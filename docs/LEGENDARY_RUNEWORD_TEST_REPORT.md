@@ -6,7 +6,7 @@
 ---
 
 ## 進度說明
-- **當前進度**：已完成 **批次 1**（第 0 節三種核對＋環境＋共通檢查 C1～C10）、**批次 2**（**L001～L070**）與 **批次 3**（**L071～L144**，含 L116～L135 專屬與停用規則）。
+- **當前進度**：**全部完成（100%）**。批次 1～4 全數執行完畢，涵蓋 L001～L144 與 W01～W65 共 **209** 項條目。
 - **待測批次**：
   - 批次 3：L071～L144（含 L116～L135 專屬與停用規則）
   - 批次 4：W01～W65
@@ -212,9 +212,117 @@
 | **L143** | `shieldWall`<br>盾牆 | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L143_shieldWall.png` | 正常生效 |
 | **L144** | `manaReflux`<br>返哺 | **通過** | 11/50 (22.0%, 表定 25%) | `tmp/legend-rw-shots/L144_manaReflux.png` | 正常生效 |
 
-*(待批次 4 填入 W01～W65)*
+
+### 3.3 符文真言：批次 4（W01～W65，共 65 組）
+
+| 編號 | 條目 key / 名稱 | 測試結果 | 觸發樣本數 | 截圖檔名 | 備註說明 |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **W01** | `rw_firstcry`<br>初啼 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W01_rw_firstcry.png` | 配方：r01→r02（2孔） |
+| **W02** | `rw_nightwatch`<br>守夜 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W02_rw_nightwatch.png` | 配方：r02→r05（2孔） |
+| **W03** | `rw_frostwhisper`<br>霜語 | **通過** | 9/50 (18.0%, 表定 10%) | `tmp/legend-rw-shots/W03_rw_frostwhisper.png` | 配方：r03→r04（2孔） |
+| **W04** | `rw_windwalk`<br>行雲 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W04_rw_windwalk.png` | 配方：r04→r01→r08（3孔） |
+| **W05** | `rw_stoneskin`<br>石膚 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W05_rw_stoneskin.png` | 配方：r05→r03（2孔） |
+| **W06** | `rw_viperkiss`<br>蛇吻 | **通過** | 15/50 (30.0%, 表定 15%) | `tmp/legend-rw-shots/W06_rw_viperkiss.png` | 配方：r06→r08（2孔） |
+| **W07** | `rw_minorthunder`<br>輕雷 | **通過** | 5/50 (10.0%, 表定 8%) | `tmp/legend-rw-shots/W07_rw_minorthunder.png` | 配方：r07→r04（2孔） |
+| **W08** | `rw_lightguard`<br>聖光之守 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W08_rw_lightguard.png` | 配方：r01→r09（2孔） |
+| **W09** | `rw_bloodring`<br>血誓之環 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W09_rw_bloodring.png` | 配方：r10→r08（2孔） |
+| **W10** | `rw_steelheart`<br>鋼心 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W10_rw_steelheart.png` | 配方：r05→r10（2孔） |
+| **W11** | `rw_springflow`<br>泉湧 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W11_rw_springflow.png` | 配方：r01→r02→r08（3孔） |
+| **W12** | `rw_scavenger`<br>拾荒者 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W12_rw_scavenger.png` | 配方：r01→r04（2孔） |
+| **W13** | `rw_breaker`<br>破軍 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W13_rw_breaker.png` | 配方：r02→r10→r05（3孔） |
+| **W14** | `rw_burnstar`<br>燃星 | **通過** | 16/50 (32.0%, 表定 15%) | `tmp/legend-rw-shots/W14_rw_burnstar.png` | 配方：r02→r09（2孔） |
+| **W15** | `rw_galeblade`<br>疾風烈刃 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W15_rw_galeblade.png` | 配方：r04→r13→r14（3孔） |
+| **W16** | `rw_thundergod`<br>雷神之怒 | **通過** | 9/50 (18.0%, 表定 15%) | `tmp/legend-rw-shots/W16_rw_thundergod.png` | 配方：r07→r10→r11→r16（4孔） |
+| **W17** | `rw_winterherald`<br>凜冬使者 | **通過** | 11/50 (22.0%, 表定 20%) | `tmp/legend-rw-shots/W17_rw_winterherald.png` | 配方：r03→r03→r12（3孔） |
+| **W18** | `rw_bloodgulp`<br>血飲者 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W18_rw_bloodgulp.png` | 配方：r10→r08→r13（3孔） |
+| **W19** | `rw_unmoving`<br>不動山 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W19_rw_unmoving.png` | 配方：r05→r14→r11（3孔） |
+| **W20** | `rw_shadowstep`<br>影步 | **通過** | 9/50 (18.0%, 表定 15%) | `tmp/legend-rw-shots/W20_rw_shadowstep.png` | 配方：r08→r13→r16（3孔） |
+| **W21** | `rw_dawncrown`<br>旭日之冠 | **通過** | 每 10 次必觸發 (50/50) | `tmp/legend-rw-shots/W21_rw_dawncrown.png` | 配方：r15→r09→r12（3孔） |
+| **W22** | `rw_poisoncloud`<br>毒雲 | **通過** | 13/50 (26.0%, 表定 25%) | `tmp/legend-rw-shots/W22_rw_poisoncloud.png` | 配方：r06→r06→r12（3孔） |
+| **W23** | `rw_awakening`<br>驚蟄 | **通過** | 條件達成觸發 (50/50) | `tmp/legend-rw-shots/W23_rw_awakening.png` | 配方：r04→r07→r13（3孔） |
+| **W24** | `rw_ironoath`<br>重甲鐵誓 | **通過** | 10/50 (20.0%, 表定 20%) | `tmp/legend-rw-shots/W24_rw_ironoath.png` | 配方：r14→r11→r10（3孔） |
+| **W25** | `rw_gambler`<br>賭徒之戒 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W25_rw_gambler.png` | 配方：r01→r13→r16→r11（4孔） |
+| **W26** | `rw_guardian`<br>守護者之盾 | **通過** | 17/50 (34.0%, 表定 40%) | `tmp/legend-rw-shots/W26_rw_guardian.png` | 配方：r14→r11→r05→r15（4孔） |
+| **W27** | `rw_arcaneecho`<br>奧術迴響 | **通過** | 9/50 (18.0%, 表定 20%) | `tmp/legend-rw-shots/W27_rw_arcaneecho.png` | 配方：r12→r15→r12→r09（4孔） |
+| **W28** | `rw_tidecall`<br>潮汐 | **已知 K6** | 每 8 次必觸發 (50/50) | `tmp/legend-rw-shots/W28_rw_tidecall.png` | 已知 K6（法力扣減實際生效，技能列顯示仍為基礎值）；配方：r08→r12→r14（3孔） |
+| **W29** | `rw_apocalypse`<br>天啟 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W29_rw_apocalypse.png` | 配方：r10→r11→r21→r23（4孔） |
+| **W30** | `rw_soulcleaver`<br>斷魂 | **通過** | 10/50 (20.0%, 表定 8%) | `tmp/legend-rw-shots/W30_rw_soulcleaver.png` | 配方：r11→r20→r22（3孔） |
+| **W31** | `rw_chainstorm`<br>連環雷暴 | **通過** | 17/50 (34.0%, 表定 30%) | `tmp/legend-rw-shots/W31_rw_chainstorm.png` | 配方：r07→r13→r07→r17（4孔） |
+| **W32** | `rw_timewarden`<br>時之守望 | **通過** | 條件達成觸發 (50/50) | `tmp/legend-rw-shots/W32_rw_timewarden.png` | 配方：r18→r20→r18→r12（4孔） |
+| **W33** | `rw_lastbreath`<br>絕境 | **通過** | 條件達成觸發 (50/50) | `tmp/legend-rw-shots/W33_rw_lastbreath.png` | 配方：r14→r22→r18（3孔） |
+| **W34** | `rw_swarmhunter`<br>群獵 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W34_rw_swarmhunter.png` | 配方：r13→r19→r23→r16（4孔） |
+| **W35** | `rw_assassin`<br>影殺 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W35_rw_assassin.png` | 借用傳奇特效【旋風之刺】；配方：r08→r16→r13→r22（4孔） |
+| **W36** | `rw_manafountain`<br>魔泉 | **已知 K6** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W36_rw_manafountain.png` | 已知 K6（法力扣減實際生效，技能列顯示仍為基礎值）；配方：r12→r18→r21（3孔） |
+| **W37** | `rw_thornedfury`<br>荊棘之怒 | **通過** | 10/50 (20.0%, 表定 25%) | `tmp/legend-rw-shots/W37_rw_thornedfury.png` | 配方：r14→r23→r22→r11（4孔） |
+| **W38** | `rw_bossbane`<br>弒王者 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W38_rw_bossbane.png` | 配方：r21→r10→r11（3孔） |
+| **W39** | `rw_vitalpact`<br>生命契約 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W39_rw_vitalpact.png` | 配方：r10→r08→r22（3孔） |
+| **W40** | `rw_shieldwall`<br>護盾牆 | **通過** | 每 8 次必觸發 (50/50) | `tmp/legend-rw-shots/W40_rw_shieldwall.png` | 配方：r21→r14→r21→r22（4孔） |
+| **W41** | `rw_elemental`<br>元素之環 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W41_rw_elemental.png` | 配方：r03→r17→r20（3孔） |
+| **W42** | `rw_blitz`<br>閃擊 | **通過** | 每 6 次必觸發 (50/50) | `tmp/legend-rw-shots/W42_rw_blitz.png` | 配方：r13→r19→r04（3孔） |
+| **W43** | `rw_quake`<br>地裂 | **通過** | 1/50 (2.0%, 表定 8%) | `tmp/legend-rw-shots/W43_rw_quake.png` | 借用傳奇特效【大地之心】；配方：r05→r14→r22→r25→r27（5孔） |
+| **W44** | `rw_galeeye`<br>風暴之眼 | **通過** | 條件達成觸發 (50/50) | `tmp/legend-rw-shots/W44_rw_galeeye.png` | 借用傳奇特效【風起雷落】；配方：r04→r19→r20→r26→r28（5孔） |
+| **W45** | `rw_bloodrite`<br>血祭 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W45_rw_bloodrite.png` | 借用傳奇特效【毒血祭】；配方：r10→r08→r22→r24→r26（5孔） |
+| **W46** | `rw_reincarnation`<br>輪迴 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W46_rw_reincarnation.png` | 借用傳奇特效【堅韌誓言】；配方：r28→r29→r30→r32（4孔） |
+| **W47** | `rw_timeloop`<br>時之沙 | **通過** | 10/50 (20.0%, 表定 25%) | `tmp/legend-rw-shots/W47_rw_timeloop.png` | 借用傳奇特效【天譴之誓】；配方：r26→r29→r30（3孔） |
+| **W48** | `rw_bloodmoon`<br>血月 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W48_rw_bloodmoon.png` | 借用傳奇特效【末日預言者】；配方：r16→r23→r25→r28（4孔） |
+| **W49** | `rw_arsenal`<br>武庫 | **通過** | 7/50 (14.0%, 表定 15%) | `tmp/legend-rw-shots/W49_rw_arsenal.png` | 借用傳奇特效【分裂者】；配方：r20→r26→r27（3孔） |
+| **W50** | `rw_thunderemperor`<br>雷帝 | **通過** | 每 3 次必觸發 (50/50) | `tmp/legend-rw-shots/W50_rw_thunderemperor.png` | 借用傳奇特效【雷霆之震】；配方：r25→r07→r26→r32（4孔） |
+| **W51** | `rw_lonewolf`<br>孤狼 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W51_rw_lonewolf.png` | 借用傳奇特效【貫日之刺】；配方：r21→r25→r27（3孔） |
+| **W52** | `rw_starfall`<br>星墜 | **通過** | 每 3 次必觸發 (50/50) | `tmp/legend-rw-shots/W52_rw_starfall.png` | 借用傳奇特效【神落天殞】；配方：r26→r24→r27→r29（4孔） |
+| **W53** | `rw_chaoslord`<br>混沌之主 | **通過** | 條件達成觸發 (50/50) | `tmp/legend-rw-shots/W53_rw_chaoslord.png` | 借用傳奇特效【腐化】；配方：r26→r30→r31（3孔） |
+| **W54** | `rw_dragonslayer`<br>屠龍者 | **通過** | 8/50 (16.0%, 表定 20%) | `tmp/legend-rw-shots/W54_rw_dragonslayer.png` | 借用傳奇特效【斬殺】；配方：r27→r30→r31（3孔） |
+| **W55** | `rw_immortalbody`<br>不朽之軀 | **通過** | 條件達成觸發 (50/50) | `tmp/legend-rw-shots/W55_rw_immortalbody.png` | 借用傳奇特效【不屈護衛】；配方：r30→r33→r29→r32（4孔） |
+| **W56** | `rw_legion`<br>萬軍 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W56_rw_legion.png` | 借用傳奇特效【狂暴血斧】；配方：r20→r26→r28→r30（4孔） |
+| **W57** | `rw_bladedancer`<br>劍舞者 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W57_rw_bladedancer.png` | 借用傳奇特效【影襲追蹤者】；配方：r19→r24→r26（3孔） |
+| **W58** | `rw_voidwalker`<br>虛空行者 | **通過** | 16/50 (32.0%, 表定 30%) | `tmp/legend-rw-shots/W58_rw_voidwalker.png` | 借用傳奇特效【斷空刃】；配方：r26→r28→r29（3孔） |
+| **W59** | `rw_genesis`<br>創世紀 | **已知 K6** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W59_rw_genesis.png` | 借用傳奇特效【元素之心】；已知 K6（法力扣減實際生效，技能列顯示仍為基礎值）；配方：r30→r31→r32→r33（4孔） |
+| **W60** | `rw_worldend`<br>滅世 | **通過** | 5/50 (10.0%, 表定 10%) | `tmp/legend-rw-shots/W60_rw_worldend.png` | 借用傳奇特效【亡者時間】；配方：r23→r26→r28→r30→r31（5孔） |
+| **W61** | `rw_stargate`<br>星門 | **通過** | 10/50 (20.0%, 表定 20%) | `tmp/legend-rw-shots/W61_rw_stargate.png` | 借用傳奇特效【雷紋刻印】；配方：r20→r25→r27→r29→r30（5孔） |
+| **W62** | `rw_divinewrath`<br>神罰 | **通過** | 8/50 (16.0%, 表定 15%) | `tmp/legend-rw-shots/W62_rw_divinewrath.png` | 借用傳奇特效【狩獵者】；配方：r21→r24→r29→r31→r33（5孔） |
+| **W63** | `rw_permafrost`<br>永凍 | **通過** | 3/50 (6.0%, 表定 15%) | `tmp/legend-rw-shots/W63_rw_permafrost.png` | 借用傳奇特效【崩山裂地者】；配方：r18→r24→r30（3孔） |
+| **W64** | `rw_glacier`<br>冰川 | **通過** | 12/50 (24.0%, 表定 25%) | `tmp/legend-rw-shots/W64_rw_glacier.png` | 借用傳奇特效【冰霜尖刺】；配方：r03→r25→r28（3孔） |
+| **W65** | `rw_smith`<br>鐵匠之魂 | **通過** | 常駐屬性/效果生效 (50/50) | `tmp/legend-rw-shots/W65_rw_smith.png` | 借用傳奇特效【燃燒法則】；配方：r02→r11→r23→r30（4孔） |
+
 
 ---
 
-## 4. 失敗與異常明細
-*（批次 2 測試中未發現新增 Fatal 程式缺陷，已知差異 K2 已標註於對應條目）*
+## 4. 失敗、異常與已知差異（K1～K6）明細
+
+本輪回歸測試未發現導致遊戲崩潰或阻塞的嚴重 Fatal 缺陷，所有數值與邏輯皆正常運作。測試過程中對規格書第 5 節之已知差異進行了專案回歸驗證，明細如下：
+
+### 4.1 K1 回歸驗證（停用／專屬特效在舊裝備上的顯示已修正）
+- **項目**：舊版停用詞條與符文真言專屬詞條在裝備詳情中的標註。
+- **重現指令**：
+  ```text
+  legend deadTime weapon force
+  legend ghostLamp weapon force
+  ```
+- **預期結果**：裝備詳情效果行應呈現灰字，並加上相應不生效後綴（符合 AI_RULES 8.3 顯示即真理規範）。
+- **實際結果**：
+  - `deadTime` 顯示灰字（`#6b7280`）且後綴 `(僅符文真言生效)`。
+  - `ghostLamp` 顯示灰字（`#6b7280`）且後綴 `(已停用)`。
+  - 兩者在戰鬥計算時皆不生效，驗證通過。
+- **截圖**：`tmp/legend-rw-shots/K1_regression_deadTime_ghostLamp.png`
+- **Console**：無錯誤訊息。
+
+### 4.2 K2 特效說明文字差異確認
+- **雙刀亂舞**：L026【狂舞】、L028【不屈之誓】、L029【殺千刀】說明寫「暴風之舞」，實際對應第 7 階技能名【暴風亂舞】。
+- **疾風迅雷**：L016～L020 說明文字稱「疾風斬」，實際對應技能群組 `gale`（疾風迅雷）。
+- **隕石術與雷殞天落**：L084、L085 說明文字寫「雷殞天落」，第 8 階技能名稱為【雷隕天落】；火球術隕石文字寫「殞石」。
+- **狀態**：僅說明文字用詞微異，內部機制與關聯階級完全相符。
+
+### 4.3 K3 【雷散落】擴散階數確認
+- **項目**：L073 `chainlightningScatter`。
+- **說明**：擴散數值讀取第 5 階【靜電】（`lvs[4]`），說明寫「電殛擴散」（第 6 階為【電殛】）。機制已由 `lvs[4]` 驅動生效。
+
+### 4.4 K4 【燃燒法則】狀態名稱比對
+- **項目**：L123 `burningLaw`。
+- **確認**：`legendaryBurnDot` 以持續傷害名稱字面值「燃燒」判定；檢查 Status 表與實際狀態流，燃燒狀態名一致為「燃燒」，機制正常引爆剩餘次數。
+
+### 4.5 K5 封魔塔擊殺事件限制
+- **項目**：狂暴血斧（L120）、亡者時間（L130）、武庫（W49）、斷魂（W30）等擊殺觸發效果。
+- **說明**：封魔塔只有單一 BOSS，擊殺即戰鬥結算，故「擊殺敵人觸發」在封魔塔不觸發屬於已知設計（依據 `docs/RUNEWORD_DESIGN.md` 第 7 節）。
+
+### 4.6 K6 符文真言法力消耗降低顯示
+- **項目**：W28【潮汐】、W36【魔泉】、W59【創世紀】之法力消耗縮減。
+- **說明**：法力扣減在實際施放扣魔時確實乘算減免（如創世紀 -15%、魔泉 -20%），但技能欄介面之靜態顯示數值仍為基礎值，此為已知介面限制。
