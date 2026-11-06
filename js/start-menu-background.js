@@ -9,6 +9,10 @@ var StartMenuBackground = (function () {
   const TAU = Math.PI * 2;
   const FRAME_MS = 1000 / 30;
   const REDUCED_MOTION_SCALE = .65;
+  const GATE_FOG_RATE = 1.25;
+  const MIDGROUND_FOG_RATE = 1.20;
+  const MIDGROUND_FOG_DENSITY = 1.30;
+  const DUST_GUST_RATE = 1.30;
 
   // x, y, 寬, 高, 沿旗桿的斜率, 末端下垂, 振幅, 遠近色調
   const CLOTH = [
@@ -116,12 +120,23 @@ var StartMenuBackground = (function () {
     const clouds = [
       { tile: vaporTexture(512, 120, [180, 140, 104], 91, true), w: 1910, y: -52, h: 310, speed: 3.5, alpha: .36 },
       { tile: vaporTexture(512, 125, [71, 59, 54], 413, true), w: 1460, y: -28, h: 356, speed: 6.7, alpha: .59 },
-      { tile: vaporTexture(512, 100, [159, 122, 91], 611, true), w: 1160, y: 151, h: 240, speed: 9.6, alpha: .38 },
-      { tile: vaporTexture(512, 78, [160, 127, 94], 781, true), w: 1480, y: 354, h: 174, speed: 12.5, alpha: .29 }
+      { tile: vaporTexture(512, 100, [159, 122, 91], 611, true), w: 1160, y: 151, h: 240, speed: 9.6, alpha: .38 }
     ];
-    for (const cloud of clouds) cloud.pattern = skyContext.createPattern(cloud.tile, 'repeat-x');
+    const leftBank = { tile: vaporTexture(512, 128, [64, 50, 42], 1003, true), w: 970, y: -38, h: 406, speed: 14.4, alpha: .67 };
+    const midground = {
+      tile: vaporTexture(512, 78, [160, 127, 94], 781, true), w: 1480, y: 354, h: 174,
+      speed: 12.5 * MIDGROUND_FOG_RATE, alpha: .29 * MIDGROUND_FOG_DENSITY
+    };
+    for (const cloud of [...clouds, leftBank, midground]) cloud.pattern = skyContext.createPattern(cloud.tile, 'repeat-x');
+    const leftFade = skyContext.createLinearGradient(410, 0, 640, 0);
+    leftFade.addColorStop(0, '#000');
+    leftFade.addColorStop(1, 'transparent');
+    // 裁切範圍落在拱門石材上，開口邊緣仍由原畫遮罩羽化。
+    const gateBounds = 'M716 145H951V426H716Z';
     return {
-      sky, skyContext, clouds, mask: skyMask(),
+      sky, skyContext, clouds, leftBank, leftFade, midground, mask: skyMask(),
+      gate: new Path2D(gateBounds),
+      outsideGate: new Path2D('M0 0H' + WIDTH + 'V' + HEIGHT + 'H0Z ' + gateBounds),
       sand: vaporTexture(192, 48, [181, 138, 89], 561, false),
       haze: vaporTexture(192, 56, [141, 108, 76], 801, false),
       spirit: vaporTexture(64, 112, [115, 176, 154], 171, false)
@@ -141,19 +156,31 @@ var StartMenuBackground = (function () {
   }
 
   function drawClouds(ctx, atmosphere, time) {
-    const { sky, skyContext, mask, clouds } = atmosphere;
+    const { sky, skyContext, mask, clouds, leftBank, leftFade, gate, outsideGate, midground } = atmosphere;
     skyContext.setTransform(1, 0, 0, 1, 0, 0);
     skyContext.clearRect(0, 0, sky.width, sky.height);
     skyContext.save();
     skyContext.scale(sky.width / WIDTH, sky.height / HEIGHT);
-    for (let i = 0; i < 3; i++) cloudStrip(skyContext, clouds[i], time);
+    cloudStrip(skyContext, leftBank, time);
+    skyContext.save();
+    skyContext.globalCompositeOperation = 'destination-in';
+    skyContext.fillStyle = leftFade;
+    skyContext.fillRect(0, 0, WIDTH, HEIGHT);
+    skyContext.restore();
+
+    skyContext.save();
+    skyContext.clip(outsideGate, 'evenodd');
+    for (const cloud of clouds) cloudStrip(skyContext, cloud, time);
+    skyContext.restore();
+    skyContext.clip(gate);
+    for (const cloud of clouds) cloudStrip(skyContext, cloud, time * GATE_FOG_RATE);
     skyContext.restore();
     skyContext.save();
     skyContext.globalCompositeOperation = 'destination-in';
     skyContext.drawImage(mask, 0, 0);
     skyContext.restore();
     ctx.drawImage(sky, 0, 0, WIDTH, HEIGHT);
-    cloudStrip(ctx, clouds[3], time);
+    cloudStrip(ctx, midground, time);
   }
 
   function clothSprites(atlas) {
@@ -164,15 +191,29 @@ var StartMenuBackground = (function () {
     });
   }
 
-  function clothPoint(flag, u, v, time, index, motionScale) {
-    const travel = time * 4.2 - u * 8 + index * 1.7;
-    const flex = u * u * flag.swing * motionScale;
-    const gust = .74 + .26 * Math.sin(time * 1.14 - index * .6);
-    const fold = Math.sin(travel + v * 2.4);
-    const snap = Math.sin(travel * 2.38 + v * 3.9);
+  function updateClothWind(wind, time) {
+    if (time >= wind.end) {
+      wind.start = time;
+      wind.end = time + 1.4 + Math.random() * 4.8;
+      wind.from = wind.to;
+      wind.to = .20 + Math.random() * 1.14;
+    }
+    const progress = (time - wind.start) / (wind.end - wind.start);
+    wind.strength = wind.from + (wind.to - wind.from) * ease(progress);
+    wind.phase += (time - wind.last) * (1.9 + wind.strength * 3.4);
+    wind.last = time;
+  }
+
+  function clothPoint(flag, u, v, wind, index, motionScale) {
+    const travel = wind.phase - u * 8 + index * 1.7;
+    const flex = u * u * flag.swing * motionScale * wind.strength;
+    const fold = Math.sin(travel + v * .85);
+    const snap = Math.sin(travel * 2.38 + v * 1.2);
+    const flutter = flex * (fold + .34 * snap);
+    // 旗布沿旗桿的斜向彎曲，強風時窄布條也保有連續的網格。
     return {
-      x: flag.x + u * flag.w + v * flag.lean + flex * (.41 * fold - .35 + .17 * snap),
-      y: flag.y + v * flag.h + u * flag.drop + flex * gust * (fold + .34 * snap)
+      x: flag.x + u * flag.w + v * flag.lean + flex * (.28 * fold - .35 + .09 * snap) + flutter * flag.lean / flag.h,
+      y: flag.y + v * flag.h + u * flag.drop + flutter
     };
   }
 
@@ -198,7 +239,7 @@ var StartMenuBackground = (function () {
     ctx.restore();
   }
 
-  function drawCloth(ctx, sprites, time, motionScale) {
+  function drawCloth(ctx, sprites, wind, motionScale) {
     for (const [index, flag] of CLOTH.entries()) {
       const sprite = sprites[flag.sprite];
       const columns = index === 0 ? 12 : 6;
@@ -206,7 +247,7 @@ var StartMenuBackground = (function () {
       const sw = sprite.width / columns, sh = sprite.height / rows;
       const mesh = [];
       for (let y = 0; y <= rows; y++) {
-        for (let x = 0; x <= columns; x++) mesh.push(clothPoint(flag, x / columns, y / rows, time, index, motionScale));
+        for (let x = 0; x <= columns; x++) mesh.push(clothPoint(flag, x / columns, y / rows, wind, index, motionScale));
       }
       ctx.globalAlpha = 1 - flag.haze;
       for (let y = 0; y < rows; y++) {
@@ -362,13 +403,17 @@ var StartMenuBackground = (function () {
       return {
         x: x + along * sweep + (random() - .5) * span,
         y: y + along * slope + (random() - .5) * (22 + strength * 21) * depth,
-        born: start + along * release
+        born: start + along * release,
+        spread: random() - .5,
+        drift: (random() - .57) * (36 + strength * 22) * depth,
+        curl: (random() - .5) * (10 + strength * 18) * depth,
+        phase: random() * TAU
       };
     }
 
     const grains = Array.from({ length: Math.round(156 + strength * 243) }, () => ({
       ...liftOff(), speed: depth * push * (35 + random() * 111), life: .54 + random() * 1.57,
-      loft: depth * (2 + random() * 13), phase: random() * TAU, size: depth * (.25 + random() * random() * 1.35)
+      loft: depth * (2 + random() * 13), size: depth * (.25 + random() * random() * 1.35)
     }));
     const trails = Array.from({ length: Math.round(6 + strength * 12) }, () => ({
       ...liftOff(), speed: depth * push * (38 + random() * 48), life: 1.7 + random() * 2.9,
@@ -377,24 +422,37 @@ var StartMenuBackground = (function () {
     return { depth, strength, grains, trails, end: start + release + 4.6 };
   }
 
+  function sandX(particle, age, progress) {
+    return particle.x + particle.speed * age * (.77 + (.30 + particle.spread * .46) * progress);
+  }
+
+  function sandY(particle, progress, loft) {
+    const turbulence = Math.sin(particle.phase + progress * 7) * particle.curl;
+    return particle.y + particle.drift * progress * progress + (turbulence - particle.loft) * loft;
+  }
+
   function drawDust(ctx, textures, dust, time, motionScale) {
     if (time >= dust.next) {
       // 只排入當下的陣風，慢幀後不補播已錯過的沙塵。
       dust.gusts.push(makeDustGust(Math.max(dust.next, time - .9)));
-      dust.next = time + 1.02 + Math.pow(Math.random(), 1.6) * 4.2;
+      dust.next = time + (1.02 + Math.pow(Math.random(), 1.6) * 4.2) / DUST_GUST_RATE;
     }
     dust.gusts = dust.gusts.filter(gust => time < gust.end);
     for (const { depth, strength, trails } of dust.gusts) {
       for (const trail of trails) {
-        const progress = (time - trail.born) / trail.life;
+        const age = time - trail.born;
+        const progress = age / trail.life;
         if (progress <= 0 || progress >= 1) continue;
         const fade = Math.sin(progress * Math.PI);
-        const x = trail.x + (time - trail.born) * trail.speed;
-        const y = trail.y - trail.loft * fade;
-        const width = (46 + 206 * progress) * depth * trail.breadth;
-        const height = (5 + 18 * progress) * depth;
+        const width = (46 + 194 * progress) * depth * trail.breadth;
+        const height = (5 + 29 * progress * progress) * depth * trail.breadth;
+        const turn = (.12 * Math.sin(trail.phase + progress * 5) + trail.drift * .003) * progress;
+        ctx.save();
+        ctx.translate(sandX(trail, age, progress), sandY(trail, progress, fade));
+        ctx.rotate(turn);
         ctx.globalAlpha = fade * (.34 + strength * .46) * motionScale;
-        ctx.drawImage(trail.pale ? textures.sand : textures.haze, x - width * .15, y - height * .78, width, height);
+        ctx.drawImage(trail.pale ? textures.sand : textures.haze, -width * .15, -height * .78, width, height);
+        ctx.restore();
       }
     }
     for (const { strength, grains } of dust.gusts) {
@@ -404,11 +462,10 @@ var StartMenuBackground = (function () {
         const progress = age / grain.life;
         if (progress <= 0 || progress >= 1) continue;
         const hop = 4 * progress * (1 - progress);
-        const x = grain.x + grain.speed * age * (.78 + progress * .32);
-        const y = grain.y - grain.loft * hop + Math.sin(age * 12 + grain.phase) * hop * 1.4;
         ctx.globalAlpha = Math.min(1, progress * 7) * (1 - progress) * (.24 + strength * .62) * motionScale;
         ctx.fillStyle = SAND_SHADES[i % SAND_SHADES.length];
-        ctx.fillRect(x, y, grain.size * (1.15 + grain.speed * .015), grain.size * .76);
+        ctx.fillRect(sandX(grain, age, progress), sandY(grain, progress, hop),
+          grain.size * (1.15 + grain.speed * .015), grain.size * .76);
       }
     }
     ctx.globalAlpha = 1;
@@ -443,6 +500,7 @@ var StartMenuBackground = (function () {
     let disposed = false, inView = false, frame = null, previous = null;
     let sprites, fires, time = 5.6, lastPaint = -Infinity;
     const dust = { gusts: [], next: time - .9 };
+    const clothWind = { end: time, last: time, phase: time * 4.2, to: .72 };
 
     function draw() {
       if (!ctx || !inView) return;
@@ -451,7 +509,10 @@ var StartMenuBackground = (function () {
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       if (fires) drawFires(ctx, fires, time);
       drawClouds(ctx, atmosphere, time);
-      if (sprites) drawCloth(ctx, sprites, time, motionScale);
+      if (sprites) {
+        updateClothWind(clothWind, time);
+        drawCloth(ctx, sprites, clothWind, motionScale);
+      }
       drawWisps(ctx, atmosphere.spirit, time);
       drawDust(ctx, atmosphere, dust, time, motionScale);
     }

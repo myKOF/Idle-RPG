@@ -4,11 +4,11 @@
     "originals/battlefield.png": "4c1f617491bc33e0a9287f4792017fcb695e0b29bca27afc2b05080cfa370ffa",
     "originals/cloth-atlas.png": "61041bec47e9020ae9fcd38520faeb6ceaff585175571e64b065c7ab8445eda2",
     "PROMPTS.json": "57b8cef8fe4ac03941dde471bff7288e78f53d86487459abef8113b014866da7",
-    "source/start-menu-background.js": "53dbe45f918c5c2a9ceaa14ac55f833d228e1cc8975e659346565927169080a6"
+    "source/start-menu-background.js": "eff915a4b81c698135cf42f26589d3a604813b72edaf1d275f8e12c0e77fefb2"
   },
   "exports": {
     "web/battlefield.webp": "6badf424c816406a4bf441c42f3a0fb91ef6fe250a31e2171c22ea900ee4e32b",
     "web/cloth-atlas.webp": "83b3a07b9e67e06011bc917bb8ef05bd9596e9eaa36ebe04d25ec64febad1af4",
-    "SOURCE.md": "af1b3c2a3ba8c28b456d2b1e54714532e91261d5742eb7f0f02f23d73bd2e3a3"
+    "SOURCE.md": "897b22851735635d3962c81573b52a39b09dff21bd9a7b3b6e78948227cffecb"
   }
 }
