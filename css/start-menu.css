@@ -36,9 +36,7 @@
 }
 #start-menu button:focus-visible {
   outline: none;
-  text-decoration: underline;
-  text-decoration-color: #dfbe83;
-  text-underline-offset: 4px;
+  text-shadow: 0 1px 2px #29170e, 0 2px 5px #2b1b10, 0 0 7px #dfbe83;
 }
 #start-menu button:disabled { opacity: .5; cursor: default; }
 #start-menu-status { color: var(--dialog-gold); margin: 12px 0 0; text-align: center; text-shadow: 0 1px 3px #000; }
@@ -47,7 +45,6 @@
 @media (hover: hover) {
   #start-menu button:hover:not(:disabled) {
     color: #fff2d8;
-    text-decoration: none;
   }
   #start-menu button:hover:not(:disabled)::before {
     content: "";
@@ -66,6 +63,13 @@
 
 @media (pointer: coarse) {
   #start-menu .system-menu-actions button { min-height: 44px !important; }
+}
+
+@media (min-width: 601px) and (min-height: 501px) {
+  #start-menu .start-menu-controls {
+    margin-inline-start: max(-38px, -2.5vw);
+    margin-block-end: min(58px, 8.4vh);
+  }
 }
 
 @media (max-width: 600px), (max-height: 500px) {
