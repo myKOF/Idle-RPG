@@ -1,3 +1,11 @@
+## SYNC-20261106-START-MENU-FINAL — 整合開始選單樣式並恢復同步
+
+- Owner：Codex。使用者以 1 授權接續本輪整合。原 develop f8e33e7c 已保留 Antigravity、Claude 技能音效及先前 Codex 成果，本輪納入 524aabd4 暖色文字與游標亮帶。只調整本段及合併所需文件，保留所有來源提交。
+- String.csv 的工作檔 CRLF 正規化後逐位等於原 HEAD，依倉庫屬性恢復 LF，無字串或 Excel 內容變更。任務紀錄因既有重複標題使自訂 driver 停止，標準三方合併成功，工作檔與兩側完整聯集逐位相同。
+- 驗收開始選單、啟動及存檔隔離、技能與介面音效、字串和 Worker 快取，並核對素材來源、Build、各工作區與遠端。
+- Done。開始選單 CSS 逐位等於 524aabd4，首頁只合入 CSS 快取 1.0.2。13 個既有測試檔共 146/146 通過，涵蓋 start-menu、startup-hold、tab-lock、save-origin-isolation、loading-screen、intro-player、ui-achievement-sound、ui-sound、worker-protocol、vfx-editor-cache-versions、skill-sfx、string-table、vfx-preset-usage。npm.cmd run build 通過 683 檔。
+- apply_strings --check 通過 2419 條／da584947，sync-start-menu --check 通過素材來源校驗。素材庫已對齊 5153c07d。原 Excel、字串與其他提交內容逐位保留。TAP 與 Build 紀錄位於 develop/logs/sync-20261106-menu-regression.tap、sync-20261106-menu-build.log。同步結果另見最新報告。
+
 ## SYNC-PENDING-20261106-215512 ? ???????????
 
 - Owner Codex?Done???????? pending merge?HEAD bb8386b132d4e16054d0ee5b898f5fc946d196f5?MERGE_HEAD 76790fb8d62bc95d7cce7684723aa9304b73a006???? index.html ????? bridge ??????????????? EOF ??????? stage?commit?
@@ -15031,6 +15039,12 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex，Done。依畫面標示縮窄按鈕欄 20%，靠左下對齊，移除可見標題、外框和底板。按鈕底色保留 80% 不透明度，保留文字對比、焦點及可及性名稱。修改開始選單 HTML／CSS、樣式快取、解鎖總表及本段。唯讀核對共用彈窗樣式、背景元件、選單接線與工作規範。
 - 首頁與 Claude 的技能音效有同檔修改，分屬選單標記／樣式引用與技能腳本引用。把 Claude 工作差異投影到本分支後，與本次差異三方試跑通過，兩組內容均完整保留。對共同祖先的整檔試跑仍回報原有 Worker 快取段落相鄰修改，與本次選單區段無關。
 - Edge 實際頁面確認 1536×695、320×660、568×260 寬度各為原本八成，按鈕離左邊 16px，短視窗可捲動。核對 80% 底色、主選單和難度的標題移除、停用游標、鍵盤返回、設定開關及畫面預覽，Console error／warning 0。七份相關 `node --test` 共 73/73 通過，`npm.cmd run build` 檢查 681 檔，字串及 diff 檢查通過。交付為本段所在提交，可供整合。
+
+## START-MENU-BUTTONS-20261106 — 開始選單純文字與游標亮帶
+
+- Owner：Codex，Done。依參考畫面以 CSS 自製無邊框、無底色的暖象牙白文字，搭配深褐陰影。游標移入可用項目時顯示淡金橫向亮帶，上下緣微亮、兩側漸淡。鍵盤焦點用底線，觸控保留 44px 高的點擊區。
+- 修改開始選單專用 CSS、首頁快取、解鎖總表和本段。唯讀核對選單接線、共用彈窗樣式和背景。首頁與 Claude 技能音效提交分屬樣式和腳本引用，針對本次差異的三方試跑通過，兩組變更都保留。
+- Edge 實際頁面驗證桌面滑鼠、鍵盤、停用項、難度返回、設定開關，以及 320px 寬的模擬觸控，Console error／warning 0。七份相關 `node --test` 共 73/73 通過，`npm.cmd run build` 檢查 681 檔，字串及 diff 檢查通過。交付為本段所在提交，可供整合。
 
 ## START-MENU-DUST-GUSTS-20261106 — 開始選單的地表陣風與遠山戰火
 
