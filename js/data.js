@@ -239,11 +239,11 @@ var TALENT_TREES = {
     { id: 't3_allres2', name: '傷害緩衝', emoji: '🌫️', stat: 'globalDmgRed', per: 2, threat: 3, goldBase: 1500000, goldGrow: 2, desc: '全局減傷額外提高' }
   ],
   4: [
-    { id: 't4_phys', name: '武技昇華', emoji: '⚔️', stat: 'skillPhys', per: 3, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '物理類技能效果額外提高' },
-    { id: 't4_magic', name: '法術昇華', emoji: '✨', stat: 'skillMagic', per: 3, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '魔法類技能效果額外提高' },
-    { id: 't4_def', name: '守護昇華', emoji: '🛡️', stat: 'skillDef', per: 3, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '防禦與治療類技能效果額外提高' },
-    { id: 't4_special', name: '奇策昇華', emoji: '🎲', stat: 'skillSpecial', per: 0.5, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '特殊類技能效果額外提高' },
-    { id: 't4_passive', name: '被動昇華', emoji: '🧬', stat: 'skillPassive', per: 3, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '被動類技能效果額外提高' },
+    { id: 't4_phys', name: '武技穿透', emoji: '⚔️', stat: 'pPen', per: 160, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '物理穿透提高' },
+    { id: 't4_magic', name: '法術穿透', emoji: '✨', stat: 'mPen', per: 160, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '魔法穿透提高' },
+    { id: 't4_def', name: '不屈意志', emoji: '🛡️', stat: 'ccRed', per: 3, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '控制時間縮減提高' },
+    { id: 't4_special', name: '點金昇華', emoji: '💰', stat: 'goldBonus', per: 5, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '金幣加成提高' },
+    { id: 't4_passive', name: '智慧昇華', emoji: '📖', stat: 'xpBonus', per: 5, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '經驗加成提高' },
     { id: 't4_normalred', name: '獵人壁壘', emoji: '🐺', stat: 'normalDmgRed', per: 2, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '對普通敵人抗性額外提高' },
     { id: 't4_elitered', name: '鎮壓壁壘', emoji: '🦁', stat: 'eliteDmgRed', per: 2, threat: 3, goldBase: 6000000, goldGrow: 2, desc: '對菁英敵人抗性額外提高' }
   ],

@@ -340,8 +340,9 @@ function computeStats(equipmentOverride) {
   st.critRate = capValue(DERIVED_COEF.critRateBase + st.agi * PRIMARY_STAT_EFFECTS.agiCritRate + A.critRate, STAT_CAPS.critRate);   // 暴擊率：基礎 5% + 敏捷係數
   st.critDmg = DERIVED_COEF.critDmgBase + st.agi * PRIMARY_STAT_EFFECTS.agiCritDmg + A.critDmg;                                  // 暴擊傷害：基礎 150%
   // 穿透不設上限（STAT_CAPS.pPen/mPen = 0）：實際忽略防禦% 由 penIgnorePct 的飽和曲線換算（§3）。
-  st.pPen = capValue(A.pPen, STAT_CAPS.pPen);
-  st.mPen = capValue(A.mPen, STAT_CAPS.mPen);
+  // 4 轉威能【武技穿透／法術穿透】：與詞條、寶石穿透直接相加（沒寫「額外」＝相加）。
+  st.pPen = capValue(A.pPen + (talent.pPen || 0), STAT_CAPS.pPen);
+  st.mPen = capValue(A.mPen + (talent.mPen || 0), STAT_CAPS.mPen);
   st.hit = DERIVED_COEF.hitBase + st.agi * PRIMARY_STAT_EFFECTS.agiHit + A.hit;                          // 命中率：基礎 100% + 敏捷×a + 額外加成（無上限；戰鬥結算再 clamp 5~100）
   // 攻速：基礎攻速、敏捷係數與上限皆由 data.js 控制。
   st.aspdBonusBase = A.aspdPct + st.agi * PRIMARY_STAT_EFFECTS.agiAspdPct; // 玩家原始攻速加成%（未夾攻速上限）
@@ -403,14 +404,16 @@ function computeStats(equipmentOverride) {
   // 8 轉「對Ｘ屬性敵人抗性」＝對帶該屬性標籤敵人的傷害抗性（定值；與敵種抗性共用減傷曲線）。
   st.resVsElem = talentElemBucket(talent, 'resVs');
   // 特殊與機制
-  st.ccRed = capValue(A.ccRed, STAT_CAPS.ccRed);                              // 控制時間縮減上限（上限 0＝無上限）
+  // 4 轉威能【不屈意志】與詞條控制時間縮減相加，再受上限限制。
+  st.ccRed = capValue(A.ccRed + (talent.ccRed || 0), STAT_CAPS.ccRed);         // 控制時間縮減上限（上限 0＝無上限）
   /* ⚠️ 2026-08-13：出怪間隔改為純定值（參數表「出怪間隔」a／b），不再乘 (1-移動速度%)，
      而這是移動速度原本唯一的作用——目前這個屬性**沒有任何效果**，等重新定位。
      最自然的去處是我方在戰場上的實際移動速度（BF_PLAYER_SPEED），座標化之後角色真的會跑。 */
   st.moveSpeed = capValue(A.moveSpeed, STAT_CAPS.moveSpeed);                      // 移動速度上限（上限 0＝無上限）
   st.loot = effectiveDropRateEffect(A.loot);
-  st.xpBonus = A.xpBonus;
-  st.goldBonus = A.goldBonus;
+  // 4 轉威能【智慧昇華／點金昇華】與詞條、傳奇、神鑄的經驗／金幣加成相加。
+  st.xpBonus = A.xpBonus + (talent.xpBonus || 0);
+  st.goldBonus = A.goldBonus + (talent.goldBonus || 0);
   st.luck = capValue(A.luck, STAT_CAPS.luck);                               // 幸運值上限（上限 0＝無上限）
   st.enhanceSuccess = A.enhanceSuccess;
   st.decomposeYield = A.decomposeYield;

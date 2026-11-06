@@ -182,8 +182,10 @@ function talentBonusesTemplate() {
     pRes: 0, mRes: 0, elemRes: 0, globalDmgRed: 0, critRate: 0,
     critDmg: 0, evasion: 0, hit: 0, hpPct: 0, shieldEff: 0, normalDmg: 0,
     eliteDmg: 0, bossDmg: 0, normalDmgRed: 0, eliteDmgRed: 0, bossDmgRed: 0,
-    patkPct: 0, matkPct: 0, totalDmgPct: 0, gemEff: 0, skillPhys: 0,
-    skillMagic: 0, skillDef: 0, skillSpecial: 0, skillPassive: 0
+    patkPct: 0, matkPct: 0, totalDmgPct: 0, gemEff: 0,
+    // 4 轉（2026-11-06 取代舊技能分類加成 skillPhys／skillMagic／skillDef／skillSpecial／skillPassive，
+    // 那五個在舊技能系統移除後沒有任何讀取點）
+    pPen: 0, mPen: 0, ccRed: 0, goldBonus: 0, xpBonus: 0
   };
   for (var i = 0; i < ELEMENTS.length; i++) {
     var suffix = ELEMENTS[i].charAt(0).toUpperCase() + ELEMENTS[i].slice(1);
