@@ -3205,8 +3205,9 @@ function calculateCombatRatingSummary(st, headerSnapshot, battleSnapshot) {
   var defMul = 1 + (isActive && pEnt && typeof buffVal === 'function' ? buffVal(pEnt, 'defUp') : 0) / 100;
 
   // 各類減傷率
-  var rPhysDef = typeof defReduction === 'function' ? defReduction((st.def * defMul) || 0, attackerLevel) : 0;
-  var rMagicDef = typeof defReduction === 'function' ? defReduction((st.mdef * defMul) || 0, attackerLevel) : 0;
+  // 防禦減傷看等級差：此處以同級敵人估算（攻擊者＝受攻擊者＝自身等級）
+  var rPhysDef = typeof defReduction === 'function' ? defReduction((st.def * defMul) || 0, attackerLevel, attackerLevel) : 0;
+  var rMagicDef = typeof defReduction === 'function' ? defReduction((st.mdef * defMul) || 0, attackerLevel, attackerLevel) : 0;
   var rPhysRes = typeof physicalResistanceReduction === 'function' ? physicalResistanceReduction(st.pRes || 0, attackerLevel) : 0;
   var rMagicRes = typeof magicResistanceReduction === 'function' ? magicResistanceReduction(st.mRes || 0, attackerLevel) : 0;
   var dmgRedRaw = st.passives && st.passives.sanctuary ? st.passives.sanctuary : 0;

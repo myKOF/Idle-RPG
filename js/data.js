@@ -2300,7 +2300,8 @@ function pctStrFloor4GlobalDmgRed(n) {
 }
 
 function defenseReductionDesc(st, keyBase) {
-  var reduction = defReduction(st[keyBase] || 0, st.level || 1) * 100;
+  var lv = st.level || 1;   // 「同級」減傷率：攻擊者與受攻擊者同等級（等級差 0）
+  var reduction = defReduction(st[keyBase] || 0, lv, lv) * 100;
   return STR(226, pctStrFloor4(reduction));
 }
 
@@ -2331,10 +2332,11 @@ function enemyTypeDmgRedDesc(st, key, label) {
   return STR(230, label, pctStrFloor4(reduction));
 }
 
-/* 穿透 tips：黃字顯示目前穿透值換算後的實際忽略防禦%（以自身等級當受攻擊者等級＝對同級敵人） */
+/* 穿透 tips：黃字顯示目前穿透值換算後的實際忽略防禦%（對同級敵人：等級差 0） */
 function penetrationDesc(st, key, label) {
   var pen = (st && st[key]) || 0;
-  var ignore = penIgnorePct(pen, (st && st.level) || 1);
+  var lv = (st && st.level) || 1;
+  var ignore = penIgnorePct(pen, lv, lv);   // 同級：等級差 0
   return STR(231, label, label, pctStrFloor4(ignore));
 }
 

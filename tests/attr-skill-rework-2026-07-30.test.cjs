@@ -198,14 +198,14 @@ test('穿透上限已取消（STAT_CAPS = 0）', () => {
   assert.equal(c.capValue(1000, c.STAT_CAPS.pPen), 1000);
 });
 
-test('忽略防禦曲線釘住參數表現值（a、b），且參數可調', () => {
-  /* 期望值出處：參數表「3-戰鬥核心／穿透忽略防禦」param a、b，經 tools/apply_params.cjs
-     套進 js/formula.js 的 PEN_IGNORE_A／PEN_IGNORE_B（改參數請改 xlsx，改 config/CSV 會被沖掉）。
+test('忽略防禦曲線釘住參數表現值（a、b、c），且參數可調', () => {
+  /* 期望值出處：參數表「3-戰鬥核心／穿透忽略防禦」param a、b、c，經 tools/apply_params.cjs
+     套進 js/formula.js 的 PEN_IGNORE_A／B／C（改參數請改 xlsx，改 config/CSV 會被沖掉）。
 
      依 AI_RULES.md 9.1 例外，測試**刻意釘住目前數值**：參數表一動這裡就會紅，
      這是預期行為——確認新值是有意調整後，把期望值一併更新。
      2026-08-06（穿透平衡性調整）：a = 0.75（原為 1.5）。
-     2026-11-06：加入 b × 受攻擊者等級，a = 5、b = 0.01。
+     2026-11-06：改為等級差 max(c, a + b×(受攻擊者等級 − 攻擊者等級))，a = 5、b = 0.01、c = 5。
 
      ⚠️ 我一度把這支改成「只釘公式形狀、a 向遊戲拿」，理由是「標題寫著參數可調
      卻用常數擋住調參」。**那個判斷跟專案慣例相反**：9.1 管的是註釋不該寫死數值
@@ -214,76 +214,68 @@ test('忽略防禦曲線釘住參數表現值（a、b），且參數可調', () 
   const c = loadContext();
   assert.equal(c.PEN_IGNORE_A, 5);
   assert.equal(c.PEN_IGNORE_B, 0.01);
-  assert.equal(typeof c.PEN_IGNORE_C, 'undefined', 'c 欄已停用');
-  assert.equal(c.penIgnoreRatio(0, 600), 0);
+  assert.equal(c.PEN_IGNORE_C, 5);
+  assert.equal(c.penIgnoreRatio(0, 1, 600), 0);
 
-  const expect = (pen, lv) => (pen / 100) / (pen / 100 + c.PEN_IGNORE_A + c.PEN_IGNORE_B * lv);
-  [[100, 1], [350, 50], [1000, 1], [1000, 600], [5000, 600]].forEach(([pen, lv]) => {
-    assert.ok(Math.abs(c.penIgnoreRatio(pen, lv) - expect(pen, lv)) < 1e-12, '穿透 ' + pen + '／等級 ' + lv);
-    assert.ok(Math.abs(c.penIgnorePct(pen, lv) - expect(pen, lv) * 100) < 1e-9,
-      'penIgnorePct 必須是 penIgnoreRatio 的百分比版本：穿透 ' + pen);
-  });
-
-  // 曲線關鍵點（a = 5、b = 0.01；第二個數字是受攻擊者等級）
-  assert.ok(Math.abs(c.penIgnorePct(100, 1) - 16.64) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(1000, 1) - 66.62) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(1000, 100) - 62.50) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(1000, 600) - 47.62) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(1600, 600) - 59.26) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(3200, 600) - 74.42) < 0.05);
-
-  /* 半數點：穿透倍率等於 a + b×等級 時剛好忽略 50% 防禦。這是這條曲線**與參數無關**的
-     幾何性質，跟上面釘死的數值不衝突——一個抓「數值被改了」，
-     一個抓「公式被改成別的形狀」。 */
-  [1, 300, 600].forEach((lv) => {
-    assert.ok(Math.abs(c.penIgnoreRatio((c.PEN_IGNORE_A + c.PEN_IGNORE_B * lv) * 100, lv) - 0.5) < 1e-12,
-      '穿透 = (a + b×等級)×100% 時應忽略 50% 防禦：等級 ' + lv);
-  });
+  // 曲線關鍵點：penIgnorePct(穿透%, 攻擊者等級, 受攻擊者等級)
+  assert.ok(Math.abs(c.penIgnorePct(100, 1, 1) - 16.67) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(1000, 1000, 600) - 66.67) < 0.05);   // 攻擊者領先：分母項夾在 c
+  assert.ok(Math.abs(c.penIgnorePct(1000, 100, 600) - 50.00) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(1000, 1, 600) - 47.64) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(1600, 100, 600) - 61.54) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(3200, 1, 1000) - 68.10) < 0.05);
 });
 
-test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a + b×受攻擊者等級)', () => {
-  /* 公式形狀：b 與 a 同單位（穿透倍率＝穿透%÷100），等級取被打的那一方。
-     這裡把 b 暫時設成測試值，只驗形狀；表格現值由上一支測試釘住。 */
+test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + max(c, a + b×(受攻擊者等級 − 攻擊者等級)))', () => {
+  /* 公式形狀：a、b、c 與穿透倍率（穿透%÷100）同單位。這裡把 c 暫時調低，
+     讓「攻擊者領先時變強」也驗得到；表格現值由上一支測試釘住。 */
   const c = loadContext();
-  c.PEN_IGNORE_B = 0.01;
-  const expect = (pen, lv) => (pen / 100) / (pen / 100 + c.PEN_IGNORE_A + c.PEN_IGNORE_B * lv);
-  [[1000, 1], [1000, 600], [3200, 1000], [100, 50]].forEach(([pen, lv]) => {
-    assert.ok(Math.abs(c.penIgnoreRatio(pen, lv) - expect(pen, lv)) < 1e-12, '穿透 ' + pen + '／等級 ' + lv);
-    assert.ok(Math.abs(c.penIgnorePct(pen, lv) - expect(pen, lv) * 100) < 1e-9);
+  c.PEN_IGNORE_C = 0.5;
+  const term = (atk, def) => Math.max(c.PEN_IGNORE_C, c.PEN_IGNORE_A + c.PEN_IGNORE_B * (def - atk));
+  const expect = (pen, atk, def) => (pen / 100) / (pen / 100 + term(atk, def));
+  [[1000, 1, 1], [1000, 1, 600], [1000, 600, 1], [3200, 1000, 300], [100, 50, 900]].forEach(([pen, atk, def]) => {
+    assert.ok(Math.abs(c.penIgnoreRatio(pen, atk, def) - expect(pen, atk, def)) < 1e-12, '穿透 ' + pen + '／' + atk + ' 打 ' + def);
+    assert.ok(Math.abs(c.penIgnorePct(pen, atk, def) - expect(pen, atk, def) * 100) < 1e-9);
   });
-  // 等級越高越難忽略防禦；沒給等級＝等級項為 0
-  assert.ok(c.penIgnoreRatio(1000, 600) < c.penIgnoreRatio(1000, 100));
-  assert.ok(Math.abs(c.penIgnoreRatio(1000) - 10 / (10 + c.PEN_IGNORE_A)) < 1e-12);
-  // 半數點：穿透倍率 = a + b×等級 時剛好忽略 50%
-  const lv = 400;
-  assert.ok(Math.abs(c.penIgnoreRatio((c.PEN_IGNORE_A + c.PEN_IGNORE_B * lv) * 100, lv) - 0.5) < 1e-12);
+  // 只看等級差：同樣差 300 級，結果一樣
+  assert.ok(Math.abs(c.penIgnoreRatio(1000, 100, 400) - c.penIgnoreRatio(1000, 600, 900)) < 1e-12);
+  // 攻擊者領先 → 穿透較有效；受攻擊者領先 → 較無效
+  assert.ok(c.penIgnoreRatio(1000, 600, 300) > c.penIgnoreRatio(1000, 300, 300));
+  assert.ok(c.penIgnoreRatio(1000, 300, 600) < c.penIgnoreRatio(1000, 300, 300));
+  // 下限 c：領先再多也不會超過 c 決定的值
+  assert.ok(Math.abs(c.penIgnoreRatio(1000, 1000, 1) - 10 / (10 + c.PEN_IGNORE_C)) < 1e-12);
+  // c 填 0 也不會變成 100% 忽略
+  c.PEN_IGNORE_C = 0;
+  assert.ok(c.penIgnoreRatio(1000, 1000, 1) < 1);
+  // 半數點：穿透倍率 = 分母項 時剛好忽略 50%
+  c.PEN_IGNORE_C = 0.5;
+  assert.ok(Math.abs(c.penIgnoreRatio(term(200, 700) * 100, 200, 700) - 0.5) < 1e-12);
 });
 
-test('resolveHit／DoT：穿透曲線的等級取受攻擊者，不是攻擊者', () => {
+test('resolveHit／DoT：穿透曲線用（受攻擊者 − 攻擊者）的等級差', () => {
   const c = loadContext();
-  c.PEN_IGNORE_B = 0.01;
   c.chance = (p) => p >= 100;
   c.rnd = () => 1;
   c.physicalResistanceReduction = () => 0;
   c.globalDamageMultiplier = () => 1;
-  /* 防禦 50000：讓穿透用錯等級時的差距大到看得出來。
-     2026-11-06 起防禦減傷曲線也看受攻擊者等級，高等級目標的防禦減傷反而變弱，
-     所以這裡不比「600 級比 1 級傷害低」，改比「穿透用的是受攻擊者等級」。 */
+  // 防禦 50000：讓穿透用錯等級時的差距大到看得出來
   const DEF = 50000;
   const hit = (atkLv, defLv) => c.resolveHit({ hp: 100 }, { hp: 1e9, shield: 0 },
     { atk: 1e6, dmgType: 'phys', critRate: 0, hit: 100, pen: 1000, level: atkLv },
     { def: DEF, dodge: 0, level: defLv }).dmg;
-  const expectHit = (penLv, defLv) =>
-    Math.round(1e6 * (1 - c.defReduction(DEF * c.penDefMultiplier(c.penIgnoreRatio(1000, penLv)), defLv)));
-  assert.equal(hit(1, 600), expectHit(600, 600));
-  assert.equal(hit(600, 1), expectHit(1, 1));
-  assert.notEqual(hit(1, 600), expectHit(1, 600), '穿透不得改用攻擊者等級');
+  const expectHit = (atkLv, defLv) =>
+    Math.round(1e6 * (1 - c.defReduction(DEF * c.penDefMultiplier(c.penIgnoreRatio(1000, atkLv, defLv)), atkLv, defLv)));
+  assert.equal(hit(1, 600), expectHit(1, 600));
+  assert.equal(hit(600, 1), expectHit(600, 1));
+  // 換掉穿透這一段的等級（只看受攻擊者／對調方向）都應對不上
+  const withPen = (penRatio, atkLv, defLv) => Math.round(1e6 * (1 - c.defReduction(DEF * c.penDefMultiplier(penRatio), atkLv, defLv)));
+  assert.notEqual(hit(1, 600), withPen(c.penIgnoreRatio(1000, 600, 1), 1, 600), '方向不得對調');
 
   // DoT 結算同一條規則
   const dot = (atkLv, defLv) => c.dotDamageAfterMitigation(1e6, { pen: 1000, level: atkLv }, { def: DEF, level: defLv });
-  const expectDot = (penLv, defLv) => 1e6 * (1 - c.defReduction(DEF * c.penDefMultiplier(c.penIgnoreRatio(1000, penLv)), defLv));
-  assert.ok(Math.abs(dot(1, 600) - expectDot(600, 600)) < 1e-6);
-  assert.ok(Math.abs(dot(1, 600) - expectDot(1, 600)) > 1, '穿透不得改用攻擊者等級');
+  const expectDot = (atkLv, defLv) => 1e6 * (1 - c.defReduction(DEF * c.penDefMultiplier(c.penIgnoreRatio(1000, atkLv, defLv)), atkLv, defLv));
+  assert.ok(Math.abs(dot(1, 600) - expectDot(1, 600)) < 1e-6);
+  assert.ok(Math.abs(dot(600, 1) - expectDot(600, 1)) < 1e-6);
 });
 
 test('忽略防禦為飽和曲線：單調遞增、到不了 100%，且不轉為增傷', () => {
@@ -318,7 +310,7 @@ test('resolveHit：敵方穿透只折減防禦，維持舊版防禦減傷公式'
   // 傷害對得上敵方舊公式：攻擊力 × (1 - 防禦減傷(防禦 × (1 - 忽略防禦比率)))
   const expectAt = (pen) => {
     const def = 500 * c.penDefMultiplier(c.penIgnoreRatio(pen));
-    return Math.round(1000 * (1 - c.defReduction(def, 1)));
+    return Math.round(1000 * (1 - c.defReduction(def, 1, 1)));
   };
   assert.equal(base, expectAt(0));
   assert.equal(mid, expectAt(350));

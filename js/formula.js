@@ -460,32 +460,35 @@ function computeStats(equipmentOverride) {
    §3 戰鬥核心
    ============================================================ */
 
-/* 敵人承受傷害的防禦減傷率 =
-   防禦 / (防禦 + 常數 + 每級係數 × 受攻擊者等級)
+/* 防禦減傷率（2026-11-06 改為等級差，雙方共用）=
+   防禦 / (防禦 + max(c, a + b × (攻擊者等級 − 受攻擊者等級)))
 
    我方承受傷害則多一層：
    max(0, 同類型攻擊 - 有效防禦) × (1 - 防禦減傷率)
 
    物理攻擊只與物理防禦比較，魔法攻擊只與魔法防禦比較；我方攻防差值不會為負。
-   基礎防禦曲線仍為遞減曲線，分母隨受攻擊者等級線性成長
-   （2026-11-06 起看被打的一方 dCfg.level，原本看攻擊者；與穿透曲線一致）。
+   攻擊者等級比受攻擊者高，分母變大、防禦擋得少；反之防禦擋得多。
+   c 是「a + b × 等級差」的下限：等級差是很大的負數時分母會趨近 0 或變負，
+   減傷率會超過 100%，所以夾住。另外再保底 1，c 填 0 也不會變成完全免傷。
 
-   兩個係數取自參數表「3-戰鬥核心／防禦減傷率」，由 tools/apply_params.cjs 寫入，
+   三個係數取自參數表「3-戰鬥核心／防禦減傷率」a／b／c，由 tools/apply_params.cjs 寫入，
    不在這裡複述數值——複述的那一份不會跟著參數表變，只會變成謊話。 */
 var DEF_REDUCTION_CONST = 10000;   // 參數表「3-戰鬥核心／防禦減傷率」a
 var DEF_REDUCTION_PER_LEVEL = 100; // 同上 b
-function defReduction(def, defenderLevel) {
+var DEF_REDUCTION_FLOOR = 1000;    // 同上 c
+function defReduction(def, attackerLevel, defenderLevel) {
   var defense = Math.max(0, Number(def) || 0);
   if (defense <= 0) return 0;
-  return defense /
-    (defense + DEF_REDUCTION_CONST + DEF_REDUCTION_PER_LEVEL * defenderLevel);
+  var levelGap = (Number(attackerLevel) || 1) - (Number(defenderLevel) || 1);
+  var term = Math.max(DEF_REDUCTION_FLOOR, DEF_REDUCTION_CONST + DEF_REDUCTION_PER_LEVEL * levelGap, 1);
+  return defense / (defense + term);
 }
 
-function playerDamageAfterDefense(attack, def, defenderLevel) {
+function playerDamageAfterDefense(attack, def, attackerLevel, defenderLevel) {
   var offense = Math.max(0, Number(attack) || 0);
   var defense = Math.max(0, Number(def) || 0);
   var attackAfterDefense = Math.max(0, offense - defense);
-  return attackAfterDefense * (1 - defReduction(defense, defenderLevel));
+  return attackAfterDefense * (1 - defReduction(defense, attackerLevel, defenderLevel));
 }
 
 // 元素附傷減免：只套用對應元素抗性，不重複套用魔法抗性
@@ -708,25 +711,31 @@ function skillElemMixOf(aCfg) {
   return null;
 }
 
-/* ---- 穿透 → 忽略防禦（2026-08-06 改版：飽和曲線；2026-11-06 加入受攻擊者等級）----
-   忽略敵人防禦比率 = 穿透倍率 ÷ (穿透倍率 + a + b × 受攻擊者等級)
-     穿透倍率 = 總穿透加成% ÷ 100（穿透 350% → 3.5）；a、b 與穿透倍率同一單位
-     受攻擊者等級 = 被打的那一方（dCfg.level：怪物＝關卡等級、玩家＝角色等級）
-   a、b 由參數表「3-戰鬥核心／穿透忽略防禦」控制（越大越難忽略防禦），因此下面不列
-   對照數字——調參數就會全錯。與參數無關的性質只有一條：
-   穿透倍率 = a + b×等級 時剛好忽略 50%。
+/* ---- 穿透 → 忽略防禦（2026-08-06 改版：飽和曲線；2026-11-06 改為等級差）----
+   忽略敵人防禦比率 = 穿透倍率 ÷ (穿透倍率 + max(c, a + b × (受攻擊者等級 − 攻擊者等級)))
+     穿透倍率 = 總穿透加成% ÷ 100（穿透 350% → 3.5）；a、b、c 與穿透倍率同一單位
+     等級：攻擊者＝aCfg.level、受攻擊者＝dCfg.level（怪物＝關卡等級、玩家＝角色等級）
+     受攻擊者等級比攻擊者高，分母變大、穿透變弱；反之變強，但分母項最低只到 c。
+     方向與防禦減傷曲線（攻擊者 − 受攻擊者）相反，兩者都是「攻擊者等級領先就佔便宜」。
+   a、b、c 由參數表「3-戰鬥核心／穿透忽略防禦」控制，因此下面不列對照數字——調參數就會全錯。
+   與參數無關的性質只有一條：穿透倍率 = 分母項 時剛好忽略 50%。
    穿透本身不設上限（STAT_CAPS.pPen/mPen = 0），改由這條飽和曲線收斂：
-   曲線趨近但到不了 100%，敵方防禦永遠保留一小部分，也不存在溢出增傷。 */
+   曲線趨近但到不了 100%，敵方防禦永遠保留一小部分，也不存在溢出增傷。
+   分母項另外保底一個極小正數，c 填 0 也不會變成 100% 忽略。 */
 var PEN_IGNORE_A = 5;
 var PEN_IGNORE_B = 0.01;
-function penIgnoreRatio(penPct, defenderLevel) {
+var PEN_IGNORE_C = 5;
+function penIgnoreTerm(attackerLevel, defenderLevel) {
+  var levelGap = (Number(defenderLevel) || 1) - (Number(attackerLevel) || 1);
+  return Math.max(PEN_IGNORE_C, PEN_IGNORE_A + PEN_IGNORE_B * levelGap, 1e-6);
+}
+function penIgnoreRatio(penPct, attackerLevel, defenderLevel) {
   var rate = Math.max(0, Number(penPct) || 0) / 100;
   if (rate <= 0) return 0;
-  var level = Math.max(0, Number(defenderLevel) || 0);
-  return clamp(rate / (rate + PEN_IGNORE_A + PEN_IGNORE_B * level), 0, 1);   // 參數設成 0/負值的異常值夾回 [0,1]
+  return clamp(rate / (rate + penIgnoreTerm(attackerLevel, defenderLevel)), 0, 1);
 }
 // 面板／說明用：實際忽略防禦%（趨近但到不了 100%）
-function penIgnorePct(penPct, defenderLevel) { return penIgnoreRatio(penPct, defenderLevel) * 100; }
+function penIgnorePct(penPct, attackerLevel, defenderLevel) { return penIgnoreRatio(penPct, attackerLevel, defenderLevel) * 100; }
 // 有效防禦乘區：忽略防禦比率直接折在防禦上，不會出現負防禦
 function penDefMultiplier(ignoreRatio) { return Math.max(0, 1 - ignoreRatio); }
 /* 有效穿透 = 屬性穿透% + 技能增益 penUp%
@@ -874,26 +883,27 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   var attackerCurrentHp = Math.max(0, Number(attacker && attacker.hp) || 0);
   // 防禦選型（物理/魔法）＋破甲＋穿透：有效防禦 = 防禦 × (1-破甲%) × (1-忽略防禦%)
   // 忽略防禦% 由穿透經 penIgnoreRatio 換算（不再等於穿透%本身）；飽和曲線，不會到 100%，也不轉增傷。
-  // 穿透曲線與防禦減傷曲線的等級項都看「受攻擊者」（dCfg.level）。
+  // 兩條曲線都看等級差：穿透用（受攻擊者 − 攻擊者）、防禦減傷用（攻擊者 − 受攻擊者），攻擊者等級領先都佔便宜。
+  var attackerLevel = aCfg.level || 1;
   var defenderLevel = dCfg.level || 1;
   var dmg = 0;
   if (aCfg.dmgType !== 'magic') {
-    var pIgnore = penIgnoreRatio(aCfg.pen, defenderLevel);
+    var pIgnore = penIgnoreRatio(aCfg.pen, attackerLevel, defenderLevel);
     var pDef = (dCfg.def || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(pIgnore);
     var pDmg = dCfg.isPlayer
-      ? playerDamageAfterDefense(aCfg.atk, pDef, defenderLevel)
-      : (aCfg.atk || 0) * (1 - defReduction(pDef, defenderLevel));
+      ? playerDamageAfterDefense(aCfg.atk, pDef, attackerLevel, defenderLevel)
+      : (aCfg.atk || 0) * (1 - defReduction(pDef, attackerLevel, defenderLevel));
     pDmg *= 1 - physicalResistanceReduction(dCfg.pRes, aCfg.level || 1);   // 物理抗性：結算防禦後套用抗性曲線
     dmg += pDmg;
   }
   if (aCfg.dmgType === 'magic' || aCfg.dmgType === 'both') {
     var mPen = (aCfg.dmgType === 'both') ? (aCfg.mPen || 0) : (aCfg.pen || 0);
-    var mIgnore = penIgnoreRatio(mPen, defenderLevel);
+    var mIgnore = penIgnoreRatio(mPen, attackerLevel, defenderLevel);
     var baseMAtk = (aCfg.dmgType === 'both') ? (aCfg.matk || 0) : (aCfg.atk || 0);
     var mDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(mIgnore);
     var mDmg = dCfg.isPlayer
-      ? playerDamageAfterDefense(baseMAtk, mDef, defenderLevel)
-      : baseMAtk * (1 - defReduction(mDef, defenderLevel));
+      ? playerDamageAfterDefense(baseMAtk, mDef, attackerLevel, defenderLevel)
+      : baseMAtk * (1 - defReduction(mDef, attackerLevel, defenderLevel));
     mDmg *= 1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1);   // 魔法抗性：結算防禦後套用抗性曲線
     dmg += mDmg;
   }
@@ -950,9 +960,9 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     var elemMagicMit = 1;
     if (dCfg.isPlayer) {
       var elemMPen = (aCfg.dmgType === 'both') ? (aCfg.mPen || 0) : (aCfg.pen || 0);
-      var elemMIgnore = penIgnoreRatio(elemMPen, defenderLevel);
+      var elemMIgnore = penIgnoreRatio(elemMPen, attackerLevel, defenderLevel);
       var elemMDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(elemMIgnore);
-      elemMagicMit = (1 - defReduction(elemMDef, defenderLevel)) *
+      elemMagicMit = (1 - defReduction(elemMDef, attackerLevel, defenderLevel)) *
         (1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1));
     }
     for (var i = 0; i < ELEMENTS.length; i++) {
@@ -1160,17 +1170,17 @@ function dotDamageAfterMitigation(amount, aCfg, dCfg, opts) {
   aCfg = aCfg || {};
   opts = opts || {};
   var lvl = aCfg.level || 1;
-  var defLvl = dCfg.level || 1;   // 穿透與防禦減傷曲線的等級項看受攻擊者
+  var defLvl = dCfg.level || 1;   // 穿透與防禦減傷曲線都看等級差（攻擊者 lvl、受攻擊者 defLvl）
   var sunder = (aCfg.sunder || 0) / 100;
   if (opts.elem || opts.magic) {
     var mPen = (aCfg.mPen !== undefined && aCfg.mPen !== null) ? aCfg.mPen : (aCfg.pen || 0);
-    var mDef = (dCfg.mdef || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(mPen, defLvl));
-    dmg *= 1 - defReduction(mDef, defLvl);
+    var mDef = (dCfg.mdef || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(mPen, lvl, defLvl));
+    dmg *= 1 - defReduction(mDef, lvl, defLvl);
     dmg *= 1 - magicResistanceReduction(dCfg.mRes);
     if (opts.elem) dmg *= elementalResistanceMultiplier(dCfg.resist, opts.elem, lvl);
   } else {
-    var pDef = (dCfg.def || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(aCfg.pen || 0, defLvl));
-    dmg *= 1 - defReduction(pDef, defLvl);
+    var pDef = (dCfg.def || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(aCfg.pen || 0, lvl, defLvl));
+    dmg *= 1 - defReduction(pDef, lvl, defLvl);
     dmg *= 1 - physicalResistanceReduction(dCfg.pRes);
   }
   if (dCfg.dmgRed) dmg *= 1 - clamp(dCfg.dmgRed, 0, GODFORGED_SANCTUARY_RED_CAP) / 100;
