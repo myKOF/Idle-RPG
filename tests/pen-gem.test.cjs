@@ -90,11 +90,12 @@ test('穿透寶石的穿透吃得到忽略防禦曲線（不設上限、不會�
 
 test('物理與魔法穿透 tips 的目前忽略防禦顯示至小數點點後四位', () => {
   const context = loadGameContext();
-  const st = { pPen: 33854, mPen: 33854 };
+  // 2026-11-06：曲線加入受攻擊者等級後，面板以自身等級當受攻擊者，文字改為「目前同級忽略防禦」
+  const st = { pPen: 33854, mPen: 33854, level: 500 };
   const pDesc = context.penetrationDesc(st, 'pPen', '物理');
   const mDesc = context.penetrationDesc(st, 'mPen', '魔法');
-  assert.match(pDesc, /目前忽略防禦：\d+\.\d{4}%/);
-  assert.match(mDesc, /目前忽略防禦：\d+\.\d{4}%/);
+  assert.match(pDesc, /目前同級忽略防禦：\d+\.\d{4}%/);
+  assert.match(mDesc, /目前同級忽略防禦：\d+\.\d{4}%/);
 });
 
 test('穿透寶石納入戰力評分，並自動進入掉落／商店／合成流程', () => {

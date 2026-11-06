@@ -228,7 +228,7 @@
 228,角色,文字｜data.js:2622 elementResistDesc,{0}=代入參數：label,降低受到的{0}屬性傷害，抗性值越高減傷效果越強。,,
 229,角色,界面文字(含標記)｜data.js:2627 elementResistDesc,"{0}=代入參數：fmt1(base)（數字(1位小數)）；{1}=代入參數：fmt1(en)（數字(1位小數)）；<br>=換行；<span style=""color:#aaa"">…</span>=變色(#aaa)；<span style=""color:#fff"">…</span>=變色(#fff)","<br><br><span style=""color:#aaa"">其他來源合計：<span style=""color:#fff"">{0}%</span><br>附魔獨立乘區：<span style=""color:#fff"">×(1 + {1}%)</span></span>",,
 230,角色,界面文字(含標記)｜data.js:2636 enemyTypeDmgRedDesc,"{0}=代入參數：label；{1}=代入參數：pctStrFloor4(reduction)（百分比）；<br>=換行；<span style=""color:#ffd700"">…</span>=變色(#ffd700)","受到{0}攻擊時降低受到的傷害。<br><br><span style=""color:#ffd700"">目前同級減傷率：{1}</span>",,
-231,角色,界面文字(含標記)｜data.js:2644 penetrationDesc,"{0}=代入參數：label；{1}=代入參數：label；{2}=代入參數：pctStrFloor4(ignore)（百分比）；<br>=換行；<span style=""color:#ffd700"">…</span>=變色(#ffd700)","造成{0}傷害時，無視敵方一定比例的{1}防禦。<br><br><span style=""color:#ffd700"">目前忽略防禦：{2}</span>",,
+231,角色,界面文字(含標記)｜data.js:2644 penetrationDesc,"{0}=代入參數：label；{1}=代入參數：label；{2}=代入參數：pctStrFloor4(ignore)（百分比）；<br>=換行；<span style=""color:#ffd700"">…</span>=變色(#ffd700)","造成{0}傷害時，無視敵方一定比例的{1}防禦。<br><br><span style=""color:#ffd700"">目前同級忽略防禦：{2}</span>",,
 232,角色,文字｜data.js:2651 drainDesc,{0}=代入參數：(isHp ? '生命' : '法力'),每對一名敵人造成一次傷害時，固定回復此數值的{0}；範圍、多段與持續傷害逐次觸發，未造成傷害不觸發。,,
 233,角色,對話框｜data.js:2663 STAT_GROUPS,,基礎屬性,,
 234,角色,文字｜data.js:2664 STAT_GROUPS,,❤️ 生命值,,

@@ -44,9 +44,9 @@ test('敵人身上的無元素 DoT 吃物理防禦與物理抗性', () => {
   const enemy = mkEnemy({ def: 10000 });
   c.applyDot(enemy, 100, 10, '流血', 'bleed');
   c.tickStatuses(enemy, 1);
-  const expect = 100 * (1 - c.defReduction(10000, 10));
+  const expect = 100 * (1 - c.defReduction(10000, 10, 10));
   assert.ok(Math.abs((1e6 - enemy.hp) - expect) < 1e-6, `got ${1e6 - enemy.hp}, want ${expect}`);
-  assert.ok(expect < 100 && expect > 50);
+  assert.ok(expect < 100 && expect > 0, '防禦有折減、但沒有完全擋掉');   // 同級時防禦 10000 剛好 50%
 });
 
 test('敵人身上的元素 DoT 走魔防，並吃對應元素抗性', () => {
@@ -83,19 +83,19 @@ test('最大生命%的狀態不吃防禦', () => {
 });
 
 test('玩家自傷流血吃自己的防禦，但不吃敵種抗性', () => {
-  const { c, player } = setup({ level: 10 }, { def: 10000, mdef: 0, pRes: 0, normalDmgRed: 1e9 });
+  const { c, player } = setup({ level: 10 }, { def: 10000, mdef: 0, pRes: 0, normalDmgRed: 1e9, level: 10 });
   c.applyDot(player, 100, 10, '鐵血裂傷', 'sgIronBleed', 0, undefined, { sourceKey: 'skill2:dualdance' });
   c.tickStatuses(player, 1);
-  const expect = 100 * (1 - c.defReduction(10000, 10));
+  const expect = 100 * (1 - c.defReduction(10000, 10, 10));
   assert.ok(Math.abs((1000 - player.hp) - expect) < 1e-6, `got ${1000 - player.hp}, want ${expect}`);
 });
 
 test('敵方施放的 DoT 打到玩家：吃防禦與依施放者敵種的敵種抗性', () => {
-  const { c, player } = setup({}, { def: 10000, mdef: 0, pRes: 0, bossDmgRed: 4000, normalDmgRed: 0 });
+  const { c, player } = setup({}, { def: 10000, mdef: 0, pRes: 0, bossDmgRed: 4000, normalDmgRed: 0, level: 10 });
   c.applyDot(player, 100, 10, '劇毒', 'bleed', undefined, undefined,
     { sourceKey: 'enemy', srcAtk: { level: 10, isBoss: true, isElite: false } });
   c.tickStatuses(player, 1);
-  const expect = 100 * (1 - c.defReduction(10000, 10)) * (1 - c.enemyTypeDamageReduction(4000, 10));
+  const expect = 100 * (1 - c.defReduction(10000, 10, 10)) * (1 - c.enemyTypeDamageReduction(4000, 10));
   assert.ok(Math.abs((1000 - player.hp) - expect) < 1e-6, `got ${1000 - player.hp}, want ${expect}`);
 });
 

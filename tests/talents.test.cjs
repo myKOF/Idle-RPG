@@ -538,3 +538,34 @@ test('全滿倍率按轉獨立，空轉與全停用不啟用、停用節點不�
   assert.equal(c.talentCompleteMultiplier(1),1);
   assert.equal(c.talentViewCompleteMultiplier(talentPanelSnapshot(c),1),1);
 });
+
+test('4 轉威能（2026-11-06）：穿透／控制時間縮減／金幣／經驗與其他來源相加生效', () => {
+  const c = statsContext();
+  const base = c.computeStats();
+  ['t4_phys', 't4_magic', 't4_def', 't4_special', 't4_passive'].forEach((id) => { c.G.player.talents.levels[id] = 10; });
+  const st = c.computeStats();
+  // 只點 5／7 節點，未整轉全滿，不吃全滿倍率；每級值取自表格，不在這裡寫死
+  const per = (id) => c.talentDef(id).per * 10;
+  assert.equal(st.pPen - base.pPen, per('t4_phys'));
+  assert.equal(st.mPen - base.mPen, per('t4_magic'));
+  assert.equal(st.ccRed - base.ccRed, per('t4_def'));
+  assert.equal(st.goldBonus - base.goldBonus, per('t4_special'));
+  assert.equal(st.xpBonus - base.xpBonus, per('t4_passive'));
+  assert.ok(per('t4_phys') > 0 && per('t4_special') > 0, '前提：表格每級值不為 0');
+});
+
+test('每個威能節點的屬性都進得了白名單，且 computeStats 讀得到（防「點了沒效果」）', () => {
+  /* 2026-11-06：4 轉的 skillPhys 等五個屬性在舊技能系統移除後沒有讀取點，點了完全沒效果也不報錯。
+     元素三族（elemX／dmgVsX／resVsX）走 talentElemBucket 動態讀取，其餘一律要在 formula.js 出現 talent.<stat>。 */
+  const c = loadContext();
+  const template = c.talentBonusesTemplate();
+  const formula = fs.readFileSync(path.join(root, 'js/formula.js'), 'utf8');
+  const missing = [];
+  Object.keys(c.TALENT_TREES).forEach((turn) => c.TALENT_TREES[turn].forEach((def) => {
+    if (def.disabled) return;
+    if (template[def.stat] === undefined) { missing.push(def.id + '：' + def.stat + ' 不在白名單'); return; }
+    if (/^(elem|dmgVs|resVs)[A-Z]/.test(def.stat) && def.stat !== 'elemRes') return;
+    if (!new RegExp('talent\\.' + def.stat + '\\b').test(formula)) missing.push(def.id + '：formula.js 沒有讀 talent.' + def.stat);
+  }));
+  assert.deepEqual(missing, []);
+});

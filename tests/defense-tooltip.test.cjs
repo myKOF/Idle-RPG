@@ -30,7 +30,7 @@ function statRow(context, labelText) {
    要驗的是「tooltip 顯示的就是遊戲算出來的那個數，而且截斷到小數四位」，
    不是「那個數等於某個特定百分比」。 */
 function expectedPct(context, def, level) {
-  const pct = context.defReduction(def, level) * 100;
+  const pct = context.defReduction(def, level, level) * 100;
   /* 與 js/data.js 的 pctStrFloor4 同樣是截斷（不是四捨五入），見下一個測試。 */
   return (Math.floor(pct * 10000) / 10000).toFixed(4);
 }
@@ -56,7 +56,7 @@ test('物理與魔法防禦 tooltip 底部以黃色顯示目前同級減傷率',
     '魔法防禦 tooltip 應顯示 defReduction() 算出的減傷率，實際：' + magicHtml);
 
   /* 防禦愈高減傷愈多，是這條曲線的定性性質；係數怎麼調都必須成立。 */
-  assert.ok(context.defReduction(st.def, st.level) > context.defReduction(st.mdef, st.level),
+  assert.ok(context.defReduction(st.def, st.level, st.level) > context.defReduction(st.mdef, st.level, st.level),
     '防禦較高的一方減傷率應較高');
 });
 
@@ -71,7 +71,7 @@ test('防禦 tooltip 減傷率截斷到小數四位且不會進位成 100%', () 
   const level = 1174;
   /* defReduction = def / (def + K)，要讓它 ≥ target 需 def ≥ K × target / (1 - target)。
      K 由遊戲自己給：把 def 設成 1 反推分母。 */
-  const r1 = context.defReduction(1, level);          // 1 / (1 + K)
+  const r1 = context.defReduction(1, level, level);          // 1 / (1 + K)
   const K = (1 - r1) / r1;                            // ⇒ K
   const target = 0.9999951;                           // 落在會被四捨五入成 100% 的區間
   const def = Math.ceil(K * target / (1 - target));
@@ -83,7 +83,7 @@ test('防禦 tooltip 減傷率截斷到小數四位且不會進位成 100%', () 
   };
   const physicalHtml = statRow(context, '物理防禦')[2](st);
 
-  const pct = context.defReduction(def, level) * 100;
+  const pct = context.defReduction(def, level, level) * 100;
   assert.ok(pct > 99.9995 && pct < 100, '前提沒建立：減傷率應落在 99.9995%~100% 之間，實際 ' + pct);
   assert.ok(physicalHtml.includes('目前同級減傷率：' + (Math.floor(pct * 10000) / 10000).toFixed(4) + '%'),
     'tooltip 應顯示截斷後的值，實際：' + physicalHtml);
