@@ -44,6 +44,12 @@
 - 隔離 Edge 在 1366、800、390px 驗證三處位移、進度條位置、三種篩選及關閉操作。共用工作區的開始選單成就入口在 1366、390px 驗證提示及版面，Console 無錯誤或警告。
 - `npm.cmd run build` 檢查 679 檔。隔離本次首頁快取變更後，成就、UI 音效與快取回歸 28/28 通過。共用工作區的字串快取差異造成 CV-1 失敗，移除本次變更後可重現。可交使用者整合並重新載入驗收。
 
+## ACHIEVEMENT-REMOVE-NOTE-20261106 — 移除開始選單成就提示
+
+- Codex，畫面修正完成。依使用者要求移除標題下方的提示元素與接線。修改 `index.html`、`js/ui-achievements.js`、`tests/ui-achievement-sound.test.cjs`、系統說明與本段。
+- Edge 從開始選單開啟成就，1366px 及 390px 下確認摘要、進度條、篩選與清單分別一起上移約 28px、51px。三種篩選與關閉操作通過，Console 無錯誤或警告。四份相關回歸 23/23 通過，`npm.cmd run build` 檢查 681 檔。
+- 提示原屬尚未提交的開始選單變更，修正隨開始選單任務交付。
+
 ## ACHIEVEMENT-PROGRESS-ALIGN-20261105 — 獎杯置中、進度條收邊與篩選頁籤
 
 - Owner：Codex；Done，延續使用者視覺回饋。原獎杯66px畫布的圖案軸心約29px、透明上下留白亦不對稱；以CSS圖層向右下各2px校正，進度條padding／刻度inset由4px減為2px，外框尺寸與完成比例保持。允許css/achievements.css、index僅該CSS快取、LV與本段；禁止改圖片／JS／配置／音效／存檔／其他在製內容，不合併推送。
@@ -14995,3 +15001,11 @@ Worker 存活且頁面正常完成載入。
 - `node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs` 42/42 通過，涵蓋 H10 真實啟動、強化／洗煉成功與成就音。`npm.cmd run build` 檢查 678 檔，`node tools/string-table/build_string_csv.cjs --check` 確認寫死文字為 0，`git diff --check` 通過。
 - 隔離 Edge 載入正式頁面、Worker 與 AudioContext，23 個滑鼠案例及原本可發聲導覽按鈕的鍵盤焦點、觸控按下與取消均靜音。UI 模組只載入 H10、成功及成就三份音檔，觸碰音播放 0 次，真實點擊及兩種通知音成功播放。Console error／warning 為 0。瀏覽器驗證範圍為 Edge 桌面和模擬觸控。
 - 交付為本段所在提交，可供使用者整合，整合後重新載入即可驗收。
+
+## START-MENU-20261106 — 遊戲開始選單
+
+- Owner：Codex，Done。開場結束或略過後，以原創荒原動態背景呈現置中的開始選單。玩家確認開局才啟動 Worker。繼續遊戲會重讀最新自動檔並沿用來源確認，首次遊玩以新遊戲為首。已有自動檔時，新遊戲需確認後才開局。困難沿用現行玩法，噩夢和煉獄停用。
+- 載入存檔捷徑依可讀的資料夾存檔啟用，進入原設定的存檔分頁，確認後直接載入選定記錄。遊戲內明確讀檔會在快取成功寫入後重載，直接接續選定記錄。開始選單沿用原成就及設定，成就顯示已存的達成紀錄，遊戲內顯示即時進度。網頁版離開遊戲執行重新整理。
+- 修改首頁與新開始選單程式／CSS、開機與存檔接線、共用成就／設定、String.xlsx／CSV／JS 及編輯器快取、解鎖表與相關回歸。唯讀核對 TabLock、SaveOrigin、協議、背景來源及交接。背景沿用已提交的 `9a502027` 素材，無本項素材庫變更。共用首頁及文件另有成就排版與移除成就提示的修正，保留其獨立區段並納入尚未提交的提示移除。
+- `node --test` 執行 22 個相關檔案共 185 項全通過，涵蓋新選單、序章、首畫、存檔來源／資料夾、Esc、成就、分頁鎖、字串及 Worker。 `npm.cmd run build` 檢查 681 檔。字串檢查寫死文字 0，原生 Excel 重開與資料核對、CSV／JS 同步及 `git diff --check` 通過。
+- 隔離 Edge 搭配實際 Worker、IndexedDB 和資料夾把手驗證七組流程，涵蓋桌面、手機尺寸與觸控模擬。首次 30 秒序章自然完成並接上選單，另驗證背景卸載、重整、最新快取繼續、手動檔、遊戲內讀檔、取消及確認新局。Console error／warning 0。行動真機與跨瀏覽器驗證未執行。提交為本段所在 Commit，可交使用者整合。

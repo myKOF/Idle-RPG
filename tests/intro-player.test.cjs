@@ -342,8 +342,8 @@ test('開機起播帶停格；揭幕前先放行停格再等播完', () => {
   assert.equal(env.P.startupBegin({ hasSave: true }), true, '預設播標題');
   assert.equal(env.P.state().id, 'title');
   assert.ok(holdClock(env) === undefined && env.anims.some((a) => a.el.className === 'intro-clock' && a.timing.duration === 1900), 'title 的停格點 1.9 秒');
-  const main = read('js/main.js');
-  assert.match(main, /IntroPlayer\.release\(\);[^\n]*\n\s*IntroPlayer\.whenIdle\(reveal\);/, '先放行再等');
+  const menu = read('js/start-menu.js');
+  assert.match(menu, /IntroPlayer\.release\(\);[^\n]*\n\s*IntroPlayer\.whenIdle\(reveal\);/, '先放行再等');
 });
 
 test('有停格點的時間軸：停住那一格的圖層都已完全淡入、停格後才開始淡出', () => {
@@ -416,37 +416,21 @@ test('序章整層收尾與聲音：暫停／seek／恢復／略過／中止都�
 });
 
 /* ---------- 開機流程接線 ---------- */
-test('接線：存檔確認後、Worker 開機前起播；揭幕等動畫；收掉 Loading 會中止動畫', () => {
+test('接線：動畫播完才揭開開始選單；收掉 Loading 會中止動畫', () => {
   const bridge = read('js/bridge.js');
   const main = read('js/main.js');
+  const menu = read('js/start-menu.js');
   const html = read('index.html');
-  const gate = /SaveOrigin\.gate\(save, info, function \(approved\) \{[\s\S]*?WorkerBridge\.start\(/.exec(bridge);
-  assert.ok(gate && /IntroPlayer\.startupBegin\(\{ hasSave: !!approved \}\)/.test(gate[0]), '在 Worker 開機前起播');
+  assert.match(menu, /IntroPlayer\.startupBegin\(\{ hasSave: !!save \}\)/);
   assert.match(bridge, /suspendStartupHoldTimeout: suspendStartupHoldTimeout, resumeStartupHoldTimeout: resumeStartupHoldTimeout/);
   const resume = /function resumeStartupHoldTimeout\(\) \{[\s\S]*?\n  \}/.exec(bridge)[0];
-  assert.match(resume, /if \(!_startupHold\) return;/, '已放行就不再計時');
-  assert.match(main, /IntroPlayer\.whenIdle\(reveal\)/, '揭幕等動畫');
-  assert.match(main, /finished = true;\s*revealWhenIntroIdle\(\);/);
+  assert.match(resume, /if \(!_startupHold \|\| !_started\) return;/, '開始選單等待期間與已放行後均不計時');
+  assert.match(menu, /IntroPlayer\.whenIdle\(reveal\)/, '揭幕等動畫');
+  assert.match(main, /finished = true;\s*revealGame\(\);/);
   assert.match(html, /IntroPlayer\.isPlaying\(\)\) IntroPlayer\.abort\('veil'\)/, 'hideLoadingScreen 收掉動畫');
   const iData = html.indexOf('js/intro-data.js'), iPlayer = html.indexOf('js/intro-player.js'), iBridge = html.indexOf('js/bridge.js');
   assert.ok(iData > 0 && iData < iPlayer && iPlayer < iBridge, '資料 → 播放器 → bridge 的載入順序');
   assert.match(html, /css\/intro\.css\?v=/);
-});
-
-test('UI先就緒：只退載入黑幕，等序章淡出完成才放行戰鬥', () => {
-  const fn = /function revealWhenIntroIdle\(\) \{[\s\S]*?\n\}/.exec(read('js/main.js'))[0];
-  const calls = [];
-  let idle;
-  const ctx = {
-    document: { getElementById(id) { assert.equal(id, 'loading-screen'); return {
-      classList: { add(c) { calls.push(c); } }, setAttribute(k, v) { calls.push([k, v]); }
-    }; } },
-    IntroPlayer: { isPlaying: () => true, release() { calls.push('release'); }, whenIdle(fn) { idle = fn; } },
-    hideLoadingScreen() { calls.push('hide'); }, WorkerBridge: { releaseStartupHold() { calls.push('battle'); } }
-  };
-  vm.runInNewContext(fn + '\nrevealWhenIntroIdle();', ctx);
-  assert.deepStrictEqual(calls, ['is-hidden', ['aria-hidden', 'true'], 'release']);
-  idle(); assert.deepStrictEqual(calls.slice(-2), ['hide', 'battle']);
 });
 
 /* ---------- 播放條件與重播（Task C） ---------- */

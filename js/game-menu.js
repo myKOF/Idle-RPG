@@ -14,6 +14,7 @@ var GameMenu = (function () {
   }
   function el(id) { return document.getElementById(id); }
   function visible(id) { var node = el(id); return !!node && node.style.display !== 'none'; }
+  function atStartMenu() { return typeof StartMenu !== 'undefined' && StartMenu.isActive(); }
   function show(id, value) {
     var node = el(id);
     if (!node) return;
@@ -31,6 +32,12 @@ var GameMenu = (function () {
   }
   function open() {
     if (busy) return;
+    if (atStartMenu()) {
+      show('settings-modal', false);
+      closeAchievementsView();
+      StartMenu.show();
+      return;
+    }
     pauseGame(true);
     if (!visible('game-menu') && !visible('settings-modal')) previousFocus = document.activeElement;
     show('settings-modal', false); closeAchievementsView();
@@ -84,6 +91,8 @@ var GameMenu = (function () {
     if (typeof isDamageNumbersEnabled === 'function') put('set-damage-numbers', isDamageNumbersEnabled());
     var autoEquip = el('toggle-autoequip'), compare = el('toggle-compare');
     if (autoEquip) put('set-auto-equip', autoEquip.checked);
+    var autoEquipSetting = el('set-auto-equip');
+    if (autoEquipSetting) autoEquipSetting.disabled = atStartMenu();
     if (compare) put('set-compare-equip', compare.checked);
     syncAudioGroupState();
   }
@@ -156,7 +165,7 @@ var GameMenu = (function () {
   }
   function openSettings(tab) {
     if (busy) return;
-    pauseGame(true);
+    if (!atStartMenu()) pauseGame(true);
     if (!visible('game-menu') && !visible('settings-modal')) previousFocus = document.activeElement;
     show('game-menu', false); show('settings-modal', true);
     syncSettingsControls();
@@ -168,18 +177,19 @@ var GameMenu = (function () {
   // 成就頁與設置頁同級：開著時遊戲維持暫停，返回回到菜單
   function achievementsVisible() { return typeof AchievementUI !== 'undefined' && AchievementUI.isOpen(); }
   function closeAchievementsView() { if (achievementsVisible()) AchievementUI.close(); }
-  function openAchievements() {
+  function openAchievements(savedAchievements) {
     if (busy || typeof AchievementUI === 'undefined') return;
-    pauseGame(true);
+    if (!atStartMenu()) pauseGame(true);
     if (!visible('game-menu') && !visible('settings-modal') && !achievementsVisible()) previousFocus = document.activeElement;
     show('game-menu', false); show('settings-modal', false);
-    AchievementUI.open();
+    AchievementUI.open(savedAchievements);
   }
   function closeAchievements() { if (!busy) open(); }
   function handleEscape() {
-    if (busy) return true;
+    if (busy || (atStartMenu() && StartMenu.isBusy())) return true;
     if (achievementsVisible()) closeAchievements();
     else if (visible('settings-modal')) closeSettings();
+    else if (atStartMenu()) StartMenu.handleEscape();
     else if (visible('game-menu')) close();
     else open();
     return true;
@@ -235,8 +245,11 @@ var GameMenu = (function () {
       if (event.key !== 'Tab' || (typeof closeTopmostModalOrOverlay === 'undefined')) return;
       // 既有確認／輸入彈窗有自己的焦點處理，不能把焦點搶回設定視窗。
       var confirm = el('confirm-modal');
-      if (confirm && confirm.style.display !== 'none') return;
-      var modal = achievementsVisible() ? el('achv-modal') : visible('settings-modal') ? el('settings-modal') : visible('game-menu') ? el('game-menu') : null;
+      var confirming = confirm && confirm.style.display !== 'none';
+      if (confirming && !atStartMenu()) return;
+      var modal = achievementsVisible() ? el('achv-modal') : visible('settings-modal') ? el('settings-modal') :
+        visible('game-menu') ? el('game-menu') : visible('start-menu') ? el('start-menu') : null;
+      if (confirming) modal = confirm;
       if (!modal) return;
       var buttons = Array.prototype.filter.call(modal.querySelectorAll('button, input, select, textarea, a[href], [tabindex]'), function (node) {
         return !node.disabled && node.tabIndex !== -1 && node.getClientRects().length > 0;

@@ -1,0 +1,18 @@
+.start-menu-pending { background: #080a0e; }
+.start-menu-pending :is(#topbar, #game-layout) { visibility: hidden; }
+
+#start-menu {
+  isolation: isolate;
+  background: radial-gradient(ellipse at 50% 32%, #262a30, #080a0e 75%) !important;
+}
+#start-menu .start-menu-card {
+  z-index: 1;
+  width: min(380px, 100%);
+  overflow-y: auto;
+}
+#start-menu .system-menu-actions { gap: 8px; }
+#start-menu [hidden] { display: none !important; }
+#start-menu-mode-title { margin: 0 0 6px; text-align: center; }
+#start-menu button:disabled { cursor: default; }
+#start-menu-status { color: var(--dialog-gold); margin: 12px 0 0; text-align: center; }
+#start-menu-modes [aria-pressed="true"] { color: var(--dialog-gold); }

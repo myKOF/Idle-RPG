@@ -9,6 +9,7 @@ var ACH_ICON_VER = '1';
 
 var AchievementUI = (function () {
   var filter = 'all', timer = null, toastQueue = [], toastShowing = false;
+  var savedAchievements = null;
 
   function el(id) { return document.getElementById(id); }
   function byId() {
@@ -29,18 +30,20 @@ var AchievementUI = (function () {
   function render() {
     var list = el('achv-list');
     if (!list || typeof ACHIEVEMENTS === 'undefined') return;
-    var snap = (typeof peekUiPanelData === 'function') ? peekUiPanelData('achv') : null;
+    var snap = (!savedAchievements && typeof peekUiPanelData === 'function') ? peekUiPanelData('achv') : null;
     var state = {};
     ((snap && snap.list) || []).forEach(function (s) { state[s.id] = s; });
     var got = snap ? snap.got : 0, html = '';
     for (var i = 0; i < ACHIEVEMENTS.length; i++) {
       var def = ACHIEVEMENTS[i], st = state[def.id] || { at: 0, prog: 0, goal: def.count };
-      var done = !!st.at;
+      var at = savedAchievements ? savedAchievements[def.id] : st.at;
+      var done = !!at;
+      if (savedAchievements && done) got++;
       if (filter === 'done' && !done) continue;
       if (filter === 'todo' && done) continue;
       var foot = done
-        ? '<span class="achv-date">' + esc(STR(2233, dateText(st.at))) + '</span>'
-        : '<span class="achv-bar"><i style="width:' + pctOf(st.prog, st.goal).toFixed(1) + '%"></i></span>' +
+        ? '<span class="achv-date">' + esc(STR(2233, dateText(at))) + '</span>'
+        : savedAchievements ? '' : '<span class="achv-bar"><i style="width:' + pctOf(st.prog, st.goal).toFixed(1) + '%"></i></span>' +
           '<span class="achv-prog">' + esc(STR(2236, fmt(st.prog), fmt(st.goal))) + '</span>';
       html += '<div class="achv-card ' + (done ? 'done' : 'todo') + '">' +
         '<div class="achv-icon">' + iconHtml(def, 'achv-img') + '</div>' +
@@ -62,24 +65,28 @@ var AchievementUI = (function () {
     });
   }
 
-  function open() {
+  function open(saved) {
     var modal = el('achv-modal');
     if (!modal) return;
-    UI.achvPanelOpen = true;
-    if (typeof refreshUiPanelSubscriptions === 'function') refreshUiPanelSubscriptions();
-    requestPanelData('achv', true);
+    savedAchievements = saved || null;
+    if (!savedAchievements) {
+      UI.achvPanelOpen = true;
+      if (typeof refreshUiPanelSubscriptions === 'function') refreshUiPanelSubscriptions();
+      requestPanelData('achv', true);
+      // 遊戲暫停時也要讀得到即時快照。
+      if (timer) clearInterval(timer);
+      timer = setInterval(function () { requestPanelData('achv', true); }, 1000);
+    }
     render();
     modal.style.display = 'flex';
     modal.setAttribute('aria-hidden', 'false');
-    // 遊戲暫停中也要看得到進度：開著期間每秒向 Worker 索取一次快照（狀態型進度沒有髒區訊號）
-    if (timer) clearInterval(timer);
-    timer = setInterval(function () { requestPanelData('achv', true); }, 1000);
     var btn = el('achv-modal-close'); if (btn) btn.focus();
   }
   function close() {
     var modal = el('achv-modal');
     if (modal) { modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); }
     if (timer) { clearInterval(timer); timer = null; }
+    savedAchievements = null;
     if (UI.achvPanelOpen) {
       UI.achvPanelOpen = false;
       if (typeof refreshUiPanelSubscriptions === 'function') refreshUiPanelSubscriptions();

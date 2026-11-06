@@ -314,14 +314,14 @@ test('Worker 已經死掉時交接不卡住', async () => {
   assert.equal(done, true, '卡在這裡會讓玩家兩個分頁都動不了');
 });
 
-test('接線：tablock 早於 bridge 載入，且 bridge 與 main 都改由 TabLock 啟動', () => {
+test('接線：tablock 早於 bridge 載入，開始選單從 TabLock 授權後才初始化', () => {
   const tabLockAt = html.indexOf('js/tablock.js');
   const bridgeAt = html.indexOf('js/bridge.js');
   const mainAt = html.indexOf('js/main.js');
   assert.ok(tabLockAt > 0, 'index.html 必須載入 js/tablock.js');
   assert.ok(tabLockAt < bridgeAt && tabLockAt < mainAt, 'tablock 必須早於 bridge 與 main');
-  // 允許中間有註解：這裡要驗的是「開機掛在 TabLock 上、進去第一件事就是讀存檔」
-  assert.match(bridgeSrc, /TabLock\.onGranted\(function \(\) \{[\s\S]*?SaveStorage\.readBootSave/);
   assert.match(mainSrc, /TabLock\.onGranted\(function \(\) \{\s*initUI\(\);/);
+  assert.match(mainSrc, /TabLock\.onGranted\(function \(\) \{[\s\S]*?StartMenu\.init\(enterGame\);/);
+  assert.match(mainSrc, /function enterGame\(save, maxRunId\) \{\s*if \(!WorkerBridge\.start/);
   assert.doesNotMatch(mainSrc, /addEventListener\('DOMContentLoaded'/);
 });

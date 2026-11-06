@@ -2985,9 +2985,10 @@ function rescanSaveFolderView(showMessage) {
 function renderSaveList() {
   var box = $id('save-list');
   if (!box) return;
-  var auto = autoSaveMetaV2();
+  var atStart = typeof StartMenu !== 'undefined' && StartMenu.isActive();
+  var auto = atStart ? StartMenu.autoRecord() : autoSaveMetaV2();
   var curRun = auto && auto.runId || 1;
-  var list = [auto].concat(saveIndex().slice().sort(function (a, b) { return b.savedAt - a.savedAt; }).slice(0, 10));
+  var list = (auto ? [auto] : []).concat(saveIndex().slice().sort(function (a, b) { return b.savedAt - a.savedAt; }).slice(0, 10));
   box.innerHTML = list.map(function (r) {
     var cur = r.kind === 'auto' && r.runId === curRun;
     var newNotice = UI.saveNoticeId === r.id ? '<div class="save-new-notice">' + STR(2046) + '</div>' : '';
@@ -10807,6 +10808,8 @@ function showConfirmDialog(message, onConfirm, options) {
   }
   modal.style.display = 'flex';
   if (useInput) setTimeout(function () { try { input.focus(); input.select(); } catch (e) { } }, 0);
+  var startMenuFocus = typeof StartMenu !== 'undefined' && StartMenu.isActive() ? document.activeElement : null;
+  if (startMenuFocus && !useInput) cancel.focus();
 
   function close() {
     modal.style.display = 'none';
@@ -10814,6 +10817,7 @@ function showConfirmDialog(message, onConfirm, options) {
     cancel.onclick = null;
     modal.onclick = null;
     if (input) input.onkeydown = null;
+    if (startMenuFocus && startMenuFocus.isConnected) startMenuFocus.focus();
   }
   function doConfirm() {
     var val = useInput && input ? input.value : undefined;
@@ -13121,15 +13125,21 @@ function initUI() {
 
     var id = loadBtn ? loadBtn.getAttribute('data-load-save')
       : delBtn.getAttribute('data-del-save');
-    var rec = typeof findSaveRecordV2 === 'function' ? findSaveRecordV2(id) : null;
+    var atStart = typeof StartMenu !== 'undefined' && StartMenu.isActive();
+    var rec = atStart && id === 'auto_current' ? StartMenu.autoRecord()
+      : typeof findSaveRecordV2 === 'function' ? findSaveRecordV2(id) : null;
     if (!rec) return;
 
     if (loadBtn) {
-      showConfirmDialog(STR(2086, saveRecName(rec), rec.fname, saveTimeStr(rec.savedAt)), function () {
-          Promise.resolve(loadSaveRecord(id)).then(function (err) {
-            if (err) blog(STR(2087, err), 'bad');
+      var when = saveTimeStr(rec.savedAt);
+      var message = atStart ? rec.fname + '\n' + STR(2001, rec.level, rec.stage, when)
+        : STR(2086, saveRecName(rec), rec.fname, when);
+      showConfirmDialog(message, function () {
+          var loading = atStart ? StartMenu.loadRecord(rec) : loadSaveRecord(id);
+          Promise.resolve(loading).then(function (err) {
+            if (err) setSaveMsg(STR(2087, err), 'bad');
           }).catch(function (e) {
-            blog(STR(2087, (e && e.message ? e.message : e)), 'bad');
+            setSaveMsg(STR(2087, (e && e.message ? e.message : e)), 'bad');
           });
         }, { title: STR(2088), okText: STR(2089), danger: true });
     } else if (delBtn) {
