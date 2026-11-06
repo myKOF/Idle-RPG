@@ -6,9 +6,8 @@
 ---
 
 ## 進度說明
-- **當前進度**：已完成 **批次 1**（第 0 節三種核對＋第 1 節環境＋共通檢查 C1～C10）。
+- **當前進度**：已完成 **批次 1**（第 0 節三種核對＋第 1 節環境＋共通檢查 C1～C10）與 **批次 2**（**L001～L070**）。
 - **待測批次**：
-  - 批次 2：L001～L070
   - 批次 3：L071～L144（含 L116～L135 專屬與停用規則）
   - 批次 4：W01～W65
 
@@ -57,13 +56,85 @@
 ---
 
 ## 3. 回歸測試總表（共 209 條目）
-*（條目將於批次 2～4 陸續更新填入）*
 
-| 編號 | 條目 key / id | 測試結果 | 觸發樣本數 | 截圖檔名 | 備註說明 |
+### 3.1 傳奇特效：批次 2（L001～L070）
+
+| 編號 | 條目 key / 名稱 | 測試結果 | 觸發樣本數 | 截圖檔名 | 備註說明 |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| *(待批次 2 填入 L001～L070)* | | | | | |
+| **L001** | `knifeChain`<br>連鎖（飛刀） | **通過** | 18/50 (36.0%, 表定 25%) | `tmp/legend-rw-shots/L001_knifeChain.png` | 正常生效 |
+| **L002** | `knifeSplitter`<br>分裂者（飛刀） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L002_knifeSplitter.png` | 符文真言借用 W49【武庫】 |
+| **L003** | `knifeExecutioner`<br>處刑者（飛刀） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L003_knifeExecutioner.png` | 正常生效 |
+| **L004** | `knifeShadowblade`<br>影刃（飛刀） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L004_knifeShadowblade.png` | 正常生效 |
+| **L005** | `knifeWaltzblade`<br>輪舞刃（飛刀） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L005_knifeWaltzblade.png` | 正常生效 |
+| **L006** | `piercingFocus`<br>凝鋒穿刺（突刺） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L006_piercingFocus.png` | 正常生效 |
+| **L007** | `thousandWounds`<br>千瘡百孔（突刺） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L007_thousandWounds.png` | 正常生效 |
+| **L008** | `sunpiercerLance`<br>貫日之刺（突刺） | **通過** | 9/50 (18.0%, 表定 25%) | `tmp/legend-rw-shots/L008_sunpiercerLance.png` | 符文真言借用 W51【孤狼】 |
+| **L009** | `thunderStab`<br>迅雷穿刺（突刺） | **通過** | 4/50 (8.0%, 表定 15%) | `tmp/legend-rw-shots/L009_thunderStab.png` | 正常生效 |
+| **L010** | `heartrendBleed`<br>穿心裂血（突刺） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L010_heartrendBleed.png` | 正常生效 |
+| **L011** | `chainSpin`<br>連環迴旋（迴旋斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L011_chainSpin.png` | 正常生效 |
+| **L012** | `galeBladeDance`<br>旋風劍舞（迴旋斬） | **通過** | 12/50 (24.0%, 表定 25%) | `tmp/legend-rw-shots/L012_galeBladeDance.png` | 正常生效 |
+| **L013** | `skyrendSlash`<br>裂空飛斬（迴旋斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L013_skyrendSlash.png` | 正常生效 |
+| **L014** | `exploitWeakness`<br>乘虛之斬（迴旋斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L014_exploitWeakness.png` | 正常生效 |
+| **L015** | `gatheringVortex`<br>聚敵旋渦（迴旋斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L015_gatheringVortex.png` | 正常生效 |
+| **L016** | `galeWhirlwind`<br>風捲殘雲（疾風迅雷） | **已知 K2** | 15/50 (30.0%, 表定 25%) | `tmp/legend-rw-shots/L016_galeWhirlwind.png` | 已知 K2（特效說明稱疾風斬） |
+| **L017** | `galeExecute`<br>斬殺（疾風迅雷） | **已知 K2** | 16/50 (32.0%, 表定 20%) | `tmp/legend-rw-shots/L017_galeExecute.png` | 已知 K2（特效說明稱疾風斬） |
+| **L018** | `galeTwinShadow`<br>雙影（疾風迅雷） | **已知 K2** | 24/50 (48.0%, 表定 50%) | `tmp/legend-rw-shots/L018_galeTwinShadow.png` | 已知 K2（特效說明稱疾風斬） |
+| **L019** | `galeWindwalker`<br>風行者（疾風迅雷） | **已知 K2** | 固定生效 (50/50) | `tmp/legend-rw-shots/L019_galeWindwalker.png` | 已知 K2（特效說明稱疾風斬） |
+| **L020** | `galeGodspeed`<br>神速斬（疾風迅雷） | **已知 K2** | 固定生效 (50/50) | `tmp/legend-rw-shots/L020_galeGodspeed.png` | 已知 K2（特效說明稱疾風斬） |
+| **L021** | `bloodPoisonBurst`<br>毒爆（血刃斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L021_bloodPoisonBurst.png` | 正常生效 |
+| **L022** | `bloodVenomRite`<br>毒血祭（血刃斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L022_bloodVenomRite.png` | 正常生效 |
+| **L023** | `bloodMist`<br>血霧（血刃斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L023_bloodMist.png` | 正常生效 |
+| **L024** | `bloodShadow`<br>血影（血刃斬） | **通過** | 21/50 (42.0%, 表定 35%) | `tmp/legend-rw-shots/L024_bloodShadow.png` | 正常生效 |
+| **L025** | `bloodCleaver`<br>切割（血刃斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L025_bloodCleaver.png` | 正常生效 |
+| **L026** | `danceFrenzy`<br>狂舞（雙刀亂舞） | **已知 K2** | 固定生效 (50/50) | `tmp/legend-rw-shots/L026_danceFrenzy.png` | 已知 K2（說明暴風之舞，實為第 7 階暴風亂舞） |
+| **L027** | `danceBerserker`<br>狂戰士（雙刀亂舞） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L027_danceBerserker.png` | 正常生效 |
+| **L028** | `danceUnyielding`<br>不屈之誓（雙刀亂舞） | **已知 K2** | 固定生效 (50/50) | `tmp/legend-rw-shots/L028_danceUnyielding.png` | 已知 K2（說明暴風之舞，實為第 7 階暴風亂舞） |
+| **L029** | `danceThousandCuts`<br>殺千刀（雙刀亂舞） | **已知 K2** | 固定生效 (50/50) | `tmp/legend-rw-shots/L029_danceThousandCuts.png` | 已知 K2（說明暴風之舞，實為第 7 階暴風亂舞） |
+| **L030** | `danceTwinBlades`<br>雙生刃（雙刀亂舞） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L030_danceTwinBlades.png` | 正常生效 |
+| **L031** | `counterOath`<br>堅韌誓言（反擊） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L031_counterOath.png` | 正常生效 |
+| **L032** | `counterWrath`<br>怒火（反擊） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L032_counterWrath.png` | 正常生效 |
+| **L033** | `counterPerfect`<br>完美姿態（反擊） | **通過** | 4/50 (8.0%, 表定 5%) | `tmp/legend-rw-shots/L033_counterPerfect.png` | 正常生效 |
+| **L034** | `counterBloodPay`<br>以血還血（反擊） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L034_counterBloodPay.png` | 正常生效 |
+| **L035** | `counterWindBody`<br>風之體（反擊） | **通過** | 14/50 (28.0%, 表定 20%) | `tmp/legend-rw-shots/L035_counterWindBody.png` | 正常生效 |
+| **L036** | `rageValor`<br>英勇氣概（嗜血狂怒） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L036_rageValor.png` | 正常生效 |
+| **L037** | `rageBurnBlood`<br>燃血（嗜血狂怒） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L037_rageBurnBlood.png` | 正常生效 |
+| **L038** | `rageBloodDebt`<br>血債償還（嗜血狂怒） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L038_rageBloodDebt.png` | 正常生效 |
+| **L039** | `rageZealot`<br>狂熱者（嗜血狂怒） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L039_rageZealot.png` | 正常生效 |
+| **L040** | `rageSlaughterer`<br>屠戮者（嗜血狂怒） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L040_rageSlaughterer.png` | 正常生效 |
+| **L041** | `fireballBeadShot`<br>連珠火（火球術） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L041_fireballBeadShot.png` | 正常生效 |
+| **L042** | `fireballEmber`<br>燃燼（火球術） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L042_fireballEmber.png` | 正常生效 |
+| **L043** | `fireballPool`<br>火池（火球術） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L043_fireballPool.png` | 正常生效 |
+| **L044** | `fireballHeart`<br>烈焰之心（火球術） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L044_fireballHeart.png` | 正常生效 |
+| **L045** | `fireballBurst`<br>爆裂（火球術） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L045_fireballBurst.png` | 正常生效 |
+| **L046** | `firepillarTracking`<br>追蹤烈焰（火龍捲） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L046_firepillarTracking.png` | 正常生效 |
+| **L047** | `firepillarSpread`<br>火龍擴散（火龍捲） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L047_firepillarSpread.png` | 正常生效 |
+| **L048** | `firepillarOutburst`<br>火焰爆衝（火龍捲） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L048_firepillarOutburst.png` | 正常生效 |
+| **L049** | `firepillarDeflagration`<br>爆燃（火龍捲） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L049_firepillarDeflagration.png` | 正常生效 |
+| **L050** | `firepillarResonance`<br>火龍共鳴（火龍捲） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L050_firepillarResonance.png` | 正常生效 |
+| **L051** | `firehuntAmplify`<br>增焰（火狩） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L051_firehuntAmplify.png` | 正常生效 |
+| **L052** | `firehuntConcurrent`<br>伴生併發（火狩） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L052_firehuntConcurrent.png` | 正常生效 |
+| **L053** | `firehuntBlaze`<br>烈火狩（火狩） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L053_firehuntBlaze.png` | 正常生效 |
+| **L054** | `firehuntDetonate`<br>炎爆（火狩） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L054_firehuntDetonate.png` | 正常生效 |
+| **L055** | `firehuntHunter`<br>狩獵者（火狩） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L055_firehuntHunter.png` | 符文真言借用 W62【神罰】 |
+| **L056** | `rockHeavyArmor`<br>重岩甲（巨岩護體） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L056_rockHeavyArmor.png` | 正常生效 |
+| **L057** | `rockLightArmor`<br>輕飛甲（巨岩護體） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L057_rockLightArmor.png` | 正常生效 |
+| **L058** | `rockAmpBoost`<br>巨岩增幅（巨岩護體） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L058_rockAmpBoost.png` | 正常生效 |
+| **L059** | `rockSpikeArmor`<br>尖刺甲（巨岩護體） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L059_rockSpikeArmor.png` | 正常生效 |
+| **L060** | `rockEarthHeart`<br>大地之心（巨岩護體） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L060_rockEarthHeart.png` | 正常生效 |
+| **L061** | `mireSpread`<br>蔓延（劇毒沼澤） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L061_mireSpread.png` | 正常生效 |
+| **L062** | `mireWeaken`<br>削弱（劇毒沼澤） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L062_mireWeaken.png` | 正常生效 |
+| **L063** | `mireCorrupt`<br>腐化（劇毒沼澤） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L063_mireCorrupt.png` | 正常生效 |
+| **L064** | `mireLavaBurn`<br>熔火（劇毒沼澤） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L064_mireLavaBurn.png` | 正常生效 |
+| **L065** | `mireErode`<br>侵蝕（劇毒沼澤） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L065_mireErode.png` | 正常生效 |
+| **L066** | `earthguardManaFeed`<br>魔力滋養（大地守護） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L066_earthguardManaFeed.png` | 正常生效 |
+| **L067** | `earthguardLifeFeed`<br>生命滋養（大地守護） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L067_earthguardLifeFeed.png` | 正常生效 |
+| **L068** | `earthguardSoulLink`<br>靈魂連結（大地守護） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L068_earthguardSoulLink.png` | 正常生效 |
+| **L069** | `earthguardHeartOfEarth`<br>地之心（大地守護） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L069_earthguardHeartOfEarth.png` | 正常生效 |
+| **L070** | `earthguardUndyingWill`<br>不滅意志（大地守護） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L070_earthguardUndyingWill.png` | 正常生效 |
+
+*(待批次 3 填入 L071～L144，待批次 4 填入 W01～W65)*
 
 ---
 
 ## 4. 失敗與異常明細
-*（待後續批次填入）*
+*（批次 2 測試中未發現新增 Fatal 程式缺陷，已知差異 K2 已標註於對應條目）*
