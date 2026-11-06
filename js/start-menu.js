@@ -80,6 +80,7 @@ var StartMenu = (function () {
     active = false;
     setBusy(false);
     showMenu(false);
+    if (typeof UISound !== 'undefined') UISound.setStartScreenActive(false);
     if (backdrop) {
       backdrop.destroy();
       backdrop = null;
@@ -169,6 +170,7 @@ var StartMenu = (function () {
         ready = true;
         if (deterministic && begin(null, 1)) return;
         show();
+        if (typeof UISound !== 'undefined') UISound.setStartScreenActive(true);
         hideLoadingScreen();
       }
       if (backdropReady) backdropReady.then(reveal);
@@ -177,6 +179,7 @@ var StartMenu = (function () {
     if (deterministic) prepare(null, {});
     else {
       showLoadingScreen();
+      if (typeof UISound !== 'undefined') UISound.preloadStartMenuAudio();
       if (typeof StartMenuBackground !== 'undefined') {
         backdrop = StartMenuBackground.mount(el('start-menu'));
         backdropReady = backdrop.ready.catch(function () { /* 背景載入失敗仍可操作選單 */ });

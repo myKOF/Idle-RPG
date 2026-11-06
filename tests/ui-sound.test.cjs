@@ -16,7 +16,7 @@ function mount(options = {}) {
   let allowed = !options.blockAutoplay;
   let clock = 1000, created = 0;
   class AudioContext {
-    constructor() { this.state = 'suspended'; this.destination = {}; created++; }
+    constructor() { this.state = options.allowContextAutoplay ? 'running' : 'suspended'; this.destination = {}; created++; }
     resume() { this.state = 'running'; return Promise.resolve(); }
     decodeAudioData(bytes) { return Promise.resolve({ url: bytes.url }); }
     createGain() { return { gain: { value: 1 }, connect() {}, disconnect() {} }; }
@@ -166,6 +166,26 @@ test('moon glow plays only on a real mouse entry into an enabled start menu butt
   assert.equal(s.played.length, 1);
 });
 
+test('loading prebuffers menu audio and the first hover can play as soon as autoplay is allowed', async () => {
+  const s = mount({ allowContextAutoplay: true });
+  const button = s.node('button', null, ['#start-menu .system-menu-actions button']);
+  s.c.UISound.preloadStartMenuAudio(); await settle();
+  const [track] = s.music;
+  assert.match(track.src, /tutti-impact\.mp3/);
+  assert.equal(track.preload, 'auto');
+  assert.equal(track.attempts, 0);
+  assert.equal(s.requests.length, 1);
+  assert.match(s.requests[0], /moon-glow/);
+  s.c.UISound.achievementUnlocked(); await settle();
+  assert.deepEqual(s.played, []);
+
+  s.c.UISound.setStartMenuVisible(true);
+  s.c.UISound.setStartScreenActive(true);
+  s.fire('pointerover', { target: button }); await settle();
+  assert.equal(track.paused, false);
+  assert.deepEqual(s.played, s.requests);
+});
+
 test('an outstanding hover decode expires when the start menu is hidden and reopened', async () => {
   const s = mount();
   const fetch = s.c.fetch;
@@ -186,14 +206,16 @@ test('an outstanding hover decode expires when the start menu is hidden and reop
 test('start menu music loops, retries autoplay after a gesture, and follows volume, mute and visibility', async () => {
   const s = mount({ blockAutoplay: true });
   assert.equal(s.music.length, 0);
-  s.c.UISound.setStartMenuVisible(true); await settle();
+  s.c.UISound.preloadStartMenuAudio();
+  s.c.UISound.setStartMenuVisible(true);
+  s.c.UISound.setStartScreenActive(true); await settle();
   const [track] = s.music;
   assert.match(track.src, /tutti-impact\.mp3/);
   assert.equal(track.loop, true);
   assert.equal(track.attempts, 1);
   assert.equal(track.paused, true);
   s.allowMusic();
-  s.fire('pointerdown'); await settle();
+  s.fire('pointerup', { pointerType: 'touch' }); await settle();
   assert.equal(track.attempts, 2);
   assert.equal(track.paused, false);
   assert.equal(track.volume, .5);
@@ -205,7 +227,7 @@ test('start menu music loops, retries autoplay after a gesture, and follows volu
   assert.equal(track.paused, false);
   track.currentTime = 15;
   s.c.UISound.setStartMenuVisible(false);
-  assert.equal(track.paused, true);
+  assert.equal(track.paused, false);
   s.c.UISound.setStartMenuVisible(true);
   assert.equal(track.paused, false);
   assert.equal(track.currentTime, 15);
@@ -214,6 +236,11 @@ test('start menu music loops, retries autoplay after a gesture, and follows volu
   s.c.document.hidden = false; s.fire('visibilitychange');
   assert.equal(track.paused, false);
   s.fire('pagehide');
+  assert.equal(track.paused, true);
+  s.fire('pageshow');
+  assert.equal(track.paused, false);
+  s.c.UISound.setStartScreenActive(false);
+  s.fire('keydown');
   assert.equal(track.paused, true);
   assert.equal(s.music.length, 1);
 });

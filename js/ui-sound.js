@@ -30,9 +30,9 @@ var UISound = (function () {
     '[data-talent-select]', '[data-talent-turn]', '[data-tower-pick]', '[data-tower-tier]',
     '[data-load-save]', '[data-del-save]', '[data-quest-claim]'
   ].join(', ');
-  var context = null, initialized = false, generation = 0;
+  var context = null, initialized = false, generation = 0, gestureReceived = false;
   var buffers = {}, loading = {}, sources = {}, lastPlayed = {};
-  var menuVisible = false, menuEpoch = 0, menuMusic = null;
+  var menuVisible = false, menuEpoch = 0, startScreenActive = false, menuMusic = null;
 
   function now() { return performance.now(); }
   function stop(kind) {
@@ -45,23 +45,41 @@ var UISound = (function () {
     Object.keys(sources).forEach(stop);
   }
   function sfxGain() { return typeof GameSettings === 'undefined' ? 1 : GameSettings.sfxGain(); }
+  function prepareMenuMusic() {
+    if (menuMusic) return;
+    menuMusic = new window.Audio();
+    menuMusic.preload = 'auto';
+    menuMusic.loop = true;
+    menuMusic.src = MENU_MUSIC;
+  }
+  function ensureContext() {
+    var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!context && AudioContextClass) context = new AudioContextClass();
+  }
+  function preloadStartMenuAudio() {
+    try { prepareMenuMusic(); } catch (_) { /* 無法預載時仍可進入選單。 */ }
+    try {
+      ensureContext();
+      load('menuHover');
+    } catch (_) { /* 沒有音訊裝置時仍可操作選單。 */ }
+  }
   function syncMenuMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    if (menuMusic) menuMusic.volume = volume;
-    if (!menuVisible || document.hidden || volume <= 0) {
-      if (menuMusic) menuMusic.pause();
-      return;
-    }
+    var shouldPlay = startScreenActive && !document.hidden && volume > 0;
     try {
-      if (!menuMusic) {
-        menuMusic = new window.Audio(MENU_MUSIC);
-        menuMusic.loop = true;
-        menuMusic.volume = volume;
-      }
+      if (shouldPlay) prepareMenuMusic();
+      if (!menuMusic) return;
+      menuMusic.volume = volume;
       // 自動播放受限時，由下一次真實操作重試。
-      if (menuMusic.paused) Promise.resolve(menuMusic.play()).catch(function () {});
+      if (!shouldPlay) menuMusic.pause();
+      else if (menuMusic.paused) Promise.resolve(menuMusic.play()).catch(function () {});
     } catch (_) { /* 播放裝置或音檔失效時仍可操作選單。 */ }
+  }
+  function setStartScreenActive(value) {
+    if (startScreenActive === value) return;
+    startScreenActive = value;
+    syncMenuMusic();
   }
   function setStartMenuVisible(value) {
     if (menuVisible === value) return;
@@ -69,7 +87,6 @@ var UISound = (function () {
     menuEpoch++;
     if (value && !document.hidden && context) load('menuHover');
     if (!value) stop('menuHover');
-    syncMenuMusic();
   }
   function load(kind) {
     if (buffers[kind]) return Promise.resolve(buffers[kind]);
@@ -93,13 +110,11 @@ var UISound = (function () {
   }
   function unlock(event) {
     if (!event || !event.isTrusted || document.hidden) return;
-    if (menuVisible) syncMenuMusic();
+    gestureReceived = true;
+    if (startScreenActive) syncMenuMusic();
     try {
-      if (!context) {
-        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return;
-        context = new AudioContextClass();
-      }
+      ensureContext();
+      if (!context) return;
       if (context.state === 'suspended') Promise.resolve(context.resume()).catch(function () {});
       load('click');
       load('success');
@@ -109,6 +124,7 @@ var UISound = (function () {
   }
   function play(kind, stillCurrent) {
     if (!ASSETS[kind] || !context || document.hidden) return;
+    if (kind !== 'menuHover' && !gestureReceived) return;
     // 設置→音訊：全體靜音／音效音量（50% ＝ 原音量）。
     if (sfxGain() <= 0) return;
     var at = now(), epoch = generation;
@@ -172,6 +188,7 @@ var UISound = (function () {
     if (initialized || typeof document === 'undefined') return;
     initialized = true;
     document.addEventListener('pointerdown', unlock, true);
+    document.addEventListener('pointerup', unlock, true);
     document.addEventListener('click', click, true);
     document.addEventListener('keydown', unlock, true);
     document.addEventListener('pointerover', menuPointerOver, true);
@@ -192,6 +209,7 @@ var UISound = (function () {
     }
   }
   init();
-  return { commandResult: commandResult, setStartMenuVisible: setStartMenuVisible,
+  return { commandResult: commandResult, preloadStartMenuAudio: preloadStartMenuAudio,
+    setStartScreenActive: setStartScreenActive, setStartMenuVisible: setStartMenuVisible,
     achievementUnlocked: function () { play('achievement'); } };
 })();

@@ -9,6 +9,7 @@ const flush = () => new Promise(setImmediate);
 function setup({ save = null, info = {}, records = [], files = [], background, deferBoot = false } = {}) {
   const nodes = new Map();
   const launches = [];
+  const audio = [];
   let confirm, finishBoot;
   let nextSave = save;
   const state = { reloads: 0 };
@@ -25,6 +26,11 @@ function setup({ save = null, info = {}, records = [], files = [], background, d
   const ctx = {
     document: { getElementById: node },
     IntroPlayer: { startupBegin() { state.introStarted = true; } },
+    UISound: {
+      preloadStartMenuAudio() { audio.push('preload'); },
+      setStartScreenActive(value) { audio.push(value); },
+      setStartMenuVisible() {}
+    },
     StartMenuBackground: background && { mount: () => ({ ready: background, destroy() {} }) },
     WorkerBridge: { isDeterministicTest: () => false },
     SaveStorage: {
@@ -54,7 +60,7 @@ function setup({ save = null, info = {}, records = [], files = [], background, d
   vm.runInContext(source, ctx);
   ctx.StartMenu.init((snapshot, runId) => { launches.push({ snapshot, runId }); return true; });
   return {
-    state, launches, menu: ctx.StartMenu, node,
+    state, launches, audio, menu: ctx.StartMenu, node,
     finishBoot,
     click: name => node('start-menu-' + name).click(),
     confirm: () => confirm(),
@@ -68,6 +74,7 @@ test('新玩家從 Loading 進入選單，等待存檔檢查及背景就緒', as
   const e = setup({ background, deferBoot: true });
   assert.equal(e.node('start-menu').style.display, 'none');
   assert.equal(e.state.loadingHidden, false);
+  assert.deepEqual(e.audio, ['preload']);
   e.finishBoot();
   await flush();
   assert.equal(e.node('start-menu').style.display, 'none');
@@ -81,12 +88,17 @@ test('新玩家從 Loading 進入選單，等待存檔檢查及背景就緒', as
   assert.equal(e.node('start-menu-continue').hidden, true);
   assert.equal(e.node('start-menu-load').disabled, true);
   assert.equal(e.state.focus, 'start-menu-new');
+  assert.deepEqual(e.audio, ['preload', true]);
   e.click('settings');
   assert.equal(e.state.settings, 'game');
   e.menu.show();
+  e.click('achv');
+  e.menu.show();
+  assert.deepEqual(e.audio, ['preload', true]);
   e.click('new');
   assert.deepEqual(e.launches, [{ snapshot: null, runId: 3 }]);
   assert.equal(e.menu.isActive(), false);
+  assert.deepEqual(e.audio, ['preload', true, false]);
 });
 
 test('背景載入失敗時仍顯示選單與繼續遊戲', async () => {
@@ -138,8 +150,10 @@ test('只有手動存檔時可開啟存檔分頁，確認所選檔案後直接�
   e.click('load');
   assert.equal(e.state.settings, 'save');
   assert.deepEqual(e.launches, []);
+  assert.deepEqual(e.audio, ['preload', true]);
   await e.menu.loadRecord(rec);
   assert.equal(e.launches[0].snapshot.runId, 2);
+  assert.deepEqual(e.audio, ['preload', true, false]);
 });
 
 test('成就讀取存檔的紀錄，模式與離開不啟動模擬', () => {
