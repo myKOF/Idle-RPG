@@ -14971,6 +14971,15 @@ Worker 存活且頁面正常完成載入。
 - 依雙方提交合併四個衝突檔，保留序章樣式快取與兩側任務紀錄，並接上incoming的提示樣式快取。素材沿用已整合的來源與匯出。
 - 驗證：太古精鑄、裝備比較tips、洗煉、快取、序章動態／聲景與符文真言相關回歸52/52通過。npm.cmd run build檢查678檔通過。Edge以正式CSS驗證詳情及tips的6個文字星號，以及三種256px裝備格烘焙圖的載入與computed styles。原圖與烘焙圖SHA核對通過。序章匯出器在本次驗證明確指定effects-materials，七張素材、提示詞與動畫來源SHA一致。git diff HEAD --check通過。
 
+## START-MENU-BACKGROUND-20261106 — 開場後選單的荒原動態背景
+
+- Owner：Codex，Done。使用者指定只製作背景，選單控制及內容由另一位 Agent 接手。以前一版原創荒原分鏡為原型，用內建 ImageGen 重繪無字底圖及透明破布圖集。保留原構圖的拱門、遺骸、旗桿與武器，壓暗天空及畫面中央。RPG Mote Studio 可存取，本次高解析寫實重繪及分層採 ImageGen。
+- `js/start-menu-background.js` 提供 `StartMenuBackground.mount(host)`、載入狀態與卸載。六片錨定旗布做連續網格擺動，三層天空和一層地平氣流由可平鋪噪聲繪製，鬼火煙絲獨立飄動。16 處地表風沙源疊 64 道薄霧和 1,632 顆沙粒，沿盔甲、骨骸、碎石向右拂過。隱藏選單／分頁暫停，減少動態保留靜止畫面。
+- 修改範圍為背景程式、`images/start-menu/` 的兩張 WebP／素材清單／交接、`tools/intro/sync-start-menu.cjs`、LV、介面特效紀錄及本段。工作前 fetch 和逐檔預檢通過。同副本成就／選單工作僅共享 LV 和任務文件，保留對方區段，分段 stage。唯讀檢查規範、原分鏡、開場播放器、開始選單 DOM／樣式及載入流程。原序章、首頁、選單操作、String、戰鬥、Worker 和存檔由既有或接手任務管理。
+- Edge 隔離頁載正式背景程式與素材及選單 DOM／CSS，桌面 1600×900、直式 390×844。十處區域實際畫素變化，抽樣同時在場的 1,632 顆風沙中 1,586 顆向右、其餘為消散後從原風沙源重生。確認背景不擋按鈕、選單隱藏與分頁暫停、動態偏好切換、卸載及再次掛載，Console error／warning 0。實際直式採中央滿版裁切，兩側旗布可能出框。
+- `npm.cmd run build`、`node --check tools/intro/sync-start-menu.cjs`、`node tools/string-table/build_string_csv.cjs --check` 與雙庫 SHA 檢查通過。以 `node --test` 跑 intro-motion、intro-player、intro-audio、vfx-preset-usage、vfx-editor-cache-versions 五檔，同時進行中的選單改動有 65/66 通過，CV-1 為該任務新版 String 在主頁和編輯器的快取版本不一致。素材庫先提交 `dc50f766`，遊戲提交見交付。
+- 接手：選單 Agent 依 `images/start-menu/SOURCE.md` 接入。背景可供 Review 與整合。未在行動真機或完整啟動流程驗證，正式序章接選單須待選單任務完成接入。
+
 ## UI-SOUND-HOVER-OPT-IN-20261106 — 僅保留指定操作的觸碰音效
 
 - Codex 已完成。以使用者 2026-11-05 逐項指定的頁籤操作為保留清單，移除未列區域的預設觸碰音。滑鼠、鍵盤焦點與觸控共用清單。H10 點擊、強化與洗煉成功音、成就音沿用既有觸發。
