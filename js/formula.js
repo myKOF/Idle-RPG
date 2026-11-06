@@ -537,8 +537,8 @@ function elementalResistanceMultiplier(resist, element, enemyLevel) {
 // 全局減傷：減傷率 = min(GLOBAL_DMG_RED_CAP%, 全局減傷總合 /（全局減傷總合 + GLOBAL_DMG_RED_DENOMINATOR）)。
 // globalDamageReduction 回傳減傷率；globalDamageMultiplier 回傳套用後的
 // 剩餘傷害倍率 = 1 − 減傷率。只在有該詞綴（total>0）時啟用，否則維持原傷害（倍率 1）。
-var GLOBAL_DMG_RED_CAP = 100;   // 全局減傷上限（%）；設 0＝無上限（減傷率自然趨近 100%）
-var GLOBAL_DMG_RED_DENOMINATOR = 2500; // 全局減傷曲線分母；越大代表同數值減傷越低。
+var GLOBAL_DMG_RED_CAP = 99.99;   // 全局減傷上限（%）；設 0＝無上限（減傷率自然趨近 100%）
+var GLOBAL_DMG_RED_DENOMINATOR = 5000; // 全局減傷曲線分母；越大代表同數值減傷越低。
 function globalDamageReduction(total) {
   total = Number(total) || 0;
   if (total <= 0) return 0;
@@ -559,9 +559,9 @@ var DAMAGE_VARIANCE_MAX = 1.2;            // 同上 b
 var DAMAGE_MIN = 1;                       // 參數表「3-戰鬥核心／最低傷害下限」
 var GODFORGED_SANCTUARY_RED_CAP = 50;     // 參數表「3-戰鬥核心／聖佑(神鑄)減傷上限」
 var GODFORGED_UNDYING_COOLDOWN_SEC = 60;  // 參數表「3-戰鬥核心／不朽(神鑄)回復」b
-var ENEMY_TYPE_DMG_RED_A = 0.95;
-var ENEMY_TYPE_DMG_RED_B = 4000;
-var ENEMY_TYPE_DMG_RED_C = 1.4;
+var ENEMY_TYPE_DMG_RED_A = 0.99;
+var ENEMY_TYPE_DMG_RED_B = 10000;
+var ENEMY_TYPE_DMG_RED_C = 1.35;
 function enemyTypeDamageReduction(total) {
   return resistanceReduction(total, ENEMY_TYPE_DMG_RED_A, ENEMY_TYPE_DMG_RED_B, ENEMY_TYPE_DMG_RED_C, false);
 }
