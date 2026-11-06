@@ -44,24 +44,13 @@ function checkForUpdates() {
     .catch(function(e){});
 }
 
-/* 揭幕要兩件事都完成：UI 首畫（waitForStartupUi）與開頭動畫（js/intro-player.js）。
-   UI 先好就等動畫播完或被略過；沒有動畫時 whenIdle 立刻回呼，與原本流程相同。
-   等待期間戰鬥仍被開機等待擋著，揭幕瞬間不會一次播出堆積的特效。 */
-function revealWhenIntroIdle() {
-  var reveal = function () {
-    if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
-    WorkerBridge.releaseStartupHold();   // 畫面出來了才開始戰鬥（見 bridge.js 開機等待）
-  };
-  if (typeof IntroPlayer !== 'undefined') {
-    // UI已首畫，讓序章最後的整層淡出直接露出真正HUD。
-    // 不呼叫hideLoadingScreen（那會中止Intro）；戰鬥仍等whenIdle才放行。
-    if (IntroPlayer.isPlaying()) {
-      var veil = document.getElementById('loading-screen');
-      if (veil) { veil.classList.add('is-hidden'); veil.setAttribute('aria-hidden', 'true'); }
-    }
-    IntroPlayer.release();   // 標題開場若停在最後一格等載入，現在可以播完收尾了
-    IntroPlayer.whenIdle(reveal);
-  } else reveal();
+function revealGame() {
+  ['topbar', 'game-layout'].forEach(function (id) {
+    var element = document.getElementById(id);
+    if (element) element.inert = false;
+  });
+  if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+  WorkerBridge.releaseStartupHold();
 }
 
 /* initUI 只建立介面；存檔、面板與 Canvas 都仍可能在非同步載入。
@@ -76,9 +65,8 @@ function waitForStartupUi() {
   });
   WorkerBridge.on('workerDead', function () {
     finished = true;
-    WorkerBridge.releaseStartupHold();
     // 讓既有的失效通知與重新載入按鈕可見，不被 Loading 蓋住。
-    if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+    revealGame();
   });
   function sceneReady() {
     if (typeof BattleRenderer === 'undefined' || !document.getElementById('battle-canvas-host')) return true;
@@ -121,7 +109,7 @@ function waitForStartupUi() {
               return;
             }
             finished = true;
-            revealWhenIntroIdle();
+            revealGame();
           });
           return;
         }
@@ -132,20 +120,23 @@ function waitForStartupUi() {
   requestAnimationFrame(check);
 }
 
-/* 掛在 TabLock 而非 DOMContentLoaded：沒有取得多分頁鎖的分頁完全不初始化遊戲——
-   不建 Worker、不 initUI、不讀存檔，只留一層遮罩。這樣「取得控制權的分頁」永遠是
-   一個剛載入、還沒跑過任何東西的頁面，不必處理半初始化狀態（見 js/tablock.js）。 */
+function enterGame(save, maxRunId) {
+  if (!WorkerBridge.start({ save: save, maxRunId: maxRunId, startedAt: Date.now() })) return false;
+  waitForStartupUi();
+  document.body.classList.remove('start-menu-pending');
+  if (typeof initGM === 'function') initGM();
+  setInterval(uiTickGuarded, 200);
+  return true;
+}
+
+/* 取得多分頁鎖後才讀檔；玩家從開始選單確認本局後才啟動 Worker。 */
 TabLock.onGranted(function () {
   initUI();
-  waitForStartupUi();
-  if (typeof initGM === 'function') initGM();
 
   /* 清理存檔資料夾「自匯入」bug 產生的同檔名重複記錄。
      這件事操作的是主執行緒的存檔索引（localStorage），不需要 G，留在這裡。 */
   var dupRemoved = (typeof dedupeSaveIndex === 'function') ? dedupeSaveIndex() : 0;
   if (dupRemoved > 0) blog(STR(1984, dupRemoved), 'info');
-
-  setInterval(uiTickGuarded, 200);   // 包一層只為了記錄例外與耗時（見 ui.js UI_TICK_DIAG）
 
   // 檢查新版本 (每 3 分鐘)
   setTimeout(checkForUpdates, 3000);
@@ -205,4 +196,5 @@ TabLock.onGranted(function () {
       }, true);
     });
   }
+  StartMenu.init(enterGame);
 });

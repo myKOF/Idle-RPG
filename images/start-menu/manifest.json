@@ -1,0 +1,14 @@
+{
+  "sourceRoot": "codex-authored/start-menu-wasteland-20261106",
+  "sources": {
+    "originals/battlefield.png": "4c1f617491bc33e0a9287f4792017fcb695e0b29bca27afc2b05080cfa370ffa",
+    "originals/cloth-atlas.png": "61041bec47e9020ae9fcd38520faeb6ceaff585175571e64b065c7ab8445eda2",
+    "PROMPTS.json": "57b8cef8fe4ac03941dde471bff7288e78f53d86487459abef8113b014866da7",
+    "source/start-menu-background.js": "81065aa1104d93aef9ae25b4ce0c7f835c04a16e54563fcc6f990fd14967ed15"
+  },
+  "exports": {
+    "web/battlefield.webp": "6badf424c816406a4bf441c42f3a0fb91ef6fe250a31e2171c22ea900ee4e32b",
+    "web/cloth-atlas.webp": "83b3a07b9e67e06011bc917bb8ef05bd9596e9eaa36ebe04d25ec64febad1af4",
+    "SOURCE.md": "165e83a07e7666a3bb01d14c75cc2c8ea51810f4eedf59319f56a0cf33f14d28"
+  }
+}

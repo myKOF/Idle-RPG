@@ -2,12 +2,11 @@
 /* 使用者核准的UI及成就音效；不參與模擬／存檔。 */
 var UISound = (function () {
   var ASSETS = {
-    hover: 'audio/ui-preview/01-hover.wav?v=411211856bdc',
     click: 'audio/ui-preview/hover-options-v5/H10.wav?v=338a16bc9ce9',
     success: 'audio/ui-preview/05-success.wav?v=4821e4b49aad',
     achievement: 'audio/achievements/mixkit-game-level-completed-2059.wav?v=8da83b49ceb5'
   };
-  // 操作能力決定是否播放：有tips的按鈕／選取項目仍播，純tips不列入操作目標。
+  // 有提示的可操作控制項仍有點擊音，純提示不列入操作目標。
   var HELP_TARGETS = '.pg-help, .forge-info-btn, #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip';
   // 委派至document，涵蓋重繪／彈窗的新節點。
   var TARGETS = [
@@ -29,18 +28,8 @@ var UISound = (function () {
     '[data-talent-select]', '[data-talent-turn]', '[data-tower-pick]', '[data-tower-tier]',
     '[data-load-save]', '[data-del-save]', '[data-quest-claim]'
   ].join(', ');
-  // 觸碰與點擊分開篩選：此白名單只限制hover／鍵盤焦點／觸控碰觸。
-  var HOVER_RULES = {
-    'tab-equip': '[data-act="upgrade"], [data-act="toggle-reroll"], [data-act="reroll-affix"], [data-act="toggle-socket"], [data-act="toggle-rune"], [data-act="engrave-rune"]',
-    'tab-skills': '[data-skill2-learn], [data-skill2-max], [data-skill2-downgrade], [data-skill2-delete]',
-    'tab-gems': '#fuse-btn, #fuse-all-btn',
-    'tab-tower': '[data-tower-floor]',
-    'tab-forge': '#forge-unload, #forge-go, #forge-auto'
-  };
-  var HOVER_SCOPES = '#tabs, #tab-equip, #tab-skills, #tab-newforge, #tab-gems, #tab-runes, #tab-tower, #tab-talents, #tab-forge, #tower-result-modal, #tower-canvas-hud';
   var context = null, initialized = false, generation = 0;
   var buffers = {}, loading = {}, sources = {}, lastPlayed = {};
-  var pointerX = null, pointerY = null, focusTarget = null, focusAt = -Infinity;
 
   function now() { return performance.now(); }
   function stopAll() {
@@ -79,7 +68,6 @@ var UISound = (function () {
         context = new AudioContextClass();
       }
       if (context.state === 'suspended') Promise.resolve(context.resume()).catch(function () {});
-      load('hover');
       load('click');
       load('success');
       load('achievement');
@@ -129,55 +117,6 @@ var UISound = (function () {
     }
     return anchor;
   }
-  function hoverTarget(node) {
-    var anchor = target(node);
-    if (!anchor) return null;
-    var scope = anchor.closest(HOVER_SCOPES);
-    // 未指定的區域與熔爐沿用現況；功能列表不受目的頁籤限制。
-    if (!scope || scope.id === 'tabs' || scope.id === 'tab-newforge') return anchor;
-    var allowed = HOVER_RULES[scope.id];
-    if (!allowed || anchor.closest(allowed) !== anchor) return null;
-    if (anchor.id === 'forge-unload') {
-      // 此按鈕有材料時改成「全部卸下」，只在實際執行自動放入時播觸碰音。
-      if (typeof uiForgePanelSnapshot !== 'function' || typeof forgeViewState !== 'function' || typeof forgeViewItemCount !== 'function') return null;
-      var forge = forgeViewState(uiForgePanelSnapshot());
-      if (!forge || forgeViewItemCount(forge)) return null;
-    }
-    return anchor;
-  }
-  function hover(event) {
-    if (!event.isTrusted || event.pointerType === 'touch' || event.buttons || document.hidden) return;
-    var samePosition = event.clientX === pointerX && event.clientY === pointerY;
-    pointerX = event.clientX; pointerY = event.clientY;
-    if (samePosition) return; // 游標未移動的DOM更換／版面位移不能觸發聲音。
-    if (typeof UI !== 'undefined' && event.target && event.target.closest &&
-        ((UI.panelScrolling && event.target.closest('#workspace-area main')) ||
-         (UI.inventoryScrolling && event.target.closest('#inventory-grid')))) return;
-    var anchor = hoverTarget(event.target);
-    if (!anchor || anchor === hoverTarget(event.relatedTarget) || (focusTarget === anchor && now() - focusAt < 120)) return;
-    play('hover');
-  }
-  function focus(event) {
-    if (!event.isTrusted || document.hidden) return;
-    var anchor = hoverTarget(event.target);
-    if (!anchor || anchor === hoverTarget(event.relatedTarget)) return;
-    // 滑鼠點擊造成的focus不另播；鍵盤導覽仍有觸碰回饋。
-    if (!keyboardFocus) return;
-    focusTarget = anchor; focusAt = now();
-    play('hover');
-  }
-  var keyboardFocus = false;
-  function pointerDown(event) {
-    if (!event.isTrusted) return;
-    keyboardFocus = false;
-    unlock(event);
-    if (event.pointerType === 'touch' && hoverTarget(event.target)) play('hover');
-  }
-  function keyDown(event) {
-    if (!event.isTrusted) return;
-    keyboardFocus = true;
-    unlock(event);
-  }
   function click(event) {
     if (!event.isTrusted || event.button > 0 || document.hidden || !target(event.target)) return;
     unlock(event);
@@ -190,13 +129,11 @@ var UISound = (function () {
   function init() {
     if (initialized || typeof document === 'undefined') return;
     initialized = true;
-    document.addEventListener('pointerover', hover, true);
-    document.addEventListener('pointerdown', pointerDown, true);
+    document.addEventListener('pointerdown', unlock, true);
     document.addEventListener('click', click, true);
-    document.addEventListener('keydown', keyDown, true);
-    document.addEventListener('focusin', focus, true);
+    document.addEventListener('keydown', unlock, true);
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden) { stopAll(); focusTarget = null; pointerX = pointerY = null; }
+      if (document.hidden) stopAll();
     });
     window.addEventListener('pagehide', stopAll);
   }

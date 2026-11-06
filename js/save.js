@@ -1861,15 +1861,21 @@ function loadSaveRecordV2(id) {
     data.savedAt = Date.now();
     raw = JSON.stringify(data);
     _saveSuppressed = true;
-    writeAutoMetaV2({
+    var meta = {
       id: 'auto_current', kind: 'auto', runId: data.runId || 1, savedAt: data.savedAt,
       fname: AUTO_FOLDER_FILE_V2,
       level: data.player && data.player.level || 1,
       stage: data.stage && data.stage.current || 1,
       zone: data.stage && data.stage.zone || 'desert'
+    };
+    return new Promise(function (resolve, reject) {
+      idbSetAutoV2(raw, function (err) {
+        if (err) { reject(err); return; }
+        writeAutoMetaV2(meta);
+        SaveStorage.reloadIntoSave(data.savedAt);
+        resolve(null);
+      }, { strict: true });
     });
-    idbSetAutoV2(raw, function () { location.reload(); });
-    return null;
   });
 }
 

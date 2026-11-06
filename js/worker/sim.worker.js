@@ -25,7 +25,7 @@ importScripts(
   '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261106-skill-sfx', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
   '../player.js?v=20261106-ai-integration', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261106-ai-integration', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261104-retire-enchant-book',
-  '../factory.js?v=20261103-equipment-rarity-v3', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261104-ancient-essence-cost', '../save.js?v=20261105-forge-offline2',
+  '../factory.js?v=20261103-equipment-rarity-v3', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261104-ancient-essence-cost', '../save.js?v=20261106-start-menu',
   '../tasks.js?v=20261105-forge-fine-task', '../achievements.js?v=20261103-equipment-rarity-v3'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1772,6 +1772,7 @@ function boot(msg) {
     loaded = (typeof migrateSave === 'function') ? migrateSave(msg.save) : msg.save;
   }
   G = loaded || newGameState();
+  if (!loaded) G.runId = _maxRunId;
   // 存檔中的 xp 可能是舊升級公式留下的溢出值；先完成升級再建立戰鬥實體。
   if (typeof settlePlayerXp === 'function') settlePlayerXp({ silent: true });
   backfillItemSockets();

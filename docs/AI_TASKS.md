@@ -1,3 +1,12 @@
+## SYNC-PENDING-20261106-215512 ? ???????????
+
+- Owner Codex?Done???????? pending merge?HEAD bb8386b132d4e16054d0ee5b898f5fc946d196f5?MERGE_HEAD 76790fb8d62bc95d7cce7684723aa9304b73a006???? index.html ????? bridge ??????????????? EOF ??????? stage?commit?
+- ???????????? protocol?shim ??????incoming ????????? Worker ??? storage 1.0.2???? incoming ??????? protocol ????? storage?bridge?Worker ?????????????????? incoming ???????????????? ownership ?????????????????????Worker ???? build???? Excel???????Git metadata?
+
+- ?????`node --test tests/start-menu.test.cjs tests/startup-hold.test.cjs tests/tab-lock.test.cjs tests/save-origin-isolation.test.cjs tests/loading-screen.test.cjs tests/intro-player.test.cjs tests/ui-achievement-sound.test.cjs tests/ui-sound.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 100/100 ???`node --test tests/skill-sfx.test.cjs tests/string-table.test.cjs tests/vfx-preset-usage.test.cjs` 46/46 ???`npm.cmd run build` 683 ????`node tools/intro/sync-start-menu.cjs --check` ??????? SHA ??????????????????
+- ? PARAMS_XLSX=config/Excel/String.xlsx?PARAMS_CSV_OUT=config/CSV/String.csv?PARAMS_SHEET=String ?? `node tools/xlsx_to_csv.cjs`?2420 ? ? 7 ??????`node tools/string-table/apply_strings.cjs` ? `--check` ???2419 ???? da584947 hash ???main?editor ???Worker ? bridge ?? sv???? XLSX ??????????? HTML?
+- `git diff HEAD --check` ?????????????????HEAD?MERGE_HEAD ??? SHA?? stage?commit??? Git metadata??????? stage???????? merge????? index.html?js/bridge.js?docs/AI_TASKS.md????? String.csv?strings_data.js ?????????????? HTML?Worker imports?editor????????????????????????? Console ??????????????????????
+
 ## SYNC-PENDING-20261106-085851 - completed integration validation
 
 - Owner: Codex; Done. Authorized integrator for this pending merge only, original HEAD ed331d913d51361024a403443434f8ac31d22a65 and MERGE_HEAD 94ac6238da4f56843b2e6e030bbc55dcd0bf142d. Both identities remain unchanged; no staging, commits, Git metadata writes, synchronization or network operations were performed. Controller stages and commits the result.
@@ -36,6 +45,26 @@
 - 驗證：`node tools/resource-icons/sync-library.cjs --apply`／`--check`七圖SHA通過；`npm.cmd run build`665檔通過、git diff／stat／check與自我Review完成。`node --test tests/header-resources.test.cjs tests/resource-tooltip.test.cjs tests/new-forge-ui.test.cjs tests/forge-equipped-inventory.test.cjs tests/ui-tick-smoke.test.cjs tests/ui-log-routing.test.cjs tests/stats-panel.test.cjs tests/divine-forge.test.cjs tests/vfx-editor-cache-versions.test.cjs`46項44通過／2既有失敗。用HEAD原始stats／ui／統計測試的唯讀preload基線重跑，兩項同名同因：七種刻印2941≠2353；高塔統計舊斷言要求window.recordLootGold。未修改這些既有功能或降低斷言。
 - 畫面QA：隔離隨機localhost／全新Edge context，正式index DOM／全CSS／正式UI及可控快照，確認資源列／神鑄中央／統計／日誌與離線文字轉換圖片皆128px載入，原魔法符號保持且重複轉換冪等；1280及640寬截圖讀回目視。Console error／warning及pageerror皆0。Forge另用固定尺寸fixture主機容納正式面板，未啟動完整Worker／讀寫玩家存檔；首次locator截圖因原漂浮動畫不穩定逾時，改以截圖animations disabled後通過。QA在本聊天visualizations/divine-stone；瀏覽器／Server均關閉。未進行全遊戲長玩或跨瀏覽器驗證。
 - 唯讀未改：規範／AGENTS／Workflow／prompts、原參考與核准生成來源、combat／tower／Worker／bridge／玩法／存檔／配置及String、原六份圖示。素材庫codex-authored/divine-stone-icon-20261105保存使用者參考、核准生成原圖、匯出與工具／提示詞／SHA紀錄，先提交`9cf8d26`；遊戲Commit為本段所在「[Codex] feat: 接入核准的神性之石透明圖標」（SHA見交付）。無本項未完成實作，可供Review及使用者合併；既有兩項測試失敗如上，不宣稱全綠。未合併／推送develop或main，下一步重載遊戲查看圖標。
+
+## ACHIEVEMENT-HEADER-LAYOUT-20261106 — 成就視窗標題、篩選與數量排版
+
+- Codex，完成。依使用者截圖將標題牌下移 10px，篩選列與總進度條中心對齊，窄版維持可換行。已達成數量文字下移 3px，字級縮小 3px。前置為既有成就視窗與篩選樣式。
+- 修改 `css/achievements.css`、`index.html` 的成就 CSS 快取、`LV_upgrade_system.md` 的成就說明與本段。共用工作區的開始選單與字串任務位於其他區段，預檢及三方試跑通過，分段提交。唯讀核對成就 UI、選單接線及既有測試。
+- 隔離 Edge 在 1366、800、390px 驗證三處位移、進度條位置、三種篩選及關閉操作。共用工作區的開始選單成就入口在 1366、390px 驗證提示及版面，Console 無錯誤或警告。
+- `npm.cmd run build` 檢查 679 檔。隔離本次首頁快取變更後，成就、UI 音效與快取回歸 28/28 通過。共用工作區的字串快取差異造成 CV-1 失敗，移除本次變更後可重現。可交使用者整合並重新載入驗收。
+
+## ACHIEVEMENT-REMOVE-NOTE-20261106 — 移除開始選單成就提示
+
+- Codex，畫面修正完成。依使用者要求移除標題下方的提示元素與接線。修改 `index.html`、`js/ui-achievements.js`、`tests/ui-achievement-sound.test.cjs`、系統說明與本段。
+- Edge 從開始選單開啟成就，1366px 及 390px 下確認摘要、進度條、篩選與清單分別一起上移約 28px、51px。三種篩選與關閉操作通過，Console 無錯誤或警告。四份相關回歸 23/23 通過，`npm.cmd run build` 檢查 681 檔。
+- 提示原屬尚未提交的開始選單變更，修正隨開始選單任務交付。
+
+## ACHIEVEMENT-FOUR-COLUMNS-20261106 — 成就卡片等比縮放
+
+- Codex，完成。總進度條從 24px 減到 19.2px，已達成數量貼齊獎杯下緣。成就視窗上限 1180px，桌面四欄，較窄時逐級減欄。卡片依可用欄寬統一縮放寬高、圖示、文字、框線與間距。
+- 修改 `css/achievements.css`、`index.html`、`LV_upgrade_system.md` 與本段。唯讀核對成就渲染、開始選單和篩選入口。首頁成就標記與快取對 Claude 實際工作檔三方試跑 exit 0，其技能音效區段獨立。
+- Edge 實測 320–1440px 共 11 種寬度。1024px 與 1440px 皆四欄，抽驗卡片約為原尺寸的 74% 與 90%，含換行說明的卡片。核對獎杯下緣、總進度條、三種篩選、捲動與關閉，並啟動遊戲 Worker 驗證單卡進度。Console 無錯誤或警告。
+- `node --test tests/start-menu.test.cjs tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/vfx-editor-cache-versions.test.cjs` 24/24 通過，`npm.cmd run build` 檢查 681 檔。可交使用者合併並重新載入驗收。
 
 ## ACHIEVEMENT-PROGRESS-ALIGN-20261105 — 獎杯置中、進度條收邊與篩選頁籤
 
@@ -14963,3 +14992,51 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex。使用者以「1」接續同步，合併377fa4ad與34a0847f。裝備tips與詳情使用簡易星號，裝備格保留主線的烘焙PNG。
 - 依雙方提交合併四個衝突檔，保留序章樣式快取與兩側任務紀錄，並接上incoming的提示樣式快取。素材沿用已整合的來源與匯出。
 - 驗證：太古精鑄、裝備比較tips、洗煉、快取、序章動態／聲景與符文真言相關回歸52/52通過。npm.cmd run build檢查678檔通過。Edge以正式CSS驗證詳情及tips的6個文字星號，以及三種256px裝備格烘焙圖的載入與computed styles。原圖與烘焙圖SHA核對通過。序章匯出器在本次驗證明確指定effects-materials，七張素材、提示詞與動畫來源SHA一致。git diff HEAD --check通過。
+
+## START-MENU-BACKGROUND-20261106 — 開場後選單的荒原動態背景
+
+- Owner：Codex，Done。使用者指定只製作背景，選單控制及內容由另一位 Agent 接手。以前一版原創荒原分鏡為原型，用內建 ImageGen 重繪無字底圖及透明破布圖集。保留原構圖的拱門、遺骸、旗桿與武器，壓暗天空及畫面中央。RPG Mote Studio 可存取，本次高解析寫實重繪及分層採 ImageGen。
+- `js/start-menu-background.js` 提供 `StartMenuBackground.mount(host)`、載入狀態與卸載。六片錨定旗布做連續網格擺動，三層天空和一層地平氣流由可平鋪噪聲繪製，鬼火煙絲獨立飄動。16 處地表風沙源疊 64 道薄霧和 1,632 顆沙粒，沿盔甲、骨骸、碎石向右拂過。隱藏選單／分頁暫停，減少動態保留靜止畫面。
+- 修改範圍為背景程式、`images/start-menu/` 的兩張 WebP／素材清單／交接、`tools/intro/sync-start-menu.cjs`、LV、介面特效紀錄及本段。工作前 fetch 和逐檔預檢通過。同副本成就／選單工作僅共享 LV 和任務文件，保留對方區段，分段 stage。唯讀檢查規範、原分鏡、開場播放器、開始選單 DOM／樣式及載入流程。原序章、首頁、選單操作、String、戰鬥、Worker 和存檔由既有或接手任務管理。
+- Edge 隔離頁載正式背景程式與素材及選單 DOM／CSS，桌面 1600×900、直式 390×844。十處區域實際畫素變化，抽樣同時在場的 1,632 顆風沙中 1,586 顆向右、其餘為消散後從原風沙源重生。確認背景不擋按鈕、選單隱藏與分頁暫停、動態偏好切換、卸載及再次掛載，Console error／warning 0。實際直式採中央滿版裁切，兩側旗布可能出框。
+- `npm.cmd run build`、`node --check tools/intro/sync-start-menu.cjs`、`node tools/string-table/build_string_csv.cjs --check` 與雙庫 SHA 檢查通過。以 `node --test` 跑 intro-motion、intro-player、intro-audio、vfx-preset-usage、vfx-editor-cache-versions 五檔，同時進行中的選單改動有 65/66 通過，CV-1 為該任務新版 String 在主頁和編輯器的快取版本不一致。素材庫先提交 `dc50f766`，遊戲提交見交付。
+- 接手：選單 Agent 依 `images/start-menu/SOURCE.md` 接入。背景可供 Review 與整合。未在行動真機或完整啟動流程驗證，正式序章接選單須待選單任務完成接入。
+
+## UI-SOUND-HOVER-OPT-IN-20261106 — 僅保留指定操作的觸碰音效
+
+- Codex 已完成。以使用者 2026-11-05 逐項指定的頁籤操作為保留清單，移除未列區域的預設觸碰音。滑鼠、鍵盤焦點與觸控共用清單。H10 點擊、強化與洗煉成功音、成就音沿用既有觸發。
+- 既有 UI 音效與頁籤清單已整合，fetch 與目標衝突預檢通過。修改 js/ui-sound.js、index.html 音效快取、兩份既有音效測試、docs/UI_SOUND.md、LV_upgrade_system.md 與本段。唯讀核對規範、js/ui.js、ui-achievements.js、ui-world-map.js、ui-gem-resonance.js 與 sfx.js 的觸發入口。音檔及素材庫沒有變更。
+- `node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs` 47/47 通過。 `npm.cmd run build` 檢查 678 檔通過，`node tools/string-table/build_string_csv.cjs --check` 寫死文字 0，`git diff --check` 通過。
+- 正式頁面以隔離 Edge、實際 Worker 與 AudioContext 驗證 19 個滑鼠案例，涵蓋功能列表、熔爐、裝備與寶石保留項目，以及設定、角色、戰鬥、世界地圖等靜音項目。設定頁真實鍵盤焦點與觸控靜音，世界地圖點擊與設定觸控點擊播放 H10。Console error／warning 為 0。內建瀏覽器無連線，行動真機與全庫測試未執行。
+- 交付為本段所在提交，可供 Review 與使用者合併。下一步於整合後重新載入遊戲驗收。
+
+## UI-SOUND-HOVER-REMOVE-20261106 — 移除全部觸碰音效
+
+- Codex 已完成。使用者釐清日後只按新指示指定位置接入，本項取代前段保留清單。移除全遊戲 UI 的觸碰音載入、清單及播放接線，涵蓋滑鼠懸停、鍵盤焦點及觸控按下。原音檔保存在試聽素材中。
+- 修改 js/ui-sound.js、index.html 音效快取、tests/ui-sound.test.cjs、tests/ui-achievement-sound.test.cjs、docs/UI_SOUND.md、LV_upgrade_system.md 與本段。唯讀核對其他音效與指標事件入口、試聽素材說明、規範及工作流程。fetch 和衝突預檢通過。
+- `node --test tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/achievements.test.cjs tests/equip-reroll-ui.test.cjs tests/upgrade-animation.test.cjs tests/ui-tick-smoke.test.cjs tests/vfx-editor-cache-versions.test.cjs` 42/42 通過，涵蓋 H10 真實啟動、強化／洗煉成功與成就音。`npm.cmd run build` 檢查 678 檔，`node tools/string-table/build_string_csv.cjs --check` 確認寫死文字為 0，`git diff --check` 通過。
+- 隔離 Edge 載入正式頁面、Worker 與 AudioContext，23 個滑鼠案例及原本可發聲導覽按鈕的鍵盤焦點、觸控按下與取消均靜音。UI 模組只載入 H10、成功及成就三份音檔，觸碰音播放 0 次，真實點擊及兩種通知音成功播放。Console error／warning 為 0。瀏覽器驗證範圍為 Edge 桌面和模擬觸控。
+- 交付為本段所在提交，可供使用者整合，整合後重新載入即可驗收。
+
+## START-MENU-20261106 — 遊戲開始選單
+
+- Owner：Codex，Done。開場結束或略過後，以原創荒原動態背景呈現置中的開始選單。玩家確認開局才啟動 Worker。繼續遊戲會重讀最新自動檔並沿用來源確認，首次遊玩以新遊戲為首。已有自動檔時，新遊戲需確認後才開局。困難沿用現行玩法，噩夢和煉獄停用。
+- 載入存檔捷徑依可讀的資料夾存檔啟用，進入原設定的存檔分頁，確認後直接載入選定記錄。遊戲內明確讀檔會在快取成功寫入後重載，直接接續選定記錄。開始選單沿用原成就及設定，成就顯示已存的達成紀錄，遊戲內顯示即時進度。網頁版離開遊戲執行重新整理。
+- 修改首頁與新開始選單程式／CSS、開機與存檔接線、共用成就／設定、String.xlsx／CSV／JS 及編輯器快取、解鎖表與相關回歸。唯讀核對 TabLock、SaveOrigin、協議、背景來源及交接。背景沿用已提交的 `9a502027` 素材，無本項素材庫變更。共用首頁及文件另有成就排版與移除成就提示的修正，保留其獨立區段並納入尚未提交的提示移除。
+- `node --test` 執行 22 個相關檔案共 185 項全通過，涵蓋新選單、序章、首畫、存檔來源／資料夾、Esc、成就、分頁鎖、字串及 Worker。 `npm.cmd run build` 檢查 681 檔。字串檢查寫死文字 0，原生 Excel 重開與資料核對、CSV／JS 同步及 `git diff --check` 通過。
+- 隔離 Edge 搭配實際 Worker、IndexedDB 和資料夾把手驗證七組流程，涵蓋桌面、手機尺寸與觸控模擬。首次 30 秒序章自然完成並接上選單，另驗證背景卸載、重整、最新快取繼續、手動檔、遊戲內讀檔、取消及確認新局。Console error／warning 0。行動真機與跨瀏覽器驗證未執行。提交為本段所在 Commit，可交使用者整合。
+
+## START-MENU-LAYOUT-20261106 — 開始選單靠左下排列
+
+- Owner：Codex，Done。依畫面標示縮窄按鈕欄 20%，靠左下對齊，移除可見標題、外框和底板。按鈕底色保留 80% 不透明度，保留文字對比、焦點及可及性名稱。修改開始選單 HTML／CSS、樣式快取、解鎖總表及本段。唯讀核對共用彈窗樣式、背景元件、選單接線與工作規範。
+- 首頁與 Claude 的技能音效有同檔修改，分屬選單標記／樣式引用與技能腳本引用。把 Claude 工作差異投影到本分支後，與本次差異三方試跑通過，兩組內容均完整保留。對共同祖先的整檔試跑仍回報原有 Worker 快取段落相鄰修改，與本次選單區段無關。
+- Edge 實際頁面確認 1536×695、320×660、568×260 寬度各為原本八成，按鈕離左邊 16px，短視窗可捲動。核對 80% 底色、主選單和難度的標題移除、停用游標、鍵盤返回、設定開關及畫面預覽，Console error／warning 0。七份相關 `node --test` 共 73/73 通過，`npm.cmd run build` 檢查 681 檔，字串及 diff 檢查通過。交付為本段所在提交，可供整合。
+
+## START-MENU-DUST-GUSTS-20261106 — 開始選單的地表陣風與遠山戰火
+
+- Owner：Codex，Done。依使用者回饋將固定位置的循環風沙改成不定時、不同位置掠過地表的陣風，並沿截圖圈出的三段遠山火線製作火光。陣風前緣向右移動，粒子分批抬升後各自消散。火線以底圖暖色遮罩保留山脊，疊加獨立起伏的反射光、火尖及少量火星，最遠一段保持較暗。
+- 範圍為背景的沙塵／戰火程式、主頁該檔快取、素材庫的程式快照／來源說明／SHA、LV、介面特效與本段。驗收陣風時序、起砂位置、向右推進、山稜火光的局部變化及生命週期。接手者為使用者驗收和整合。
+- Claude 正修改同一份 index 的技能音效與 Worker 版本區段。共同祖先試跑的既有 Worker／存檔載入衝突與本項無關，將本項單一快取行套用到該試跑結果的三方試跑 exit 0。其他目標預檢乾淨。
+- 兩分鐘確定性時間取樣含 51 批陣風，間隔約 1.05–5.00 秒、實際起砂時間約 0.70–3.17 秒，確認每批起砂橫跨一段地表，粒子全數向右且生命結束後不回到起點。Edge 正式頁面略過測試開頭動畫進入選單，取樣 1,193 幀，三段火線各自變亮／變暗，開設定及切換減少動態會停播，Console error／warning 0。預覽含原比例山稜近看與全景。
+- `node --test` 以 start-menu、intro-player、intro-motion、vfx-preset-usage、vfx-editor-cache-versions 五檔共 67/67 通過；`npm.cmd run build` 檢查 681 檔，String 寫死 0，雙庫 SHA 與提交 diff 檢查通過。未做行動真機，原窄版中央裁切可能讓右側火線超出視野。
+- 背景程式、index 背景快取、LV、介面特效、素材交接與本段分開提交。與同副本成就修改共用 index、LV 和本檔，區段獨立並以三方試跑驗證。唯讀核對選單掛載、原底圖、素材同步工具及回歸。兩張 WebP 的位元組保持原樣，素材庫的背景程式快照與說明先提交 `5153c07d`。遊戲提交見交付，可供整合。

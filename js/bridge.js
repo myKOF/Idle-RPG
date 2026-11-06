@@ -16,7 +16,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261106-legendary-inactive-note';
+  var WORKER_ASSET_VERSION = '20261106-start-menu-skill-sfx-merge-v1';
   var _menuPaused = false;
   /* 開機等待：Loading 黑幕期間 Worker 不開始戰鬥，揭幕那一刻才放行。
      否則 Loading 期間模擬照跑、視覺事件堆在佇列，揭幕後一次播出（特效暴增、FPS 掉到個位數）。
@@ -35,14 +35,13 @@ var WorkerBridge = (function () {
     _startupHold = false;
     post(MSG_IN.MENU_PAUSE, { paused: effectivePaused() });
   }
-  _startupHoldTimer = setTimeout(releaseStartupHold, STARTUP_HOLD_MAX_MS);
   /* 開頭動畫播放中暫停逾時保險（js/intro-player.js）：動畫比 20 秒長時，
      不能讓戰鬥在動畫後面先開打。動畫結束再重新計時一整段，交回原本的保險。 */
   function suspendStartupHoldTimeout() {
     if (_startupHoldTimer) { clearTimeout(_startupHoldTimer); _startupHoldTimer = 0; }
   }
   function resumeStartupHoldTimeout() {
-    if (!_startupHold) return;
+    if (!_startupHold || !_started) return;
     if (_startupHoldTimer) clearTimeout(_startupHoldTimer);
     _startupHoldTimer = setTimeout(releaseStartupHold, STARTUP_HOLD_MAX_MS);
   }
@@ -362,8 +361,15 @@ var WorkerBridge = (function () {
     };
     if (typeof SaveStorage !== 'undefined' && typeof SaveStorage.readBootSave === 'function') {
       try {
-        SaveStorage.readBootSave(function (save) {
-          relaunch(save, (typeof SaveStorage.maxRunId === 'function') ? SaveStorage.maxRunId() : 0);
+        SaveStorage.readBootSave(function (save, info) {
+          if (fallback.startedAt) {
+            // 開始選單已選定本局。首份新快照落地前，重啟沿用該次選擇。
+            save = info && info.cacheSave;
+            var runId = fallback.save ? fallback.save.runId || 1 : fallback.maxRunId;
+            if (!save || (save.runId || 1) !== runId || !(Number(save.savedAt) >= fallback.startedAt)) save = null;
+          }
+          relaunch(save, fallback.startedAt ? fallback.maxRunId :
+            (typeof SaveStorage.maxRunId === 'function') ? SaveStorage.maxRunId() : 0);
         });
         return;
       } catch (e) {}
@@ -436,7 +442,9 @@ var WorkerBridge = (function () {
        交叉驗證只要有它就永遠對不上。順帶讓測試不去動測試用 origin 的既有存檔。
        安全邊界與 js/gm_exec.js 一致：只認本機 hostname。 */
     if (isDeterministicTest()) opts = { save: null, maxRunId: opts.maxRunId || 1, _isRestart: isRestart };
-    if (!isRestart) { _bootOpts = { save: opts.save || null, maxRunId: opts.maxRunId || 1 }; }
+    if (!isRestart) {
+      _bootOpts = { save: opts.save || null, maxRunId: opts.maxRunId || 1, startedAt: opts.startedAt };
+    }
     /* 重啟時先把 alive 拉回來，否則新 Worker 的第一則訊息會走進 onMessage 的
        誤判自我修復分支，對玩家喊「先前的失效判定為誤判」——這次不是誤判。 */
     if (isRestart) { stats.alive = true; stats.deadReason = null; }
@@ -460,6 +468,7 @@ var WorkerBridge = (function () {
       return false;
     }
     _started = true;
+    if (!isRestart) resumeStartupHoldTimeout();
     _worker.onmessage = onMessage;
     _worker.onerror = function (err) {
       stats.errors++;
@@ -623,34 +632,8 @@ var WorkerBridge = (function () {
 
   return {
     start: start, stop: stop, send: send, on: on, loadSave: loadSave, handoff: handoff,
-    requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode,
+    requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode, isDeterministicTest: isDeterministicTest,
     whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused, releaseStartupHold: releaseStartupHold,
     suspendStartupHoldTimeout: suspendStartupHoldTimeout, resumeStartupHoldTimeout: resumeStartupHoldTimeout
   };
-})();
-
-/* ---- 開機 ----
-   Worker 是模擬與存檔的唯一權威：以玩家的真實存檔開機，並負責之後所有存檔寫入。
-   主執行緒只把存檔讀出來交過去，自己不 migrate、不結算、不持有 G（見 main.js）。
-
-   刻意先於 main.js 註冊：Worker 越早開機，面板越早抵達，initUI() 之後畫面空白的時間就越短。
-
-   改掛在 TabLock 上而非 DOMContentLoaded：沒有取得多分頁鎖的分頁一律不開機——
-   兩顆 Worker 對同一份存檔各寫各的，後寫的會整份蓋掉先寫的（見 js/tablock.js）。
-   TabLock 保證回呼在 DOM 就緒之後才執行。 */
-(function () {
-  TabLock.onGranted(function () {
-    /* 讀出來的存檔若是「回退讀到的舊檔名」或「標記著別的 origin」，SaveOrigin 會先問過玩家
-       才開機；其餘情況直接放行（見 js/save_origin.js）。存檔覆蓋不可逆，不該由時間戳自己決定。 */
-    SaveStorage.readBootSave(function (save, info) {
-      SaveOrigin.gate(save, info, function (approved) {
-        /* 開頭動畫在這裡起播：確認視窗已經關掉（動畫不會蓋住它），Worker 開機與 initUI 跟動畫重疊進行。 */
-        if (typeof IntroPlayer !== 'undefined') {
-          try { IntroPlayer.startupBegin({ hasSave: !!approved }); }
-          catch (e) { console.error('[intro] 起播失敗', e); }
-        }
-        WorkerBridge.start({ save: approved, maxRunId: SaveStorage.maxRunId() });
-      });
-    });
-  });
 })();

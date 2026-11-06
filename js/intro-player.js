@@ -3,24 +3,14 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    intro-player.js — 開頭動畫播放器（時間軸資料見 js/intro-data.js）
    -----------------------------------------------------------------------------
    一層疊在 Loading 黑幕上方的 DOM 舞台。圖層用 Web Animations 播放，只動
-   transform 與 opacity：這兩種屬性由合成器執行，開機時主執行緒忙著 initUI、
-   建 Worker、建場景，動畫也不會跟著卡（另開 Pixi 會跟戰場搶主執行緒與 GPU）。
+   transform 與 opacity，由合成器執行。
 
-   與開機流程的關係（js/main.js waitForStartupUi、js/bridge.js 開機等待）：
-     - 存檔來源確認通過、Worker 開機之前，bridge.js 呼叫 startupBegin()，
-       由 chooseStartupTimeline() 決定要不要播、播哪一條。
-     - 播放中暫停開機等待的逾時保險；否則動畫一長，戰鬥就在動畫後面開打，
-       視覺事件堆在佇列裡，揭幕時一次播出（23dd33ac 修過的問題）。
-     - main.js 揭幕前呼叫 whenIdle()：動畫播完或被略過才收黑幕、放行戰鬥。
-       UI 先準備好就等動畫；動畫先播完就露出底下的 Loading 繼續等 UI。
-     - 任何收掉 Loading 的路徑（Worker 失效、分頁鎖被搶）都會呼叫 abort()，
-       讓失效通知與遮罩不被動畫蓋住（index.html 的 hideLoadingScreen）。
+   js/start-menu.js 讀完存檔後呼叫 startupBegin() 選擇開場，whenIdle() 回呼顯示
+   開始選單。玩家選好本局後才啟動 Worker。hideLoadingScreen() 會中止仍在播放的演出，
+   讓分頁鎖等通知可見。
 
-   停在標題等載入（holdAt）：開機播放時，時間軸可以指定停格點。播到那裡 UI 還沒準備好，
-     就整個畫面停住、顯示載入圓點，等 main.js 呼叫 release() 才播完收尾；UI 先準備好則
-     不停直接播完。標題開場因此能蓋住整段載入、一路接到遊戲畫面，不會先退回「Loading」。
-     停格超過 HOLD_MAX_MS 自動放行（退回底下的 Loading 繼續等），不讓動畫把開機卡死。
-     GM 指令預覽不停格。
+   時間軸可指定 holdAt 等待呼叫端 release()；超過 HOLD_MAX_MS 自動放行。
+   開始選單在起播後直接放行，讓演出按原時長播完。GM 指令預覽與設定重播不停格。
 
    略過：點擊畫面、Esc、Space、Enter，或略過按鈕。
    減少動態偏好：只保留淡入淡出，不位移不縮放。
@@ -421,7 +411,7 @@ var IntroPlayer = (function () {
     return true;
   }
 
-  /* 開機進入點：bridge.js 在存檔來源確認通過、Worker 開機之前呼叫。 */
+  /* 開始選單讀完存檔後、Worker 開機前呼叫。 */
   function startupBegin(ctx) {
     ctx = ctx || {};
     var pick = { hasSave: ctx.hasSave, prologueSeen: storageGet(PROLOGUE_SEEN_KEY) === '1' };

@@ -40,15 +40,18 @@ function setup({ canvas = true } = {}) {
     validUiPanelKey: () => true,
     MSG_OUT: { BOOTED: 'booted' },
     WorkerBridge: {
+      start: () => true,
       status: () => bridge,
+      releaseStartupHold() {},
       on(type, fn) { (handlers[type] ||= []).push(fn); }
     },
     BattleRenderer: { status: () => renderer },
     TabLock: { onGranted(fn) { granted = fn; } },
+    StartMenu: { init(start) { start(null, 1); } },
     window: {},
     document: {
       hidden: false,
-      body: { classList: { contains: () => canvasClass } },
+      body: { classList: { contains: () => canvasClass, remove() {} } },
       getElementById: id => id === 'battle-canvas-host' && canvas ? {} : null
     },
     showLoadingScreen() { log.push('show'); },

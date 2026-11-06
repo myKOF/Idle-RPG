@@ -33,16 +33,35 @@ var SaveStorage = (function () {
     return info;
   }
 
-  /* 讀出開機用的存檔：資料夾與 IndexedDB 快取取較新者。
-     刻意**不呼叫 migrateSave**——遷移是 Worker 的職責，兩邊都做會讓一次性遷移跑兩次。 */
-  function readBootSave(cb) {
-    var finish = function (folderBest) {
+  // 遊戲內明確讀檔或重新開局會重載；僅直接接續這次寫入的快取。
+  var RESUME_KEY = 'ir_resume_loaded_save';
+  function reloadIntoSave(savedAt) {
+    try { sessionStorage.setItem(RESUME_KEY, String(savedAt)); } catch (e) {}
+    location.reload();
+  }
+
+  /* 開機取資料夾與 IndexedDB 較新者，遷移由 Worker 處理。 */
+  function readBootSave(cb, allowResume) {
+    var resumeAt = 0;
+    if (allowResume) {
+      try {
+        resumeAt = Number(sessionStorage.getItem(RESUME_KEY)) || 0;
+        sessionStorage.removeItem(RESUME_KEY);
+      } catch (e) {}
+    }
+    var finish = function (folderBest, manualScan) {
       idbGetAutoV2(function (raw) {
         var cacheBest = null;
         var data = parseSaveTextV2(raw);
         if (data) cacheBest = { data: data, savedAt: Number(data.savedAt) || 0 };
-        var best = chooseNewestSaveV2(folderBest, cacheBest);
-        cb(best ? best.data : null, bootSaveInfo(best, folderBest, cacheBest));
+        var resume = !!(resumeAt && cacheBest && cacheBest.savedAt === resumeAt);
+        var best = resume ? cacheBest : chooseNewestSaveV2(folderBest, cacheBest);
+        var info = bootSaveInfo(best, folderBest, cacheBest);
+        info.resume = resume;
+        info.cacheSave = cacheBest && cacheBest.data;
+        info.folderAuto = folderBest ? autoSaveMetaV2() : null;
+        info.manualScan = manualScan;
+        cb(best ? best.data : null, info);
       });
     };
     if (!window.showDirectoryPicker) { finish(null); return; }
@@ -55,8 +74,7 @@ var SaveStorage = (function () {
            Worker 啟動與第一個背包面板一起阻塞數秒。手動存檔索引不影響
            本次要載入的 auto save，改在回呼交回控制權後背景同步。 */
         readFolderAutoV2(function (folderBest) {
-          finish(folderBest);
-          scanManualMetadataV2().catch(function () {});
+          finish(folderBest, scanManualMetadataV2().catch(function () {}));
         });
       }).catch(function () { finish(null); });
     });
@@ -139,7 +157,7 @@ var SaveStorage = (function () {
       done(err);
       if (!err) {
         if (typeof showLoadingScreen === 'function') showLoadingScreen();
-        location.reload();
+        reloadIntoSave(meta.savedAt);
       }
     });
   }
@@ -242,6 +260,7 @@ var SaveStorage = (function () {
 
   return {
     readBootSave: readBootSave,
+    reloadIntoSave: reloadIntoSave,
     maxRunId: maxRunId,
     persist: persist
   };

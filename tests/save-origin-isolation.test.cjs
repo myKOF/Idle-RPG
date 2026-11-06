@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const bridgeSrc = fs.readFileSync(path.join(root, 'js/bridge.js'), 'utf8');
+const startMenuSrc = fs.readFileSync(path.join(root, 'js/start-menu.js'), 'utf8');
 const originSrc = fs.readFileSync(path.join(root, 'js/save_origin.js'), 'utf8');
 
 /* 2026-07-29 事故的結構性成因：存檔資料夾是實體目錄、不分 origin，
@@ -293,6 +293,6 @@ test('接線：save_origin 早於 bridge 載入，且開機流程確實經過它
   assert.ok(originAt > 0, 'index.html 必須載入 js/save_origin.js');
   assert.ok(storageAt < originAt && originAt < bridgeAt,
     'save_origin 需在 storage 之後、bridge 之前載入');
-  assert.match(bridgeSrc, /SaveOrigin\.gate\(save, info, function \(approved\)/,
+  assert.match(startMenuSrc, /SaveOrigin\.gate\(save, info, function \(approved\)/,
     '開機必須經過確認關卡，不能直接把讀到的存檔丟給 Worker');
 });
