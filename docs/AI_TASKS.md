@@ -37,6 +37,13 @@
 - 畫面QA：隔離隨機localhost／全新Edge context，正式index DOM／全CSS／正式UI及可控快照，確認資源列／神鑄中央／統計／日誌與離線文字轉換圖片皆128px載入，原魔法符號保持且重複轉換冪等；1280及640寬截圖讀回目視。Console error／warning及pageerror皆0。Forge另用固定尺寸fixture主機容納正式面板，未啟動完整Worker／讀寫玩家存檔；首次locator截圖因原漂浮動畫不穩定逾時，改以截圖animations disabled後通過。QA在本聊天visualizations/divine-stone；瀏覽器／Server均關閉。未進行全遊戲長玩或跨瀏覽器驗證。
 - 唯讀未改：規範／AGENTS／Workflow／prompts、原參考與核准生成來源、combat／tower／Worker／bridge／玩法／存檔／配置及String、原六份圖示。素材庫codex-authored/divine-stone-icon-20261105保存使用者參考、核准生成原圖、匯出與工具／提示詞／SHA紀錄，先提交`9cf8d26`；遊戲Commit為本段所在「[Codex] feat: 接入核准的神性之石透明圖標」（SHA見交付）。無本項未完成實作，可供Review及使用者合併；既有兩項測試失敗如上，不宣稱全綠。未合併／推送develop或main，下一步重載遊戲查看圖標。
 
+## ACHIEVEMENT-HEADER-LAYOUT-20261106 — 成就視窗標題、篩選與數量排版
+
+- Codex，完成。依使用者截圖將標題牌下移 10px，篩選列與總進度條中心對齊，窄版維持可換行。已達成數量文字下移 3px，字級縮小 3px。前置為既有成就視窗與篩選樣式。
+- 修改 `css/achievements.css`、`index.html` 的成就 CSS 快取、`LV_upgrade_system.md` 的成就說明與本段。共用工作區的開始選單與字串任務位於其他區段，預檢及三方試跑通過，分段提交。唯讀核對成就 UI、選單接線及既有測試。
+- 隔離 Edge 在 1366、800、390px 驗證三處位移、進度條位置、三種篩選及關閉操作。共用工作區的開始選單成就入口在 1366、390px 驗證提示及版面，Console 無錯誤或警告。
+- `npm.cmd run build` 檢查 679 檔。隔離本次首頁快取變更後，成就、UI 音效與快取回歸 28/28 通過。共用工作區的字串快取差異造成 CV-1 失敗，移除本次變更後可重現。可交使用者整合並重新載入驗收。
+
 ## ACHIEVEMENT-PROGRESS-ALIGN-20261105 — 獎杯置中、進度條收邊與篩選頁籤
 
 - Owner：Codex；Done，延續使用者視覺回饋。原獎杯66px畫布的圖案軸心約29px、透明上下留白亦不對稱；以CSS圖層向右下各2px校正，進度條padding／刻度inset由4px減為2px，外框尺寸與完成比例保持。允許css/achievements.css、index僅該CSS快取、LV與本段；禁止改圖片／JS／配置／音效／存檔／其他在製內容，不合併推送。

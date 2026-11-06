@@ -58,7 +58,7 @@
 .achv-corner.bl { bottom: -5px; left: -5px; background-image: url(../images/ui/achievements/corner-bl.png); }
 .achv-corner.br { bottom: -5px; right: -5px; background-image: url(../images/ui/achievements/corner-br.png); }
 #achv-modal .achv-heading { display: flex; justify-content: center; margin: -8px 0 4px; }
-.achv-banner { width: min(374px, 52%); aspect-ratio: 730 / 130; background: url(../images/ui/achievements/banner.png) center / 100% 100% no-repeat; display: flex; align-items: center; justify-content: center; }
+.achv-banner { width: min(374px, 52%); aspect-ratio: 730 / 130; background: url(../images/ui/achievements/banner.png) center / 100% 100% no-repeat; display: flex; align-items: center; justify-content: center; transform: translateY(10px); }
 #achv-modal .achv-banner h2 {
   margin: 0 !important; border: 0 !important; padding: 0 !important; box-shadow: none !important; width: 100%; text-align: center; font-size: clamp(20px, 3vw, 31px) !important; line-height: 1 !important;
   letter-spacing: 8px; text-indent: 8px; font-weight: 800; padding: 0;
@@ -67,7 +67,7 @@
 }
 #achv-summary {
   position: relative; display: flex; align-items: center; min-height: 44px;
-  padding-left: 56px; margin-bottom: 9px; font-size: clamp(16px, 2.2vw, 20px);
+  padding: 6px 0 0 56px; margin-bottom: 9px; font-size: calc(clamp(16px, 2.2vw, 20px) - 3px);
   font-weight: 700; font-variant-numeric: tabular-nums; color: #f3e4c4;
   line-height: 1.4; letter-spacing: .5px; text-shadow: 0 2px 3px #000;
 }
@@ -111,9 +111,11 @@
   background: #fff1bd; box-shadow: 0 0 7px 2px #ffe2a18c; pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) { #achv-modal .achv-total-track i { transition: none; } }
-#achv-modal .achv-top { justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+#achv-modal .achv-top { justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
 #achv-modal .achv-filters {
   align-items: center; gap: 4px; padding: 4px;
+  /* 同列時，從下緣對齊移至總進度條的中心。 */
+  transform: translateY(calc(50% - 12px));
   background: #0e1013cc; border: 1px solid #23262d; border-radius: 8px;
 }
 /* 與神鑄裝備品質頁籤共用色票與尺寸，僅作用於成就篩選。 */
