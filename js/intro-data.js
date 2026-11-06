@@ -27,6 +27,28 @@
 
    顯示文字一律用 String 表編號（AI_RULES 8.10），不在這裡寫字。
    ============================================================================= */
+var INTRO_PROLOGUE_CAPTIONS = [
+  {
+    "str": 2414,
+    "at": 350,
+    "dur": 5250
+  },
+  {
+    "str": 2415,
+    "at": 6250,
+    "dur": 6200
+  },
+  {
+    "str": 2416,
+    "at": 13300,
+    "dur": 7200
+  },
+  {
+    "str": 2417,
+    "at": 21100,
+    "dur": 7800
+  }
+];
 var INTRO_TIMELINES = {
   /* 標題開場：每次啟動都播（js/intro-player.js chooseStartupTimeline）。
      與載入重疊進行：1.9 秒停格點時載入已好就直接淡出接遊戲，沒好就停在完整標題＋載入圓點。
@@ -49,10 +71,11 @@ var INTRO_TIMELINES = {
     ]
   },
 
-  /* 依 docs/dark_fantasy_opening_animation_script.md：30 秒、四幕。
+  /* 依 docs/dark_fantasy_opening_animation_script_v2.md：30 秒、四幕。
      原創繪景＋合成器推鏡／沙塵／羽芒，最後一幕由掌心拉遠、起身迎敵。
      使用者修訂：殘破銀白聖甲、縮小人物、三對巨大六翼；全幅保留羽翼。
-     沒有新增旁白；舊旁白 String 留存但不再播放。29 秒待UI，最後1秒淡入實際HUD。 */
+     依使用者續修只保留四句字幕，沒有語音／人聲；字幕共用String與時序；2D分件與粒子共用播放器時鐘。
+     29秒待UI，最後1秒淡入實際HUD。 */
   prologue: {
     duration: 30000,
     holdAt: 29000,
@@ -75,10 +98,12 @@ var INTRO_TIMELINES = {
         from: { scale: 0.65 }, to: { scale: 1.3 } },
       { kind: 'shape', cls: 'intro-embers', at: 1700, dur: 4400, fadeIn: 700, fadeOut: 600,
         from: { y: -6, x: -2 }, to: { y: 9, x: 3 }, easing: 'linear' },
+      { kind: 'motion', motion: 'heaven', at: 0, dur: 6600, fadeIn: 900, fadeOut: 600, from: { y: -1.5 }, to: { y: 1.5 }, easing: 'linear' },
       // 6–13：跟隨負傷六翼天使墜下；羽芒掠過，落地揚塵。
-      { kind: 'image', src: 'images/intro/angel-fall.webp?v=1', cls: 'intro-image-cinema',
+      { kind: 'image', src: 'images/intro-v2/angel-fall-background.webp?v=1', cls: 'intro-image-cinema',
         at: 6000, dur: 7500, fadeIn: 600, fadeOut: 500,
         from: { y: -2 }, to: { y: 2 }, easing: 'cubic-bezier(.32,.1,.72,1)' },
+      { kind: 'motion', motion: 'fall', src: 'images/intro-v2/angel-fall-angel.webp?v=1', at: 6000, dur: 7500, fadeIn: 600, fadeOut: 500, from: { y: -2 }, to: { y: 2 }, easing: 'cubic-bezier(.32,.1,.72,1)' },
       { kind: 'shape', cls: 'intro-feather-trails', at: 6500, dur: 5700, fadeIn: 900, fadeOut: 800,
         from: { x: -6, y: 12 }, to: { x: 6, y: -18 }, easing: 'ease-in' },
       { kind: 'shape', cls: 'intro-impact', at: 12200, dur: 1300, fadeIn: 180, fadeOut: 1000,
@@ -87,24 +112,28 @@ var INTRO_TIMELINES = {
       { kind: 'image', src: 'images/intro/desolate-human-world.webp?v=1', cls: 'intro-image-cinema',
         at: 13000, dur: 8500, fadeIn: 650, fadeOut: 500,
         from: { scale: 0.94 }, to: { scale: 1 }, easing: 'linear' },
+      { kind: 'motion', motion: 'wasteland', at: 13000, dur: 8500, fadeIn: 650, fadeOut: 500, from: { scale: .94 }, to: { scale: 1 }, easing: 'linear' },
       { kind: 'shape', cls: 'intro-sand-haze', at: 13000, dur: 8500, fadeIn: 900, fadeOut: 600,
         from: { x: -9 }, to: { x: 9 }, easing: 'linear' },
       { kind: 'shape', cls: 'intro-ghost-lights', at: 14200, dur: 6900, fadeIn: 1400, fadeOut: 900,
         from: { y: 2, scale: 0.96 }, to: { y: -2, scale: 1.02 }, easing: 'linear' },
       // 21–26：掌心聖光特寫拉遠，顯出殘破銀白聖甲與巨大六翼。
-      { kind: 'image', src: 'images/intro/awakening.webp?v=2', cls: 'intro-image-cinema intro-image-awakening',
+      { kind: 'image', src: 'images/intro-v2/awakening-background.webp?v=1', cls: 'intro-image-cinema intro-image-awakening',
         at: 21000, dur: 5700, fadeIn: 650, fadeOut: 700,
         from: { y: -6, scale: 2.25 }, to: { y: 0, scale: 1 }, easing: 'ease-out' },
+      { kind: 'motion', motion: 'awakening', src: 'images/intro-v2/awakening-angel.webp?v=1', at: 21000, dur: 4100, fadeIn: 650, fadeOut: 700, from: { y: -6, scale: 2.25 }, to: { y: 0, scale: 1 }, easing: 'ease-out' },
       { kind: 'shape', cls: 'intro-sacred-light', at: 21300, dur: 5200, fadeIn: 1100, fadeOut: 1000,
         from: { scale: 0.18 }, to: { scale: 1.1 }, easing: 'ease-out' },
+      { kind: 'motion', motion: 'rising', src: 'images/intro-v2/rising-angel.webp?v=1', at: 24400, dur: 2300, fadeIn: 700, fadeOut: 700 },
       // 26–30：拾劍站起，面對幽靈；整層淡出露出已準備好的真正UI。
-      { kind: 'image', src: 'images/intro/rise-and-quest.webp?v=1', cls: 'intro-image-cinema',
+      { kind: 'image', src: 'images/intro-v2/rise-and-quest-background.webp?v=1', cls: 'intro-image-cinema',
         at: 26000, dur: 4000, fadeIn: 700, fadeOut: 0,
         from: { scale: 1 }, to: { scale: 0.96 }, easing: 'ease-out' },
+      { kind: 'motion', motion: 'standing', src: 'images/intro-v2/rise-and-quest-angel.webp?v=1', at: 26000, dur: 4000, fadeIn: 700, fadeOut: 0, from: { scale: 1 }, to: { scale: .96 }, easing: 'ease-out' },
       { kind: 'shape', cls: 'intro-dawn-rays', at: 26400, dur: 3600, fadeIn: 1200, fadeOut: 0,
         from: { scale: 0.85 }, to: { scale: 1.1 }, easing: 'ease-out' },
       { kind: 'shape', cls: 'intro-cinema-vignette', at: 0, dur: 30000, fadeIn: 600, fadeOut: 0 }
-    ]
+    ].concat(INTRO_PROLOGUE_CAPTIONS.map(function (cue) { return { kind: 'text', str: cue.str, cls: 'intro-text-caption intro-v2-caption', place: 'caption', at: cue.at, dur: cue.dur, fadeIn: 300, fadeOut: 350 }; }))
   },
 
   /* 框架驗證用佔位鏡頭：網址帶 ?intro=test 才會播，玩家不會看到。

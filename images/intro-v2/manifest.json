@@ -1,0 +1,160 @@
+{
+  "version": 2,
+  "sourceRoot": "codex-authored/intro-dark-fantasy-v2-20261106",
+  "assets": [
+    {
+      "name": "angel-fall-background",
+      "transparent": false,
+      "source": "images/angel-fall-background.webp",
+      "target": "images/intro-v2/angel-fall-background.webp",
+      "original": "originals/angel-fall-background.png"
+    },
+    {
+      "name": "angel-fall-angel",
+      "transparent": true,
+      "source": "images/angel-fall-angel.webp",
+      "target": "images/intro-v2/angel-fall-angel.webp",
+      "original": "originals/angel-fall-angel.png"
+    },
+    {
+      "name": "awakening-background",
+      "transparent": false,
+      "source": "images/awakening-background.webp",
+      "target": "images/intro-v2/awakening-background.webp",
+      "original": "originals/awakening-background.png"
+    },
+    {
+      "name": "awakening-angel",
+      "transparent": true,
+      "source": "images/awakening-angel.webp",
+      "target": "images/intro-v2/awakening-angel.webp",
+      "original": "originals/awakening-angel.png"
+    },
+    {
+      "name": "rise-and-quest-background",
+      "transparent": false,
+      "source": "images/rise-and-quest-background.webp",
+      "target": "images/intro-v2/rise-and-quest-background.webp",
+      "original": "originals/rise-and-quest-background.png"
+    },
+    {
+      "name": "rise-and-quest-angel",
+      "transparent": true,
+      "source": "images/rise-and-quest-angel.webp",
+      "target": "images/intro-v2/rise-and-quest-angel.webp",
+      "original": "originals/rise-and-quest-angel.png"
+    },
+    {
+      "name": "rising-angel",
+      "transparent": true,
+      "source": "images/rising-angel.webp",
+      "target": "images/intro-v2/rising-angel.webp",
+      "original": "originals/rising-angel.png"
+    }
+  ],
+  "recipes": [
+    "js/intro-motion.js",
+    "js/intro-data.js"
+  ],
+  "sources": [
+    {
+      "file": "originals/angel-fall-background.png",
+      "sha256": "16fe088e12048427b2782b07d063eee3c52dd981fe2630f5ce56076d9b430d79"
+    },
+    {
+      "file": "originals/angel-fall-angel.png",
+      "sha256": "40ab4782d11c67862687aee8044ee69256fd81cba55df421fd27e1d36b7ee202"
+    },
+    {
+      "file": "originals/awakening-background.png",
+      "sha256": "067a9c6f4b6842ea893e25046a7e9fa37eb0cc8c4954533c23f1bb5dc25e706f"
+    },
+    {
+      "file": "originals/awakening-angel.png",
+      "sha256": "f42952b1759e06eb88dfe2f3c5bf9b9f95def58eea5c513087e0fa72708588d4"
+    },
+    {
+      "file": "originals/rise-and-quest-background.png",
+      "sha256": "96f1fbcf9af439fb3cd0df44c98c14f28afd119d6698e03452bcd25b60812689"
+    },
+    {
+      "file": "originals/rise-and-quest-angel.png",
+      "sha256": "9536c136a0a36e7cb078bc9fc8dd0bd0c5444bf77a2d67ee87bccb84978bb0c7"
+    },
+    {
+      "file": "originals/rising-angel.png",
+      "sha256": "72b3e5efcc446bc2210ad0d8ba5021e7fc76c5c396b4df5d80019c65818e72a3"
+    },
+    {
+      "file": "reference/angel-fall.webp",
+      "sha256": "a140d963a8a09bb0b53dc7c092d99071ffe8519a65b31d2304771be788b2f988"
+    },
+    {
+      "file": "reference/awakening.webp",
+      "sha256": "e46165e03eb2aab01c94e8d5a2eaa025888637a9749c1eec37589543a771d843"
+    },
+    {
+      "file": "reference/rise-and-quest.webp",
+      "sha256": "0c70b41dbfa4735f0974c89e78e3763abccf08e682536ba11ae9774d822a4031"
+    },
+    {
+      "file": "assets.json",
+      "sha256": "eb61daf8189f564561031cf33cd3a709d899ebdf6899075361c6897e753ec2d8"
+    },
+    {
+      "file": "source/intro-motion.js",
+      "sha256": "65bde572b98ff654a6fb999923b4398993c7fb689b8a8a21404f48aedf494c81"
+    },
+    {
+      "file": "source/intro-data.js",
+      "sha256": "39e63287ff24cfd627c35ef03f17da9449f869850a2face7c61b97e1a9f2c37e"
+    }
+  ],
+  "exports": [
+    {
+      "source": "images/angel-fall-background.webp",
+      "target": "images/intro-v2/angel-fall-background.webp",
+      "sha256": "ba8f583cc51d17ff885a062bcdc41b2cfef07c17e765f606a73ab0faee0d76a5"
+    },
+    {
+      "source": "images/angel-fall-angel.webp",
+      "target": "images/intro-v2/angel-fall-angel.webp",
+      "sha256": "ee8fe5d977ace949032026dc83d48204a57d5e8a567203dc1c09434118804241"
+    },
+    {
+      "source": "images/awakening-background.webp",
+      "target": "images/intro-v2/awakening-background.webp",
+      "sha256": "a11fa4bb0483f228ebe2149351b0843bde3f3e61e27167ff010cb5e045362861"
+    },
+    {
+      "source": "images/awakening-angel.webp",
+      "target": "images/intro-v2/awakening-angel.webp",
+      "sha256": "ca941ea74a5810914cfd2d0823e1f207116443c08c0ddf8c8ee0017900044f03"
+    },
+    {
+      "source": "images/rise-and-quest-background.webp",
+      "target": "images/intro-v2/rise-and-quest-background.webp",
+      "sha256": "4215d30d59a6386a276fe4480530f0f9dfc8c6bb527043fe1bc4430db9f71fac"
+    },
+    {
+      "source": "images/rise-and-quest-angel.webp",
+      "target": "images/intro-v2/rise-and-quest-angel.webp",
+      "sha256": "98e20a5944c768d8dacb834b00d10aaf8f9b3180f4d4b2d7725dfeb44facd30a"
+    },
+    {
+      "source": "images/rising-angel.webp",
+      "target": "images/intro-v2/rising-angel.webp",
+      "sha256": "c5378d62a56abf3d203e87776a70e650f6e1550a2a548d1400b17f6471a1c493"
+    },
+    {
+      "source": "SOURCE.md",
+      "target": "images/intro-v2/SOURCE.md",
+      "sha256": "c985b600220fc66dccdcfc73e6f10ac6a64c51ede8161e576ac01c04ffb6df8a"
+    },
+    {
+      "source": "PROMPTS.json",
+      "target": "images/intro-v2/PROMPTS.json",
+      "sha256": "f07d4b2fa88f1c5d24584c38c8e91d852272f7085de6d2943fc94e25db8ea5ea"
+    }
+  ]
+}

@@ -67,8 +67,14 @@ function makeEnv(opts) {
     }
   };
   if (opts.audio) ctx.IntroAudio = opts.audio;
+  if (opts.frames) {
+    ctx.requestAnimationFrame = opts.frames.request;
+    ctx.cancelAnimationFrame = opts.frames.cancel;
+  }
   vm.createContext(ctx);
   vm.runInContext(read('js/intro-data.js') + '\nthis.INTRO_TIMELINES = INTRO_TIMELINES;', ctx);
+  vm.runInContext(read('js/intro-motion.js'), ctx);
+  if (opts.motion) ctx.IntroMotion = opts.motion;
   if (opts.prologue) ctx.INTRO_TIMELINES.prologue = opts.prologue;
   if (opts.noPrologue) delete ctx.INTRO_TIMELINES.prologue;   // 模擬序章還沒做好的資料
   vm.runInContext(read('js/intro-player.js') + '\nthis.IntroPlayer = IntroPlayer;', ctx);
@@ -83,6 +89,37 @@ const SAMPLE = {
     { kind: 'text', str: 48, at: 500, dur: 1500 }
   ]
 };
+
+test('網格共用一個rAF：背景暫停、seek停格、略過及中止均取消並回收', () => {
+  let seq = 0, disposed = 0;
+  const pending = new Map(), painted = [];
+  const frames = { request(fn) { pending.set(++seq, fn); return seq; }, cancel(id) { pending.delete(id); } };
+  const motion = { build() { return { render(t, force) { painted.push([t, force]); }, dispose() { disposed++; } }; } };
+  const env = makeEnv({ frames, motion });
+  const timeline = { layers: [{ kind: 'motion', motion: 'fall', at: 0, dur: 2000 }] };
+  env.P.play(timeline, {});
+  assert.equal(pending.size, 1);
+  env.clock().currentTime = 750;
+  const [id, fn] = pending.entries().next().value; pending.delete(id); fn();
+  assert.deepStrictEqual(painted, [[750, false]], '使用WAAPI時鐘而非rAF時間');
+  assert.equal(pending.size, 1);
+  env.ctx.document.hidden = true; env.docListeners.visibilitychange[0]();
+  assert.equal(pending.size, 0);
+  env.ctx.document.hidden = false; env.docListeners.visibilitychange[0]();
+  env.docListeners.visibilitychange[0]();
+  assert.equal(pending.size, 1, '不重複建立循環');
+  env.P.seek(1200);
+  assert.equal(pending.size, 0);
+  assert.deepStrictEqual(painted.at(-1), [1200, true], 'seek即刻重畫');
+  env.docListeners.visibilitychange[0](); assert.equal(pending.size, 0, 'seek保持停格');
+  env.P.abort(); assert.equal(disposed, 1);
+  env.P.play(timeline, {}); assert.equal(pending.size, 1);
+  env.P.skip(); assert.equal(pending.size, 0);
+  env.P.abort(); assert.equal(disposed, 2);
+  env.P.play(timeline, {}); assert.equal(pending.size, 1);
+  env.anims.filter(a => a.el.className === 'intro-clock').at(-1).onfinish();
+  assert.equal(pending.size, 0); assert.equal(disposed, 3);
+});
 
 /* ---------- 純函式 ---------- */
 test('淡入淡出關鍵影格：offset 不倒退，淡入淡出超過持續時間時等比壓縮', () => {
@@ -340,10 +377,13 @@ test('序章：新玩家開機會播、四幕30秒、使用正式繪景與聲景
     assert.ok(fs.existsSync(path.join(root, l.src.split('?')[0])), '圖檔存在：' + l.src);
   }
   assert.equal(tl.layers.filter(l => l.kind === 'image').length, 5);
-  assert.equal(tl.layers.filter(l => l.kind === 'text').length, 0, '腳本沒有旁白，不再播放舊故事');
+  assert.deepStrictEqual(Array.from(tl.layers.filter(l => l.kind === 'text'), l => l.str), [2414, 2415, 2416, 2417], 'v2四句旁白字幕共用String');
+  assert.equal(tl.audio.narration, undefined, '依使用者續修沒有語音／人聲');
+  assert.deepStrictEqual(Array.from(tl.layers.filter(l => l.kind === 'motion'), l => l.motion), ['heaven', 'fall', 'wasteland', 'awakening', 'rising', 'standing']);
   assert.equal(tl.holdAt, 29000, '完整迎敵畫面等UI');
   assert.equal(tl.revealDuration, 1000, '最後1秒淡入真正HUD');
-  for (const url of Object.values(tl.audio)) assert.ok(fs.existsSync(path.join(root, url.split('?')[0])), url);
+  for (const url of Object.values(tl.audio).filter(v => typeof v === 'string')) assert.ok(fs.existsSync(path.join(root, url.split('?')[0])), url);
+  for (const l of tl.layers.filter(l => l.kind === 'motion' && l.src)) assert.ok(fs.existsSync(path.join(root, l.src.split('?')[0])), l.src);
   assert.match(read('css/intro.css'), /\.intro-image-cinema\s*\{\s*object-fit: contain;/, '完整羽翼適配直式畫面');
   assert.equal(env.P.startupBegin({ hasSave: false }), true);
   assert.equal(env.P.state().id, 'prologue', '新玩家播序章');
