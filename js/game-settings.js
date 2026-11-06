@@ -12,7 +12,7 @@ var GameSettings = (function () {
     outline: true,          // 人物輪廓邊框
     cameraLock: true,       // 鏡頭鎖定（取消後滾輪可調鏡頭距離）
     mute: false,            // 全體靜音
-    musicVolume: 50,        // 0～100；目前遊戲還沒有背景音樂，先存著等音樂接上
+    musicVolume: 50,        // 0～100；開場與開始選單配樂
     sfxVolume: 50,          // 0～100；50＝原本調好的音量，100＝兩倍
     allyAttackSfx: true,    // 我方攻擊音效
     enemyAttackSfx: true    // 敵方攻擊音效

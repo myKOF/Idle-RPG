@@ -3,9 +3,11 @@
 var UISound = (function () {
   var ASSETS = {
     click: 'audio/ui-preview/hover-options-v5/H10.wav?v=338a16bc9ce9',
+    menuHover: 'audio/ui-preview/hover-10-moon-glow.wav?v=9b2ad705476a',
     success: 'audio/ui-preview/05-success.wav?v=4821e4b49aad',
     achievement: 'audio/achievements/mixkit-game-level-completed-2059.wav?v=8da83b49ceb5'
   };
+  var MENU_MUSIC = 'audio/start-menu/tutti-impact.mp3?v=3b01a74c3094';
   // 有提示的可操作控制項仍有點擊音，純提示不列入操作目標。
   var HELP_TARGETS = '.pg-help, .forge-info-btn, #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip';
   // 委派至document，涵蓋重繪／彈窗的新節點。
@@ -30,14 +32,44 @@ var UISound = (function () {
   ].join(', ');
   var context = null, initialized = false, generation = 0;
   var buffers = {}, loading = {}, sources = {}, lastPlayed = {};
+  var menuVisible = false, menuEpoch = 0, menuMusic = null;
 
   function now() { return performance.now(); }
+  function stop(kind) {
+    if (!sources[kind]) return;
+    try { sources[kind].stop(); } catch (_) {}
+    delete sources[kind];
+  }
   function stopAll() {
     generation++;
-    Object.keys(sources).forEach(function (kind) {
-      try { sources[kind].stop(); } catch (_) {}
-      delete sources[kind];
-    });
+    Object.keys(sources).forEach(stop);
+  }
+  function sfxGain() { return typeof GameSettings === 'undefined' ? 1 : GameSettings.sfxGain(); }
+  function syncMenuMusic() {
+    var volume = typeof GameSettings === 'undefined' ? .5 :
+      (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
+    if (menuMusic) menuMusic.volume = volume;
+    if (!menuVisible || document.hidden || volume <= 0) {
+      if (menuMusic) menuMusic.pause();
+      return;
+    }
+    try {
+      if (!menuMusic) {
+        menuMusic = new window.Audio(MENU_MUSIC);
+        menuMusic.loop = true;
+        menuMusic.volume = volume;
+      }
+      // 自動播放受限時，由下一次真實操作重試。
+      if (menuMusic.paused) Promise.resolve(menuMusic.play()).catch(function () {});
+    } catch (_) { /* 播放裝置或音檔失效時仍可操作選單。 */ }
+  }
+  function setStartMenuVisible(value) {
+    if (menuVisible === value) return;
+    menuVisible = value;
+    menuEpoch++;
+    if (value && !document.hidden && context) load('menuHover');
+    if (!value) stop('menuHover');
+    syncMenuMusic();
   }
   function load(kind) {
     if (buffers[kind]) return Promise.resolve(buffers[kind]);
@@ -61,6 +93,7 @@ var UISound = (function () {
   }
   function unlock(event) {
     if (!event || !event.isTrusted || document.hidden) return;
+    if (menuVisible) syncMenuMusic();
     try {
       if (!context) {
         var AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -71,21 +104,22 @@ var UISound = (function () {
       load('click');
       load('success');
       load('achievement');
+      if (menuVisible) load('menuHover');
     } catch (_) { /* 沒有音訊裝置時仍可正常使用UI。 */ }
   }
-  function play(kind) {
+  function play(kind, stillCurrent) {
     if (!ASSETS[kind] || !context || document.hidden) return;
     // 設置→音訊：全體靜音／音效音量（50% ＝ 原音量）。
-    var master = typeof GameSettings !== 'undefined' ? GameSettings.sfxGain() : 1;
-    if (master <= 0) return;
+    if (sfxGain() <= 0) return;
     var at = now(), epoch = generation;
     var notification = kind === 'success' || kind === 'achievement';
     if (at - (lastPlayed[kind] === undefined ? -Infinity : lastPlayed[kind]) < (notification ? 120 : 80)) return;
     lastPlayed[kind] = at;
     // 冷載入只等待這一次短期互動，切頁或背景返回不補播過期聲音。
     load(kind).then(function (buffer) {
+      var master = sfxGain();
       if (!buffer || document.hidden || generation !== epoch || context.state !== 'running' ||
-          now() - at > (notification ? 900 : 180)) return;
+          master <= 0 || (stillCurrent && !stillCurrent()) || now() - at > (notification ? 900 : 180)) return;
       try {
         if (sources[kind]) sources[kind].stop();
         var source = context.createBufferSource();
@@ -122,6 +156,14 @@ var UISound = (function () {
     unlock(event);
     play('click');
   }
+  function menuPointerOver(event) {
+    if (!menuVisible || !event.isTrusted || event.pointerType !== 'mouse' || event.buttons) return;
+    var button = event.target && event.target.closest && event.target.closest('#start-menu .system-menu-actions button');
+    if (!button || button.disabled || button.closest('[hidden], [inert]') ||
+        (event.relatedTarget && button.contains(event.relatedTarget))) return;
+    var epoch = menuEpoch;
+    play('menuHover', function () { return menuVisible && menuEpoch === epoch; });
+  }
   function commandResult(name, result) {
     var value = result && Object.prototype.hasOwnProperty.call(result, 'result') ? result.result : result;
     if ((name === 'item.upgrade' && value === 'ok') || (name === 'item.rerollAffix' && value === null)) play('success');
@@ -132,11 +174,24 @@ var UISound = (function () {
     document.addEventListener('pointerdown', unlock, true);
     document.addEventListener('click', click, true);
     document.addEventListener('keydown', unlock, true);
+    document.addEventListener('pointerover', menuPointerOver, true);
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) stopAll();
+      syncMenuMusic();
     });
-    window.addEventListener('pagehide', stopAll);
+    window.addEventListener('pagehide', function () {
+      stopAll();
+      if (menuMusic) menuMusic.pause();
+    });
+    window.addEventListener('pageshow', syncMenuMusic);
+    if (typeof GameSettings !== 'undefined') {
+      GameSettings.subscribe(function (name) {
+        if (name === 'mute' || name === 'musicVolume') syncMenuMusic();
+        if (sfxGain() <= 0) stop('menuHover');
+      });
+    }
   }
   init();
-  return { commandResult: commandResult, achievementUnlocked: function () { play('achievement'); } };
+  return { commandResult: commandResult, setStartMenuVisible: setStartMenuVisible,
+    achievementUnlocked: function () { play('achievement'); } };
 })();

@@ -12,6 +12,7 @@ var StartMenu = (function () {
   function showMenu(value) {
     el('start-menu').style.display = value ? 'flex' : 'none';
     el('start-menu').setAttribute('aria-hidden', value ? 'false' : 'true');
+    if (typeof UISound !== 'undefined') UISound.setStartMenuVisible(value);
   }
   function setStatus(id) {
     var node = el('start-menu-status');
