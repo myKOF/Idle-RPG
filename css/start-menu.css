@@ -11,29 +11,62 @@
 #start-menu .start-menu-controls {
   z-index: 1;
   box-sizing: border-box;
-  /* 原按鈕欄的八成（320px × 0.8），另留 8px 給焦點描邊。 */
+  /* 原按鈕欄的八成（320px × 0.8），另留 8px 內距。 */
   width: min(264px, 100%);
   max-height: 100%;
   padding: 4px;
   overflow-y: auto;
 }
-#start-menu .system-menu-actions { gap: 8px; }
+#start-menu .system-menu-actions { gap: 2px; }
 #start-menu [hidden] { display: none !important; }
-#start-menu button {
-  border-color: #686451;
-  border-radius: 5px;
-  background: rgb(39 41 37 / 80%);
-  color: var(--dialog-text);
+#start-menu .system-menu-actions button {
+  position: relative;
+  isolation: isolate;
+  min-height: 34px !important;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: #f5e7cf;
+  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
+  font-size: 18px !important;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.25;
+  text-shadow: 0 1px 2px #29170e, 0 2px 5px #2b1b10, 0 0 7px #28170ed9;
 }
-#start-menu button:is(:hover, :focus-visible):not(:disabled) {
-  border-color: var(--dialog-gold);
-  background: rgb(59 51 38 / 80%);
-  color: #ffe6af;
+#start-menu button:focus-visible {
+  outline: none;
+  text-decoration: underline;
+  text-decoration-color: #dfbe83;
+  text-underline-offset: 4px;
 }
-#start-menu button:focus-visible { outline: 2px solid var(--dialog-gold); outline-offset: 2px; }
 #start-menu button:disabled { opacity: .5; cursor: default; }
 #start-menu-status { color: var(--dialog-gold); margin: 12px 0 0; text-align: center; text-shadow: 0 1px 3px #000; }
-#start-menu-modes button[aria-pressed="true"] { color: var(--dialog-gold); }
+#start-menu-modes button[aria-pressed="true"] { color: #efd7a4; }
+
+@media (hover: hover) {
+  #start-menu button:hover:not(:disabled) {
+    color: #fff2d8;
+    text-decoration: none;
+  }
+  #start-menu button:hover:not(:disabled)::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset-inline: 0;
+    top: 50%;
+    height: 1.45em;
+    transform: translateY(-50%);
+    background: linear-gradient(transparent, rgb(249 228 191 / 38%) 13%,
+      rgb(241 221 183 / 30%) 25% 75%, rgb(249 228 191 / 38%) 87%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 42% 58%, transparent);
+    pointer-events: none;
+  }
+}
+
+@media (pointer: coarse) {
+  #start-menu .system-menu-actions button { min-height: 44px !important; }
+}
 
 @media (max-width: 600px), (max-height: 500px) {
   /* 小視窗原本使用較薄的外框內距，按當時的按鈕欄寬縮至八成。 */
