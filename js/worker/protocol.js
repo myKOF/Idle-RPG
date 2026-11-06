@@ -107,7 +107,8 @@
 // v69：header.systemUnlocks 與 ui.markUnlockSeen；已讀提示隨存檔保存。
 // v71：太古精鑄新增可選 equipmentOrigin，成功／取消還原原套原欄，指令數不變。
 // v72：神鑄rate新增materialCost／affordableStones；太古精鑄依次數與成功率級距消耗太古精華。
-var WORKER_PROTOCOL_VERSION = 72;
+// v73（2026-11-06 技能音效）：vfx 事件新增可選 sfx＝{ cast, attack, projectile, hit, ground, field } 角色 → 音效 id；act 新增可選 sfx（施放音效）。
+var WORKER_PROTOCOL_VERSION = 73;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -241,11 +242,13 @@ var EVENT_KINDS = {
              js/skills2.js sgVfxRoles）。顯示層有這個欄位就以 VFX Core 播 Preset，
              fxKind／variant／travelMs／area 仍決定行為與時序；沒有欄位＝退回程式畫法。
              只放 id 字串，不放路徑、不放 Preset 內容。
+     sfx（v73，可選）：同 vfx 的角色鍵 → 技能音效 id（js/sfx-synth.js），值來自 Skills2 的音效欄
+             （js/skills2.js sgSfxRoles，解析規則同 vfx）。顯示層在該角色真正播放的那一刻發聲；沒有填值就不帶。
      presetOnly（v27，可選）：true＝這一則只有 Preset 端畫得出來，沒有接上 Preset
              Runtime 的顯示層必須整則忽略。狀態每跳（status-tick）用它：那是為了
              Preset 才新增的事件，退回泛用受擊爆點會讓每一次 DoT 跳動都閃一下。 */
   VFX: 'vfx',
-  /* { act, elId, target, lockMs }  角色動作（v36）。模擬層只說「發生了什麼動作」，
+  /* { act, elId, target, lockMs, sfx? }  角色動作（v36）；sfx（v73）＝Skills2「施放音效」的 id，硬直結束那一刻播。模擬層只說「發生了什麼動作」，
      姿勢與播放時序完全由顯示層決定（js/battle-renderer.js onAct）。
      act     'cast'＝開始施放技能（js/skills.js beginSkillCast：施放硬直的起點，技能共用）。
              超神重複施放、暴風之舞化身這類自動連發不送：每一下都播施法姿勢會一直從頭抽搐。
