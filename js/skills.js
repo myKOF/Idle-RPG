@@ -235,7 +235,9 @@ function skillCastActEmit(job, lockSec) {
     primary = (typeof bfPickPrimary === 'function') ? bfPickPrimary(live, job.pEnt && job.pEnt._lockTarget) : null;
     if (!primary) primary = live[0];
   }
-  emitPlayerAct('cast', job.floatSel, primary, lockSec);
+  /* Skills2「施放音效」跟著施法動作走（顯示層在硬直結束、技能放出去那一刻播） */
+  var castSfx = (job.kind === 'skill2' && typeof sgSfxRoles === 'function') ? (sgSfxRoles(job.skillId).cast || '') : '';
+  emitPlayerAct('cast', job.floatSel, primary, lockSec, castSfx);
 }
 
 function beginSkillCast(job) {

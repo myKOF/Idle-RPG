@@ -2443,6 +2443,8 @@ var BattleRenderer = (function () {
     }
     var p = S.player;
     if (!p || p.dead || p.revival || ev.act !== 'cast') return;
+    /* Skills2「施放音效」：技能在硬直結束那一刻放出去，聲音對到那一刻（docs/BATTLE_SOUND.md） */
+    if (ev.sfx && typeof Sfx !== 'undefined' && Sfx.playCast) Sfx.playCast(ev.sfx, (Number(ev.lockMs) || 0) / 1000);
     var ent = ev.target ? S.entities[canvasActorId(ev.target)] : null;
     if (ent && ent.root) {
       p.facing = ent.root.x < p.root.x ? -1 : 1;

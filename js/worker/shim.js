@@ -311,6 +311,8 @@ function playCombatVfx(spec) {
      整批特效會安靜地維持舊畫法——沒有錯誤訊息，只有「改了表格卻沒反應」。
      ⚠️ 這裡是白名單：spec 上新增的欄位不同步列進來就等於沒送。 */
   if (spec.vfx && typeof spec.vfx === 'object') event.vfx = spec.vfx;
+  /* 協議 v73：Skills2 音效欄解析出來的角色 → 音效 id（js/sfx-synth.js），沒有填值就不送 */
+  if (spec.sfx && typeof spec.sfx === 'object') event.sfx = spec.sfx;
   if (spec.presetOnly) event.presetOnly = true;
   shimPushEvent('vfx', event);
 }
@@ -318,14 +320,16 @@ function playCombatVfx(spec) {
 /* ---- 角色動作（協議 v36 EVENT_KINDS.ACT）----
    模擬層只說「開始施放技能了、對著誰、硬直多長」，姿勢與播放時序由顯示層決定。
    定址與 float／vfx 一致：不帶實體，只帶圖層 id。 */
-function emitPlayerAct(act, floatSel, targetEnt, lockSec) {
+function emitPlayerAct(act, floatSel, targetEnt, lockSec, sfx) {
   if (typeof playerEventFloatTarget !== 'function') return;
-  shimPushEvent('act', {
+  var event = {
     act: act,
     elId: playerEventFloatTarget(floatSel),
     target: (targetEnt && typeof enemyEventFloatTarget === 'function') ? enemyEventFloatTarget(targetEnt, floatSel) : null,
     lockMs: lockSec > 0 ? Math.round(lockSec * 1000) : 0
-  });
+  };
+  if (sfx) event.sfx = String(sfx);   // 協議 v73：Skills2「施放音效」
+  shimPushEvent('act', event);
 }
 
 /* ---- 玩家升級（協議 EVENT_KINDS.LEVELUP）---- */

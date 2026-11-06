@@ -825,6 +825,48 @@ function vfxFromRow(get, row, columns) {
   return Object.keys(out).length ? out : null;
 }
 
+/* ---- 音效欄位（2026-11-06 技能音效）----
+   Skills2 十一個音效欄與十一個特效欄一一對應：某角色的特效播出那一刻，同角色的音效跟著響
+   （施放音效例外：跟著施法動作，在硬直結束時響）。本體六欄留白沿前階繼承；觸發五欄只讀本列、
+   只能填在該觸發角色有接線的列（接線表同觸發特效，tools/skills2-vfx.cjs）。
+   每一格填 js/sfx-synth.js 登記的音效 id。JS 端：sk.sfx／sk.triggerSfx，形狀同 vfx／triggerVfx。 */
+const SKILL_SFX_COLUMNS = [['施放音效', 'cast'], ['攻擊音效', 'attack'], ['飛行音效', 'projectile'], ['受擊音效', 'hit'], ['地板音效', 'ground'], ['持續場域音效', 'field']];
+const SKILL_TRIGGER_SFX_COLUMNS = [['觸發音效', 'attack'], ['觸發子彈音效', 'projectile'], ['觸發命中音效', 'hit'], ['觸發地板音效', 'ground'], ['觸發持續場域音效', 'field']];
+let sfxIdCache = null;
+function sfxIds() {
+  if (!sfxIdCache) {
+    const file = path.join(ROOT, 'js', 'sfx-synth.js');
+    delete require.cache[require.resolve(file)];
+    sfxIdCache = new Set(require(file).ids());
+  }
+  return sfxIdCache;
+}
+function sfxFromRow(get, row, columns) {
+  const out = {};
+  columns.forEach(c => { const id = String(get(row, c[0]) == null ? '' : get(row, c[0])).trim(); if (id) out[c[1]] = id; });
+  return Object.keys(out).length ? out : null;
+}
+/* 音效名稱與觸發接線檢查：錯誤一次說清楚是哪一列、哪一欄、怎麼改 */
+function validateSkillSfx(gid, stage, body, trigger) {
+  const ids = sfxIds(), where = 'Skills2 ' + gid + '/' + stage;
+  const check = (label, id) => {
+    if (ids.has(id)) return;
+    const near = Array.from(ids).filter(v => presetNameDistance(v, id) <= 2).slice(0, 3);
+    throw new Error(where + '「' + label + '」＝「' + id + '」不是登記過的音效。' +
+      (near.length ? '相近名稱：' + near.join('、') + '。' : '') + '可用名稱見 js/sfx-synth.js 的 RECIPES。');
+  };
+  SKILL_SFX_COLUMNS.forEach(([label, role]) => { if (body && body[role]) check(label, body[role]); });
+  const ev = skills2Vfx.event(gid, stage);
+  SKILL_TRIGGER_SFX_COLUMNS.forEach(([label, role]) => {
+    if (!trigger || !trigger[role]) return;
+    if (!ev || !ev.roles.includes(role)) {
+      throw new Error(where + '「' + label + '」未接線：這一列' + (ev ? '沒有這個觸發角色' : '沒有獨立觸發事件') +
+        '，填了也不會響。可填的觸發音效欄：' + (ev ? SKILL_TRIGGER_SFX_COLUMNS.filter(c => ev.roles.includes(c[1])).map(c => '「' + c[0] + '」').join('、') : '無') + '。');
+    }
+    check(label, trigger[role]);
+  });
+}
+
 function excelColumn(index) {
   let result = '';
   for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) result = String.fromCharCode(65 + (n - 1) % 26) + result;
@@ -1210,7 +1252,13 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['程式依事件指定的來源列取用特效；本體特效逐欄繼承，觸發特效只讀本列，詳見置頂的本體／觸發特效說明。'],
   ['施放特效＝角色身上；攻擊特效＝攻擊本體（斬弧／爆發／光束／雷柱／護罩）；飛行子彈＝會移動的東西（含環繞體）；'],
   ['受擊特效＝命中爆點；地板特效＝地面法陣、痕跡、軌道環及落點預警（舊場域設定仍相容）；持續場域特效＝雷球、龍捲風、毒霧等持續作用的本體，可固定、移動或跟隨角色，依技能範圍縮放；填 Preset 檔名，速度、持續時間、傷害間隔仍由技能參數決定。'],
-  ['整列留白：技能本體沿前階繼承；附加效果不播放。整條來源都無特效時不退回舊版畫法；換外觀可在 VFX 編輯器另存新檔名再填入。']
+  ['整列留白：技能本體沿前階繼承；附加效果不播放。整條來源都無特效時不退回舊版畫法；換外觀可在 VFX 編輯器另存新檔名再填入。'],
+  [''],
+  ['施放音效 / 攻擊音效 / 飛行音效 / 受擊音效 / 地板音效 / 持續場域音效，觸發音效 / 觸發子彈音效 / 觸發命中音效 / 觸發地板音效 / 觸發持續場域音效（2026-11-06 技能音效）'],
+  ['與同名的特效欄一一對應：該角色的特效播出那一刻，這格的音效跟著響（例：受擊音效＝受擊特效出現時）；施放音效例外，跟著施法動作、在技能放出去那一刻響。'],
+  ['填 js/sfx-synth.js 登記的音效名稱（例：fireball、meteor-fly、firepillar）。本體六欄留白沿前階繼承、超神空欄從第七階繼承；觸發五欄只讀本列，只能填在該觸發角色有接線的列。'],
+  ['音效分三種：單次（命中、爆炸）；飛行（長度自動對齊飛行時間，例 meteor-fly）；循環（場域存在期間持續，例 firepillar（火龍捲），填在施放音效時播固定秒數）。'],
+  ['地板／持續場域欄的單次音效只在場域出生時響一次，不隨每拍續命重播。敵人技能列不接音效。']
 ];
 /* 「冷卻時間」是群組層欄位：程式只讀階數=1 那一列，其餘列**僅供對照**，
    因此編表者可以在後續列寫自己的註記（例如各階原本設想的冷卻曲線）。
@@ -1413,6 +1461,9 @@ function enemyDefFromRow(get, r, gid, catalog) {
   if (vfx) d.vfx = vfx;
   const tv = vfxFromRow(get, r, skills2Vfx.columns);
   if (tv) d.triggerVfx = tv;
+  /* 敵人技能尚未接音效：填了不會響，直接拒絕，免得以為生效 */
+  const enemySfx = sfxFromRow(get, r, SKILL_SFX_COLUMNS.concat(SKILL_TRIGGER_SFX_COLUMNS.map(c => [c[0], 'trigger-' + c[1]])));
+  if (enemySfx) throw new Error(where + '：敵人技能沒有接音效，請清除音效欄（' + Object.keys(enemySfx).join('、') + '）');
   /* 狀態欄（2026-10-14）：我方狀態＝施放者自己身上的狀態（護盾、狂暴…）；敵方狀態＝玩家身上的狀態（詛咒…）。
      狀態長什麼樣子（上身、持續、作用特效）只寫在 Status 表。 */
   const status = {};
@@ -1459,7 +1510,8 @@ SCHEMAS.Skills2 = {
     '解鎖轉生/等級/封魔塔層級', '階段名稱',
     '效果參數(JSON)', '升級金幣基數', '升級金幣倍率', '效果說明模板']
     .concat(SKILL_VFX_COLUMNS.map(c => c[0])).concat(['超神ID'])
-    .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）']).concat(skills2Vfx.columns.map(c=>c[0])).concat([skills2Vfx.noteColumn])
+    .concat(skills2Geometry.columns).concat(['作用方式與距離用途（唯讀說明）']).concat(skills2Vfx.columns.map(c=>c[0]))
+    .concat(SKILL_SFX_COLUMNS.map(c => c[0])).concat(SKILL_TRIGGER_SFX_COLUMNS.map(c => c[0])).concat([skills2Vfx.noteColumn])
     .concat(SKILLS2_STATUS_COLUMNS.map(c => c[0])).concat(['類別', '擊中回復觸發系數']),
   extract(src) {
     const SKILLS2 = evalLiteral(extractLiteral(src, 'SKILLS2').literal);
@@ -1475,7 +1527,8 @@ SCHEMAS.Skills2 = {
           skills2TierCostCell(t, note, g.cost), String(i + 1),
           skills2UnlockCell(t.unlock), t.name,
           skills2OtherFx(t.fx || {}), numStr(t.goldBase || 0), numStr(t.goldGrow || 1), t.desc || '']
-          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat(vfxCells(t.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,String(i+1))])
+          .concat(vfxCells(t.vfx, SKILL_VFX_COLUMNS)).concat(['']).concat(skills2GeometryCells(gid,String(i+1),t,g.range)).concat(vfxCells(t.triggerVfx,skills2Vfx.columns))
+          .concat(vfxCells(t.sfx, SKILL_SFX_COLUMNS)).concat(vfxCells(t.triggerSfx, SKILL_TRIGGER_SFX_COLUMNS)).concat([skills2Vfx.note(gid,String(i+1))])
           .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(t.status && t.status[c[1]]))).concat(['', i === 0 && g.drainPct !== undefined ? numStr(g.drainPct) + '%' : '']));
       });
       // 超神進化三選一：階數固定接在各階之後（SKILLS2_ULT_ROW_BASE + 選項索引）
@@ -1486,7 +1539,8 @@ SCHEMAS.Skills2 = {
           skills2TierCostCell(o, note, g.cost), String(SKILLS2_ULT_ROW_BASE + i),
           skills2UnlockCell(o.unlock), o.name,
           skills2OtherFx(o.fx || {}), numStr(o.goldBase || 0), numStr(o.goldGrow || 1), o.desc || '']
-          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat(vfxCells(o.triggerVfx,skills2Vfx.columns)).concat([skills2Vfx.note(gid,o.id)])
+          .concat(vfxCells(o.vfx, SKILL_VFX_COLUMNS)).concat([o.id || '']).concat(skills2GeometryCells(gid,o.id,o)).concat(vfxCells(o.triggerVfx,skills2Vfx.columns))
+          .concat(vfxCells(o.sfx, SKILL_SFX_COLUMNS)).concat(vfxCells(o.triggerSfx, SKILL_TRIGGER_SFX_COLUMNS)).concat([skills2Vfx.note(gid,o.id)])
           .concat(SKILLS2_STATUS_COLUMNS.map(c => skills2StatusCell(o.status && o.status[c[1]]))).concat(['', '']));
       });
     });
@@ -1509,6 +1563,8 @@ SCHEMAS.Skills2 = {
   rebuild(dataRows, header) {
     const get = rowGetter(header);
     for(const [label] of skills2Vfx.columns) if(!header.includes(label)) throw Error('Skills2 缺少新版觸發欄「'+label+'」，請先遷移 Excel');
+    /* 音效欄缺欄就整批拒絕：舊表照套會把所有技能音效清空 */
+    for(const [label] of SKILL_SFX_COLUMNS.concat(SKILL_TRIGGER_SFX_COLUMNS)) if(!header.includes(label)) throw Error('Skills2 缺少音效欄「'+label+'」，請換成新版 Skills2.xlsx');
     for(const label of ['特殊效果','特殊用途特效','特效用途特效']) if(header.includes(label)) throw Error('Skills2 舊用途欄尚未遷移：'+label);
     const groups = {};
     const order = [];
@@ -1615,7 +1671,12 @@ SCHEMAS.Skills2 = {
       const stageKey = tierIdx >= SKILLS2_ULT_ROW_BASE ? get(r, '超神ID').trim() : String(tierIdx);
       const triggerVfx = vfxFromRow(get,r,skills2Vfx.columns);
       skills2Vfx.validate(gid,stageKey,triggerVfx);
-      const triggerData = skills2Vfx.event(gid,stageKey) ? {triggerVfx:triggerVfx || {}} : null;
+      const tierSfx = sfxFromRow(get, r, SKILL_SFX_COLUMNS);
+      const triggerSfx = sfxFromRow(get, r, SKILL_TRIGGER_SFX_COLUMNS);
+      validateSkillSfx(gid, stageKey, tierSfx, triggerSfx);
+      const triggerData = skills2Vfx.event(gid,stageKey)
+        ? Object.assign({triggerVfx:triggerVfx || {}}, triggerSfx ? {triggerSfx:triggerSfx} : null) : null;
+      const sfxData = tierSfx ? { sfx: tierSfx } : null;
       const status = {};
       SKILLS2_STATUS_COLUMNS.forEach(([label, side]) => {
         const where = 'Skills2 ' + gid + ' ' + (tierIdx >= SKILLS2_ULT_ROW_BASE ? '超神 ' + stageKey : '第 ' + tierIdx + ' 階') + '「' + label + '」';
@@ -1636,7 +1697,7 @@ SCHEMAS.Skills2 = {
           id: ultId, name: get(r, '階段名稱'), cost: tierCost, fx: fx,
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
-        }, unlock ? { unlock } : null, tierVfx ? { vfx: tierVfx } : null, triggerData, tierStatus);
+        }, unlock ? { unlock } : null, tierVfx ? { vfx: tierVfx } : null, sfxData, triggerData, tierStatus);
         return;
       }
       groups[gid].tiers[tierIdx - 1] = Object.assign(
@@ -1648,7 +1709,7 @@ SCHEMAS.Skills2 = {
           goldBase: toNum(get(r, '升級金幣基數')), goldGrow: toNum(get(r, '升級金幣倍率')),
           desc: get(r, '效果說明模板')
         },
-        tierVfx ? { vfx: tierVfx } : null, triggerData, tierStatus);
+        tierVfx ? { vfx: tierVfx } : null, sfxData, triggerData, tierStatus);
     });
     // 登記表（js/skills2.js SKILL2_STATUS_SLOTS）指到的列必須存在：打錯鍵的位置會永遠讀不到狀態
     Object.keys(statusSlots).forEach(key => {

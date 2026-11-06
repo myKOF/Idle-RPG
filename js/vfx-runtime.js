@@ -386,6 +386,24 @@ var VFXRuntime = (function () {
     return Math.max(0, ms) / 1000;
   }
 
+  /* 技能音效（2026-11-06）：事件帶 spec.sfx（Skills2 音效欄）時，在角色播放的同一刻交給 Sfx。
+     聲音只是跟著畫面走，不影響任何特效的播放與回傳值；VFX Editor 沒有載入 Sfx，自然不發聲。 */
+  function sfxRole(spec, role, delaySec) {
+    if (!spec || !spec.sfx || !spec.sfx[role] || typeof Sfx === 'undefined' || !Sfx.skillRole) return;
+    try { Sfx.skillRole(spec, role, delaySec, travelSecAt(spec, 0), sfxKeepSec(spec)); } catch (e) {}
+  }
+  /* 場域音效的壽命：與 playGround 的續命規則一致（逐拍事件＝dur × GROUND_KEEP_TICKS；出生只派送一次的用完整壽命） */
+  function sfxKeepSec(spec) {
+    var v = spec.variant || '';
+    if (spec.area && isFinite(spec.area.lifeSec)) return Math.max(0, Number(spec.area.lifeSec));
+    if (v === 'dragon-devour' || v === 'flying-thunder' || v === 'indomitable-guard' || v === 'indomitable-light' ||
+        v === 'mire-inferno-pool' || (v === 'water-tide-merge' && !spec.area)) return Math.max(0, num(spec.dur, 0));
+    return Math.max(GROUND_MIN_KEEP_SEC, num(spec.dur, 0.5) * GROUND_KEEP_TICKS);
+  }
+  function sfxStop(key) {
+    if (typeof Sfx !== 'undefined' && Sfx.loopStop) { try { Sfx.loopStop(key); } catch (e) {} }
+  }
+
   /* ---------------------------------------------------------------
      建立一份 Adapter。backend／resolver／ctx 全部由呼叫端注入，
      因此測試可以用 NullBackend 在 Node 裡跑完整條路徑。
@@ -1849,6 +1867,7 @@ var VFXRuntime = (function () {
           ['field:', 'ground:', 'attack:', 'projectile:'].forEach(function(prefix) {
             var key = prefix + tornadoId;
             if (grounds[key]) { stopRef(grounds[key].ref); delete grounds[key]; }
+            sfxStop(key);
           });
           pending = pending.filter(function(job) {
             return !(job.spec && job.spec.area && job.spec.area.id === tornadoId);
@@ -1871,6 +1890,7 @@ var VFXRuntime = (function () {
       if (spec.variant === 'flying-thunder-end') {
         var key = 'field:' + (spec.area && spec.area.id);
         if (grounds[key]) { stopRef(grounds[key].ref); delete grounds[key]; }
+        sfxStop(key);
         return true;
       }
       var roles = spec.vfx;
@@ -1890,10 +1910,15 @@ var VFXRuntime = (function () {
       var primary = primaryRoleOf(spec, roles);
       // 純命中事件不可再次施法或發射；這些角色已由起飛事件播放。
       if (primary === 'hit') {
+        if (spec.hit !== false) sfxRole(spec, 'hit', 0);   // 聲音不受效能模式的閃光配額影響
         if (perfOn && !perfHitAllowed()) return true;   // 效能模式：命中閃光限量，傷害數字不受影響
         if (spec.hit !== false) playRole(spec, 'hit');
         return true;
       }
+      /* 技能音效（Skills2 音效欄）：主要角色＋地板／持續場域；受擊另在命中時刻播（見下方預排受擊） */
+      if (primary) sfxRole(spec, primary, 0);
+      if (primary !== 'field') sfxRole(spec, 'field', 0);
+      if (primary !== 'ground') sfxRole(spec, 'ground', 0);
       var orbit = spec.area && (num(spec.area.orbs, 0) > 0 || Array.isArray(spec.area.members));
       var orbitPlayed = orbit && playOrbit(spec, roles);
       var order = ['cast', 'attack', 'projectile', 'field', 'ground'];
@@ -1914,9 +1939,10 @@ var VFXRuntime = (function () {
         // 雷鏈的 targets 是「起點、終點」，只在抵達終點時播命中，不能起飛就讓兩端一起爆。
         var chainHit = (spec.variant === 'lightning-chain' || spec.variant === 'frost-spread' || spec.variant === 'wind-rend-spread') && spec.fxKind === 'chain';
         var hitSpec = chainHit ? Object.assign({}, spec, { targets: (spec.targets || []).slice(-1) }) : spec;
+        var preHitDelay = roles.projectile || chainHit ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0;
         playOnTargets(fxRtFor(roles.hit), roles.hit, hitSpec, hitScaleOf(spec,tuning(roles.hit,'hitScale')),
-          roles.projectile || chainHit ? travelSecAt(spec, Array.isArray(spec.targets) && spec.targets.length >= 2 ? 1 : 0) : 0,
-          undefined, true);
+          preHitDelay, undefined, true);
+        sfxRole(spec, 'hit', preHitDelay);
       }
       return true;
     }
