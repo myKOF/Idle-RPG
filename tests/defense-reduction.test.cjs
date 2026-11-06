@@ -92,3 +92,33 @@ test('敵人承受傷害仍使用舊版防禦減傷公式', () => {
     expectedPlayerDamage(context, attack, defense, attackerLevel)
   ), '敵方不應套用我方新增的先扣防禦層');
 });
+
+test('防禦減傷率 = 防禦 ÷ (防禦 + a + b × 受攻擊者等級)', () => {
+  const context = loadContext();
+  const a = context.DEF_REDUCTION_CONST, b = context.DEF_REDUCTION_PER_LEVEL;
+  [[100, 1], [5000, 300], [200000, 600]].forEach(([def, lv]) => {
+    assert.ok(Math.abs(context.defReduction(def, lv) - def / (def + a + b * lv)) < 1e-12, '防禦 ' + def + '／等級 ' + lv);
+  });
+  assert.ok(context.defReduction(5000, 600) < context.defReduction(5000, 1), '受攻擊者等級越高，同樣防禦減傷越少');
+});
+
+test('resolveHit／DoT：防禦減傷曲線的等級取受攻擊者，不是攻擊者（2026-11-06）', () => {
+  const context = loadContext();
+  const defense = 5000;
+  // 敵人承受：攻擊者 1 級、受攻擊者 600 級 → 用 600
+  const onEnemy = resolve(context, { atk: 100000, dmgType: 'phys', level: 1 }, { def: defense, level: 600 });
+  assert.equal(onEnemy, Math.round(100000 * (1 - context.defReduction(defense, 600))));
+  assert.notEqual(onEnemy, Math.round(100000 * (1 - context.defReduction(defense, 1))), '不得改用攻擊者等級');
+
+  // 我方承受：攻擊者 600 級、受攻擊者（玩家）10 級 → 用 10
+  const onPlayer = resolve(context, { atk: 100000, dmgType: 'phys', level: 600 }, { def: defense, level: 10, isPlayer: true });
+  assert.equal(onPlayer, Math.round(expectedPlayerDamage(context, 100000, defense, 10)));
+
+  // 魔法段同一條規則
+  const magic = resolve(context, { atk: 100000, dmgType: 'magic', level: 1 }, { mdef: defense, level: 600 });
+  assert.equal(magic, Math.round(100000 * (1 - context.defReduction(defense, 600))));
+
+  // DoT：跟直接命中一致
+  const dot = context.dotDamageAfterMitigation(1000, { level: 1 }, { def: defense, level: 600 });
+  assert.ok(Math.abs(dot - 1000 * (1 - context.defReduction(defense, 600))) < 1e-9);
+});

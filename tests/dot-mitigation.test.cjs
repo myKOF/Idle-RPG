@@ -83,7 +83,7 @@ test('最大生命%的狀態不吃防禦', () => {
 });
 
 test('玩家自傷流血吃自己的防禦，但不吃敵種抗性', () => {
-  const { c, player } = setup({ level: 10 }, { def: 10000, mdef: 0, pRes: 0, normalDmgRed: 1e9 });
+  const { c, player } = setup({ level: 10 }, { def: 10000, mdef: 0, pRes: 0, normalDmgRed: 1e9, level: 10 });
   c.applyDot(player, 100, 10, '鐵血裂傷', 'sgIronBleed', 0, undefined, { sourceKey: 'skill2:dualdance' });
   c.tickStatuses(player, 1);
   const expect = 100 * (1 - c.defReduction(10000, 10));
@@ -91,7 +91,7 @@ test('玩家自傷流血吃自己的防禦，但不吃敵種抗性', () => {
 });
 
 test('敵方施放的 DoT 打到玩家：吃防禦與依施放者敵種的敵種抗性', () => {
-  const { c, player } = setup({}, { def: 10000, mdef: 0, pRes: 0, bossDmgRed: 4000, normalDmgRed: 0 });
+  const { c, player } = setup({}, { def: 10000, mdef: 0, pRes: 0, bossDmgRed: 4000, normalDmgRed: 0, level: 10 });
   c.applyDot(player, 100, 10, '劇毒', 'bleed', undefined, undefined,
     { sourceKey: 'enemy', srcAtk: { level: 10, isBoss: true, isElite: false } });
   c.tickStatuses(player, 1);

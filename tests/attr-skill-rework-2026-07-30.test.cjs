@@ -266,20 +266,24 @@ test('resolveHit／DoT：穿透曲線的等級取受攻擊者，不是攻擊者'
   c.rnd = () => 1;
   c.physicalResistanceReduction = () => 0;
   c.globalDamageMultiplier = () => 1;
+  /* 防禦 50000：讓穿透用錯等級時的差距大到看得出來。
+     2026-11-06 起防禦減傷曲線也看受攻擊者等級，高等級目標的防禦減傷反而變弱，
+     所以這裡不比「600 級比 1 級傷害低」，改比「穿透用的是受攻擊者等級」。 */
+  const DEF = 50000;
   const hit = (atkLv, defLv) => c.resolveHit({ hp: 100 }, { hp: 1e9, shield: 0 },
-    { atk: 1000, dmgType: 'phys', critRate: 0, hit: 100, pen: 1000, level: atkLv },
-    { def: 500, dodge: 0, level: defLv }).dmg;
-  const expectHit = (atkLv, defLv) =>
-    Math.round(1000 * (1 - c.defReduction(500 * c.penDefMultiplier(c.penIgnoreRatio(1000, defLv)), atkLv)));
-  assert.equal(hit(1, 600), expectHit(1, 600));
-  assert.equal(hit(1, 1), expectHit(1, 1));
-  assert.ok(hit(1, 600) < hit(1, 1), '受攻擊者等級越高，穿透忽略的防禦越少');
+    { atk: 1e6, dmgType: 'phys', critRate: 0, hit: 100, pen: 1000, level: atkLv },
+    { def: DEF, dodge: 0, level: defLv }).dmg;
+  const expectHit = (penLv, defLv) =>
+    Math.round(1e6 * (1 - c.defReduction(DEF * c.penDefMultiplier(c.penIgnoreRatio(1000, penLv)), defLv)));
+  assert.equal(hit(1, 600), expectHit(600, 600));
+  assert.equal(hit(600, 1), expectHit(1, 1));
+  assert.notEqual(hit(1, 600), expectHit(1, 600), '穿透不得改用攻擊者等級');
 
   // DoT 結算同一條規則
-  const dot = (defLv) => c.dotDamageAfterMitigation(1000, { pen: 1000, level: 1 }, { def: 500, level: defLv });
-  const expectDot = (defLv) => 1000 * (1 - c.defReduction(500 * c.penDefMultiplier(c.penIgnoreRatio(1000, defLv)), 1));
-  assert.ok(Math.abs(dot(600) - expectDot(600)) < 1e-6);
-  assert.ok(dot(600) < dot(1));
+  const dot = (atkLv, defLv) => c.dotDamageAfterMitigation(1e6, { pen: 1000, level: atkLv }, { def: DEF, level: defLv });
+  const expectDot = (penLv, defLv) => 1e6 * (1 - c.defReduction(DEF * c.penDefMultiplier(c.penIgnoreRatio(1000, penLv)), defLv));
+  assert.ok(Math.abs(dot(1, 600) - expectDot(600, 600)) < 1e-6);
+  assert.ok(Math.abs(dot(1, 600) - expectDot(1, 600)) > 1, '穿透不得改用攻擊者等級');
 });
 
 test('忽略防禦為飽和曲線：單調遞增、到不了 100%，且不轉為增傷', () => {
