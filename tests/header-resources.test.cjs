@@ -45,7 +45,7 @@ test('other late resources retain existing acquisition visibility and no optiona
   assert.deepEqual(headerResources({ shownRes: { 'r-soul-origin': true, 'r-demon-seed': true } }),
     [...basic, 'r-soul-origin', 'r-demon-seed']);
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const header = html.slice(html.indexOf('<header id="topbar">'), html.indexOf('</header>'));
+  const header = html.slice(html.indexOf('<header id="topbar"'), html.indexOf('</header>'));
   for (const id of ['r-dust', 'r-ancient-essence', 'r-soul-origin', 'r-demon-seed']) {
     assert.match(header, new RegExp('<span class="res" style="display:none"[^\\n]*id="' + id + '"'));
   }
@@ -56,10 +56,11 @@ test('game branding is consistent in header, document titles, welcome and battle
   vm.createContext(context);
   for (const file of ['strings_data.js', 'strings.js'])
     vm.runInContext(fs.readFileSync(path.join(root, 'js', file), 'utf8'), context);
-  assert.equal(context.STR(48), '神力之巔：無限進化');
+  assert.equal(context.STR(48), '神力之巔：無限征途');
   assert.equal(context.STR(50), '⚔️ 神力之巔');
-  assert.equal(context.STR(51), '無限進化');
-  assert.equal(context.STR(90), '⚔️ 歡迎來到《神力之巔：無限進化》！');
+  assert.equal(context.STR(51), '無限征途');
+  assert.equal(context.STR(90), '⚔️ 歡迎來到《神力之巔：無限征途》！');
+  assert.equal(context.STR(2412), '無限征途');
   assert.equal(context.STR(181, 'Lv.1'), 'Lv.1｜神力之巔');
   assert.equal(context.STR(565), '神力之巔');
   assert.equal(context.STR(2066), '神力之巔：戰況監控');
