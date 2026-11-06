@@ -198,45 +198,47 @@ test('穿透上限已取消（STAT_CAPS = 0）', () => {
   assert.equal(c.capValue(1000, c.STAT_CAPS.pPen), 1000);
 });
 
-test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a)，且參數可調', () => {
-  /* 期望值出處：參數表「3-戰鬥核心／忽略防禦」param a，經 tools/apply_params.cjs
-     套進 js/formula.js 的 PEN_IGNORE_A（改參數請改 xlsx，改 config/CSV 會被沖掉）。
+test('忽略防禦曲線釘住參數表現值（a、b），且參數可調', () => {
+  /* 期望值出處：參數表「3-戰鬥核心／穿透忽略防禦」param a、b，經 tools/apply_params.cjs
+     套進 js/formula.js 的 PEN_IGNORE_A／PEN_IGNORE_B（改參數請改 xlsx，改 config/CSV 會被沖掉）。
 
      依 AI_RULES.md 9.1 例外，測試**刻意釘住目前數值**：參數表一動這裡就會紅，
      這是預期行為——確認新值是有意調整後，把期望值一併更新。
-     2026-08-06（穿透平衡性調整）起：a = 0.75（原為 1.5）。
+     2026-08-06（穿透平衡性調整）：a = 0.75（原為 1.5）。
+     2026-11-06：加入 b × 受攻擊者等級，a = 5、b = 0.01。
 
      ⚠️ 我一度把這支改成「只釘公式形狀、a 向遊戲拿」，理由是「標題寫著參數可調
      卻用常數擋住調參」。**那個判斷跟專案慣例相反**：9.1 管的是註釋不該寫死數值
      （註釋不會被驗證，改了就變成謊話），而測試恰恰相反——釘住數值是刻意的哨兵，
      讓調參的人被強制看見「這個改動影響到誰」。已改回。 */
   const c = loadContext();
-  assert.equal(c.PEN_IGNORE_A, 0.75);
-  /* 2026-11-06：b 欄重新啟用為「b × 受攻擊者等級」（見下一支測試）；表格目前填 0，
-     所以下面不帶等級的期望值仍成立。b 改成非 0 時這行會紅，連同曲線關鍵點一起更新。 */
-  assert.equal(c.PEN_IGNORE_B, 0);
+  assert.equal(c.PEN_IGNORE_A, 5);
+  assert.equal(c.PEN_IGNORE_B, 0.01);
   assert.equal(typeof c.PEN_IGNORE_C, 'undefined', 'c 欄已停用');
-  assert.equal(c.penIgnoreRatio(0), 0);
+  assert.equal(c.penIgnoreRatio(0, 600), 0);
 
-  const expect = (pen) => (pen / 100) / (pen / 100 + c.PEN_IGNORE_A);
-  [100, 250, 350, 500, 1000, 5000].forEach((pen) => {
-    assert.ok(Math.abs(c.penIgnoreRatio(pen) - expect(pen)) < 1e-12, '穿透 ' + pen);
-    assert.ok(Math.abs(c.penIgnorePct(pen) - expect(pen) * 100) < 1e-9,
+  const expect = (pen, lv) => (pen / 100) / (pen / 100 + c.PEN_IGNORE_A + c.PEN_IGNORE_B * lv);
+  [[100, 1], [350, 50], [1000, 1], [1000, 600], [5000, 600]].forEach(([pen, lv]) => {
+    assert.ok(Math.abs(c.penIgnoreRatio(pen, lv) - expect(pen, lv)) < 1e-12, '穿透 ' + pen + '／等級 ' + lv);
+    assert.ok(Math.abs(c.penIgnorePct(pen, lv) - expect(pen, lv) * 100) < 1e-9,
       'penIgnorePct 必須是 penIgnoreRatio 的百分比版本：穿透 ' + pen);
   });
 
-  // 曲線關鍵點（a = 0.75）
-  assert.ok(Math.abs(c.penIgnorePct(100) - 57.14) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(250) - 76.92) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(350) - 82.35) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(500) - 86.96) < 0.05);
-  assert.ok(Math.abs(c.penIgnorePct(1000) - 93.02) < 0.05);
+  // 曲線關鍵點（a = 5、b = 0.01；第二個數字是受攻擊者等級）
+  assert.ok(Math.abs(c.penIgnorePct(100, 1) - 16.64) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(1000, 1) - 66.62) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(1000, 100) - 62.50) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(1000, 600) - 47.62) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(1600, 600) - 59.26) < 0.05);
+  assert.ok(Math.abs(c.penIgnorePct(3200, 600) - 74.42) < 0.05);
 
-  /* 半數點：穿透倍率等於 a 時剛好忽略 50% 防禦。這是這條曲線**與參數無關**的
+  /* 半數點：穿透倍率等於 a + b×等級 時剛好忽略 50% 防禦。這是這條曲線**與參數無關**的
      幾何性質，跟上面釘死的數值不衝突——一個抓「數值被改了」，
      一個抓「公式被改成別的形狀」。 */
-  assert.ok(Math.abs(c.penIgnoreRatio(c.PEN_IGNORE_A * 100) - 0.5) < 1e-12,
-    '穿透 = a×100% 時應忽略 50% 防禦');
+  [1, 300, 600].forEach((lv) => {
+    assert.ok(Math.abs(c.penIgnoreRatio((c.PEN_IGNORE_A + c.PEN_IGNORE_B * lv) * 100, lv) - 0.5) < 1e-12,
+      '穿透 = (a + b×等級)×100% 時應忽略 50% 防禦：等級 ' + lv);
+  });
 });
 
 test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a + b×受攻擊者等級)', () => {
@@ -307,8 +309,8 @@ test('resolveHit：敵方穿透只折減防禦，維持舊版防禦減傷公式'
       { def: 500, dodge: 0, level: 1 }).dmg;
   };
   const base = hit(0);
-  const mid = hit(350);              // 忽略 70% 防禦
-  const high = hit(5000);            // 忽略 97.1% 防禦，仍非全免
+  const mid = hit(350);              // 部分忽略防禦
+  const high = hit(5000);            // 大部分忽略防禦，仍非全免
   // 傷害對得上敵方舊公式：攻擊力 × (1 - 防禦減傷(防禦 × (1 - 忽略防禦比率)))
   const expectAt = (pen) => {
     const def = 500 * c.penDefMultiplier(c.penIgnoreRatio(pen));

@@ -716,8 +716,8 @@ function skillElemMixOf(aCfg) {
    穿透倍率 = a + b×等級 時剛好忽略 50%。
    穿透本身不設上限（STAT_CAPS.pPen/mPen = 0），改由這條飽和曲線收斂：
    曲線趨近但到不了 100%，敵方防禦永遠保留一小部分，也不存在溢出增傷。 */
-var PEN_IGNORE_A = 0.75;
-var PEN_IGNORE_B = 0;
+var PEN_IGNORE_A = 5;
+var PEN_IGNORE_B = 0.01;
 function penIgnoreRatio(penPct, defenderLevel) {
   var rate = Math.max(0, Number(penPct) || 0) / 100;
   if (rate <= 0) return 0;
