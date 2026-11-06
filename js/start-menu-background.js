@@ -8,6 +8,7 @@ var StartMenuBackground = (function () {
   const HEIGHT = 941;
   const TAU = Math.PI * 2;
   const FRAME_MS = 1000 / 30;
+  const REDUCED_MOTION_SCALE = .65;
 
   // x, y, 寬, 高, 沿旗桿的斜率, 末端下垂, 振幅, 遠近色調
   const CLOTH = [
@@ -163,15 +164,15 @@ var StartMenuBackground = (function () {
     });
   }
 
-  function clothPoint(flag, u, v, time, index) {
+  function clothPoint(flag, u, v, time, index, motionScale) {
     const travel = time * 4.2 - u * 8 + index * 1.7;
-    const flex = u * u;
+    const flex = u * u * flag.swing * motionScale;
     const gust = .74 + .26 * Math.sin(time * 1.14 - index * .6);
     const fold = Math.sin(travel + v * 2.4);
     const snap = Math.sin(travel * 2.38 + v * 3.9);
     return {
-      x: flag.x + u * flag.w + v * flag.lean + flex * flag.swing * (.41 * fold - .35 + .17 * snap),
-      y: flag.y + v * flag.h + u * flag.drop + flex * flag.swing * gust * (fold + .34 * snap)
+      x: flag.x + u * flag.w + v * flag.lean + flex * (.41 * fold - .35 + .17 * snap),
+      y: flag.y + v * flag.h + u * flag.drop + flex * gust * (fold + .34 * snap)
     };
   }
 
@@ -197,7 +198,7 @@ var StartMenuBackground = (function () {
     ctx.restore();
   }
 
-  function drawCloth(ctx, sprites, time) {
+  function drawCloth(ctx, sprites, time, motionScale) {
     for (const [index, flag] of CLOTH.entries()) {
       const sprite = sprites[flag.sprite];
       const columns = index === 0 ? 12 : 6;
@@ -205,7 +206,7 @@ var StartMenuBackground = (function () {
       const sw = sprite.width / columns, sh = sprite.height / rows;
       const mesh = [];
       for (let y = 0; y <= rows; y++) {
-        for (let x = 0; x <= columns; x++) mesh.push(clothPoint(flag, x / columns, y / rows, time, index));
+        for (let x = 0; x <= columns; x++) mesh.push(clothPoint(flag, x / columns, y / rows, time, index, motionScale));
       }
       ctx.globalAlpha = 1 - flag.haze;
       for (let y = 0; y < rows; y++) {
@@ -376,7 +377,7 @@ var StartMenuBackground = (function () {
     return { depth, strength, grains, trails, end: start + release + 4.6 };
   }
 
-  function drawDust(ctx, textures, dust, time) {
+  function drawDust(ctx, textures, dust, time, motionScale) {
     if (time >= dust.next) {
       // 只排入當下的陣風，慢幀後不補播已錯過的沙塵。
       dust.gusts.push(makeDustGust(Math.max(dust.next, time - .9)));
@@ -392,7 +393,7 @@ var StartMenuBackground = (function () {
         const y = trail.y - trail.loft * fade;
         const width = (46 + 206 * progress) * depth * trail.breadth;
         const height = (5 + 18 * progress) * depth;
-        ctx.globalAlpha = fade * (.34 + strength * .46);
+        ctx.globalAlpha = fade * (.34 + strength * .46) * motionScale;
         ctx.drawImage(trail.pale ? textures.sand : textures.haze, x - width * .15, y - height * .78, width, height);
       }
     }
@@ -405,7 +406,7 @@ var StartMenuBackground = (function () {
         const hop = 4 * progress * (1 - progress);
         const x = grain.x + grain.speed * age * (.78 + progress * .32);
         const y = grain.y - grain.loft * hop + Math.sin(age * 12 + grain.phase) * hop * 1.4;
-        ctx.globalAlpha = Math.min(1, progress * 7) * (1 - progress) * (.24 + strength * .62);
+        ctx.globalAlpha = Math.min(1, progress * 7) * (1 - progress) * (.24 + strength * .62) * motionScale;
         ctx.fillStyle = SAND_SHADES[i % SAND_SHADES.length];
         ctx.fillRect(x, y, grain.size * (1.15 + grain.speed * .015), grain.size * .76);
       }
@@ -445,22 +446,24 @@ var StartMenuBackground = (function () {
 
     function draw() {
       if (!ctx || !inView) return;
+      const motionScale = motion.matches ? REDUCED_MOTION_SCALE : 1;
       ctx.setTransform(surface.width / WIDTH, 0, 0, surface.height / HEIGHT, 0, 0);
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       if (fires) drawFires(ctx, fires, time);
       drawClouds(ctx, atmosphere, time);
-      if (sprites) drawCloth(ctx, sprites, time);
+      if (sprites) drawCloth(ctx, sprites, time, motionScale);
       drawWisps(ctx, atmosphere.spirit, time);
-      drawDust(ctx, atmosphere, dust, time);
+      drawDust(ctx, atmosphere, dust, time, motionScale);
     }
 
     function tick(now) {
       frame = null;
-      if (disposed || !inView || document.hidden || motion.matches || !root.isConnected) {
+      if (disposed || !inView || document.hidden || !root.isConnected) {
         previous = null;
         return;
       }
-      if (previous !== null) time += (now - previous) / 1000;
+      // 降低背景的動態強度，仍保留連續演出。
+      if (previous !== null) time += (now - previous) / 1000 * (motion.matches ? REDUCED_MOTION_SCALE : 1);
       previous = now;
       if (now - lastPaint >= FRAME_MS - 1) {
         lastPaint = now;
@@ -470,7 +473,7 @@ var StartMenuBackground = (function () {
     }
 
     function syncPlayback() {
-      const play = ctx && inView && !disposed && !document.hidden && !motion.matches && root.isConnected;
+      const play = ctx && inView && !disposed && !document.hidden && root.isConnected;
       if (play && frame === null) frame = requestAnimationFrame(tick);
       if (!play && frame !== null) {
         cancelAnimationFrame(frame);
@@ -497,7 +500,6 @@ var StartMenuBackground = (function () {
     resize.observe(root);
     visibility.observe(root);
     document.addEventListener('visibilitychange', syncPlayback);
-    motion.addEventListener('change', syncPlayback);
 
     const atlas = new Image();
     if (ctx) atlas.src = new URL('cloth-atlas.webp', ASSETS);
@@ -524,7 +526,6 @@ var StartMenuBackground = (function () {
         resize.disconnect();
         visibility.disconnect();
         document.removeEventListener('visibilitychange', syncPlayback);
-        motion.removeEventListener('change', syncPlayback);
         surface.width = surface.height = 0;
         sprites = null;
         fires = null;

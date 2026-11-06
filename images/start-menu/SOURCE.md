@@ -14,7 +14,7 @@
 
 ## 接入開始選單
 
-由選單載入 `<script src="js/start-menu-background.js?v=1.0.1"></script>`，並在選單背景的定位容器呼叫：
+由選單載入 `<script src="js/start-menu-background.js?v=1.0.2"></script>`，並在選單背景的定位容器呼叫：
 
 ```js
 const backdrop = StartMenuBackground.mount(document.getElementById('start-menu'));
@@ -22,4 +22,4 @@ const backdrop = StartMenuBackground.mount(document.getElementById('start-menu')
 // 離開選單或拆卸容器時再呼叫 backdrop.destroy()。可重複呼叫。
 ```
 
-容器應有定位與自己的堆疊環境，例如 `position: fixed; isolation: isolate`。背景佔滿容器，z-index 為 0。選單卡片須有較高層級。可在序章播放時掛載至隱藏的選單容器以提前載入素材。背景不攔截指標、不管理焦點與遊戲流程。縮窄視窗時以置中的滿版裁切維持拱門，兩側物件可能超出可視區。減少動態偏好會保留靜止的構圖，隱藏分頁或選單時停止計時。素材載入失敗時保留已可用的背景層，選單可照常使用。
+容器應有定位與自己的堆疊環境，例如 `position: fixed; isolation: isolate`。背景佔滿容器，z-index 為 0。選單卡片須有較高層級。可在序章播放時掛載至隱藏的選單容器以提前載入素材。背景不攔截指標、不管理焦點與遊戲流程。縮窄視窗時以置中的滿版裁切維持拱門，兩側物件可能超出可視區。減少動態偏好下以一般模式 65% 的速度播放，旗布擺幅和風沙不透明度同樣降低。隱藏分頁或選單時停止計時。素材載入失敗時保留已可用的背景層，選單可照常使用。
