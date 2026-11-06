@@ -309,3 +309,34 @@ test('整合：符文真言借用專屬傳奇，經 computeStats 生效；沒有
   assert.ok('deadTime' in c.getStats().passives, '詞條本身仍被讀到（資料原樣保留）');
   assert.ok(!c.getStats().legendaryEffects.deadTime, '裝備上殘留的 deadTime 不生效');
 });
+
+test('裝備詳情：停用與符文真言專屬的傳奇特效顯示灰字＋不生效後綴，一般特效不變（AI_RULES 8.3）', () => {
+  const c = loadContext(['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js',
+    'js/battlefield.js', 'js/item.js', 'js/player.js', 'js/combat.js', 'js/skills.js', 'js/skills2.js', 'js/legendary.js', 'js/save.js']);
+  c.G = c.newGameState(); c.GT = 0;
+  const item = (id, key) => ({ id, name: id, kind: 'equip', slot: 'weapon', weaponType: 'sword1h', rarity: 5, level: 100, upgrade: 0,
+    affixes: [], sockets: [], enchants: [], passive: { key } });
+  const disabledKey = Object.keys(c.LEGACY_LEGENDARY_DISABLED)[0];
+  assert.equal(c.passiveInactiveNote(disabledKey), '(已停用)');
+  assert.equal(c.passiveInactiveNote('deadTime'), '(僅符文真言生效)');
+  assert.equal(c.passiveInactiveNote('sunder'), '');
+
+  const passiveDiv = (html) => (html.match(/<div class="it-passive[^"]*"[^>]*>[^<]*<\/div>/) || [''])[0];
+  for (const [key, note] of [['ghostLamp', '(已停用)'], ['deadTime', '(僅符文真言生效)']]) {
+    const it = item('w_' + key, key);
+    c.G.equipment.weapon = it;
+    const div = passiveDiv(c.itemDetailHTML(it, null, { equipment: c.G.equipment }));
+    assert.match(div, /it-passive-inactive/, key);
+    assert.match(div, /#6b7280/, key);
+    assert.ok(div.includes(note), key + ' 後綴 ' + note);
+    assert.ok(div.includes('【' + c.PASSIVE_POOL[key].name + '】'), key + ' 仍顯示特效名稱');
+    // 背包中的比較視窗也一樣：不生效的特效不染成「新增」綠字
+    const cmp = item('w_cmp', 'sunder');
+    assert.match(passiveDiv(c.itemDetailHTML(it, cmp, {})), /it-passive-inactive/, key + ' 比較時');
+  }
+
+  const normal = item('w_normal', 'sunder');
+  c.G.equipment.weapon = normal;
+  const div = passiveDiv(c.itemDetailHTML(normal, null, { equipment: c.G.equipment }));
+  assert.equal(div, '<div class="it-passive">' + c.esc(c.passiveLine(normal, normal.passive)) + '</div>');
+});

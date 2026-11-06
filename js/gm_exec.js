@@ -1184,6 +1184,66 @@
     return normItemSlot === normTarget || item.slot === targetSlot;
   }
 
+  /* legend <特效key|list|clear> [部位] [force]：把穿戴中裝備的傳奇特效直接設為指定 key（測試用，取代隨機擲骰）。
+     停用（LEGACY_LEGENDARY_DISABLED）與符文真言專屬（RUNEWORD_ONLY_LEGENDARY）的鍵預設拒絕；
+     加 force 才寫入，用來模擬舊存檔殘留的同名詞條（照規則不生效）。 */
+  function gmLegendTag(key) {
+    if (typeof LEGACY_LEGENDARY_DISABLED !== 'undefined' && LEGACY_LEGENDARY_DISABLED[key]) return '停用';
+    if (typeof RUNEWORD_ONLY_LEGENDARY !== 'undefined' && RUNEWORD_ONLY_LEGENDARY[key]) return '符文真言專屬';
+    return '';
+  }
+  function gmLegend(args) {
+    var usage = '格式：legend 特效key [部位] [force]｜legend clear [部位|all]｜legend list [技能群組|general|rwonly|disabled]';
+    var sub = String(args[0] || '');
+    if (!sub) return { ok: false, message: usage };
+    if (sub.toLowerCase() === 'list') {
+      var filter = String(args[1] || '').toLowerCase();
+      var keys = Object.keys(PASSIVE_POOL).filter(function (k) {
+        var pd = PASSIVE_POOL[k];
+        if (!pd || !pd.legendary) return false;
+        var tag = gmLegendTag(k);
+        if (!filter) return true;
+        if (filter === 'rwonly') return tag === '符文真言專屬';
+        if (filter === 'disabled') return tag === '停用';
+        if (filter === 'general') return !pd.relatedSkill && !tag;
+        return String(pd.relatedSkill || '').toLowerCase() === filter;
+      });
+      if (!keys.length) return { ok: false, message: '沒有符合的傳奇特效：' + filter };
+      return { ok: true, message: keys.length + ' 個：' + keys.map(function (k) {
+        var tag = gmLegendTag(k);
+        return k + '（' + PASSIVE_POOL[k].name + (tag ? '｜' + tag : '') + '）';
+      }).join('、') };
+    }
+    var rest = args.slice(1);
+    if (sub.toLowerCase() === 'clear' && ['all', 'wear', '全身'].indexOf(String(rest[0] || '').toLowerCase()) >= 0) {
+      var cleared = 0;
+      SLOT_LIST.forEach(function (s) { var w = G.equipment && G.equipment[s]; if (w && w.passive) { w.passive = null; cleared++; } });
+      if (typeof markStatsDirty === 'function') markStatsDirty();
+      gmDirty();
+      return { ok: true, message: '已清除身上 ' + cleared + ' 件裝備的傳奇特效' };
+    }
+    var force = rest.some(function (a) { return String(a).toLowerCase() === 'force'; });
+    rest = rest.filter(function (a) { return String(a).toLowerCase() !== 'force'; });
+    var slot = rest[0] ? gmParseSlot(rest[0]) : 'weapon';
+    if (!slot || SLOT_LIST.indexOf(slot) < 0) return { ok: false, message: '無效的部位：' + rest[0] + '（' + SLOT_LIST.join('/') + '）' };
+    var it = G.equipment && G.equipment[slot];
+    if (!it) return { ok: false, message: '「' + slot + '」沒有穿戴裝備（可先用 equipset）' };
+    if (sub.toLowerCase() === 'clear') {
+      it.passive = null;
+    } else {
+      var key = Object.keys(PASSIVE_POOL).filter(function (k) { return k.toLowerCase() === sub.toLowerCase(); })[0];
+      if (!key || !PASSIVE_POOL[key].legendary) return { ok: false, message: '找不到傳奇特效：' + sub + '（legend list 可列出全部）' };
+      var tag = gmLegendTag(key);
+      if (tag && !force) return { ok: false, message: '【' + PASSIVE_POOL[key].name + '】是' + tag + '特效，不會出現在裝備上；要模擬舊存檔殘留請加 force' };
+      it.passive = { key: key };
+    }
+    if (typeof markStatsDirty === 'function') markStatsDirty();
+    gmDirty();
+    if (!it.passive) return { ok: true, message: slot + ' 的傳奇特效已清除' };
+    var t = gmLegendTag(it.passive.key);
+    return { ok: true, message: slot + ' 的傳奇特效設為【' + PASSIVE_POOL[it.passive.key].name + '】' + (t ? '（' + t + '，照規則不生效）' : '') };
+  }
+
   function gmParseSlot(raw) {
     if (!raw) return null;
     var str = String(raw).trim().toLowerCase();
@@ -1622,6 +1682,9 @@
       if (!GEM_TYPES[type] || level === null || count === null) return { ok: false, message: '格式：gem 寶石key 等級 數量' };
       addGem(type, level, count);
       return { ok: true, message: '增加 ' + gemLabel(type, level) + ' x' + (typeof fmt === 'function' ? fmt(count) : count) };
+    }
+    if (command === 'legend' || command === 'legendary') {
+      return gmLegend(args);
     }
     if (command === 'rune') {
       // rune <符文id|all> [數量]：r01～r33；all＝每種各給 N 顆

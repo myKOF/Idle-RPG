@@ -1126,7 +1126,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=c2e793f8"></script>
+  <script src="js/strings_data.js?v=1a9d2fe3"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=1.0.0"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
@@ -1168,7 +1168,7 @@
   <script src="js/battle-renderer.js?v=20261105-intro-levelup-merge-v1"></script>
   <script src="js/sfx.js?v=1.0.1"></script>
   <script src="js/stats.js?v=1.0.8"></script>
-  <script src="js/item.js?v=20261103-equipment-rarity-v3"></script>
+  <script src="js/item.js?v=20261106-legendary-inactive-note"></script>
   <script src="js/gem_resonance.js?v=1.0.10"></script>
   <script src="js/runeword.js?v=20261102_merged_ai_latest"></script>
   <script src="js/skills.js?v=1.0.47"></script>
@@ -1193,7 +1193,7 @@
   <script src="js/ui-newforge-visuals.js?v=1.0.8"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
-  <script src="js/gm.js?v=20261105-gm-intro"></script>
+  <script src="js/gm.js?v=20261106-gm-legend"></script>
   <!-- 戰鬥效能診斷（FPS 計數器下方的多行疊層、perfReport()）。只在內部版本才做事，
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
@@ -1206,7 +1206,7 @@
   <script src="js/intro-data.js?v=1.0.4"></script>
   <script src="js/intro-audio.js?v=1.0.0"></script>
   <script src="js/intro-player.js?v=1.0.6"></script>
-  <script src="js/bridge.js?v=20261106-ai-integration"></script>
+  <script src="js/bridge.js?v=20261106-legendary-inactive-note"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

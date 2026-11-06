@@ -21,7 +21,7 @@ if (typeof GameClock !== 'undefined') {
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
   '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261106-ai-integration', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261106-ai-integration', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261103-battlefield-unlock-params-merge', '../stats.js?v=20261028-develop-merge-a8acfe',
-  '../item.js?v=20261103-equipment-rarity-v3', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261102_merged_ai_latest',
+  '../item.js?v=20261106-legendary-inactive-note', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261102_merged_ai_latest',
   '../skills.js?v=20261029-merge-cd5ad556', '../skills2.js?v=20261106-ai-integration', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261031-achv-talent-mastery-merge',
   '../player.js?v=20261106-ai-integration', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261106-ai-integration', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261104-retire-enchant-book',
@@ -30,7 +30,7 @@ importScripts(
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20261104-gm-tasks');
+importScripts('../gm_exec.js?v=20261106-gm-legend');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
