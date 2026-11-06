@@ -15017,6 +15017,11 @@ Worker 存活且頁面正常完成載入。
 - `npm.cmd run build`、`node --check tools/intro/sync-start-menu.cjs`、`node tools/string-table/build_string_csv.cjs --check` 與雙庫 SHA 檢查通過。以 `node --test` 跑 intro-motion、intro-player、intro-audio、vfx-preset-usage、vfx-editor-cache-versions 五檔，同時進行中的選單改動有 65/66 通過，CV-1 為該任務新版 String 在主頁和編輯器的快取版本不一致。素材庫先提交 `dc50f766`，遊戲提交見交付。
 - 接手：選單 Agent 依 `images/start-menu/SOURCE.md` 接入。背景可供 Review 與整合。未在行動真機或完整啟動流程驗證，正式序章接選單須待選單任務完成接入。
 
+## UI-HOVER-MOON-GLOW-20261106 — 保存月暈懸停音效
+
+- Owner：Codex，Done。依使用者選定的第 10 個試聽音，將月暈 WAV 原樣保存至 audio/ui-preview/hover-10-moon-glow.wav。範圍為音檔、本段及素材庫的母檔與合成來源。用途為素材存檔，播放接線留待使用者指定。
+- 素材為原創合成，44.1 kHz、16-bit 單聲道，約 106 毫秒。Node 重產、Windows WAV 載入及試聽／母檔／專案副本 SHA-256 一致性驗證通過。npm.cmd run build 檢查 684 檔通過。唯讀核對 UI 音效文件、現有音效程式及首頁引用。素材庫先提交 8f727aa7，本段所在提交可供整合。
+
 ## UI-SOUND-HOVER-OPT-IN-20261106 — 僅保留指定操作的觸碰音效
 
 - Codex 已完成。以使用者 2026-11-05 逐項指定的頁籤操作為保留清單，移除未列區域的預設觸碰音。滑鼠、鍵盤焦點與觸控共用清單。H10 點擊、強化與洗煉成功音、成就音沿用既有觸發。
