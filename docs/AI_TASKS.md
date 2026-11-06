@@ -74,6 +74,13 @@
 - Edge 實測 320–1440px 共 11 種寬度。1024px 與 1440px 皆四欄，抽驗卡片約為原尺寸的 74% 與 90%，含換行說明的卡片。核對獎杯下緣、總進度條、三種篩選、捲動與關閉，並啟動遊戲 Worker 驗證單卡進度。Console 無錯誤或警告。
 - `node --test tests/start-menu.test.cjs tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/vfx-editor-cache-versions.test.cjs` 24/24 通過，`npm.cmd run build` 檢查 681 檔。可交使用者合併並重新載入驗收。
 
+## ACHIEVEMENT-CORNER-ICON-ALIGN-20261106 — 成就關閉按鈕與圖示對齊
+
+- Codex，完成。關閉按鈕左移 10px、下移 8px。獎杯及總進度條跟隨首欄位置與卡片縮放，對齊圖示可見左緣。
+- 修改 `css/achievements.css`、`index.html` 成就樣式快取、`LV_upgrade_system.md` 及本段。唯讀核對成就渲染、關閉接線、共用視窗樣式和圖片透明範圍。與開始選單字型在首頁及文件分段，三方試跑通過，分開提交。
+- Edge 驗證 320–1440px 共 11 種寬度，截圖尺寸下獎杯與總進度條右移約 30px，與首欄圖示的可見左緣相差約 1px。角飾非透明區與關閉按鈕無重疊，三種篩選及關閉通過，Console 無錯誤或警告。
+- `node --test tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/start-menu.test.cjs tests/vfx-editor-cache-versions.test.cjs` 24/24 通過，`npm.cmd run build` 檢查 684 檔。可交使用者合併並重新載入驗收。
+
 ## ACHIEVEMENT-PROGRESS-ALIGN-20261105 — 獎杯置中、進度條收邊與篩選頁籤
 
 - Owner：Codex；Done，延續使用者視覺回饋。原獎杯66px畫布的圖案軸心約29px、透明上下留白亦不對稱；以CSS圖層向右下各2px校正，進度條padding／刻度inset由4px減為2px，外框尺寸與完成比例保持。允許css/achievements.css、index僅該CSS快取、LV與本段；禁止改圖片／JS／配置／音效／存檔／其他在製內容，不合併推送。

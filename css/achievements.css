@@ -46,7 +46,15 @@
 }
 
 /* ---- 2026-10-31 換皮：依使用者提供的授權示意圖（images/ui/achievements/*，由示意圖裁切；標題文字已抹除，改由 String 表顯示） ---- */
-#achv-modal .achv-card-box { position: relative; width: min(1180px, 100%); height: min(92vh, 780px); max-height: none; padding: 12px 20px 26px !important; }
+#achv-modal .achv-card-box {
+  --achv-columns: 4; --achv-grid-gap: 14px;
+  --achv-card-design-width: 291; --achv-card-max-px: .9px;
+  --achv-list-start: 4px; --achv-list-end: 12px; --achv-scrollbar-width: 12px;
+  --achv-row-gaps: calc((var(--achv-columns) - 1) * var(--achv-grid-gap));
+  --achv-row-design-width: calc(var(--achv-columns) * var(--achv-card-design-width));
+  position: relative; width: min(1180px, 100%); height: min(92vh, 780px); max-height: none; padding: 12px 20px 26px !important;
+}
+#achv-modal-close { top: 18px; right: 22px; }
 .achv-corner { position: absolute; width: 79px; height: 68px; background-repeat: no-repeat; background-size: 100% 100%; pointer-events: none; }
 .achv-corner.tl { top: -5px; left: -5px; background-image: url(../images/ui/achievements/corner-tl.png); }
 .achv-corner.tr { top: -5px; right: -5px; background-image: url(../images/ui/achievements/corner-tr.png); }
@@ -78,7 +86,15 @@
     inset 0 1px 5px #fff0c94d, 0 2px 5px #0009, 0 0 12px #e5ae401a;
   filter: brightness(1.18) saturate(1.15);
 }
-#achv-modal .achv-total { flex: 0 1 600px; }
+#achv-modal .achv-total {
+  --achv-row-available: calc(100% - var(--achv-list-start) - var(--achv-list-end) - var(--achv-scrollbar-width) - var(--achv-row-gaps));
+  --achv-row-max-width: calc(var(--achv-row-design-width) * var(--achv-card-max-px));
+  --achv-row-inset: max(0px, calc((var(--achv-row-available) - var(--achv-row-max-width)) / 2));
+  --achv-icon-px: min(var(--achv-card-max-px), calc(var(--achv-row-available) / var(--achv-row-design-width)));
+  flex: 0 1 600px;
+  /* 首欄位置加上卡框內距及圖示本身的透明留白。 */
+  margin-inline-start: calc(var(--achv-list-start) + var(--achv-row-inset) + 23 * var(--achv-icon-px));
+}
 #achv-modal .achv-total-track {
   position: relative; display: block; box-sizing: border-box; height: var(--achv-track-height); padding: 2px;
   border: 1px solid #a58a56; border-radius: 5px; overflow: hidden;
@@ -127,20 +143,18 @@
 }
 #achv-modal .achv-filters button:focus-visible { outline: 2px solid var(--afl-gold-line); outline-offset: 2px; }
 #achv-modal #achv-list {
-  --achv-columns: 4; --achv-grid-gap: 14px;
-  --achv-card-design-width: 291; --achv-card-max-px: .9px;
   container-type: inline-size;
   display: grid; height: 100%; align-content: start; justify-content: center;
   grid-template-columns: repeat(var(--achv-columns), minmax(0, calc(var(--achv-card-design-width) * var(--achv-card-max-px))));
-  gap: var(--achv-grid-gap); padding: 4px 12px 4px 4px;
+  gap: var(--achv-grid-gap); padding-block: 4px; padding-inline: var(--achv-list-start) var(--achv-list-end);
 }
-@media (max-width: 1019px) { #achv-modal #achv-list { --achv-columns: 3; } }
-@media (max-width: 779px) { #achv-modal #achv-list { --achv-columns: 2; } }
-@media (max-width: 559px) { #achv-modal #achv-list { --achv-columns: 1; } }
+@media (max-width: 1019px) { #achv-modal .achv-card-box { --achv-columns: 3; } }
+@media (max-width: 779px) { #achv-modal .achv-card-box { --achv-columns: 2; } }
+@media (max-width: 559px) { #achv-modal .achv-card-box { --achv-columns: 1; } }
 #achv-modal .achv-card {
   /* 依欄寬換算原卡片的 1px，所有尺寸共用同一比例。 */
   --achv-card-px: min(var(--achv-card-max-px), calc(
-    (100cqw - (var(--achv-columns) - 1) * var(--achv-grid-gap)) / (var(--achv-columns) * var(--achv-card-design-width))
+    (100cqw - var(--achv-row-gaps)) / var(--achv-row-design-width)
   ));
   position: relative; min-height: calc(112 * var(--achv-card-px)); gap: calc(14 * var(--achv-card-px));
   padding: calc(12 * var(--achv-card-px)) calc(16 * var(--achv-card-px)); border-radius: calc(6 * var(--achv-card-px));
@@ -173,7 +187,7 @@
   background: #0b0d12; border: calc(2 * var(--achv-card-px)) solid #3d4452;
 }
 #achv-modal .achv-bar i { background: linear-gradient(#ffe08a, #d79a2b 60%, #8a5a12); border-radius: calc(4 * var(--achv-card-px)); }
-.achv-list-scroll::-webkit-scrollbar { width: 12px; }
+.achv-list-scroll::-webkit-scrollbar { width: var(--achv-scrollbar-width); }
 .achv-list-scroll::-webkit-scrollbar-track { background: #0c0f15; border: 1px solid #3a414f; border-radius: 6px; }
 .achv-list-scroll::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #6a7385, #3b4251); border-radius: 6px; border: 1px solid #1a1e27; }
 .achv-list-scroll::-webkit-scrollbar-button, .achv-list-scroll::-webkit-scrollbar-button:single-button,
