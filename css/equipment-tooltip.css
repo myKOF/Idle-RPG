@@ -16,3 +16,16 @@
   max-width: calc(100vw - 16px) !important;
   overflow-x: auto;
 }
+
+/* 詞條保持原本簡易星號；裝備格的圖片星列沿用目前樣式。 */
+#detail-pane .ancient-star,
+.equip-detail-card .ancient-star {
+  color: #fb923c;
+  -webkit-text-fill-color: currentColor;
+  text-shadow: 0 0 5px currentColor;
+}
+
+#detail-pane .ancient-star::after,
+.equip-detail-card .ancient-star::after {
+  content: none;
+}

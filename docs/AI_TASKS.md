@@ -14947,3 +14947,19 @@ Worker 存活且頁面正常完成載入。
 - 沿用既有數值（試算表與程式現值不同，且未標紅）：崩山裂地者（+100%／+300%，表為 +50%／+60%）、旋風之刺（20 次普攻，表為 10 次）、狂暴血斧（3%，表為 2%）。試算表未給的數值為暫定：影襲追蹤者飛刀 150% 物理。元素之心的「屬性傷害加成額外 +35%」採加算、抗性 -50% 採 ×0.5。
 - 測試：新增 `tests/legendary-runeword-only.test.cjs`（14 項，含符文真言→`computeStats` 整合）；更新 `legendary-affix`、`legendary-global`、`runeword-data`（取消「23 主技能各 1 組」分配規則）。完整套件（再加 1 項整合測試前）5631 項：4936 通過、693 失敗；原始 HEAD 基線 5618 項、692 失敗，差集僅 `ELITE-ENGINE-4f`（單跑通過，為既有隨機性，基線同檔失敗的是 4d）；無新增 regression。`build_check` 670 檔通過；`build_string_csv.cjs --check` 寫死 0 條。
 - 風險／未驗證：未在瀏覽器實機驗證；亡者時間的 40 米依戰場座標判定，無座標時視為範圍內；天譴之誓增傷窗口取 3 秒。
+
+## ANCIENT-STAR-SIMPLE-TEXT-20261105 — tips與詳情還原簡易星號
+
+- Owner：Codex；Done，單一開發者。使用者要求裝備tips／詳情詞條改回原本簡易星星，裝備欄圖片保持。僅在既有equipment-tooltip.css對equip-detail-card／detail-pane恢復文字字形及原橘色輕光暈，停用其::after圖片；詞條／精鑄既有文字分色保持。裝備／背包／神鑄badge的三色PNG、1px輪廓、強光暈及窄格重疊不改。
+- 允許：css/equipment-tooltip.css、index僅其快取、LV、docs/assets來源渲染說明及本段；禁止style.css／JS／PNG／素材／玩法／星數／配置、其他整合及Intro在製內容、合併推送。已讀規範／Workflow／任務，tips專用CSS預檢乾淨；develop整合包含本分支既有星星成果及獨立更新橫幅，選用專用CSS避開共同style快取行，各候選對develop實際檔案三方試跑見驗證。
+- 驗收：正式CSS／itemDetailHTML確認詳情、單卡／比較tips、洗煉及刻印均為簡易✡，不再顯示PNG；badge圖／filter／尺寸／間距逐項保持。相關tips／精鑄／洗煉／快取回歸、Build、素材SHA及diff後僅提交本項。後續使用者Review／合併。
+- 完成：僅專用CSS新增兩組局部規則，詞條字形fill恢復currentColor、輕文字陰影，::after content為none；不改共用style.css或任何JS／星列規則。index僅equipment-tooltip版本升20261105-simple-ancient-stars-v1，全局style與其他整合快取保持；候選五檔對develop實際檔案、HEAD基線的正規化LF merge-file皆exit0，開始修改前本副本已由外層同步至5facf4f3，無自行整合操作。
+- 瀏覽器：正式全CSS／PNG與itemDetailHTML、實際洗煉reroll.active／selIdx，確認詳情4、單卡4、比較8、刻印1、洗煉4顆共21個簡易詞條星號皆文字fill可見且圖片content none；51個穿戴／背包／神鑄badge星星仍PNG可見、文字fill透明、字級18px，三色／描邊／光暈／重疊保持。Console error／warning0；QA截圖simple-text-stars.jpg及simple-text-results.json保存在本聊天visualizations/star-alignment。初次讀computed style的camelCase vendor alias為空，已改getPropertyValue完整確認，不以空值當通過。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/equipment-tooltip-compare.test.cjs tests/equip-reroll-ui.test.cjs tests/vfx-editor-cache-versions.test.cjs`28/28通過；`npm.cmd run build`669檔通過，`node tools/ancient-stars/export-source.cjs --check`原素材SHA一致、`git diff --check`通過。素材／PNG皆未修改，不建素材庫空Commit；無新增顯示文字／String需求。
+- 修改5檔：css/equipment-tooltip.css、index.html、LV_upgrade_system.md、docs/assets/ANCIENT_STARS_SOURCE.md及本段。唯讀未改規範／Workflow／Agent、原版CSS、style.css／其他CSS、js/item.js／ui.js／精鑄邏輯、原PNG／素材庫／匯出器與既有測試／helpers；無本項未完成或已知新增風險，未做全遊戲長玩。Commit為本段所在「[Codex] fix: 裝備tips與詳情恢復簡易星號」（SHA見交付），可供Review及使用者合併，未合併推送；下一步重載遊戲檢視。
+
+## SYNC-ANCIENT-STAR-TEXT-20261106 — 整合詞條星號與裝備格烘焙圖示
+
+- Owner：Codex。使用者以「1」接續同步，合併377fa4ad與34a0847f。裝備tips與詳情使用簡易星號，裝備格保留主線的烘焙PNG。
+- 依雙方提交合併四個衝突檔，保留序章樣式快取與兩側任務紀錄，並接上incoming的提示樣式快取。素材沿用已整合的來源與匯出。
+- 驗證：太古精鑄、裝備比較tips、洗煉、快取、序章動態／聲景與符文真言相關回歸52/52通過。npm.cmd run build檢查678檔通過。Edge以正式CSS驗證詳情及tips的6個文字星號，以及三種256px裝備格烘焙圖的載入與computed styles。原圖與烘焙圖SHA核對通過。序章匯出器在本次驗證明確指定effects-materials，七張素材、提示詞與動畫來源SHA一致。git diff HEAD --check通過。

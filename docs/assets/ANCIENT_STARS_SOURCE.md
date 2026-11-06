@@ -14,3 +14,4 @@
 - 2026-11-05窄格避框：星列使用可壓縮Grid軌道，max-width為格內寬扣除左右共24px；每顆星星保留max-content及原18px字級，軌道縮短時只增加重疊，不縮圖案。寬格原步距保持，>4顆原重疊以兩側負margin及對稱padding保留，三色／描邊／光暈與PNG／母圖SHA不變。
 - 匯出：`node tools/ancient-stars/export-source.cjs --apply`；驗證：`node tools/ancient-stars/export-source.cjs --check`。素材庫路徑由共用 `vfx-library-root.cjs` 解析，不記錄本機絕對路徑。
 - 2026-11-05效能修正（烘焙光暈）：上列CSS濾鏡（SVG色彩矩陣＋SVG feMorphology描邊＋三層drop-shadow）每次重繪都在CPU重算，背包上百顆星星使介面卡頓。改由 `tools/ancient-stars/bake-glow.cjs` 以相同參數（1 CSS px≈7.6圖像素；描邊1px #6b3f16；外暈1／3／6px，σ＝半徑／2；淺藍色彩矩陣）離線烘進 `images/ui/ancient-star-{gold,light-blue,blue}-glow.png`（256px，四周各留64px光暈）。CSS只換圖並以 `transform: scale(2)` 抵銷留白，星星本體尺寸／基線／間距不變，已無任何濾鏡。原128px PNG仍為母圖、SHA不變。重新烘焙：`node tools/ancient-stars/bake-glow.cjs --apply`；驗證：`--check`。
+- 2026-11-06顯示分流：裝備tips和詳情使用原有✡字形與輕文字光暈。裝備、背包和神鑄格繼續使用三色烘焙PNG，保留輪廓、光暈與窄格重疊。
