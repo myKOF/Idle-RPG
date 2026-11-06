@@ -1,3 +1,11 @@
+## STARTUP-LOADING-20261106 — 以 Loading 取代自動開場
+
+- Owner：Codex，Done。沿用既有黑底 Loading，待自動存檔檢查與選單背景準備完成後顯示開始選單。移除短標題和首次序章的自動播放入口及舊網址參數，保留設定及 GM 手動播放。
+- 前置為現行開始選單與 Loading。範圍為 js/start-menu.js、js/intro-player.js、js/intro-data.js、js/bridge.js、首頁快取、開始選單及序章回歸、LV 與本段。素材、字串表、存檔與 Worker 協議由既有流程管理。驗收新舊玩家、背景載入失敗與直接接續存檔。接手為使用者驗收及整合。
+- 16 份相關 `node --test` 共 155/155 通過，涵蓋 Loading、開始選單、序章與 GM、存檔、首畫、分頁鎖、音訊、快取及 Worker。`npm.cmd run build` 檢查 684 檔，字串寫死 0、diff 檢查通過。
+- 內建瀏覽器未連線，改用隔離 Edge 驗證。1440×780 桌面及 390×844 窄視窗刻意延遲背景，確認先顯示 Loading，準備完成直接進入選單，期間未掛載開場舞台。測試設定重播／略過、新遊戲、自動存檔與重新載入後繼續，使用實際 Worker 和 IndexedDB。Console error／warning 0，未做行動真機驗證。
+- 唯讀核對 main、storage、分頁鎖及背景程式。衝突預檢通過，首頁與文件內的字體／標誌試版分段保留。本段所在提交可供整合。
+
 ## SYNC-20261106-START-MENU-FINAL — 整合開始選單樣式並恢復同步
 
 - Owner：Codex。使用者以 1 授權接續本輪整合。原 develop f8e33e7c 已保留 Antigravity、Claude 技能音效及先前 Codex 成果，本輪納入 524aabd4 暖色文字與游標亮帶。只調整本段及合併所需文件，保留所有來源提交。

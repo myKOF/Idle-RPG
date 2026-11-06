@@ -35,12 +35,7 @@ var WorkerBridge = (function () {
     _startupHold = false;
     post(MSG_IN.MENU_PAUSE, { paused: effectivePaused() });
   }
-  /* 開頭動畫播放中暫停逾時保險（js/intro-player.js）：動畫比 20 秒長時，
-     不能讓戰鬥在動畫後面先開打。動畫結束再重新計時一整段，交回原本的保險。 */
-  function suspendStartupHoldTimeout() {
-    if (_startupHoldTimer) { clearTimeout(_startupHoldTimer); _startupHoldTimer = 0; }
-  }
-  function resumeStartupHoldTimeout() {
+  function armStartupHoldTimeout() {
     if (!_startupHold || !_started) return;
     if (_startupHoldTimer) clearTimeout(_startupHoldTimer);
     _startupHoldTimer = setTimeout(releaseStartupHold, STARTUP_HOLD_MAX_MS);
@@ -468,7 +463,7 @@ var WorkerBridge = (function () {
       return false;
     }
     _started = true;
-    if (!isRestart) resumeStartupHoldTimeout();
+    if (!isRestart) armStartupHoldTimeout();
     _worker.onmessage = onMessage;
     _worker.onerror = function (err) {
       stats.errors++;
@@ -633,7 +628,6 @@ var WorkerBridge = (function () {
   return {
     start: start, stop: stop, send: send, on: on, loadSave: loadSave, handoff: handoff,
     requestPanel: requestPanel, status: status, enabled: enabled, safeMode: safeMode, isDeterministicTest: isDeterministicTest,
-    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused, releaseStartupHold: releaseStartupHold,
-    suspendStartupHoldTimeout: suspendStartupHoldTimeout, resumeStartupHoldTimeout: resumeStartupHoldTimeout
+    whenWritesDrained: whenWritesDrained, saveAutoNow: saveAutoNow, setMenuPaused: setMenuPaused, releaseStartupHold: releaseStartupHold
   };
 })();

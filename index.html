@@ -51,7 +51,7 @@
       };
       window.hideLoadingScreen = function () {
         clearInterval(timer);
-        // 收掉 Loading 的路徑（Worker 失效、分頁鎖被搶）也要收掉開頭動畫，否則通知與遮罩被動畫蓋住
+        // 分頁鎖等通知需要蓋過手動播放的序章
         if (window.IntroPlayer && IntroPlayer.isPlaying()) IntroPlayer.abort('veil');
         var screen = document.getElementById('loading-screen');
         if (!screen) return;
@@ -1226,11 +1226,11 @@
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>
-  <script src="js/intro-data.js?v=20261106-intro-v2"></script>
+  <script src="js/intro-data.js?v=20261106-intro-v3"></script>
   <script src="js/intro-motion.js?v=1.0.0"></script>
   <script src="js/intro-audio.js?v=1.0.0"></script>
-  <script src="js/intro-player.js?v=20261106-start-menu"></script>
-  <script src="js/bridge.js?v=20261106-start-menu-skill-sfx-merge-v1"></script>
+  <script src="js/intro-player.js?v=20261106-manual-intro-v1"></script>
+  <script src="js/bridge.js?v=20261106-start-menu-skill-sfx-merge-v2"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -1241,7 +1241,7 @@
   <script src="js/lagprobe.js?v=1.0.19"></script>
   <script src="js/game-menu.js?v=1.0.8"></script>
   <script src="js/start-menu-background.js?v=1.0.3"></script>
-  <script src="js/start-menu.js?v=1.0.1"></script>
+  <script src="js/start-menu.js?v=1.0.2"></script>
   <script src="js/ai-key-setting.js?v=20261105-settings-tabs"></script>
   <script src="js/main.js?v=1.0.10"></script>
 </body>

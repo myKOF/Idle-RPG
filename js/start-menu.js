@@ -1,7 +1,7 @@
 'use strict';
 if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網
 
-/* 開場與開始選單只讀存檔。玩家選好本局後，才交給 Worker 遷移、結算與寫入。 */
+/* 載入開始選單時只讀存檔。玩家選好本局後，才交給 Worker 遷移、結算與寫入。 */
 var StartMenu = (function () {
   var active = true, ready = false, busy = false, modes = false;
   var startGame, bootSave = null, bootInfo = {}, folderAuto = null;
@@ -159,6 +159,7 @@ var StartMenu = (function () {
     button('exit').addEventListener('click', function () { location.reload(); });
 
     var deterministic = WorkerBridge.isDeterministicTest();
+    var backdropReady;
     function prepare(save, info) {
       bootSave = save;
       bootInfo = info;
@@ -170,20 +171,16 @@ var StartMenu = (function () {
         show();
         hideLoadingScreen();
       }
-      if (typeof IntroPlayer !== 'undefined') {
-        try {
-          if (IntroPlayer.startupBegin({ hasSave: !!save })) {
-            IntroPlayer.release();
-            IntroPlayer.whenIdle(reveal);
-            return;
-          }
-        } catch (error) { console.error('[intro] 起播失敗', error); }
-      }
-      reveal();
+      if (backdropReady) backdropReady.then(reveal);
+      else reveal();
     }
     if (deterministic) prepare(null, {});
     else {
-      if (typeof StartMenuBackground !== 'undefined') backdrop = StartMenuBackground.mount(el('start-menu'));
+      showLoadingScreen();
+      if (typeof StartMenuBackground !== 'undefined') {
+        backdrop = StartMenuBackground.mount(el('start-menu'));
+        backdropReady = backdrop.ready.catch(function () { /* 背景載入失敗仍可操作選單 */ });
+      }
       SaveStorage.readBootSave(prepare, true);
     }
   }
