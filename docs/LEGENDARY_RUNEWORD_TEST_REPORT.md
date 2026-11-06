@@ -6,7 +6,7 @@
 ---
 
 ## 進度說明
-- **當前進度**：已完成 **批次 1**（第 0 節三種核對＋第 1 節環境＋共通檢查 C1～C10）與 **批次 2**（**L001～L070**）。
+- **當前進度**：已完成 **批次 1**（第 0 節三種核對＋環境＋共通檢查 C1～C10）、**批次 2**（**L001～L070**）與 **批次 3**（**L071～L144**，含 L116～L135 專屬與停用規則）。
 - **待測批次**：
   - 批次 3：L071～L144（含 L116～L135 專屬與停用規則）
   - 批次 4：W01～W65
@@ -132,7 +132,87 @@
 | **L069** | `earthguardHeartOfEarth`<br>地之心（大地守護） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L069_earthguardHeartOfEarth.png` | 正常生效 |
 | **L070** | `earthguardUndyingWill`<br>不滅意志（大地守護） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L070_earthguardUndyingWill.png` | 正常生效 |
 
-*(待批次 3 填入 L071～L144，待批次 4 填入 W01～W65)*
+
+### 3.2 傳奇特效：批次 3（L071～L144，含專屬／停用／通用）
+
+| 編號 | 條目 key / 名稱 | 測試結果 | 觸發樣本數 | 截圖檔名 | 備註說明 |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **L071** | `chainlightningSurge`<br>電荷連鎖（連鎖閃電） | **通過** | 17/50 (34.0%, 表定 35%) | `tmp/legend-rw-shots/L071_chainlightningSurge.png` | 正常生效 |
+| **L072** | `chainlightningVolley`<br>電擊（連鎖閃電） | **通過** | 26/50 (52.0%, 表定 50%) | `tmp/legend-rw-shots/L072_chainlightningVolley.png` | 正常生效 |
+| **L073** | `chainlightningScatter`<br>雷散落（連鎖閃電） | **已知 K3** | 固定生效 (50/50) | `tmp/legend-rw-shots/L073_chainlightningScatter.png` | 已知 K3（說明寫電殛擴散，實讀第 5 階靜電） |
+| **L074** | `chainlightningSuper`<br>超導（連鎖閃電） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L074_chainlightningSuper.png` | 正常生效 |
+| **L075** | `chainlightningOverload`<br>過載（連鎖閃電） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L075_chainlightningOverload.png` | 正常生效 |
+| **L076** | `thunderstrikeTriple`<br>三重雷（落雷術） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L076_thunderstrikeTriple.png` | 正常生效 |
+| **L077** | `thunderstrikeLock`<br>雷鎖（落雷術） | **通過** | 14/50 (28.0%, 表定 25%) | `tmp/legend-rw-shots/L077_thunderstrikeLock.png` | 正常生效 |
+| **L078** | `thunderstrikeQuake`<br>震雷（落雷術） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L078_thunderstrikeQuake.png` | 正常生效 |
+| **L079** | `thunderstrikeRebirth`<br>雷之再生（落雷術） | **通過** | 50/50 (100.0%, 表定 100%) | `tmp/legend-rw-shots/L079_thunderstrikeRebirth.png` | 正常生效 |
+| **L080** | `thunderstrikeRod`<br>引雷針（落雷術） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L080_thunderstrikeRod.png` | 正常生效 |
+| **L081** | `thunderorbCore`<br>雷核（雷球） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L081_thunderorbCore.png` | 正常生效 |
+| **L082** | `thunderorbOverload`<br>超載（雷球） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L082_thunderorbOverload.png` | 正常生效 |
+| **L083** | `thunderorbShockCore`<br>感電核心（雷球） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L083_thunderorbShockCore.png` | 正常生效 |
+| **L084** | `thunderorbFallCount`<br>雷殞落（雷球） | **已知 K2** | 固定生效 (50/50) | `tmp/legend-rw-shots/L084_thunderorbFallCount.png` | 已知 K2（說明雷殞天落，技能階為雷隕天落） |
+| **L085** | `thunderorbFallStun`<br>雷殞震（雷球） | **已知 K2** | 固定生效 (50/50) | `tmp/legend-rw-shots/L085_thunderorbFallStun.png` | 已知 K2（說明雷殞天落，技能階為雷隕天落） |
+| **L086** | `icearrowVolley`<br>連射（寒冰箭） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L086_icearrowVolley.png` | 正常生效 |
+| **L087** | `icearrowSeal`<br>冰封（寒冰箭） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L087_icearrowSeal.png` | 正常生效 |
+| **L088** | `icearrowWinter`<br>凜冬侵蝕（寒冰箭） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L088_icearrowWinter.png` | 正常生效 |
+| **L089** | `icearrowSplit`<br>冰裂箭（寒冰箭） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L089_icearrowSplit.png` | 正常生效 |
+| **L090** | `icearrowDeepFreeze`<br>深度凍結（寒冰箭） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L090_icearrowDeepFreeze.png` | 正常生效 |
+| **L091** | `waterballVolley`<br>水流連彈（水流彈） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L091_waterballVolley.png` | 正常生效 |
+| **L092** | `waterballNovaBurst`<br>冰霜擴散（水流彈） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L092_waterballNovaBurst.png` | 正常生效 |
+| **L093** | `waterballFrostSurge`<br>寒霜湧動（水流彈） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L093_waterballFrostSurge.png` | 正常生效 |
+| **L094** | `waterballTorrent`<br>激流（水流彈） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L094_waterballTorrent.png` | 正常生效 |
+| **L095** | `waterballTornado`<br>水龍勢（水流彈） | **通過** | 2/50 (4.0%, 表定 10%) | `tmp/legend-rw-shots/L095_waterballTornado.png` | 正常生效 |
+| **L096** | `frostnovaShatter`<br>碎冰（冰霜新星） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L096_frostnovaShatter.png` | 正常生效 |
+| **L097** | `frostnovaTwinBurst`<br>雙冰爆（冰霜新星） | **通過** | 19/50 (38.0%, 表定 35%) | `tmp/legend-rw-shots/L097_frostnovaTwinBurst.png` | 正常生效 |
+| **L098** | `frostnovaIceSpike`<br>寒冰衝擊（冰霜新星） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L098_frostnovaIceSpike.png` | 正常生效 |
+| **L099** | `frostnovaColdTide`<br>寒潮（冰霜新星） | **通過** | 10/50 (20.0%, 表定 20%) | `tmp/legend-rw-shots/L099_frostnovaColdTide.png` | 正常生效 |
+| **L100** | `frostnovaWinterFrost`<br>凜冬寒霜（冰霜新星） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L100_frostnovaWinterFrost.png` | 正常生效 |
+| **L101** | `windbladeRend`<br>裂風（風刃） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L101_windbladeRend.png` | 正常生效 |
+| **L102** | `windbladePressure`<br>增壓（風刃） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L102_windbladePressure.png` | 正常生效 |
+| **L103** | `windbladeTrace`<br>風之痕（風刃） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L103_windbladeTrace.png` | 正常生效 |
+| **L104** | `windbladeErode`<br>風蝕（風刃） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L104_windbladeErode.png` | 正常生效 |
+| **L105** | `windbladeVoidCut`<br>斷空刃（風刃） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L105_windbladeVoidCut.png` | 被符文真言借用：W58【虛空行者】；正常生效 |
+| **L106** | `vacuumResonance`<br>共振（真空斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L106_vacuumResonance.png` | 正常生效 |
+| **L107** | `vacuumRift`<br>裂痕（真空斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L107_vacuumRift.png` | 正常生效 |
+| **L108** | `vacuumWindBlade`<br>真空風刃（真空斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L108_vacuumWindBlade.png` | 正常生效 |
+| **L109** | `vacuumExpand`<br>空間澎脹（真空斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L109_vacuumExpand.png` | 正常生效 |
+| **L110** | `vacuumFlux`<br>虛空漲落（真空斬） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L110_vacuumFlux.png` | 正常生效 |
+| **L111** | `stormbarrierAbsorb`<br>吸收（暴風屏障） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L111_stormbarrierAbsorb.png` | 正常生效 |
+| **L112** | `stormbarrierReflect`<br>暴風反射（暴風屏障） | **通過** | 3/50 (6.0%, 表定 10%) | `tmp/legend-rw-shots/L112_stormbarrierReflect.png` | 正常生效 |
+| **L113** | `stormbarrierCounterCut`<br>逆風切（暴風屏障） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L113_stormbarrierCounterCut.png` | 正常生效 |
+| **L114** | `stormbarrierWall`<br>風之壁（暴風屏障） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L114_stormbarrierWall.png` | 正常生效 |
+| **L115** | `stormbarrierCore`<br>風暴核心（暴風屏障） | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L115_stormbarrierCore.png` | 正常生效 |
+| **L116** | `mountainSunderer`<br>崩山裂地者 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L116_mountainSunderer.png` | 被符文真言借用：W63【永凍】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L117** | `shadowTracker`<br>影襲追蹤者 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L117_shadowTracker.png` | 被符文真言借用：W20【影步】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L118** | `whirlwindStab`<br>旋風之刺 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L118_whirlwindStab.png` | 被符文真言借用：W42【閃擊】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L119** | `doomProphet`<br>末日預言者 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L119_doomProphet.png` | 被符文真言借用：W29【天啟】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L120** | `berserkBloodAxe`<br>狂暴血斧 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L120_berserkBloodAxe.png` | 被符文真言借用：W30【斷魂】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L121** | `unyieldingGuard`<br>不屈護衛 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L121_unyieldingGuard.png` | 被符文真言借用：W24【重甲鐵誓】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L122** | `thunderShock`<br>雷霆之震 | **通過** | 8/50 (16.0%, 表定 20%) | `tmp/legend-rw-shots/L122_thunderShock.png` | 被符文真言借用：W16【雷神之怒】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L123** | `burningLaw`<br>燃燒法則 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L123_burningLaw.png` | 被符文真言借用：W65【鐵匠之魂】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L124** | `thunderMark`<br>雷紋刻印 | **通過** | 5/50 (10.0%, 表定 10%) | `tmp/legend-rw-shots/L124_thunderMark.png` | 被符文真言借用：W61【星門】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L125** | `iceSpikeBurst`<br>冰霜尖刺 | **通過** | 6/50 (12.0%, 表定 10%) | `tmp/legend-rw-shots/L125_iceSpikeBurst.png` | 被符文真言借用：W64【冰川】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L126** | `heavenlyVow`<br>天譴之誓 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L126_heavenlyVow.png` | 被符文真言借用：W32【時之守望】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L127** | `godfallMeteor`<br>神落天殞 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L127_godfallMeteor.png` | 被符文真言借用：W52【星墜】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L128** | `stormAndThunder`<br>風起雷落 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L128_stormAndThunder.png` | 被符文真言借用：W44【風暴之眼】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L129** | `elementHeart`<br>元素之心 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L129_elementHeart.png` | 被符文真言借用：W59【創世紀】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L130** | `deadTime`<br>亡者時間 | **通過** | 真言借用觸發 (50/50) | `tmp/legend-rw-shots/L130_deadTime.png` | 被符文真言借用：W60【滅世】；符文真言專屬（一般裝備不生效，符文真言借用生效；K1 回歸灰字正常） |
+| **L131** | `fireSpiritShield`<br>火靈盾 | **通過** | 不觸發 (0/50，已停用) | `tmp/legend-rw-shots/L131_fireSpiritShield.png` | 舊版傳奇停用（不掉落、不生效；K1 回歸灰字「(已停用)」正常） |
+| **L132** | `magicLightShield`<br>魔法光盾 | **通過** | 不觸發 (0/50，已停用) | `tmp/legend-rw-shots/L132_magicLightShield.png` | 舊版傳奇停用（不掉落、不生效；K1 回歸灰字「(已停用)」正常） |
+| **L133** | `lightCollision`<br>光之碰撞 | **通過** | 不觸發 (0/50，已停用) | `tmp/legend-rw-shots/L133_lightCollision.png` | 舊版傳奇停用（不掉落、不生效；K1 回歸灰字「(已停用)」正常） |
+| **L134** | `ghostLamp`<br>幽冥神燈 | **通過** | 不觸發 (0/50，已停用) | `tmp/legend-rw-shots/L134_ghostLamp.png` | 舊版傳奇停用（不掉落、不生效；K1 回歸灰字「(已停用)」正常） |
+| **L135** | `magicRecoil`<br>魔法反震 | **通過** | 不觸發 (0/50，已停用) | `tmp/legend-rw-shots/L135_magicRecoil.png` | 舊版傳奇停用（不掉落、不生效；K1 回歸灰字「(已停用)」正常） |
+| **L136** | `bloodthirst`<br>嗜血 | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L136_bloodthirst.png` | 正常生效 |
+| **L137** | `chainReaction`<br>連鎖反應 | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L137_chainReaction.png` | 正常生效 |
+| **L138** | `elation`<br>激昂 | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L138_elation.png` | 正常生效 |
+| **L139** | `experienceTome`<br>經驗寶典 | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L139_experienceTome.png` | 正常生效 |
+| **L140** | `goldenTouch`<br>點金手 | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L140_goldenTouch.png` | 正常生效 |
+| **L141** | `fortify`<br>強固 | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L141_fortify.png` | 正常生效 |
+| **L142** | `softenBlow`<br>以柔剋剛 | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L142_softenBlow.png` | 正常生效 |
+| **L143** | `shieldWall`<br>盾牆 | **通過** | 固定生效 (50/50) | `tmp/legend-rw-shots/L143_shieldWall.png` | 正常生效 |
+| **L144** | `manaReflux`<br>返哺 | **通過** | 11/50 (22.0%, 表定 25%) | `tmp/legend-rw-shots/L144_manaReflux.png` | 正常生效 |
+
+*(待批次 4 填入 W01～W65)*
 
 ---
 
