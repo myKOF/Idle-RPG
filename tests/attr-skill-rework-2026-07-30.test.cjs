@@ -212,7 +212,9 @@ test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a)，且參數可調', () 
      讓調參的人被強制看見「這個改動影響到誰」。已改回。 */
   const c = loadContext();
   assert.equal(c.PEN_IGNORE_A, 0.75);
-  assert.equal(typeof c.PEN_IGNORE_B, 'undefined', 'b 欄已停用');
+  /* 2026-11-06：b 欄重新啟用為「b × 受攻擊者等級」（見下一支測試）；表格目前填 0，
+     所以下面不帶等級的期望值仍成立。b 改成非 0 時這行會紅，連同曲線關鍵點一起更新。 */
+  assert.equal(c.PEN_IGNORE_B, 0);
   assert.equal(typeof c.PEN_IGNORE_C, 'undefined', 'c 欄已停用');
   assert.equal(c.penIgnoreRatio(0), 0);
 
@@ -235,6 +237,47 @@ test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a)，且參數可調', () 
      一個抓「公式被改成別的形狀」。 */
   assert.ok(Math.abs(c.penIgnoreRatio(c.PEN_IGNORE_A * 100) - 0.5) < 1e-12,
     '穿透 = a×100% 時應忽略 50% 防禦');
+});
+
+test('忽略防禦% = 穿透倍率 ÷ (穿透倍率 + a + b×受攻擊者等級)', () => {
+  /* 公式形狀：b 與 a 同單位（穿透倍率＝穿透%÷100），等級取被打的那一方。
+     這裡把 b 暫時設成測試值，只驗形狀；表格現值由上一支測試釘住。 */
+  const c = loadContext();
+  c.PEN_IGNORE_B = 0.01;
+  const expect = (pen, lv) => (pen / 100) / (pen / 100 + c.PEN_IGNORE_A + c.PEN_IGNORE_B * lv);
+  [[1000, 1], [1000, 600], [3200, 1000], [100, 50]].forEach(([pen, lv]) => {
+    assert.ok(Math.abs(c.penIgnoreRatio(pen, lv) - expect(pen, lv)) < 1e-12, '穿透 ' + pen + '／等級 ' + lv);
+    assert.ok(Math.abs(c.penIgnorePct(pen, lv) - expect(pen, lv) * 100) < 1e-9);
+  });
+  // 等級越高越難忽略防禦；沒給等級＝等級項為 0
+  assert.ok(c.penIgnoreRatio(1000, 600) < c.penIgnoreRatio(1000, 100));
+  assert.ok(Math.abs(c.penIgnoreRatio(1000) - 10 / (10 + c.PEN_IGNORE_A)) < 1e-12);
+  // 半數點：穿透倍率 = a + b×等級 時剛好忽略 50%
+  const lv = 400;
+  assert.ok(Math.abs(c.penIgnoreRatio((c.PEN_IGNORE_A + c.PEN_IGNORE_B * lv) * 100, lv) - 0.5) < 1e-12);
+});
+
+test('resolveHit／DoT：穿透曲線的等級取受攻擊者，不是攻擊者', () => {
+  const c = loadContext();
+  c.PEN_IGNORE_B = 0.01;
+  c.chance = (p) => p >= 100;
+  c.rnd = () => 1;
+  c.physicalResistanceReduction = () => 0;
+  c.globalDamageMultiplier = () => 1;
+  const hit = (atkLv, defLv) => c.resolveHit({ hp: 100 }, { hp: 1e9, shield: 0 },
+    { atk: 1000, dmgType: 'phys', critRate: 0, hit: 100, pen: 1000, level: atkLv },
+    { def: 500, dodge: 0, level: defLv }).dmg;
+  const expectHit = (atkLv, defLv) =>
+    Math.round(1000 * (1 - c.defReduction(500 * c.penDefMultiplier(c.penIgnoreRatio(1000, defLv)), atkLv)));
+  assert.equal(hit(1, 600), expectHit(1, 600));
+  assert.equal(hit(1, 1), expectHit(1, 1));
+  assert.ok(hit(1, 600) < hit(1, 1), '受攻擊者等級越高，穿透忽略的防禦越少');
+
+  // DoT 結算同一條規則
+  const dot = (defLv) => c.dotDamageAfterMitigation(1000, { pen: 1000, level: 1 }, { def: 500, level: defLv });
+  const expectDot = (defLv) => 1000 * (1 - c.defReduction(500 * c.penDefMultiplier(c.penIgnoreRatio(1000, defLv)), 1));
+  assert.ok(Math.abs(dot(600) - expectDot(600)) < 1e-6);
+  assert.ok(dot(600) < dot(1));
 });
 
 test('忽略防禦為飽和曲線：單調遞增、到不了 100%，且不轉為增傷', () => {

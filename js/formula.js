@@ -707,21 +707,25 @@ function skillElemMixOf(aCfg) {
   return null;
 }
 
-/* ---- 穿透 → 忽略防禦（2026-08-06 改版：飽和曲線）----
-   忽略敵人防禦比率 = 穿透倍率 ÷ (穿透倍率 + a)
-     穿透倍率 = 總穿透加成% ÷ 100（穿透 350% → 3.5）
-   a 由參數表「3-戰鬥核心／穿透忽略防禦」控制（a 越大越難忽略防禦），因此下面不列
-   對照數字——調 a 就會全錯。與 a 無關的性質只有一條：穿透 = a×100% 時剛好忽略 50%。
+/* ---- 穿透 → 忽略防禦（2026-08-06 改版：飽和曲線；2026-11-06 加入受攻擊者等級）----
+   忽略敵人防禦比率 = 穿透倍率 ÷ (穿透倍率 + a + b × 受攻擊者等級)
+     穿透倍率 = 總穿透加成% ÷ 100（穿透 350% → 3.5）；a、b 與穿透倍率同一單位
+     受攻擊者等級 = 被打的那一方（dCfg.level：怪物＝關卡等級、玩家＝角色等級）
+   a、b 由參數表「3-戰鬥核心／穿透忽略防禦」控制（越大越難忽略防禦），因此下面不列
+   對照數字——調參數就會全錯。與參數無關的性質只有一條：
+   穿透倍率 = a + b×等級 時剛好忽略 50%。
    穿透本身不設上限（STAT_CAPS.pPen/mPen = 0），改由這條飽和曲線收斂：
    曲線趨近但到不了 100%，敵方防禦永遠保留一小部分，也不存在溢出增傷。 */
 var PEN_IGNORE_A = 0.75;
-function penIgnoreRatio(penPct) {
+var PEN_IGNORE_B = 0;
+function penIgnoreRatio(penPct, defenderLevel) {
   var rate = Math.max(0, Number(penPct) || 0) / 100;
   if (rate <= 0) return 0;
-  return clamp(rate / (rate + PEN_IGNORE_A), 0, 1);   // a 設成 0/負值的異常參數夾回 [0,1]
+  var level = Math.max(0, Number(defenderLevel) || 0);
+  return clamp(rate / (rate + PEN_IGNORE_A + PEN_IGNORE_B * level), 0, 1);   // 參數設成 0/負值的異常值夾回 [0,1]
 }
 // 面板／說明用：實際忽略防禦%（趨近但到不了 100%）
-function penIgnorePct(penPct) { return penIgnoreRatio(penPct) * 100; }
+function penIgnorePct(penPct, defenderLevel) { return penIgnoreRatio(penPct, defenderLevel) * 100; }
 // 有效防禦乘區：忽略防禦比率直接折在防禦上，不會出現負防禦
 function penDefMultiplier(ignoreRatio) { return Math.max(0, 1 - ignoreRatio); }
 /* 有效穿透 = 屬性穿透% + 技能增益 penUp%
@@ -869,9 +873,11 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   var attackerCurrentHp = Math.max(0, Number(attacker && attacker.hp) || 0);
   // 防禦選型（物理/魔法）＋破甲＋穿透：有效防禦 = 防禦 × (1-破甲%) × (1-忽略防禦%)
   // 忽略防禦% 由穿透經 penIgnoreRatio 換算（不再等於穿透%本身）；飽和曲線，不會到 100%，也不轉增傷。
+  // 曲線分母的等級項看「受攻擊者」（dCfg.level），與防禦減傷公式看攻擊者等級不同。
+  var defenderLevel = dCfg.level || 1;
   var dmg = 0;
   if (aCfg.dmgType !== 'magic') {
-    var pIgnore = penIgnoreRatio(aCfg.pen);
+    var pIgnore = penIgnoreRatio(aCfg.pen, defenderLevel);
     var pDef = (dCfg.def || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(pIgnore);
     var pDmg = dCfg.isPlayer
       ? playerDamageAfterDefense(aCfg.atk, pDef, aCfg.level || 1)
@@ -881,7 +887,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   }
   if (aCfg.dmgType === 'magic' || aCfg.dmgType === 'both') {
     var mPen = (aCfg.dmgType === 'both') ? (aCfg.mPen || 0) : (aCfg.pen || 0);
-    var mIgnore = penIgnoreRatio(mPen);
+    var mIgnore = penIgnoreRatio(mPen, defenderLevel);
     var baseMAtk = (aCfg.dmgType === 'both') ? (aCfg.matk || 0) : (aCfg.atk || 0);
     var mDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(mIgnore);
     var mDmg = dCfg.isPlayer
@@ -943,7 +949,7 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
     var elemMagicMit = 1;
     if (dCfg.isPlayer) {
       var elemMPen = (aCfg.dmgType === 'both') ? (aCfg.mPen || 0) : (aCfg.pen || 0);
-      var elemMIgnore = penIgnoreRatio(elemMPen);
+      var elemMIgnore = penIgnoreRatio(elemMPen, defenderLevel);
       var elemMDef = (dCfg.mdef || 0) * (1 - (aCfg.sunder || 0) / 100) * penDefMultiplier(elemMIgnore);
       elemMagicMit = (1 - defReduction(elemMDef, aCfg.level || 1)) *
         (1 - magicResistanceReduction(dCfg.mRes, aCfg.level || 1));
@@ -1156,12 +1162,12 @@ function dotDamageAfterMitigation(amount, aCfg, dCfg, opts) {
   var sunder = (aCfg.sunder || 0) / 100;
   if (opts.elem || opts.magic) {
     var mPen = (aCfg.mPen !== undefined && aCfg.mPen !== null) ? aCfg.mPen : (aCfg.pen || 0);
-    var mDef = (dCfg.mdef || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(mPen));
+    var mDef = (dCfg.mdef || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(mPen, dCfg.level || 1));
     dmg *= 1 - defReduction(mDef, lvl);
     dmg *= 1 - magicResistanceReduction(dCfg.mRes);
     if (opts.elem) dmg *= elementalResistanceMultiplier(dCfg.resist, opts.elem, lvl);
   } else {
-    var pDef = (dCfg.def || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(aCfg.pen || 0));
+    var pDef = (dCfg.def || 0) * (1 - sunder) * penDefMultiplier(penIgnoreRatio(aCfg.pen || 0, dCfg.level || 1));
     dmg *= 1 - defReduction(pDef, lvl);
     dmg *= 1 - physicalResistanceReduction(dCfg.pRes);
   }

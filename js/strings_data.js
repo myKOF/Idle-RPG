@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = '92a2740d';
+var STRING_DATA_VERSION = '8d1aad42';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -233,7 +233,7 @@ var STRING_DATA = {
   "228": ["降低受到的{0}屬性傷害，抗性值越高減傷效果越強。"],
   "229": ["<br><br><span style=\"color:#aaa\">其他來源合計：<span style=\"color:#fff\">{0}%</span><br>附魔獨立乘區：<span style=\"color:#fff\">×(1 + {1}%)</span></span>"],
   "230": ["受到{0}攻擊時降低受到的傷害。<br><br><span style=\"color:#ffd700\">目前同級減傷率：{1}</span>"],
-  "231": ["造成{0}傷害時，無視敵方一定比例的{1}防禦。<br><br><span style=\"color:#ffd700\">目前忽略防禦：{2}</span>"],
+  "231": ["造成{0}傷害時，無視敵方一定比例的{1}防禦。<br><br><span style=\"color:#ffd700\">目前同級忽略防禦：{2}</span>"],
   "232": ["每對一名敵人造成一次傷害時，固定回復此數值的{0}；範圍、多段與持續傷害逐次觸發，未造成傷害不觸發。"],
   "233": ["基礎屬性"],
   "234": ["❤️ 生命值"],

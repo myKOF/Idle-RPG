@@ -1034,8 +1034,9 @@ scalar('formula', 'ENEMY_CRIT_RATE_NORMAL', '3-戰鬥核心', '敵人爆擊', 0)
 scalar('formula', 'ENEMY_CRIT_RATE_ELITE', '3-戰鬥核心', '敵人爆擊', 1);
 scalar('formula', 'ENEMY_CRIT_RATE_BOSS', '3-戰鬥核心', '敵人爆擊', 2);
 scalar('formula', 'ENEMY_CRIT_DMG_PCT', '3-戰鬥核心', '敵人爆擊', 3);
-// 穿透 → 忽略防禦曲線（formula.js §3；忽略防禦 = 穿透倍率 ÷ (穿透倍率 + a)，b/c 欄已停用）
+// 穿透 → 忽略防禦曲線（formula.js §3；忽略防禦 = 穿透倍率 ÷ (穿透倍率 + a + b×受攻擊者等級)，c 欄停用）
 scalar('formula', 'PEN_IGNORE_A', '3-戰鬥核心', '穿透忽略防禦', 0);
+scalar('formula', 'PEN_IGNORE_B', '3-戰鬥核心', '穿透忽略防禦', 1);
 // 野外菁英掉落倍率（formula.js 常數 ELITE_DROP_MULT；野外 rollFieldDrops 與離線收益共用）
 scalar('formula', 'ELITE_DROP_MULT', '4-野外怪物', '野外菁英掉落倍率', 0);
 // 寶石商店刷新週期（item.js，單一常數）

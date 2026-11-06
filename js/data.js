@@ -2331,10 +2331,10 @@ function enemyTypeDmgRedDesc(st, key, label) {
   return STR(230, label, pctStrFloor4(reduction));
 }
 
-/* 穿透 tips：黃字顯示目前穿透值換算後的實際忽略防禦% */
+/* 穿透 tips：黃字顯示目前穿透值換算後的實際忽略防禦%（以自身等級當受攻擊者等級＝對同級敵人） */
 function penetrationDesc(st, key, label) {
   var pen = (st && st[key]) || 0;
-  var ignore = penIgnorePct(pen);
+  var ignore = penIgnorePct(pen, (st && st.level) || 1);
   return STR(231, label, label, pctStrFloor4(ignore));
 }
 
