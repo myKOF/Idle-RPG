@@ -50,6 +50,13 @@
 - Edge 從開始選單開啟成就，1366px 及 390px 下確認摘要、進度條、篩選與清單分別一起上移約 28px、51px。三種篩選與關閉操作通過，Console 無錯誤或警告。四份相關回歸 23/23 通過，`npm.cmd run build` 檢查 681 檔。
 - 提示原屬尚未提交的開始選單變更，修正隨開始選單任務交付。
 
+## ACHIEVEMENT-FOUR-COLUMNS-20261106 — 成就卡片等比縮放
+
+- Codex，完成。總進度條從 24px 減到 19.2px，已達成數量貼齊獎杯下緣。成就視窗上限 1180px，桌面四欄，較窄時逐級減欄。卡片依可用欄寬統一縮放寬高、圖示、文字、框線與間距。
+- 修改 `css/achievements.css`、`index.html`、`LV_upgrade_system.md` 與本段。唯讀核對成就渲染、開始選單和篩選入口。首頁成就標記與快取對 Claude 實際工作檔三方試跑 exit 0，其技能音效區段獨立。
+- Edge 實測 320–1440px 共 11 種寬度。1024px 與 1440px 皆四欄，抽驗卡片約為原尺寸的 74% 與 90%，含換行說明的卡片。核對獎杯下緣、總進度條、三種篩選、捲動與關閉，並啟動遊戲 Worker 驗證單卡進度。Console 無錯誤或警告。
+- `node --test tests/start-menu.test.cjs tests/achievements.test.cjs tests/ui-achievement-sound.test.cjs tests/vfx-editor-cache-versions.test.cjs` 24/24 通過，`npm.cmd run build` 檢查 681 檔。可交使用者合併並重新載入驗收。
+
 ## ACHIEVEMENT-PROGRESS-ALIGN-20261105 — 獎杯置中、進度條收邊與篩選頁籤
 
 - Owner：Codex；Done，延續使用者視覺回饋。原獎杯66px畫布的圖案軸心約29px、透明上下留白亦不對稱；以CSS圖層向右下各2px校正，進度條padding／刻度inset由4px減為2px，外框尺寸與完成比例保持。允許css/achievements.css、index僅該CSS快取、LV與本段；禁止改圖片／JS／配置／音效／存檔／其他在製內容，不合併推送。
