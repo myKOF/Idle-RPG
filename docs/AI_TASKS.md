@@ -1,3 +1,17 @@
+## TOWER-BOSS3-LV3-20261108 — 骷髏王Ⅲ材質版與第3個BOSS
+
+- Owner：Codex，Done，單一主開發者。使用者提供 BOSS1_LV3.glb，要求與前一版完全相同流程套用；承接為第3關「骷髏王Ⅲ」，沿用同系列自製／自行生成及修改授權。五動作、已認可握姿與披風避碰沿用，劍由新檔重新拆分另綁骨。
+- 前置：第1／2個模型已完成；最新主線已整合50關各自NPC列，保留全部獨立數值及倍率。本次只改 tower_boss_3 第484列外觀與3D欄；第13／23／33／43列為獨立配置，保持原狀。51~150關仍依目前50列循環，不改其邏輯。
+- 允許：新模型／透明頭像、新獨立匯出器、NPC.xlsx第484列外觀／動作與CSV／衍生data、主頁／bridge／Worker資料快取、對應回歸、來源交接／LV／本段、素材庫獨立套件。禁止改數值／倍率／技能／屬性、公式、Worker協議、通用3D執行期或其他BOSS配置，不合併／推送其他分支。
+- 驗收：新材質UV與來源SHA、重新拆劍／剛性權重、五動作與前版全骨蒙皮比對、60Hz披風／握點／地面QA、原生Excel正常重開及授權範圍比對、實際第3關載入／三攻擊／死亡／退場及其他關保留、相關回歸與Build、高清GIF與雙倉庫提交。逐檔衝突預檢全乾淨；後續交使用者驗收與整合。
+- 完成：新增boss3.glb、實際模型渲染的透明頭像及獨立匯出器；更新第484列名稱／四圖像／模型動作、CSV／data與必要主頁／bridge／Worker資料快取、npc3d-config／tower-boss3d／tower-boss-floors測試、來源交接及LV／本段。重用既有variant製作／QA與渲染工具，未修改通用3D執行期。原檔SHA8418790c…、新模型6bf58a60…；前兩模型SHA保持。
+- 模型QA：新PBR／UV共9975面全數匹配，重新拆出新劍436面並重建Sword_R、RightHand父骨與100%剛性權重。Blender重匯入五動作共1363個60Hz樣本、194骨有效蒙皮矩陣對前版最大元素誤差0.00001711；披風／身體交叉對數全0，披風最低0.038m、武器最低0.0343824m、握點誤差<0.000001m。保留135根披風避碰骨與已認可手套／握柄；另目視多幀及實際戰鬥畫面。
+- 表格：原生Excel來源獨占存取、只改13格、正常重開，兩表28365格資料／公式與七個原生物件核對通過；唯讀格式比較另確認style定義、24535個儲存格樣式、列屬性、欄寬／合併／驗證與條件格式保持。使用config_tables.readXlsxRows／csvStringify保留原始精度，CSV→data僅BOSS_LIST語意改1，後續試跑0。第13／23／33／43及其他49列未改；53／103層依既有50列循環使用第3列。名稱為NPC配置，不重複寫String。
+- 測試：`node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/tower-boss-move-attack.test.cjs tests/npc-vision.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`為48/48通過；`npm.cmd run build`692檔通過。IAB無可用連線，改隔離Edge／新局／原生Worker，實測第3關名稱／頭像／boss3、Walk與三攻擊、Die後建立1／釋放1，第4關不建立NPC3D、第1關仍boss1，撤退後總建立2／釋放2。Console error 0，三項既有音效Oscillator頻率裁切warning原樣記錄，未改音效。
+- 唯讀檢查：規範、最新50關與數值整合紀錄、NPC全表及格式、既有variant／QA／渲染／匯出工具、Three／NPC3D／塔／Worker／GM／UI介面、來源manifest與授權。另一聊天同副本新增第二首地圖配樂、更新共用data／快取／LV／任務段；沿用上輪分段保留方式，只提交本任務區段，不納入其配樂變更。已自我Review；披風為烘焙避碰，未做行動真機及長時間效能驗證。預覽／雙庫提交結果見後續交付。
+
+- 交付：五份1080×1144 GIF與1920×1200總覽，20FPS原速、所有幀數／時長／loop與透明頭像alpha通過，總覽為173幀／8.65秒；模型多幀與握姿已目視。素材庫Commit `0a8d0c04`，獨立套件30項來源／輸出逐檔及stage SHA核對通過，前兩匯出器亦通過。遊戲Commit為本段所在提交；本項無未完成功能，可供驗收後合併，未合併／推送。背景配樂新提交19872c2e保留，其他聊天的登入背景調整只留在工作區，不納入本提交。
+
 ## SYNC-PENDING-20261108-222816 - NPC / tower / zone BGM integration
 
 - Owner: Codex; Done (controller staging / merge commit pending), authorized integrator for pending HEAD fcfa38dbccbd406bdfe7731c38af887d3455feb5 / MERGE_HEAD 8434262e589d7a87443150e02a39bcd6434d0939 only. Scope: known conflicts, required generated data/cache/tests and this record. No delegation, staging, commits, Git metadata writes or other-worktree changes. Controller handles native Excel and merge commit.

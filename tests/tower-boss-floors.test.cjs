@@ -29,9 +29,18 @@ test('TBF-1 NPC 表有 50 列 tower_boss，依關卡順序；倍率欄預填 1�
   assert.deepEqual(towers.map(r => r[i('NPC識別碼')]), Array.from({ length: 50 }, (_, k) => 'tower_boss_' + (k + 1)));
   towers.forEach(r => MULTS.forEach(([label]) => assert.equal(r[i(label)], '1', r[0] + ' ' + label)));
   rows.filter(r => r[i('類型')] !== 'tower_boss').forEach(r => MULTS.forEach(([label]) => assert.equal(r[i(label)], '', r[0] + ' ' + label)));
-  // 第 11~50 關的初始內容沿用原本 10 隻循環（外觀、技能、移動／攻擊都一樣）
+  // 第3關已獨立換成LV3；13/23/33/43仍保留原雷霆外觀。其他複製列及玩法欄保持。
   const same = ['NPC名稱', '屬性', '外觀', '站立圖像', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '魔法型（1是／0否）', '專屬技能', '隨機技能下限', '隨機技能上限', '3D模型'];
-  towers.slice(10).forEach((r, k) => same.forEach(n => assert.equal(r[i(n)], towers[k % 10][i(n)], r[0] + ' ' + n)));
+  towers.slice(10).forEach((r, k) => same.forEach(n => assert.equal(r[i(n)], towers[k % 10 === 2 ? 12 : k % 10][i(n)], r[0] + ' ' + n)));
+  for (const number of [13, 23, 33, 43]) {
+    const row = towers[number - 1];
+    assert.equal(row[i('NPC名稱')], '雷霆巨獸');
+    assert.equal(row[i('站立圖像')], 'sprites/boss/boss_thunder.png');
+    assert.equal(row[i('3D模型')], '');
+    for (const field of ['屬性', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '專屬技能']) {
+      assert.equal(row[i(field)], towers[2][i(field)]);
+    }
+  }
 });
 
 test('TBF-2 樓層對應：第 n 關用 tower_boss_n，51／101 層回到第 1 關那列', () => {
