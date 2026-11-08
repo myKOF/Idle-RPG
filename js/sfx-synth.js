@@ -621,7 +621,7 @@ var SfxSynth = (function () {
     'poison-drop':        d(poisonDrop, 1.4),
     'blood-burst':        d(bloodBurst, 1.4),
     'dualdance':          d(dualdance, 2.0, { minGapMs: 450 }),      // 一則事件就是四連斬，連續事件不疊播
-    'counter':            d(counter, 1.1),
+    'counter':            d(counter, 1.9),     // 2026-11-08 使用者要求比原本大聲 50%
     'holy-burst':         d(holyBurst, 1),
     'bloodrage':          d(bloodrage, 0.75, { minGapMs: 300 }),     // 狂怒期間每次普攻都爆一次，高攻速不連環重拳
     // 火
