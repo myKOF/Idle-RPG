@@ -11,7 +11,7 @@ const {extractFunction, buildSceneTree, fakePixi} = require('./helpers/battle-sc
 const root = path.resolve(__dirname, '..');
 const source = readExpanded(path.join(root, 'js/battle-renderer.js'));
 const DEFAULT = Number(/var BATTLE_CAMERA_DISTANCE_PERCENT = ([\d.]+);/.exec(source)[1]);
-const Z = 100 / DEFAULT, FS = 90 / 65;
+const Z = 100 / DEFAULT, FS = vm.runInNewContext(/var BATTLE_CAMERA_FULLSCREEN_ZOOM = ([^;]+);/.exec(source)[1]);
 function load() {
   const S = buildSceneTree(source);
   const c = {S, Math, Number, isFinite, PIXI: fakePixi, BATTLE_CAMERA_DISTANCE_PERCENT: DEFAULT, BATTLE_CAMERA_FULLSCREEN_ZOOM: FS, perfMode: false,
@@ -64,13 +64,14 @@ test('CAMERA 內測滾輪100→80%，場景確實拉近且HUD不縮放，反向�
   assert.equal(label.textContent, '90%'); near(c.S.cameraScale, baseline);
 });
 
-test('CAMERA 全屏百分比：正常戰鬥預設90%、全螢幕預設65%，同尺寸切換即更新且不累積', () => {
+test('CAMERA 全屏百分比：正常戰鬥預設90%、全螢幕預設75%，同尺寸切換即更新且不累積', () => {
   const {c, label, wheel} = wheelSetup();
+  near(FS, 90 / 75);
   const baseline = c.S.cameraScale;
   for (let i = 0; i < 3; i++) {
     c.fullscreen = true; c.resize();
-    assert.equal(label.textContent, '65%'); near(c.S.cameraScale, baseline * FS);
-    wheel(-100); assert.equal(label.textContent, '62%');
+    assert.equal(label.textContent, '75%'); near(c.S.cameraScale, baseline * FS);
+    wheel(-100); assert.equal(label.textContent, '71%');
     near(c.S.cameraScale, baseline * FS / .95);
     c.fullscreen = false; c.resize();
     assert.equal(label.textContent, '86%'); near(c.S.cameraScale, baseline / .95);
@@ -78,7 +79,7 @@ test('CAMERA 全屏百分比：正常戰鬥預設90%、全螢幕預設65%，同�
   }
   c.fullscreen = true; c.resize();
   for (let i = 0; i < 4; i++) wheel(-100);
-  assert.equal(label.textContent, '52%'); near(c.S.cameraScale, baseline * FS / .8);
+  assert.equal(label.textContent, '60%'); near(c.S.cameraScale, baseline * FS / .8);
 });
 
 test('CAMERA 內測距離限制50～200%，到界仍阻止外層捲動，鎖定時不套用（所有玩家一致，內測才顯示距離）', () => {
@@ -93,7 +94,7 @@ test('CAMERA 內測距離限制50～200%，到界仍阻止外層捲動，鎖定�
   assert.equal(publicVersion.wheel(-100).prevented, 0);
   publicVersion.c.S.cameraDistancePercent = 50;
   publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, Z);
-  publicVersion.c.fullscreen = true; publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, 100 / 65);
+  publicVersion.c.fullscreen = true; publicVersion.c.resize(); near(publicVersion.c.S.cameraScale, 100 / 75);
 });
 
 test('CAMERA 鏡頭鎖定（預設）時滾輪不縮放也不攔截；取消鎖定後一般玩家也能用，重新鎖定回到預設距離', () => {
@@ -117,14 +118,14 @@ test('CAMERA 測試場景忽略預設鎖定可雙向縮放，全螢幕共用倍�
   assert.equal(label.textContent, '72%'); near(c.S.cameraScale, Z / .8);
   near(c.S.app.stage.scale.x, 1); near(c.S.app.stage.scale.y, 1);
   c.fullscreen = true; c.resize();
-  assert.equal(label.textContent, '52%'); near(c.S.cameraScale, Z * FS / .8);
+  assert.equal(label.textContent, '60%'); near(c.S.cameraScale, Z * FS / .8);
   for (let i = 0; i < 4; i++) wheel(100);
   assert.equal(c.S.cameraDistancePercent, 100);
-  assert.equal(label.textContent, '65%');
+  assert.equal(label.textContent, '75%');
   wheel(-100);
   c.setTestMapScene(false);
   assert.equal(c.GameSettings.get('cameraLock'), true, '不得改寫使用者鎖定設定');
-  assert.equal(label.textContent, '65%'); near(c.S.cameraScale, Z * FS);
+  assert.equal(label.textContent, '75%'); near(c.S.cameraScale, Z * FS);
   assert.equal(wheel(-100).prevented, 0);
   c.fullscreen = false; c.resize(); near(c.S.cameraScale, Z);
   c.GameSettings.get = () => false;
@@ -197,7 +198,7 @@ test('CAMERA 重繪維持實際畫布尺寸，不逐幀重建；改距離會重�
   }
 });
 
-test('CAMERA 全螢幕拉近（90÷65），同尺寸切換亦刷新、退出還原且重入不累積', () => {
+test('CAMERA 全螢幕拉近（90÷75），同尺寸切換亦刷新、退出還原且重入不累積', () => {
   const c=load(), S=c.S, calls=[];
   S.host={clientWidth:800,clientHeight:600};
   S.app.renderer={resize:(w,h)=>calls.push([w,h])};
@@ -205,7 +206,7 @@ test('CAMERA 全螢幕拉近（90÷65），同尺寸切換亦刷新、退出還�
   for(let i=0;i<3;i++) {
     c.fullscreen=true;c.resize();
     near(S.cameraScale,normal*FS);near(S.W,normalWidth/FS);
-    near(S.cameraStage.scale.x,100/65);near(S.cameraStage.scale.y,100/65);
+    near(S.cameraStage.scale.x,100/75);near(S.cameraStage.scale.y,100/75);
     const count=calls.length;c.resize();assert.equal(calls.length,count,'相同倍率不得逐幀重建');
     c.fullscreen=false;c.resize();near(S.cameraScale,normal);near(S.W,normalWidth);
   }

@@ -15323,3 +15323,15 @@ Worker 存活且頁面正常完成載入。
 - 程序時間取樣兩分鐘有 10 次事件，路徑各異且座標有限，間隔約 8.57–19.67 秒，減少動態亮度曲線僅一個峰值。閃電與雲光沿共用天空路徑裁切，位於拱門及遠景後方，雲霧仍在前方飄動。
 - Edge 正式選單以 1120×630 及 1920×869 畫幅試播並截取閃電峰值和動態；亮區逐像素驗證沒有超出天空輪廓，設定暫停／返回和減少動態播放通過，Console error／warning 0。相關 start-menu-background、start-menu、vfx-preset-usage、vfx-editor-cache-versions 共 39/39，Build 692 檔、字串寫死 0、雙庫 SHA 及提交 diff 通過。
 - 素材庫程式快照與說明先提交 `3316f3e5`，遊戲提交見交付。可供驗收及整合。未做行動真機及跨瀏覽器驗證，減少動態模式刻意柔化閃光。
+
+## BATTLE-CAMERA-75-20261108 — 一般戰鬥90%、全螢幕75%鏡頭距離
+
+- Owner：Codex；Done，單一開發者。一般戰鬥維持參數表90%，全螢幕預設由65%改75%，沿用滾輪比例、鏡頭鎖定及HUD螢幕層。
+- 前置：既有鏡頭功能完成，fetch與逐檔預檢已執行。允許js/battle-renderer.js、既有鏡頭回歸、index.html與tools/scene-preview.html的renderer快取、LV與本段。禁止配置表、素材、玩法／Worker／存檔及其他工作區；不合併或推送。
+- 預檢：除index外皆乾淨。ai/claude的fa3836c2只更新相鄰sfx-synth快取1196行，本項更新renderer快取1195行；三方試跑exit1。使用者明確答覆「同意分段更新（建議）」後，只改鏡頭快取行，相鄰音效行保留原樣；沒有合併Claude分支。
+- 驗收：一般90%／全螢幕75%與實際縮放一致、反覆切換還原、滾輪／測試場景／HUD、相關回歸、Build及diff檢查。完成後Commit；後續交使用者驗收與整合。
+- 完成：僅調整全螢幕倍率為90÷75，百分比沿既有公式讀取；移除註釋中的重複數值。既有鏡頭測試改讀正式倍率，更新75%、滾輪及測試場景期望，保留一般90%、HUD、還原及參數錨點斷言。修改renderer、鏡頭測試、主頁／場景預覽的renderer快取、LV與本段，共6檔。
+- 唯讀核對：AI_RULES／AGENTS／Workflow／prompts/codex、game_parameters.csv、js/ui.js全螢幕流程、game-settings／start-menu／intro-player、戰鬥HUD與相關測試／build工具；未改配置表、戰鬥判定、Worker、存檔或開放條件。沒有獨立素材變更，素材庫無本項修改，不建立空素材Commit。
+- 測試：`node --test tests/battle-camera-distance.test.cjs tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-toolbar.test.cjs tests/gm-test-map.test.cjs tests/vfx-editor-cache-versions.test.cjs`共41項、38通過；gm-test-map既有3失敗為兩項預期10列但現為11，以及抽取makeEnemy缺requestNpc3d。將renderer唯讀覆蓋為修改前位元組重跑該檔，仍相同7/10與相同三項失敗；未改或放寬斷言。鏡頭／全螢幕／HUD／工具列／快取五檔31/31通過。`npm.cmd run build`692檔通過，diff檢查通過。
+- 瀏覽器：IAB初始化無可用連線，改獨立暫存profile的headless Edge、新局與正式主頁／原生Worker。一般90%實際倍率1.111111、全螢幕75%實際倍率1.333333，退出與再次進入正確；HUD stage倍率維持1，血球顯示寬度兩模式皆約82.48px。Console error／warning 0。首輪驗證誤用整頁CSS縮放後的Canvas螢幕寬度比對鏡頭世界尺度，已改由renderer實際畫布座標核對，未修改產品程式。測試瀏覽器與伺服器正常關閉。
+- 交付：本項無未完成，可供使用者驗收與合併；Commit為本段所在提交，SHA見回報。已知限制為上述三項既有GM測試失敗，未做行動真機、跨瀏覽器或長時間遊玩。未合併或推送；下一步重載遊戲檢視兩種鏡頭距離。

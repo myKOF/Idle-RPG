@@ -357,8 +357,8 @@ var BattleRenderer = (function () {
   var GROUND_Y_SCALE = 0.5;
   /* game_parameters：100＝原距離，90＝拉近10%。只改顯示，不改世界座標與戰鬥判定。 */
   var BATTLE_CAMERA_DISTANCE_PERCENT = 90;
-  /* 全螢幕只拉近場景：正常戰鬥鏡頭距離 90%、全螢幕 65%，倍率 = 90 ÷ 65；不隨參數表距離改變。 */
-  var BATTLE_CAMERA_FULLSCREEN_ZOOM = 90 / 65;
+  /* 全螢幕倍率 = 一般預設距離 ÷ 全螢幕預設距離；不隨參數表距離改變。 */
+  var BATTLE_CAMERA_FULLSCREEN_ZOOM = 90 / 75;
   /* 設置→遊戲設定「鏡頭鎖定」：勾選（預設）＝固定距離；取消後滾輪可調距離（所有玩家，不再限內測）。 */
   function cameraLocked() {
     if (S.testMap) return false;   // GM 測試場景隨時可用滾輪觀察；離場後沿用原設定
@@ -385,7 +385,7 @@ var BattleRenderer = (function () {
   function updateCameraDistanceLabel() {
     var label = document.getElementById('battle-camera-distance');
     if (!label || typeof isInternalVersion !== 'function' || !isInternalVersion()) return;
-    // 顯示實際鏡頭距離：正常戰鬥預設 90%、全螢幕預設 65%，滾輪再依比例增減。
+    // 顯示實際鏡頭距離：參數表距離 × 滾輪比例 ÷ 全螢幕倍率。
     var distance = Number(BATTLE_CAMERA_DISTANCE_PERCENT);
     label.textContent = Math.round((isFinite(distance) && distance > 0 ? distance : 90) *
       internalCameraDistancePercent() / 100 / cameraFullscreenMultiplier()) + '%';
