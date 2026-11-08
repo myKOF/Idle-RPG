@@ -1,3 +1,12 @@
+## SYNC-DIAGNOSTIC-STAGING-20261109 — 忽略診斷輸出不阻塞合併
+
+- Owner：Codex，Done，待本提交正常同步。本輪 1 授權的樹人合併已提交72a4cbb0，接續修復原阻塞。控制器將模型回報的 ignored logs/*.tap 當作正式檔案git add，造成已完成驗證仍停止。
+- 範圍為 resolve-sync-conflicts.ps1、既有 sync-auto-conflicts 端對端測試及本段。僅保留位於實際logs目錄、Git確定忽略的未追蹤 .tap／.log 紀錄。已追蹤紀錄仍正常提交，其他ignored JSON、遺失路徑與越界仍須拒絕。修正提示詞以區分交付檔與診斷輸出。
+- 驗收真實暫存Git遠端重現原錯誤，修復後測試／Build紀錄仍在磁碟而正式成果與各分支能完成同步，並驗證追蹤紀錄與原路徑防護。
+- 完成：僅略過已存在且Git忽略的logs內.tap／.log，保留磁碟證據；已追蹤紀錄用add --update提交，避免ignored父目錄令add --all報錯。正式交付檔與診斷檔的模型提示詞已釐清，原忽略JSON、缺檔、越界與合併身分防護保留。
+- 回歸：先以新端對端案例重現Could not stage reported file: logs/tests.tap；修復後執行 node --test --test-reporter=tap --test-name-pattern='Diagnostic reports preserve|unapproved ignored|Missing reported|Resolver escape|PowerShell scripts parse' tests/sync-auto-conflicts.test.cjs，6/6通過，無skip。真實暫存遠端驗證正式合併及所有AI分支同步、追蹤log內容進提交、未追蹤紀錄留存；PowerShell解析及BAT格式通過。git diff --check通過。紀錄在logs/sync-20261109-diagnostics-{before,after}.tap。
+- 本修正不改遊戲、Excel或測試斷言。樹人整合另已Build697檔通過、回歸274/277通過；3項既有tower-rewards-ui失敗與原基線相同。尚無本項已知未完成實作，最終各工作區／遠端SHA見同步報告。
+
 ## SYNC-20261109-TREANT-RESUME — 完成樹人整合與同步
 
 - Owner：Codex，整合驗證完成，控制器修復接續。使用者以 1 授權接續 HEAD abdd9441 與 incoming 844e5096。原合併與驗證已完成，控制器停在把 ignored logs/sync-a54d6904-tests.tap 加入索引。已核對正式成果均保留，原生 NPC Excel 與 CSV／data、模型逐位等於 incoming。

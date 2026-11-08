@@ -6,7 +6,7 @@ const {spawnSync,execFileSync}=require('node:child_process');
 const source=path.resolve(__dirname,'..');
 const windows=process.platform==='win32';
 function git(cwd,...args){return execFileSync('git',['-C',cwd,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();}
-function fixture({conflict=true,buildFails=false,incomingWhitespace=false,incomingDeletion=false}={}){
+function fixture({conflict=true,buildFails=false,incomingWhitespace=false,incomingDeletion=false,trackedDiagnostic=false}={}){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'sync auto conflicts '));
  const repo=path.join(root,'develop'),remote=path.join(root,'remote.git');
  fs.mkdirSync(repo);git(repo,'init','-b','develop');git(repo,'config','user.name','Sync Test');git(repo,'config','user.email','sync@example.invalid');
@@ -15,7 +15,13 @@ function fixture({conflict=true,buildFails=false,incomingWhitespace=false,incomi
  fs.copyFileSync(path.join(source,'sync_ai_worktrees.bat'),path.join(repo,'sync_ai_worktrees.bat'));
  fs.writeFileSync(path.join(repo,'.gitignore'),'logs/\n');
  fs.writeFileSync(path.join(repo,'tools','build_check.cjs'),`process.exit(${buildFails?1:0});\n`);
- fs.writeFileSync(path.join(repo,'state.txt'),'base\n');git(repo,'add','.');git(repo,'commit','-m','base');
+ fs.writeFileSync(path.join(repo,'state.txt'),'base\n');
+ if(trackedDiagnostic){
+  fs.mkdirSync(path.join(repo,'logs'));
+  fs.writeFileSync(path.join(repo,'logs','build.log'),'previous build\n');
+  git(repo,'add','--force','--','logs/build.log');
+ }
+ git(repo,'add','.');git(repo,'commit','-m','base');
  fs.writeFileSync(path.join(repo,'untouched.txt'),'unchanged\n');git(repo,'add','untouched.txt');git(repo,'commit','-m','untouched guard');
  if(incomingDeletion){
   for(const file of ['obsolete anim [1].json','obsolete anim 2.json'])fs.writeFileSync(path.join(repo,file),'old animation\n');
@@ -61,6 +67,13 @@ if(mode==='missing-report')files.push('never-tracked.json');
 if(mode==='ignored-report'){
  fs.mkdirSync(path.join(repo,'logs'),{recursive:true});fs.writeFileSync(path.join(repo,'logs','unapproved.json'),'{}\n');
  files.push('logs/unapproved.json');
+}
+if(mode==='diagnostic-report'){
+ fs.mkdirSync(path.join(repo,'logs','nested'),{recursive:true});
+ fs.writeFileSync(path.join(repo,'logs','tests.tap'),'TAP version 13\nok 1 - fixture\n');
+ fs.writeFileSync(path.join(repo,'logs','build.log'),'fixture build passed\n');
+ fs.writeFileSync(path.join(repo,'logs','nested','baseline.TAP'),'TAP version 13\nok 1 - baseline\n');
+ files.push('logs/tests.tap','logs/build.log','logs\\nested\\baseline.TAP');
 }
 if(fs.existsSync(path.join(repo,'.agents','AGENTS.md'))){
  if(!prompt.includes('git diff HEAD --check'))process.exit(9);
@@ -177,6 +190,28 @@ test('An unapproved ignored JSON report still blocks staging and push',{skip:!wi
   const r=f.run('ignored-report');assert.notEqual(r.status,0);assert.match(f.log(r),/Could not stage reported file: logs\/unapproved.json/);
   assert.equal(f.pending(),true);assert.equal(f.remoteHead(),f.initialRemote);assert.equal(git(f.repo,'rev-parse','HEAD'),f.original);
   assert.ok(fs.existsSync(path.join(f.repo,'logs','unapproved.json')));
+ }finally{f.clean();}
+});
+
+for(const trackedDiagnostic of [false,true])test(`Diagnostic reports preserve ${trackedDiagnostic?'tracked build logs':'untracked output'} while syncing every branch`,{skip:!windows},()=>{
+ const f=fixture({trackedDiagnostic});
+ try{
+  const r=f.run('diagnostic-report');
+  assert.equal(r.status,0,f.log(r));
+  assert.equal(f.pending(),false);
+  const head=git(f.repo,'rev-parse','HEAD');
+  assert.equal(f.remoteHead(),head);
+  assert.equal(git(f.repo,'status','--porcelain'),'');
+  assert.equal(git(f.repo,'ls-files','--','logs'),trackedDiagnostic?'logs/build.log':'');
+  for(const file of ['tests.tap','build.log','nested/baseline.TAP']){
+   assert.ok(fs.existsSync(path.join(f.repo,'logs',file)),'diagnostic remains available: '+file);
+  }
+  if(trackedDiagnostic){
+   assert.equal(git(f.remote,'show',head+':logs/build.log'),'fixture build passed');
+  }
+  for(const branch of ['ai/antigravity','ai/claude','ai/codex']){
+   assert.equal(git(f.remote,'rev-parse',branch),head);
+  }
  }finally{f.clean();}
 });
 test('Excel second pass cannot request an unbounded retry or commit an incomplete result',{skip:!hasExcel},()=>{

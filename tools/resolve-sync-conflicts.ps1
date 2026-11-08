@@ -28,6 +28,7 @@ function Assert-MergeIdentity {
 
 function Stage-ReportedFiles {
     param([string]$Root, [object[]]$Files)
+    $diagnosticRoot = [IO.Path]::GetFullPath((Join-Path $Root 'logs')) + [IO.Path]::DirectorySeparatorChar
     foreach ($relativePath in $Files) {
         if ([string]::IsNullOrWhiteSpace($relativePath) -or [IO.Path]::IsPathRooted($relativePath) -or
             $relativePath -match '(^|[\\/])\.git([\\/]|$)' -or $relativePath -match '[\r\n\x00]') {
@@ -36,6 +37,26 @@ function Stage-ReportedFiles {
         $fullPath = [IO.Path]::GetFullPath((Join-Path $Root $relativePath))
         if (-not $fullPath.StartsWith($Root.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
             (Test-Path -LiteralPath $fullPath -PathType Container)) { throw 'Reported path escapes the worktree or names a directory.' }
+        # Keep ignored diagnostic output on disk. Tracked logs remain deliverables.
+        if ($fullPath.StartsWith($diagnosticRoot, [StringComparison]::OrdinalIgnoreCase) -and
+            @('.tap', '.log') -contains [IO.Path]::GetExtension($fullPath) -and
+            (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+            & git -C $Root check-ignore --quiet -- $relativePath
+            $ignoreCheck = $LASTEXITCODE
+            if ($ignoreCheck -eq 0) {
+                Write-Host "Preserved ignored diagnostic: $relativePath"
+                continue
+            }
+            if ($ignoreCheck -ne 1) { throw "Could not verify diagnostic ignore status: $relativePath" }
+            $trackedPaths = @(& git --literal-pathspecs -C $Root ls-files -- $relativePath)
+            if ($LASTEXITCODE -ne 0) { throw "Could not verify diagnostic tracking: $relativePath" }
+            if ($trackedPaths.Count -gt 0) {
+                # --all can reject an ignored parent even when its file is tracked.
+                & git --literal-pathspecs -C $Root add --update -- $relativePath
+                if ($LASTEXITCODE -ne 0) { throw "Could not stage tracked diagnostic: $relativePath" }
+                continue
+            }
+        }
         if (-not (Test-Path -LiteralPath $fullPath)) {
             # Git already removes clean incoming deletions from the merge index.
             # Re-adding that absent path fails; accept only an exact staged deletion.
@@ -180,7 +201,7 @@ The configured asset library is: $AssetLibraryRoot
 Run relevant tests and build. Compare known failing tests against the correct original baseline; never weaken assertions.
 Run git diff HEAD --check against the COMPLETE merged result, including originally staged incoming files.
 Repair whitespace errors there as necessary; git diff --check alone misses already staged incoming changes.
-Record the resolution and validation in docs/AI_TASKS.md. Return every edited/added/deleted file as a repository-relative path in files.
+Record the resolution and validation in docs/AI_TASKS.md. Return every edited/added/deleted deliverable as a repository-relative path in files. Describe ignored logs/*.tap and logs/*.log diagnostic output in tests instead of files; retain those logs on disk.
 DO NOT run git add, commit, or write Git metadata in either repository: the sandbox protects indexes; the controller stages reported files.
 DO NOT commit the GAME repository: the parent script verifies and creates the merge commit.
 DO NOT push, fetch, pull, rebase, switch branch, reset, clean, abort the merge, modify other worktrees, or invoke any sync script.
