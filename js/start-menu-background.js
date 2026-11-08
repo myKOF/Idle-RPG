@@ -14,6 +14,10 @@ var StartMenuBackground = (function () {
   const MIDGROUND_FOG_DENSITY = 1.30;
   const DUST_GUST_RATE = 1.30;
   const FIRE_INTENSITY = 2;
+  const GATE_SKY_OPENING =
+    'M729 258Q744 217 785 195L810 193 832 168 853 160 871 207 900 191Q937 212 930 258' +
+    'L914 315 901 349 878 365 864 398 848 393 820 413 801 395 778 356 765 338 745 366 724 376Z';
+  const LIGHTNING_BOUNDS = { x: 700, y: 135, w: 280, h: 300 };
   const DUST_ORIGINS = { x: -135, y: 535, w: WIDTH - 135, h: 362 };
   // 紅框使用底圖座標，跟隨滿版裁切。
   const LOCAL_HAZE = { x: 208, y: 426, w: 756, h: 405 };
@@ -120,7 +124,7 @@ var StartMenuBackground = (function () {
       'M-30 -30H252L230 93 181 289 151 324 146 231 110 203 69 225 52 211 58 142 -30 89Z ' +
       'M266 -30H842L825 19 773 51 732 93 731 42 700 43 669 61 655 113 626 143 604 126 570 152 560 202 525 218 513 312 474 373 414 365 362 360 321 333 237 318 181 344 199 249 229 131Z ' +
       'M849 -30H1710V151L1657 155 1626 168 1589 180 1555 122 1541 155 1525 134 1499 124 1482 75 1453 40 1422 96 1409 130 1380 155 1346 140 1316 182 1288 152 1257 187 1215 195 1197 163 1180 127 1148 179 1111 226 1082 242 1055 210 1037 229 1025 147 995 130 986 84 961 64 939 84 919 56 892 52 857 19Z ' +
-      'M729 258Q744 217 785 195L810 193 832 168 853 160 871 207 900 191Q937 212 930 258L914 315 901 349 878 365 864 398 848 393 820 413 801 395 778 356 765 338 745 366 724 376Z'
+      GATE_SKY_OPENING
     );
     ctx.fill(openings);
     return mask;
@@ -175,6 +179,7 @@ var StartMenuBackground = (function () {
       gate: new Path2D(gateBounds),
       outsideGate: new Path2D('M0 0H' + WIDTH + 'V' + HEIGHT + 'H0Z ' + gateBounds),
       localHaze: makeLocalHaze(),
+      lightningGlow: vaporTexture(192, 144, [242, 74, 65], 1751, false),
       sand: vaporTexture(192, 48, [181, 138, 89], 561, false),
       haze: vaporTexture(192, 56, [141, 108, 76], 801, false),
       spirit: vaporTexture(64, 112, [115, 176, 154], 171, false)
@@ -219,6 +224,128 @@ var StartMenuBackground = (function () {
     skyContext.restore();
     ctx.drawImage(sky, 0, 0, WIDTH, HEIGHT);
     cloudStrip(ctx, midground, time);
+  }
+
+  function lightningPath(start, end, roughness, random) {
+    let points = [start, end];
+    for (let level = 0; level < 5; level++) {
+      const next = [];
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i], b = points[i + 1];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const distance = Math.max(1, Math.hypot(dx, dy));
+        const offset = (random() - .5) * roughness * Math.pow(.51, level);
+        next.push(a, {
+          x: (a.x + b.x) / 2 + dy / distance * offset,
+          y: (a.y + b.y) / 2 - dx / distance * offset * .42
+        });
+      }
+      next.push(points[points.length - 1]);
+      points = next;
+    }
+    return points;
+  }
+
+  function makeGateLightning(glow) {
+    const random = Math.random;
+    const { x, y, w, h } = LIGHTNING_BOUNDS;
+    const start = { x: 816 + random() * 48, y: 202 + random() * 18 };
+    const end = { x: start.x - 43 + random() * 80, y: 321 + random() * 47 };
+    const main = lightningPath(start, end, 35 + random() * 24, random);
+    const paths = [{ points: main, width: .82 + random() * .32, alpha: 1 }];
+    for (let i = 0; i < 7; i++) {
+      const root = main[5 + Math.floor(random() * 22)];
+      const direction = random() < .5 ? -1 : 1;
+      const tip = {
+        x: root.x + direction * (10 + random() * 28),
+        y: root.y + 10 + random() * 34
+      };
+      const branch = lightningPath(root, tip, 10 + random() * 9, random);
+      paths.push({ points: branch, width: .25 + random() * .25, alpha: .43 + random() * .37 });
+      const fork = branch[11 + Math.floor(random() * 12)];
+      paths.push({
+        points: lightningPath(fork, { x: fork.x + direction * (5 + random() * 12), y: fork.y + 5 + random() * 13 }, 5, random),
+        width: .16 + random() * .13, alpha: .22 + random() * .3
+      });
+    }
+
+    const channel = canvas(w, h), clouds = canvas(w, h);
+    const ctx = channel.getContext('2d');
+    const cloud = clouds.getContext('2d');
+    const opening = new Path2D(GATE_SKY_OPENING);
+    ctx.translate(-x, -y);
+    ctx.clip(opening);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const path of paths) {
+      ctx.globalAlpha = path.alpha;
+      ctx.beginPath();
+      path.points.forEach((p, i) => { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
+      ctx.shadowColor = '#e71e48';
+      ctx.shadowBlur = 8;
+      ctx.strokeStyle = 'rgba(196,17,47,.32)';
+      ctx.lineWidth = path.width * 8;
+      ctx.stroke();
+      ctx.shadowBlur = 3;
+      ctx.strokeStyle = '#f53d56';
+      ctx.lineWidth = path.width * 2.4;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffd6c8';
+      ctx.lineWidth = path.width * .66;
+      ctx.stroke();
+    }
+
+    cloud.translate(-x, -y);
+    cloud.clip(opening);
+    const centerX = (start.x + end.x) / 2;
+    const centerY = start.y + (end.y - start.y) * .37;
+    const scatter = cloud.createRadialGradient(centerX, centerY, 2, centerX, centerY, 101);
+    scatter.addColorStop(0, 'rgba(234,55,61,.38)');
+    scatter.addColorStop(.45, 'rgba(177,27,48,.21)');
+    scatter.addColorStop(1, 'rgba(113,16,33,0)');
+    cloud.fillStyle = scatter;
+    cloud.fillRect(x, y, w, h);
+    cloud.globalAlpha = .64;
+    cloud.drawImage(glow, centerX - 98, centerY - 79, 196, 158);
+    cloud.globalAlpha = .34;
+    cloud.drawImage(glow, centerX - 61, centerY - 32, 156, 167);
+    return {
+      channel, clouds,
+      pulses: [{ at: 0, strength: 1, decay: .095 },
+        { at: .13 + random() * .07, strength: .52 + random() * .32, decay: .07 },
+        { at: .31 + random() * .10, strength: .23 + random() * .31, decay: .09 }]
+    };
+  }
+
+  function drawGateLightning(ctx, glow, state, time, motionScale) {
+    if (state.event && time - state.started >= 1.1) {
+      state.event = null;
+      state.next = time + 7 + Math.random() * 12;
+    }
+    if (!state.event && time >= state.next) {
+      state.event = makeGateLightning(glow);
+      state.started = time;
+    }
+    if (!state.event) return;
+    const age = time - state.started;
+    let flash = 0;
+    if (motionScale < 1) {
+      flash = .53 * Math.pow(Math.sin(Math.PI * clamp(age / .82)), 2);
+    } else {
+      for (const pulse of state.event.pulses) {
+        const since = age - pulse.at;
+        if (since >= 0) flash += pulse.strength * Math.min(1, since / .009) * Math.exp(-since / pulse.decay);
+      }
+    }
+    const afterglow = (1 - Math.exp(-age / .035)) * Math.exp(-age / .34);
+    const { x, y } = LIGHTNING_BOUNDS;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, flash * .85 + afterglow * .45) * motionScale;
+    ctx.drawImage(state.event.clouds, x, y);
+    ctx.globalAlpha = Math.min(1, flash) * motionScale;
+    ctx.drawImage(state.event.channel, x, y);
+    ctx.restore();
   }
 
   function clothSprites(atlas) {
@@ -560,6 +687,7 @@ var StartMenuBackground = (function () {
       fogHeight: 1.85, amount: LOCAL_DUST_AMOUNT
     };
     const clothWind = { end: time, last: time, phase: time * 4.2, to: .72 };
+    const lightning = { event: null, next: time + 2.8 + Math.random() * 3.4, started: 0 };
 
     function draw() {
       if (!ctx || !inView) return;
@@ -567,6 +695,7 @@ var StartMenuBackground = (function () {
       ctx.setTransform(surface.width / WIDTH, 0, 0, surface.height / HEIGHT, 0, 0);
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       if (fires) drawFires(ctx, fires, time);
+      drawGateLightning(ctx, atmosphere.lightningGlow, lightning, time, motionScale);
       drawClouds(ctx, atmosphere, time);
       if (sprites) {
         updateClothWind(clothWind, time);
@@ -652,6 +781,7 @@ var StartMenuBackground = (function () {
         fires = null;
         dust.gusts.length = 0;
         localDust.gusts.length = 0;
+        lightning.event = null;
         root.remove();
       }
     };
