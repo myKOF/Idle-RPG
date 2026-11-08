@@ -7205,11 +7205,17 @@ function towerDetailHTML(fl, highest) {
 }
 
 function towerActionsHTML(fl, highest, gold, active) {
-  if (fl > highest + 1) return STR(1877, (highest + 1));
-  var cost = towerChallengeCost(fl);
-  // 戰鬥停用不綁 pending key，避免指令鎖解除時重新啟用。
-  var buttonAttrs = active ? ' disabled' : pendingUiButtonAttributes(nodePendingKey('tower'));
-  return '<button class="btn twx-go" data-tower-floor="' + fl + '"' + buttonAttrs + '>' + STR(1879, fl) + '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button><button class="btn twx-auto" data-tower-auto="' + fl + '"' + buttonAttrs + ' data-tip="' + STR(1878) + '">' + STR(1880) + '</button>';
+  if (!active && fl > highest + 1) return STR(1877, (highest + 1));
+  var buttonAttrs = pendingUiButtonAttributes(nodePendingKey('tower'));
+  var primary;
+  if (active) {
+    primary = '<button class="btn twx-go warn" data-tower-flee' + buttonAttrs + '>' + STR(68) + '</button>';
+  } else {
+    var cost = towerChallengeCost(fl);
+    primary = '<button class="btn twx-go" data-tower-floor="' + fl + '"' + buttonAttrs + '>' + STR(1879, fl) + '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button>';
+  }
+  // 戰鬥中的連挑不綁 pending key，避免指令鎖解除時重新啟用。
+  return primary + '<button class="btn twx-auto" data-tower-auto="' + fl + '"' + (active ? ' disabled' : buttonAttrs) + ' data-tip="' + STR(1878) + '">' + STR(1880) + '</button>';
 }
 
 function towerSelectFloor(fl) {
@@ -7282,7 +7288,7 @@ function renderTower() {
       bindTowerBossImageFallback(detail);
     }
     var actions = $id('tower-actions');
-    var actionsH = towerActionsHTML(st.sel, highest, player.gold || 0, towerState.active);
+    var actionsH = towerActionsHTML(st.sel, highest, player.gold || 0, towerState.active || (viewState() || {}).towerActive);
     if (actions && actions._lastH !== actionsH) { actions._lastH = actionsH; actions.innerHTML = actionsH; }
 
     // 上次結果
@@ -12677,6 +12683,18 @@ function initUI() {
         });
         return;
       }
+      return;
+    }
+    var flee = e.target.closest('[data-tower-flee]');
+    if (flee) {
+      if (flee.disabled || isUiCommandPending(nodePendingKey('tower')) ||
+          !(towerViewActive(uiTowerPanelSnapshot()) || (viewState() || {}).towerActive)) return;
+      sendUiCommand('tower.flee', {}, {
+        keys: [nodePendingKey('tower')],
+        panels: ['tower']
+      }).catch(function (error) {
+        reportUiCommandFailure(STR(1233), error, ['tower']);
+      });
       return;
     }
     var tf = e.target.closest('[data-tower-floor]');

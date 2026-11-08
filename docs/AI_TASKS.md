@@ -1,3 +1,13 @@
+## TOWER-FLEE-BUTTON-20261108 — 塔戰中的挑戰按鈕改為撤退
+
+- Owner：Codex；Done，單一開發者。封魔塔 BOSS 戰鬥中，左側主要挑戰按鈕改為可操作的「撤退」，沿用既有 tower.flee 指令與 String 68。連挑戰中仍停用，退出後恢復挑戰／費用，樓層與 BOSS／獎勵資訊保持可瀏覽。
+- 前置：既有 Canvas 塔戰、撤退與指令等待鎖均已完成；fetch 與逐檔衝突預檢乾淨。允許 js/ui.js 塔按鈕與事件、index.html 對應快取、tests/tower-info-during-fight.test.cjs、LV_upgrade_system.md 與本段；禁止改戰鬥結算、公式、Worker 協議、存檔、配置、素材及其他副本，不合併／推送。
+- 驗收：戰鬥中顯示可操作撤退、pending 防重複、瀏覽未解鎖樓層仍可撤退、退出恢復挑戰，連挑與既有撤退流程保持；相關回歸、Build、字串及 diff 檢查，完成後 Commit。後續由使用者驗收與整合。
+- 完成：修改上述五檔；主要按鈕不顯示挑戰費用，撤退沿用 tower 共用等待鎖，較新的 battle 開戰快照亦會切換按鈕。連挑停用不綁 pending key，避免解除等待鎖後誤啟用。主頁 UI 快取更新為 20261108-tower-flee。唯讀檢查 tower.js 結算、bridge／Worker 面板與既有指令／協議、字串來源、CSS、UI 音訊及規範；無配置、字串、素材庫或必要素材變更，不建立空素材 Commit。
+- 測試：`node --test tests/tower-info-during-fight.test.cjs tests/tower-auto-result.test.cjs tests/tower-auto-advance.test.cjs tests/tower-head-layout.test.cjs tests/tower-scene-intro.test.cjs tests/tower-rewards-ui.test.cjs tests/boss-skill-lock.test.cjs tests/inventory-command-pending.test.cjs tests/string-table.test.cjs` 為 50/53 通過；`node --test tests/init-ui-smoke.test.cjs tests/ui-worker-events.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/ui-sound.test.cjs` 為 29/30 通過。本次塔戰按鈕六項全通過。四項失敗分別為獎勵 UI 測試三項缺少 divineStoneIconHTML，啟動 smoke 一項缺少 DIVINE_FORGE_MODES；以唯讀 fs overlay 載入 HEAD 原始 ui.js，兩份測試重現完全相同四項失敗，未修改測試接受缺失或調整無關功能。
+- 瀏覽器：內建 IAB 無可用連線，改以隔離 headless Edge、正式主頁、原生 Worker 及 seed=17 新局驗證。實際倒數推進後主要按鈕顯示「撤退」、連挑 disabled、費用隱藏；點擊取得 reason=flee，確認結算後恢復挑戰。另驗連挑開始後切至未解鎖樓層仍可撤退，連挑狀態清空且退出不接下一場。Console error／warning 0，未接觸真人存檔；臨時瀏覽器與伺服器均已關閉。自動審核拒絕停止暫存 Edge 行程及遞迴清理專屬目錄的指令，僅回傳 blocked by policy、未提供細節；改以專屬 CDP 正常關閉瀏覽器，測試產物保留於系統 Temp 的 codex-tower-flee-20261108，不納入專案。
+- 交付：`npm.cmd run build` 檢查 688 檔、String 寫死 0、`git diff --check` 及收尾逐檔衝突預檢通過。已自我 Review；已知限制為上述四項既有測試失敗，未做行動真機、多瀏覽器或長時間遊玩。本項無未完成內容，可供使用者驗收與合併；Commit 為本段所在提交，SHA 見交付。建議整合後重載主頁驗收，未合併／推送。
+
 ## SYNC-MERGE-20261108-f680d5 - Pending develop merge resolution
 
 - Owner: Codex; Done (controller staging and merge commit pending). Explicit authorization covers only HEAD 54a11d9a0b13655a8fdb3414a3665bc8ff4d3b29 and MERGE_HEAD f680d5eb12c95f60b851f6d9a34a4c9612432621. No delegation, commit, staging, push, other-worktree changes or Git metadata writes.
