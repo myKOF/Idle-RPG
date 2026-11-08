@@ -11,6 +11,7 @@
      gain      響度補償（依實測 RMS 校正，讓各音效聽感大小接近；循環音效刻意壓低）
      minGapMs  同一個音效兩次發聲的最短間隔（超過就丟掉，不補播）
      maxVoices 同一個音效同時最多幾個聲音在播
+     retrigger 地板／持續場域每次續命（定時作用）都重播；預設只在場域出生時播一次
      castSec   循環音效掛在「施放音效」時播放的秒數（施放沒有場域壽命可循）
 
    Sfx（js/sfx.js）呼叫 render() 預先離線算成 AudioBuffer，播放時零延遲。 */
@@ -636,7 +637,7 @@ var SfxSynth = (function () {
     'flying-thunder':     d(flyingThunder, 0.5, LOOP),
     'thunderstrike':      d(thunderstrike, 0.85),
     'thunder-curtain':    d(thunderCurtain, 0.55, LOOP),
-    'thunder-orb':        d(thunderOrb, 1, { minGapMs: 450 }),   // 只在雷球出現時響；持續傷害每次作用不重播（2026-11-08 使用者要求）
+    'thunder-orb':        d(thunderOrb, 1, { retrigger: true, minGapMs: 450 }),   // 雷球每次放電都劈啪一下（場域定時作用，不是中毒那類狀態每跳）
     'thunderfall-fly':    d(thunderfallFly, 0.7, FLIGHT),
     'thunderfall-impact': d(thunderfallImpact, 0.75),
     // 冰
@@ -656,7 +657,7 @@ var SfxSynth = (function () {
     'vacuum-shockwave':   d(vacuumShockwave, 0.8),
     'void-disc':          d(voidDisc, 0.95, LOOP),
     'storm-barrier':      d(stormBarrier, 0.65, { kind: 'loop', castSec: 4 }),
-    'storm-rip':          d(stormRip, 0.85, { minGapMs: 800 })   // 只在撕裂出現時響，屏障每次作用不重播
+    'storm-rip':          d(stormRip, 0.85, { retrigger: true, minGapMs: 800 })   // 屏障每次作用都響
   };
 
   /* ═════════ 離線渲染 ═════════ */

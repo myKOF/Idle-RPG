@@ -272,7 +272,7 @@ var Sfx = (function () {
   }
 
   /* 技能事件的某個角色剛播放（由 VFX Runtime 呼叫）。
-     地板／持續場域：循環音效跟著場域續命；單次音效只在場域出生時播，持續傷害每次作用（續命）不重播。
+     地板／持續場域：循環音效跟著場域續命；單次音效只在場域出生時播（retrigger 的每次作用都播，例如雷球放電）。
      飛行：長度＝這一則事件的飛行時間。 */
   function skillRole(spec, role, delaySec, travelSec, keepSec) {
     var id = spec && spec.sfx && spec.sfx[role], def = synthDef(id);
@@ -288,7 +288,7 @@ var Sfx = (function () {
       if (def.kind === 'loop') return loopTouch(key, id, keep + delay, side);
       var t = nowMs(), seen = fieldSeen[key];
       fieldSeen[key] = t + (keep + delay) * 1000;
-      if (seen && seen > t) return false;
+      if (seen && seen > t && !def.retrigger) return false;
       for (var k in fieldSeen) if (fieldSeen[k] <= t) delete fieldSeen[k];
       return playSynth(id, { delaySec: delay, side: side });
     }
