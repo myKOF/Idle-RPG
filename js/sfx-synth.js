@@ -212,13 +212,14 @@ var SfxSynth = (function () {
     whoosh(ac, out, t, len, { f0: 180, f1: 420, f2: 160, q: 1.2, peak: 0.5, white: false, peakAt: 0.35 });   // 低沉迴旋
     burstNoise(ac, out, t + 0.12, 'bandpass', 4800 * k, 6, 0.001, 0.45, 0.15);                         // 刀鋒「鏘」
   }
-  function gale(ac, out, t, R) { var k = R(0.92, 1.1);
-    whoosh(ac, out, t, 0.1, { f0: 1200 * k, f1: 6500 * k, f2: 2500 * k, q: 1.5, peak: 0.7, p0: -0.8, p1: 0.8, peakAt: 0.7 });
-    var ti = t + 0.07;
-    burstNoise(ac, out, ti, 'highpass', 2000, 0.7, 0.0005, 0.9, 0.05, 4);   // 「啪」
-    arcCrackle(ac, out, ti, 0.18, 0.45);                                   // 雷光
-    boom(ac, out, ti, 150 * k, 70, 0.12, 0.6);
-    whoosh(ac, out, ti, 0.35, { f0: 3000, f1: 1500, f2: 500, q: 0.8, peak: 0.25, peakAt: 0.1 });   // 餘風
+  function gale(ac, out, t, R) {   // 2026-11-08 使用者改成重擊砸地方向，從 5 個候選選定「落錘震波」
+    var k = R(0.93, 1.07);
+    boom(ac, out, t, 75 * k, 30, 0.6, 1);                                                    // 重錘落地的悶響
+    burstNoise(ac, out, t, 'lowpass', 700, 0.8, 0.002, 0.8, 0.1, 3);
+    whoosh(ac, out, t + 0.01, 0.7, { f0: 200, f1: 900, f2: 250, q: 0.9, peak: 0.7, peakAt: 0.12, white: false });   // 空氣震波往外推
+    whoosh(ac, out, t + 0.01, 0.55, { f0: 1800, f1: 1200, f2: 400, q: 0.7, peak: 0.35, peakAt: 0.1 });
+    crackles(ac, out, t + 0.05, 0.4, 10, 0.35, { fLo: 300, fHi: 1200, q: 2.5, dMin: 0.02, dMax: 0.05, bias: 1.5, spread: 0.8 });   // 碎屑
+    rumble(ac, out, t + 0.03, 0.9, 120, 0.6, 0.08);                                         // 餘震
   }
   function bloodblade(ac, out, t, R) { var k = R(0.92, 1.1);
     whoosh(ac, out, t, 0.13, { f0: 700 * k, f1: 3500 * k, f2: 2500 * k, q: 2.5, peak: 0.5, peakAt: 0.85 });
