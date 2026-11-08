@@ -68,6 +68,8 @@ test('音效解析與特效同規則：本體逐階繼承、觸發只讀本列�
   // 毒霧感染（中毒每跳機率觸發）：持續傷害每次作用不發聲，觸發列留白也不退回本體的血刃斬音效
   assert.deepEqual(plain(c.sgSfxRoles('bloodblade', { vfxTier: 5 })), {});
   assert.deepEqual(plain(c.sgSfxRoles('bloodblade', { vfxUlt: 'venomDomain' })), {});
+  assert.deepEqual(plain(c.sgSfxRoles('bloodblade', { vfxTier: 7 })), {}, '零日感染不發聲');
+  assert.deepEqual(plain(c.sgSfxRoles('bloodblade', { vfxUlt: 'disintegrate' })), { attack: 'blood-burst' }, '崩解保留');
   // vfxBase：觸發列被要求走本體時，回到本體繼承鏈
   assert.equal(c.sgSfxRoles('bloodblade', { vfxTier: 5, vfxBase: true }).attack, 'bloodblade');
   // 呼叫端指定的外觀與目前階不同（火球分裂固定用第 1 階外觀）：聲音跟著外觀的來源列走
