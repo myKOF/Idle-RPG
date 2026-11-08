@@ -1098,7 +1098,8 @@ var BattleRenderer = (function () {
   function tickEntityAnimation(entity, ticker, dt) {
     var body = entity && entity.body;
     if (dt > 0 && body && !body.destroyed && body.playing && typeof body.update === 'function') {
-      body.update(ticker);
+      if (entity.npc3d) body.update(ticker, dt);
+      else body.update(ticker);
     }
   }
   /* 這個動作在實體目前方向的那一組幀；不分方向的序列幀就是唯一那一組 */
@@ -2652,8 +2653,10 @@ var BattleRenderer = (function () {
     var bp = (b.pos && isFinite(b.pos.x)) ? b.pos : { x: pp.x + 260, y: pp.y };
     var tier = BossArena.tierOf(b);
     var floor = (panel.tower && panel.tower.floor) || 0;
+    var arena = panel.tower && panel.tower.arena;
     S.arena.enter({
-      cx: (pp.x + bp.x) / 2, cy: (pp.y + bp.y) / 2, tier: tier, element:BossArena.elementOf(b),
+      cx: arena ? arena.cx : (pp.x + bp.x) / 2, cy: arena ? arena.cy : (pp.y + bp.y) / 2,
+      arena: arena, tier: tier, element:BossArena.elementOf(b),
       W: S.canvasW || S.W, H: S.canvasH || S.H,
       title: String(b.name || '').replace(/^第\d+層・/, ''),
       subtitle: STR(445, floor, BossArena.paletteFor(tier,BossArena.elementOf(b)).name)
@@ -7420,7 +7423,7 @@ var BattleRenderer = (function () {
       if (!Object.prototype.hasOwnProperty.call(S.entities, id)) continue;
       var e = S.entities[id];
       if (dt <= 0) continue;
-      tickEntityAnimation(e, ticker, dt);
+      // 3D NPC先依本幀位移設定步速，再推進動畫；攻擊與死亡仍走原時間。
 
       /* 站位與逼近由模擬層決定（js/battlefield.js 座標制），面板只有 5Hz。
          這裡照內插緩衝播放（見 posSolve）：畫面比模擬層晚一點點，
@@ -7434,11 +7437,13 @@ var BattleRenderer = (function () {
         /* 序列幀自己會動：不套擺動／呼吸。走路與站立依實際位移切換；出招中與死亡中不打斷。 */
         if (e.state !== 'dying') {
           var hasWalk = e.npc3d || S.sheets[e.sheetName].anims.walk;
-          var wantAnim = (hasWalk && (e.state === 'entering' || movedLen > 0.6 * dt * 60)) ? 'walk' : 'idle';
+          var movingNpc = movedLen > (e.npc3d ? .01 * dt : 0.6 * dt * 60);
+          var wantAnim = (hasWalk && (e.state === 'entering' || movingNpc)) ? 'walk' : 'idle';
           e.baseAnim = wantAnim;
           if ((e.curAnim === 'idle' || e.curAnim === 'walk') && e.curAnim !== wantAnim) playAnim(e, wantAnim);
         }
         if (e.npc3d && e.state !== 'dying') {
+          Npc3D.move(e.body, movedLen, dt);
           var target = playerPos();
           e.body.hero3dFace(movedLen > .1 ? edx : target.x - e.wx,
                           movedLen > .1 ? edy : target.y - 26 - e.wy);
@@ -7453,6 +7458,7 @@ var BattleRenderer = (function () {
         e.bodyWrap.scale.y = 1 + Math.sin(e.bobPhase) * 0.035;
         e.bodyWrap.rotation = Math.sin(e.bobPhase * 0.7) * 0.03;
       }
+      tickEntityAnimation(e, ticker, dt);
 
       if (e.state === 'entering') {
         e.enterT += dt;

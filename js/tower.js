@@ -13,6 +13,7 @@ var TOWER = {
   dmgDealt: 0,
   bossDmgDealt: 0,
   playerPos: null,    // 我方戰場座標（＝ bfPlayerPos() 的參照，見 placeTowerCombatants）
+  arena: null,        // 固定世界中心與範圍；同時投影給法陣顯示
   introCd: 0,         // 登場倒數（秒）：轉場期間戰鬥不開始、限時不走（見 TOWER_INTRO_SEC）
   result: null,       // 結束後的結算資料（顯示用）
   showingResult: false,
@@ -139,10 +140,14 @@ function startTowerFight(floor) {
    沒載入 battlefield.js 的環境（部分單元測試）維持舊的無座標行為：
    bfPos 回 null ⇒ 射程判定一律放行、技能幾何退化成單體。 */
 function placeTowerCombatants(boss) {
+  TOWER.arena = null;
   if (typeof bfPlayerPos !== 'function') { TOWER.playerPos = null; return; }
   var home = bfPlayerPos();
   TOWER.playerPos = home;
   if (boss) boss.pos = { x: home.x + TOWER_BOSS_SPAWN_DIST, y: home.y };
+  if (boss && typeof bfTowerArenaGeometry === 'function') {
+    TOWER.arena = bfTowerArenaGeometry((home.x + boss.pos.x) / 2, (home.y + boss.pos.y) / 2);
+  }
 }
 
 /* ---- 連續挑戰 ----
@@ -161,6 +166,14 @@ function startTowerAuto(floor, count) {
 }
 
 function towerTick(dt) {
+  if (typeof bfClampTowerCombatants === 'function') bfClampTowerCombatants();
+  try { return towerTickInsideArena(dt); }
+  finally {
+    // 技能衝鋒／推拉及提早結算也走此收斂，不能只限制普通跑位。
+    if (typeof bfClampTowerCombatants === 'function') bfClampTowerCombatants();
+  }
+}
+function towerTickInsideArena(dt) {
   if (!(TOWER.player && TOWER.player._sgRevival && TOWER.player._sgRevival.mode === 'earthguard') &&
       typeof tickDeferredEnemyAttackRetaliations === 'function') tickDeferredEnemyAttackRetaliations();
   // 連續挑戰：上一場結束後倒數，自動開始下一場
@@ -581,6 +594,7 @@ function finishTowerFight() {
   TOWER.boss = null;
   TOWER.player = null;
   TOWER.playerPos = null;
+  TOWER.arena = null;
   // 45 新技能：塔戰結束回野外＝場景切換，清空技能執行期狀態（避免塔內殘留排程打進野外）
   if (typeof resetSkillRT === 'function') resetSkillRT();
   /* 野外重生：生命與法力一起補滿——與野外死亡復活（js/combat.js fieldTick 的 reviveCd 出口）

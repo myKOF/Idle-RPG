@@ -76,6 +76,21 @@ function makeArena(BossArena, P) {
   return { arena, layers };
 }
 
+test('authoritative arena keeps identical world geometry across small and fullscreen viewports', () => {
+  const {BossArena}=loadArena(),P=fakePixi(),{arena,layers}=makeArena(BossArena,P);
+  const bounds={cx:2400,cy:-600,viewWidth:800,viewHeight:800,halfWidth:800,halfHeight:1600};
+  let center;
+  for(const [W,H] of [[320,480],[1440,1000],[1920,1080]]){
+    arena.enter({cx:bounds.cx,cy:bounds.cy,tier:'trial',W,H,arena:bounds});
+    const actual=arena.stats();
+    if(center)assert.deepEqual(actual.center,center);else center=actual.center;
+    assert.equal(actual.bounds,bounds);
+    assert.equal(layers.base.children[0].width,bounds.halfWidth*8);
+    assert.equal(layers.base.children[0].height,bounds.halfHeight*8);
+    arena.exit();assert.equal(arena.stats().bounds,null);
+  }
+});
+
 test('ARENA-ELEMENT 正式 BOSS 屬性優先，未知或物理屬性保留塔色', () => {
   const {BossArena}=loadArena();
   assert.equal(BossArena.elementOf({elem:'poison',attr:'light',hell:true}),'poison');

@@ -1,4 +1,8 @@
-# Worker 協議 v72
+# Worker 協議 v74
+
+v74（2026-11-09 塔戰邊界）：`PANEL battle.tower.arena`新增可選暫態幾何 `{cx,cy,viewWidth,viewHeight,halfWidth,halfHeight}`，皆為有限數值、尺寸為正，單位為世界座標。場地中心在開戰時固定；基準法陣場景四邊各外擴原寬／高50%，移動區總寬高兩倍，縱向依地面投影換算。Worker限制玩家及BOSS、跑位目標與強制位移；顯示層用同一中心與基準尺寸，視窗或全螢幕不改實際戰鬥大小。退場清空，舊快照缺欄維持舊法陣構圖；指令與存檔不變。
+
+v73（2026-11-06 技能音效）：`vfx.sfx`新增可選角色至音效ID映射，`act.sfx`可帶施放音效；維持既有音效欄位及事件語意。
 
 v72（2026-11-04 精鑄材料）：`forge.rate`新增`materialCost`（實際消耗材料數）及`affordableStones`（目前庫存可負擔的最大成功率增量份數）。`forge.stones`／`forge.setStones.count`仍為成功率增量份數；中央與加減面板顯示`materialCost`，成功率依份數計算。太古精鑄由`ancientEssence`扣款，第2條精鑄與最終成功率級距倍率相乘並向上取整；其餘模式仍扣`dust`。所有費用／門檻由game_parameters管理，先驗證完整材料，三秒到期再驗證及一次扣款；不足拒絕，保留原料。指令數與存檔欄位不變。
 

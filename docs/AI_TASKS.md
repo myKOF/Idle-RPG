@@ -1,3 +1,19 @@
+## TOWER-BOUNDS-GAIT-20261108 — 塔戰固定邊界與骷髏王步幅同步
+
+- Owner：Codex，Done，單一主開發者。使用者要求骷髏王移動動畫依實際移速加減速，所有塔BOSS不可跑出中央場景四邊各外擴50%的區域；依圖3採總寬高2倍。追查到菁英跑位目標跟隨追擊玩家，形成往外漂移；NPC 3D步行原固定1倍。
+- 允許：battlefield權威邊界／跑位目標、tower場地生命週期與位移收斂、Hero3D步幅量測、Npc3D與battle-renderer同步、BossArena共用世界幾何、Worker runtime arena投影契約／版本／文件、必要快取、相關回歸／瀏覽器驗證、LV與本段。禁止修改NPC／技能／天賦／參數表的既有數值、模型／貼圖、傷害／攻速公式、存檔與解鎖，不合併／推送。
+- 前置與衝突：本副本原有NPC攻速0.4等未提交配置及CSV重匯出保持，不納入本項。逐檔預檢除index外乾淨；Claude fa3836c2更新反擊音效快取，三方試跑index衝突；使用者已確認「同意分段更新（建議）」，保留音效行，只改本項必要版本。其他檔若新增重疊另檢查。
+- 設計：塔戰建立固定世界中心與基準800×800法陣場景，地面縱向0.5投影；四邊各外擴原畫面尺寸50%，可移動區總寬高2倍。伺服器判定與法陣顯示共用此幾何，視窗／全螢幕不改實際場地；玩家、BOSS、跑位與強制位移均受邊界限制。GLB步幅由原速腳部接地軌跡量測，播放倍率＝實際世界移速／縮放後原速步幅速度；不改攻擊或死亡速率。
+- 驗收：50種BOSS及53／64層追擊／跑位、四邊角落／高速／擊退與衝鋒、進出場清理、野外不受限、不同視窗顯示同一幾何；步速減半／加倍／轉向／縮放與停止、出招／死亡保留；相關計算及渲染測試、協議與快取、Build、隔離瀏覽器及必要畫面。後續交使用者驗收及整合。
+
+- 完成（2026-11-09）：battlefield新增固定世界幾何、含身體半徑的矩形限制及合法跑位目標；tower開戰固定中心、tick前後統一限制並於退場清空。BossArena及battle-renderer使用Worker投影同一arena，深淵改用矩形遮罩，整個合法區域都顯示地板。Hero3D按60Hz接地腳掌軌跡中位速度量測原速步幅，Npc3D依實際世界位移／顯示比例調速，停止為0；渲染以同一dt推進，攻擊／死亡保持既有播放規則。未知腳骨命名無可靠量測時維持原速，不猜測新參數。
+- 修改：js/battlefield.js、tower.js、battle-arena.js、battle-renderer.js、hero3d.js、npc3d.js、bridge.js、worker/protocol.js／sim.worker.js、index.html、docs/WORKER_PROTOCOL.md、LV_upgrade_system.md／本段，以及hero3d-locomotion、npc3d-locomotion、tower-arena-bounds、battle-arena、worker-protocol五份測試。協議74新增暫態tower.arena，無新增指令／存檔。主頁及Worker相關快取統一20261108-tower-bounds-gait，Claude音效行保持。
+- 回歸：`node --test --test-concurrency=2 --test-reporter=tap tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/battle-arena.test.cjs tests/battle-camera-distance.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-battlefield.test.cjs tests/tower-auto-result.test.cjs tests/tower-auto-advance.test.cjs tests/tower-scene-intro.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/tower-boss-move-attack.test.cjs tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/hero3d-*.test.cjs`（PowerShell以陣列展開hero3d檔）211項，210通過、1項既有TBF-1失敗：原NPC前三列攻速0.4、複製列11起仍3，舊測試預期相同。唯讀fs overlay把本輪既有程式還原為HEAD再跑tower-boss-floors，5項中4通過，完全相同失敗；未改表格／測試以消除失敗。
+- 新增邊界測試覆蓋全部50列與53／64／101／150層、持續追擊／跑位、角落完成、擊退與任意強制位移／早退、野外無限制及不同視窗同一幾何；步幅以真的Three骨架驗證接地／擺腳篩選與量測還原，步速半倍／倍增／縮放／停止／暫停／低FPS同dt及攻擊死亡時間皆通過。最後擴充三塔後單跑tower-arena-bounds 4/4通過；`npm.cmd run build`695檔通過；`git diff --check`通過。
+- 瀏覽器：IAB無連線，隔離headless Edge新局／真Worker。第53層實際boss3原速步幅0.487537m/s，55次步速取樣逐筆核對倍率、40次權威位置取樣均在固定場地，普通／全螢幕中心及尺寸一致；第64層舊2D BOSS同用新場地，退場arena=null且圖層關閉。已目視一般／全螢幕與遮罩擴展後畫面。Console error 0；另記錄既有Oscillator頻率裁切與預載圖未即時使用兩項warning，未修改音效或預載。測試瀏覽器與18994伺服器已關閉，預覽／報告留在聊天目錄，不進Git。
+- 唯讀檢查：規範、eliteRepoPick及推拉／衝鋒路徑、原模擬／投影與Worker契約、GLB／Hero3D介面、鏡頭及法陣Canvas、既有場景／暫停／塔戰測試、NPC／技能／天賦／參數差異及模型來源。三個模型匯出檢查分別34／29／30項通過，模型與圖像未改；純執行期修正，無本項素材庫提交。保留使用者原有NPC.xlsx／CSV／data與其他重匯出CSV修改，不納入Commit。
+- 交付：已自我Review；本項無未完成功能，可以連同上述既有配置測試差異供驗收後合併。限制為未做行動真機、所有技能組合及長時間效能驗證，未知骨命名的後續模型需另外定義步幅；本次三隻使用相同已認可Mixamo骨架。Commit為本段所在提交，SHA見聊天交付；未合併／推送。
+
 ## TOWER-BOSS3-LV3-20261108 — 骷髏王Ⅲ材質版與第3個BOSS
 
 - Owner：Codex，Done，單一主開發者。使用者提供 BOSS1_LV3.glb，要求與前一版完全相同流程套用；承接為第3關「骷髏王Ⅲ」，沿用同系列自製／自行生成及修改授權。五動作、已認可握姿與披風避碰沿用，劍由新檔重新拆分另綁骨。
