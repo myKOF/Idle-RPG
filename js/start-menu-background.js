@@ -16,7 +16,8 @@ var StartMenuBackground = (function () {
   const FIRE_INTENSITY = 2;
   const DUST_ORIGINS = { x: -135, y: 535, w: WIDTH - 135, h: 362 };
   // 紅框使用底圖座標，跟隨滿版裁切。
-  const LOCAL_HAZE = { x: 184, y: 433, w: 750, h: 376 };
+  const LOCAL_HAZE = { x: 208, y: 426, w: 756, h: 405 };
+  const LOCAL_DUST_AMOUNT = 2;
   const LOCAL_DUST_OVERLAP = LOCAL_HAZE.y + LOCAL_HAZE.h - DUST_ORIGINS.y;
   // 陣風在區內偏上游處掀起，留足距離讓沙霧向右展開。
   const LOCAL_DUST_ORIGINS = {
@@ -159,14 +160,18 @@ var StartMenuBackground = (function () {
       tile: vaporTexture(512, 78, [160, 127, 94], 781, true), w: 1480, y: 354, h: 174,
       speed: MIDGROUND_FOG_SPEED, alpha: .29 * MIDGROUND_FOG_DENSITY
     };
-    for (const cloud of [...clouds, leftBank, midground]) cloud.pattern = skyContext.createPattern(cloud.tile, 'repeat-x');
+    const groundFog = {
+      tile: vaporTexture(512, 128, [161, 145, 122], 1207, true),
+      w: 1120, y: LOCAL_HAZE.y - 22, h: LOCAL_HAZE.h + 36, speed: 7.5, alpha: .38
+    };
+    for (const cloud of [...clouds, leftBank, midground, groundFog]) cloud.pattern = skyContext.createPattern(cloud.tile, 'repeat-x');
     const leftFade = skyContext.createLinearGradient(410, 0, 640, 0);
     leftFade.addColorStop(0, '#000');
     leftFade.addColorStop(1, 'transparent');
     // 裁切範圍落在拱門石材上，開口邊緣仍由原畫遮罩羽化。
     const gateBounds = 'M716 145H951V426H716Z';
     return {
-      sky, skyContext, clouds, leftBank, leftFade, midground, mask: skyMask(),
+      sky, skyContext, clouds, leftBank, leftFade, midground, groundFog, mask: skyMask(),
       gate: new Path2D(gateBounds),
       outsideGate: new Path2D('M0 0H' + WIDTH + 'V' + HEIGHT + 'H0Z ' + gateBounds),
       localHaze: makeLocalHaze(),
@@ -421,7 +426,7 @@ var StartMenuBackground = (function () {
     ctx.globalAlpha = 1;
   }
 
-  function makeDustGust(start, area) {
+  function makeDustGust(start, area, amount) {
     const random = Math.random;
     const y = area.y + random() * area.h, x = area.x + random() * area.w;
     const depth = .58 + (y - DUST_ORIGINS.y) / DUST_ORIGINS.h * .89;
@@ -444,11 +449,11 @@ var StartMenuBackground = (function () {
       };
     }
 
-    const grains = Array.from({ length: Math.round(156 + strength * 243) }, () => ({
+    const grains = Array.from({ length: Math.round(156 + strength * 243) * amount }, () => ({
       ...liftOff(), speed: depth * push * (35 + random() * 111), life: .54 + random() * 1.57,
       loft: depth * (2 + random() * 13), size: depth * (.25 + random() * random() * 1.35)
     }));
-    const trails = Array.from({ length: Math.round(6 + strength * 12) }, () => ({
+    const trails = Array.from({ length: Math.round(6 + strength * 12) * amount }, () => ({
       ...liftOff(), speed: depth * push * (38 + random() * 48), life: 1.7 + random() * 2.9,
       loft: depth * (2 + random() * 8), breadth: .66 + random() * .68, pale: random() > .46
     }));
@@ -467,7 +472,7 @@ var StartMenuBackground = (function () {
   function drawDust(ctx, textures, dust, time, motionScale) {
     if (time >= dust.next) {
       // 只排入當下的陣風，慢幀後不補播已錯過的沙塵。
-      dust.gusts.push(makeDustGust(Math.max(dust.next, time - .9), dust.area));
+      dust.gusts.push(makeDustGust(Math.max(dust.next, time - .9), dust.area, dust.amount));
       dust.next = time + (1.02 + Math.pow(Math.random(), 1.6) * 4.2) / dust.rate;
     }
     dust.gusts = dust.gusts.filter(gust => time < gust.end);
@@ -510,6 +515,7 @@ var StartMenuBackground = (function () {
     context.clearRect(0, 0, w, h);
     context.save();
     context.translate(-x, -y);
+    cloudStrip(context, atmosphere.groundFog, time);
     drawDust(context, atmosphere, dust, time, motionScale);
     context.restore();
     context.save();
@@ -547,9 +553,12 @@ var StartMenuBackground = (function () {
     const atmosphere = ctx && makeAtmosphere();
     let disposed = false, inView = false, frame = null, previous = null;
     let sprites, fires, time = 5.6, lastPaint = -Infinity;
-    const dust = { gusts: [], next: time - .9, area: DUST_ORIGINS, rate: DUST_GUST_RATE, fogHeight: 1 };
+    const dust = { gusts: [], next: time - .9, area: DUST_ORIGINS, rate: DUST_GUST_RATE, fogHeight: 1, amount: 1 };
     // 加一條與原區域出現率相同的獨立陣風，使區內頻率加倍。
-    const localDust = { gusts: [], next: time - .7, area: LOCAL_DUST_ORIGINS, rate: LOCAL_DUST_RATE, fogHeight: 1.85 };
+    const localDust = {
+      gusts: [], next: time - .7, area: LOCAL_DUST_ORIGINS, rate: LOCAL_DUST_RATE,
+      fogHeight: 1.85, amount: LOCAL_DUST_AMOUNT
+    };
     const clothWind = { end: time, last: time, phase: time * 4.2, to: .72 };
 
     function draw() {
