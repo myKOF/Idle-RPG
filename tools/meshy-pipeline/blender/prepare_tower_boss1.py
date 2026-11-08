@@ -1,6 +1,6 @@
 """Prepare the user-authorized BOSS1 preview with a rigid, separate right sword.
 
-blender -b --python-exit-code 1 --python prepare_tower_boss1.py -- INPUT OUTPUT
+blender -b --python-exit-code 1 --python prepare_tower_boss1.py -- INPUT OUTPUT --hand-source HAND.blend
 The five supplied motions are retained at their original speed. Horizontal root
 travel is removed from combat clips for later simulation-controlled movement.
 Editable .blend, five-action .glb and numerical QA are written to OUTPUT.
@@ -20,6 +20,8 @@ CLIPS = ['Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']
 HAND = 'mixamorig:RightHand'
 HIPS = 'mixamorig:Hips'
 WEAPON = 'Sword_R'
+CAPE = ['Cape_Upper', 'Cape_Middle', 'Cape_Lower']
+CAPE_HEIGHTS = [1.48, 1.02, .56, .10]
 GRIP = Vector((-.775, -.025, 1.355))
 TIP = Vector((-.775, -.025, .166))
 
@@ -47,7 +49,94 @@ def rigid_group(obj, name):
     obj.vertex_groups.new(name=name).add(list(range(len(obj.data.vertices))), 1, 'REPLACE')
 
 
-def prepare(source, output):
+def clear_sword_arm(arm):
+    """Give a lowered sword hand clearance from the oversized hip/forearm armor."""
+    upper = arm.pose.bones['mixamorig:RightArm']
+    wrist = arm.pose.bones[HAND].head
+    amount = max(0, min(1, (upper.head.z - wrist.z - .12) / .25))
+    if amount:
+        angle = math.radians(14) * amount
+        lateral = arm.pose.bones['mixamorig:LeftShoulder'].head - arm.pose.bones['mixamorig:RightShoulder'].head
+        lateral.z = 0
+        lateral.normalize()
+        back = Vector((0, 0, 1)).cross(lateral)
+        pivot = upper.head.copy()
+        upper.matrix = Matrix.Translation(pivot) @ Matrix.Rotation(angle, 4, back) @ Matrix.Translation(-pivot) @ upper.matrix
+        bpy.context.view_layer.update()
+
+
+def pronate_forearm(arm, dorsal_rest):
+    """Carry wrist rotation through the forearm while retaining the sword pose."""
+    hand = arm.pose.bones[HAND]
+    forearm = arm.pose.bones['mixamorig:RightForeArm']
+    hand_pose = hand.matrix.copy()
+    axis = (hand.head - forearm.head).normalized()
+    current = (forearm.matrix @ arm.data.bones[forearm.name].matrix_local.inverted()).to_3x3() @ dorsal_rest
+    desired = (hand.matrix @ arm.data.bones[HAND].matrix_local.inverted()).to_3x3() @ dorsal_rest
+    current -= axis * current.dot(axis)
+    desired -= axis * desired.dot(axis)
+    if current.length < .001 or desired.length < .001:
+        return
+    current.normalize()
+    desired.normalize()
+    angle = math.atan2(axis.dot(current.cross(desired)), current.dot(desired))
+    pivot = forearm.head.copy()
+    forearm.matrix = Matrix.Translation(pivot) @ Matrix.Rotation(angle, 4, axis) @ Matrix.Translation(-pivot) @ forearm.matrix
+    bpy.context.view_layer.update()
+    hand.matrix = hand_pose
+    bpy.context.view_layer.update()
+
+
+def hang_cape(arm, time):
+    """Keep the cloth descending in world gravity, then lay its hem behind it.
+
+    The upper attachment follows the torso. Its lower chain follows yaw and
+    gravity instead of inheriting the torso's forward pitch and flying upward.
+    """
+    spine = arm.pose.bones['mixamorig:Spine2']
+    spine_delta = spine.matrix @ arm.data.bones[spine.name].matrix_local.inverted()
+    head = spine_delta @ Vector((0, .145, CAPE_HEIGHTS[0]))
+    lateral = arm.pose.bones['mixamorig:LeftShoulder'].matrix.translation - arm.pose.bones['mixamorig:RightShoulder'].matrix.translation
+    lateral.z = 0
+    lateral.normalize()
+    back = Vector((0, 0, 1)).cross(lateral).normalized()
+    yaw = math.atan2(back.y, back.x) - math.pi / 2
+    yaw_matrix = Matrix.Rotation(yaw, 3, 'Z')
+    root = head.copy()
+    for index, name in enumerate(CAPE):
+        length = CAPE_HEIGHTS[index] - CAPE_HEIGHTS[index + 1]
+        remaining = CAPE_HEIGHTS[index] - CAPE_HEIGHTS[-1]
+        available = max(.015, head.z - .065)
+        angle = math.acos(min(.995, available / (remaining + .035)))
+        angle += math.radians(-15 + index * 15)
+        angle += math.radians(2.5) * math.sin(time * 4 + index * .8)
+        angle = max(math.radians(4), min(math.radians(88), angle))
+        direction = back * math.sin(angle) + Vector((0, 0, -math.cos(angle)))
+        direction = (direction + lateral * (.012 * math.sin(time * 3 + index))).normalized()
+        rest = arm.data.bones[name].matrix_local.copy()
+        local_direction = yaw_matrix.inverted() @ direction
+        bend = Vector((0, 0, -1)).rotation_difference(local_direction).to_matrix()
+        rotation = yaw_matrix @ bend @ rest.to_3x3()
+        arm.pose.bones[name].matrix = Matrix.Translation(head) @ rotation.to_4x4()
+        bpy.context.view_layer.update()
+        head += direction * length
+    # The fused source has narrow collar/edge triangles remaining on the body.
+    # Drive their original cloak bones with the same curve, so the seam cannot
+    # retain the old torso-driven pitch while the detached cloth hangs below it.
+    deltas = [arm.pose.bones[name].matrix @ arm.data.bones[name].matrix_local.inverted() for name in CAPE]
+    for name in ['Bone_027', 'Bone_026', 'Bone_025', 'Bone_024']:
+        rest = arm.data.bones[name].matrix_local
+        station = max(0, min(2, (CAPE_HEIGHTS[0] - rest.translation.z) / .46))
+        index, weight = min(2, int(station)), station - int(station)
+        delta = deltas[index].copy()
+        if index < 2:
+            delta = delta.lerp(deltas[index + 1], weight)
+        arm.pose.bones[name].matrix = delta @ rest
+        bpy.context.view_layer.update()
+    return root, head
+
+
+def prepare(source, output, hand_source):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.fps = 30
@@ -108,60 +197,91 @@ def prepare(source, output):
     trim_faces(body, set(range(len(body.data.polygons))) - sword_faces)
 
     # The generated open fingers share irregular triangles and auxiliary bone
-    # weights. Replace only the distal glove with anatomical, segmented armor
-    # fingers wrapped around the grip; preserve the original wrist and forearm.
-    old_hand_faces = {f.index for f in body.data.polygons
-                      if f.center.x < -.695 and 1.28 < f.center.z < 1.435
-                      and -.11 < f.center.y < .085}
+    # weights. Replace the glove with the posed MakeHuman hand, retaining the
+    # original forearm armor and blending its wrist attachment.
+    old_group_names = {group.index: group.name for group in body.vertex_groups}
+    old_hand_vertices = set()
+    for vertex in body.data.vertices:
+        p = vertex.co
+        hand_weight = sum(group.weight for group in vertex.groups
+                          if old_group_names[group.group].startswith(HAND)
+                          or old_group_names[group.group] == 'Bone_051')
+        if p.x < -.625 and 1.23 < p.z < 1.49 and -.16 < p.y < .12 and (hand_weight > .10 or p.x < -.66):
+            old_hand_vertices.add(vertex.index)
+    old_hand_faces = {face.index for face in body.data.polygons
+                      if face.center.x < -.61 and any(index in old_hand_vertices for index in face.vertices)}
     trim_faces(body, set(range(len(body.data.polygons))) - old_hand_faces)
-    silver = bpy.data.materials.new('BOSS1_Silver_Gauntlet')
-    silver.diffuse_color = (.39, .43, .46, 1)
-    silver.use_nodes = True
-    principled = silver.node_tree.nodes.get('Principled BSDF')
-    principled.inputs['Base Color'].default_value = silver.diffuse_color
-    principled.inputs['Metallic'].default_value = .62
-    principled.inputs['Roughness'].default_value = .32
-    hand_parts = []
-
-    def hand_part(obj):
-        obj.data.materials.clear()
-        obj.data.materials.append(silver)
-        for face in obj.data.polygons:
-            face.use_smooth = True
-        rigid_group(obj, HAND)
-        hand_parts.append(obj)
-
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=1,
-                                        location=(-.708, -.012, 1.365))
-    palm = bpy.context.object
-    palm.scale = (.053, .029, .058)
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    hand_part(palm)
-
-    def phalanx(a, b, radius):
-        a, b = Vector(a), Vector(b)
-        bpy.ops.mesh.primitive_cone_add(vertices=8, radius1=radius, radius2=radius * .86,
-                                        depth=(b - a).length, location=(a + b) / 2)
-        obj = bpy.context.object
-        obj.rotation_euler = (b - a).to_track_quat('Z', 'Y').to_euler()
-        hand_part(obj)
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=4, radius=radius * .98, location=b)
-        hand_part(bpy.context.object)
-
-    for z in (1.326, 1.352, 1.378, 1.404):
-        points = [(-.732, .012, z), (-.766, .023, z), (-.806, -.002, z), (-.794, -.041, z)]
-        for k in range(3):
-            phalanx(points[k], points[k + 1], .012 - k * .001)
-    thumb = [(-.693, -.047, 1.325), (-.726, -.061, 1.340),
-             (-.761, -.052, 1.359), (-.779, -.039, 1.373)]
-    for k in range(3):
-        phalanx(thumb[k], thumb[k + 1], .014 - k * .0015)
-    hand_vertices = list(range(sum(len(o.data.vertices) for o in hand_parts)))
+    with bpy.data.libraries.load(str(hand_source), link=False) as (_, imported):
+        imported.objects = ['BOSS1_RightHand_Anatomical']
+    hand_mesh = imported.objects[0]
+    scene.collection.objects.link(hand_mesh)
+    dorsal_rest = Vector(hand_mesh['dorsalNormalRest'])
+    thumb_axis_rest = Vector(hand_mesh['thumbDistalAxisRest'])
+    thumb_tip_rest = Vector(hand_mesh['thumbTipRest'])
+    hand_vertices = list(range(len(hand_mesh.data.vertices)))
+    hand_mesh.vertex_groups.clear()
+    hand_group = hand_mesh.vertex_groups.new(name=HAND)
+    forearm_group = hand_mesh.vertex_groups.new(name='mixamorig:RightForeArm')
+    for vertex in hand_mesh.data.vertices:
+        reach = -.6321539283 - vertex.co.x
+        weight = max(0, min(1, (reach - .015) / .060))
+        weight = weight * weight * (3 - 2 * weight)
+        if weight:
+            hand_group.add([vertex.index], weight, 'REPLACE')
+        if weight < 1:
+            forearm_group.add([vertex.index], 1 - weight, 'REPLACE')
     bpy.ops.object.select_all(action='DESELECT')
-    for obj in [body] + hand_parts:
+    for obj in [body, hand_mesh]:
         obj.select_set(True)
     bpy.context.view_layer.objects.active = body
     bpy.ops.object.join()
+
+    # SmartRig's original cloak is partly assigned to legs and otherwise inherits
+    # Spine2's full pitch. Retain its UV geometry and fit a gravity-led chain.
+    group_names = {g.index: g.name for g in body.vertex_groups}
+    original_cape = {'Bone_024', 'Bone_025', 'Bone_026', 'Bone_027'}
+    cape_vertices = set()
+    for vertex in body.data.vertices:
+        cape_weight = sum(g.weight for g in vertex.groups if group_names[g.group] in original_cape)
+        if cape_weight > .12 and vertex.co.y > .05 and vertex.co.z < 1.54:
+            cape_vertices.add(vertex.index)
+    uv = body.data.uv_layers.active
+    for face in body.data.polygons:
+        p = face.center
+        if p.y <= .105 or p.z >= 1.50 or abs(p.x) > .60 or face.material_index != 0:
+            continue
+        coord = sum((uv.data[i].uv for i in face.loop_indices), Vector((0, 0))) / len(face.loop_indices)
+        x, y = int(coord.x * iw) % iw, int(coord.y * ih) % ih
+        red, green, blue = pixels[4 * (y * iw + x):4 * (y * iw + x) + 3]
+        if red > green * 1.32 and red > blue * 1.10:
+            cape_vertices.update(face.vertices)
+    cape_faces = {face.index for face in body.data.polygons
+                  if face.center.y > .065 and face.center.z < 1.525
+                  and any(index in cape_vertices for index in face.vertices)}
+    cape = body.copy()
+    cape.data = body.data.copy()
+    cape.name = 'BOSS1_Cape'
+    scene.collection.objects.link(cape)
+    trim_faces(cape, cape_faces)
+    trim_faces(body, set(range(len(body.data.polygons))) - cape_faces)
+    # Separate the cloth at the fused shoulder seam. Shared armor vertices must
+    # retain their original skin rather than being pulled by the hanging cloak.
+    cape.vertex_groups.clear()
+    cape.vertex_groups.new(name='mixamorig:Spine2')
+    for name in CAPE:
+        cape.vertex_groups.new(name=name)
+    cape_vertices = list(range(len(cape.data.vertices)))
+    for index in cape_vertices:
+        z = cape.data.vertices[index].co.z
+        station = max(0, min(2, (CAPE_HEIGHTS[0] - z) / .46))
+        upper = min(2, int(station))
+        weight = station - upper
+        attach = max(0, min(1, (z - 1.36) / .16))
+        cape.vertex_groups[CAPE[upper]].add([index], (1 - weight) * (1 - attach), 'REPLACE')
+        if upper < 2 and weight:
+            cape.vertex_groups[CAPE[upper + 1]].add([index], weight * (1 - attach), 'REPLACE')
+        if attach:
+            cape.vertex_groups['mixamorig:Spine2'].add([index], attach, 'REPLACE')
 
     # Rebuild the leather grip; all visible original ornament remains textured.
     leather = bpy.data.materials.new('BOSS1_Grip_Leather')
@@ -186,6 +306,12 @@ def prepare(source, output):
     bone.head, bone.tail = GRIP, TIP
     bone.parent = arm.data.edit_bones[HAND]
     bone.use_connect = False
+    for index, name in enumerate(CAPE):
+        cape_bone = arm.data.edit_bones.new(name)
+        cape_bone.head = (0, .145, CAPE_HEIGHTS[index])
+        cape_bone.tail = (0, .145, CAPE_HEIGHTS[index + 1])
+        cape_bone.parent = arm.data.edit_bones['mixamorig:Spine2'] if index == 0 else arm.data.edit_bones[CAPE[index - 1]]
+        cape_bone.use_connect = index > 0
     bpy.ops.object.mode_set(mode='OBJECT')
     rigid_group(weapon, WEAPON)
     weapon_points = [v.co.copy() for v in weapon.data.vertices]
@@ -193,17 +319,42 @@ def prepare(source, output):
     hand_rest_inv = arm.data.bones[HAND].matrix_local.inverted()
     bind_action(arm, originals['Walk'])
     scene.frame_set(0)
+    clear_sword_arm(arm)
     hand0 = arm.pose.bones[HAND].matrix.copy()
     original_dir = (hand0 @ hand_rest_inv).to_3x3() @ (TIP - GRIP).normalized()
     desired = Vector((0, -.80, -.60)).normalized()
     correction_world = original_dir.rotation_difference(desired).to_matrix()
+    aimed_hand = correction_world @ hand0.to_3x3()
+    aimed_delta = aimed_hand @ hand_rest_inv.to_3x3()
+    back = aimed_delta @ dorsal_rest
+    # The latest right-side photograph shows the dorsal surface toward the
+    # character's right camera, with the palm toward the body and thumb at guard.
+    outward = arm.pose.bones['mixamorig:RightShoulder'].head - arm.pose.bones['mixamorig:LeftShoulder'].head
+    outward.z = 0
+    back -= desired * back.dot(desired)
+    outward -= desired * outward.dot(desired)
+    back.normalize()
+    outward.normalize()
+    roll = math.atan2(desired.dot(back.cross(outward)), back.dot(outward))
+    correction_world = Matrix.Rotation(roll, 3, desired) @ correction_world
     correction_local = hand0.to_3x3().inverted() @ correction_world @ hand0.to_3x3()
     print('WALK_SWORD_CORRECTION', list(original_dir), correction_local.to_quaternion().angle)
+    arm['handDorsalNormalRest'] = list(dorsal_rest)
+    arm['thumbDistalAxisRest'] = list(thumb_axis_rest)
+    arm['thumbTipRest'] = list(thumb_tip_rest)
+    arm['gripReference'] = 'User right-side hand photograph, 2026-11-08'
+    arm['handSource'] = 'MakeHuman / MPFB CC0 anatomical right hand'
+    scene.frame_set(1)
+    scene.frame_set(0)
 
-    original_bones = [b.name for b in arm.data.bones if b.name != WEAPON]
+    original_bones = [b.name for b in arm.data.bones if b.name not in [WEAPON] + CAPE]
     report = {'blender': bpy.app.version_string, 'license': 'User confirmed self-created/generated and authorized game use/modification in chat, 2026-11-08',
               'sourceSha256': source_sha, 'weaponBone': WEAPON, 'weaponParent': HAND,
               'swordSourceFaces': len(sword_faces), 'closedHandVertices': len(hand_vertices),
+              'capeBones': CAPE, 'capeVertices': len(cape_vertices), 'gripReferenceRollDegrees': math.degrees(roll),
+              'handSourceSha256': hashlib.sha256(hand_source.read_bytes()).hexdigest(),
+              'dorsalNormalRest': list(dorsal_rest), 'thumbDistalAxisRest': list(thumb_axis_rest),
+              'thumbTipRest': list(thumb_tip_rest),
               'clips': {}}
     processed = {}
     for name, action in originals.items():
@@ -236,6 +387,8 @@ def prepare(source, output):
                 hip_matrix.translation.y = 0
             hip.matrix = hip_matrix
             bpy.context.view_layer.update()
+            clear_sword_arm(arm)
+            hang_cape(arm, frame / 30)
             hand = arm.pose.bones[HAND]
             hand.matrix = hand.matrix @ correction_local.to_4x4()
             bpy.context.view_layer.update()
@@ -261,6 +414,7 @@ def prepare(source, output):
                 pivot = hand.matrix.translation.copy()
                 hand.matrix = Matrix.Translation(pivot) @ rotation @ Matrix.Translation(-pivot) @ hand.matrix
                 bpy.context.view_layer.update()
+            pronate_forearm(arm, dorsal_rest)
             matrix = arm.pose.bones[WEAPON].matrix @ arm.data.bones[WEAPON].matrix_local.inverted()
             grip, tip = matrix @ GRIP, matrix @ TIP
             expected_grip = hand.matrix @ hand_rest_inv @ GRIP
@@ -281,7 +435,7 @@ def prepare(source, output):
     bind_action(arm, processed['Walk'])
     scene.frame_set(0)
     bpy.ops.object.select_all(action='DESELECT')
-    for obj in (arm, body, weapon):
+    for obj in (arm, body, weapon, cape):
         obj.select_set(True)
     bpy.context.view_layer.objects.active = arm
     bpy.data.orphans_purge(do_recursive=True)
@@ -291,7 +445,7 @@ def prepare(source, output):
                               use_selection=True, export_animations=True,
                               export_animation_mode='ACTIONS', export_force_sampling=True,
                               export_frame_range=False, export_nla_strips=False,
-                              export_skins=True, export_morph=False, export_yup=True)
+                              export_skins=True, export_morph=False, export_yup=True, export_extras=True)
     report['outputSha256'] = hashlib.sha256((output / 'BOSS1_preview.glb').read_bytes()).hexdigest()
     (output / 'qa.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     print('BOSS1_PREPARED', json.dumps(report['clips']))
@@ -301,5 +455,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('source', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--hand-source', type=Path, required=True)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    prepare(args.source, args.output)
+    prepare(args.source, args.output, args.hand_source)

@@ -33,6 +33,8 @@ def write_gif(frames, destination, durations):
 
 def package(root):
     manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
+    fps = manifest.get('renderFps', 25)
+    frame_ms = round(1000 / fps)
     thumbnails, output = {}, {}
     for name, clip in manifest['clips'].items():
         frames, thumbnails[name] = [], []
@@ -42,25 +44,31 @@ def package(root):
             board = Image.new('RGB', (1080, 1144), (14, 19, 27))
             board.paste(source, (0, 64))
             draw = ImageDraw.Draw(board)
-            draw.text((28, 15), f'封魔塔 BOSS  ·  {LABELS[name]}', font=font(28), fill=(235, 223, 197))
-            draw.text((800, 21), f'{clip["clip"]}  /  25 FPS', font=font(20), fill=(154, 173, 193))
+            speed = clip.get('playbackSpeed', 1)
+            view = '正面' if manifest.get('camera') == 'front' else '斜前方'
+            draw.text((28, 18), f'封魔塔 BOSS · {LABELS[name]} · {speed:g} 倍速 · {view}', font=font(24), fill=(235, 223, 197))
+            draw.text((800, 21), f'{clip["clip"]} / {fps} FPS', font=font(20), fill=(154, 173, 193))
             frames.append(board)
             thumbnail = Image.new('RGB', (612, 450), (13, 18, 26))
             thumbnail.paste(source.resize((450, 450), Image.Resampling.LANCZOS), (81, 0))
             thumbnails[name].append(thumbnail)
-        durations = [40] * len(frames)
+        durations = [round((i + 1) * 100 / fps) * 10 - round(i * 100 / fps) * 10 for i in range(len(frames))]
         durations[-1] += 0 if clip['loop'] else (850 if name == 'Die' else 300)
         file = root / f'BOSS1_{name}_HD.gif'
         write_gif(frames, file, durations)
         output[name] = {'file': file.name, 'sizeBytes': file.stat().st_size,
                         'width': 1080, 'height': 1144, 'frames': len(frames)}
         print('GIF_WRITTEN', name, file.stat().st_size, flush=True)
+    if len(manifest['clips']) != 5:
+        frames[0].save(root / 'BOSS1_cover.png')
+        (root / 'gif-report.json').write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding='utf-8')
+        return
     # Each motion loops at its own original speed; the full walk is visible.
     duration = max(c['duration'] for c in manifest['clips'].values())
     board_frames = []
     grip = Image.open(root / 'grip-detail.png').convert('RGB').resize((450, 450), Image.Resampling.LANCZOS)
-    for frame in range(round(duration * 25)):
-        t = frame / 25
+    for frame in range(round(duration * fps)):
+        t = frame / fps
         board = Image.new('RGB', (1920, 1200), (13, 18, 26))
         draw = ImageDraw.Draw(board)
         draw.text((32, 20), '封魔塔 BOSS  /  3D 五動作預覽', font=font(36), fill=(235, 224, 199))
@@ -68,7 +76,7 @@ def package(root):
         for i, (name, clip) in enumerate(manifest['clips'].items()):
             hold = 0 if clip['loop'] else (.85 if name == 'Die' else .30)
             local = min(t % (clip['duration'] + hold), clip['duration'])
-            index = min(len(thumbnails[name]) - 1, int(local * 25))
+            index = min(len(thumbnails[name]) - 1, int(local * fps))
             x, y = 14 + (i % 3) * 640, 132 + (i // 3) * 530
             draw.text((x + 12, y), f'{LABELS[name]}  /  {clip["clip"]}', font=font(24), fill=(225, 213, 187))
             board.paste(thumbnails[name][index], (x, y + 43))
@@ -77,7 +85,7 @@ def package(root):
         board.paste(grip, (x + 81, y + 43))
         board_frames.append(board)
     destination = root / 'BOSS1_actions_HD.gif'
-    write_gif(board_frames, destination, [40] * len(board_frames))
+    write_gif(board_frames, destination, [frame_ms] * len(board_frames))
     board_frames[0].save(root / 'BOSS1_cover.png')
     output['overview'] = {'file': destination.name, 'sizeBytes': destination.stat().st_size,
                           'width': 1920, 'height': 1200, 'frames': len(board_frames)}

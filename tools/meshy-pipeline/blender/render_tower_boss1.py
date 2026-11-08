@@ -1,6 +1,7 @@
 """Render the actual NPC-table GLB at native 1080px, preserving clip speed.
 
 blender -b --python-exit-code 1 --python render_tower_boss1.py -- OUTPUT [--npc tower_boss_1]
+Use --only Attack3 --camera front --speed 0.2 for the five-times-slower front inspection.
 """
 import argparse
 import csv
@@ -17,7 +18,7 @@ MAPPING = [('Walk', '3D移動動作'), ('Attack1', '3D攻擊1動作'),
            ('Attack2', '3D攻擊2動作'), ('Attack3', '3D攻擊3動作'), ('Die', '3D死亡動作')]
 
 
-def render(output, npc, only=None):
+def render(output, npc, only=None, camera_view='three-quarter', speed=1, fps=25):
     with (ROOT / 'config/CSV/NPC.csv').open(encoding='utf-8-sig', newline='') as file:
         row = next(r for r in csv.DictReader(file) if r['NPC識別碼'] == npc and r['類型'] == 'tower_boss')
     model = ROOT / row['3D模型']
@@ -68,14 +69,19 @@ def render(output, npc, only=None):
     camera = bpy.data.objects.new('Fixed clip camera', camera_data)
     scene.collection.objects.link(camera)
     scene.camera = camera
-    direction = Vector((2.0, -5.5, 2.0)).normalized()
+    direction = Vector((0, -5.5, .55) if camera_view == 'front' else (2.0, -5.5, 2.0)).normalized()
     rotation = (-direction).to_track_quat('-Z', 'Y')
     camera.rotation_euler = rotation.to_euler()
     inverse_rotation = rotation.inverted()
     manifest = {'npc': npc, 'model': row['3D模型'], 'width': 1080, 'height': 1080,
-                'renderFps': 25, 'engine': 'Blender EEVEE', 'clips': {}}
+                'renderFps': fps, 'camera': camera_view, 'playbackSpeed': speed,
+                'engine': 'Blender EEVEE', 'clips': {}}
     if only and (output / 'manifest.json').exists():
         manifest = json.loads((output / 'manifest.json').read_text(encoding='utf-8'))
+        if (manifest.get('camera', 'three-quarter') != camera_view
+                or manifest.get('renderFps', 25) != fps
+                or manifest.get('playbackSpeed', 1) != speed):
+            raise ValueError('Use a fresh output directory when changing camera, speed or fps')
     for semantic, field in MAPPING:
         if only and semantic not in only:
             continue
@@ -85,7 +91,8 @@ def render(output, npc, only=None):
         arm.animation_data.action = action
         arm.animation_data.action_slot = action.slots[0]
         start, end = action.frame_range
-        duration = (end - start) / 30
+        source_duration = (end - start) / 30
+        duration = source_duration / speed
         projected = []
         for index in range(61):
             frame = start + (end - start) * index / 60
@@ -99,16 +106,17 @@ def render(output, npc, only=None):
         target = rotation @ ((low + high) / 2)
         camera.location = target + direction * 8
         camera_data.ortho_scale = max(high.x - low.x, high.y - low.y) * 1.18
-        count = max(2, math.ceil(duration * 25))
+        count = max(2, math.ceil(duration * fps))
         directory = output / semantic
         directory.mkdir(exist_ok=True)
         for index in range(count):
-            time = min(duration, index / 25)
+            time = min(source_duration, index / fps * speed)
             frame = start + time * 30
             scene.frame_set(math.floor(frame), subframe=frame % 1)
             scene.render.filepath = str(directory / f'{index:04d}.png')
             bpy.ops.render.render(write_still=True)
         manifest['clips'][semantic] = {'clip': row[field], 'frames': count, 'duration': duration,
+                                       'sourceDuration': source_duration, 'playbackSpeed': speed,
                                        'loop': semantic == 'Walk', 'cameraSpan': camera_data.ortho_scale}
         print('CLIP_RENDERED', semantic, count, flush=True)
     arm.data.pose_position = 'REST'
@@ -126,5 +134,10 @@ if __name__ == '__main__':
     parser.add_argument('output', type=Path)
     parser.add_argument('--npc', default='tower_boss_1')
     parser.add_argument('--only', nargs='+', choices=[key for key, _ in MAPPING])
+    parser.add_argument('--camera', choices=['front', 'three-quarter'], default='three-quarter')
+    parser.add_argument('--speed', type=float, default=1)
+    parser.add_argument('--fps', type=int, default=25)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    render(args.output, args.npc, args.only)
+    if not 0 < args.speed <= 4 or not 1 <= args.fps <= 60:
+        parser.error('speed must be positive and fps must be within 1..60')
+    render(args.output, args.npc, args.only, args.camera, args.speed, args.fps)

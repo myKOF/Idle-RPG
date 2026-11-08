@@ -66,6 +66,11 @@ test('exported sword is a separate rigid mesh under the right hand and all five 
   const sword = gltf.nodes.find(n => n.name === 'BOSS1_Sword');
   const body = gltf.nodes.find(n => n.name === 'BOSS1_Body');
   assert.ok(sword && body && sword.mesh !== body.mesh);
+  const cape = gltf.nodes.find(n => n.name === 'BOSS1_Cape');
+  assert.ok(cape && cape.mesh !== body.mesh && cape.mesh !== sword.mesh, 'cloth is isolated from shared shoulder armor vertices');
+  for (const name of ['Cape_Upper', 'Cape_Middle', 'Cape_Lower']) {
+    assert.ok(gltf.nodes.some(n => n.name === name), 'missing gravity-led cloth bone: ' + name);
+  }
   const skin = gltf.skins[sword.skin];
   const joint = skin.joints.indexOf(weaponIndex);
   assert.ok(joint >= 0);
@@ -83,6 +88,21 @@ test('exported sword is a separate rigid mesh under the right hand and all five 
       assert.equal(weights.reduce((a, b) => a + b, 0), 1);
       assert.equal(weights.filter(w => w > 0).length, 1);
       assert.equal(joints[weights.findIndex(w => w > 0)], joint);
+    }
+  }
+  const capeSkin = gltf.skins[cape.skin];
+  const allowed = new Set(['mixamorig:Spine2', 'Cape_Upper', 'Cape_Middle', 'Cape_Lower']);
+  for (const primitive of gltf.meshes[cape.mesh].primitives) {
+    for (let v = 0; v < gltf.accessors[primitive.attributes.POSITION].count; v++) {
+      let weight = 0;
+      for (let c = 0; c < 4; c++) {
+        const w = component(primitive.attributes.WEIGHTS_0, v, c);
+        if (w <= 0) continue;
+        weight += w;
+        const jointIndex = component(primitive.attributes.JOINTS_0, v, c);
+        assert.ok(allowed.has(gltf.nodes[capeSkin.joints[jointIndex]].name), 'cape cannot be pulled by legs or source auxiliary bones');
+      }
+      assert.ok(Math.abs(weight - 1) < 1e-6);
     }
   }
 });
