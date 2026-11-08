@@ -1,3 +1,18 @@
+## TOWER-BOSS2-LV2-20261108 — 骷髏王Ⅱ材質版與第2個BOSS
+
+- Owner：Codex，Done，單一主開發者。使用者提供 BOSS1_LV2.glb，明確表示為同一BOSS的另一材質，五動作沿用前版，劍重新拆分並另綁骨；指定作第2個BOSS，並確認名稱「骷髏王Ⅱ」。素材授權沿用本聊天既有自製／自行生成授權與此次套用指示。
+- 前置：第1個BOSS已具備認可握姿、披風避碰及五動作。新檔原骨架／縮放不同，先對齊幾何與UV／材質，再使用已核准動作，重新拆出新素材的劍與 Sword_R。第1個模型與其餘八種BOSS保留；不改玩法、數值、技能、存檔或解鎖。
+- 允許：新模型／頭像與製作／匯出工具、必要渲染工具參數、NPC.xlsx第483列外觀及3D欄／CSV／衍生data、bridge／主頁快取、對應測試、來源交接／LV／本段及素材庫獨立套件。不合併／推送其他分支。
+- 衝突：Claude 2247d5e2 修改NPC速度／距離欄及衍生資料、快取、任務與塔測試；使用者已確認「同意分段套用（建議）」。只改第2個BOSS外觀／動作欄與必要快取，不合入該分支；保留對方分支及數值成果供後續整合。
+- 驗收：新來源SHA／材質UV對應、劍獨立網格及單骨權重、五動作姿勢與第1模型一致、60Hz披風／握點QA、原生Excel正常重開與範圍保留、實際第2關載入與退場、相關回歸／Build、高清預覽與雙倉庫提交。後續由使用者檢視與整合。
+- 完成：新模型 boss2.glb／正式透明頭像、variant 製作及全骨蒙皮 QA 工具、獨立素材匯出器、NPC.xlsx／CSV／data 第二列、主頁／bridge與Worker資料import必要快取、npc3d-config／tower-boss3d 測試、來源交接及 LV／本段。來源新 PBR／UV 共匹配 9,975 面無缺漏，從新網格拆出436劍面、重建 RightHand 下 Sword_R，單骨100%權重；保留已認可手套／握柄、194骨與135披風避碰骨及五動作。
+- 表格：原生 Excel 只改第483列13格外觀／動作，正常重開逐格核對兩張表24,550格資料／公式及七個原生物件；CSV→data 只改 BOSS_LIST 一項，後續 `node tools/config_tables.cjs --apply NPC` 語意變更0。第一個GLB SHA仍為2e945e89…，新GLB為aadf8f4d…；其他八種BOSS配置、冰屬性／技能／數值保持。第2／12／22…層沿用第二種定義。
+- QA：Blender 5.2.3，五動作1,363個60Hz樣本，全部194骨有效蒙皮矩陣對第一個模型最大誤差0.00001711；劍骨重建後靜止軸可能換表示，故比較 pose×inverse(rest)。幾何QA披風／身體交叉對數全0，披風最低0.038m、武器最低0.03438m、握點誤差<0.000001m。已目視五動作多幀及遊戲畫面；輸出五份1080×1144 GIF與1920×1200總覽，20FPS／原速，逐檔核對幀數、播放時長及循環；預覽不納入Git。
+- 測試：`node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/tower-boss3d.test.cjs tests/npc-vision.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`，37/37通過；`npm.cmd run build`690檔通過。IAB無連線，使用隔離Edge正式主頁／原生Worker，實測第2關新名／頭像／model2、Walk及三攻擊、Die後建立1／釋放1；第3關無NPC3D，第1關仍model1，撤退後總建立2／釋放2。Console error 0；首次完整流程見兩項未修改音效的Oscillator頻率裁切warning，照實保留報告，後續重跑結果見素材庫runtime JSON，未修改音效或用模型測試消除警告。
+- 唯讀檢查：三個規範、既有來源／素材manifest、原NPC兩表資料、通用渲染／NPC3D／塔／Worker／GM與UI介面、主頁與同工作區其他配樂任務差異。其他聊天在同副本修改Zones／配樂、data與快取、LV及任務文件；本項只提交自身區段，保留其工作區成果。已自我Review；限制為烘焙披風非即時布料，未做行動真機或長時間測試；沒有未完成功能，可供驗收與合併，不合併／推送。雙庫提交SHA見交付。
+
+- 交付：素材庫提交 `d748f77d`，套件 `codex-authored/tower-boss2-lv2-20261108/` 共29個雜湊來源／輸出項；原始CC0檔以binary保存原bytes，來源與stage逐項核對。遊戲Commit為本段所在提交，見聊天交付；收尾補齊Worker data import快取，沿用已核准必要快取範圍，不改Claude的formula／tower／combat版本。測試Edge與本項18991暫存伺服器已關閉。
+
 ## TOWER-FLEE-BUTTON-20261108 — 塔戰中的挑戰按鈕改為撤退
 
 - Owner：Codex；Done，單一開發者。封魔塔 BOSS 戰鬥中，左側主要挑戰按鈕改為可操作的「撤退」，沿用既有 tower.flee 指令與 String 68。連挑戰中仍停用，退出後恢復挑戰／費用，樓層與 BOSS／獎勵資訊保持可瀏覽。

@@ -16,7 +16,10 @@ test('first tower boss becomes Skeleton King without changing stats or the ten-b
   assert.equal(boss.npcId,'tower_boss_1');
   assert.equal(boss.model3d.file,'images/models/npc3d/boss1.glb');
   assert.equal(boss.maxHp,stats.hp);assert.equal(boss.atk,stats.atk);assert.equal(boss.aspd,stats.aspd);
-  assert.equal(context.makeBoss(2).model3d,null);
-  assert.match(context.makeBoss(2).name,/冰霜女皇/);
+  assert.equal(context.makeBoss(2).model3d.file,'images/models/npc3d/boss2.glb');
+  assert.match(context.makeBoss(2).name,/骷髏王Ⅱ/);
+  assert.equal(context.makeBoss(2).maxHp,stats.hp);
+  assert.equal(context.makeBoss(3).model3d,null);
+  assert.equal(context.makeBoss(12).npcId,'tower_boss_2');
   assert.equal(context.makeBoss(11).npcId,boss.npcId);
 });
