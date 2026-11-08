@@ -187,12 +187,13 @@ var SfxSynth = (function () {
   function loopEnv(ac, t, dur, peak) { return envHold(ac, t, 0.25, peak == null ? 1 : peak, dur - 0.65, 0.4); }
 
   /* ═════════ 物理 ═════════ */
-  function knife(ac, out, t, R) { var k = R(0.92, 1.1);
-    whoosh(ac, out, t, 0.09, { f0: 2500 * k, f1: 6000 * k, f2: 3500 * k, q: 2.5, peak: 0.35, p0: -0.4, p1: 0.2, peakAt: 0.8 });
+  function knife(ac, out, t, R) {   // 2026-11-08 使用者從 5 個候選選定「鏗鏘」：像打在盔甲上
+    var k = R(0.95, 1.07);
+    whoosh(ac, out, t, 0.09, { f0: 2500 * k, f1: 6000 * k, f2: 3500 * k, q: 2.5, peak: 0.3, p0: 0.4, p1: -0.2, peakAt: 0.8 });
     var ti = t + 0.08;
-    burstNoise(ac, out, ti, 'bandpass', 3500 * k, 1.5, 0.0008, 0.8, 0.035);                 // 刺入「嚓」
-    ring(ac, out, ti, 1900 * k, [[1, 0.5], [2.71, 0.35, 1.6], [5.12, 0.2, 2.4]], 0.12, 0.25); // 刀身輕顫
-    ring(ac, out, ti, 190 * k, [[1, 0.8], [2.4, 0.4, 1.5]], 0.07, 0.6);                      // 刺中的悶聲
+    burstNoise(ac, out, ti, 'highpass', 4000, 0.7, 0.0004, 0.8, 0.02, 3);                    // 撞擊瞬間
+    ring(ac, out, ti, 2950 * k, [[1, 0.6], [1.006, 0.4], [2.41, 0.35, 1.5], [3.88, 0.2, 2.2], [5.3, 0.12, 3]], 0.32, 0.22);   // 清脆「叮——」
+    crackles(ac, out, ti + 0.005, 0.12, 9, 0.6, { fLo: 4000, fHi: 8000, q: 3, dMin: 0.003, dMax: 0.008, bias: 1.3, spread: 0.7 });   // 濺出的火花
   }
   function thrust(ac, out, t, R) { var k = R(0.92, 1.1);
     whoosh(ac, out, t, 0.12, { f0: 700 * k, f1: 4200 * k, f2: 5200 * k, q: 2, peak: 0.5, peakAt: 0.85 });
@@ -598,7 +599,7 @@ var SfxSynth = (function () {
   var LOOP = { kind: 'loop' }, FLIGHT = { kind: 'flight' };
   var RECIPES = {
     // 物理
-    'knife':              d(knife, 1.2),
+    'knife':              d(knife, 1.8),
     'thrust':             d(thrust, 1),
     'cleave':             d(cleave, 1.1),
     'gale':               d(gale, 0.65),
