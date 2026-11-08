@@ -65,7 +65,12 @@ test('音效解析與特效同規則：本體逐階繼承、觸發只讀本列�
   assert.deepEqual(plain(c.sgSfxRoles('fireball', { vfxTier: 7, vfxRoles: { projectile: 'proj-meteor-inferno' } })), { projectile: 'meteor-fly' });
   // 觸發列：只讀本列，不繼承本體
   assert.deepEqual(plain(c.sgSfxRoles('gale', { vfxUlt: 'thunderGodSlash' })), { attack: 'thunderstrike' });
-  assert.deepEqual(plain(c.sgSfxRoles('bloodblade', { vfxTier: 5 })), { hit: 'poison-drop' });
+  // 原則：場域每次作用有聲、debuff 每次作用無聲。毒霧感染（中毒每跳觸發）不發聲，觸發列留白也不退回本體音效；萬毒血霧是場域每拍，有聲
+  assert.deepEqual(plain(c.sgSfxRoles('bloodblade', { vfxTier: 5 })), {});
+  assert.deepEqual(plain(c.sgSfxRoles('bloodblade', { vfxUlt: 'venomDomain' })), { hit: 'poison-drop' });
+  assert.deepEqual(plain(c.sgSfxRoles('waterball', { vfxUlt: 'abyssBurial' })), { hit: 'abyss-vortex' }, '海淵葬界領域每拍有聲');
+  assert.deepEqual(plain(c.sgSfxRoles('bloodblade', { vfxTier: 7 })), {}, '零日感染不發聲');
+  assert.deepEqual(plain(c.sgSfxRoles('bloodblade', { vfxUlt: 'disintegrate' })), { attack: 'blood-burst' }, '崩解保留');
   // vfxBase：觸發列被要求走本體時，回到本體繼承鏈
   assert.equal(c.sgSfxRoles('bloodblade', { vfxTier: 5, vfxBase: true }).attack, 'bloodblade');
   // 呼叫端指定的外觀與目前階不同（火球分裂固定用第 1 階外觀）：聲音跟著外觀的來源列走

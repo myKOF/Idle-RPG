@@ -11,7 +11,7 @@
      gain      響度補償（依實測 RMS 校正，讓各音效聽感大小接近；循環音效刻意壓低）
      minGapMs  同一個音效兩次發聲的最短間隔（超過就丟掉，不補播）
      maxVoices 同一個音效同時最多幾個聲音在播
-     retrigger 地板／持續場域每次續命都重播（預設只在場域出生時播一次）
+     retrigger 地板／持續場域每次續命（定時作用）都重播；預設只在場域出生時播一次
      castSec   循環音效掛在「施放音效」時播放的秒數（施放沒有場域壽命可循）
 
    Sfx（js/sfx.js）呼叫 render() 預先離線算成 AudioBuffer，播放時零延遲。 */
@@ -187,20 +187,22 @@ var SfxSynth = (function () {
   function loopEnv(ac, t, dur, peak) { return envHold(ac, t, 0.25, peak == null ? 1 : peak, dur - 0.65, 0.4); }
 
   /* ═════════ 物理 ═════════ */
-  function knife(ac, out, t, R) { var k = R(0.92, 1.1);
-    whoosh(ac, out, t, 0.09, { f0: 2500 * k, f1: 6000 * k, f2: 3500 * k, q: 2.5, peak: 0.35, p0: -0.4, p1: 0.2, peakAt: 0.8 });
+  function knife(ac, out, t, R) {   // 2026-11-08 使用者從 5 個候選選定「鏗鏘」：像打在盔甲上
+    var k = R(0.95, 1.07);
+    whoosh(ac, out, t, 0.09, { f0: 2500 * k, f1: 6000 * k, f2: 3500 * k, q: 2.5, peak: 0.3, p0: 0.4, p1: -0.2, peakAt: 0.8 });
     var ti = t + 0.08;
-    burstNoise(ac, out, ti, 'bandpass', 3500 * k, 1.5, 0.0008, 0.8, 0.035);                 // 刺入「嚓」
-    ring(ac, out, ti, 1900 * k, [[1, 0.5], [2.71, 0.35, 1.6], [5.12, 0.2, 2.4]], 0.12, 0.25); // 刀身輕顫
-    ring(ac, out, ti, 190 * k, [[1, 0.8], [2.4, 0.4, 1.5]], 0.07, 0.6);                      // 刺中的悶聲
+    burstNoise(ac, out, ti, 'highpass', 4000, 0.7, 0.0004, 0.8, 0.02, 3);                    // 撞擊瞬間
+    ring(ac, out, ti, 2950 * k, [[1, 0.6], [1.006, 0.4], [2.41, 0.35, 1.5], [3.88, 0.2, 2.2], [5.3, 0.12, 3]], 0.32, 0.22);   // 清脆「叮——」
+    crackles(ac, out, ti + 0.005, 0.12, 9, 0.6, { fLo: 4000, fHi: 8000, q: 3, dMin: 0.003, dMax: 0.008, bias: 1.3, spread: 0.7 });   // 濺出的火花
   }
-  function thrust(ac, out, t, R) { var k = R(0.92, 1.1);
-    whoosh(ac, out, t, 0.12, { f0: 700 * k, f1: 4200 * k, f2: 5200 * k, q: 2, peak: 0.5, peakAt: 0.85 });
-    var ti = t + 0.11;
-    burstNoise(ac, out, ti, 'highpass', 2500, 0.7, 0.0006, 0.9, 0.05, 3);
-    squelch(ac, out, ti + 0.005, k, 0.6, 2600, 900, 0.07);
-    ring(ac, out, ti, 160 * k, [[1, 0.9], [2.2, 0.5, 1.4]], 0.09, 0.7);
-    ring(ac, out, ti, 2700 * k, [[1, 0.3], [2.4, 0.2, 1.5]], 0.18, 0.18);
+  function thrust(ac, out, t, R) {   // 2026-11-08 使用者從 5 個候選選定「疾風一刺」
+    var k = R(0.93, 1.08), len = 0.13, ti = t + len;
+    var bp = filt(ac, 'bandpass', 800, 2.2);
+    sweep(bp.frequency, t, [[0, 800 * k], [len * 0.5, 1600 * k], [len, 7000 * k]]);              // 破風一路加速往上衝
+    chain(noise(ac, t, len + 0.05), bp, rampGain(ac, t, [[0, 0.0001], [len * 0.5, 0.15], [len, 0.75], [len + 0.012, 0.0001]]), out);
+    squelch(ac, out, ti, k, 1, 2400, 700, 0.08);                                                  // 「噗嗤」
+    ring(ac, out, ti, 165 * k, [[1, 0.9], [2.3, 0.45, 1.5]], 0.08, 0.75);
+    burstNoise(ac, out, ti, 'bandpass', 1600 * k, 1, 0.0006, 0.5, 0.03);
   }
   function cleave(ac, out, t, R) { var k = R(0.92, 1.1), len = 0.5;
     var bp = filt(ac, 'bandpass', 600, 2.2);
@@ -210,13 +212,14 @@ var SfxSynth = (function () {
     whoosh(ac, out, t, len, { f0: 180, f1: 420, f2: 160, q: 1.2, peak: 0.5, white: false, peakAt: 0.35 });   // 低沉迴旋
     burstNoise(ac, out, t + 0.12, 'bandpass', 4800 * k, 6, 0.001, 0.45, 0.15);                         // 刀鋒「鏘」
   }
-  function gale(ac, out, t, R) { var k = R(0.92, 1.1);
-    whoosh(ac, out, t, 0.1, { f0: 1200 * k, f1: 6500 * k, f2: 2500 * k, q: 1.5, peak: 0.7, p0: -0.8, p1: 0.8, peakAt: 0.7 });
-    var ti = t + 0.07;
-    burstNoise(ac, out, ti, 'highpass', 2000, 0.7, 0.0005, 0.9, 0.05, 4);   // 「啪」
-    arcCrackle(ac, out, ti, 0.18, 0.45);                                   // 雷光
-    boom(ac, out, ti, 150 * k, 70, 0.12, 0.6);
-    whoosh(ac, out, ti, 0.35, { f0: 3000, f1: 1500, f2: 500, q: 0.8, peak: 0.25, peakAt: 0.1 });   // 餘風
+  function gale(ac, out, t, R) {   // 2026-11-08 使用者改成重擊砸地方向，從 5 個候選選定「落錘震波」
+    var k = R(0.93, 1.07);
+    boom(ac, out, t, 75 * k, 30, 0.6, 1);                                                    // 重錘落地的悶響
+    burstNoise(ac, out, t, 'lowpass', 700, 0.8, 0.002, 0.8, 0.1, 3);
+    whoosh(ac, out, t + 0.01, 0.7, { f0: 200, f1: 900, f2: 250, q: 0.9, peak: 0.7, peakAt: 0.12, white: false });   // 空氣震波往外推
+    whoosh(ac, out, t + 0.01, 0.55, { f0: 1800, f1: 1200, f2: 400, q: 0.7, peak: 0.35, peakAt: 0.1 });
+    crackles(ac, out, t + 0.05, 0.4, 10, 0.35, { fLo: 300, fHi: 1200, q: 2.5, dMin: 0.02, dMax: 0.05, bias: 1.5, spread: 0.8 });   // 碎屑
+    rumble(ac, out, t + 0.03, 0.9, 120, 0.6, 0.08);                                         // 餘震
   }
   function bloodblade(ac, out, t, R) { var k = R(0.92, 1.1);
     whoosh(ac, out, t, 0.13, { f0: 700 * k, f1: 3500 * k, f2: 2500 * k, q: 2.5, peak: 0.5, peakAt: 0.85 });
@@ -250,12 +253,16 @@ var SfxSynth = (function () {
       ring(ac, out, tt + 0.065, 2300 * kk, [[1, 0.4], [2.6, 0.25, 1.6]], 0.09, 0.18);
     }
   }
-  function counter(ac, out, t, R) { var k = R(0.95, 1.05);
-    burstNoise(ac, out, t, 'highpass', 3000, 0.7, 0.0005, 0.8, 0.03, 3);                                          // 格擋瞬間
-    ring(ac, out, t, 820 * k, [[1, 0.7], [1.007, 0.5], [2.32, 0.5, 1.3], [3.95, 0.35, 1.8], [5.6, 0.2, 2.5]], 0.7, 0.32);   // 「鏘——」
-    whoosh(ac, out, t + 0.09, 0.16, { f0: 800 * k, f1: 3800 * k, f2: 2000 * k, q: 2, peak: 0.45, p0: 0.4, p1: -0.4, peakAt: 0.8 });   // 反手一擊
-    ring(ac, out, t + 0.23, 150 * k, [[1, 1], [2.2, 0.4, 1.4]], 0.1, 0.7);
-    burstNoise(ac, out, t + 0.23, 'bandpass', 1200, 1, 0.001, 0.6, 0.06);
+  function counter(ac, out, t, R) {   // 2026-11-08 使用者看了 5 輪 25 個候選，選定「弓掌拍」：手掌微彎拍在厚毯上
+    var k = R(0.93, 1.07);
+    chain(noise(ac, t, 0.055), filt(ac, 'bandpass', 1200 * k, 0.9), filt(ac, 'lowpass', 2160 * k), env(ac, t, 0.0008, 0.35, 0.025), out);   // 被布吃掉的短促掌聲
+    var o = osc(ac, 'sine', t, 0.12); sweep(o.frequency, t, [[0, 190 * k], [0.08, 120 * k]]);
+    chain(o, env(ac, t, 0.002, 0.6, 0.09), out);                                                              // 掌心空氣被擠出的「啵」
+    chain(noise(ac, t, 0.1), filt(ac, 'bandpass', 220 * k, 4), gain(ac, 3), env(ac, t, 0.002, 0.6, 0.08), out);
+    var ti = t + 0.003, lp = filt(ac, 'lowpass', 420 * k, 0.9);                                               // 厚毯的悶響
+    sweep(lp.frequency, ti, [[0, 420 * k], [0.1, 147 * k]]);
+    chain(noise(ac, ti, 0.15), lp, env(ac, ti, 0.002, 0.6, 0.1), out);
+    boom(ac, out, ti, 90 * k, 54 * k, 0.11, 0.48);
   }
   function holyBurst(ac, out, t, R) { var k = R(0.97, 1.03);
     whoosh(ac, out, t, 0.35, { f0: 400, f1: 3500, f2: 5000, q: 1, peak: 0.25, peakAt: 0.9 });
@@ -476,6 +483,14 @@ var SfxSynth = (function () {
     chain(noise(ac, t, 0.45), bp, fl, env(ac, t, 0.004, 0.9, 0.38), out);                   // 「嘩」
     for (var i = 0; i < 7; i++) bubble(ac, out, t + 0.03 + Math.random() * 0.35, (500 + Math.random() * 1300) * k, 0.03 + Math.random() * 0.04, 0.2, Math.random() * 1.2 - 0.6);   // 水花
   }
+  function abyssVortex(ac, out, t, R) {   // 海淵葬界領域每拍：水被往下捲的「咻嚕——」（2026-11-08 使用者從第 2 輪候選選定）
+    var k = R(0.94, 1.06), len = 0.45;
+    var bp = filt(ac, 'bandpass', 1500, 2.5); sweep(bp.frequency, t, [[0, 2200 * k], [len, 350 * k]]);
+    var fl = ac.createGain(); flutter(fl.gain, t, len, 0.4, 1, 0.015, 0.04);
+    var p = ac.createStereoPanner(), lfo = osc(ac, 'sine', t, len + 0.05); lfo.frequency.value = 3; chain(lfo, gain(ac, 0.6), p.pan);   // 水流繞一圈
+    chain(noise(ac, t, len + 0.05), bp, fl, rampGain(ac, t, [[0, 0.0001], [0.06, 0.7], [len, 0.0001]]), p, out);
+    for (var i = 0; i < 5; i++) bubble(ac, out, t + 0.1 + i * 0.06 + Math.random() * 0.03, (420 - i * 45) * k, 0.05, 0.18, Math.random() * 0.8 - 0.4);   // 咕嚕
+  }
   function waterTornado(ac, out, t, R, dur) { dur = dur || 3;
     var bp = filt(ac, 'bandpass', 800, 1.2); flutter(bp.frequency, t, dur, 450, 1500, 0.06, 0.15);
     var p = ac.createStereoPanner(), lfo = osc(ac, 'sine', t, dur + 0.05); lfo.frequency.value = 0.8; chain(lfo, gain(ac, 0.6), p.pan);
@@ -598,15 +613,15 @@ var SfxSynth = (function () {
   var LOOP = { kind: 'loop' }, FLIGHT = { kind: 'flight' };
   var RECIPES = {
     // 物理
-    'knife':              d(knife, 1.2),
-    'thrust':             d(thrust, 1),
+    'knife':              d(knife, 1.8),
+    'thrust':             d(thrust, 0.52),
     'cleave':             d(cleave, 1.1),
     'gale':               d(gale, 0.65),
     'bloodblade':         d(bloodblade, 1.15),
     'poison-drop':        d(poisonDrop, 1.4),
     'blood-burst':        d(bloodBurst, 1.4),
     'dualdance':          d(dualdance, 2.0, { minGapMs: 450 }),      // 一則事件就是四連斬，連續事件不疊播
-    'counter':            d(counter, 1.2),
+    'counter':            d(counter, 1.1),
     'holy-burst':         d(holyBurst, 1),
     'bloodrage':          d(bloodrage, 0.75, { minGapMs: 300 }),     // 狂怒期間每次普攻都爆一次，高攻速不連環重拳
     // 火
@@ -626,7 +641,7 @@ var SfxSynth = (function () {
     'rock-spike':         d(rockSpike, 1),
     'gravity-burst':      d(gravityBurst, 0.75),
     'petrify':            d(petrify, 1.1),
-    'mire':               d(mire, 1.5),
+    'mire':               d(mire, 1.5, { retrigger: true, minGapMs: 600 }),   // 沼澤是場域，每拍作用都響（敵人身上的毒才是 debuff）
     'earthguard':         d(earthguard, 1.1),
     'light-pillar':       d(lightPillar, 1),
     // 雷
@@ -634,7 +649,7 @@ var SfxSynth = (function () {
     'flying-thunder':     d(flyingThunder, 0.5, LOOP),
     'thunderstrike':      d(thunderstrike, 0.85),
     'thunder-curtain':    d(thunderCurtain, 0.55, LOOP),
-    'thunder-orb':        d(thunderOrb, 1, { retrigger: true, minGapMs: 450 }),   // 雷球每次續命都劈啪一下
+    'thunder-orb':        d(thunderOrb, 1, { retrigger: true, minGapMs: 450 }),   // 雷球每次放電都劈啪一下（場域定時作用，不是中毒那類狀態每跳）
     'thunderfall-fly':    d(thunderfallFly, 0.7, FLIGHT),
     'thunderfall-impact': d(thunderfallImpact, 0.75),
     // 冰
@@ -643,6 +658,7 @@ var SfxSynth = (function () {
     'waterball':          d(waterball, 1.6),
     'water-tornado':      d(waterTornado, 0.7, LOOP),
     'tide-column':        d(tideColumn, 0.95),
+    'abyss-vortex':       d(abyssVortex, 1.73),       // 領域每拍都響，刻意比水流彈命中小聲約三成
     'frostnova':          d(frostnova, 1.3),
     'blizzard':           d(blizzard, 1.1, LOOP),
     'ice-spike':          d(iceSpike, 2.0),
@@ -654,7 +670,7 @@ var SfxSynth = (function () {
     'vacuum-shockwave':   d(vacuumShockwave, 0.8),
     'void-disc':          d(voidDisc, 0.95, LOOP),
     'storm-barrier':      d(stormBarrier, 0.65, { kind: 'loop', castSec: 4 }),
-    'storm-rip':          d(stormRip, 0.85, { retrigger: true, minGapMs: 800 })
+    'storm-rip':          d(stormRip, 0.85, { retrigger: true, minGapMs: 800 })   // 屏障每次作用都響
   };
 
   /* ═════════ 離線渲染 ═════════ */
