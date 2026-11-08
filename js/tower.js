@@ -44,8 +44,8 @@ function setTowerAutoAdvance(on) {
 }
 
 function makeBoss(floor) {
-  var bd = BOSS_LIST[(floor - 1) % BOSS_LIST.length];
-  var bs = bossStatsFor(floor);              // BOSS 數值公式 → formula.js §4
+  var bd = towerBossDefFor(floor);           // 該關 BOSS（NPC 表 tower_boss 列，超過列數從頭輪）→ formula.js §4
+  var bs = bossStatsFor(floor);              // BOSS 數值公式（含該關戰鬥倍率）→ formula.js §4
   /* 移動速度／攻擊速度／攻擊距離／視野：讀 NPC 表的 tower_boss 列（與野外 NPC 同一套換算，js/combat.js npcCombatProfile）。
      攻速是表上的絕對值（次/秒），不再乘階級或場景倍率；留白＝1 次/秒，移速與射程留白＝戰場預設。 */
   var prof = npcCombatProfile(bd, { aspd: 1 }, null, 'tower_boss');

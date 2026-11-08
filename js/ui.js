@@ -7087,7 +7087,7 @@ function towerTierOf(fl) {
 }
 
 function towerBossOf(fl) {
-  return BOSS_LIST[(fl - 1) % BOSS_LIST.length];
+  return towerBossDefFor(fl);   // 第 fl 層的 BOSS 列（NPC 表 tower_boss，超過列數從頭輪）→ formula.js
 }
 
 function towerBossIconHTML(bd, cls) {

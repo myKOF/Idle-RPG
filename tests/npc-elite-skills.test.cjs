@@ -26,13 +26,13 @@ test('NPC-SKILL-1 欄位：技能特效欄已移除，新增專屬技能與隨�
   assert.ok(header.indexOf('技能') < 0);
 });
 
-test('NPC-SKILL-2 每個 NPC 有 normal／elite／elite_adv／boss 四列；另有 10 列 tower_boss（封魔塔 BOSS）', () => {
+test('NPC-SKILL-2 每個 NPC 有 normal／elite／elite_adv／boss 四列；另有 50 列 tower_boss（封魔塔每關一列）', () => {
   const { col, rows } = readCsv();
   const byId = {};
   rows.forEach((r) => { (byId[r[col('NPC識別碼')]] = byId[r[col('NPC識別碼')]] || []).push(r[col('類型')]); });
   const ids = Object.keys(byId);
   const towers = ids.filter((id) => /^tower_boss_/.test(id));
-  assert.equal(towers.length, 10);
+  assert.equal(towers.length, 50);
   towers.forEach((id) => assert.deepEqual(byId[id], ['tower_boss'], id));
   const npcs = ids.filter((id) => !/^tower_boss_/.test(id));
   assert.equal(npcs.length, 120);
@@ -67,7 +67,7 @@ test('NPC-SKILL-4 資料同步：套用後 js/data.js 一致（NPC pool 的 skil
   const c = loadEliteEnv();
   assert.equal(c.NPC_CONFIG_TABLE.desert_11.skills.boss.ex.length, 1);
   assert.deepEqual(Array.from(c.NPC_CONFIG_TABLE.desert_1.skills.elite.rnd), [2, 2]);
-  assert.equal(c.BOSS_LIST.length, 10);
+  assert.equal(c.BOSS_LIST.length, 50);
   c.BOSS_LIST.forEach((b, i) => { assert.equal(b.id, 'tower_boss_' + (i + 1)); assert.ok(b.skills.ex.length >= 1); assert.deepEqual(Array.from(b.skills.rnd), [4, 6]); });
   const fresh = cfg.SCHEMAS.NPC.extract(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8'));
   /* 「圖像備註」是人工維護的說明（新版／舊版、缺哪些圖），不在自動產生的比對範圍內 */
@@ -95,8 +95,8 @@ test('NPC-SKILL-5 套用檢查：未知專屬技能、隨機數量超出技能�
   assert.throws(() => rebuild(rows), /類型/);
   rows = base(); rowOf(rows, 'boss')[i('專屬技能')] = 'e_meteor;e_meteor';
   assert.throws(() => rebuild(rows), /重複/);
-  rows = base(); rows.pop();
-  assert.throws(() => rebuild(rows), /tower_boss/, '封魔塔 BOSS 列數固定');
+  rows = base(); rows.splice(rows.findIndex((r) => r[0] === 'tower_boss_20'), 1);
+  assert.throws(() => rebuild(rows), /依關卡順序/, '封魔塔 BOSS 列不可跳號');
 });
 
 test('NPC-SKILL-6 基本資料只認 normal 列：改其他類型列的名稱不會影響遊戲；改 tower_boss 列的名稱、屬性會寫回 BOSS_LIST', () => {

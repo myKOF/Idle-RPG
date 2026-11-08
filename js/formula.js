@@ -1542,28 +1542,42 @@ function isFieldBossStage(stage) {
 /* ---- 高塔 BOSS 數值（三塔獨立參數） ----
    依樓層選用 TOWER_BOSS_TRIAL / TOWER_BOSS_HELL / TOWER_BOSS_PURGATORY（data.js）；
    每塔各自一整套：對應野外階段、等級加值、命中、生命/攻擊/防禦倍率（直接乘基準值、不鏈乘）、
-   攻速、閃避、控制抵抗、元素附傷、經驗與戰鬥規則（限時/狂暴/蓄力）。 */
+   閃避、控制抵抗、元素附傷、經驗與戰鬥規則（限時/狂暴/蓄力）。
+   再乘上該關 BOSS 自己的戰鬥倍率（NPC 表 tower_boss 列的生命／攻擊／防禦／命中／閃避倍率，留白＝1）。 */
 function towerBossCfg(floor) {
   if (isPurgatoryTowerFloor(floor)) return TOWER_BOSS_PURGATORY;
   if (isHellTowerFloor(floor)) return TOWER_BOSS_HELL;
   return TOWER_BOSS_TRIAL;
 }
+/* 第 floor 層用哪一列 BOSS：NPC 表 tower_boss_N＝第 N 關；樓層超過列數就從第 1 列重新輪
+   （目前 50 列：第 51、101 層都用第 1 關那列，數值仍套各自塔的公式）。 */
+function towerBossDefFor(floor) {
+  if (typeof BOSS_LIST === 'undefined' || !BOSS_LIST.length) return null;
+  var n = Math.max(1, Math.floor(Number(floor) || 1));
+  return BOSS_LIST[(n - 1) % BOSS_LIST.length];
+}
+function towerBossMult(bd, key) {
+  var v = bd ? Number(bd[key]) : NaN;
+  return (isFinite(v) && v >= 0) ? v : 1;
+}
 function bossStatsFor(floor, powerBonus) {
   var cfg = towerBossCfg(floor);
+  var bd = towerBossDefFor(floor);
   var refStage = cfg.refStageBase + floor * cfg.refStagePerFloor;
   var base = monsterStatsFor(refStage, false, false, powerBonus);
-  var bossAtk = base.atk * cfg.atkMult;   // BOSS 總魔攻（該塔總倍率）
+  var bossAtk = base.atk * cfg.atkMult * towerBossMult(bd, 'atkMult');   // BOSS 總魔攻（該塔總倍率 × 該關倍率）
+  var defMult = cfg.defMult * towerBossMult(bd, 'defMult');
   return {
     refStage: refStage,
     level: base.level + cfg.levelBonus,
     hell: isHellTowerFloor(floor),
     purgatory: isPurgatoryTowerFloor(floor),
-    hp: base.hp * cfg.hpMult,
+    hp: base.hp * cfg.hpMult * towerBossMult(bd, 'hpMult'),
     atk: bossAtk,
-    def: base.def * cfg.defMult,
-    mdef: base.mdef * cfg.defMult,
-    dodge: Math.min(cfg.dodgeBase + floor * cfg.dodgePerFloor, cfg.dodgeCap),
-    hit: cfg.hitBase + floor * cfg.hitPerFloor,
+    def: base.def * defMult,
+    mdef: base.mdef * defMult,
+    dodge: Math.min(cfg.dodgeBase + floor * cfg.dodgePerFloor, cfg.dodgeCap) * towerBossMult(bd, 'dodgeMult'),
+    hit: (cfg.hitBase + floor * cfg.hitPerFloor) * towerBossMult(bd, 'hitMult'),
     ctrlRes: cfg.ctrlRes,
     // 元素附傷以「總魔攻 bossAtk」為基準再乘該塔元素係數
     elemAtkVal: bossAtk * cfg.elemMult,

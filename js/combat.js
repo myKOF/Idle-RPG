@@ -722,6 +722,13 @@ function testMapNpcList() {
         (pool || []).forEach(function (mt, i) {
             if (!mt || !mt.id || seen[mt.id]) return;
             seen[mt.id] = true;
+            /* 封魔塔 BOSS 每關一列（NPC 表 tower_boss_1~50），多數關只是沿用同一副外觀：
+               場景只看外觀，同名稱＋同圖像＋同模型的只放第一隻。 */
+            if (tower) {
+                var look = 'tower|' + mt.name + '|' + (mt.img || '') + '|' + ((mt.model3d && mt.model3d.file) || '');
+                if (seen[look]) return;
+                seen[look] = true;
+            }
             out.push({ mt: mt, tower: tower ? i : -1, row: row, col: col++ });
         });
         if (col) row++;

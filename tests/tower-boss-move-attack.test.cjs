@@ -30,7 +30,7 @@ function combatProfileFns() {
 
 test('TBMA-1 NPC 表 tower_boss 列已填移動／攻擊三欄，且寫進 BOSS_LIST', () => {
   const towerRows = rows.slice(1).filter(r => r[ix('類型')] === 'tower_boss');
-  assert.equal(towerRows.length, 10);
+  assert.equal(towerRows.length, 50);
   const list = bosses(source);
   towerRows.forEach((r, i) => {
     ['移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)'].forEach(col => assert.ok(Number(r[ix(col)]) > 0, r[0] + ' ' + col));
@@ -68,7 +68,7 @@ test('TBMA-4 makeBoss 用表上的攻速（絕對值，不分塔），移速與�
   const fns = combatProfileFns();
   const stats = { level: 5, hp: 1000, atk: 10, def: 1, mdef: 1, dodge: 0, hit: 100, xp: 1, ctrlRes: 70, elemAtkVal: 1 };
   const ctx = { BOSS_LIST: list, STR: (_id, f, n) => f + ' ' + n, bossStatsFor: () => stats, ELEMENTS: ['fire'],
-    npcCombatProfile: fns.npcCombatProfile };
+    npcCombatProfile: fns.npcCombatProfile, towerBossDefFor: f => list[(f - 1) % list.length] };
   vm.runInNewContext(read('js/tower.js'), ctx);
   [1, 4, 51, 101].forEach(floor => {
     const bd = list[(floor - 1) % list.length];

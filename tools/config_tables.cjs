@@ -457,6 +457,11 @@ function npcSkillCells(sk) {
    檔名格式正確卻不在 npc.json 就中止套用，免得拼錯字讓敵人靜靜退回 emoji。
    「圖像備註」純說明（新版正式圖像／舊版圖像、缺哪些圖），不寫回遊戲。 */
 const NPC_SPRITE_ACTIONS = [['idle', '站立圖像'], ['walk', '移動圖像'], ['attack', '攻擊圖像'], ['die', '死亡圖像']];
+/* 封魔塔 BOSS 每關的戰鬥倍率（2026-11-08）：乘在參數表「4-高塔BOSS」的樓層公式上（js/formula.js bossStatsFor）。
+   只有 tower_boss 列能填；空白或 1＝不變（欄位不寫入）。元素附傷跟著攻擊倍率走，防禦倍率同時作用於物防與魔防。
+   野外 NPC 的 hpMult／atkMult／defMult 仍在 js/data.js，不歸這幾欄管——其他類型的列填了會中止套用，免得以為有效。 */
+const NPC_TOWER_MULT_COLUMNS = [['生命倍率', 'hpMult'], ['攻擊倍率', 'atkMult'], ['防禦倍率', 'defMult'],
+  ['命中倍率', 'hitMult'], ['閃避倍率', 'dodgeMult']];
 const NPC_MODEL_COLUMNS = [['idle', '3D站立動作'], ['walk', '3D移動動作'], ['attack1', '3D攻擊1動作'],
   ['attack2', '3D攻擊2動作'], ['attack3', '3D攻擊3動作'], ['die', '3D死亡動作']];
 function npcModelCells(entry) {
@@ -499,8 +504,9 @@ function npcSpriteCells(entry) {
 SCHEMAS.NPC = {
   name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName).concat(['BOSS_LIST']),
   header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '站立圖像', '移動圖像', '攻擊圖像', '死亡圖像', '圖像備註', '縮放比',
-    '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '視野範圍(米)', '魔法型（1是／0否）', '出現權重',
-    '專屬技能', '隨機技能下限', '隨機技能上限', '備註', '3D模型'].concat(NPC_MODEL_COLUMNS.map(([, label]) => label)),
+    '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '視野範圍(米)', '魔法型（1是／0否）', '出現權重']
+    .concat(NPC_TOWER_MULT_COLUMNS.map(([label]) => label),
+      ['專屬技能', '隨機技能下限', '隨機技能上限', '備註', '3D模型'], NPC_MODEL_COLUMNS.map(([, label]) => label)),
   extract(src) {
     const rows = [];
     const catalog = enemySkillCatalog();
@@ -516,6 +522,7 @@ SCHEMAS.NPC = {
           const sk = type === 'normal' ? null : (entry.skills && entry.skills[type]) || null;
           const row = [id, entry.name, def.zone, type].concat(base, npcSkillCells(sk), [npcSkillNote(type, sk, catalog)]);
           row.splice(15, 0, numStr(entry.sightRanges && entry.sightRanges[type] != null ? entry.sightRanges[type] : 50));
+          row.splice(18, 0, ...NPC_TOWER_MULT_COLUMNS.map(() => ''));   // 戰鬥倍率只給 tower_boss 列
           rows.push(row.concat(npcModelCells(entry)));
         });
       });
@@ -526,7 +533,8 @@ SCHEMAS.NPC = {
       rows.push([b.id || ('tower_boss_' + (index + 1)), b.name, NPC_TOWER_ZONE, 'tower_boss', b.attr || b.elem || '', b.emoji || '',
         b.img || '', b.img || '', b.img || '', b.img || '', '舊版靜態圖（' + (b.img || '無') + '），尚無序列幀：缺移動／攻擊／死亡動畫', '1',
         numStr(b.runSpeed == null ? '' : b.runSpeed), numStr(b.atkSpeed == null ? '' : b.atkSpeed),
-        numStr(b.atkRange == null ? '' : b.atkRange), numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)], npcModelCells(b)));
+        numStr(b.atkRange == null ? '' : b.atkRange), numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(
+        NPC_TOWER_MULT_COLUMNS.map(([, key]) => numStr(b[key] == null ? 1 : b[key])), npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)], npcModelCells(b)));
     });
     return rows;
   },
@@ -577,6 +585,11 @@ SCHEMAS.NPC = {
       if (!Number.isFinite(sight) || !(sight > 0)) throw new Error('NPC ' + lineOf(index) + '「視野範圍(米)」必須是大於 0 的有限數字：' + sightRaw);
       if (!sightById[id]) sightById[id] = {};
       sightById[id][type] = sight;
+      if (type !== 'tower_boss') {
+        NPC_TOWER_MULT_COLUMNS.forEach(([label]) => {
+          if (get(row, label).trim() !== '') throw new Error('NPC ' + lineOf(index) + '（' + id + ' ' + type + '）「' + label + '」只有 tower_boss 列能填，其他類型請留白');
+        });
+      }
       if (NPC_SKILL_TYPES.indexOf(type) >= 0) {
         const where = 'NPC ' + lineOf(index) + '（' + id + ' ' + type + '）';
         const ex = get(row, '專屬技能').split(/[;；,，\s]+/).map(t => t.trim()).filter(Boolean);
@@ -643,12 +656,18 @@ SCHEMAS.NPC = {
       const sk = skillsById[o.id];
       if (sk && Object.keys(sk).length) o.skills = sk;
     }));
-    /* 封魔塔 BOSS：列的順序＝BOSS_LIST 的順序；站立圖像同時用於列表頭像與載入備援。 */
-    if (towerRows.length !== oldBosses.length) {
-      throw new Error('NPC 表的 tower_boss 列要剛好 ' + oldBosses.length + ' 列（目前 ' + towerRows.length + '）：封魔塔 BOSS 清單由程式決定，這裡只能改它們的名稱、屬性、外觀、移動／攻擊、視野與技能');
-    }
-    const bosses = oldBosses.map((old, i) => {
-      const t = towerRows[i];
+    /* 封魔塔 BOSS（2026-11-08 改為每關一列）：tower_boss_N＝第 N 關，識別碼必須從 1 依序排列、不可跳號；
+       列數就是一輪的關數，超過的樓層從第 1 列重新輪（js/formula.js towerBossDefFor）。站立圖像同時用於列表頭像與載入備援。 */
+    if (!towerRows.length) throw new Error('NPC 表至少要有 1 列 tower_boss（封魔塔第 1 關）');
+    towerRows.forEach((t, i) => {
+      if (t.id !== 'tower_boss_' + (i + 1)) {
+        throw new Error('NPC ' + lineOf(t.index) + '：tower_boss 列的識別碼必須依關卡順序排列，這一列應為 tower_boss_' + (i + 1) + '（目前 ' + t.id + '）');
+      }
+    });
+    const oldBossById = {};
+    oldBosses.forEach((b, i) => { oldBossById[b.id || ('tower_boss_' + (i + 1))] = b; });
+    const bosses = towerRows.map((t, i) => {
+      const old = oldBossById[t.id] || { name: '', emoji: '', elem: null, attr: '', img: '' };
       const b = Object.assign({}, old);
       b.id = 'tower_boss_' + (i + 1);
       b.sightRange = sightById[t.id].tower_boss;
@@ -656,9 +675,22 @@ SCHEMAS.NPC = {
       const emoji = get(t.row, '外觀'); if (emoji) b.emoji = emoji;
       const portrait = get(t.row, '站立圖像').trim(); if (portrait) b.img = portrait;
       const attr = get(t.row, '屬性').trim(); if (attr) b.attr = attr;
+      if (!b.name) throw new Error('NPC ' + lineOf(t.index) + '（' + t.id + '）缺少「NPC名稱」');
+      /* 元素：魔法型＝1 的 BOSS 以「屬性」的元素魔法攻擊（js/tower.js：elem 決定魔攻與元素附傷），0＝物理 BOSS */
+      b.elem = toBool(get(t.row, '魔法型（1是／0否）')) ? (b.attr || null) : null;
       const model = npcModelFromRow(t.row, get, 'NPC ' + lineOf(t.index) + '（' + t.id + '）');
       if (model) b.model3d = model; else delete b.model3d;
       applyMoveAttack(b, t.row, t.index);   // 移動速度／攻擊速度／攻擊距離：以本列為準（js/tower.js makeBoss）
+      NPC_TOWER_MULT_COLUMNS.forEach(([label, key]) => {
+        const raw = get(t.row, label).trim();
+        if (raw === '' || Number(raw) === 1) { delete b[key]; return; }
+        const v = Number(raw);   // 不用 toNum：非數字也要報出是哪一欄
+        const needPositive = key === 'hpMult' || key === 'atkMult';
+        if (!Number.isFinite(v) || v < 0 || (needPositive && v === 0)) {
+          throw new Error('NPC ' + lineOf(t.index) + '（' + t.id + '）「' + label + '」必須是' + (needPositive ? '大於 0' : '0 以上') + '的數字：' + raw);
+        }
+        b[key] = v;
+      });
       delete b.skills;
       if (Object.keys(t.skills).length) b.skills = t.skills;
       return b;
