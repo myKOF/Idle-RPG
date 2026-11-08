@@ -16,8 +16,13 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
   const current = bosses(source);
   assert.equal(result.length, 10);
   for (let i = 0; i < result.length; i++) {
-    assert.equal(result[i].model3d.file, 'images/models/npc3d/boss1.glb');
-    assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
+    if (i === 0) {
+      assert.equal(result[i].name, '骷髏王');
+      assert.equal(result[i].img, 'sprites/boss/boss_skeleton_king.png');
+      assert.ok(fs.existsSync(path.join(root, 'images', result[i].img)));
+      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss1.glb');
+      assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
+    } else assert.equal(result[i].model3d, undefined, 'other bosses retain their existing appearance');
     assert.deepEqual(result[i], current[i]);
   }
   const extracted = cfg.SCHEMAS.NPC.extract(source);
@@ -30,7 +35,7 @@ test('changing a clip in the NPC table changes only that boss binding', () => {
   row[ix('3D攻擊1動作')] = 'Attack3';
   const result = bosses(cfg.SCHEMAS.NPC.rebuild(data, header, source).BOSS_LIST);
   assert.equal(result[0].model3d.clips.attack1, 'Attack3');
-  assert.equal(result[1].model3d.clips.attack1, 'Attack1');
+  assert.equal(result[1].model3d, undefined);
   assert.deepEqual(result[0].skills, bosses(source)[0].skills);
 });
 
@@ -92,6 +97,9 @@ test('exported sword is a separate rigid mesh under the right hand and all five 
   }
   const capeSkin = gltf.skins[cape.skin];
   const allowed = new Set(['mixamorig:Spine2', 'Cape_Upper', 'Cape_Middle', 'Cape_Lower']);
+  const collisionBones = gltf.nodes.filter(n => /^CapeFit_\d{2}_\d{2}$/.test(n.name || ''));
+  assert.equal(collisionBones.length, 135, 'armor-aware cloth grid is retained in the exported skin');
+  for (const node of collisionBones) allowed.add(node.name);
   for (const primitive of gltf.meshes[cape.mesh].primitives) {
     for (let v = 0; v < gltf.accessors[primitive.attributes.POSITION].count; v++) {
       let weight = 0;

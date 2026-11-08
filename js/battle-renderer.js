@@ -1111,12 +1111,12 @@ var BattleRenderer = (function () {
      播完、保持最後一格、播完接回 baseAnim 的規則與下面 2D 那一套一致。 */
   function playHero3dAnim(entity, animName, backTo) {
     var sheet = S.sheets[entity.sheetName];
-    var cfg = Hero3D.CLIP_FOR[animName];
+    var cfg = entity.npc3d ? Npc3D.play(entity.body, animName, entity.data && entity.data.aspd) : Hero3D.CLIP_FOR[animName];
     if (!cfg || !entity.body) return;
     if (entity.curAnim === animName && cfg.loop) return;
     entity.curAnim = animName;
     entity.texAnim = animName;
-    entity.body.hero3dPlay(cfg, sheet && sheet.speeds && sheet.speeds[animName]);
+    if (!entity.npc3d) entity.body.hero3dPlay(cfg, sheet && sheet.speeds && sheet.speeds[animName]);
     entity.body.loop = !!cfg.loop;
     if (cfg.hold) {
       entity.body.onComplete = null;
@@ -1730,6 +1730,7 @@ var BattleRenderer = (function () {
     }).catch(function () { S.imgTex[src] = 'failed'; });
   }
   function refreshMobBody(e) {
+    if (e.npc3d) return;
     var next = makeMobBody(e.data, e.visScale);
     if (!next) return;
     var idx = e.bodyWrap.getChildIndex(e.body);
@@ -1879,8 +1880,32 @@ var BattleRenderer = (function () {
     if (body) body.scale.set(body.scale.x * visScale);
     return body;
   }
+  function requestNpc3d(e) {
+    var def = typeof Npc3D !== 'undefined' ? Npc3D.definition(e.data) : null;
+    if (!def || e.npc3dLoading || e.npc3d) return;
+    e.npc3dLoading = true;
+    Npc3D.create(def).then(function (body) {
+      if (S.failed || S.entities[e.id] !== e || e.state === 'dying' || e.state === 'gone') {
+        Npc3D.dispose(body); body.destroy(); return;
+      }
+      var index = e.bodyWrap.getChildIndex(e.body);
+      e.body.destroy();
+      e.body = body;
+      e.bodyWrap.addChildAt(body, index);
+      body.scale.set(Npc3D.scale(body, e.visScale));
+      e.bodyWrap.rotation = 0; e.bodyWrap.scale.set(1);
+      e.npc3d = true; e.npcSprite = false; e.sheetName = '';
+      e.curAnim = ''; e.baseAnim = 'idle';
+      e.hitHeight = 64 * e.visScale; e.hitCenter = e.hitHeight * .55;
+      playAnim(e, 'idle');
+      if (e.eliteDeco) e.eliteDeco.baseScale = Math.abs(body.scale.x);
+      syncNpcRankGlow(e);
+    }).catch(function (error) {
+      console.warn('[battle-renderer] NPC 3D load failed; retaining existing body:', error);
+    });
+  }
   function adoptNpcSprite(e) {
-    if (!e || !e.data || e.state === 'dying' || e.npcSprite) return;
+    if (!e || !e.data || e.state === 'dying' || e.npcSprite || e.npc3d) return;
     var def = npcSpriteDef(e.data);
     if (!def) return;
     var name = 'npc:' + def.id;
@@ -2006,7 +2031,7 @@ var BattleRenderer = (function () {
     if (npcDef && S.sheets['npc:' + npcDef.id]) {
       sheetName = 'npc:' + npcDef.id;
       body = makeNpcSpriteBody(sheetName, visScale);
-    } else if (isBoss && S.sheets.boss) {
+    } else if (isBoss && S.sheets.boss && !(typeof Npc3D !== 'undefined' && Npc3D.definition(data))) {
       sheetName = 'boss';
       body = makeAnimSprite('boss', 'idle');
       var targetH = 64 * visScale;     // 與玩家共用世界尺度，體型由NPC表與階級決定
@@ -2103,6 +2128,7 @@ var BattleRenderer = (function () {
     syncNpcRankGlow(ent);
     applyEntityBillboard(ent);   // 出生的那一幀就別歪（tickWorld 之後每幀會再算）
     drawHpBar(ent);
+    requestNpc3d(ent);
     return ent;
   }
 
@@ -2853,8 +2879,8 @@ var BattleRenderer = (function () {
     spec._enemyAttackAnimated = true;
     var sourceEnt = spec.sourceId ? S.entities[spec.sourceId] : null;
     if (!sourceEnt || sourceEnt.state === 'dying' || sourceEnt.state === 'gone') return;
-    if (sourceEnt.npcSprite || (sourceEnt.isBoss && sourceEnt.sheetName)) playAnim(sourceEnt, 'attack', 'idle');
-    if (spec.variant !== 'enemy-projectile' && sourceEnt.state === 'idle') {
+    if (sourceEnt.npc3d || sourceEnt.npcSprite || (sourceEnt.isBoss && sourceEnt.sheetName)) playAnim(sourceEnt, 'attack', 'idle');
+    if (!sourceEnt.npc3d && spec.variant !== 'enemy-projectile' && sourceEnt.state === 'idle') {
       var pc = playerPos();
       var dx = pc.x - sourceEnt.wx, dy = (pc.y - 26) - sourceEnt.wy;
       var dist = Math.sqrt(dx * dx + dy * dy);
@@ -2928,7 +2954,12 @@ var BattleRenderer = (function () {
     S.lastPos[ent.id] = { x: ent.root.x, y: ent.root.y - entityCenterHeight(ent), footY: ent.root.y, at: nowMs() };
     if (ent.isBoss) removeBossBar(ent.id);
     var dieSheet = ent.npcSprite ? S.sheets[ent.sheetName] : null;
-    if (dieSheet && dieSheet.anims.die) {
+    if (ent.npc3d) {
+      ent.sprDie = true;
+      ent.dieDur = ent.body.hero3d.duration(ent.body.npc3d.clips.die.clip);
+      ent.baseAnim = 'die';
+      playAnim(ent, 'die', 'die');
+    } else if (dieSheet && dieSheet.anims.die) {
       /* NPC 序列幀有死亡動作：播完停在最後一格，再淡出（見 tickWorld 的 dying 段） */
       ent.sprDie = true;
       ent.dieDur = dieSheet.manifest.anims.die.frames / Math.max(1, dieSheet.speeds.die * 60);
@@ -2944,6 +2975,7 @@ var BattleRenderer = (function () {
     var ent = S.entities[id];
     if (!ent) return;
     S.lastPos[id] = { x: ent.root.x, y: ent.root.y - entityCenterHeight(ent), footY: ent.root.y, at: nowMs() };
+    if (ent.npc3d) Npc3D.dispose(ent.body);
     ent.root.destroy({ children: true });
     delete S.entities[id];
   }
@@ -7398,12 +7430,18 @@ var BattleRenderer = (function () {
       e.wx = eAt.x; e.wy = eAt.y;
       var movedLen = Math.sqrt(edx * edx + edy * edy);
 
-      if (e.npcSprite) {
+      if (e.npcSprite || e.npc3d) {
         /* 序列幀自己會動：不套擺動／呼吸。走路與站立依實際位移切換；出招中與死亡中不打斷。 */
         if (e.state !== 'dying') {
-          var wantAnim = (S.sheets[e.sheetName].anims.walk && (e.state === 'entering' || movedLen > 0.6 * dt * 60)) ? 'walk' : 'idle';
+          var hasWalk = e.npc3d || S.sheets[e.sheetName].anims.walk;
+          var wantAnim = (hasWalk && (e.state === 'entering' || movedLen > 0.6 * dt * 60)) ? 'walk' : 'idle';
           e.baseAnim = wantAnim;
           if ((e.curAnim === 'idle' || e.curAnim === 'walk') && e.curAnim !== wantAnim) playAnim(e, wantAnim);
+        }
+        if (e.npc3d && e.state !== 'dying') {
+          var target = playerPos();
+          e.body.hero3dFace(movedLen > .1 ? edx : target.x - e.wx,
+                          movedLen > .1 ? edy : target.y - 26 - e.wy);
         }
       } else if (e.state === 'entering' || movedLen > 0.6 * dt * 60) {
         /* 走路擺動：小怪左右搖 + 輕微縮放跳動（類倖存者小怪步態） */
@@ -8775,7 +8813,8 @@ var BattleRenderer = (function () {
         home: playerPos(),
         entities: Object.keys(S.entities).map(function (id) {
           var e = S.entities[id];
-          return { id: id, x: Math.round(e.wx), y: Math.round(e.wy), state: e.state, lunge: +(e.lunge || 0).toFixed(2), magic: !!(e.data && e.data.magic), npc: e.data && e.data.npcId, sheet: e.sheetName, anim: e.curAnim };
+          return { id: id, x: Math.round(e.wx), y: Math.round(e.wy), state: e.state, lunge: +(e.lunge || 0).toFixed(2), magic: !!(e.data && e.data.magic), npc: e.data && e.data.npcId, sheet: e.sheetName, anim: e.curAnim,
+            npc3d: !!e.npc3d, clip: e.npc3d ? e.body.hero3d.clip : null };
         })
       };
     }

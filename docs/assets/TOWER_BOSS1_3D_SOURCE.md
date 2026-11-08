@@ -1,6 +1,6 @@
 # 封魔塔 BOSS1 3D 預覽來源與交接
 
-任務：`TOWER-BOSS1-3D-PREVIEW-20261108`、`TOWER-BOSS1-3D-REV2-20261108`，Codex。第二版依使用者回饋修正披風上翹與正握方向，提供第三招正面五倍慢動作高清 GIF；**尚未接入正式戰鬥渲染器**。NPC 表與生成資料已保存 3D 配置。
+任務：`TOWER-BOSS1-CAPE-20261108`、`TOWER-SKELETON-KING-20261108`，Codex。使用者已認可手部，本輪保留握姿、增加披風避碰，並將封魔塔第一種 BOSS 改為「骷髏王」，接入實際 3D 戰鬥顯示。第三招另提供正面五倍慢動作，五動作提供背面預覽。
 
 ## 授權與來源
 
@@ -16,7 +16,7 @@
 | BOSS1_Attack3.glb | 5c66dfaef36662647e4400171d3e1d96fd9d065d6327bfd1801489a0705dbf41 |
 | BOSS1_Die.glb | da1cf3e807abfc266325cad5933bdc5f76201ac502c8b7fa2796540590548a6d |
 
-素材庫由 `tools/vfx/vfx-library-root.cjs` 解析，目前套件為 `codex-authored/tower-boss1-3d-20261108-v2/`；第一版 `codex-authored/tower-boss1-3d-20261108/` 完整保留。`sources/` 保存五個原檔，`editable/BOSS1_preview.blend` 是貼圖已打包的可編輯來源，`exports/boss1.glb` 對應遊戲專案 `images/models/npc3d/boss1.glb`。`manifest.json` 記錄來源、製作工具、輸出與 QA 的 SHA。預覽 PNG／GIF 是聊天交付產物，不納入 Git。
+素材庫由 `tools/vfx/vfx-library-root.cjs` 解析，目前套件為 `codex-authored/tower-boss1-3d-20261108-v3/`；前兩版完整保留。`sources/` 保存五個原檔與已認可的上一版 GLB，`editable/BOSS1_preview.blend` 是貼圖已打包的可編輯來源，`exports/boss1.glb` 對應 `images/models/npc3d/boss1.glb`。`exports/boss_skeleton_king.png` 是同一實際 GLB 渲染的透明頭像，對應 `images/sprites/boss/`。manifest 記錄來源、製作工具、輸出與 QA 的 SHA。聊天預覽 PNG／GIF 不納入 Git，正式頭像保留。
 
 ## 製作方式
 
@@ -30,9 +30,13 @@
 - 第二版把背部披風拆成獨立 `BOSS1_Cape`，保留原幾何／UV，解除腿骨與原披風骨的混合權重，改由 `Cape_Upper / Cape_Middle / Cape_Lower` 與上背連接。上段跟隨背部位置，下段保持重力向下，沉身／倒地時向身後低處鋪開；肩部殘留邊緣的原四根披風骨共用同一曲線，避免接縫上翹或拉扯肩甲。
 - 披風是烘焙的骨骼動畫，未新增即時布料模擬。原前方裙襬、頭髮與其他衣甲保留原動作／權重；未做全身布料或盔甲碰撞處理。
 
+第三版在使用者認可的實際 GLB 上追加 `CapeFit_00_00` 等 15×9 個骨骼。披風原幾何／UV 保留，每個頂點最多四根骨權重。先擬合原重力垂墜，再依當幀實際身體／衣甲三角面向背側避讓，另做整片三角面交叉處理與地面限制，接觸解除短暫緩放。碰撞結果以 60 fps 烘焙；原角色與武器動作的時間、姿勢保持，沒有執行期布料成本。使用已匯出的 GLB 作為輸入，可保留使用者實際看到的四元數插值，避免 Blender 來源的 Bezier 中間姿勢改變握劍。
+
 ## NPC 表欄位
 
-權威來源為 `config/Excel/NPC.xlsx` 的 `NPC` 工作表，`W:AC`；封魔塔十列位於第 482–491 列，各列可獨立換模型與動作。原有四欄 2D 圖像、備註、數值與技能均保留。原生 Excel 修改並正常模式重開驗證，原兩張工作表的既有資料、公式及物件保留。
+權威來源為 `config/Excel/NPC.xlsx` 的 `NPC` 工作表。第 482 列 `tower_boss_1` 名稱為骷髏王，`W:AC` 保存模型與五個動作。第 483–491 列撤下尚未接入的預填 3D 綁定，維持原外觀；之後仍可各列獨立填入其他模型。第 482 列原有四個圖像欄 `G:J` 改為 `sprites/boss/boss_skeleton_king.png`，站立圖像同時供列表頭像與載入備援讀取。數值、技能、元素及備註未改。
+
+原生 Excel 正常重開驗證 69 個授權儲存格；兩張表共 24,550 格資料／公式逐格比對，其他儲存格與七個原生物件保留。名稱屬 NPC 配置內容，未另在 String 表重複建立。
 
 | 欄位 | 目前值 | 用途 |
 | --- | --- | --- |
@@ -44,20 +48,26 @@
 | 3D攻擊3動作 | Attack3 | 2.967 秒 |
 | 3D死亡動作 | Die | 2.167 秒，倒地後保持末幀 |
 
-表頭的 Excel 註解記錄原始動作檔名。修改後沿用「套用參數.bat」或既有 Excel→CSV→`config_tables` 流程；生成 `BOSS_LIST[].model3d`。GLB 路徑、檔案存在性及每個動作名稱都會驗證；錯誤時中止套用。模型及動作欄位全清空可取消該列綁定。站立取首幀／死亡停末幀是後續接入的語意，現行遊戲尚未消費此 3D 配置。
+表頭的 Excel 註解記錄原始動作檔名。修改後沿用「套用參數.bat」或既有 Excel→CSV→`config_tables` 流程，生成 `BOSS_LIST[].model3d` 與站立圖像 `img`。GLB 路徑、存在性及動作名稱會驗證；錯誤時中止套用。模型及動作欄位全清空可取消綁定。
+
+`tower.makeBoss` 將 NPC 身分／model3d 傳給戰鬥快照；`js/npc3d.js` 使用既有 Hero3D 的 Three／Pixi 身體介面，獨立於玩家的 3D 開關。站立停 Walk 首幀，移動正常循環，普通攻擊依序使用三招並按既有攻擊間隔播放，Die 原速播放後淡出；模擬的傷害、攻速、技能、數值、解鎖及存檔不變。已認可的手部與骨骼姿勢沒有在執行期重算。模型載入期間或 WebGL 失敗沿用原身體／備援圖；載入完成前已退場則立即回收，正常死亡或換場也釋放 Three、Canvas 貼圖與 WebGL context。其他九種 BOSS 不建立 NPC 3D 控制器。沿用原十種 BOSS 樓層循環，因此第 11／21…層仍使用第一種 BOSS 定義。
 
 ## 重建與驗證
 
 1. `node tools/meshy-pipeline/src/export-tower-boss1.cjs --check` 檢查素材庫與專案雜湊。
 2. Blender 先執行 `tools/meshy-pipeline/blender/build_tower_boss_hand.py -- <上述版本 MPFB checkout> <手部輸出資料夾>`，再執行 `tools/meshy-pipeline/blender/prepare_tower_boss1.py -- <五個原檔所在資料夾> <製作輸出資料夾> --hand-source <手部輸出資料夾>/BOSS1_anatomical_hand.blend`，輸出 Blender、GLB 與握點 QA。已有素材庫手部 Blend 時可直接使用，不必重新安裝 MPFB。更新必要來源及 manifest 後依雙倉庫流程提交。
+   第三版接著執行 `refine_tower_boss_cape.py -- <已認可的第二版 GLB> <新輸出資料夾>`。此步保留原素材與動作，新增避碰披風骨格，輸出可編輯 Blend、GLB 與 cape-bake-qa.json。
 3. `node tools/config_tables.cjs --apply NPC` 應回報語意變更 0。
-4. Blender 執行 `tools/meshy-pipeline/blender/qa_tower_boss1.py -- <實際 GLB> <QA.json>`，逐幀檢查披風骨向下、下襬低於肩部、武器不入地、握點誤差、拇指朝劍格，並確認披風沒有腿骨權重。使用手部真正的手背法向檢查低持劍 Walk 朝人物右側；攻擊揮劍、倒地時手掌隨原動作旋轉，不強迫全程朝同一方向。數值不能代替握姿目視，另檢視人物右側／前側近照及實際動作影格。
+4. Blender 執行 `tools/meshy-pipeline/blender/qa_tower_boss1.py -- <實際 GLB> <QA.json> <已認可的第二版 GLB>`，以 60 fps 檢查披風與身體三角面交叉、下襬／地面、武器不入地、握點及拇指方向。右手、前臂及劍骨每個取樣都與已認可版本比較。肩領最上方 rest Z > 1.505 米的微小貼合區允許原接縫接觸，其餘披風不允許幾何交叉。另檢視背／側／正面影格；不能以純數值替代目視。
 5. Blender 執行 `tools/meshy-pipeline/blender/render_tower_boss1.py -- <全新預覽資料夾> --only Attack3 --camera front --speed 0.2`。由 NPC 表讀 GLB 與動作名稱，重新匯入實際 GLB，以 EEVEE 原生 1080×1080、25 fps 逐幀渲染。固定正面鏡頭保留原動作轉身，沒有讓鏡頭跟著角色旋轉。原第三招 2.967 秒，檢視片段延長為 14.833 秒。
 6. `python tools/meshy-pipeline/package_tower_boss1.py <預覽資料夾>` 輸出 1080×1144 GIF，表頭標示正面與 0.2 倍速；結尾短暫停留後重播。省略 `--only` 可重建五動作與總覽；變更鏡頭／速度／fps 時須使用不同目錄，避免混入舊影格。
 7. `node --test tests/npc3d-config.test.cjs tests/npc-vision.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`。
+8. `--camera rear --fps 15` 輸出五動作背面；`--portrait` 單獨輸出從當下模型自動構圖的透明頭像與來源雜湊。`node --test tests/npc3d-runtime.test.cjs tests/tower-boss3d.test.cjs` 驗證接入與生命週期；另跑既有 `hero3d*.test.cjs`。
 
 第二版上述四檔 30/30 通過，並增加披風獨立網格／專用骨架／無腿骨權重檢查。第一版較廣套件的三項原有失敗仍留存紀錄（NPC-SKILL-4 的既有生成備註／縮放差異、NPC-SPRITE-4 的既有空白圖像備註、NPC-SPRITE-5 假定哥布林縮放仍為 1）；當時已在隔離副本以修改前版本確認同名失敗。第二版未改這些測試、原配置或對應玩法。
 
-第二版最終 GLB 重匯入共檢查 684 幀：披風下襬至少低於肩部 0.180 米，披風最低 0.027 米，全劍最低 0.035 米，握點誤差低於 0.000001 米；拇指末節與刀刃方向點積 0.884，Walk 手背朝人物右側投影點積至少 0.963。舊版以握點到掌心的向量推論手背方向並不可靠，已由真正的手背法向與右側鏡頭取代。手套為單色銀色材質，未新增手部細節貼圖；仍須由使用者檢視本輪握姿。
+第二版最終 GLB 重匯入共檢查 684 幀：披風下襬至少低於肩部 0.180 米，披風最低 0.027 米，全劍最低 0.035 米，握點誤差低於 0.000001 米；拇指末節與刀刃方向點積 0.884，Walk 手背朝人物右側投影點積至少 0.963。舊版以握點到掌心的向量推論手背方向並不可靠，已由真正的手背法向與右側鏡頭取代。手套為單色銀色材質，未新增手部細節貼圖；該版握姿已獲使用者認可。
 
-第一版已同步主頁 data／bridge 與 Worker 資料快取。第二版只修模型及製作／檢視工具，NPC 表中的模型路徑與五動作名稱、data、前端／Worker 腳本及快取均保持；0.2 倍速僅用於檢視，沒有修改 GLB 原片段時長、遊戲攻速或命中時序。正式遊戲 3D、攻擊事件對時、效能與實戰驗收留待預覽確認後接入，不宣稱已完成。
+第三版 GLB 重匯入共 1,363 個 60 Hz 取樣，披風／身體交叉對數均為 0；地面最低 0.038 米，右手／前臂／劍骨矩陣對已認可版本最大誤差 0.00000188，握點誤差低於 0.000001 米。這是五個已烘焙動作的避碰，沒有加入披風自碰撞、兵器接觸或即時布料物理；前裙襬仍保留來源權重。第三招 0.2 倍速僅供檢視，GLB 原時長與遊戲攻速不變。
+
+第三版同步 data／tower／hero3d／npc3d／battle-renderer 主頁快取與 Worker 資料版本。主頁更新與 Claude 音效版本行相鄰，三方試跑衝突，使用者已明確同意分段更新；本輪未改兩個音效版本行，也未合併該分支。必要回歸、建置與實際瀏覽器結果記錄於本輪 AI_TASKS。

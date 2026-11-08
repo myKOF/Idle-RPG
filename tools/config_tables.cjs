@@ -638,7 +638,7 @@ SCHEMAS.NPC = {
       const sk = skillsById[o.id];
       if (sk && Object.keys(sk).length) o.skills = sk;
     }));
-    /* 封魔塔 BOSS：列的順序＝BOSS_LIST 的順序，名稱、屬性、外觀可改，圖檔與元素攻擊類型維持原樣。 */
+    /* 封魔塔 BOSS：列的順序＝BOSS_LIST 的順序；站立圖像同時用於列表頭像與載入備援。 */
     if (towerRows.length !== oldBosses.length) {
       throw new Error('NPC 表的 tower_boss 列要剛好 ' + oldBosses.length + ' 列（目前 ' + towerRows.length + '）：封魔塔 BOSS 清單由程式決定，這裡只能改它們的名稱、屬性、外觀與技能');
     }
@@ -649,6 +649,7 @@ SCHEMAS.NPC = {
       b.sightRange = sightById[t.id].tower_boss;
       const name = get(t.row, 'NPC名稱'); if (name) b.name = name;
       const emoji = get(t.row, '外觀'); if (emoji) b.emoji = emoji;
+      const portrait = get(t.row, '站立圖像').trim(); if (portrait) b.img = portrait;
       const attr = get(t.row, '屬性').trim(); if (attr) b.attr = attr;
       const model = npcModelFromRow(t.row, get, 'NPC ' + lineOf(t.index) + '（' + t.id + '）');
       if (model) b.model3d = model; else delete b.model3d;

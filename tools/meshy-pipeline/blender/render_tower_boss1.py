@@ -5,6 +5,7 @@ Use --only Attack3 --camera front --speed 0.2 for the five-times-slower front in
 """
 import argparse
 import csv
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -18,7 +19,7 @@ MAPPING = [('Walk', '3D移動動作'), ('Attack1', '3D攻擊1動作'),
            ('Attack2', '3D攻擊2動作'), ('Attack3', '3D攻擊3動作'), ('Die', '3D死亡動作')]
 
 
-def render(output, npc, only=None, camera_view='three-quarter', speed=1, fps=25):
+def render(output, npc, only=None, camera_view='three-quarter', speed=1, fps=25, portrait=False):
     with (ROOT / 'config/CSV/NPC.csv').open(encoding='utf-8-sig', newline='') as file:
         row = next(r for r in csv.DictReader(file) if r['NPC識別碼'] == npc and r['類型'] == 'tower_boss')
     model = ROOT / row['3D模型']
@@ -63,16 +64,46 @@ def render(output, npc, only=None, camera_view='three-quarter', speed=1, fps=25)
     bsdf.inputs['Base Color'].default_value = (.018, .023, .033, 1)
     bsdf.inputs['Roughness'].default_value = .8
     bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 0, -.005))
-    bpy.context.object.data.materials.append(slate)
+    floor = bpy.context.object
+    floor.data.materials.append(slate)
     camera_data = bpy.data.cameras.new('Fixed clip camera')
     camera_data.type = 'ORTHO'
     camera = bpy.data.objects.new('Fixed clip camera', camera_data)
     scene.collection.objects.link(camera)
     scene.camera = camera
-    direction = Vector((0, -5.5, .55) if camera_view == 'front' else (2.0, -5.5, 2.0)).normalized()
+    directions = {'front': (0, -5.5, .55), 'rear': (2, 5.5, 1.2), 'three-quarter': (2, -5.5, 2)}
+    direction = Vector(directions[camera_view]).normalized()
     rotation = (-direction).to_track_quat('-Z', 'Y')
     camera.rotation_euler = rotation.to_euler()
     inverse_rotation = rotation.inverted()
+    if portrait:
+        action = bpy.data.actions[row['3D站立動作']]
+        arm.animation_data.action = action
+        arm.animation_data.action_slot = action.slots[0]
+        scene.frame_set(0)
+        floor.hide_render = True
+        scene.render.film_transparent = True
+        scene.render.image_settings.color_mode = 'RGBA'
+        scene.render.image_settings.compression = 70
+        direction = Vector((.35, -7, .85)).normalized()
+        rotation = (-direction).to_track_quat('-Z', 'Y')
+        body = next(obj for obj in meshes if obj.name == 'BOSS1_Body')
+        evaluated = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        upper_body = [rotation.inverted() @ (evaluated.matrix_world @ evaluated.data.vertices[v.index].co)
+                      for v in body.data.vertices if v.co.z > 1.15 and abs(v.co.x) < .48]
+        low = Vector(tuple(min(p[i] for p in upper_body) for i in range(3)))
+        high = Vector(tuple(max(p[i] for p in upper_body) for i in range(3)))
+        target = rotation @ ((low + high) / 2)
+        camera.location = target + direction * 8
+        camera.rotation_euler = rotation.to_euler()
+        camera_data.ortho_scale = max(high.x - low.x, high.y - low.y) * 1.15
+        scene.render.filepath = str(output / 'boss_skeleton_king.png')
+        bpy.ops.render.render(write_still=True)
+        (output / 'portrait-source.json').write_text(json.dumps({
+            'model': row['3D模型'], 'modelSha256': hashlib.sha256(model.read_bytes()).hexdigest(),
+            'clip': action.name, 'frame': 0, 'dimensions': [1080, 1080], 'transparent': True
+        }, indent=2), encoding='utf-8')
+        return
     manifest = {'npc': npc, 'model': row['3D模型'], 'width': 1080, 'height': 1080,
                 'renderFps': fps, 'camera': camera_view, 'playbackSpeed': speed,
                 'engine': 'Blender EEVEE', 'clips': {}}
@@ -134,10 +165,11 @@ if __name__ == '__main__':
     parser.add_argument('output', type=Path)
     parser.add_argument('--npc', default='tower_boss_1')
     parser.add_argument('--only', nargs='+', choices=[key for key, _ in MAPPING])
-    parser.add_argument('--camera', choices=['front', 'three-quarter'], default='three-quarter')
+    parser.add_argument('--camera', choices=['front', 'rear', 'three-quarter'], default='three-quarter')
     parser.add_argument('--speed', type=float, default=1)
     parser.add_argument('--fps', type=int, default=25)
+    parser.add_argument('--portrait', action='store_true')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     if not 0 < args.speed <= 4 or not 1 <= args.fps <= 60:
         parser.error('speed must be positive and fps must be within 1..60')
-    render(args.output, args.npc, args.only, args.camera, args.speed, args.fps)
+    render(args.output, args.npc, args.only, args.camera, args.speed, args.fps, args.portrait)

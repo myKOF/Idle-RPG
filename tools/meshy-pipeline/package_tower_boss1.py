@@ -34,7 +34,6 @@ def write_gif(frames, destination, durations):
 def package(root):
     manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
     fps = manifest.get('renderFps', 25)
-    frame_ms = round(1000 / fps)
     thumbnails, output = {}, {}
     for name, clip in manifest['clips'].items():
         frames, thumbnails[name] = [], []
@@ -45,7 +44,7 @@ def package(root):
             board.paste(source, (0, 64))
             draw = ImageDraw.Draw(board)
             speed = clip.get('playbackSpeed', 1)
-            view = '正面' if manifest.get('camera') == 'front' else '斜前方'
+            view = {'front': '正面', 'rear': '背面'}.get(manifest.get('camera'), '斜前方')
             draw.text((28, 18), f'封魔塔 BOSS · {LABELS[name]} · {speed:g} 倍速 · {view}', font=font(24), fill=(235, 223, 197))
             draw.text((800, 21), f'{clip["clip"]} / {fps} FPS', font=font(20), fill=(154, 173, 193))
             frames.append(board)
@@ -85,7 +84,8 @@ def package(root):
         board.paste(grip, (x + 81, y + 43))
         board_frames.append(board)
     destination = root / 'BOSS1_actions_HD.gif'
-    write_gif(board_frames, destination, [frame_ms] * len(board_frames))
+    durations = [round((i + 1) * 100 / fps) * 10 - round(i * 100 / fps) * 10 for i in range(len(board_frames))]
+    write_gif(board_frames, destination, durations)
     board_frames[0].save(root / 'BOSS1_cover.png')
     output['overview'] = {'file': destination.name, 'sizeBytes': destination.stat().st_size,
                           'width': 1920, 'height': 1200, 'frames': len(board_frames)}
