@@ -1864,16 +1864,16 @@ var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
 
 // ---- BOSS 高塔（元素 BOSS 以魔法攻擊） ----
 var BOSS_LIST = [
-  { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_1', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
-  { name: '冰霜女皇', emoji: '❄️', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_ice.png', id: 'tower_boss_2', sightRange: 50, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
-  { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_thunder.png', id: 'tower_boss_3', sightRange: 50, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
-  { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_4', sightRange: 50, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
-  { name: '劇毒之母', emoji: '🕷️', elem: 'poison', attr: 'poison', img: 'sprites/boss/boss_poison.png', id: 'tower_boss_5', sightRange: 50, skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
-  { name: '深淵領主', emoji: '😈', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_abyss.png', id: 'tower_boss_6', sightRange: 50, skills: { ex: ['e_darkzone', 'e_darkorbs'], rnd: [4, 6] } },
-  { name: '亡靈霜龍', emoji: '🐲', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_dragon.png', id: 'tower_boss_7', sightRange: 50, skills: { ex: ['e_iceshards', 'e_waterprison'], rnd: [4, 6] } },
-  { name: '聖焰審判官', emoji: '😇', elem: 'light', attr: 'light', img: 'sprites/boss/boss_light.png', id: 'tower_boss_8', sightRange: 50, skills: { ex: ['e_fireball', 'e_heal'], rnd: [4, 6] } },
-  { name: '風暴泰坦', emoji: '🌩️', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_storm.png', id: 'tower_boss_9', sightRange: 50, skills: { ex: ['e_tornado', 'e_lightningspear'], rnd: [4, 6] } },
-  { name: '混沌之影', emoji: '🌑', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_chaos.png', id: 'tower_boss_10', sightRange: 50, skills: { ex: ['e_curse', 'e_manadrain'], rnd: [4, 6] } }
+  { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_1', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
+  { name: '冰霜女皇', emoji: '❄️', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_ice.png', id: 'tower_boss_2', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
+  { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_thunder.png', id: 'tower_boss_3', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
+  { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_4', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 5, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
+  { name: '劇毒之母', emoji: '🕷️', elem: 'poison', attr: 'poison', img: 'sprites/boss/boss_poison.png', id: 'tower_boss_5', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
+  { name: '深淵領主', emoji: '😈', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_abyss.png', id: 'tower_boss_6', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_darkzone', 'e_darkorbs'], rnd: [4, 6] } },
+  { name: '亡靈霜龍', emoji: '🐲', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_dragon.png', id: 'tower_boss_7', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_iceshards', 'e_waterprison'], rnd: [4, 6] } },
+  { name: '聖焰審判官', emoji: '😇', elem: 'light', attr: 'light', img: 'sprites/boss/boss_light.png', id: 'tower_boss_8', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_fireball', 'e_heal'], rnd: [4, 6] } },
+  { name: '風暴泰坦', emoji: '🌩️', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_storm.png', id: 'tower_boss_9', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_tornado', 'e_lightningspear'], rnd: [4, 6] } },
+  { name: '混沌之影', emoji: '🌑', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_chaos.png', id: 'tower_boss_10', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_curse', 'e_manadrain'], rnd: [4, 6] } }
 ];
 /* ---- 高塔 BOSS 各塔獨立參數 ----
    試煉之塔(1~50)／地獄之塔(51~100)／煉獄之塔(101~150) 三套獨立設定，
@@ -1885,7 +1885,7 @@ var TOWER_BOSS_TRIAL = {                                  // 試煉之塔 1~50 �
   levelBonus: 3,                                          // BOSS 等級 = 對應階段 + levelBonus
   hitBase: 200, hitPerFloor: 70,                          // 命中率 = hitBase + 樓層×hitPerFloor
   hpMult: 20, atkMult: 3, defMult: 10,                    // 生命/攻擊/物魔防 = 基準 × 倍率
-  aspd: 3, ctrlRes: 70,                                   // 攻速（次/秒）／控制抵抗%
+  ctrlRes: 70,                                            // 控制抵抗%（攻速改由 NPC 表 tower_boss 列逐隻設定）
   dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 15,   // 閃避 = min(base + 樓層×per, cap)%
   elemMult: 3,                                            // 元素附傷 = 總魔攻 × elemMult
   xpMult: 2,                                              // 經驗 = 建議野外階段普通怪經驗 × xpMult
@@ -1896,7 +1896,7 @@ var TOWER_BOSS_HELL = {                                   // 地獄之塔 51~100
   levelBonus: 3,
   hitBase: 200, hitPerFloor: 70,
   hpMult: 400, atkMult: 15, defMult: 10,
-  aspd: 3, ctrlRes: 70,
+  ctrlRes: 70,
   dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 17,
   elemMult: 3,
   xpMult: 2,
@@ -1907,7 +1907,7 @@ var TOWER_BOSS_PURGATORY = {                              // 煉獄之塔 101~15
   levelBonus: 3,
   hitBase: 200, hitPerFloor: 70,
   hpMult: 4000, atkMult: 75, defMult: 10,
-  aspd: 3, ctrlRes: 70,
+  ctrlRes: 70,
   dodgeBase: 8, dodgeCap: 10000000, dodgePerFloor: 20,
   elemMult: 3,
   xpMult: 2,

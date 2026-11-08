@@ -46,6 +46,9 @@ function setTowerAutoAdvance(on) {
 function makeBoss(floor) {
   var bd = BOSS_LIST[(floor - 1) % BOSS_LIST.length];
   var bs = bossStatsFor(floor);              // BOSS 數值公式 → formula.js §4
+  /* 移動速度／攻擊速度／攻擊距離／視野：讀 NPC 表的 tower_boss 列（與野外 NPC 同一套換算，js/combat.js npcCombatProfile）。
+     攻速是表上的絕對值（次/秒），不再乘階級或場景倍率；留白＝1 次/秒，移速與射程留白＝戰場預設。 */
+  var prof = npcCombatProfile(bd, { aspd: 1 }, null, 'tower_boss');
   var b = {
     name: STR(1821, floor, bd.name), emoji: bd.emoji, img: bd.img,
     npcId: bd.id || null, model3d: bd.model3d || null,
@@ -56,9 +59,10 @@ function makeBoss(floor) {
     maxHp: bs.hp, hp: bs.hp,
     atk: bs.atk, def: bs.def, mdef: bs.mdef,
     magic: !!bd.elem,                        // 元素 BOSS 以魔法攻擊（對玩家魔防）
-    aspd: bs.aspd, dodge: bs.dodge, hit: bs.hit, // 命中率 = 基礎值 + 樓層×每層值 → formula.js §4
+    aspd: prof.aspd, dodge: bs.dodge, hit: bs.hit, // 命中率 = 基礎值 + 樓層×每層值 → formula.js §4
+    runSpeed: prof.runSpeed, atkRange: prof.atkRange, // 座標單位；0＝用戰場預設 → js/battlefield.js
     atkCd: 1.5, effects: {}, ctrlRes: bs.ctrlRes,
-    sightRange: npcSightRange(bd, 'tower_boss'),
+    sightRange: prof.sightRange,
     _alerted: false,
     elite: false, isBoss: true, towerBoss: true, xp: bs.xp,
     /* 浮字／特效定址沿用塔戰原有的 tb-float（我方是 tp-float）；

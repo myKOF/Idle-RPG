@@ -20,11 +20,11 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261108-skeleton-sfx-merge', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261106-t4-talents', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261103-battlefield-unlock-params-merge', '../stats.js?v=20261028-develop-merge-a8acfe',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261108-tower-boss-npc-stats', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261108-tower-boss-npc-stats', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261103-battlefield-unlock-params-merge', '../stats.js?v=20261028-develop-merge-a8acfe',
   '../item.js?v=20261106-legendary-inactive-note', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261102_merged_ai_latest',
   '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261106-skill-sfx', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
   '../player.js?v=20261106-ai-integration', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261106-ai-integration', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261104-retire-enchant-book',
+  '../combat.js?v=20261106-ai-integration', '../elite.js?v=20261028-develop-merge-a8acfe', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261108-tower-boss-npc-stats',
   '../factory.js?v=20261103-equipment-rarity-v3', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261104-ancient-essence-cost', '../save.js?v=20261106-start-menu',
   '../tasks.js?v=20261105-forge-fine-task', '../achievements.js?v=20261103-equipment-rarity-v3'
 );

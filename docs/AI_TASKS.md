@@ -1,3 +1,11 @@
+## TOWER-BOSS-NPC-STATS-20261108 — 封魔塔 BOSS 移動／攻擊屬性搬進 NPC 表
+
+- Owner：Claude，Done。使用者要求封魔塔 BOSS 的攻速、移動等屬性也由 NPC 表填寫。
+- 原狀：攻速來自參數表「4-高塔BOSS／攻速 / 控制抵抗」（三塔各 3 次/秒）；移速與射程未設定，走戰場預設（21 米/秒；元素 BOSS 32 米、鋼鐵魔像近戰 5 米）。
+- 修改：NPC.xlsx 十列 tower_boss 填入上述現值（移動速度 21、攻擊速度 3、攻擊距離 32／鋼鐵魔像 5）；config_tables 的 tower_boss 列讀寫這三欄（與 normal 列共用驗證）；tower.js makeBoss 改走 combat.js npcCombatProfile；參數表第 101 列改為只剩「控制抵抗」（a/b/c＝試煉/地獄/煉獄），apply_params、data.js TOWER_BOSS_*、formula.js bossStatsFor 移除 aspd，不留兩套攻速。Excel 皆以原生 API 修改並重開驗證。快取版本 bump（data/formula/tower/bridge、Worker 匯入）。
+- 行為差異：元素 BOSS 填了攻擊距離 32 米後依 NPC 表規則「停在射程內側站樁」（原本會走到貼身），開場 26 米已在射程內；鋼鐵魔像不變。
+- 測試：新增 tests/tower-boss-move-attack.test.cjs（5 項）；tower-boss3d 改驗表上攻速。全套件與基準相比無新增失敗（基準既有 680 項失敗，兩項比對差異為不穩定測試，單獨重跑 3/3 通過）。瀏覽器實測塔戰第 1 層正常、makeBoss 1/4/51/101 層值正確。
+
 ## SYNC-MERGE-20261108-f680d5 - Pending develop merge resolution
 
 - Owner: Codex; Done (controller staging and merge commit pending). Explicit authorization covers only HEAD 54a11d9a0b13655a8fdb3414a3665bc8ff4d3b29 and MERGE_HEAD f680d5eb12c95f60b851f6d9a34a4c9612432621. No delegation, commit, staging, push, other-worktree changes or Git metadata writes.

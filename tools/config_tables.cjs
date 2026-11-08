@@ -405,7 +405,8 @@ const NPC_POOL_DEFS = [
      boss        野外 BOSS（體型 3.4 倍、光暈顏色隨屬性）
      tower_boss  封魔塔 BOSS（所屬地圖識別碼＝tower；順序＝BOSS_LIST 的順序；體型 5~7 倍）
    - 基本資料（名稱、屬性、外觀、移動／攻擊、權重）只讀 normal 列；其他類型的這些欄位是複製品，改了不會生效。
-     例外：tower_boss 列沒有 normal 列，名稱、屬性、外觀就讀它自己。
+     例外：tower_boss 列沒有 normal 列，名稱、屬性、外觀、移動速度／攻擊速度／攻擊距離就讀它自己
+     （2026-11-08 起封魔塔 BOSS 的攻速不再由參數表「4-高塔BOSS」各塔設定，改由這三欄逐隻設定）。
    - 技能三欄（任何非 normal 類型都可填）：
        專屬技能    Skills2 表「類別＝enemy」的群組ID（e_ 開頭），用「;」分隔；這種敵人一定會有的技能
        隨機技能下限／上限  從「隨機技能池」（Skills2 敵人技能中 pool＝random 的那些）抽幾個（含頭尾）
@@ -524,7 +525,8 @@ SCHEMAS.NPC = {
       const sk = (b.skills) || null;
       rows.push([b.id || ('tower_boss_' + (index + 1)), b.name, NPC_TOWER_ZONE, 'tower_boss', b.attr || b.elem || '', b.emoji || '',
         b.img || '', b.img || '', b.img || '', b.img || '', '舊版靜態圖（' + (b.img || '無') + '），尚無序列幀：缺移動／攻擊／死亡動畫', '1',
-        '', '', '', numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)], npcModelCells(b)));
+        numStr(b.runSpeed == null ? '' : b.runSpeed), numStr(b.atkSpeed == null ? '' : b.atkSpeed),
+        numStr(b.atkRange == null ? '' : b.atkRange), numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)], npcModelCells(b)));
     });
     return rows;
   },
@@ -552,6 +554,17 @@ SCHEMAS.NPC = {
     const towerRows = [];
     const seen = {};
     const lineOf = index => '第 ' + (index + 2) + ' 列';
+    /* 移動／攻擊三項（normal 列與 tower_boss 列共用）：空白格＝沿用系統預設（欄位不寫入）；填了就必須是正數，
+       填 0 或負數多半是誤植，寧可中止套用也不要讓敵人靜靜變成不動或不攻擊。 */
+    const applyMoveAttack = (o, row, index) => {
+      [['移動速度(米/秒)', 'runSpeed'], ['攻擊速度(次/秒)', 'atkSpeed'], ['攻擊距離(米)', 'atkRange']].forEach(function (pair) {
+        const raw = get(row, pair[0]).trim();
+        if (raw === '') { delete o[pair[1]]; return; }
+        const v = toNum(raw);
+        if (!(v > 0)) throw new Error('NPC ' + lineOf(index) + '「' + pair[0] + '」必須是大於 0 的數字：' + raw);
+        o[pair[1]] = v;
+      });
+    };
     dataRows.forEach((row, index) => {
       const id = get(row, 'NPC識別碼').trim();
       if (id === '') return;
@@ -619,15 +632,7 @@ SCHEMAS.NPC = {
         if (!(sv > 0) || !Number.isFinite(sv)) throw new Error('NPC ' + lineOf(index) + '「縮放比」必須是大於 0 的數字：' + scaleRaw);
         o.scale = sv;
       }
-      /* 移動／攻擊三項：空白格＝沿用系統預設（欄位不寫入）；填了就必須是正數，
-         填 0 或負數多半是誤植，寧可中止套用也不要讓敵人靜靜變成不動或不攻擊。 */
-      [['移動速度(米/秒)', 'runSpeed'], ['攻擊速度(次/秒)', 'atkSpeed'], ['攻擊距離(米)', 'atkRange']].forEach(function (pair) {
-        const raw = get(row, pair[0]).trim();
-        if (raw === '') { delete o[pair[1]]; return; }
-        const v = toNum(raw);
-        if (!(v > 0)) throw new Error('NPC ' + lineOf(index) + '「' + pair[0] + '」必須是大於 0 的數字：' + raw);
-        o[pair[1]] = v;
-      });
+      applyMoveAttack(o, row, index);
       delete o.aspdMult;
       delete o.eliteSkills;
       delete o.skills;
@@ -640,7 +645,7 @@ SCHEMAS.NPC = {
     }));
     /* 封魔塔 BOSS：列的順序＝BOSS_LIST 的順序；站立圖像同時用於列表頭像與載入備援。 */
     if (towerRows.length !== oldBosses.length) {
-      throw new Error('NPC 表的 tower_boss 列要剛好 ' + oldBosses.length + ' 列（目前 ' + towerRows.length + '）：封魔塔 BOSS 清單由程式決定，這裡只能改它們的名稱、屬性、外觀與技能');
+      throw new Error('NPC 表的 tower_boss 列要剛好 ' + oldBosses.length + ' 列（目前 ' + towerRows.length + '）：封魔塔 BOSS 清單由程式決定，這裡只能改它們的名稱、屬性、外觀、移動／攻擊、視野與技能');
     }
     const bosses = oldBosses.map((old, i) => {
       const t = towerRows[i];
@@ -653,6 +658,7 @@ SCHEMAS.NPC = {
       const attr = get(t.row, '屬性').trim(); if (attr) b.attr = attr;
       const model = npcModelFromRow(t.row, get, 'NPC ' + lineOf(t.index) + '（' + t.id + '）');
       if (model) b.model3d = model; else delete b.model3d;
+      applyMoveAttack(b, t.row, t.index);   // 移動速度／攻擊速度／攻擊距離：以本列為準（js/tower.js makeBoss）
       delete b.skills;
       if (Object.keys(t.skills).length) b.skills = t.skills;
       return b;

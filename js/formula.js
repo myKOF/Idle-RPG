@@ -1562,7 +1562,6 @@ function bossStatsFor(floor, powerBonus) {
     atk: bossAtk,
     def: base.def * cfg.defMult,
     mdef: base.mdef * cfg.defMult,
-    aspd: cfg.aspd,
     dodge: Math.min(cfg.dodgeBase + floor * cfg.dodgePerFloor, cfg.dodgeCap),
     hit: cfg.hitBase + floor * cfg.hitPerFloor,
     ctrlRes: cfg.ctrlRes,
