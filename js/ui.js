@@ -1195,6 +1195,7 @@ function syncBossConfigControls() {
 }
 
 function applyUiBossFightView(view) {
+  if (typeof UISound !== 'undefined') UISound.setScene(view);
   var changed = !!view.towerActive !== !!(UI_WORKER_STATE.view && UI_WORKER_STATE.view.towerActive);
   UI_WORKER_STATE.view = view;
   if (!changed) return;

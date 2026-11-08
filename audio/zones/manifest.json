@@ -1,0 +1,12 @@
+{
+  "title": "Desert Ascendant",
+  "file": "desert-ascendant.mp3",
+  "source": "User-supplied desert-ascendant.mp3",
+  "authorization": "User explicitly confirmed 已取得授權 on 2026-11-08",
+  "modification": "None; copied byte-for-byte",
+  "sha256": "c52558e7adc5c0d9ddb6e13100c445eaa0f23be6694a22e621b825fb2e6a1ba1",
+  "bytes": 4336393,
+  "libraryRelativePath": "third-party/user-supplied/desert-ascendant",
+  "gameRelativePath": "audio/zones/desert-ascendant.mp3",
+  "usage": "Zones BGM column; desert scene looping background music"
+}

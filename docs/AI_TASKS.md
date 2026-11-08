@@ -9629,6 +9629,23 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 # 3. Codex 任務
 
+## ZONE-BGM-20261108 — 地圖配樂配置與荒漠循環播放
+
+- Owner：Codex；Done，單一開發者。使用者要求 Zones 加 BGM 欄，荒漠進場循環播放指定的 desert-ascendant.mp3。使用者確認已取得授權。
+- 前置：Zones 來源獨占存取通過；表格及音檔預檢乾淨。共用工具／UI／資料以本項起始快照對 Claude 現況三方試跑；快取同行重疊經使用者確認同意分段處理。
+- 允許：Zones.xlsx／CSV、config_tables 的 Zones 段、data 的荒漠 BGM、UI 場景通知、ui-sound、必要快取、音檔與來源說明、相關回歸、LV 及本段；素材庫保存音檔與來源。禁止改 NPC／塔戰／公式／Worker 協議／存檔／其他任務，不合併推送。
+- 驗收：Excel 原生儲存並正常重開、來源／CSV／JS 對齊、同場景不重播、離場停播、選單與場景互斥、音量／靜音、循環／手勢解鎖、瀏覽器及相關回歸、Build、雙庫雜湊與 Commit。後續交使用者驗收與整合。
+- 完成：BGM 位於地圖名稱旁的 D 欄，荒漠填入 audio/zones/desert-ascendant.mp3，其餘地圖留空。沿既有 Excel→CSV→config_tables 產生 ZONES.bgm，UISound 依 FULL／TICK 的 zone／towerActive 切換，同圖換關續播、其他地圖與塔戰停止、返回荒漠從曲首播放。開始畫面與場景配樂互斥，共用音樂音量／全體靜音；背景繼續循環，pagehide 暫停、pageshow 恢復。
+- 修改：config/Excel/Zones.xlsx、config/CSV/Zones.csv、tools/config_tables.cjs 的 Zones 段、js/data.js 的 desert.bgm、js/ui.js 的場景通知、js/ui-sound.js、js/bridge.js／index.html／js/worker/sim.worker.js 的資料快取、audio/zones 三檔、tests/zone-music.test.cjs、tests/new-battle-zones.test.cjs 的欄位定位、tests/ui-achievement-sound.test.cjs 的快取預期、LV 與本段。既有表格回歸改用欄名定位，保留原有地圖解鎖與上限斷言；Worker 僅同步 data.js 的快取字串。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、main／start-menu／game-settings／intro-player、Worker view／protocol、tower／gm_exec、Excel 匯出與原生編修工具、素材庫解析器、既有音檔來源與相關回歸。未改 NPC／塔戰／公式／協議／存檔；同副本骷髏王Ⅱ的進行中檔案與其他素材庫暫存項保留，不納入本項。
+- Excel：來源獨占確認，原生 API 只新增 D 欄並寫入表頭／荒漠路徑兩格，正常重開兩次通過。以修改前副本逐格比對全部 209 格資料與樣式、分頁／窗格／資料驗證／物件數，皆保留；原生 Excel 匯出修改前後 PDF 並檢查，欄名與音檔路徑完整可讀。artifact-tool 匯入在本機遇到記憶體錯誤，改用原生 Excel 驗證與輸出，未手改 XML。
+- 測試：`node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/start-menu.test.cjs tests/game-menu.test.cjs tests/intro-audio.test.cjs tests/ui-worker-events.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/new-battle-zones.test.cjs tests/god-realm-zones.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs` 共 103 項，102 通過。唯一 BIOMES-CONFIG 失敗為其他進行中任務的 NPC Excel／CSV 差異；唯讀 overlay 還原本項修改前工具、資料、Zones Excel／CSV 與測試後，同檔仍 6/7、相同 NPC 斷言失敗，未降低檢查。新增 BGM 七項全通過。
+- `node tools/config_tables.cjs --apply Zones` 語意變更 0；`npm.cmd run build` 690 檔通過；`node tools/string-table/build_string_csv.cjs --check` 寫死 0；diff 檢查通過。未改 apply_params 的數值錨點。
+- 瀏覽器：IAB 無可用連線，改用隔離 headless Edge、正式主頁／原生 Worker 及 seed=17，未讀寫使用者存檔。真實 MP3 長 180.427708 秒，驗證進場起播、原生 loop 曲尾回首、同圖換關不中斷、音量25%、靜音恢復、荒漠／冰原往返、模擬分頁隱藏時進度持續前進、塔戰開始停止與撤退確認後恢復。Console error／warning／pageerror 0，測試瀏覽器與伺服器正常關閉。此 headless Edge 指定限制旗標仍允許無手勢起播，手勢阻擋／重試及選單互斥由回歸驗證；未做行動真機或跨瀏覽器。
+- 素材：使用者已取得授權的原檔，未轉碼、非 Codex 自製；來源確認／SHA 寫入 README 與 manifest。原檔、素材庫及遊戲 SHA-256 完全一致（c52558e7adc5c0d9ddb6e13100c445eaa0f23be6694a22e621b825fb2e6a1ba1）。素材庫先提交 `747ca783`，遊戲 Commit 為本段所在提交，SHA 見回報。
+- 協作：本項以起始工作快照對 Claude 實際快照的 tools/config_tables／data／ui／任務文件三方試跑 exit0；分屬 Zones、場景通知及獨立任務段，與 NPC／塔戰修改無語意相依。data／ui／bridge 共用快取同行重疊經使用者明確同意；僅分段提交本項，保留其他任務。自我 Review 完成，功能無未完成項，可供合併；已知限制為上述既有 NPC 回歸失敗及 headless 自動播放政策實測限制。下一步由使用者整合後重載遊戲驗收，未合併／推送。
+
+
 狀態：
 
 進行中（P1 協議測試已交付並合併；下列為 P2 期間任務）
