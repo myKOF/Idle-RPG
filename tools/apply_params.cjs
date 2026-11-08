@@ -472,8 +472,8 @@ rangeBound('data', 'TOWER_PURGATORY_MAX_FLOOR', '4-高塔BOSS', '試練之塔範
   objFieldML('data', anchor, 'hpMult', '4-高塔BOSS', '生命', t, L('hpMult'));
   objFieldML('data', anchor, 'atkMult', '4-高塔BOSS', '攻擊', t, L('atkMult'));
   objFieldML('data', anchor, 'defMult', '4-高塔BOSS', '物/魔防', t, L('defMult'));
-  objFieldML('data', anchor, 'aspd', '4-高塔BOSS', '攻速 / 控制抵抗', t * 2, L('aspd'));
-  objFieldML('data', anchor, 'ctrlRes', '4-高塔BOSS', '攻速 / 控制抵抗', t * 2 + 1, L('ctrlRes'));
+  // 攻速 2026-11-08 移到 NPC 表 tower_boss 列（逐隻設定，見 tools/config_tables.cjs）；這列只剩控制抵抗
+  objFieldML('data', anchor, 'ctrlRes', '4-高塔BOSS', '控制抵抗', t, L('ctrlRes'));
   objFieldML('data', anchor, 'dodgeBase', '4-高塔BOSS', '閃避率', t * 3, L('dodgeBase'));
   objFieldML('data', anchor, 'dodgeCap', '4-高塔BOSS', '閃避率', t * 3 + 1, L('dodgeCap'));
   objFieldML('data', anchor, 'dodgePerFloor', '4-高塔BOSS', '閃避率', t * 3 + 2, L('dodgePerFloor'));

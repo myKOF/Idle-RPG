@@ -43,16 +43,19 @@ test('test_map：NPC 表全部＋封魔塔 BOSS，依場景向右分列、逐列
   const c = loadContext();
   const res = c.executeGMCommand('test_map');
   assert.equal(res.ok, true, res.message);
-  const expected = run(c, 'Object.keys(NPC_CONFIG_TABLE).length + BOSS_LIST.length');
+  /* 封魔塔 BOSS 每關一列（50 列），場景只放外觀不同的：同名稱＋圖像＋模型只取第一隻 */
+  const towerIds = Array.from(run(c, "(function(){var s={};return BOSS_LIST.filter(function(b){var k=b.name+'|'+(b.img||'')+'|'+((b.model3d&&b.model3d.file)||'');if(s[k])return false;s[k]=1;return true;}).map(function(b){return b.id;});})()"));
+  assert.equal(towerIds.length, 10);
+  const expected = run(c, 'Object.keys(NPC_CONFIG_TABLE).length') + towerIds.length;
   const list = run(c, 'fieldEnemyList()');
-  assert.equal(list.length, expected, '每個 NPC 識別碼一隻（含 10 個塔 BOSS）');
+  assert.equal(list.length, expected, '每個 NPC 識別碼一隻（塔 BOSS 每種外觀一隻）');
   assert.equal(run(c, 'FIELD._testMap && FIELD._gmArena'), true);
   assert.equal(c.GM_TEST.god, true, '被動怪被打會還擊，測試期間鎖血');
 
   const step = run(c, 'bfMeterPx(20)');
   const rows = run(c, 'ZONE_LIST.map(k => ZONES[k].pool.map(mt => mt.id))');
   const seen = new Set();
-  const groups = [...rows, run(c, 'Object.keys(NPC_CONFIG_TABLE)'), run(c, 'BOSS_LIST.map(b => b.id)')]
+  const groups = [...rows, run(c, 'Object.keys(NPC_CONFIG_TABLE)'), towerIds]
     .map(row => Array.from(row).filter(id => {
       if (seen.has(id)) return false;
       seen.add(id); return true;

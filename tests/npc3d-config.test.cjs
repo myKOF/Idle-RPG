@@ -14,15 +14,16 @@ const bosses = literal => cfg.evalLiteral(cfg.extractLiteral(literal, 'BOSS_LIST
 test('NPC 3D metadata round-trips all tower rows and preserves their gameplay data', () => {
   const result = bosses(cfg.SCHEMAS.NPC.rebuild(clone(), header, source).BOSS_LIST);
   const current = bosses(source);
-  assert.equal(result.length, 10);
+  assert.equal(result.length, 50);
   for (let i = 0; i < result.length; i++) {
-    if (i === 0) {
+    if (i % 10 === 0) {   // 第 1／11／21／31／41 關沿用骷髏王外觀與模型
       assert.equal(result[i].name, '骷髏王');
       assert.equal(result[i].img, 'sprites/boss/boss_skeleton_king.png');
       assert.ok(fs.existsSync(path.join(root, 'images', result[i].img)));
       assert.equal(result[i].model3d.file, 'images/models/npc3d/boss1.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
     } else assert.equal(result[i].model3d, undefined, 'other bosses retain their existing appearance');
+    assert.equal(result[i].id, 'tower_boss_' + (i + 1));
     assert.deepEqual(result[i], current[i]);
   }
   const extracted = cfg.SCHEMAS.NPC.extract(source);
@@ -54,7 +55,7 @@ test('mistyped clips, missing models and model-less action bindings stop table a
 
 test('empty model and clip cells clear a binding while preserving the legacy image', () => {
   const data = clone(), row = data.find(r => r[0] === 'tower_boss_1');
-  for (let i = 22; i < header.length; i++) row[i] = '';
+  for (let i = ix('3D模型'); i < header.length; i++) row[i] = '';
   const result = bosses(cfg.SCHEMAS.NPC.rebuild(data, header, source).BOSS_LIST);
   assert.equal(result[0].model3d, undefined);
   assert.equal(result[0].img, bosses(source)[0].img);
