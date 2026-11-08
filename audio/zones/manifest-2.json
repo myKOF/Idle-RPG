@@ -1,0 +1,12 @@
+{
+  "title": "Desert Ascendant 2",
+  "file": "desert-ascendant_2.mp3",
+  "source": "User-supplied desert-ascendant_2.mp3",
+  "authorization": "User explicitly confirmed 第二首也已取得授權 on 2026-11-08",
+  "modification": "None; copied byte-for-byte",
+  "sha256": "e1f3515e0d13f097d727b24695022135afdc3d7758d40de7cfc25995951a6d69",
+  "bytes": 4190316,
+  "libraryRelativePath": "third-party/user-supplied/desert-ascendant",
+  "gameRelativePath": "audio/zones/desert-ascendant_2.mp3",
+  "usage": "Zones BGM2; second track in desert sequential looping playlist"
+}

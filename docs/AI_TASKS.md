@@ -9660,6 +9660,19 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 # 3. Codex 任務
 
+## ZONE-BGM2-20261108 — 荒漠兩首背景音樂依序循環
+
+- Owner：Codex；Done，單一開發者。使用者提供 desert-ascendant_2.mp3，確認第二首亦已取得授權，要求 Zones 再加欄位並按第一首→第二首→第一首循環。
+- 前置：第一首 BGM 已完成且分支／工作區乾淨，fetch 與逐檔衝突預檢通過。允許 Zones.xlsx／CSV、config_tables 的 Zones 段、data 的 bgm2、ui-sound 輪播、必要首頁／Worker 快取、音檔與來源、相關回歸、LV、本段及素材庫對應套件。禁止修改 NPC／塔戰／公式／協議／存檔或其他任務，不合併推送。
+- 驗收：Excel 獨占存取／原生儲存並正常重開、原有欄位資料格式保留、第二首原檔與雙庫 SHA、兩曲曲尾依序切換／同圖換關不中斷、靜音／音量／面板／背景／離場與過期事件、單曲與空欄相容、瀏覽器實播、相關回歸／Build／diff，自我 Review 後先提交素材再提交遊戲。交使用者驗收與整合。
+- 完成：Zones 的 E 欄為 BGM2，荒漠填入 audio/zones/desert-ascendant_2.mp3，其餘留空；沿 Excel→CSV→config_tables 產生 bgm2。共用音訊按 BGM／BGM2 次序輪播，單曲維持原生循環，空欄略過。每次曲尾切換後同圖快照不會重設索引；離場清除舊曲播放，重入從第一首開始。靜音／選單／pagehide 均保留當前曲目，過期 ended 不會誤播或跳曲，pageshow 可續播。背景分頁照常換曲。
+- 修改：config/Excel/Zones.xlsx、config/CSV/Zones.csv、tools/config_tables.cjs 的 Zones 段、js/data.js 的 desert.bgm2、js/ui-sound.js、首頁與 bridge／Worker 的資料快取、audio/zones/README.md／第二首MP3／manifest-2.json、tests/zone-music.test.cjs、tests/ui-achievement-sound.test.cjs 的快取預期、LV 與本段。未改第一首音檔、NPC／塔戰／公式／Worker 協議／存檔。唯讀檢查前項交接、規範／Workflow、UI 場景通知、開始選單／音訊設定、Excel 工具、素材根目錄解析及既有回歸。
+- Excel：獨占存取後以原生 API 插入一欄、只寫表頭與荒漠路徑兩格，正常重開兩次通過。修改前後 220 格原資料／樣式逐格一致，分頁／窗格／資料驗證／繪圖物件保留；原生 Excel 匯出 PDF 並檢視，兩個 BGM 欄與音檔路徑完整可讀。
+- 驗證：`node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/start-menu.test.cjs tests/game-menu.test.cjs tests/intro-audio.test.cjs tests/ui-worker-events.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/new-battle-zones.test.cjs tests/god-realm-zones.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs` 共 106/106 通過（BGM 十項全通過）。`node tools/config_tables.cjs --apply Zones` 語意變更 0；`npm.cmd run build` 692 檔通過；`node tools/string-table/build_string_csv.cjs --check` 寫死 0；diff 檢查通過。未修改數值參數錨點。
+- 瀏覽器：IAB 無可用連線，使用隔離 headless Edge、正式主頁／原生 Worker 及 seed=17，不碰使用者存檔。兩個真實 MP3 各長 180.427708／174.341167 秒，以跳至曲尾驗證原生 ended 按第一首→第二首→第一首循環；第二首的30秒處換關及靜音後仍保留進度，音量25%／恢復、模擬隱藏時換曲、荒漠／冰原往返與從第一首重入通過。Console error／warning／pageerror 0；瀏覽器與伺服器正常關閉。尚未驗行動真機與跨瀏覽器。
+- 素材：第二首由使用者提供並確認授權，非 Codex 自製，未轉碼。原檔、遊戲及素材庫 SHA-256 均為 e1f3515e0d13f097d727b24695022135afdc3d7758d40de7cfc25995951a6d69；來源與授權另記 manifest-2.json。素材庫先提交 `1a403756`；遊戲 Commit 為本段所在提交，SHA 見回報。
+- 協作／交付：工作期間同副本新增骷髏王Ⅲ的 NPC／data／測試／素材修改；只分段提交 desert.bgm2 與本段，保留對方 BOSS 外觀及獨立任務／檔案，不納入本項。共用快取統一新版本，沒有修改對方數值或玩法。自我 Review 完成，BGM 功能無未完成項，可供使用者合併後重載驗收；未合併／推送。修改範圍、未修改檢查、測試與限制如上。
+
 ## ZONE-BGM-20261108 — 地圖配樂配置與荒漠循環播放
 
 - Owner：Codex；Done，單一開發者。使用者要求 Zones 加 BGM 欄，荒漠進場循環播放指定的 desert-ascendant.mp3。使用者確認已取得授權。

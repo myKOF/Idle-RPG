@@ -33,7 +33,7 @@ var UISound = (function () {
   var context = null, initialized = false, generation = 0, gestureReceived = false;
   var buffers = {}, loading = {}, sources = {}, lastPlayed = {};
   var menuVisible = false, menuEpoch = 0, startScreenActive = false, menuMusic = null;
-  var sceneTrack = '', sceneMusic = null;
+  var sceneTracks = [], sceneIndex = 0, sceneMusic = null, pageActive = true;
 
   function now() { return performance.now(); }
   function stop(kind) {
@@ -67,7 +67,7 @@ var UISound = (function () {
   function syncMenuMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    var shouldPlay = startScreenActive && volume > 0;
+    var shouldPlay = pageActive && startScreenActive && volume > 0;
     try {
       if (shouldPlay) prepareMenuMusic();
       if (!menuMusic) return;
@@ -85,13 +85,22 @@ var UISound = (function () {
   function syncSceneMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    var shouldPlay = !startScreenActive && !!sceneTrack && volume > 0;
+    var shouldPlay = pageActive && !startScreenActive && sceneTracks.length > 0 && volume > 0;
     try {
       if (shouldPlay && !sceneMusic) {
         sceneMusic = new window.Audio();
         sceneMusic.preload = 'auto';
-        sceneMusic.loop = true;
-        sceneMusic.src = sceneTrack;
+        sceneMusic.loop = sceneTracks.length === 1;
+        sceneMusic.src = sceneTracks[sceneIndex];
+        var audio = sceneMusic;
+        audio.onended = function () {
+          // 離場或換曲後才送達的舊事件，不得重新起播或再跳一首。
+          if (sceneMusic !== audio || !audio.ended) return;
+          sceneIndex = (sceneIndex + 1) % sceneTracks.length;
+          audio.src = sceneTracks[sceneIndex];
+          audio.currentTime = 0;
+          syncSceneMusic();
+        };
       }
       if (!sceneMusic) return;
       sceneMusic.volume = volume;
@@ -107,9 +116,10 @@ var UISound = (function () {
   function setScene(view) {
     if (!view) return;
     var zone = typeof ZONES !== 'undefined' && ZONES[view.zone];
-    var track = !view.towerActive && zone && zone.bgm || '';
-    if (track === sceneTrack) return;
-    sceneTrack = track;
+    var tracks = !view.towerActive && zone ? [zone.bgm, zone.bgm2].filter(Boolean) : [];
+    if (tracks.length === sceneTracks.length && tracks.every(function (track, i) { return track === sceneTracks[i]; })) return;
+    sceneTracks = tracks;
+    sceneIndex = 0;
     if (sceneMusic) {
       try { sceneMusic.pause(); sceneMusic.currentTime = 0; } catch (_) {}
       sceneMusic = null;
@@ -232,11 +242,12 @@ var UISound = (function () {
       else syncMusic();
     });
     window.addEventListener('pagehide', function () {
+      pageActive = false;
       stopAll();
       if (menuMusic) menuMusic.pause();
       if (sceneMusic) sceneMusic.pause();
     });
-    window.addEventListener('pageshow', syncMusic);
+    window.addEventListener('pageshow', function () { pageActive = true; syncMusic(); });
     if (typeof GameSettings !== 'undefined') {
       GameSettings.subscribe(function (name) {
         if (name === 'mute' || name === 'musicVolume') syncMusic();

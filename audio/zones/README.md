@@ -1,6 +1,6 @@
 # 地圖背景音樂
 
-Zones.xlsx「地圖」的 BGM 欄填寫專案相對路徑，留空表示該地圖沒有配樂。經 Excel → CSV → config_tables 套用至 ZONES.bgm。場景依 Worker 的 zone／towerActive 權威快照切換；同地圖換關不重新起播，離開該地圖或進入封魔塔即停止。沿用音樂音量及全體靜音，分頁隱藏時持續循環，離開網頁時暫停。瀏覽器限制自動播放時，在首次真實操作後起播。
+Zones.xlsx「地圖」的 BGM／BGM2 欄填寫專案相對路徑，按欄位順序播放後回到第一首。單曲直接循環，空欄略過，兩欄皆空則沒有配樂。經 Excel → CSV → config_tables 套用至 ZONES.bgm／bgm2。場景依 Worker 的 zone／towerActive 權威快照切換；同地圖換關、切面板與靜音保留曲目及進度，離開該地圖或進入封魔塔即停止。沿用音樂音量及全體靜音，分頁隱藏時持續輪播，離開網頁時暫停，返回時接續。瀏覽器限制自動播放時，在首次真實操作後起播。
 
 ## Desert Ascendant
 
@@ -9,3 +9,11 @@ Zones.xlsx「地圖」的 BGM 欄填寫專案相對路徑，留空表示該地�
 - 遊戲路徑：`audio/zones/desert-ascendant.mp3`
 - 素材庫相對路徑：`third-party/user-supplied/desert-ascendant/`
 - SHA-256：`c52558e7adc5c0d9ddb6e13100c445eaa0f23be6694a22e621b825fb2e6a1ba1`
+
+## Desert Ascendant 2
+
+使用者提供的 `desert-ascendant_2.mp3`；2026-11-08 使用者明確確認「第二首也已取得授權」。非 Codex 自製，原樣保存，未轉碼或調整音量。荒漠依 `desert-ascendant.mp3` → `desert-ascendant_2.mp3` → 第一首依序循環。
+
+- 遊戲路徑：`audio/zones/desert-ascendant_2.mp3`
+- 素材庫相對路徑：`third-party/user-supplied/desert-ascendant/`
+- SHA-256：`e1f3515e0d13f097d727b24695022135afdc3d7758d40de7cfc25995951a6d69`

@@ -2609,7 +2609,7 @@ function zoneEncounterLiteral(entries) {
 /* 地圖中繼資料也由 Excel 投影；上限／名稱／前置不再依賴手工同步。 */
 SCHEMAS.Zones = {
   name:'Zones',jsFile:'data',sheet:'地圖',noXlsxGen:true,vars:['ZONES','ZONE_LIST','REALMS','ZONE_ENCOUNTER'],
-  header:['順序','地圖識別碼','地圖名稱','BGM','位面','關卡上限','前置地圖識別碼','前置通關關卡','最低轉生次數','生命倍率','攻擊倍率','防禦倍率','攻速倍率','經驗金幣獎勵倍率'].concat(ZONE_ENCOUNTER_COLS.map(c=>c.label)),
+  header:['順序','地圖識別碼','地圖名稱','BGM','BGM2','位面','關卡上限','前置地圖識別碼','前置通關關卡','最低轉生次數','生命倍率','攻擊倍率','防禦倍率','攻速倍率','經驗金幣獎勵倍率'].concat(ZONE_ENCOUNTER_COLS.map(c=>c.label)),
   evaluate(literal) {
     const scope={STR,ZONE_ENEMY_TABLES:Object.fromEntries(NPC_POOL_DEFS.map(d=>[d.zone,d.zone]))};
     NPC_POOL_DEFS.forEach(d=>scope[d.varName]=d.varName);
@@ -2631,6 +2631,8 @@ SCHEMAS.Zones = {
       const fields={name:get(row,'地圖名稱'),emoji:emoji[id],realm,maxStage:cap};
       const bgm=get(row,'BGM').trim();
       if(bgm)fields.bgm=bgm;
+      const bgm2=get(row,'BGM2').trim();
+      if(bgm2)fields.bgm2=bgm2;
       if(req){fields.reqZone=req;fields.reqStage=reqStage;}
       if(rebirth)fields.reqReincarnation=rebirth;
       for(const [field,label] of [['hpMult','生命倍率'],['atkMult','攻擊倍率'],['defMult','防禦倍率'],['aspdMult','攻速倍率'],['rewardMult','經驗金幣獎勵倍率']]){const n=Number(get(row,label));if(!Number.isFinite(n)||n<=0)throw new Error('Zones '+id+' '+label+' 必須大於0');fields[field]=n;}
@@ -2642,7 +2644,7 @@ SCHEMAS.Zones = {
   },
   extract(src) {
     const zones=this.evaluate(extractLiteral(src,'ZONES').literal),enc=evalLiteral(extractLiteral(src,'ZONE_ENCOUNTER').literal),list=evalLiteral(extractLiteral(src,'ZONE_LIST').literal);
-    return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.bgm||'',z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].concat(ZONE_ENCOUNTER_COLS.map(c=>zoneCellText(c,enc[id][c.key]))).map(String);});
+    return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.bgm||'',z.bgm2||'',z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].concat(ZONE_ENCOUNTER_COLS.map(c=>zoneCellText(c,enc[id][c.key]))).map(String);});
   }
 };
 const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance', 'Achievement'];

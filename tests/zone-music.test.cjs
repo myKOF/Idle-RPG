@@ -9,12 +9,15 @@ const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const { SCHEMAS, csvParse, readXlsxRows, extractLiteral } = require('../tools/config_tables.cjs');
 const track = 'audio/zones/desert-ascendant.mp3';
+const track2 = 'audio/zones/desert-ascendant_2.mp3';
 
 function mount(blocked = false) {
   const events = {}, music = [], settings = { mute: false, musicVolume: 50, sfxVolume: 50 };
   let changed, allowed = !blocked;
   class Audio {
-    constructor() { this.paused = true; this.currentTime = 0; this.starts = 0; music.push(this); }
+    constructor() { this.paused = true; this.currentTime = 0; this.starts = 0; this.ended = false; music.push(this); }
+    get src() { return this._src; }
+    set src(value) { this._src = value; this.paused = true; this.ended = false; this.currentTime = 0; }
     play() {
       this.starts++;
       if (!allowed) return Promise.reject(new Error('Autoplay denied'));
@@ -24,7 +27,7 @@ function mount(blocked = false) {
     pause() { this.paused = true; }
   }
   const c = {
-    ZONES: { desert: { bgm: track }, Icefield: {}, test: { bgm: 'audio/test.mp3' } },
+    ZONES: { desert: { bgm: track, bgm2: track2 }, Icefield: {}, test: { bgm: 'audio/test.mp3' }, secondOnly: { bgm2: track2 } },
     document: { hidden: false, addEventListener: (name, fn) => { events[name] = fn; } },
     window: { Audio, addEventListener: (name, fn) => { events[name] = fn; } },
     GameSettings: { get: key => settings[key], sfxGain: () => 1, subscribe: fn => { changed = fn; } }
@@ -33,6 +36,7 @@ function mount(blocked = false) {
   return { c, music, events,
     scene: (zone, towerActive = false) => c.UISound.setScene({ zone, towerActive }),
     setting: (key, value) => { settings[key] = value; changed(key); },
+    finish: audio => { audio.ended = true; audio.paused = true; audio.onended(); },
     allow: () => { allowed = true; }
   };
 }
@@ -42,20 +46,27 @@ test('Zones Excel, CSV, runtime BGM and reverse extraction stay in sync without 
   const xlsx = readXlsxRows(path.join(root, 'config/Excel/Zones.xlsx'), '地圖');
   assert.deepEqual(xlsx, rows);
   assert.equal(rows[0][3], 'BGM');
-  const id = rows[0].indexOf('地圖識別碼'), bgm = rows[0].indexOf('BGM');
-  for (const row of rows.slice(1)) assert.equal(row[bgm], row[id] === 'desert' ? track : '');
+  assert.equal(rows[0][4], 'BGM2');
+  const id = rows[0].indexOf('地圖識別碼'), bgm = rows[0].indexOf('BGM'), bgm2 = rows[0].indexOf('BGM2');
+  for (const row of rows.slice(1)) {
+    assert.equal(row[bgm], row[id] === 'desert' ? track : '');
+    assert.equal(row[bgm2], row[id] === 'desert' ? track2 : '');
+  }
   const src = read('js/data.js');
   const rebuilt = SCHEMAS.Zones.rebuild(rows.slice(1), rows[0], src);
   const actual = SCHEMAS.Zones.evaluate(extractLiteral(src, 'ZONES').literal);
   const expected = SCHEMAS.Zones.evaluate(extractLiteral(rebuilt.ZONES, 'ZONES').literal);
   assert.equal(JSON.stringify(actual), JSON.stringify(expected));
   const extracted = SCHEMAS.Zones.extract(src);
-  assert.deepEqual(extracted.map(row => row.slice(0, 14)), rows.slice(1).map(row => row.slice(0, 14)));
+  assert.deepEqual(extracted.map(row => row.slice(0, 15)), rows.slice(1).map(row => row.slice(0, 15)));
   assert.equal(actual.desert.bgm, track);
+  assert.equal(actual.desert.bgm2, track2);
   assert.equal(actual.Icefield.bgm, undefined);
   const manifest = JSON.parse(read('audio/zones/manifest.json'));
   const bytes = fs.readFileSync(path.join(root, track));
   assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), manifest.sha256);
+  const manifest2 = JSON.parse(read('audio/zones/manifest-2.json'));
+  assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root, track2))).digest('hex'), manifest2.sha256);
 });
 
 test('entering a configured map loops music; ticks and stage changes preserve playback', () => {
@@ -63,7 +74,7 @@ test('entering a configured map loops music; ticks and stage changes preserve pl
   m.scene('desert');
   const audio = m.music[0];
   assert.equal(audio.src, track);
-  assert.equal(audio.loop, true);
+  assert.equal(audio.loop, false);
   assert.equal(audio.paused, false);
   audio.currentTime = 25;
   for (let i = 0; i < 100; i++) m.c.UISound.setScene({ zone: 'desert', stage: i, towerActive: false });
@@ -75,6 +86,70 @@ test('entering a configured map loops music; ticks and stage changes preserve pl
   m.scene('desert');
   assert.equal(m.music[1].currentTime, 0);
   assert.equal(m.music[1].paused, false);
+});
+
+test('two tracks play first then second then first; same-map snapshots retain the second track', () => {
+  const m = mount(); m.scene('desert');
+  const audio = m.music[0];
+  m.finish(audio);
+  assert.equal(audio.src, track2);
+  assert.equal(audio.paused, false);
+  assert.equal(audio.loop, false);
+  audio.currentTime = 42;
+  for (let i = 0; i < 20; i++) m.c.UISound.setScene({ zone: 'desert', stage: i });
+  assert.equal(audio.src, track2);
+  assert.equal(audio.currentTime, 42);
+  assert.equal(audio.starts, 2);
+  audio.onended();
+  assert.equal(audio.src, track2, 'a queued duplicate end event must not skip the new track');
+  m.finish(audio);
+  assert.equal(audio.src, track);
+  assert.equal(audio.currentTime, 0);
+  assert.equal(audio.starts, 3);
+  assert.equal(m.music.length, 1);
+});
+
+test('single-track and second-column-only maps loop; stale old-scene end events stay silent', () => {
+  const m = mount(); m.scene('test');
+  assert.equal(m.music[0].loop, true);
+  m.scene('secondOnly');
+  assert.equal(m.music[1].src, track2);
+  assert.equal(m.music[1].loop, true);
+  m.scene('desert');
+  const old = m.music[2];
+  m.scene('Icefield'); m.finish(old);
+  assert.equal(old.paused, true);
+  assert.equal(m.music.length, 3);
+  m.scene('desert'); m.finish(old);
+  assert.equal(m.music[3].src, track);
+  assert.equal(m.music[3].paused, false);
+});
+
+test('track ends respect mute, start-screen and page-exit pause; resume preserves the selected track', () => {
+  const m = mount(); m.scene('desert');
+  const audio = m.music[0];
+  m.finish(audio); audio.currentTime = 12;
+  m.setting('mute', true); m.setting('mute', false);
+  assert.equal(audio.src, track2);
+  assert.equal(audio.currentTime, 12);
+  m.setting('mute', true); m.finish(audio);
+  assert.equal(audio.src, track);
+  assert.equal(audio.paused, true);
+  m.setting('mute', false);
+  assert.equal(audio.paused, false);
+  m.c.UISound.setStartScreenActive(true); m.finish(audio);
+  assert.equal(audio.src, track2);
+  assert.equal(audio.paused, true);
+  m.c.UISound.setStartScreenActive(false);
+  assert.equal(audio.paused, false);
+  m.events.pagehide(); m.finish(audio);
+  assert.equal(audio.src, track);
+  assert.equal(audio.paused, true);
+  m.setting('musicVolume', 30);
+  assert.equal(audio.paused, true);
+  m.events.pageshow();
+  assert.equal(audio.src, track);
+  assert.equal(audio.paused, false);
 });
 
 test('tower, blank and unknown maps stop field music; another configured map replaces it', () => {
