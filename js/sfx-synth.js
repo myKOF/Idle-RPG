@@ -253,12 +253,16 @@ var SfxSynth = (function () {
       ring(ac, out, tt + 0.065, 2300 * kk, [[1, 0.4], [2.6, 0.25, 1.6]], 0.09, 0.18);
     }
   }
-  function counter(ac, out, t, R) { var k = R(0.95, 1.05);
-    burstNoise(ac, out, t, 'highpass', 3000, 0.7, 0.0005, 0.8, 0.03, 3);                                          // 格擋瞬間
-    ring(ac, out, t, 820 * k, [[1, 0.7], [1.007, 0.5], [2.32, 0.5, 1.3], [3.95, 0.35, 1.8], [5.6, 0.2, 2.5]], 0.7, 0.32);   // 「鏘——」
-    whoosh(ac, out, t + 0.09, 0.16, { f0: 800 * k, f1: 3800 * k, f2: 2000 * k, q: 2, peak: 0.45, p0: 0.4, p1: -0.4, peakAt: 0.8 });   // 反手一擊
-    ring(ac, out, t + 0.23, 150 * k, [[1, 1], [2.2, 0.4, 1.4]], 0.1, 0.7);
-    burstNoise(ac, out, t + 0.23, 'bandpass', 1200, 1, 0.001, 0.6, 0.06);
+  function counter(ac, out, t, R) {   // 2026-11-08 使用者看了 5 輪 25 個候選，選定「弓掌拍」：手掌微彎拍在厚毯上
+    var k = R(0.93, 1.07);
+    chain(noise(ac, t, 0.055), filt(ac, 'bandpass', 1200 * k, 0.9), filt(ac, 'lowpass', 2160 * k), env(ac, t, 0.0008, 0.35, 0.025), out);   // 被布吃掉的短促掌聲
+    var o = osc(ac, 'sine', t, 0.12); sweep(o.frequency, t, [[0, 190 * k], [0.08, 120 * k]]);
+    chain(o, env(ac, t, 0.002, 0.6, 0.09), out);                                                              // 掌心空氣被擠出的「啵」
+    chain(noise(ac, t, 0.1), filt(ac, 'bandpass', 220 * k, 4), gain(ac, 3), env(ac, t, 0.002, 0.6, 0.08), out);
+    var ti = t + 0.003, lp = filt(ac, 'lowpass', 420 * k, 0.9);                                               // 厚毯的悶響
+    sweep(lp.frequency, ti, [[0, 420 * k], [0.1, 147 * k]]);
+    chain(noise(ac, ti, 0.15), lp, env(ac, ti, 0.002, 0.6, 0.1), out);
+    boom(ac, out, ti, 90 * k, 54 * k, 0.11, 0.48);
   }
   function holyBurst(ac, out, t, R) { var k = R(0.97, 1.03);
     whoosh(ac, out, t, 0.35, { f0: 400, f1: 3500, f2: 5000, q: 1, peak: 0.25, peakAt: 0.9 });
@@ -617,7 +621,7 @@ var SfxSynth = (function () {
     'poison-drop':        d(poisonDrop, 1.4),
     'blood-burst':        d(bloodBurst, 1.4),
     'dualdance':          d(dualdance, 2.0, { minGapMs: 450 }),      // 一則事件就是四連斬，連續事件不疊播
-    'counter':            d(counter, 1.2),
+    'counter':            d(counter, 1.1),
     'holy-burst':         d(holyBurst, 1),
     'bloodrage':          d(bloodrage, 0.75, { minGapMs: 300 }),     // 狂怒期間每次普攻都爆一次，高攻速不連環重拳
     // 火
