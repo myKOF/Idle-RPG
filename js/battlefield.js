@@ -378,7 +378,8 @@ function bfTickApproach(enemies, dt) {
       continue;
     }
     // 菁英詞條施法／衝鋒中：原地不動（衝鋒的位移由 js/elite.js 自己推進）
-    if (typeof eliteLocked === 'function' && eliteLocked(ent)) continue;
+    if (ent._towerStopForAction || (typeof towerBossActionLocked === 'function' && towerBossActionLocked(ent)) ||
+        (typeof eliteLocked === 'function' && eliteLocked(ent))) continue;
     var ox = p.x, oy = p.y;
     /* 追的是我方**當前**座標，不是出生時的方位——我方跑走就得重新追。 */
     var dx0 = p.x - home.x, dy0 = p.y - home.y;
@@ -386,9 +387,10 @@ function bfTickApproach(enemies, dt) {
     var stop = bfStopDistance(ent);
     var rp = ent._rp;
     if (rp) {
-      /* 跑位（菁英以上，js/elite.js eliteRepoPick）：目標點是「相對我方的角度＋距離」，我方跑動時目標點跟著走。
+      /* 跑位（js/elite.js eliteRepoPick）：塔BOSS使用固定世界目標；野外使用相對我方的角度＋距離。
          到了就清掉並通知技能引擎（_rpDone），由它排下一次。 */
-      var goal = { x: home.x + Math.cos(rp.ang) * rp.dist, y: home.y + Math.sin(rp.ang) * rp.dist };
+      var goal = isFinite(rp.x) && isFinite(rp.y) ? { x: rp.x, y: rp.y }
+        : { x: home.x + Math.cos(rp.ang) * rp.dist, y: home.y + Math.sin(rp.ang) * rp.dist };
       bfClampTowerPoint(goal, bfEntityRadius(ent));
       var tx = goal.x, ty = goal.y;
       var rdx = tx - p.x, rdy = ty - p.y, rd = Math.sqrt(rdx * rdx + rdy * rdy);

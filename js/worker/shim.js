@@ -331,6 +331,11 @@ function emitPlayerAct(act, floatSel, targetEnt, lockSec, sfx) {
   if (sfx) event.sfx = String(sfx);   // 協議 v73：Skills2「施放音效」
   shimPushEvent('act', event);
 }
+function emitEnemyAct(act, source, seconds) {
+  if (!source || !source.floatSel) return;
+  shimPushEvent('act', { act: act, elId: source.floatSel, target: 'tp-float',
+    lockMs: Math.round(seconds * 1000) });
+}
 
 /* ---- 玩家升級（協議 EVENT_KINDS.LEVELUP）---- */
 function emitPlayerLevelUp(level) {

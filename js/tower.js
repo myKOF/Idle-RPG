@@ -173,6 +173,27 @@ function towerTick(dt) {
     if (typeof bfClampTowerCombatants === 'function') bfClampTowerCombatants();
   }
 }
+function towerBossActionLocked(boss) {
+  return !!(boss && boss.towerBoss && boss._towerActionUntil > GT);
+}
+function towerBossActionDuration(boss, castSeconds) {
+  var rate = Number(boss && boss.aspd);
+  return Math.max(rate > 0 ? .85 / rate : 1.275, Number(castSeconds) || 0);
+}
+function towerBossNeedsMoveStep(boss) {
+  return !!(boss && boss.towerBoss && boss._rp && !towerBossActionLocked(boss) &&
+    (!(boss._towerLastMoveAt > (boss._towerActionUntil || 0))));
+}
+function towerBossHoldAction(boss, kind, castSeconds) {
+  if (!boss || !boss.towerBoss) return;
+  var seconds = towerBossActionDuration(boss, castSeconds);
+  boss._towerActionUntil = GT + seconds;
+  boss._towerActionKind = kind;
+  if (!boss._towerHasActed && boss._el) boss._el.repoAt = GT + seconds + Math.max(1,
+    typeof eliteG === 'function' ? eliteG('repoMin', 4) : 4);
+  boss._towerHasActed = true;
+  if (typeof emitEnemyAct === 'function') emitEnemyAct(kind, boss, seconds);
+}
 function towerTickInsideArena(dt) {
   if (!(TOWER.player && TOWER.player._sgRevival && TOWER.player._sgRevival.mode === 'earthguard') &&
       typeof tickDeferredEnemyAttackRetaliations === 'function') tickDeferredEnemyAttackRetaliations();
@@ -243,6 +264,7 @@ function towerTickInsideArena(dt) {
 
   /* 高級敵人技能（js/elite.js）：封魔塔 BOSS 與野外共用同一套引擎，這裡只負責「驅動它、處理它的後果」。
      玩家被技能打死 → 失敗；BOSS 被反震等打死 → 勝利。 */
+  if (towerBossActionLocked(b) && b._rp) b._rp.t0 += dt; // 站定出手不消耗跑位的六秒行走期限。
   if (typeof eliteTick === 'function') {
     if (eliteTick(dt)) { endTowerFight(false, 'death'); return; }
     if (b.hp <= 0) { endTowerFight(true); return; }
@@ -288,8 +310,16 @@ function towerTickInsideArena(dt) {
   if (skillCastTick && skillCastTick.casting) playerMoveDt = 0;
   else if (skillCastTick && skillCastTick.completed) playerMoveDt = skillCastTick.remainingDt;
   if (!p._sgRevival && typeof bfTickPlayer === 'function') bfTickPlayer([b], playerMoveDt, b, p);
+  b._towerStopForAction = !towerBossNeedsMoveStep(b) && !towerBossActionLocked(b) && !ccActionLocked(b) &&
+    !(typeof eliteLocked === 'function' && eliteLocked(b)) &&
+    (b.atkCd <= dt * slowFactor(b) || TOWER.specialCd <= dt) &&
+    (typeof bfInAttackRange !== 'function' || bfInAttackRange(b));
+  var bossBeforeMove = b.pos && { x: b.pos.x, y: b.pos.y };
   if (typeof eliteStepMotion === 'function') eliteStepMotion([b], dt);   // 衝鋒位移
   if (typeof bfTickApproach === 'function') bfTickApproach([b], dt);
+  b._towerMovedThisTick = !!(bossBeforeMove && b.pos &&
+    Math.hypot(b.pos.x - bossBeforeMove.x, b.pos.y - bossBeforeMove.y) > 1e-8);
+  if (b._towerMovedThisTick) b._towerLastMoveAt = GT;
 
   if (!playerActionControlBlocked(p, false) &&
       (typeof skillCastInProgress !== 'function' || !skillCastInProgress(p))) {
@@ -326,13 +356,15 @@ function towerTickInsideArena(dt) {
     b.atkCd -= dt * slowFactor(b);
     /* 打不到就不打（同野外 fieldMonsterAttack）：冷卻停在 ready，進射程當下出手。 */
     /* 技能施放中（js/elite.js eliteLocked）站著不普攻：當作還沒進射程，冷卻停在 ready，施放完立刻出手。 */
-    var bossInRange = (typeof bfInAttackRange !== 'function' || bfInAttackRange(b)) &&
+    var bossInRange = !b._towerMovedThisTick && !towerBossNeedsMoveStep(b) && !towerBossActionLocked(b) &&
+      (typeof bfInAttackRange !== 'function' || bfInAttackRange(b)) &&
       !(typeof eliteLocked === 'function' && eliteLocked(b));
     if (b.atkCd <= 0 && !bossInRange) {
       b.atkCd = 0;
     } else if (b.atkCd <= 0) {
       var bossTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
+      towerBossHoldAction(b, 'attack');
       var bossHit = doMonsterAttack(b, bossTarget, 'tp-float', mult);
       // 使用攻擊結果的實際輸出，包含護盾吸收與擊殺時超出生命的溢出傷害。
       TOWER.bossDmgDealt += Math.max(0, (bossHit.dmg || 0));
@@ -343,10 +375,11 @@ function towerTickInsideArena(dt) {
     // 特殊技：每「蓄力周期」秒重擊（各塔獨立）
     TOWER.specialCd -= dt;
     if (TOWER.specialCd <= 0 && !bossInRange) TOWER.specialCd = 0;   // 蓄滿了等進射程再砸
-    if (TOWER.specialCd <= 0 && bossInRange && p.hp > 0) {
+    if (TOWER.specialCd <= 0 && bossInRange && !towerBossActionLocked(b) && p.hp > 0) {
       TOWER.specialCd = bcfg.chargePeriod;
       var bossSpecialTarget = (typeof legendaryChooseEnemyAttackTarget === 'function')
         ? legendaryChooseEnemyAttackTarget(p) : p;
+      towerBossHoldAction(b, 'cast');
       var bossSpecialHit = doMonsterAttack(b, bossSpecialTarget, 'tp-float', 2.2 * mult, STR(1836));
       TOWER.bossDmgDealt += Math.max(0, (bossSpecialHit.dmg || 0));
       if (p.hp <= 0) { endTowerFight(false, 'death'); return; }

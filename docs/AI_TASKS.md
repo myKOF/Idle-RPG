@@ -1,3 +1,23 @@
+## SYNC-20261109-TREANT-RESUME — 完成樹人整合與同步
+
+- Owner：Codex，整合驗證完成，控制器修復接續。使用者以 1 授權接續 HEAD abdd9441 與 incoming 844e5096。原合併與驗證已完成，控制器停在把 ignored logs/sync-a54d6904-tests.tap 加入索引。已核對正式成果均保留，原生 NPC Excel 與 CSV／data、模型逐位等於 incoming。
+- 本輪先獨立核對樹人五動作、BOSS停步出手、Worker75、原反擊音效、素材與配置，完成正式合併。後續控制器只排除 Git 已忽略且未追蹤的 logs 目錄診斷 .tap／.log，保留正式檔案、既有追蹤檔案及其他路徑的暫存檢查，並用端對端回歸重現原停止。
+- 允許本段、原合併成果與控制器／相關測試，預檢無額外外部修改。正式來源的正常提交及各工作區同步後完成交付。
+- 獨立重驗以 PowerShell 篩選 tests/*.test.cjs 的 ^(npc3d-|hero3d-|tower-|battlefield|battle-arena|battle-camera-distance|worker-protocol|worker-shim|vfx-editor-cache-versions|treant-asset|string-table|skill-sfx|ui-sound|ui-achievement-sound)，node --test --test-concurrency=2 --test-reporter=tap 共277項274通過。3項 tower-rewards-ui 失敗與前輪原 abdd944 基線逐名相同，相關測試斷言保留。
+- npm.cmd run build通過697檔，NPC生成試跑11字面值／語意變更0，String2421條／370a19ab同步。樹人來源匯出器--check32檔通過，素材庫7af7c081已同步。原Excel／CSV／data／模型位元組與incoming相同，合併快取與音效版本已核對。
+- 本輪先提交正式合併，再單獨修正控制器與端對端回歸。既有 ignored logs/sync-a54d6904-* 驗證紀錄繼續留存；當前TAP與Build在logs/sync-20261109-treant-{regression.tap,build.log}。本輪未做全庫／瀏覽器長玩。
+
+## SYNC-20261109-014558 ? Treant / audio pending merge
+
+- Owner: Codex; Done (controller staging / merge commit pending). Authorized pending HEAD abdd944144ce0db11df84a76c1a87a19859ae52e / MERGE_HEAD 844e5096f7b3216840a91d1a4747b1324297d779 only; base 74afdf12. Scope: known conflicts, necessary caches/generated data, validation and this record. Controller stages and commits; no delegation, metadata writes or other-worktree modifications.
+- Three-way inspection preserves counter-louder audio, independent-floor tests and mainline integration history, plus treant configuration/model, action locks, protocol 75 and incoming task history. Both task additions verified line-by-line. Precheck found the authorized incoming overlap; other-worktree ownership warnings were not bypassed. Fresh combined cache: 20261109-treant-audio-sync-a54d6904 across main/bridge/Worker and renderer preview.
+- NPC Excel cleanly comes from incoming; no originally conflicted XLSX, workbook changes or COM. Source task records native reopening; this pass does not claim new native Excel verification.
+
+- Validation: regenerated NPC CSV through config_tables.readXlsxRows / csvStringify; node tools/config_tables.cjs --apply NPC --write and --apply NPC rebuilt 11 literals, semantic changes 0, no JS rewrite. node tools/meshy-pipeline/src/export-tower-treant.cjs --check verified 32 source/export files; existing library commit 7af7c081, no library changes required.
+- Regression command: node --test --test-concurrency=2 --test-reporter=tap $testFiles, where PowerShell selected tests matching ^(npc3d-|hero3d-|tower-|battlefield|battle-arena|battle-camera-distance|worker-protocol|worker-shim|vfx-editor-cache-versions|treant-asset|string-table|skill-sfx|ui-sound|ui-achievement-sound). 277 tests: 274 passed, 3 tower-rewards-ui failures for missing divineStoneIconHTML. Correct original abdd944 baseline: read-only fs overlay of original js/config/tests bytes, node --test-reporter=tap - requiring tests/tower-rewards-ui.test.cjs, 8 tests: 5 passed, identical 3 failures. No assertions weakened; no regression found.
+- npm.cmd run build passed all 697 files. Full git diff HEAD --check passed including staged incoming changes. Assertions verify no conflict markers, fresh main/Worker/preview caches, unchanged HEAD/MERGE_HEAD, workbook bytes equal incoming and audio bytes equal original HEAD, authoritative CSV equality. Logs: logs/sync-a54d6904-{tests,baseline}.tap and logs/sync-a54d6904-build.log. First task-union read exceeded Node default output buffer before any edits; repeated with a bounded larger buffer and validated both task additions successfully.
+- Modified integration files: index.html, tools/scene-preview.html, js/bridge.js, js/worker/sim.worker.js, NPC.csv regeneration and this task record; all incoming changes preserved. Read-only inspected required rules, workflow, agent/task history, three revisions, cache imports, configuration tooling, relevant tests and asset source. No game commit created; index remains unmerged until controller stages. No incomplete implementation; existing UI test harness failures remain, no new browser/mobile/long-play validation. Ready for this pending merge only; controller owns final staging/commit.
+
 ## SYNC-20261109-TOWER — 整合塔戰邊界與獨立BOSS配置
 
 - Owner：Codex，Done，合併及驗證完成。使用者以 1 授權接續 develop 8602ab6c 與 incoming 74afdf12。保留主線反擊音量、新塔戰邊界／步幅、第3關模型、音樂與遠景，以及使用者各關獨立調整。
@@ -15372,3 +15392,17 @@ Worker 存活且頁面正常完成載入。
 - 測試：`node --test tests/battle-camera-distance.test.cjs tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-toolbar.test.cjs tests/gm-test-map.test.cjs tests/vfx-editor-cache-versions.test.cjs`共41項、38通過；gm-test-map既有3失敗為兩項預期10列但現為11，以及抽取makeEnemy缺requestNpc3d。將renderer唯讀覆蓋為修改前位元組重跑該檔，仍相同7/10與相同三項失敗；未改或放寬斷言。鏡頭／全螢幕／HUD／工具列／快取五檔31/31通過。`npm.cmd run build`692檔通過，diff檢查通過。
 - 瀏覽器：IAB初始化無可用連線，改獨立暫存profile的headless Edge、新局與正式主頁／原生Worker。一般90%實際倍率1.111111、全螢幕75%實際倍率1.333333，退出與再次進入正確；HUD stage倍率維持1，血球顯示寬度兩模式皆約82.48px。Console error／warning 0。首輪驗證誤用整頁CSS縮放後的Canvas螢幕寬度比對鏡頭世界尺度，已改由renderer實際畫布座標核對，未修改產品程式。測試瀏覽器與伺服器正常關閉。
 - 交付：本項無未完成，可供使用者驗收與合併；Commit為本段所在提交，SHA見回報。已知限制為上述三項既有GM測試失敗，未做行動真機、跨瀏覽器或長時間遊玩。未合併或推送；下一步重載遊戲檢視兩種鏡頭距離。
+
+
+## TOWER-TREANT-ACTIONS-20261109 — 樹人第2關與BOSS停步出手
+
+- Owner：Codex，Done，單一主開發者。承接使用者要求：BOSS跑位只播移動，普攻／施法先停下、完成再移動，修正開場往遠處跑；追加BOSS2_Walk.glb樹人替換第2關，無武器，後補BOSS2_Attack1／2／3與Die，五動作一併接入及製作高清GIF。沿用同聊天自製／自行生成及修改授權。
+- 允許：NPC第483列外觀／動作與CSV／衍生data、GLB／透明頭像與獨立素材包／匯出器、NPC可選動作驗證／備援、tower／battlefield／elite行動互斥及固定跑位、NPC動作播放／渲染對時、必要Worker契約／版本／快取、相關測試與LV／來源交接／本段。禁止改其他49列、使用者最新BOSS數值、傷害／技能倍率、存檔／解鎖，不合併／推送或處理develop既有合併。
+- 衝突：develop正在接入上一輪，相關NPC／程式檔與本HEAD相同；其新tower-boss-floors測試改驗50列獨立，使用者已確認「同意分段接續（建議）」，本輪保留新測試修正，僅在codex工作區續作。index原音效相鄰快取沿用既有分段授權，保留音效行。任務文件改附加尾端，與develop前端的整合紀錄分開。
+- 驗收：停步攻擊／施法全程無普通移動、結束後恢復原跑位，開場不後退、跑位目標固定且在既有邊界內；樹人原檔直連、無劍／換手等加工，站立／走路與缺動作備援、原生Excel窄改／正常重開／資料格式比對；實際第2關／其他BOSS、高清GIF、相關回歸與Build、雙庫保存。後續交使用者驗收與整合。
+- 完成：第2／52／102層為樹人；五原檔的節點與骨架相同，以Walk原始網格／材質／貼圖／蒙皮二進位為底追加四動畫，單網格58關節、每動畫168channel，原速時長2.966667／4.5／2.8／5.866667／2.166667秒。攻擊固定Hips水平x/z、保留高度及其餘姿勢，死亡保留倒下。透明頭像為正式模型渲染；沒有武器或第三方美術。NPC483列13格原生Excel窄改、正常重開，28365格資料／公式及七物件保留；與HEAD逐格比對只有這13格改變，其他49列與使用者最新數值保持。兩頁樣式定義、24535格樣式ID、列／欄格式等一致，NPC重建試跑語意差異0。
+- 行為：普攻與技能統一暫態動作鎖；開場先接戰出手、不為最小射程技能後退，跑位目標固定世界位置。施法暫停跑位期限，完成後至少恢復一次實際位移才接受下一招，避免多個ready技能永遠卡住跑位；同一模擬tick有位移就不接普攻／重擊。一次ACT驅動一個完整動作，等待240ms位置插值停穩、按剩餘鎖定時間播放，移動時只走路。技能本身衝鋒與受擊推移仍按原規則；沒有傷害／技能倍率或結算時間修改。Worker協議75、主頁與Worker快取同步，原音效兩行保留。
+- 修改檔案：NPC.xlsx／CSV、data、treant.glb／boss_treant.png；tower／elite／battlefield、npc3d／hero3d／battle-renderer、worker/shim／protocol／sim.worker、bridge／index；config_tables、四個treant製作／渲染／包GIF／匯出工具；NPC／tower／protocol相關測試、兩個新增motion／asset回歸，來源交接／WORKER_PROTOCOL／LV及本段。tower-boss-floors測試依使用者授權取develop新版本，未動develop。唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、combat／formula／skills／skills2／elite_data、Worker與ui事件路由、3D素材／原三個匯出器、資料／Excel與既有測試及其他工作區差異。沒有修改其他49列、傷害公式、存檔／開放條件或共用骷髏王製作工具。
+- 測試：`node --test tests/tower-action-motion.test.cjs tests/tower-battlefield.test.cjs tests/tower-arena-bounds.test.cjs tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/worker-protocol.test.cjs tests/treant-asset.test.cjs` 40/40。廣泛執行npc3d-*、hero3d-*、tower-*、purgatory-tower、elite-*、npc-elite-skills、worker-protocol／shim、battlefield、vfx-editor-cache-versions、treant-asset與string-table共294項284通過。9項穩定失敗在唯讀覆蓋HEAD的同73項測試重現：elite-data規則、飛彈、塔技能資料、菁英體型、NPC技能資料2項及塔獎勵UI缺divineStoneIconHTML的3項。另火鏈4f隨機失敗：本版與HEAD各獨立6次皆5過1失敗；未降低斷言或改無關檔。`npm.cmd run build`697檔通過，String寫死0，diff檢查及舊三模型匯出SHA通過。
+- 實機：IAB無連線後，隔離Edge／正式頁面／原生Worker、seed17新局與GM鎖血，沒有碰使用者存檔。樹人817幀、骷髏王722幀，攻擊／施法姿勢與實際移動重疊0；樹人三攻擊循環、走路與死亡名稱皆核對，正常退場，Console error／warning0。早期測試把`damage 100`誤當百分比，已改正式GM的`damage 100%`後驗證死亡通過；另一測試的原生stats血量上限也已一致化，沒有修改產品以配合測試。模型五動作Blend正常重開保留、貼圖打包，高清GIF五份1080×1144及1920×1200總覽，20FPS原速，118幀總覽5.9秒，確認尺寸／時長／循環。預覽與測試畫面放聊天visualizations。
+- 交付：素材庫套件tower-treant-20261109共32個SHA項，原五檔、正式匯出、可編輯Blend與工具／QA先提交`7af7c081`；遊戲提交為本段所在提交，SHA見回報。完整來源與操作見docs/assets/TOWER_TREANT_SOURCE.md。沒有未完成實作，可供使用者合併及重載驗收；未合併／推送、未處理develop既有合併。已知限制為上述既有測試失敗及未做行動真機、跨瀏覽器、長時間效能／遊玩；動畫內部仍為使用者提供的跳躍／連擊姿勢，並無新增即時物理。

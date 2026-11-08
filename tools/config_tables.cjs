@@ -487,7 +487,7 @@ function npcModelFromRow(row, get, where) {
   const gltf = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString('utf8'));
   const available = new Set((gltf.animations || []).map(a => a.name));
   for (const [key, label] of NPC_MODEL_COLUMNS) {
-    if (!clips[key] || !available.has(clips[key])) throw new Error(where + '「' + label + '」不在 GLB 動作中：' + clips[key]);
+    if ((key === 'walk' && !clips[key]) || (clips[key] && !available.has(clips[key]))) throw new Error(where + '「' + label + '」不在 GLB 動作中：' + clips[key]);
   }
   return { file, clips };
 }
