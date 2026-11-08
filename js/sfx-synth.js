@@ -195,13 +195,14 @@ var SfxSynth = (function () {
     ring(ac, out, ti, 2950 * k, [[1, 0.6], [1.006, 0.4], [2.41, 0.35, 1.5], [3.88, 0.2, 2.2], [5.3, 0.12, 3]], 0.32, 0.22);   // 清脆「叮——」
     crackles(ac, out, ti + 0.005, 0.12, 9, 0.6, { fLo: 4000, fHi: 8000, q: 3, dMin: 0.003, dMax: 0.008, bias: 1.3, spread: 0.7 });   // 濺出的火花
   }
-  function thrust(ac, out, t, R) { var k = R(0.92, 1.1);
-    whoosh(ac, out, t, 0.12, { f0: 700 * k, f1: 4200 * k, f2: 5200 * k, q: 2, peak: 0.5, peakAt: 0.85 });
-    var ti = t + 0.11;
-    burstNoise(ac, out, ti, 'highpass', 2500, 0.7, 0.0006, 0.9, 0.05, 3);
-    squelch(ac, out, ti + 0.005, k, 0.6, 2600, 900, 0.07);
-    ring(ac, out, ti, 160 * k, [[1, 0.9], [2.2, 0.5, 1.4]], 0.09, 0.7);
-    ring(ac, out, ti, 2700 * k, [[1, 0.3], [2.4, 0.2, 1.5]], 0.18, 0.18);
+  function thrust(ac, out, t, R) {   // 2026-11-08 使用者從 5 個候選選定「疾風一刺」
+    var k = R(0.93, 1.08), len = 0.13, ti = t + len;
+    var bp = filt(ac, 'bandpass', 800, 2.2);
+    sweep(bp.frequency, t, [[0, 800 * k], [len * 0.5, 1600 * k], [len, 7000 * k]]);              // 破風一路加速往上衝
+    chain(noise(ac, t, len + 0.05), bp, rampGain(ac, t, [[0, 0.0001], [len * 0.5, 0.15], [len, 0.75], [len + 0.012, 0.0001]]), out);
+    squelch(ac, out, ti, k, 1, 2400, 700, 0.08);                                                  // 「噗嗤」
+    ring(ac, out, ti, 165 * k, [[1, 0.9], [2.3, 0.45, 1.5]], 0.08, 0.75);
+    burstNoise(ac, out, ti, 'bandpass', 1600 * k, 1, 0.0006, 0.5, 0.03);
   }
   function cleave(ac, out, t, R) { var k = R(0.92, 1.1), len = 0.5;
     var bp = filt(ac, 'bandpass', 600, 2.2);
@@ -600,7 +601,7 @@ var SfxSynth = (function () {
   var RECIPES = {
     // 物理
     'knife':              d(knife, 1.8),
-    'thrust':             d(thrust, 1),
+    'thrust':             d(thrust, 0.52),
     'cleave':             d(cleave, 1.1),
     'gale':               d(gale, 0.65),
     'bloodblade':         d(bloodblade, 1.15),
