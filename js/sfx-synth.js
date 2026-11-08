@@ -629,7 +629,7 @@ var SfxSynth = (function () {
     'rock-spike':         d(rockSpike, 1),
     'gravity-burst':      d(gravityBurst, 0.75),
     'petrify':            d(petrify, 1.1),
-    'mire':               d(mire, 1.5),
+    'mire':               d(mire, 1.5, { retrigger: true, minGapMs: 600 }),   // 沼澤是場域，每拍作用都響（敵人身上的毒才是 debuff）
     'earthguard':         d(earthguard, 1.1),
     'light-pillar':       d(lightPillar, 1),
     // 雷
