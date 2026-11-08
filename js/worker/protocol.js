@@ -109,7 +109,8 @@
 // v72：神鑄rate新增materialCost／affordableStones；太古精鑄依次數與成功率級距消耗太古精華。
 // v73（2026-11-06 技能音效）：vfx 事件新增可選 sfx＝{ cast, attack, projectile, hit, ground, field } 角色 → 音效 id；act 新增可選 sfx（施放音效）。
 // v74：battle.tower.arena 為權威固定世界中心／範圍及法陣基準畫面；不改指令或存檔。
-var WORKER_PROTOCOL_VERSION = 74;
+// v75：塔BOSS ACT 支援 attack/cast；lockMs 為整段停步動作時間，tb-float 定址敵方。
+var WORKER_PROTOCOL_VERSION = 75;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -252,6 +253,7 @@ var EVENT_KINDS = {
   /* { act, elId, target, lockMs, sfx? }  角色動作（v36）；sfx（v73）＝Skills2「施放音效」的 id，硬直結束那一刻播。模擬層只說「發生了什麼動作」，
      姿勢與播放時序完全由顯示層決定（js/battle-renderer.js onAct）。
      act     'cast'＝開始施放技能（js/skills.js beginSkillCast：施放硬直的起點，技能共用）。
+             v75 塔BOSS另送 attack／cast，elId=tb-float、target=tp-float；lockMs是完整動作鎖，傷害仍按原技能時序。
              超神重複施放、暴風之舞化身這類自動連發不送：每一下都播施法姿勢會一直從頭抽搐。
      elId    施放者的浮字圖層（pv-float＝野外、tp-float＝高塔），定址同 FLOAT。
      target  主要目標的圖層 id（mv-float-N／tb-float），沒有就 null；顯示層據此面向目標。

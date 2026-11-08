@@ -1112,7 +1112,7 @@ var BattleRenderer = (function () {
      播完、保持最後一格、播完接回 baseAnim 的規則與下面 2D 那一套一致。 */
   function playHero3dAnim(entity, animName, backTo) {
     var sheet = S.sheets[entity.sheetName];
-    var cfg = entity.npc3d ? Npc3D.play(entity.body, animName, entity.data && entity.data.aspd) : Hero3D.CLIP_FOR[animName];
+    var cfg = entity.npc3d ? Npc3D.play(entity.body, animName, entity.data && entity.data.aspd, entity.towerActionSeconds) : Hero3D.CLIP_FOR[animName];
     if (!cfg || !entity.body) return;
     if (entity.curAnim === animName && cfg.loop) return;
     entity.curAnim = animName;
@@ -2461,11 +2461,19 @@ var BattleRenderer = (function () {
      特效仍由各自的 vfx 事件負責，這裡只換角色的面向與姿勢。 */
   function onAct(ev) {
     if (!ev || !S.ready || documentHidden()) return;
-    if (canvasActorId(ev.elId) !== 'pv-float') return;
+    var actorId = canvasActorId(ev.elId);
+    if (actorId !== 'pv-float' && !(S.entities[actorId] && S.entities[actorId].data && S.entities[actorId].data.towerBoss)) return;
     /* 與特效同一套顯示延遲：畫面上的世界落後模擬 POS_BUFFER_MS，姿勢也延後才對得上特效與站位 */
     if (!ev._buffered) {
       ev._buffered = true;
       laterFrame(function () { onAct(ev); }, POS_BUFFER_MS, 1);
+      return;
+    }
+    if (actorId !== 'pv-float') {
+      var actor = S.entities[actorId];
+      if (actor && actor.state !== 'dying' && (ev.act === 'attack' || ev.act === 'cast')) {
+        actor.pendingTowerAction = { anim: ev.act, seconds: Math.max(1 / 60, (Number(ev.lockMs) || 0) / 1000) };
+      }
       return;
     }
     var p = S.player;
@@ -2882,6 +2890,7 @@ var BattleRenderer = (function () {
     spec._enemyAttackAnimated = true;
     var sourceEnt = spec.sourceId ? S.entities[spec.sourceId] : null;
     if (!sourceEnt || sourceEnt.state === 'dying' || sourceEnt.state === 'gone') return;
+    if (sourceEnt.data && sourceEnt.data.towerBoss) return; // 塔BOSS姿勢只由一次ACT驅動，不讓多枚特效重播動作。
     if (sourceEnt.npc3d || sourceEnt.npcSprite || (sourceEnt.isBoss && sourceEnt.sheetName)) playAnim(sourceEnt, 'attack', 'idle');
     if (!sourceEnt.npc3d && spec.variant !== 'enemy-projectile' && sourceEnt.state === 'idle') {
       var pc = playerPos();
@@ -7432,6 +7441,21 @@ var BattleRenderer = (function () {
       var edx = eAt.x - e.wx, edy = eAt.y - e.wy;
       e.wx = eAt.x; e.wy = eAt.y;
       var movedLen = Math.sqrt(edx * edx + edy * edy);
+
+      if (e.data && e.data.towerBoss && e.state !== 'dying') {
+        if (movedLen > .01 * dt && (e.curAnim === 'attack' || e.curAnim === 'cast')) {
+          e.curAnim = ''; playAnim(e, 'walk');
+        }
+        if (e.pendingTowerAction) {
+          if (movedLen > .01 * dt) e.pendingTowerAction.seconds -= dt;
+          else if (e.pendingTowerAction.seconds > 0) {
+            e.towerActionSeconds = e.pendingTowerAction.seconds;
+            playAnim(e, e.npc3d ? e.pendingTowerAction.anim : 'attack', 'idle');
+            e.towerActionSeconds = 0; e.pendingTowerAction = null;
+          }
+          if (e.pendingTowerAction && e.pendingTowerAction.seconds <= 0) e.pendingTowerAction = null;
+        }
+      }
 
       if (e.npcSprite || e.npc3d) {
         /* 序列幀自己會動：不套擺動／呼吸。走路與站立依實際位移切換；出招中與死亡中不打斷。 */

@@ -450,9 +450,11 @@ function eliteGroupMembers(m, aliveOnly) {
 
 /* ---------------- 跑位 ----------------
    菁英以上的敵人每隔 repoMin~repoMax 秒換一次位置。目標點以「換完之後仍然打得到玩家」為主：
-   用「相對玩家的極座標」記（角度＋距離），所以玩家跑動時目標點會跟著走，不會跑到一個打不到人的地方。
+   野外用相對玩家的極座標；塔BOSS將當下目標固定為世界座標，不追著移動中的玩家向外逃。
    真正的移動在 js/battlefield.js bfTickApproach（讀 ent._rp）：這裡只決定去哪裡、什麼時候去。 */
 function eliteRepoPick(m, mode, ref) {
+  if (m && m.towerBoss && (!m._towerHasActed ||
+      (typeof towerBossActionLocked === 'function' && towerBossActionLocked(m)))) return false;
   var pp = elitePos(), mp = eliteMonsterPos(m);
   if (!mp || typeof bfStopDistance !== 'function') return false;
   var stop = bfStopDistance(m);
@@ -473,6 +475,11 @@ function eliteRepoPick(m, mode, ref) {
     dist = Math.max(30, stop * (0.82 + Math.random() * 0.16));
   }
   m._rp = { ang: ang, dist: dist, t0: GT };
+  if (m.towerBoss) {
+    var goal = { x: pp.x + Math.cos(ang) * dist, y: pp.y + Math.sin(ang) * dist };
+    if (typeof bfClampTowerPoint === 'function') bfClampTowerPoint(goal, bfEntityRadius(m));
+    m._rp.x = goal.x; m._rp.y = goal.y;
+  }
   m._rpDone = false;
   m._el.repoAt = Infinity;       // 到了才排下一次
   return true;
@@ -585,8 +592,10 @@ function eliteTickOne(m, dt) {
   if (!eliteReady(m)) return;
   var acting = !ccActionLocked(m);
   if (acting && !eliteLocked(m)) eliteRepoTick(m);
+  // 跑位中的上一招結束後，先實際恢復一步；多個ready技能不能把移動永遠餓住。
+  if (m.towerBoss && typeof towerBossNeedsMoveStep === 'function' && towerBossNeedsMoveStep(m)) return;
   /* 先跑位再施放：跑位技能已經在路上，到了（或超時）才放出來 */
-  if (rt.pend && acting && (!m._rp || GT >= rt.pend.until)) {
+  if (rt.pend && acting && (!m.towerBoss || !eliteLocked(m)) && (!m._rp || GT >= rt.pend.until)) {
     var pd = eliteDef(rt.pend.id);
     var pid = rt.pend.id;
     if (rt.pend.away && m._rp) { m._rp = null; m._rpDone = true; }   // 超時還沒跑完：停下來直接放
@@ -607,7 +616,7 @@ function eliteTickOne(m, dt) {
     if (rt.pend && rt.pend.id === id) continue;
     rt.cd[id] = (rt.cd[id] || 0) - dt;
     if (rt.cd[id] > 0 || !acting) continue;
-    if (rt.busyUntil > GT || ELITE_RT.budget <= 0 || !elitePlayerAlive()) continue;
+    if (rt.busyUntil > GT || (m.towerBoss && eliteLocked(m)) || ELITE_RT.budget <= 0 || !elitePlayerAlive()) continue;
     if (!eliteCanCast(m, d)) { rt.cd[id] = 0.6; continue; }
     if (eliteKeepAway(m, d, id)) continue;
     if (d.repo && !rt.pend && !m._rp) {
@@ -632,6 +641,8 @@ function eliteKeepAway(m, d, id) {
   if (!(d.minRange > 0)) return false;
   var rt = m._el, mp = eliteMonsterPos(m), pp = elitePos();
   if (!mp || eliteDist(mp.x, mp.y, pp.x, pp.y) >= d.minRange) return false;
+  // 塔戰不為遠距技能反覆逃跑；距離不足就等下一次，仍可用其他技能或普攻。
+  if (m.towerBoss) { rt.cd[id] = .6; return true; }
   if (rt.pend) { rt.cd[id] = 0.4; return true; }           // 另一個技能正在跑位等施放：不搶它的 pend
   if (!eliteMoves(m) || !eliteRepoPick(m, 'away', d.minRange)) return false;   // 不會跑位的怪：直接放
   rt.pend = { id: id, until: GT + (d.backoff > 0 ? d.backoff : 3), away: true };
@@ -675,7 +686,8 @@ function eliteAnnounce(m, d) {
 function eliteBusy(m, sec, lockMove) {
   var rt = m._el;
   rt.busyUntil = GT + sec;
-  if (lockMove) m._elLockUntil = GT + sec;
+  if (m.towerBoss) m._elLockUntil = Math.max(m._elLockUntil || 0, GT + sec);
+  else if (lockMove) m._elLockUntil = GT + sec;
 }
 
 /* 行為原型 → 施放函式。主動技能的 arch 必須在這裡有對應；常駐／被動的 arch 列在 ELITE_PASSIVE_ARCHS。
@@ -710,6 +722,9 @@ function eliteCast(m, d, id) {
   eliteHoldAdd(d);
   eliteAnnounce(m, d);
   fn(m, d);
+  if (m.towerBoss && typeof towerBossHoldAction === 'function') {
+    towerBossHoldAction(m, 'cast', Math.max(0, m._el.busyUntil - GT, (m._elLockUntil || 0) - GT));
+  }
 }
 
 /* ============ 範圍落點：隕石雨、雷霆風暴 ============
@@ -2070,4 +2085,7 @@ function eliteStepMotion(list, dt) {
   }
 }
 /* 這隻現在被技能鎖住（施法／衝鋒中）：不走路、不普攻。 */
-function eliteLocked(m) { return !!(m && m._elLockUntil > GT); }
+function eliteLocked(m) {
+  return !!(m && m._elLockUntil > GT) ||
+    (typeof towerBossActionLocked === 'function' && towerBossActionLocked(m));
+}

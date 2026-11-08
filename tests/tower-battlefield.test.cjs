@@ -87,12 +87,16 @@ test('打不到時冷卻停在 ready 不累積：BOSS 走不過來就不出手�
   assert.equal(b.atkCd, 0);
   assert.equal(s.c.TOWER.specialCd, 0);
   assert.equal(s.c.TOWER.player.atkCd, 0);
-  // 一走進射程只補一下普攻＋一下蓄力重擊，不會把十秒的欠債一次打完
+  // 走進射程先普攻，播完才接蓄力重擊；不能同時出兩個動作，也不累積欠債。
   b.pos.x = s.c.bfPlayerPos().x + 60;
   s.tick(0.1);
+  assert.equal(s.log.boss.length, 1);
+  assert.equal(s.log.boss[0].name, '');
+  b.atkCd = 10; // 單獨觀察已蓄好的重擊在普攻結束後接續。
+  s.tick(s.c.towerBossActionDuration(b) + .1);
   assert.equal(s.log.boss.length, 2);
   assert.deepStrictEqual(s.log.boss.map(h => h.name).sort(), ['', '蓄力重擊']);
-  assert.equal(s.log.player.length, 1);
+  assert.ok(s.log.player.length >= 1);
 });
 
 test('結束：清掉塔戰站位參照，畫面據此回到野外', () => {

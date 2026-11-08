@@ -53,6 +53,16 @@ test('missing clips release the controller and repeated disposal releases resour
   f.api.dispose(f.body);f.api.dispose(f.body);
   assert.deepEqual(f.destroyed,{ctrl:1,texture:1,outline:1});
 });
+
+test('walk-only models hold a standing pose for missing attacks and fade from a held death pose', async () => {
+  const f=fixture(['Walk']);
+  await f.api.create({file:def.file,clips:{walk:'Walk'}});
+  const attack=f.api.play(f.body,'attack',1);
+  assert.equal(attack.clip,'Walk');assert.equal(attack.loop,false);assert.equal(attack.end,1/60);
+  const cast=f.api.play(f.body,'cast',1,2);
+  assert.equal(cast.end,1/60);
+  const death=f.api.play(f.body,'die');assert.equal(death.hold,true);assert.equal(death.end,1/60);
+});
 test('a late asynchronous model cannot replace a removed or reused enemy', async () => {
   const battle=fs.readFileSync(path.join(root,'js/battle-renderer.js'),'utf8');
   const snippet=battle.slice(battle.indexOf('  function requestNpc3d(e)'),battle.indexOf('  function adoptNpcSprite(e)'));

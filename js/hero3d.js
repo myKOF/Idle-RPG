@@ -771,11 +771,11 @@
       if (typeof sp.onComplete === 'function') sp.onComplete();
     };
     /* 名目速度＝2D 那個動作的 animationSpeed，之後外部乘上的倍數就是 3D 的播放倍率 */
-    sp.hero3dPlay = function (cfg, nominalSpeed) {
+    sp.hero3dPlay = function (cfg, nominalSpeed, fade) {
       nominal = nominalSpeed > 0 ? nominalSpeed : 0.5;
       factor = 1;
       ctrl.speed = 1;
-      return ctrl.play(cfg);
+      return ctrl.play(cfg, fade);
     };
     sp.hero3dFace = function (dx, dy) { ctrl.faceVector(dx, dy); };
     sp.gotoAndStop = function (n) {

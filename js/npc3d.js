@@ -2,10 +2,10 @@
    Simulation, hit resolution and attack rates remain owned by the worker. */
 (function (global) {
   'use strict';
-  var VERSION = '20261108-skeleton-king';
+  var VERSION = '20261109-treant-actions';
   function definition(data) {
     var def = data && data.model3d;
-    return def && def.file && def.clips && def.clips.walk && def.clips.die ? def : null;
+    return def && def.file && def.clips && def.clips.walk ? def : null;
   }
   async function create(def) {
     var ctrl = await global.Hero3D.create({
@@ -16,34 +16,35 @@
     try {
       var clips = def.clips;
       ['idle', 'walk', 'attack1', 'attack2', 'attack3', 'die'].forEach(function (key) {
-        if (ctrl.clips.indexOf(clips[key]) < 0) throw new Error('Missing NPC 3D animation: ' + key);
+        if (clips[key] && ctrl.clips.indexOf(clips[key]) < 0) throw new Error('Missing NPC 3D animation: ' + key);
       });
       var body = global.Hero3D.makeBody(ctrl);
       body.npc3d = { controller: ctrl, attackIndex: 0, motionSpeed: 0, clips: {
-        idle: { clip: clips.idle, loop: true, still: true },
+        idle: { clip: clips.idle || clips.walk, loop: true, still: true },
         walk: { clip: clips.walk, loop: true },
-        attack1: { clip: clips.attack1, loop: false },
-        attack2: { clip: clips.attack2, loop: false },
-        attack3: { clip: clips.attack3, loop: false },
-        die: { clip: clips.die, loop: false, hold: true }
+        attack1: clips.attack1 ? { clip: clips.attack1, loop: false } : { clip: clips.idle || clips.walk, loop: false, end: 1 / 60 },
+        attack2: clips.attack2 ? { clip: clips.attack2, loop: false } : { clip: clips.idle || clips.walk, loop: false, end: 1 / 60 },
+        attack3: clips.attack3 ? { clip: clips.attack3, loop: false } : { clip: clips.idle || clips.walk, loop: false, end: 1 / 60 },
+        die: clips.die ? { clip: clips.die, loop: false, hold: true } : { clip: clips.idle || clips.walk, loop: false, end: 1 / 60, hold: true }
       } };
       return body;
     } catch (error) { ctrl.dispose(); throw error; }
   }
-  function play(body, semantic, attacksPerSecond) {
+  function play(body, semantic, attacksPerSecond, actionSeconds) {
     var state = body.npc3d;
-    var key = semantic === 'attack' ? 'attack' + (state.attackIndex++ % 3 + 1) : semantic;
+    var key = semantic === 'attack' || semantic === 'cast' ? 'attack' + (state.attackIndex++ % 3 + 1) : semantic;
     var cfg = state.clips[key];
     if (!cfg) return null;
-    body.hero3dPlay(cfg, .5);
+    body.hero3dPlay(cfg, .5, 0);
     state.semantic = semantic;
     if (semantic === 'walk') applyWalkSpeed(body);
     // Fit the full strike to the existing attack interval; preview slow motion
     // is never applied in combat. Death retains its original duration.
-    if (semantic === 'attack') {
+    if (semantic === 'attack' || semantic === 'cast') {
       var rate = Number(attacksPerSecond);
       var interval = rate > 0 ? 1 / rate : 1.5;
-      body.animationSpeed = .5 * Math.max(1, state.controller.duration(cfg.clip) / (interval * .85));
+      var seconds = actionSeconds > 0 ? actionSeconds : interval * .85;
+      body.animationSpeed = .5 * (cfg.end || state.controller.duration(cfg.clip)) / seconds;
     }
     return cfg;
   }

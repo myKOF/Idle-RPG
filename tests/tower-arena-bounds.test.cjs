@@ -26,7 +26,7 @@ function inside(c){
 test('50 independent bosses and all three tower tiers keep pursuit and moving repo targets within one fixed arena',()=>{
  const c=setup();
  for(const floor of [...Array.from({length:50},(_,i)=>i+1),53,64,101,150]){
-  c.startTowerFight(floor);const a=JSON.stringify(c.TOWER.arena),b=c.TOWER.boss;b._el={};b._bodyR=52+floor;
+  c.startTowerFight(floor);const a=JSON.stringify(c.TOWER.arena),b=c.TOWER.boss;b._el={};b._towerHasActed=true;b._bodyR=52+floor;
   for(let step=0;step<400;step++){
    c.GT+=.05;
    if(step%20===0)c.eliteRepoPick(b,step%40===0?'away':null,1800);
