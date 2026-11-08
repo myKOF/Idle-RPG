@@ -20,7 +20,8 @@ function readCsv() {
 
 test('NPC-SKILL-1 欄位：技能特效欄已移除，新增專屬技能與隨機技能數量上下限', () => {
   const { header } = readCsv();
-  assert.deepEqual(header.slice(header.indexOf('專屬技能')), ['專屬技能', '隨機技能下限', '隨機技能上限', '備註']);
+  assert.deepEqual(header.slice(header.indexOf('專屬技能')), ['專屬技能', '隨機技能下限', '隨機技能上限', '備註',
+    '3D模型', '3D站立動作', '3D移動動作', '3D攻擊1動作', '3D攻擊2動作', '3D攻擊3動作', '3D死亡動作']);
   assert.ok(header.indexOf('技能特效') < 0, '技能特效欄不再需要');
   assert.ok(header.indexOf('技能') < 0);
 });

@@ -456,6 +456,35 @@ function npcSkillCells(sk) {
    檔名格式正確卻不在 npc.json 就中止套用，免得拼錯字讓敵人靜靜退回 emoji。
    「圖像備註」純說明（新版正式圖像／舊版圖像、缺哪些圖），不寫回遊戲。 */
 const NPC_SPRITE_ACTIONS = [['idle', '站立圖像'], ['walk', '移動圖像'], ['attack', '攻擊圖像'], ['die', '死亡圖像']];
+const NPC_MODEL_COLUMNS = [['idle', '3D站立動作'], ['walk', '3D移動動作'], ['attack1', '3D攻擊1動作'],
+  ['attack2', '3D攻擊2動作'], ['attack3', '3D攻擊3動作'], ['die', '3D死亡動作']];
+function npcModelCells(entry) {
+  const model = entry.model3d || {};
+  return [model.file || ''].concat(NPC_MODEL_COLUMNS.map(([key]) => (model.clips || {})[key] || ''));
+}
+function npcModelFromRow(row, get, where) {
+  const file = get(row, '3D模型').trim();
+  const clips = Object.fromEntries(NPC_MODEL_COLUMNS.map(([key, label]) => [key, get(row, label).trim()]));
+  if (!file) {
+    if (Object.values(clips).some(Boolean)) throw new Error(where + '：填寫 3D 動作時必須指定「3D模型」');
+    return null;
+  }
+  if (!/^images\/models\/[a-zA-Z0-9_\/-]+\.glb$/.test(file) || file.split('/').includes('..')) {
+    throw new Error(where + '「3D模型」必須是 images/models/ 下的本機 GLB 路徑：' + file);
+  }
+  const target = path.join(ROOT, file);
+  if (!fs.existsSync(target)) throw new Error(where + ' 的 3D 模型不存在：' + file);
+  const bytes = fs.readFileSync(target);
+  if (bytes.length < 20 || bytes.readUInt32LE(0) !== 0x46546c67 || bytes.readUInt32LE(4) !== 2) {
+    throw new Error(where + ' 的 3D 模型不是有效 GLB 2：' + file);
+  }
+  const gltf = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString('utf8'));
+  const available = new Set((gltf.animations || []).map(a => a.name));
+  for (const [key, label] of NPC_MODEL_COLUMNS) {
+    if (!clips[key] || !available.has(clips[key])) throw new Error(where + '「' + label + '」不在 GLB 動作中：' + clips[key]);
+  }
+  return { file, clips };
+}
 function npcSpriteStems() {
   const p = path.join(ROOT, 'images', 'sprites', 'npc', 'npc.json');
   return fs.existsSync(p) ? Object.keys(JSON.parse(fs.readFileSync(p, 'utf8')).stems || {}) : [];
@@ -470,7 +499,7 @@ SCHEMAS.NPC = {
   name: 'NPC', jsFile: 'data', sheet: 'NPC', vars: NPC_POOL_DEFS.map(d => d.varName).concat(['BOSS_LIST']),
   header: ['NPC識別碼', 'NPC名稱', '所屬地圖識別碼', '類型', '屬性', '外觀', '站立圖像', '移動圖像', '攻擊圖像', '死亡圖像', '圖像備註', '縮放比',
     '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '視野範圍(米)', '魔法型（1是／0否）', '出現權重',
-    '專屬技能', '隨機技能下限', '隨機技能上限', '備註'],
+    '專屬技能', '隨機技能下限', '隨機技能上限', '備註', '3D模型'].concat(NPC_MODEL_COLUMNS.map(([, label]) => label)),
   extract(src) {
     const rows = [];
     const catalog = enemySkillCatalog();
@@ -486,7 +515,7 @@ SCHEMAS.NPC = {
           const sk = type === 'normal' ? null : (entry.skills && entry.skills[type]) || null;
           const row = [id, entry.name, def.zone, type].concat(base, npcSkillCells(sk), [npcSkillNote(type, sk, catalog)]);
           row.splice(15, 0, numStr(entry.sightRanges && entry.sightRanges[type] != null ? entry.sightRanges[type] : 50));
-          rows.push(row);
+          rows.push(row.concat(npcModelCells(entry)));
         });
       });
     });
@@ -495,7 +524,7 @@ SCHEMAS.NPC = {
       const sk = (b.skills) || null;
       rows.push([b.id || ('tower_boss_' + (index + 1)), b.name, NPC_TOWER_ZONE, 'tower_boss', b.attr || b.elem || '', b.emoji || '',
         b.img || '', b.img || '', b.img || '', b.img || '', '舊版靜態圖（' + (b.img || '無') + '），尚無序列幀：缺移動／攻擊／死亡動畫', '1',
-        '', '', '', numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)]));
+        '', '', '', numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)], npcModelCells(b)));
     });
     return rows;
   },
@@ -580,6 +609,8 @@ SCHEMAS.NPC = {
         sprite[a[0]] = v;
       });
       if (sprite.idle) o.sprite = sprite; else delete o.sprite;
+      const model = npcModelFromRow(row, get, 'NPC ' + lineOf(index) + '（' + id + '）');
+      if (model) o.model3d = model; else delete o.model3d;
       /* 縮放比：相對目前預設大小的倍數（1＝不變），NPC 所有階級共用，只認 normal 列；空白或 1 都不寫入 */
       const scaleRaw = get(row, '縮放比').trim();
       if (scaleRaw === '' || Number(scaleRaw) === 1) delete o.scale;
@@ -619,6 +650,8 @@ SCHEMAS.NPC = {
       const name = get(t.row, 'NPC名稱'); if (name) b.name = name;
       const emoji = get(t.row, '外觀'); if (emoji) b.emoji = emoji;
       const attr = get(t.row, '屬性').trim(); if (attr) b.attr = attr;
+      const model = npcModelFromRow(t.row, get, 'NPC ' + lineOf(t.index) + '（' + t.id + '）');
+      if (model) b.model3d = model; else delete b.model3d;
       delete b.skills;
       if (Object.keys(t.skills).length) b.skills = t.skills;
       return b;

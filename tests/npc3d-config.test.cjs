@@ -1,0 +1,88 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const cfg = require('../tools/config_tables.cjs');
+const root = path.resolve(__dirname, '..');
+const source = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
+const rows = cfg.csvParse(fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8')).filter(r => r.length > 1);
+const header = rows[0], ix = name => header.indexOf(name);
+const clone = () => rows.slice(1).map(r => r.slice());
+const bosses = literal => cfg.evalLiteral(cfg.extractLiteral(literal, 'BOSS_LIST').literal);
+
+test('NPC 3D metadata round-trips all tower rows and preserves their gameplay data', () => {
+  const result = bosses(cfg.SCHEMAS.NPC.rebuild(clone(), header, source).BOSS_LIST);
+  const current = bosses(source);
+  assert.equal(result.length, 10);
+  for (let i = 0; i < result.length; i++) {
+    assert.equal(result[i].model3d.file, 'images/models/npc3d/boss1.glb');
+    assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
+    assert.deepEqual(result[i], current[i]);
+  }
+  const extracted = cfg.SCHEMAS.NPC.extract(source);
+  const h = cfg.SCHEMAS.NPC.header;
+  assert.equal(extracted.find(r => r[0] === 'tower_boss_1')[h.indexOf('3D攻擊2動作')], 'Attack2');
+});
+
+test('changing a clip in the NPC table changes only that boss binding', () => {
+  const data = clone(), row = data.find(r => r[0] === 'tower_boss_1');
+  row[ix('3D攻擊1動作')] = 'Attack3';
+  const result = bosses(cfg.SCHEMAS.NPC.rebuild(data, header, source).BOSS_LIST);
+  assert.equal(result[0].model3d.clips.attack1, 'Attack3');
+  assert.equal(result[1].model3d.clips.attack1, 'Attack1');
+  assert.deepEqual(result[0].skills, bosses(source)[0].skills);
+});
+
+test('mistyped clips, missing models and model-less action bindings stop table application', () => {
+  for (const [field, value, expected] of [
+    ['3D攻擊2動作', 'AttackTypo', /不在 GLB 動作中/],
+    ['3D模型', 'images/models/npc3d/missing.glb', /模型不存在/],
+    ['3D模型', '../boss1.glb', /本機 GLB 路徑/],
+    ['3D模型', '', /必須指定/]
+  ]) {
+    const data = clone();
+    data.find(r => r[0] === 'tower_boss_1')[ix(field)] = value;
+    assert.throws(() => cfg.SCHEMAS.NPC.rebuild(data, header, source), expected);
+  }
+});
+
+test('empty model and clip cells clear a binding while preserving the legacy image', () => {
+  const data = clone(), row = data.find(r => r[0] === 'tower_boss_1');
+  for (let i = 22; i < header.length; i++) row[i] = '';
+  const result = bosses(cfg.SCHEMAS.NPC.rebuild(data, header, source).BOSS_LIST);
+  assert.equal(result[0].model3d, undefined);
+  assert.equal(result[0].img, bosses(source)[0].img);
+});
+
+test('exported sword is a separate rigid mesh under the right hand and all five clips exist', () => {
+  const bytes = fs.readFileSync(path.join(root, 'images/models/npc3d/boss1.glb'));
+  const jsonSize = bytes.readUInt32LE(12);
+  const gltf = JSON.parse(bytes.subarray(20, 20 + jsonSize).toString('utf8'));
+  assert.deepEqual(gltf.animations.map(a => a.name).sort(), ['Attack1', 'Attack2', 'Attack3', 'Die', 'Walk']);
+  const weaponIndex = gltf.nodes.findIndex(n => n.name === 'Sword_R');
+  const parent = gltf.nodes.find(n => (n.children || []).includes(weaponIndex));
+  assert.equal(parent.name, 'mixamorig:RightHand');
+  const sword = gltf.nodes.find(n => n.name === 'BOSS1_Sword');
+  const body = gltf.nodes.find(n => n.name === 'BOSS1_Body');
+  assert.ok(sword && body && sword.mesh !== body.mesh);
+  const skin = gltf.skins[sword.skin];
+  const joint = skin.joints.indexOf(weaponIndex);
+  assert.ok(joint >= 0);
+  const binary = bytes.subarray(28 + jsonSize);
+  function component(accessor, row, lane) {
+    const a = gltf.accessors[accessor], view = gltf.bufferViews[a.bufferView];
+    const size = {5121: 1, 5123: 2, 5126: 4}[a.componentType];
+    const offset = (view.byteOffset || 0) + (a.byteOffset || 0) + row * (view.byteStride || size * 4) + lane * size;
+    return a.componentType === 5121 ? binary.readUInt8(offset) : a.componentType === 5123 ? binary.readUInt16LE(offset) : binary.readFloatLE(offset);
+  }
+  for (const primitive of gltf.meshes[sword.mesh].primitives) {
+    for (let v = 0; v < gltf.accessors[primitive.attributes.POSITION].count; v++) {
+      const weights = Array.from({length: 4}, (_, c) => component(primitive.attributes.WEIGHTS_0, v, c));
+      const joints = Array.from({length: 4}, (_, c) => component(primitive.attributes.JOINTS_0, v, c));
+      assert.equal(weights.reduce((a, b) => a + b, 0), 1);
+      assert.equal(weights.filter(w => w > 0).length, 1);
+      assert.equal(joints[weights.findIndex(w => w > 0)], joint);
+    }
+  }
+});
