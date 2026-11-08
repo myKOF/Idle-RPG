@@ -1,3 +1,64 @@
+## SYNC-MERGE-20261108-f680d5 - Pending develop merge resolution
+
+- Owner: Codex; Done (controller staging and merge commit pending). Explicit authorization covers only HEAD 54a11d9a0b13655a8fdb3414a3665bc8ff4d3b29 and MERGE_HEAD f680d5eb12c95f60b851f6d9a34a4c9612432621. No delegation, commit, staging, push, other-worktree changes or Git metadata writes.
+- Three-way inspection: base index used old sound versions; ours independently bumped sfx-synth/sfx while theirs bumped battle-renderer and added NPC3D. Preserve all three intended updates. Use fresh 20261108-skeleton-sfx-merge for renderer, data, bridge entry/Worker asset and Worker data import. Editor does not load data.js; existing editor imports are unchanged and cache tests pass. Preserve all incoming files and controller EOF corrections.
+- Scope: index.html conflict, js/bridge.js and js/worker/sim.worker.js cache synchronization, this record. Re-exported config/CSV/NPC.csv using existing Excel reader; output matches incoming content after Git newline normalization. tools/config_tables.cjs --apply NPC --write and subsequent --apply NPC both rebuilt 11 literals with 0 semantic changes and no JS write. NPC.xlsx bytes equal MERGE_HEAD blob b81736e964585b846c3227150ceb15eda2dba822; no workbook edits or COM use, no originally conflicted Excel, no Excel plan. Native reopening was recorded by source task; this pass does not claim new native Excel validation.
+- Read-only inspection: AI_RULES.md, AGENTS.md, docs/AI_WORKFLOW.md, prompts/codex.md, existing tasks, base/ours/theirs index, package.json, config exporter/readers, NPC tests and asset exporter. Conflict precheck found the authorized incoming ai/codex changes. Other worktree status reads encountered Git ownership restrictions; no trust expansion or global config change.
+- Tests: node --test --test-concurrency=2 --test-reporter=tap tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/tower-boss3d.test.cjs tests/npc-elite-skills.test.cjs tests/npc-vision.test.cjs tests/hero3d-*.test.cjs tests/skill-sfx.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/start-menu-background.test.cjs tests/start-menu.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs: 154 tests, 152 passed, 2 pre-existing failures (NPC-SKILL-4 generated-note comparison; NPC-SKILL-6 expects old boss_flame image). Read-only fs overlay of original f680d5eb bytes for every path differing from MERGE_HEAD, node --test-reporter=tap -e requiring tests/npc-elite-skills.test.cjs: 7 tests, 5 passed, the identical two failures. Subprocess apply remains zero-semantic-change. No assertions or source behavior weakened; no merge regression found.
+- Validation: npm.cmd run build: PASS, 688 files. node tools/meshy-pipeline/src/export-tower-boss1.cjs --check: PASS, 34 source/export files. New Node assertions: no index conflict markers, both sound versions and NPC3D entry preserved, new data/Worker/bridge caches agree, HEAD/MERGE_HEAD and workbook blob unchanged. git diff HEAD --check: PASS for complete merged result including staged incoming changes. Source asset package already committed as b24cc808; no asset-library changes required in this pass.
+- Risks/uncompleted: the two source-baseline failures remain; no new browser/mobile or long-duration validation performed. Ready for controller to stage and create this merge commit; index unmerged entries intentionally remain until then. No game commit created, no release or synchronization of other worktrees.
+
+## TOWER-SKELETON-KING-20261108 — 封魔塔第1關接入骷髏王
+
+- Owner：Codex，Review（接入與驗證完成）。使用者追加將本 BOSS 替換為第1關、命名「骷髏王」；依本聊天封魔塔上下文處理。前置為已認可的手部與本輪披風修正。NPC 表保留第一種塔 BOSS 的模型／五動作綁定，撤下其餘九種尚未接入的預填綁定，保留其他資料與原外觀；沿用既有十種 BOSS 的樓層循環。
+- 允許 NPC.xlsx／CSV／生成 data、tower 身分傳遞、Hero3D 共用介面、NPC 3D 身體接入、battle-renderer 生命週期／動作、主頁／Worker 資料快取、必要測試與 LV／交接／本段。不改數值、公式、技能、存檔與解鎖，不合併／推送。
+- 驗收：Excel 正常重開與原功能保留、第一種塔 BOSS 名稱與模型、其他九種外觀不變、走路／三攻擊／死亡與回待機、非同步載入競態／退場釋放、實際瀏覽器塔戰、相關回歸／Build／快取。使用者為後續驗收者。
+- 完成：NPC.xlsx 第482列名稱／外觀／四圖像欄與模型動作綁定，G:J 指向實際 GLB 渲染的透明頭像；483–491列只清除預填3D綁定。使用原生 Excel 窄範圍修改69格，正常模式重開，兩張表24,550格資料／公式逐格比對，七個原生物件保留。CSV→data 語意只改 BOSS_LIST，再套用試跑變更0；NPC 名稱由配置讀取，無 String 重複資料。
+- tower 傳遞 NPC 身分／model3d；新增 npc3d 介面共用 Hero3D 的 Three／Pixi，支援待機停首幀、移動、三攻擊輪播及死亡原速停末幀後淡出，並跟隨朝向、縮放與階級效果。原傷害、技能、數值與攻速不變；攻擊表現依原間隔播放，本輪預覽0.2倍速不進戰鬥。模型載入中以配置圖像備援，過期請求／退場會釋放控制器與貼圖，不取代玩家 Hero3D 實例。
+- 修改：NPC Excel／CSV、data、tower、hero3d、npc3d、battle-renderer、bridge／主頁快取、config_tables 的塔頭像讀取、npc3d-config／runtime 與 tower-boss3d 測試、LV／來源交接／本段。唯讀檢查：Worker 快照與固定協議、公式、GM／UI 塔流程、既有玩家3D、資料匯出及原生Excel工具；未改技能、玩法公式、存檔、String、解鎖或其他工作區。
+- 主頁與 ai/claude 的音效版本行相鄰，三方試跑 exit1；使用者已明確答覆「同意分段更新（建議）」。本輪只更新自己的入口／快取，兩個音效版本行保持原樣，未合併 Claude 分支。其餘預檢乾淨。
+- 六份 NPC3D／視野／Worker／快取測試35/35；十一份既有 hero3d 回歸65/65；`npm.cmd run build`688檔通過。內建 IAB 無連線，改隔離 Edge／全新瀏覽器 context，實測第1關名稱、3D身體／頭像、Walk／三攻擊／Die、死亡後建立1／釋放1、再進第2關仍用原身體且無新增NPC3D；Console／Worker error 0，未讀寫使用者瀏覽器存檔。未做行動真機或長時間效能測試。
+- 可供使用者審查後整合；沒有合併／推送／發布。雙庫 Commit 與圖像／預覽交付見本輪披風任務後續紀錄。
+
+## TOWER-BOSS1-CAPE-20261108 — 保留已認可手部並修正披風穿模
+
+- Owner：Codex，Review（修訂預覽已完成）。使用者已認可上一版手部；本輪修五動作披風與身體／衣甲的穿插，保留手部、劍及原動作時長；後續名稱修改依上方使用者追加任務。單一主開發者。
+- 允許披風避碰烘焙工具、相關 QA／回歸、GLB、預覽工具必要調整、素材庫新版本及交接／LV／本段。禁止玩法、Worker、存檔、攻速、配置值及其他工作區，不合併／推送。
+- 驗收：以實際變形後身體網格避碰、五動作全幀幾何交叉檢查、手部與原非披風動畫保持、背／側面時序檢視、第三招正面 0.2 倍速 GIF、來源 SHA、必要回歸與 Build。預覽由使用者檢視；正式戰鬥接入已依使用者後續明確指示一併完成。
+- 完成新增 refine_tower_boss_cape.py：從已認可的 GLB 保留實際插值，以15×9骨格與每頂點最多四骨權重擬合原披風，依當幀實際身體表面、完整三角面相交及地面限制避碰，60fps烘焙；原UV／手部／武器／動作時長保留。不是執行期布料。
+- GLB重匯入共1,363個60Hz取樣（含原30fps影格中點），披風／身體交叉對數全部0，地面最低0.038米；與已認可GLB右手／前臂／劍骨最大矩陣誤差0.00000188、握點誤差低於0.000001米。肩領最上方rest Z>1.505米的微小貼合區保留原接縫；未新增前裙襬、自碰撞或兵器接觸物理。
+- 第三招正面原生1080px／25fps／0.2倍速371幀，動作14.833秒、尾停0.3秒，GIF實際15.140秒；五動作背面1080px／15fps及1920×1200總覽，總覽130幀／8.670秒。七份GIF全幀解碼、尺寸／循環／時長與背面時序圖、正面取樣目視通過。正式透明頭像也由同一GLB渲染並驗證alpha。
+- 修改：新增披風烘焙工具、qa／render／GIF／export工具、npc3d-config回歸、GLB／正式頭像、來源交接與LV／本段。唯讀：五個使用者原GLB、已認可第二版GLB與Blend、MakeHuman手部及授權、原NPC數值／技能。素材庫新v3保存所有必要來源／可編輯檔與QA，前兩版保留；預覽在本聊天tower-boss1/v6，不加入Git。
+- 已知限制：避碰覆蓋五個烘焙動作；肩領貼合區、非披風衣甲、自碰撞／兵器接觸及任意新混合姿勢不宣稱有即時物理保證。手部維持使用者認可版，披風待使用者看本輪GIF。遊戲接入依上方後續授權完成，不再等待另一輪接入許可。
+- 雙庫交付：素材庫先提交 `b24cc808`；34份來源／輸出及Git索引雜湊核對通過，再由既有匯出工具套用與檢查專案版本。MakeHuman原始文字資產採逐位保存，避免換行正規化改變原始SHA；六份Python編譯、CJS與diff檢查通過。遊戲提交為本段所在Commit，可供審查整合；未合併、推送或發布。
+- 未採用v4／v4b／v5候選與臨時Excel副本的刪除清理被自動審核以「blocked by policy」拒絕；保留在聊天visualizations，沒有納入任一倉庫。正式來源與本輪v6交付完整，不影響任務驗證。
+
+## TOWER-BOSS1-3D-REV2-20261108 — 披風下垂、正握與第三招正面慢動作
+
+- Owner：Codex，Review（修訂預覽已完成，待使用者檢視）。依使用者回饋修正五動作背部披風上翹、正握，輸出第三招 0.2 倍速的正面高清 GIF。使用者最新人物右側照片優先於先前方向解讀：低持劍時右側鏡頭看到手背、掌面朝身體、拇指朝劍格。慢速用於本次檢視，不改遊戲攻速／傷害時序。
+- 前置：上一版五動作及使用者自製素材授權已具備。允許製作／渲染／GIF 工具、boss1.glb、對應素材庫新版本來源與匯出清單、3D 回歸、來源交接、LV 與本段。既有 NPC 模型／動作名稱綁定保留。禁止玩法、Worker、存檔、配置數值及其他工作區，不合併／推送。
+- 驗收：五片段披風不再隨軀幹抬起、人物右側握姿近照、獨立劍骨與握點保持、第三招正面 0.2 倍速 GIF 的時間／尺寸／逐幀渲染及目視檢視，雙庫 SHA、必要回歸與 Build。後續由使用者檢視預覽，正式遊戲接入仍待看稿。
+- 完成模型修整：背部披風獨立成 BOSS1_Cape，3,759 個匯出頂點僅綁上背與三根專用骨，不再受腿骨帶動；肩部原四根披風邊骨共用重力曲線。舊程序化手甲已替換為官方 CC0 MakeHuman 真實手部拓樸，經指骨握拳、擬合、連接前臂；保留完整人體／指骨來源、參數、授權與 SHA。參考圖只用於握法，不作素材匯入。保留原披風幾何／UV、原劍裝飾、五動作名稱與原時長。
+- Blender 重新匯入實際 GLB，684 幀驗證通過：三根披風骨均向下，下襬至少低於肩部 0.180 米；披風最低 0.027 米、全劍最低 0.035 米，握點最大誤差低於 0.000001 米，拇指末節朝刀刃點積 0.884，Walk 真正的手背法向朝人物右側投影點積至少 0.963。攻擊／倒地時掌面隨原動作旋轉；不強迫全片段保持右側朝向。舊版以掌心相對握點的向量證明手背方向有誤，已撤回並改用真實手背法向及右側近照目視。
+- 四份既有／擴充回歸 `node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/npc-vision.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 30/30 通過；新增檢查披風獨立網格、三骨齊全與所有權重不含腿骨。`npm.cmd run build` 685 檔通過，NPC 套用試跑語意變更 0。未改 Excel／CSV／data／String／主頁、Worker 或攻速；0.2 倍速只用於本次預覽。
+- 第三招固定正面鏡頭（人物保留原轉身），原生 1080×1080／25 fps 渲染 371 幀；GIF 含標題 1080×1144、動作 14.833 秒、尾停 0.3 秒，實際循環 15.140 秒，全幀解碼／尺寸／時間及取樣目視通過。另留人物右側 PBR 手部近照與五動作各七張背部時序圖。聊天交付在 tower-boss1/v3；舊版保留，不以舊手部的 GIF 交付。
+- 修改：boss1.glb、MAKEHUMAN_LICENSE.txt、prepare／build_tower_boss_hand／qa／render 四個 Blender 工具、GIF 包裝及來源匯出工具、npc3d-config 回歸、來源交接、LV 及本段。唯讀檢查：五個原始 GLB、官方 MakeHuman 來源／授權、NPC.xlsx／CSV 與 config_tables、現行戰鬥／人物渲染、視野／Worker／快取測試及共通協議。五份 Python 語法編譯與 CJS 檢查通過。
+- 素材庫先提交修訂套件 `42ad9668`，再以 `349600ca` 保留原始 OBJ 的 Git 換行與逐位雜湊；26 份來源／專案輸出及 Git 索引雜湊逐項通過。可編輯角色與 MakeHuman 人體／手部 Blend、參數、CC0 原文、五個原 GLB 及 QA 都已保存。遊戲提交為本段所在 Commit。可供使用者審查後整合，未合併／推送／發布。
+- 已知限制／下一步：手套為單色銀色材質，未做細節貼圖；披風為烘焙骨骼，未做全身衣甲碰撞或即時布料。預覽握姿仍由使用者檢視；正式戰鬥 3D 接入、命中事件對時、實戰效能仍待預覽確認。NPC 模型／五動作名稱已在上一版配置，本輪未改名稱。
+
+## TOWER-BOSS1-3D-PREVIEW-20261108 — 封魔塔 BOSS 五動作與獨立劍骨骼
+
+- Owner：Codex，Review（預覽與配置已完成）。使用者提供五份 BOSS1 GLB，並於本聊天確認為自製／自行生成、可供本遊戲使用及修改。先交付實際 3D 高清 GIF 預覽，正式遊戲接入待本次預覽檢視。
+- 前置：五檔同骨架素材及授權已確認。以 Blender 拆分右手劍、建立獨立武器骨骼並校正五動作，保留貼圖與可編輯來源。單一主開發者，無委派。
+- 允許：新增 tools/meshy-pipeline/blender/prepare_tower_boss1.py、docs/assets/TOWER_BOSS1_3D_SOURCE.md、本段及對應素材庫獨立目錄；預覽與診斷輸出在聊天 visualizations。禁止修改玩法、Worker、存檔、配置、現行 BOSS／人物渲染及其他進行中內容，不合併／推送。
+- 驗收：Blender 實際逐幀渲染五動作、劍為獨立網格且剛性綁定右手子骨骼、握點全片段穩定、幾何與 GLB 重匯入檢查、來源 SHA、Build 與 diff。素材來源與製作工具先存素材庫，再提交遊戲工具及交接。後續由使用者檢視 GIF。
+- 使用者追加：模型與圖像／動作名稱全部納入 NPC 表方便修改。授權範圍加上 NPC.xlsx／CSV、新 3D 欄位的 config_tables 讀寫、data 衍生資料及必要快取、欄位回歸、LV、渲染與 GIF 製作工具。以 Excel 原生 API 保留既有工作簿功能，正常重開驗證；預覽由同份 NPC 配置讀取動作。此輪先保留 3D 配置與素材，遊戲渲染接入仍待預覽檢視。
+- 完成 Blender 製作與 GLB 重匯入：五動作原速、原地走路／攻擊根骨、保留跳躍與死亡倒地位移；獨立 Sword_R 為右手子骨，整把劍 100% 單骨權重。原劍裝飾／UV 保留，握柄及分節握拳自製；684 個來源取樣最大握點誤差低於 0.000001 米，實際匯出逐幀五片段全劍最低高度均大於 0.038 米。來源衣襬／披風的地面穿插沿用原權重，未另做布料物理。
+- NPC 原生 Excel 16.0 正常重開通過，兩張表的原資料／公式及原物件保留；新增七欄 W:AC、十列塔 BOSS 可各自編修。CSV→data 試跑語意變更 0，字串寫死 0。預覽由同份 NPC 表讀模型和動作。首頁僅 data／bridge 快取與 Claude 音效修改不同區段，共同祖先三方試跑 exit 0，未合入對方分支。
+- 相關六檔測試 42 項：39 通過，NPC-SKILL-4／NPC-SPRITE-4／NPC-SPRITE-5 三項既有失敗；隔離副本用修改前 HEAD 的工具、CSV、data 與原測試重跑，同名三項失敗。新增 3D／視野／Worker／快取四檔共 30/30 通過，未弱化原斷言；NPC-SKILL-1 僅擴充完整新表頭。Build、GIF 交付與雙倉庫提交結果見後續記錄。
+- `npm.cmd run build` 685 檔通過，15 份素材庫來源／專案輸出 SHA 檢查通過，原 NPC 的前 22 欄僅四格等值浮點文字由 2.2000000000000002 正規化為 2.2，IEEE 數值完全相同。六個 GIF 全幀解碼驗證、循環／尺寸／時長及中間影格目視通過：總覽 1920×1200，五個單動作各 1080×1144，25 fps 原速播放。來源授權、改動與唯讀檔、重建及風險詳見 docs/assets/TOWER_BOSS1_3D_SOURCE.md。
+- 唯讀未改：AI_RULES、AGENTS、Workflow、prompts/codex、現行 hero3d／battle-renderer、五個原始 GLB、Excel 更新器／CSV 匯出器、既有 NPC／視野／Worker 測試與規範。素材庫先提交 `7bcf74e9`，遊戲提交為本段所在 Commit。只有本輪預覽素材、配置、工具與交接，可供使用者審查；正式遊戲 3D 接入、命中事件對時、效能及實戰仍待預覽檢視。未合併、推送或發布。
+
 ## STARTUP-LOADING-20261106 — 以 Loading 取代自動開場
 
 - Owner：Codex，Done。沿用既有黑底 Loading，待自動存檔檢查與選單背景準備完成後顯示開始選單。移除短標題和首次序章的自動播放入口及舊網址參數，保留設定及 GM 手動播放。
@@ -15097,6 +15158,12 @@ Worker 存活且頁面正常完成載入。
 - 修改開始選單、UI 音訊、首頁快取、三份回歸測試、音效說明、解鎖總表及本段。唯讀核對音檔、設定面板與開機入口。沿用已歸檔素材，素材庫無變更。遊戲交付為本段所在提交，可供整合。
 - Edge 以真實 MP3／WAV 驗證兩檔在選單揭幕前請求、月暈音提前解碼。允許自動播放時配樂於揭幕後約 2ms 起播，首次滑入即播放月暈音。強制限制自動播放時，首次真實點擊後起播及解鎖懸停音。實測設定／成就續播、曲尾回到曲首、靜音與進入遊戲停止，Console error／warning 0。12 份相關 `node --test` 共 96/96、`npm.cmd run build`、字串與 diff 檢查通過。
 
+## START-MENU-AUDIO-BACKGROUND-20261107 — 開始畫面背景配樂
+
+- Owner：Codex，Done。開始畫面的配樂在分頁隱藏時繼續循環，仍遵循音量及全體靜音。成功進入遊戲或離開網頁時停止。背景的短介面音效仍由原有可見性流程清理。
+- 修改 UI 音訊、首頁快取、兩份音訊回歸、音效說明、解鎖總表與本段。唯讀核對開始選單生命週期。沿用已歸檔音檔，素材庫無變更。遊戲交付為本段所在提交，可供整合。
+- Edge 強制要求頁內操作時，重新整理後頁面已有焦點，仍要首次頁內點擊才起播。模擬分頁隱藏事件後，實際 MP3 的播放進度持續前進，曲尾正常循環，回到前景後進入遊戲時停止。Console error／warning 0。12 份相關 `node --test` 96/96、`npm.cmd run build`、字串與 diff 檢查通過。
+
 ## START-MENU-DUST-GUSTS-20261106 — 開始選單的地表陣風與遠山戰火
 
 - Owner：Codex，Done。依使用者回饋將固定位置的循環風沙改成不定時、不同位置掠過地表的陣風，並沿截圖圈出的三段遠山火線製作火光。陣風前緣向右移動，粒子分批抬升後各自消散。火線以底圖暖色遮罩保留山脊，疊加獨立起伏的反射光、火尖及少量火星，最遠一段保持較暗。
@@ -15120,3 +15187,17 @@ Worker 存活且頁面正常完成載入。
 - 檢查舊版與新版真實繪圖座標，拱門內各層速率比 1.25，中段 12.5 → 15 px/s、不透明度 0.29 → 0.377，風沙排程率比 1.30。固定種子驗證沙霧及沙粒後期的散布均比初期寬，粒子向右行進；兩分鐘取樣旗布陣風強度約 0.31–1.31、變化區間長度約 1.53–6.08 秒，六片旗布強風取樣 172,800 個三角形皆正向。
 - Edge 正式選單的 1920×869 畫幅讀回左上、拱門、中段、旗布、地表五區畫素，皆連續變化。減少動態仍播放，設定打開時暫停、返回後恢復，Console error／warning 0。以 `node --test` 跑 start-menu-background、start-menu、intro-player、intro-motion、vfx-preset-usage 與 vfx-editor-cache-versions 共 68/68 通過。Build 684 檔、字串寫死 0、diff 與雙庫 SHA 通過。
 - 唯讀核對原場景、背景掛載和遮罩、CSS 與規範。兩張圖像位元組與素材提示詞保持原樣。素材庫程式快照提交 `70c8befd`，遊戲提交見交付。可供驗收及整合，未做行動真機或跨瀏覽器驗證。
+
+## START-MENU-LOCAL-WEATHER-20261107 — 紅框內風沙濃霧及遠山火光
+
+- Owner：Codex，Done。依三張截圖把左下紅框換算為底圖的 184,433 起始、750×376 範圍。以與原本區內出現率相同的額外陣風，讓區內的濃霧與飛砂合計頻率加倍。陣風從上游掀起，額外濃霧與飛砂由區域羽化遮罩收邊。中段霧帶從 15 提升至 22.5 底圖像素／秒，右上三段共 14 個火點的火尖高度和光暈峰值加倍。
+- 修改背景程式、首頁背景快取、素材來源與程式快照／SHA、LV、介面特效及本段。唯讀核對原場景、前版速度與發生率、播放入口和規範。音效任務已獨立提交 `20cc800c`，本次提交只包含背景。
+- Edge 以正式 1920×869 選單確認局部效果合成、遮罩中心及四周漸淡、逐幀畫素變化，並保留全景動態及山火特寫。減少動態仍播放，設定打開時暫停、返回恢復，Console error／warning 0。比較前後真實繪圖邏輯，火尖和光暈倍率為 2，中段霧速倍率為 1.5，局部陣風排程率倍率為 2。
+- `node --test` 以 start-menu-background、start-menu、intro-player、intro-motion、vfx-preset-usage 與 vfx-editor-cache-versions 驗證，共 64/64 通過。Build 684 檔、字串寫死 0、diff 與雙庫 SHA 通過。素材庫提交 `852c51e1`，遊戲提交見交付。可供驗收與整合，未做行動真機及跨瀏覽器驗證。
+
+## START-MENU-FOREGROUND-FOG-20261108 — 紅框飛砂增量與緩行霧氣
+
+- Owner：Codex，Done。依新紅框換算底圖座標為 208,426 起始、756×405 範圍。局部陣風每批沙粒及飄砂束數量各加倍，另加一層獨立循環的前景霧氣，每秒向右移動 7.5 個底圖像素。霧氣在陣風間隙仍持續流動，由局部羽化遮罩柔和收邊。
+- 修改背景程式、首頁背景快取、素材來源與程式快照／SHA、LV、介面特效及本段。工作區乾淨、fetch 及逐檔預檢通過。唯讀檢查原場景、局部風砂與主頁掛載、素材工具及規範。
+- 固定亂數比對同一強度的局部陣風，沙粒為 315→630、飄砂束為 14→28。Edge 正式 1920×869 選單確認局部霧層每幀向右位移、畫素持續變化、增加後的飛砂及邊緣淡出；減少動態、設定開關暫停及返回通過，Console error／warning 0。保留動態預覽和截圖。
+- `node --test` 以 start-menu-background、start-menu、vfx-preset-usage 與 vfx-editor-cache-versions 共 39/39 通過。Build 684 檔、字串寫死 0、diff 與雙庫 SHA 通過。素材庫程式快照提交 `225a4e77`，遊戲提交見交付。可供驗收與整合，未做行動真機及跨瀏覽器驗證。

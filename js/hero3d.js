@@ -450,8 +450,8 @@
     var gltf = await new gltfMod.GLTFLoader().loadAsync(absUrl(opts.model || modelForReincarnations(opts.reincarnations)));
     var modelStyle = (gltf.asset && gltf.asset.extras) || {};
     if (modelStyle.pbrExternal === true) validateExternalPbr(gltf);
-    var pbr = false;
-    try { pbr = modelStyle.pbrEmbedded === true || modelStyle.pbrExternal === true || await restorePbrMaterials(THREE, gltf, modelStyle.appearance); }
+    var pbr = opts.pbr === true;
+    try { pbr = pbr || modelStyle.pbrEmbedded === true || modelStyle.pbrExternal === true || await restorePbrMaterials(THREE, gltf, modelStyle.appearance); }
     catch (err) { global.console.warn('[hero3d] PBR載入失敗，使用原有材質：', err && err.message ? err.message : err); }
 
     var size = opts.size || SIZE, span = opts.span || SPAN;      // 預設與遊戲相同；opts 只給驗證時放大看細節用
@@ -520,6 +520,7 @@
       skinIndex: skinForReincarnations(opts.reincarnations),
       canvas: canvas,
       size: size,
+      outlineEnabled: opts.outline !== false,
       /* 腳底在畫布裡的縱向位置（0＝上緣、1＝下緣）：正交鏡頭下，高度 h 的點離中心 (h − TARGET_Y)·cos(仰角) 公尺 */
       anchorY: 0.5 + TARGET_Y * Math.cos(e) / span,
       pxPerMeter: size / span,
@@ -545,7 +546,7 @@
     ctrl.play = function (cfg, fade) {
       var next = actions[cfg.clip];
       if (!next) return false;
-      if (next === current && cfg.loop) return true;
+      if (next === current && cfg.loop && currentCfg === cfg) return true;
       var prev = current;
       next.reset();
       next.enabled = true;
@@ -555,6 +556,7 @@
       next.time = cfg.reverse ? next.getClip().duration : (cfg.start || 0);
       next.setEffectiveWeight(1);
       next.play();
+      next.paused = !!cfg.still;
       if (prev && prev !== next && fade !== 0) next.crossFadeFrom(prev, fade == null ? FADE_SEC : fade, false);
       else if (prev && prev !== next) prev.stop();
       current = next;
@@ -655,7 +657,7 @@
     };
     ctrl.clips = Object.keys(actions);
     ctrl.update(0);
-    global.Hero3D.instance = ctrl;   // 除錯與驗證用（在 console 看畫布、手動播動作）
+    if (opts.registerInstance !== false) global.Hero3D.instance = ctrl;   // NPC 不取代主角除錯實例
     return ctrl;
   }
 
@@ -680,6 +682,7 @@
     sp.hero3dOutlineTex = otex;
     var OUTLINE_R = 2;   // 畫布像素；畫布縮到遊戲裡約 0.7 倍，所以螢幕上約 1.4 像素寬
     function drawOutline() {
+      if (ctrl.outlineEnabled === false) return;
       ox.globalCompositeOperation = 'source-over';
       ox.clearRect(0, 0, oc.width, oc.height);
       for (var a = 0; a < 8; a++) {

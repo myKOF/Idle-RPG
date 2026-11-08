@@ -16,7 +16,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261106-start-menu-skill-sfx-merge-v1';
+  var WORKER_ASSET_VERSION = '20261108-skeleton-sfx-merge';
   var _menuPaused = false;
   /* 開機等待：Loading 黑幕期間 Worker 不開始戰鬥，揭幕那一刻才放行。
      否則 Loading 期間模擬照跑、視覺事件堆在佇列，揭幕後一次播出（特效暴增、FPS 掉到個位數）。

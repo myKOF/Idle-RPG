@@ -1864,7 +1864,7 @@ var FIELD_DEATH_STAGE_RETREAT = 10; // 野外死亡退回階段數
 
 // ---- BOSS 高塔（元素 BOSS 以魔法攻擊） ----
 var BOSS_LIST = [
-  { name: '烈焰魔君', emoji: '🔥', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_flame.png', id: 'tower_boss_1', sightRange: 50, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
+  { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_1', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
   { name: '冰霜女皇', emoji: '❄️', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_ice.png', id: 'tower_boss_2', sightRange: 50, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
   { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_thunder.png', id: 'tower_boss_3', sightRange: 50, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
   { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_4', sightRange: 50, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },

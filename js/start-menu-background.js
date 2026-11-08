@@ -10,9 +10,21 @@ var StartMenuBackground = (function () {
   const FRAME_MS = 1000 / 30;
   const REDUCED_MOTION_SCALE = .65;
   const GATE_FOG_RATE = 1.25;
-  const MIDGROUND_FOG_RATE = 1.20;
+  const MIDGROUND_FOG_SPEED = 22.5;
   const MIDGROUND_FOG_DENSITY = 1.30;
   const DUST_GUST_RATE = 1.30;
+  const FIRE_INTENSITY = 2;
+  const DUST_ORIGINS = { x: -135, y: 535, w: WIDTH - 135, h: 362 };
+  // 紅框使用底圖座標，跟隨滿版裁切。
+  const LOCAL_HAZE = { x: 208, y: 426, w: 756, h: 405 };
+  const LOCAL_DUST_AMOUNT = 2;
+  const LOCAL_DUST_OVERLAP = LOCAL_HAZE.y + LOCAL_HAZE.h - DUST_ORIGINS.y;
+  // 陣風在區內偏上游處掀起，留足距離讓沙霧向右展開。
+  const LOCAL_DUST_ORIGINS = {
+    x: LOCAL_HAZE.x, y: DUST_ORIGINS.y, w: LOCAL_HAZE.w - 235, h: LOCAL_DUST_OVERLAP - 44
+  };
+  const LOCAL_DUST_RATE = DUST_GUST_RATE *
+    (LOCAL_HAZE.w * LOCAL_DUST_OVERLAP) / (DUST_ORIGINS.w * DUST_ORIGINS.h);
 
   // x, y, 寬, 高, 沿旗桿的斜率, 末端下垂, 振幅, 遠近色調
   const CLOTH = [
@@ -114,6 +126,27 @@ var StartMenuBackground = (function () {
     return mask;
   }
 
+  function makeLocalHaze() {
+    const { w, h } = LOCAL_HAZE;
+    const surface = canvas(w, h);
+    const mask = canvas(w, h);
+    const maskContext = mask.getContext('2d');
+    const horizontal = maskContext.createLinearGradient(0, 0, w, 0);
+    const vertical = maskContext.createLinearGradient(0, 0, 0, h);
+    for (const edge of [horizontal, vertical]) {
+      edge.addColorStop(0, 'transparent');
+      edge.addColorStop(.17, '#000');
+      edge.addColorStop(.81, '#000');
+      edge.addColorStop(1, 'transparent');
+    }
+    maskContext.fillStyle = horizontal;
+    maskContext.fillRect(0, 0, w, h);
+    maskContext.globalCompositeOperation = 'destination-in';
+    maskContext.fillStyle = vertical;
+    maskContext.fillRect(0, 0, w, h);
+    return { surface, mask, context: surface.getContext('2d') };
+  }
+
   function makeAtmosphere() {
     const sky = canvas(768, 432);
     const skyContext = sky.getContext('2d');
@@ -125,18 +158,23 @@ var StartMenuBackground = (function () {
     const leftBank = { tile: vaporTexture(512, 128, [64, 50, 42], 1003, true), w: 970, y: -38, h: 406, speed: 14.4, alpha: .67 };
     const midground = {
       tile: vaporTexture(512, 78, [160, 127, 94], 781, true), w: 1480, y: 354, h: 174,
-      speed: 12.5 * MIDGROUND_FOG_RATE, alpha: .29 * MIDGROUND_FOG_DENSITY
+      speed: MIDGROUND_FOG_SPEED, alpha: .29 * MIDGROUND_FOG_DENSITY
     };
-    for (const cloud of [...clouds, leftBank, midground]) cloud.pattern = skyContext.createPattern(cloud.tile, 'repeat-x');
+    const groundFog = {
+      tile: vaporTexture(512, 128, [161, 145, 122], 1207, true),
+      w: 1120, y: LOCAL_HAZE.y - 22, h: LOCAL_HAZE.h + 36, speed: 7.5, alpha: .38
+    };
+    for (const cloud of [...clouds, leftBank, midground, groundFog]) cloud.pattern = skyContext.createPattern(cloud.tile, 'repeat-x');
     const leftFade = skyContext.createLinearGradient(410, 0, 640, 0);
     leftFade.addColorStop(0, '#000');
     leftFade.addColorStop(1, 'transparent');
     // 裁切範圍落在拱門石材上，開口邊緣仍由原畫遮罩羽化。
     const gateBounds = 'M716 145H951V426H716Z';
     return {
-      sky, skyContext, clouds, leftBank, leftFade, midground, mask: skyMask(),
+      sky, skyContext, clouds, leftBank, leftFade, midground, groundFog, mask: skyMask(),
       gate: new Path2D(gateBounds),
       outsideGate: new Path2D('M0 0H' + WIDTH + 'V' + HEIGHT + 'H0Z ' + gateBounds),
+      localHaze: makeLocalHaze(),
       sand: vaporTexture(192, 48, [181, 138, 89], 561, false),
       haze: vaporTexture(192, 56, [141, 108, 76], 801, false),
       spirit: vaporTexture(64, 112, [115, 176, 154], 171, false)
@@ -324,7 +362,7 @@ var StartMenuBackground = (function () {
         pixels.data[i] = 255;
         pixels.data[i + 1] = Math.min(198, green + 58);
         pixels.data[i + 2] = blue + 24;
-        pixels.data[i + 3] = Math.round(255 * heat * falloff);
+        pixels.data[i + 3] = Math.round(255 * clamp(FIRE_INTENSITY * heat * falloff));
       }
     }
     sample.putImageData(pixels, 0, 0);
@@ -340,8 +378,8 @@ var StartMenuBackground = (function () {
       ctx.translate(center, center);
       ctx.scale(1.28, .85);
       const glow = ctx.createRadialGradient(0, -radius * .38, 0, 0, -radius * .38, radius * 1.43);
-      glow.addColorStop(0, 'rgba(216,86,39,.33)');
-      glow.addColorStop(.44, 'rgba(184,69,33,.16)');
+      glow.addColorStop(0, 'rgba(216,86,39,' + .33 * FIRE_INTENSITY + ')');
+      glow.addColorStop(.44, 'rgba(184,69,33,' + .16 * FIRE_INTENSITY + ')');
       glow.addColorStop(1, 'rgba(137,59,37,0)');
       ctx.fillStyle = glow;
       ctx.fillRect(-center, -center, center * 2, center * 2);
@@ -367,10 +405,10 @@ var StartMenuBackground = (function () {
       ctx.globalAlpha = strength * (.16 + .44 * roll + .40 * flicker);
       if (detail) ctx.drawImage(detail, x - radius, y - radius);
 
-      const tongue = strength * (1 + 4.8 * roll * flicker);
+      const tongue = FIRE_INTENSITY * strength * (1 + 4.8 * roll * flicker);
       const bend = Math.sin(time * rate * 3 + phase) * 1.3;
       ctx.fillStyle = '#ffba7b';
-      ctx.globalAlpha = strength * flicker * roll * .57;
+      ctx.globalAlpha = clamp(FIRE_INTENSITY * strength * flicker * roll * .57);
       ctx.beginPath();
       ctx.moveTo(x - .9, y + .5);
       ctx.quadraticCurveTo(x - 1.2, y - tongue * .52, x + bend + .5, y - tongue);
@@ -379,7 +417,7 @@ var StartMenuBackground = (function () {
       for (const spark of sparks) {
         const age = mod(time + spark.phase, spark.life) / spark.life;
         const lift = Math.sin(Math.PI * age);
-        ctx.globalAlpha = strength * lift * lift * (.22 + .32 * flicker);
+        ctx.globalAlpha = clamp(FIRE_INTENSITY * strength * lift * lift * (.22 + .32 * flicker));
         const emberX = x + spark.drift * age + Math.sin(age * 5 + phase) * age * 2;
         const emberY = y - spark.rise * age;
         ctx.fillRect(emberX, emberY, spark.size * 1.3, spark.size);
@@ -388,10 +426,10 @@ var StartMenuBackground = (function () {
     ctx.globalAlpha = 1;
   }
 
-  function makeDustGust(start) {
+  function makeDustGust(start, area, amount) {
     const random = Math.random;
-    const near = random(), depth = .58 + near * .89;
-    const x = -135 + random() * (WIDTH - 135), y = 535 + near * 362;
+    const y = area.y + random() * area.h, x = area.x + random() * area.w;
+    const depth = .58 + (y - DUST_ORIGINS.y) / DUST_ORIGINS.h * .89;
     const release = .65 + random() * 2.95, strength = .31 + random() * .69;
     const sweep = depth * (120 + random() * 235);
     const span = depth * (185 + random() * 195), slope = (random() - .5) * 37;
@@ -411,11 +449,11 @@ var StartMenuBackground = (function () {
       };
     }
 
-    const grains = Array.from({ length: Math.round(156 + strength * 243) }, () => ({
+    const grains = Array.from({ length: Math.round(156 + strength * 243) * amount }, () => ({
       ...liftOff(), speed: depth * push * (35 + random() * 111), life: .54 + random() * 1.57,
       loft: depth * (2 + random() * 13), size: depth * (.25 + random() * random() * 1.35)
     }));
-    const trails = Array.from({ length: Math.round(6 + strength * 12) }, () => ({
+    const trails = Array.from({ length: Math.round(6 + strength * 12) * amount }, () => ({
       ...liftOff(), speed: depth * push * (38 + random() * 48), life: 1.7 + random() * 2.9,
       loft: depth * (2 + random() * 8), breadth: .66 + random() * .68, pale: random() > .46
     }));
@@ -434,8 +472,8 @@ var StartMenuBackground = (function () {
   function drawDust(ctx, textures, dust, time, motionScale) {
     if (time >= dust.next) {
       // 只排入當下的陣風，慢幀後不補播已錯過的沙塵。
-      dust.gusts.push(makeDustGust(Math.max(dust.next, time - .9)));
-      dust.next = time + (1.02 + Math.pow(Math.random(), 1.6) * 4.2) / DUST_GUST_RATE;
+      dust.gusts.push(makeDustGust(Math.max(dust.next, time - .9), dust.area, dust.amount));
+      dust.next = time + (1.02 + Math.pow(Math.random(), 1.6) * 4.2) / dust.rate;
     }
     dust.gusts = dust.gusts.filter(gust => time < gust.end);
     for (const { depth, strength, trails } of dust.gusts) {
@@ -445,7 +483,7 @@ var StartMenuBackground = (function () {
         if (progress <= 0 || progress >= 1) continue;
         const fade = Math.sin(progress * Math.PI);
         const width = (46 + 194 * progress) * depth * trail.breadth;
-        const height = (5 + 29 * progress * progress) * depth * trail.breadth;
+        const height = (5 + 29 * progress * progress) * depth * trail.breadth * dust.fogHeight;
         const turn = (.12 * Math.sin(trail.phase + progress * 5) + trail.drift * .003) * progress;
         ctx.save();
         ctx.translate(sandX(trail, age, progress), sandY(trail, progress, fade));
@@ -469,6 +507,22 @@ var StartMenuBackground = (function () {
       }
     }
     ctx.globalAlpha = 1;
+  }
+
+  function drawLocalDust(ctx, atmosphere, dust, time, motionScale) {
+    const { x, y, w, h } = LOCAL_HAZE;
+    const { surface, mask, context } = atmosphere.localHaze;
+    context.clearRect(0, 0, w, h);
+    context.save();
+    context.translate(-x, -y);
+    cloudStrip(context, atmosphere.groundFog, time);
+    drawDust(context, atmosphere, dust, time, motionScale);
+    context.restore();
+    context.save();
+    context.globalCompositeOperation = 'destination-in';
+    context.drawImage(mask, 0, 0);
+    context.restore();
+    ctx.drawImage(surface, x, y);
   }
 
   function layer(host, el, style) {
@@ -499,7 +553,12 @@ var StartMenuBackground = (function () {
     const atmosphere = ctx && makeAtmosphere();
     let disposed = false, inView = false, frame = null, previous = null;
     let sprites, fires, time = 5.6, lastPaint = -Infinity;
-    const dust = { gusts: [], next: time - .9 };
+    const dust = { gusts: [], next: time - .9, area: DUST_ORIGINS, rate: DUST_GUST_RATE, fogHeight: 1, amount: 1 };
+    // 加一條與原區域出現率相同的獨立陣風，使區內頻率加倍。
+    const localDust = {
+      gusts: [], next: time - .7, area: LOCAL_DUST_ORIGINS, rate: LOCAL_DUST_RATE,
+      fogHeight: 1.85, amount: LOCAL_DUST_AMOUNT
+    };
     const clothWind = { end: time, last: time, phase: time * 4.2, to: .72 };
 
     function draw() {
@@ -515,6 +574,7 @@ var StartMenuBackground = (function () {
       }
       drawWisps(ctx, atmosphere.spirit, time);
       drawDust(ctx, atmosphere, dust, time, motionScale);
+      drawLocalDust(ctx, atmosphere, localDust, time, motionScale);
     }
 
     function tick(now) {
@@ -591,6 +651,7 @@ var StartMenuBackground = (function () {
         sprites = null;
         fires = null;
         dust.gusts.length = 0;
+        localDust.gusts.length = 0;
         root.remove();
       }
     };

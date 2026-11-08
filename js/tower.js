@@ -48,6 +48,7 @@ function makeBoss(floor) {
   var bs = bossStatsFor(floor);              // BOSS 數值公式 → formula.js §4
   var b = {
     name: STR(1821, floor, bd.name), emoji: bd.emoji, img: bd.img,
+    npcId: bd.id || null, model3d: bd.model3d || null,
     hell: !!bs.hell,
     purgatory: !!bs.purgatory,
     level: bs.level,

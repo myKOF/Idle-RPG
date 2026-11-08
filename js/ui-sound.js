@@ -66,7 +66,7 @@ var UISound = (function () {
   function syncMenuMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    var shouldPlay = startScreenActive && !document.hidden && volume > 0;
+    var shouldPlay = startScreenActive && volume > 0;
     try {
       if (shouldPlay) prepareMenuMusic();
       if (!menuMusic) return;
@@ -194,7 +194,7 @@ var UISound = (function () {
     document.addEventListener('pointerover', menuPointerOver, true);
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) stopAll();
-      syncMenuMusic();
+      else syncMenuMusic();
     });
     window.addEventListener('pagehide', function () {
       stopAll();

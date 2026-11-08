@@ -203,7 +203,7 @@ test('an outstanding hover decode expires when the start menu is hidden and reop
   assert.deepEqual(s.played, []);
 });
 
-test('start menu music loops, retries autoplay after a gesture, and follows volume, mute and visibility', async () => {
+test('start menu music loops, retries autoplay after a gesture, and keeps playing in the background', async () => {
   const s = mount({ blockAutoplay: true });
   assert.equal(s.music.length, 0);
   s.c.UISound.preloadStartMenuAudio();
@@ -231,8 +231,17 @@ test('start menu music loops, retries autoplay after a gesture, and follows volu
   s.c.UISound.setStartMenuVisible(true);
   assert.equal(track.paused, false);
   assert.equal(track.currentTime, 15);
+  const attemptsBeforeHide = track.attempts;
   s.c.document.hidden = true; s.fire('visibilitychange');
+  assert.equal(track.paused, false);
+  assert.equal(track.attempts, attemptsBeforeHide);
+  s.setPreference('musicVolume', 24);
+  assert.equal(track.volume, .24);
+  assert.equal(track.paused, false);
+  s.setPreference('mute', true);
   assert.equal(track.paused, true);
+  s.setPreference('mute', false);
+  assert.equal(track.paused, false);
   s.c.document.hidden = false; s.fire('visibilitychange');
   assert.equal(track.paused, false);
   s.fire('pagehide');
