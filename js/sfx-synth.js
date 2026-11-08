@@ -479,6 +479,14 @@ var SfxSynth = (function () {
     chain(noise(ac, t, 0.45), bp, fl, env(ac, t, 0.004, 0.9, 0.38), out);                   // 「嘩」
     for (var i = 0; i < 7; i++) bubble(ac, out, t + 0.03 + Math.random() * 0.35, (500 + Math.random() * 1300) * k, 0.03 + Math.random() * 0.04, 0.2, Math.random() * 1.2 - 0.6);   // 水花
   }
+  function abyssVortex(ac, out, t, R) {   // 海淵葬界領域每拍：水被往下捲的「咻嚕——」（2026-11-08 使用者從第 2 輪候選選定）
+    var k = R(0.94, 1.06), len = 0.45;
+    var bp = filt(ac, 'bandpass', 1500, 2.5); sweep(bp.frequency, t, [[0, 2200 * k], [len, 350 * k]]);
+    var fl = ac.createGain(); flutter(fl.gain, t, len, 0.4, 1, 0.015, 0.04);
+    var p = ac.createStereoPanner(), lfo = osc(ac, 'sine', t, len + 0.05); lfo.frequency.value = 3; chain(lfo, gain(ac, 0.6), p.pan);   // 水流繞一圈
+    chain(noise(ac, t, len + 0.05), bp, fl, rampGain(ac, t, [[0, 0.0001], [0.06, 0.7], [len, 0.0001]]), p, out);
+    for (var i = 0; i < 5; i++) bubble(ac, out, t + 0.1 + i * 0.06 + Math.random() * 0.03, (420 - i * 45) * k, 0.05, 0.18, Math.random() * 0.8 - 0.4);   // 咕嚕
+  }
   function waterTornado(ac, out, t, R, dur) { dur = dur || 3;
     var bp = filt(ac, 'bandpass', 800, 1.2); flutter(bp.frequency, t, dur, 450, 1500, 0.06, 0.15);
     var p = ac.createStereoPanner(), lfo = osc(ac, 'sine', t, dur + 0.05); lfo.frequency.value = 0.8; chain(lfo, gain(ac, 0.6), p.pan);
@@ -646,6 +654,7 @@ var SfxSynth = (function () {
     'waterball':          d(waterball, 1.6),
     'water-tornado':      d(waterTornado, 0.7, LOOP),
     'tide-column':        d(tideColumn, 0.95),
+    'abyss-vortex':       d(abyssVortex, 1.73),       // 領域每拍都響，刻意比水流彈命中小聲約三成
     'frostnova':          d(frostnova, 1.3),
     'blizzard':           d(blizzard, 1.1, LOOP),
     'ice-spike':          d(iceSpike, 2.0),
