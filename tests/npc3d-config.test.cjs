@@ -16,11 +16,12 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
   const current = bosses(source);
   assert.equal(result.length, 50);
   for (let i = 0; i < result.length; i++) {
-    if (i % 10 < 2) {
-      assert.equal(result[i].name, i % 10 === 1 ? "骷髏王Ⅱ" : "骷髏王");
-      assert.equal(result[i].img, i % 10 === 1 ? 'sprites/boss/boss_skeleton_king_lv2.png' : 'sprites/boss/boss_skeleton_king.png');
+    if (i === 2 || i % 10 < 2) {
+      const variant = i === 2 ? 3 : i % 10 + 1;
+      assert.equal(result[i].name, ['骷髏王', '骷髏王Ⅱ', '骷髏王Ⅲ'][variant - 1]);
+      assert.equal(result[i].img, 'sprites/boss/boss_skeleton_king' + (variant === 1 ? '' : '_lv' + variant) + '.png');
       assert.ok(fs.existsSync(path.join(root, 'images', result[i].img)));
-      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss' + (i % 10 === 1 ? 2 : 1) + '.glb');
+      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss' + variant + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
     } else assert.equal(result[i].model3d, undefined, 'other bosses retain their existing appearance');
     assert.equal(result[i].id, 'tower_boss_' + (i + 1));
@@ -61,7 +62,7 @@ test('empty model and clip cells clear a binding while preserving the legacy ima
   assert.equal(result[0].img, bosses(source)[0].img);
 });
 
-for (const model of ['boss1', 'boss2']) test(model + ': sword is a separate rigid mesh under the right hand and all five clips exist', () => {
+for (const model of ['boss1', 'boss2', 'boss3']) test(model + ': sword is a separate rigid mesh under the right hand and all five clips exist', () => {
   const bytes = fs.readFileSync(path.join(root, 'images/models/npc3d/' + model + '.glb'));
   const jsonSize = bytes.readUInt32LE(12);
   const gltf = JSON.parse(bytes.subarray(20, 20 + jsonSize).toString('utf8'));
@@ -116,8 +117,8 @@ for (const model of ['boss1', 'boss2']) test(model + ': sword is a separate rigi
   }
 });
 
-test('second boss retains the supplied material variant instead of duplicating the first appearance', () => {
-  const models = ['boss1','boss2'].map(name => {
+test('all three bosses retain distinct supplied base-color textures', () => {
+  const models = ['boss1','boss2','boss3'].map(name => {
     const bytes = fs.readFileSync(path.join(root, 'images/models/npc3d/' + name + '.glb'));
     const length = bytes.readUInt32LE(12);
     return { bytes, gltf: JSON.parse(bytes.subarray(20, 20 + length)), binaryStart: length + 28 };
@@ -130,5 +131,7 @@ test('second boss retains the supplied material variant instead of duplicating t
     const view = gltf.bufferViews[gltf.images[texture.source].bufferView];
     return bytes.subarray(binaryStart + (view.byteOffset || 0), binaryStart + (view.byteOffset || 0) + view.byteLength);
   });
-  assert.equal(colorBytes[0].equals(colorBytes[1]), false);
+  for (let i = 0; i < colorBytes.length; i++) {
+    for (let j = i + 1; j < colorBytes.length; j++) assert.equal(colorBytes[i].equals(colorBytes[j]), false);
+  }
 });

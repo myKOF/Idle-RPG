@@ -443,6 +443,56 @@
     };
   }
 
+  /* 接地腳掌相對身體向後滑行的速度，就是原速動作對應的地面移速。
+     只在NPC要求時量測；獨立mixer還原綁定，玩家3D不增加載入成本。 */
+  function measureLocomotion(THREE, model, clip) {
+    if (!clip || !(clip.duration > 0)) return 0;
+    var toes = [], feet = [], hips = null;
+    model.traverse(function (node) {
+      if (!node.isBone) return;
+      if (/(Left|Right)ToeBase$/i.test(node.name)) toes.push(node);
+      else if (/(Left|Right)Foot$/i.test(node.name)) feet.push(node);
+      if (/Hips$/i.test(node.name)) hips = node;
+    });
+    var contacts = toes.length === 2 ? toes : feet;
+    if (contacts.length !== 2) return 0;
+    var mixer = new THREE.AnimationMixer(model), action = mixer.clipAction(clip);
+    var samples = [[], []], point = new THREE.Vector3(), firstHip = null, lastHip = null;
+    var steps = Math.max(2, Math.ceil(clip.duration * 60)), step = clip.duration / steps;
+    try {
+      action.setLoop(THREE.LoopOnce, 1); action.clampWhenFinished = true; action.play();
+      for (var i = 0; i <= steps; i++) {
+        mixer.setTime(i * step); model.updateMatrixWorld(true);
+        for (var foot = 0; foot < 2; foot++) {
+          contacts[foot].getWorldPosition(point);
+          samples[foot].push({ x: point.x, y: point.y, z: point.z });
+        }
+        if (hips) {
+          hips.getWorldPosition(point);
+          if (!firstHip) firstHip = point.clone();
+          lastHip = point.clone();
+        }
+      }
+    } finally { mixer.stopAllAction(); mixer.uncacheRoot(model); model.updateMatrixWorld(true); }
+    var velocities = [];
+    samples.forEach(function (track) {
+      var lo = Infinity, hi = -Infinity;
+      track.forEach(function (p) { lo = Math.min(lo, p.y); hi = Math.max(hi, p.y); });
+      var contactY = lo + (hi - lo) * .3 + .000001;
+      for (var i = 1; i < track.length; i++) {
+        var a = track[i - 1], b = track[i];
+        if (a.y <= contactY && b.y <= contactY) {
+          var speed = Math.hypot(b.x - a.x, b.z - a.z) / step;
+          if (speed > .0001 && isFinite(speed)) velocities.push(speed);
+        }
+      }
+    });
+    velocities.sort(function (a, b) { return a - b; });
+    var planted = velocities.length ? velocities[Math.floor(velocities.length / 2)] : 0;
+    var root = firstHip ? Math.hypot(lastHip.x - firstHip.x, lastHip.z - firstHip.z) / clip.duration : 0;
+    return Math.max(planted, root);
+  }
+
   async function create(opts) {
     opts = opts || {};
     var THREE = await import('three');
@@ -513,6 +563,8 @@
 
     var mixer = new THREE.AnimationMixer(gltf.scene);
     var actions = {};
+    var locomotion = opts.locomotionClip ? measureLocomotion(THREE, gltf.scene,
+      gltf.animations.filter(function (clip) { return clip.name === opts.locomotionClip; })[0]) : 0;
     gltf.animations.forEach(function (c) { actions[c.name] = mixer.clipAction(c); });
 
     var ctrl = {
@@ -524,6 +576,7 @@
       /* 腳底在畫布裡的縱向位置（0＝上緣、1＝下緣）：正交鏡頭下，高度 h 的點離中心 (h − TARGET_Y)·cos(仰角) 公尺 */
       anchorY: 0.5 + TARGET_Y * Math.cos(e) / span,
       pxPerMeter: size / span,
+      locomotionMetersPerSecond: locomotion,
       clip: '',
       onFinished: null,
       yaw: Math.PI / 2,              // 預設面向右（與 2D 的 defaultDirection 0 一致）

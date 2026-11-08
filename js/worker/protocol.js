@@ -108,7 +108,8 @@
 // v71：太古精鑄新增可選 equipmentOrigin，成功／取消還原原套原欄，指令數不變。
 // v72：神鑄rate新增materialCost／affordableStones；太古精鑄依次數與成功率級距消耗太古精華。
 // v73（2026-11-06 技能音效）：vfx 事件新增可選 sfx＝{ cast, attack, projectile, hit, ground, field } 角色 → 音效 id；act 新增可選 sfx（施放音效）。
-var WORKER_PROTOCOL_VERSION = 73;
+// v74：battle.tower.arena 為權威固定世界中心／範圍及法陣基準畫面；不改指令或存檔。
+var WORKER_PROTOCOL_VERSION = 74;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

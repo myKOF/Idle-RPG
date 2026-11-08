@@ -277,6 +277,14 @@ var BossArena = (function () {
     g.fillStyle = gr;
     g.fillRect(0, 0, size, size);
   }
+  // 權威場地為矩形：整個合法區域保持地板可見，只在界外漸暗。
+  function drawArenaBounds(g, size) {
+    var c = size / 2, half = c / ABYSS_SPAN;
+    g.fillStyle = 'rgba(0,0,0,0.97)'; g.fillRect(0, 0, size, size);
+    g.save(); g.globalCompositeOperation = 'destination-out';
+    g.fillStyle = '#000'; g.shadowColor = '#000'; g.shadowBlur = 4;
+    g.fillRect(c - half, c - half, half * 2, half * 2); g.restore();
+  }
   // 畫面四周的心跳光暈（白色，螢幕層 tint＋加色）
   function drawEdgeGlow(g, size) {
     var c = size / 2;
@@ -340,6 +348,7 @@ var BossArena = (function () {
     T.coreGlow = tex(paint(SIGIL_SIZE, SIGIL_SIZE, function (g) { drawSigilCore(g, seed ^ 2, true); }));
     T.cracks = tex(paint(CRACK_SIZE, CRACK_SIZE, function (g) { drawCracks(g, seed ^ 3, CRACK_INNER); }));
     T.abyss = tex(paint(256, 256, function (g) { drawAbyss(g, 256); }));
+    T.arenaBounds = tex(paint(256, 256, function (g) { drawArenaBounds(g, 256); }));
     T.edge = tex(paint(256, 256, function (g) { drawEdgeGlow(g, 256); }));
     T.contact = tex(paint(180,64,function(g){DecorNature.drawContact(g,90,32,138,seed^19,environmentStyle(pal));}));
     T.fog = tex(paint(96,96,function(g){var gr=g.createRadialGradient(48,48,0,48,48,48);gr.addColorStop(0,'rgba(210,211,196,.4)');gr.addColorStop(.6,'rgba(180,182,172,.15)');gr.addColorStop(1,'transparent');g.fillStyle=gr;g.fillRect(0,0,96,96);}));
@@ -423,7 +432,9 @@ var BossArena = (function () {
       R.cx = o.cx; R.cy = o.cy;
       R.time = 0; R.ignite = 0; R.enraged = false; R.enrageFlash = 0;
       R.rng = A.mulberry(A.strHash(tierKey + ':' + Math.round(o.cx) + ':' + Math.round(o.cy)));
-      var W = o.W || 800, H = o.H || 800;
+      R.bounds = o.arena || null;
+      var W = R.bounds ? R.bounds.viewWidth : (o.W || 800);
+      var H = R.bounds ? R.bounds.viewHeight : (o.H || 800);
       R.viewH = H;
       // 圓場（世界單位）：橫向約畫面寬的 0.46，縱向約畫面高的 0.4（畫面上是一半，所以世界單位要除以 groundScale）
       R.rx = Math.max(260, Math.min(560, W * 0.46));
@@ -432,9 +443,10 @@ var BossArena = (function () {
       R.sigilR = sigilR;
       var pb = opts.planeBase, pg = opts.planeGlow;
       // 深淵（最底，非等比縮放成圓場的橢圓）
-      var ab = sprite(T.abyss, pb);
+      var ab = sprite(R.bounds ? T.arenaBounds : T.abyss, pb);
       ab.anchor.set(0.5);
-      ab.width = R.rx * 2 * ABYSS_SPAN; ab.height = R.ry * 2 * ABYSS_SPAN;
+      ab.width = (R.bounds ? R.bounds.halfWidth : R.rx) * 2 * ABYSS_SPAN;
+      ab.height = (R.bounds ? R.bounds.halfHeight : R.ry) * 2 * ABYSS_SPAN;
       ab.x = R.cx; ab.y = R.cy;
       R.base.push(ab);
       // 法陣刻痕（暗色、一般混色）
@@ -748,7 +760,8 @@ var BossArena = (function () {
       return {
         enabled: enabled, on: R.on, tier: R.tier, element:R.element||null, lightColor:R.T?R.T.pal.glow:null, props: R.props.length, glow: R.glow.length,
         localParticles:R.local.length, particles: R.particles.length, title: !!R.title, enraged: R.enraged,
-        center: R.on ? { x: R.cx, y: R.cy, rx: R.rx, ry: R.ry, sigilR: R.sigilR } : null
+        center: R.on ? { x: R.cx, y: R.cy, rx: R.rx, ry: R.ry, sigilR: R.sigilR } : null,
+        bounds: R.on ? R.bounds : null
       };
     }
 

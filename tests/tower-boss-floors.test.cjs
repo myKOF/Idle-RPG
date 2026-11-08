@@ -22,16 +22,33 @@ function formulaContext() {
   return c;
 }
 
-test('TBF-1 NPC 表有 50 列 tower_boss，依關卡順序；倍率欄預填 1、其他類型留白', () => {
+test('TBF-1 NPC 表有 50 個獨立 tower_boss，Excel、CSV 與執行資料依關卡一致', () => {
   const rows = cfg.csvParse(read('config/CSV/NPC.csv')).filter(r => r.length > 1);
   const h = rows.shift(), i = n => h.indexOf(n);
   const towers = rows.filter(r => r[i('類型')] === 'tower_boss');
   assert.deepEqual(towers.map(r => r[i('NPC識別碼')]), Array.from({ length: 50 }, (_, k) => 'tower_boss_' + (k + 1)));
-  towers.forEach(r => MULTS.forEach(([label]) => assert.equal(r[i(label)], '1', r[0] + ' ' + label)));
   rows.filter(r => r[i('類型')] !== 'tower_boss').forEach(r => MULTS.forEach(([label]) => assert.equal(r[i(label)], '', r[0] + ' ' + label)));
-  // 第 11~50 關的初始內容沿用原本 10 隻循環（外觀、技能、移動／攻擊都一樣）
-  const same = ['NPC名稱', '屬性', '外觀', '站立圖像', '移動速度(米/秒)', '攻擊速度(次/秒)', '攻擊距離(米)', '魔法型（1是／0否）', '專屬技能', '隨機技能下限', '隨機技能上限', '3D模型'];
-  towers.slice(10).forEach((r, k) => same.forEach(n => assert.equal(r[i(n)], towers[k % 10][i(n)], r[0] + ' ' + n)));
+
+  const excel = cfg.readXlsxRows(path.join(root, 'config/Excel/NPC.xlsx'), 'NPC');
+  const excelHeader = excel.shift();
+  const excelRows = new Map(excel.map(row => [row[excelHeader.indexOf('NPC識別碼')], row]));
+  const runtimeRows = new Map(sc.extract(source)
+    .filter(row => row[col('類型')] === 'tower_boss')
+    .map(row => [row[col('NPC識別碼')], row]));
+  const runtimeFields = h.filter(name => !['縮放比', '出現權重', '備註', '圖像備註'].includes(name));
+  const cell = value => String(value ?? '').replace(/\r\n/g, '\n');
+  assert.equal(runtimeRows.size, 50);
+  for (const row of towers) {
+    const id = row[i('NPC識別碼')];
+    assert.ok(excelRows.has(id), id + ' Excel row');
+    assert.ok(runtimeRows.has(id), id + ' runtime row');
+    for (const field of h) {
+      assert.equal(cell(row[i(field)]), cell(excelRows.get(id)[excelHeader.indexOf(field)]), id + ' Excel ' + field);
+    }
+    for (const field of runtimeFields) {
+      assert.equal(cell(runtimeRows.get(id)[col(field)]), cell(row[i(field)]), id + ' runtime ' + field);
+    }
+  }
 });
 
 test('TBF-2 樓層對應：第 n 關用 tower_boss_n，51／101 層回到第 1 關那列', () => {
@@ -94,5 +111,34 @@ test('TBF-5 套用：可增減關數（從 1 依序），魔法型決定元素�
   assert.equal(list[50].name, '新關卡魔像');
   assert.equal(list[50].elem, 'lightning');
   assert.equal(list[3].elem, null);
+});
+
+test('TBF-6 單關速度與倍率可獨立調整，僅該列及其後續塔別沿用', () => {
+  const rows = sc.extract(source).map(row => row.slice());
+  const listOf = () => cfg.evalLiteral(cfg.extractLiteral(sc.rebuild(rows, sc.header, source).BOSS_LIST, 'BOSS_LIST').literal);
+  const beforeList = listOf();
+  const c = formulaContext();
+  const before11 = c.bossStatsFor(11);
+  const before61 = c.bossStatsFor(61);
+  const before111 = c.bossStatsFor(111);
+  const row = rows.find(entry => entry[0] === 'tower_boss_11');
+  row[col('移動速度(米/秒)')] = '7.25';
+  row[col('攻擊速度(次/秒)')] = '0.8';
+  row[col('攻擊距離(米)')] = '17';
+  row[col('生命倍率')] = String(Number(row[col('生命倍率')] || 1) * 2.5);
+  const afterList = listOf();
+  const otherRows = list => list.filter(entry => entry.id !== 'tower_boss_11');
+  assert.equal(JSON.stringify(otherRows(afterList)), JSON.stringify(otherRows(beforeList)), '其他49列完整保留');
+  vm.runInContext('BOSS_LIST = ' + JSON.stringify(afterList), c);
+  for (const floor of [11, 61, 111]) {
+    const def = c.towerBossDefFor(floor);
+    assert.equal(def.id, 'tower_boss_11');
+    assert.equal(def.runSpeed, 7.25);
+    assert.equal(def.atkSpeed, 0.8);
+    assert.equal(def.atkRange, 17);
+  }
+  for (const [floor, before] of [[11, before11], [61, before61], [111, before111]]) {
+    assert.equal(c.bossStatsFor(floor).hp, before.hp * 2.5, 'floor ' + floor);
+  }
 });
 

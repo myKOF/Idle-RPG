@@ -1,3 +1,54 @@
+## SYNC-20261109-TOWER — 整合塔戰邊界與獨立BOSS配置
+
+- Owner：Codex，Done，合併及驗證完成。使用者以 1 授權接續 develop 8602ab6c 與 incoming 74afdf12。保留主線反擊音量、新塔戰邊界／步幅、第3關模型、音樂與遠景，以及使用者各關獨立調整。
+- 自動流程因 TBF-1 對複製列強制相等而停止。已核對原始需求為 50 關數值各自獨立，74afdf12 是單側明確調整。修正測試為 Excel／CSV／每關執行資料對應，新增單關調整隔離與 51～150 層沿用驗證，保留數量、順序、欄位與非法倍率檢查。
+- 範圍為原合併、index 與 scene-preview 必要快取、上述測試與本段。預檢完成，已知 incoming 是本次授權來源。驗收塔戰／模型步幅／Worker／鏡頭／音樂／文字、素材來源與 Build，再正常同步所有可同步 AI 成果。
+- 原阻塞已釐清。需求紀錄 TOWER-BOSS-PER-FLOOR 明定 1～50 關獨立配置，原測試把初始複製內容當成永久契約。本輪 TBF-1 保留 50 關順序及非塔倍率欄限制，改為逐列比對 Excel／CSV 及 BOSS_LIST 可投影欄位。TBF-4 的非法倍率拒絕檢查保留，新增 TBF-6 驗證單關速度／攻速／距離及生命倍率可獨立改動、其他49列完整保留，第61／111層使用第11列。六項 tower-boss-floors 回歸通過。
+- 只額外修改 tests/tower-boss-floors.test.cjs、docs/AI_TASKS.md、index.html 及 tools/scene-preview.html 的 renderer 快取。兩頁統一 20261109-tower-audio-merge，保留反擊音量版號 counter-louder。NPC／Zones 的 Excel、CSV、data 及模型／頭像逐位等於 incoming，反擊程式逐位等於原 HEAD。
+- 回歸指令 node --test --test-concurrency=2 --test-reporter=tap，明確傳入 battlefield、battlefield-rt、battle-arena、battle-camera-distance、tower-arena-bounds、tower-battlefield、tower-auto-result、tower-auto-advance、tower-scene-intro、tower-boss3d、tower-boss-floors、tower-boss-move-attack、tower-rewards-ui、npc3d-config、npc3d-runtime、npc3d-locomotion、worker-protocol、worker-shim、vfx-editor-cache-versions、ui-achievement-sound、ui-sound、zone-music、skill-sfx、vfx-preset-usage 的 tests/*.test.cjs 及 PowerShell 展開全部 hero3d-*.test.cjs。280項277通過，3項 tower-rewards-ui 失敗以唯讀fs overlay重跑原8602ab6c逐名相同，均為既有測試缺 divineStoneIconHTML 的環境。其他測試斷言完整保留。
+- npm.cmd run build通過695檔。NPC／Zones生成試跑各11／4字面值、語意變更0，String2421條／370a19ab同步。三個模型來源檢查分別34／29／30檔通過，開始選單來源核對通過，第二首荒漠配樂與授權manifest／素材庫SHA一致。素材庫3316f3e5已對齊遠端，本輪沿用既有來源。
+- 唯讀檢查規範／Workflow／Agent文件、原三方版本、配置與既有測試。紀錄 logs/sync-20261109-tower-{config,regression,ui-baseline}.tap 及 sync-20261109-tower-build.log。本輪執行相關回歸與來源驗證，未執行全庫或瀏覽器長玩。已知限制為上述3項原有UI測試失敗，本項實作完成，合併提交及同步SHA見交付。
+
+## SYNC-PENDING-20261109-001635 ? tower / audio integration
+
+- Owner: Codex; Blocked (regression). Authorized pending merge only: HEAD 8602ab6cc6c1d68c236ab701be1532bff9a5d7b5 / MERGE_HEAD 74afdf12f779bf7b37ff939ca2b2b41c4e350bf1; base 8c4cf1c99165d496ec88883437ca18ae0666ff2f. Scope: index conflict, necessary cache/generated corrections, validation and this record. No staging, commits, metadata writes, delegation or other-worktree edits.
+- Three-way inspection: ours raises counter gain 1.1 to 1.9 and bumps its URL; theirs adds tower bounds/gait, third boss, music playlist and background improvements. Preserve both code intents, keep counter-louder URL, assign fresh renderer cache 20261109-sync-79dd5b7d. Excel files are incoming clean merges, not original conflicts; do not modify workbook bytes.
+- Precheck executed; known incoming ai/codex overlap is explicitly authorized. Other-worktree reads within the precheck hit dubious ownership; no trust settings changed. Controller owns staging and merge commit.
+
+- Validation: `node tools/config_tables.cjs --apply NPC` dry-run: 11 literals, zero semantic changes; `node tools/config_tables.cjs --apply Zones` dry-run: 4 literals, zero semantic changes. `npm.cmd run build`: all 695 files passed. `node --test --test-concurrency=2 --test-reporter=dot $testFiles`, with PowerShell-selected battlefield/battle-arena/battle-camera-distance/tower-/npc3d-/hero3d-/worker-protocol/worker-shim/vfx-editor-cache-versions/ui-achievement-sound/zone-music/sfx test files: four failures. Three tower-rewards-ui failures are the pre-existing divineStoneIconHTML missing test context; TBF-1 fails on tower_boss_11 movement speed 21 versus 12.
+- Correct original baseline verified using a read-only Node fs overlay backed by `git show 8602ab6cc6c1d68c236ab701be1532bff9a5d7b5:<path>` and Module._compile for tower-boss-floors and tower-rewards-ui: 13 tests, 10 passed / 3 failed; TBF-1 passed and the same three UI failures remained. Therefore TBF-1 is newly failing relative to original HEAD, even though incoming task history describes independent tuning and earlier mismatched test assumptions. Do not weaken assertions or change authoritative Excel to hide this. Blocking follow-up: reconcile incoming independent NPC tuning with the copy-equality test contract, then validate again. No workbook changes, CSV/JS rewrites, temporary files or asset-library edits made.
+- Conflict markers removed; full `git diff HEAD --check` passed, including staged incoming changes. HEAD/MERGE_HEAD preserved. No commit created; merge remains intact for controller. Modified integration files: index.html and docs/AI_TASKS.md.
+
+## TOWER-BOUNDS-GAIT-20261108 — 塔戰固定邊界與骷髏王步幅同步
+
+- Owner：Codex，Done，單一主開發者。使用者要求骷髏王移動動畫依實際移速加減速，所有塔BOSS不可跑出中央場景四邊各外擴50%的區域；依圖3採總寬高2倍。追查到菁英跑位目標跟隨追擊玩家，形成往外漂移；NPC 3D步行原固定1倍。
+- 允許：battlefield權威邊界／跑位目標、tower場地生命週期與位移收斂、Hero3D步幅量測、Npc3D與battle-renderer同步、BossArena共用世界幾何、Worker runtime arena投影契約／版本／文件、必要快取、相關回歸／瀏覽器驗證、LV與本段。禁止修改NPC／技能／天賦／參數表的既有數值、模型／貼圖、傷害／攻速公式、存檔與解鎖，不合併／推送。
+- 前置與衝突：本副本原有NPC攻速0.4等未提交配置及CSV重匯出保持，不納入本項。逐檔預檢除index外乾淨；Claude fa3836c2更新反擊音效快取，三方試跑index衝突；使用者已確認「同意分段更新（建議）」，保留音效行，只改本項必要版本。其他檔若新增重疊另檢查。
+- 設計：塔戰建立固定世界中心與基準800×800法陣場景，地面縱向0.5投影；四邊各外擴原畫面尺寸50%，可移動區總寬高2倍。伺服器判定與法陣顯示共用此幾何，視窗／全螢幕不改實際場地；玩家、BOSS、跑位與強制位移均受邊界限制。GLB步幅由原速腳部接地軌跡量測，播放倍率＝實際世界移速／縮放後原速步幅速度；不改攻擊或死亡速率。
+- 驗收：50種BOSS及53／64層追擊／跑位、四邊角落／高速／擊退與衝鋒、進出場清理、野外不受限、不同視窗顯示同一幾何；步速減半／加倍／轉向／縮放與停止、出招／死亡保留；相關計算及渲染測試、協議與快取、Build、隔離瀏覽器及必要畫面。後續交使用者驗收及整合。
+
+- 完成（2026-11-09）：battlefield新增固定世界幾何、含身體半徑的矩形限制及合法跑位目標；tower開戰固定中心、tick前後統一限制並於退場清空。BossArena及battle-renderer使用Worker投影同一arena，深淵改用矩形遮罩，整個合法區域都顯示地板。Hero3D按60Hz接地腳掌軌跡中位速度量測原速步幅，Npc3D依實際世界位移／顯示比例調速，停止為0；渲染以同一dt推進，攻擊／死亡保持既有播放規則。未知腳骨命名無可靠量測時維持原速，不猜測新參數。
+- 修改：js/battlefield.js、tower.js、battle-arena.js、battle-renderer.js、hero3d.js、npc3d.js、bridge.js、worker/protocol.js／sim.worker.js、index.html、docs/WORKER_PROTOCOL.md、LV_upgrade_system.md／本段，以及hero3d-locomotion、npc3d-locomotion、tower-arena-bounds、battle-arena、worker-protocol五份測試。協議74新增暫態tower.arena，無新增指令／存檔。主頁及Worker相關快取統一20261108-tower-bounds-gait，Claude音效行保持。
+- 回歸：`node --test --test-concurrency=2 --test-reporter=tap tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/battle-arena.test.cjs tests/battle-camera-distance.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-battlefield.test.cjs tests/tower-auto-result.test.cjs tests/tower-auto-advance.test.cjs tests/tower-scene-intro.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/tower-boss-move-attack.test.cjs tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/worker-protocol.test.cjs tests/worker-shim.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/hero3d-*.test.cjs`（PowerShell以陣列展開hero3d檔）211項，210通過、1項既有TBF-1失敗：原NPC前三列攻速0.4、複製列11起仍3，舊測試預期相同。唯讀fs overlay把本輪既有程式還原為HEAD再跑tower-boss-floors，5項中4通過，完全相同失敗；未改表格／測試以消除失敗。
+- 新增邊界測試覆蓋全部50列與53／64／101／150層、持續追擊／跑位、角落完成、擊退與任意強制位移／早退、野外無限制及不同視窗同一幾何；步幅以真的Three骨架驗證接地／擺腳篩選與量測還原，步速半倍／倍增／縮放／停止／暫停／低FPS同dt及攻擊死亡時間皆通過。最後擴充三塔後單跑tower-arena-bounds 4/4通過；`npm.cmd run build`695檔通過；`git diff --check`通過。
+- 瀏覽器：IAB無連線，隔離headless Edge新局／真Worker。第53層實際boss3原速步幅0.487537m/s，55次步速取樣逐筆核對倍率、40次權威位置取樣均在固定場地，普通／全螢幕中心及尺寸一致；第64層舊2D BOSS同用新場地，退場arena=null且圖層關閉。已目視一般／全螢幕與遮罩擴展後畫面。Console error 0；另記錄既有Oscillator頻率裁切與預載圖未即時使用兩項warning，未修改音效或預載。測試瀏覽器與18994伺服器已關閉，預覽／報告留在聊天目錄，不進Git。
+- 唯讀檢查：規範、eliteRepoPick及推拉／衝鋒路徑、原模擬／投影與Worker契約、GLB／Hero3D介面、鏡頭及法陣Canvas、既有場景／暫停／塔戰測試、NPC／技能／天賦／參數差異及模型來源。三個模型匯出檢查分別34／29／30項通過，模型與圖像未改；純執行期修正，無本項素材庫提交。保留使用者原有NPC.xlsx／CSV／data與其他重匯出CSV修改，不納入Commit。
+- 交付：已自我Review；本項無未完成功能，可以連同上述既有配置測試差異供驗收後合併。限制為未做行動真機、所有技能組合及長時間效能驗證，未知骨命名的後續模型需另外定義步幅；本次三隻使用相同已認可Mixamo骨架。Commit為本段所在提交，SHA見聊天交付；未合併／推送。
+
+## TOWER-BOSS3-LV3-20261108 — 骷髏王Ⅲ材質版與第3個BOSS
+
+- Owner：Codex，Done，單一主開發者。使用者提供 BOSS1_LV3.glb，要求與前一版完全相同流程套用；承接為第3關「骷髏王Ⅲ」，沿用同系列自製／自行生成及修改授權。五動作、已認可握姿與披風避碰沿用，劍由新檔重新拆分另綁骨。
+- 前置：第1／2個模型已完成；最新主線已整合50關各自NPC列，保留全部獨立數值及倍率。本次只改 tower_boss_3 第484列外觀與3D欄；第13／23／33／43列為獨立配置，保持原狀。51~150關仍依目前50列循環，不改其邏輯。
+- 允許：新模型／透明頭像、新獨立匯出器、NPC.xlsx第484列外觀／動作與CSV／衍生data、主頁／bridge／Worker資料快取、對應回歸、來源交接／LV／本段、素材庫獨立套件。禁止改數值／倍率／技能／屬性、公式、Worker協議、通用3D執行期或其他BOSS配置，不合併／推送其他分支。
+- 驗收：新材質UV與來源SHA、重新拆劍／剛性權重、五動作與前版全骨蒙皮比對、60Hz披風／握點／地面QA、原生Excel正常重開及授權範圍比對、實際第3關載入／三攻擊／死亡／退場及其他關保留、相關回歸與Build、高清GIF與雙倉庫提交。逐檔衝突預檢全乾淨；後續交使用者驗收與整合。
+- 完成：新增boss3.glb、實際模型渲染的透明頭像及獨立匯出器；更新第484列名稱／四圖像／模型動作、CSV／data與必要主頁／bridge／Worker資料快取、npc3d-config／tower-boss3d／tower-boss-floors測試、來源交接及LV／本段。重用既有variant製作／QA與渲染工具，未修改通用3D執行期。原檔SHA8418790c…、新模型6bf58a60…；前兩模型SHA保持。
+- 模型QA：新PBR／UV共9975面全數匹配，重新拆出新劍436面並重建Sword_R、RightHand父骨與100%剛性權重。Blender重匯入五動作共1363個60Hz樣本、194骨有效蒙皮矩陣對前版最大元素誤差0.00001711；披風／身體交叉對數全0，披風最低0.038m、武器最低0.0343824m、握點誤差<0.000001m。保留135根披風避碰骨與已認可手套／握柄；另目視多幀及實際戰鬥畫面。
+- 表格：原生Excel來源獨占存取、只改13格、正常重開，兩表28365格資料／公式與七個原生物件核對通過；唯讀格式比較另確認style定義、24535個儲存格樣式、列屬性、欄寬／合併／驗證與條件格式保持。使用config_tables.readXlsxRows／csvStringify保留原始精度，CSV→data僅BOSS_LIST語意改1，後續試跑0。第13／23／33／43及其他49列未改；53／103層依既有50列循環使用第3列。名稱為NPC配置，不重複寫String。
+- 測試：`node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/tower-boss-move-attack.test.cjs tests/npc-vision.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`為48/48通過；`npm.cmd run build`692檔通過。IAB無可用連線，改隔離Edge／新局／原生Worker，實測第3關名稱／頭像／boss3、Walk與三攻擊、Die後建立1／釋放1，第4關不建立NPC3D、第1關仍boss1，撤退後總建立2／釋放2。Console error 0，三項既有音效Oscillator頻率裁切warning原樣記錄，未改音效。
+- 唯讀檢查：規範、最新50關與數值整合紀錄、NPC全表及格式、既有variant／QA／渲染／匯出工具、Three／NPC3D／塔／Worker／GM／UI介面、來源manifest與授權。另一聊天同副本新增第二首地圖配樂、更新共用data／快取／LV／任務段；沿用上輪分段保留方式，只提交本任務區段，不納入其配樂變更。已自我Review；披風為烘焙避碰，未做行動真機及長時間效能驗證。預覽／雙庫提交結果見後續交付。
+
+- 交付：五份1080×1144 GIF與1920×1200總覽，20FPS原速、所有幀數／時長／loop與透明頭像alpha通過，總覽為173幀／8.65秒；模型多幀與握姿已目視。素材庫Commit `0a8d0c04`，獨立套件30項來源／輸出逐檔及stage SHA核對通過，前兩匯出器亦通過。遊戲Commit為本段所在提交；本項無未完成功能，可供驗收後合併，未合併／推送。背景配樂新提交19872c2e保留，其他聊天的登入背景調整只留在工作區，不納入本提交。
+
 ## SYNC-PENDING-20261108-222816 - NPC / tower / zone BGM integration
 
 - Owner: Codex; Done (controller staging / merge commit pending), authorized integrator for pending HEAD fcfa38dbccbd406bdfe7731c38af887d3455feb5 / MERGE_HEAD 8434262e589d7a87443150e02a39bcd6434d0939 only. Scope: known conflicts, required generated data/cache/tests and this record. No delegation, staging, commits, Git metadata writes or other-worktree changes. Controller handles native Excel and merge commit.
@@ -9660,6 +9711,19 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 # 3. Codex 任務
 
+## ZONE-BGM2-20261108 — 荒漠兩首背景音樂依序循環
+
+- Owner：Codex；Done，單一開發者。使用者提供 desert-ascendant_2.mp3，確認第二首亦已取得授權，要求 Zones 再加欄位並按第一首→第二首→第一首循環。
+- 前置：第一首 BGM 已完成且分支／工作區乾淨，fetch 與逐檔衝突預檢通過。允許 Zones.xlsx／CSV、config_tables 的 Zones 段、data 的 bgm2、ui-sound 輪播、必要首頁／Worker 快取、音檔與來源、相關回歸、LV、本段及素材庫對應套件。禁止修改 NPC／塔戰／公式／協議／存檔或其他任務，不合併推送。
+- 驗收：Excel 獨占存取／原生儲存並正常重開、原有欄位資料格式保留、第二首原檔與雙庫 SHA、兩曲曲尾依序切換／同圖換關不中斷、靜音／音量／面板／背景／離場與過期事件、單曲與空欄相容、瀏覽器實播、相關回歸／Build／diff，自我 Review 後先提交素材再提交遊戲。交使用者驗收與整合。
+- 完成：Zones 的 E 欄為 BGM2，荒漠填入 audio/zones/desert-ascendant_2.mp3，其餘留空；沿 Excel→CSV→config_tables 產生 bgm2。共用音訊按 BGM／BGM2 次序輪播，單曲維持原生循環，空欄略過。每次曲尾切換後同圖快照不會重設索引；離場清除舊曲播放，重入從第一首開始。靜音／選單／pagehide 均保留當前曲目，過期 ended 不會誤播或跳曲，pageshow 可續播。背景分頁照常換曲。
+- 修改：config/Excel/Zones.xlsx、config/CSV/Zones.csv、tools/config_tables.cjs 的 Zones 段、js/data.js 的 desert.bgm2、js/ui-sound.js、首頁與 bridge／Worker 的資料快取、audio/zones/README.md／第二首MP3／manifest-2.json、tests/zone-music.test.cjs、tests/ui-achievement-sound.test.cjs 的快取預期、LV 與本段。未改第一首音檔、NPC／塔戰／公式／Worker 協議／存檔。唯讀檢查前項交接、規範／Workflow、UI 場景通知、開始選單／音訊設定、Excel 工具、素材根目錄解析及既有回歸。
+- Excel：獨占存取後以原生 API 插入一欄、只寫表頭與荒漠路徑兩格，正常重開兩次通過。修改前後 220 格原資料／樣式逐格一致，分頁／窗格／資料驗證／繪圖物件保留；原生 Excel 匯出 PDF 並檢視，兩個 BGM 欄與音檔路徑完整可讀。
+- 驗證：`node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/start-menu.test.cjs tests/game-menu.test.cjs tests/intro-audio.test.cjs tests/ui-worker-events.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/new-battle-zones.test.cjs tests/god-realm-zones.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs` 共 106/106 通過（BGM 十項全通過）。`node tools/config_tables.cjs --apply Zones` 語意變更 0；`npm.cmd run build` 692 檔通過；`node tools/string-table/build_string_csv.cjs --check` 寫死 0；diff 檢查通過。未修改數值參數錨點。
+- 瀏覽器：IAB 無可用連線，使用隔離 headless Edge、正式主頁／原生 Worker 及 seed=17，不碰使用者存檔。兩個真實 MP3 各長 180.427708／174.341167 秒，以跳至曲尾驗證原生 ended 按第一首→第二首→第一首循環；第二首的30秒處換關及靜音後仍保留進度，音量25%／恢復、模擬隱藏時換曲、荒漠／冰原往返與從第一首重入通過。Console error／warning／pageerror 0；瀏覽器與伺服器正常關閉。尚未驗行動真機與跨瀏覽器。
+- 素材：第二首由使用者提供並確認授權，非 Codex 自製，未轉碼。原檔、遊戲及素材庫 SHA-256 均為 e1f3515e0d13f097d727b24695022135afdc3d7758d40de7cfc25995951a6d69；來源與授權另記 manifest-2.json。素材庫先提交 `1a403756`；遊戲 Commit 為本段所在提交，SHA 見回報。
+- 協作／交付：工作期間同副本新增骷髏王Ⅲ的 NPC／data／測試／素材修改；只分段提交 desert.bgm2 與本段，保留對方 BOSS 外觀及獨立任務／檔案，不納入本項。共用快取統一新版本，沒有修改對方數值或玩法。自我 Review 完成，BGM 功能無未完成項，可供使用者合併後重載驗收；未合併／推送。修改範圍、未修改檢查、測試與限制如上。
+
 ## ZONE-BGM-20261108 — 地圖配樂配置與荒漠循環播放
 
 - Owner：Codex；Done，單一開發者。使用者要求 Zones 加 BGM 欄，荒漠進場循環播放指定的 desert-ascendant.mp3。使用者確認已取得授權。
@@ -15288,3 +15352,23 @@ Worker 存活且頁面正常完成載入。
 - 交付：本項無未完成，可供使用者合併後重新載入驗收；Commit 為本段所在提交，SHA 見回報。已知限制為兩項既有回歸失敗及上述既有音訊 warning；未做行動真機、跨瀏覽器或長時間遊玩。沒有合併／推送。
 
 - 收尾協作：Claude 在本項完成後提交 2247d5e2，首頁只改 data／formula／tower／bridge 快取，與本次標記／UI／String／樣式快取分屬不同行，沒有語意相依；以共同祖先對實際對方快照三方試跑 exit0。任務文件的新紀錄改放檔尾，以本次 HEAD 為修改基準對實際 ai/claude 文件試跑 exit0；共同祖先仍有本次開始前既存 TOWER-FLEE 紀錄與對方新紀錄的檔首插入衝突，後續整合須保留兩項，與本次檔尾內容無關。沒有合併或修改對方工作區。
+
+## START-MENU-RED-LIGHTNING-20261108 — 拱門遠空的偶發紅色閃電
+
+- Owner：Codex，Done。中央拱門遠空加入偶發紅色落雷。每次隨機生成 33 點主幹、七道分叉及末梢細絲，疊加紅色光暈和細亮芯。一般模式三次短促放電及雲內散光餘暉，減少動態使用一次柔和亮起。首個事件約在可見後 2.8–6.2 秒，後續間隔約 8.1–20.1 秒；總時鐘隨選單和分頁可見性暫停，卸載回收。
+- 修改背景程式、首頁背景快取、素材來源／程式快照與 SHA、LV、特效登記及本段。唯讀核對原拱門畫面、天空輪廓、掛載／卸載及工作規範。預檢乾淨，同副本配樂 `19872c2e` 及模型 `0ce69559` 已獨立提交，本項只提交背景。
+- 程序時間取樣兩分鐘有 10 次事件，路徑各異且座標有限，間隔約 8.57–19.67 秒，減少動態亮度曲線僅一個峰值。閃電與雲光沿共用天空路徑裁切，位於拱門及遠景後方，雲霧仍在前方飄動。
+- Edge 正式選單以 1120×630 及 1920×869 畫幅試播並截取閃電峰值和動態；亮區逐像素驗證沒有超出天空輪廓，設定暫停／返回和減少動態播放通過，Console error／warning 0。相關 start-menu-background、start-menu、vfx-preset-usage、vfx-editor-cache-versions 共 39/39，Build 692 檔、字串寫死 0、雙庫 SHA 及提交 diff 通過。
+- 素材庫程式快照與說明先提交 `3316f3e5`，遊戲提交見交付。可供驗收及整合。未做行動真機及跨瀏覽器驗證，減少動態模式刻意柔化閃光。
+
+## BATTLE-CAMERA-75-20261108 — 一般戰鬥90%、全螢幕75%鏡頭距離
+
+- Owner：Codex；Done，單一開發者。一般戰鬥維持參數表90%，全螢幕預設由65%改75%，沿用滾輪比例、鏡頭鎖定及HUD螢幕層。
+- 前置：既有鏡頭功能完成，fetch與逐檔預檢已執行。允許js/battle-renderer.js、既有鏡頭回歸、index.html與tools/scene-preview.html的renderer快取、LV與本段。禁止配置表、素材、玩法／Worker／存檔及其他工作區；不合併或推送。
+- 預檢：除index外皆乾淨。ai/claude的fa3836c2只更新相鄰sfx-synth快取1196行，本項更新renderer快取1195行；三方試跑exit1。使用者明確答覆「同意分段更新（建議）」後，只改鏡頭快取行，相鄰音效行保留原樣；沒有合併Claude分支。
+- 驗收：一般90%／全螢幕75%與實際縮放一致、反覆切換還原、滾輪／測試場景／HUD、相關回歸、Build及diff檢查。完成後Commit；後續交使用者驗收與整合。
+- 完成：僅調整全螢幕倍率為90÷75，百分比沿既有公式讀取；移除註釋中的重複數值。既有鏡頭測試改讀正式倍率，更新75%、滾輪及測試場景期望，保留一般90%、HUD、還原及參數錨點斷言。修改renderer、鏡頭測試、主頁／場景預覽的renderer快取、LV與本段，共6檔。
+- 唯讀核對：AI_RULES／AGENTS／Workflow／prompts/codex、game_parameters.csv、js/ui.js全螢幕流程、game-settings／start-menu／intro-player、戰鬥HUD與相關測試／build工具；未改配置表、戰鬥判定、Worker、存檔或開放條件。沒有獨立素材變更，素材庫無本項修改，不建立空素材Commit。
+- 測試：`node --test tests/battle-camera-distance.test.cjs tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-toolbar.test.cjs tests/gm-test-map.test.cjs tests/vfx-editor-cache-versions.test.cjs`共41項、38通過；gm-test-map既有3失敗為兩項預期10列但現為11，以及抽取makeEnemy缺requestNpc3d。將renderer唯讀覆蓋為修改前位元組重跑該檔，仍相同7/10與相同三項失敗；未改或放寬斷言。鏡頭／全螢幕／HUD／工具列／快取五檔31/31通過。`npm.cmd run build`692檔通過，diff檢查通過。
+- 瀏覽器：IAB初始化無可用連線，改獨立暫存profile的headless Edge、新局與正式主頁／原生Worker。一般90%實際倍率1.111111、全螢幕75%實際倍率1.333333，退出與再次進入正確；HUD stage倍率維持1，血球顯示寬度兩模式皆約82.48px。Console error／warning 0。首輪驗證誤用整頁CSS縮放後的Canvas螢幕寬度比對鏡頭世界尺度，已改由renderer實際畫布座標核對，未修改產品程式。測試瀏覽器與伺服器正常關閉。
+- 交付：本項無未完成，可供使用者驗收與合併；Commit為本段所在提交，SHA見回報。已知限制為上述三項既有GM測試失敗，未做行動真機、跨瀏覽器或長時間遊玩。未合併或推送；下一步重載遊戲檢視兩種鏡頭距離。

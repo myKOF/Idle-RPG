@@ -96,6 +96,33 @@ var BF_PLAYER_CHASING = false;     // 起步／停步的遲滯狀態（見 bfTic
 function bfPlayerPos() { return BF_PLAYER; }
 function bfResetPlayer() { BF_PLAYER.x = 0; BF_PLAYER.y = 0; BF_PLAYER_CHASING = false; BF_PLAYER_OBS.id = 0; BF_PLAYER_OBS.side = 0; return BF_PLAYER; }
 
+/* 固定塔戰世界幾何：基準法陣畫面四邊各外擴原寬／高的50%，總寬高為兩倍。
+   顯示層同用viewWidth/viewHeight；視窗、鏡頭及全螢幕不改變戰鬥邊界。 */
+function bfTowerArenaGeometry(cx, cy) {
+  var width = 800, height = 800, groundScale = 0.5;
+  return { cx: cx, cy: cy, viewWidth: width, viewHeight: height,
+    halfWidth: width, halfHeight: height / groundScale };
+}
+function bfTowerArena() {
+  return typeof G !== 'undefined' && G && G.tower && G.tower.active &&
+    typeof TOWER !== 'undefined' && TOWER && TOWER.arena ? TOWER.arena : null;
+}
+function bfClampTowerPoint(pos, radius, arena) {
+  arena = arena || bfTowerArena();
+  if (!arena || !pos) return false;
+  var pad = Math.max(0, Number(radius) || 0);
+  var rx = Math.max(0, arena.halfWidth - pad), ry = Math.max(0, arena.halfHeight - pad);
+  var x = pos.x, y = pos.y;
+  pos.x = Math.max(arena.cx - rx, Math.min(arena.cx + rx, pos.x));
+  pos.y = Math.max(arena.cy - ry, Math.min(arena.cy + ry, pos.y));
+  return pos.x !== x || pos.y !== y;
+}
+function bfClampTowerCombatants() {
+  if (!bfTowerArena()) return;
+  bfClampTowerPoint(TOWER.playerPos, bfPlayerBodyRadius());
+  if (TOWER.boss) bfClampTowerPoint(bfPos(TOWER.boss), bfEntityRadius(TOWER.boss));
+}
+
 /* ---- 地形障礙（js/battle-terrain.js）----
    野外大型擺件（底座寬 ≥ BF_OBSTACLE_MIN_M 米，預設 12）是障礙：走路被擋住時沿邊緣滑開，
    隔著障礙不能近戰普攻；技能、投射物、範圍判定一律不受影響。封魔塔沒有野外地形，不啟用。
@@ -361,7 +388,9 @@ function bfTickApproach(enemies, dt) {
     if (rp) {
       /* 跑位（菁英以上，js/elite.js eliteRepoPick）：目標點是「相對我方的角度＋距離」，我方跑動時目標點跟著走。
          到了就清掉並通知技能引擎（_rpDone），由它排下一次。 */
-      var tx = home.x + Math.cos(rp.ang) * rp.dist, ty = home.y + Math.sin(rp.ang) * rp.dist;
+      var goal = { x: home.x + Math.cos(rp.ang) * rp.dist, y: home.y + Math.sin(rp.ang) * rp.dist };
+      bfClampTowerPoint(goal, bfEntityRadius(ent));
+      var tx = goal.x, ty = goal.y;
       var rdx = tx - p.x, rdy = ty - p.y, rd = Math.sqrt(rdx * rdx + rdy * rdy);
       if (rd <= 8) { ent._rp = null; ent._rpDone = true; }
       else {
@@ -428,11 +457,17 @@ function bfTickApproach(enemies, dt) {
       BattleTerrain.pushOut(tp, bfEntityRadius(te), home.x, home.y, te._obs);
     }
   }
+  for (i = 0; i < live.length; i++) bfClampTowerPoint(bfPos(live[i]), bfEntityRadius(live[i]));
+  bfClampTowerPoint(home, bfPlayerBodyRadius());
   return justInRange;
 }
 
 /* 普通走路才繞牆；擊退／衝鋒等強制位移只碰撞，不自行改技能路線。 */
 function bfMoveToward(p, target, budget, pad, stop) {
+  if (bfTowerArena()) {
+    target = { x: target.x, y: target.y };
+    bfClampTowerPoint(target, pad);
+  }
   var next = typeof eliteWallWaypoint === 'function' ? eliteWallWaypoint(p, target, pad) : target;
   if (!next) return false;
   var dx = next.x - p.x, dy = next.y - p.y, len = Math.hypot(dx, dy);
@@ -441,7 +476,8 @@ function bfMoveToward(p, target, budget, pad, stop) {
   var step = Math.min(gap, budget), ox = p.x, oy = p.y;
   p.x += dx / len * step; p.y += dy / len * step;
   if (typeof eliteClampMove === 'function' && eliteClampMove(ox, oy, p, pad)) return false;
-  return step > 0.0001;
+  bfClampTowerPoint(p, pad);
+  return Math.hypot(p.x - ox, p.y - oy) > 0.0001;
 }
 
 /* ---- 我方移動（每個 tick 呼叫一次）----
