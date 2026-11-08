@@ -15211,3 +15211,17 @@ Worker 存活且頁面正常完成載入。
 - 修改背景程式、首頁背景快取、素材來源與程式快照／SHA、LV、介面特效及本段。工作區乾淨、fetch 及逐檔預檢通過。唯讀檢查原場景、局部風砂與主頁掛載、素材工具及規範。
 - 固定亂數比對同一強度的局部陣風，沙粒為 315→630、飄砂束為 14→28。Edge 正式 1920×869 選單確認局部霧層每幀向右位移、畫素持續變化、增加後的飛砂及邊緣淡出；減少動態、設定開關暫停及返回通過，Console error／warning 0。保留動態預覽和截圖。
 - `node --test` 以 start-menu-background、start-menu、vfx-preset-usage 與 vfx-editor-cache-versions 共 39/39 通過。Build 684 檔、字串寫死 0、diff 與雙庫 SHA 通過。素材庫程式快照提交 `225a4e77`，遊戲提交見交付。可供驗收與整合，未做行動真機及跨瀏覽器驗證。
+
+## BATTLE-TOOLBAR-20261108 — 整理戰鬥標題及共用靜音快捷鍵
+
+- Owner：Codex；Done，單一開發者。將敵情／數字／效能、暫停／統計等操作移到場景上方，整理關卡與工具排列，自動推進改 AUTO 按鈕，新增與設置相通的全體靜音。使用者確認血／魔球、技能及 BUFF 保留場景內；塔戰撤退也移上方。
+- 前置：工作區乾淨、fetch 及逐檔衝突預檢通過。允許 index.html、js/ui.js、js/game-menu.js、css/world-map.css、css/ashen-forge.css、String.xlsx／CSV／生成字串及編輯器快取、相關測試、LV 與本段。禁止改戰鬥公式、Worker 協議、存檔、素材、其他工作區及合併推送。
+- 驗收：桌面／全螢幕排列、AUTO 指令等待及回復、靜音雙向同步與持久化、塔戰撤退、Canvas／DOM 備援、原 HUD、相關回歸、Build、Excel 原生重開、字串與 diff 檢查。完成後 Commit，交使用者驗收整合。
+- 完成：標題／關卡／操作分三排，左右兩組工具同高對齊，窄容器可換排。移除 Canvas 啟動時搬入暫停按鈕的邏輯，統計在 DOM 備援亦可操作。敵情改為原生按鈕並保留滑入及點擊提示；塔戰撤退沿原指令與等待鎖。AUTO 用 aria-pressed／亮色顯示，維持 header 權威快照、等待時防連點及失敗還原。靜音直接寫 GameSettings.mute，設定勾選、音量區停用與喇叭圖示即時雙向同步，不重設音量。
+- 修改：index.html、js/ui.js、js/game-menu.js、css/world-map.css、css/ashen-forge.css、String.xlsx／CSV／strings_data、tools/vfx/editor/index.html 字串快取、tests/battle-toolbar.test.cjs／combat-pause.test.cjs／tower-scene-intro.test.cjs、LV 與本段。String 2433／2434 透過既有原生 Excel API 寫入8格，兩次正常重開核對全表及物件，CSV 只新增兩列；來源獨占確認、語法、字串同步／寫死0及 diff 檢查通過。無獨立美術或音檔變更，喇叭為 HTML SVG 程式圖形，素材庫無變更，不建立空素材 Commit。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、main／game-settings／ui-sound／sfx／sfx-synth、Worker protocol、battle renderer／HUD、塔戰與世界地圖流程、Excel／String 工具及相關回歸；沒有改戰鬥、配置數值、存檔或解鎖條件。自我 Review 已完成。
+- 測試：`node --test tests/battle-toolbar.test.cjs tests/combat-pause.test.cjs tests/battle-fullscreen.test.cjs tests/battle-ui-rework.test.cjs tests/settings-tabs.test.cjs tests/tower-scene-intro.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-camera-distance.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs tests/stage-jump-ui.test.cjs tests/stage-rework.test.cjs tests/inventory-command-pending.test.cjs tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/game-menu.test.cjs tests/game-menu-pause.test.cjs tests/game-menu-save.test.cjs tests/tower-info-during-fight.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/ui-worker-events.test.cjs` 共164項、162通過。兩項 stage-rework 失敗仍預期舊塔 BOSS 烈焰魔君與荒漠舊倍率；相關測試／NPC／Zones／掉落／data 全與 HEAD 相同，唯讀 overlay 還原 HEAD 字串後同檔仍8/10、相同兩項失敗，未降低斷言。`npm.cmd run build`689檔通過。
+- 瀏覽器：內建 IAB 無可用連線，使用隔離 Edge／正式主頁、原生 Worker 及 seed=17，不接觸使用者存檔。1920×1080、1366×768、390×844、568×320 及戰鬥全螢幕各按鈕均在場景上方，無重疊；HUD 保持原位。實測 AUTO 滑鼠／Space／Enter、靜音雙向同步／重載、模擬觸控、暫停／恢復、敵情滑入及點擊、統計開關、塔戰撤退（結算 reason=flee）及 canvas=0 的暫停／統計。Console error／pageerror 0；GM升至100級時既有 sfx-synth.js:127 出現一次高頻超出 AudioContext 取樣範圍的 warning，該檔未改。測試瀏覽器與伺服器已正常關閉，預覽留在聊天 visualizations。
+- 交付：本項無未完成，可供使用者合併後重新載入驗收；Commit 為本段所在提交，SHA 見回報。已知限制為兩項既有回歸失敗及上述既有音訊 warning；未做行動真機、跨瀏覽器或長時間遊玩。沒有合併／推送。
+
+- 收尾協作：Claude 在本項完成後提交 2247d5e2，首頁只改 data／formula／tower／bridge 快取，與本次標記／UI／String／樣式快取分屬不同行，沒有語意相依；以共同祖先對實際對方快照三方試跑 exit0。任務文件的新紀錄改放檔尾，以本次 HEAD 為修改基準對實際 ai/claude 文件試跑 exit0；共同祖先仍有本次開始前既存 TOWER-FLEE 紀錄與對方新紀錄的檔首插入衝突，後續整合須保留兩項，與本次檔尾內容無關。沒有合併或修改對方工作區。

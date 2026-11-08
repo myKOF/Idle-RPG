@@ -98,7 +98,7 @@ test('戰鬥關卡控制列使用正式 tooltip，不使用原生 title', () => 
   assert.doesNotMatch(ui, /el\.title\s*=/);
 });
 
-test('戰鬥控制版面將自動推進放在原關卡控制列，迷你視窗移至關卡列上方，暫停與統計面板移至綜合紀錄列', () => {
+test('戰鬥控制版面將 AUTO、暫停、統計與迷你視窗放在場景上方', () => {
   const html = readExpanded(path.join(root, 'index.html'));
   const stageStart = html.indexOf('<div id="stage-bar">');
   const stageEnd = html.indexOf('<!-- 任務快捷列', stageStart);
@@ -108,10 +108,11 @@ test('戰鬥控制版面將自動推進放在原關卡控制列，迷你視窗�
   const logHeader = html.slice(logStart, logEnd);
 
   assert.match(stageBar, /id="st-auto"/);
-  assert.doesNotMatch(stageBar, /id="btn-combat-pause"/);
+  assert.match(stageBar, /id="btn-combat-pause"/);
+  assert.match(stageBar, /id="btn-battle-info"/);
   assert.match(stageBar, /id="btn-pip"/);
   assert.doesNotMatch(stageBar, /id="btn-summary"/);
-  assert.match(logHeader, /id="btn-combat-pause"/);
+  assert.doesNotMatch(logHeader, /id="btn-combat-pause"/);
   assert.doesNotMatch(logHeader, /id="btn-pip"/);
   assert.match(logHeader, /id="btn-summary"/);
   assert.match(html, /<div id="battle-fps" class="battle-fps-counter"/);
