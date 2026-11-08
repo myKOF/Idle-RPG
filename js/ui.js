@@ -1195,6 +1195,7 @@ function syncBossConfigControls() {
 }
 
 function applyUiBossFightView(view) {
+  if (typeof UISound !== 'undefined') UISound.setScene(view);
   var changed = !!view.towerActive !== !!(UI_WORKER_STATE.view && UI_WORKER_STATE.view.towerActive);
   UI_WORKER_STATE.view = view;
   if (!changed) return;
@@ -4422,6 +4423,31 @@ function setStagePendingStage(stage) {
   refreshStageDisplay();
 }
 
+function refreshStageAutoButton(on) {
+  var button = $id('st-auto');
+  if (!button) return;
+  button.setAttribute('aria-pressed', on ? 'true' : 'false');
+  button.classList.toggle('active', !!on);
+}
+
+function initStageAutoButton() {
+  var button = $id('st-auto');
+  if (!button) return;
+  button.setAttribute('data-ui-pending-key', nodePendingKey('stage-auto'));
+  button.addEventListener('click', function () {
+    if (isUiCommandPending(nodePendingKey('stage-auto'))) return;
+    var on = this.getAttribute('aria-pressed') !== 'true';
+    refreshStageAutoButton(on);
+    // header 是 autoAdvance 的權威快照；指令完成前不讓舊快照覆蓋玩家操作。
+    sendUiCommand('stage.setAutoAdvance', { on: on }, {
+      keys: [nodePendingKey('stage-auto')], panels: ['battle', 'header']
+    }).catch(function (error) {
+      refreshStageDisplay();
+      reportUiCommandFailure(STR(197), error, ['battle', 'header']);
+    });
+  });
+}
+
 function refreshStageDisplay(stageOverride) {
   var header = peekUiPanelData('header') || {};
   var stg = header.stage;
@@ -4429,7 +4455,6 @@ function refreshStageDisplay(stageOverride) {
   var znd = uiCurrentZoneDef(header);
   var label = $id('stage-label');
   var best = $id('stage-best');
-  var auto = $id('st-auto');
   if (_stagePendingStage !== null && !isUiCommandPending(nodePendingKey('stage'))) {
     _stagePendingStage = null; // 新資料已到，樂觀值退場
   }
@@ -4440,8 +4465,7 @@ function refreshStageDisplay(stageOverride) {
       : (_stagePendingStage !== null ? _stagePendingStage : stg.current));
   setHtmlIfChanged(label, STR(629, zoneIconHtml(stg.zone || 'desert', znd), displayStage));
   setTextIfChanged(best, STR(630, stg.best));
-  // 切換在途時不要用舊快照蓋掉勾選狀態
-  if (!isUiCommandPending(nodePendingKey('stage-auto'))) setCheckedIfChanged(auto, stg.autoAdvance);
+  if (!isUiCommandPending(nodePendingKey('stage-auto'))) refreshStageAutoButton(stg.autoAdvance);
 }
 
 function refreshCombatPauseButton() {
@@ -7205,11 +7229,17 @@ function towerDetailHTML(fl, highest) {
 }
 
 function towerActionsHTML(fl, highest, gold, active) {
-  if (fl > highest + 1) return STR(1877, (highest + 1));
-  var cost = towerChallengeCost(fl);
-  // 戰鬥停用不綁 pending key，避免指令鎖解除時重新啟用。
-  var buttonAttrs = active ? ' disabled' : pendingUiButtonAttributes(nodePendingKey('tower'));
-  return '<button class="btn twx-go" data-tower-floor="' + fl + '"' + buttonAttrs + '>' + STR(1879, fl) + '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button><button class="btn twx-auto" data-tower-auto="' + fl + '"' + buttonAttrs + ' data-tip="' + STR(1878) + '">' + STR(1880) + '</button>';
+  if (!active && fl > highest + 1) return STR(1877, (highest + 1));
+  var buttonAttrs = pendingUiButtonAttributes(nodePendingKey('tower'));
+  var primary;
+  if (active) {
+    primary = '<button class="btn twx-go warn" data-tower-flee' + buttonAttrs + '>' + STR(68) + '</button>';
+  } else {
+    var cost = towerChallengeCost(fl);
+    primary = '<button class="btn twx-go" data-tower-floor="' + fl + '"' + buttonAttrs + '>' + STR(1879, fl) + '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button>';
+  }
+  // 戰鬥中的連挑不綁 pending key，避免指令鎖解除時重新啟用。
+  return primary + '<button class="btn twx-auto" data-tower-auto="' + fl + '"' + (active ? ' disabled' : buttonAttrs) + ' data-tip="' + STR(1878) + '">' + STR(1880) + '</button>';
 }
 
 function towerSelectFloor(fl) {
@@ -7282,7 +7312,7 @@ function renderTower() {
       bindTowerBossImageFallback(detail);
     }
     var actions = $id('tower-actions');
-    var actionsH = towerActionsHTML(st.sel, highest, player.gold || 0, towerState.active);
+    var actionsH = towerActionsHTML(st.sel, highest, player.gold || 0, towerState.active || (viewState() || {}).towerActive);
     if (actions && actions._lastH !== actionsH) { actions._lastH = actionsH; actions.innerHTML = actionsH; }
 
     // 上次結果
@@ -7401,6 +7431,8 @@ function renderTowerCanvasHud(battleSnapshot, view) {
     document.body.classList.toggle('tower-canvas-fight', show);
   }
   setStyleIfChanged(hud, 'display', show ? '' : 'none');
+  var fleeButton = $id('tch-flee');
+  if (fleeButton) setStyleIfChanged(fleeButton, 'display', show ? '' : 'none');
   if (!show) return;
   var b = tower.boss;
   setTextIfChanged($id('tch-floor'), STR(1888, (tower.floor || 0)));
@@ -10995,16 +11027,6 @@ function initBattleCanvasMode() {
        DOM 的 #pv-hp／#pv-mp 留在隱藏的 .battle-scene 裡讓 renderBattle 照常寫、不再顯示。
        BUFF 狀態圖示直接於技能快捷列上方實時呈現。 */
 
-    /* 暫停按鈕 → 畫布右上角；戰況資訊 → 直接開關統計面板 */
-    var btnRow = $id('battle-canvas-buttons');
-    var pauseBtn = $id('btn-combat-pause');
-    var infoBtn = $id('btn-battle-info');
-    if (btnRow && pauseBtn) {
-      btnRow.insertBefore(pauseBtn, infoBtn || null);
-    }
-    if (infoBtn) {
-      infoBtn.addEventListener('click', toggleStatsPanel);
-    }
     /* 版面大改後所有幾何快取作廢 */
     uiInvalidateFloatLayout();
     if (typeof vfxInvalidateLayout === 'function') vfxInvalidateLayout();
@@ -11352,6 +11374,8 @@ function initUI() {
   }
   syncVfxQualityForTab();
   initBattleCanvasMode();
+  var battleInfoBtn = $id('btn-battle-info');
+  if (battleInfoBtn) battleInfoBtn.addEventListener('click', toggleStatsPanel);
   initHero3dToggle();
 
   var battleFullscreenBtn = $id('btn-battle-fullscreen');
@@ -12029,6 +12053,8 @@ function initUI() {
       showSkillTooltip(ultTipCard.getAttribute('data-sk'), ultTipCard);
       return;
     }
+    var etip = e.target.closest('#btn-enemy-tip') || e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip');
+    if (etip) { showEnemyTooltip(etip); return; }
     if (e.target.closest('button') || e.target.closest('.btn')) {
       hideTooltip();
       return;
@@ -12042,8 +12068,6 @@ function initUI() {
     }
     var statRow = e.target.closest('.stat-row[data-tt-title]');
     if (statRow) { showStatTooltip(statRow.getAttribute('data-tt-title'), statRow.getAttribute('data-tt-desc'), statRow); return; }
-    var etip = e.target.closest('#btn-enemy-tip') || e.target.closest('#btn-boss-tip') || e.target.closest('#btn-tower-result-boss-tip');
-    if (etip) { showEnemyTooltip(etip); return; }
   });
   document.addEventListener('mouseout', function (e) {
     // 捲動中不收提示：捲動開始時已經收過一次，這裡再跑只是白做一串 closest
@@ -12404,16 +12428,7 @@ function initUI() {
       reportUiCommandFailure(STR(185), error, ['battle', 'header']);
     });
   });
-  $id('st-auto').addEventListener('change', function () {
-    /* panels 必須含 header：勾選狀態是由 header 面板的 stage.autoAdvance 畫的
-       （refreshStageDisplay），只等 battle 回來的話 header 仍是舊值，
-       下一個 uiTick 就會把玩家剛勾的框彈回去。 */
-    sendUiCommand('stage.setAutoAdvance', { on: !!this.checked }, {
-      keys: [nodePendingKey('stage-auto')], panels: ['battle', 'header']
-    }).catch(function (error) {
-      reportUiCommandFailure(STR(197), error, ['battle', 'header']);
-    });
-  });
+  initStageAutoButton();
 
   // 裝備 / 背包點擊（事件委派）
   document.addEventListener('click', function (e) {
@@ -12677,6 +12692,18 @@ function initUI() {
         });
         return;
       }
+      return;
+    }
+    var flee = e.target.closest('[data-tower-flee]');
+    if (flee) {
+      if (flee.disabled || isUiCommandPending(nodePendingKey('tower')) ||
+          !(towerViewActive(uiTowerPanelSnapshot()) || (viewState() || {}).towerActive)) return;
+      sendUiCommand('tower.flee', {}, {
+        keys: [nodePendingKey('tower')],
+        panels: ['tower']
+      }).catch(function (error) {
+        reportUiCommandFailure(STR(1233), error, ['tower']);
+      });
       return;
     }
     var tf = e.target.closest('[data-tower-floor]');

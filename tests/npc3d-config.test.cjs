@@ -16,11 +16,11 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
   const current = bosses(source);
   assert.equal(result.length, 50);
   for (let i = 0; i < result.length; i++) {
-    if (i % 10 === 0) {   // 第 1／11／21／31／41 關沿用骷髏王外觀與模型
-      assert.equal(result[i].name, '骷髏王');
-      assert.equal(result[i].img, 'sprites/boss/boss_skeleton_king.png');
+    if (i % 10 < 2) {
+      assert.equal(result[i].name, i % 10 === 1 ? "骷髏王Ⅱ" : "骷髏王");
+      assert.equal(result[i].img, i % 10 === 1 ? 'sprites/boss/boss_skeleton_king_lv2.png' : 'sprites/boss/boss_skeleton_king.png');
       assert.ok(fs.existsSync(path.join(root, 'images', result[i].img)));
-      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss1.glb');
+      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss' + (i % 10 === 1 ? 2 : 1) + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
     } else assert.equal(result[i].model3d, undefined, 'other bosses retain their existing appearance');
     assert.equal(result[i].id, 'tower_boss_' + (i + 1));
@@ -36,7 +36,7 @@ test('changing a clip in the NPC table changes only that boss binding', () => {
   row[ix('3D攻擊1動作')] = 'Attack3';
   const result = bosses(cfg.SCHEMAS.NPC.rebuild(data, header, source).BOSS_LIST);
   assert.equal(result[0].model3d.clips.attack1, 'Attack3');
-  assert.equal(result[1].model3d, undefined);
+  assert.deepEqual(result[1], bosses(source)[1]);
   assert.deepEqual(result[0].skills, bosses(source)[0].skills);
 });
 
@@ -61,8 +61,8 @@ test('empty model and clip cells clear a binding while preserving the legacy ima
   assert.equal(result[0].img, bosses(source)[0].img);
 });
 
-test('exported sword is a separate rigid mesh under the right hand and all five clips exist', () => {
-  const bytes = fs.readFileSync(path.join(root, 'images/models/npc3d/boss1.glb'));
+for (const model of ['boss1', 'boss2']) test(model + ': sword is a separate rigid mesh under the right hand and all five clips exist', () => {
+  const bytes = fs.readFileSync(path.join(root, 'images/models/npc3d/' + model + '.glb'));
   const jsonSize = bytes.readUInt32LE(12);
   const gltf = JSON.parse(bytes.subarray(20, 20 + jsonSize).toString('utf8'));
   assert.deepEqual(gltf.animations.map(a => a.name).sort(), ['Attack1', 'Attack2', 'Attack3', 'Die', 'Walk']);
@@ -114,4 +114,21 @@ test('exported sword is a separate rigid mesh under the right hand and all five 
       assert.ok(Math.abs(weight - 1) < 1e-6);
     }
   }
+});
+
+test('second boss retains the supplied material variant instead of duplicating the first appearance', () => {
+  const models = ['boss1','boss2'].map(name => {
+    const bytes = fs.readFileSync(path.join(root, 'images/models/npc3d/' + name + '.glb'));
+    const length = bytes.readUInt32LE(12);
+    return { bytes, gltf: JSON.parse(bytes.subarray(20, 20 + length)), binaryStart: length + 28 };
+  });
+  const second = models[1].gltf;
+  assert.ok(second.materials.some(m => m.name === 'BOSS_LV2_PBR'));
+  const colorBytes = models.map(({bytes,gltf,binaryStart}) => {
+    const material = gltf.materials.find(m => m.pbrMetallicRoughness.baseColorTexture);
+    const texture = gltf.textures[material.pbrMetallicRoughness.baseColorTexture.index];
+    const view = gltf.bufferViews[gltf.images[texture.source].bufferView];
+    return bytes.subarray(binaryStart + (view.byteOffset || 0), binaryStart + (view.byteOffset || 0) + view.byteLength);
+  });
+  assert.equal(colorBytes[0].equals(colorBytes[1]), false);
 });

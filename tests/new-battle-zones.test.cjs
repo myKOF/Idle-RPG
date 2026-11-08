@@ -51,8 +51,8 @@ test('BIOMES-CONFIG 五份Excel／CSV逐格一致、任務可達、掉落及共�
 });
 test('BIOMES-ROUNDTRIP 地圖再匯入可變更名稱上限與解鎖，拒絕前置環路或越界',()=>{
  const rows=tables.csvParse(fs.readFileSync(path.join(root,'config/CSV/Zones.csv'),'utf8')).filter(r=>r.length>1),header=rows.shift(),schema=tables.SCHEMAS.Zones,src=fs.readFileSync(path.join(root,'js/data.js'),'utf8');
- const input=json(rows);input[2][2]='測試森林';input[2][4]='210';input[3][6]='210';const rebuilt=schema.rebuild(input,header,src),c=load();for(const [name,block] of Object.entries(rebuilt))vm.runInContext(block,c);assert.equal(c.ZONES.mist_forest.name,'測試森林');assert.equal(c.ZONES.mist_forest.maxStage,210);assert.equal(c.ZONES.lava_mountain.reqStage,210);assert.equal(c.ZONES.mist_forest.pool,c.MIST_FOREST_POOL);
- input[3][6]='211';assert.throws(()=>schema.rebuild(input,header,src),/超過上限/);input[3][6]='210';input[2][5]='lava_mountain';assert.throws(()=>schema.rebuild(input,header,src),/前置必須/);
+ const col=name=>header.indexOf(name),input=json(rows);input[2][col('地圖名稱')]='測試森林';input[2][col('關卡上限')]='210';input[3][col('前置通關關卡')]='210';const rebuilt=schema.rebuild(input,header,src),c=load();for(const [name,block] of Object.entries(rebuilt))vm.runInContext(block,c);assert.equal(c.ZONES.mist_forest.name,'測試森林');assert.equal(c.ZONES.mist_forest.maxStage,210);assert.equal(c.ZONES.lava_mountain.reqStage,210);assert.equal(c.ZONES.mist_forest.pool,c.MIST_FOREST_POOL);
+ input[3][col('前置通關關卡')]='211';assert.throws(()=>schema.rebuild(input,header,src),/超過上限/);input[3][col('前置通關關卡')]='210';input[2][col('前置地圖識別碼')]='lava_mountain';assert.throws(()=>schema.rebuild(input,header,src),/前置必須/);
 });
 test('BIOMES-GROUND 新地面可重製、真週期雜訊接縫連續、三張圖各自用自己的貼圖快取',()=>{
  const c=vm.createContext({console,Math});c.document={createElement(){const canvas={};canvas.getContext=()=>({createImageData(w,h){return {data:new Uint8ClampedArray(w*h*4)};},putImageData(im){canvas.pixels=im.data;}});return canvas;}};

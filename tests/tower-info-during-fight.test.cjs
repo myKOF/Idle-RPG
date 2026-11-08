@@ -36,7 +36,7 @@ function setup() {
   };
   vm.createContext(c);
   vm.runInContext(['pendingUiButtonAttributes', 'towerActionsHTML', 'renderTower', 'towerViewActive'].map(fn).join('\n'), c);
-  const clickStart = ui.indexOf("    var tf = e.target.closest('[data-tower-floor]');");
+  const clickStart = ui.indexOf("    var flee = e.target.closest('[data-tower-flee]');");
   const clickEnd = ui.indexOf('\n  });', clickStart);
   assert.ok(clickStart >= 0 && clickEnd > clickStart);
   vm.runInContext('function towerClick(e) {\n' + ui.slice(clickStart, clickEnd) + '\n}', c);
@@ -48,7 +48,7 @@ function setup() {
   } };
 }
 
-test('Canvas 開戰保留樓層與 BOSS／獎勵資訊，兩個挑戰按鈕停用；退出後恢復', () => {
+test('Canvas 開戰保留樓層與 BOSS／獎勵資訊，挑戰改為撤退，連挑停用；退出後恢復', () => {
   const s = setup();
   s.c.renderTower();
   const details = s.nodes['tower-detail'].innerHTML;
@@ -58,13 +58,24 @@ test('Canvas 開戰保留樓層與 BOSS／獎勵資訊，兩個挑戰按鈕停�
   assert.equal(s.nodes['tower-list-wrap'].style.display, '');
   assert.equal(s.nodes['tower-detail'].innerHTML, details);
   assert.equal(s.nodes['tower-floors'].innerHTML, floors);
-  assert.equal((s.nodes['tower-actions'].innerHTML.match(/ disabled/g) || []).length, 2);
-  assert.doesNotMatch(s.nodes['tower-actions'].innerHTML, /data-ui-pending-key/, 'pending 解除不可啟用戰鬥停用的按鈕');
+  const actions = s.nodes['tower-actions'].innerHTML;
+  assert.match(actions, /data-tower-flee[^>]*>撤退<\/button>/);
+  assert.doesNotMatch(actions, /data-tower-floor|twx-cost/);
+  assert.equal((actions.match(/ disabled/g) || []).length, 1);
+  assert.equal((actions.match(/data-ui-pending-key/g) || []).length, 1);
+  assert.match(actions, /data-tower-auto="35" disabled data-tip/, 'pending 解除不可啟用戰鬥停用的連挑');
   s.c.UI.towerBrowse.sel = 34; s.c.renderTower();
   assert.match(s.nodes['tower-detail'].innerHTML, />34</);
-  assert.equal((s.nodes['tower-actions'].innerHTML.match(/ disabled/g) || []).length, 2);
+  assert.match(s.nodes['tower-actions'].innerHTML, /data-tower-flee/);
+  assert.equal((s.nodes['tower-actions'].innerHTML.match(/ disabled/g) || []).length, 1);
+  s.c.UI.towerBrowse.sel = 40; s.c.renderTower();
+  assert.match(s.nodes['tower-actions'].innerHTML, /data-tower-flee/, '戰中瀏覽未解鎖樓層也能撤退');
+  s.c.UI.towerBrowse.sel = 35;
   s.active(false); s.c.renderTower();
   assert.doesNotMatch(s.nodes['tower-actions'].innerHTML, / disabled/);
+  assert.doesNotMatch(s.nodes['tower-actions'].innerHTML, /data-tower-flee/);
+  assert.match(s.nodes['tower-actions'].innerHTML, /data-tower-floor="35"/);
+  assert.match(s.nodes['tower-actions'].innerHTML, /twx-cost/);
   assert.equal((s.nodes['tower-actions'].innerHTML.match(/data-ui-pending-key/g) || []).length, 2);
 });
 
@@ -72,9 +83,37 @@ test('非戰鬥時仍受指令等待鎖保護，無 Canvas 的戰鬥保留原 DO
   const s = setup();
   s.c.pending = true; s.c.renderTower();
   assert.equal((s.nodes['tower-actions'].innerHTML.match(/ disabled/g) || []).length, 2);
+  s.active(true); s.c.renderTower();
+  assert.match(s.nodes['tower-actions'].innerHTML, /data-tower-flee[^>]* disabled/);
+  assert.equal((s.nodes['tower-actions'].innerHTML.match(/ disabled/g) || []).length, 2);
   s.c.pending = false; s.active(true); s.c.canvas = false; s.c.renderTower();
   assert.equal(s.nodes['tower-fight'].style.display, '');
   assert.equal(s.nodes['tower-list-wrap'].style.display, 'none');
+});
+
+test('較新的 battle 開戰狀態也顯示撤退；指令鎖解除後可撤退但不可連挑', () => {
+  const s = setup();
+  s.view.towerActive = true; s.c.pending = true; s.c.renderTower();
+  assert.match(s.nodes['tower-actions'].innerHTML, /data-tower-flee[^>]* disabled/);
+  s.c.pending = false; s.c.renderTower();
+  assert.match(s.nodes['tower-actions'].innerHTML, /data-tower-flee[^>]*>撤退/);
+  assert.equal((s.nodes['tower-actions'].innerHTML.match(/ disabled/g) || []).length, 1);
+});
+
+test('撤退入口共用 tower.flee 與等待鎖；停用／等待中／退出後不送指令', () => {
+  const s = setup();
+  s.click('flee');
+  s.active(true); s.click('flee', true);
+  s.c.pending = true; s.click('flee');
+  assert.equal(s.sent.length, 0);
+  s.c.pending = false; s.click('flee');
+  assert.equal(s.sent.length, 1);
+  assert.equal(s.sent[0].name, 'tower.flee');
+  assert.deepEqual(Object.keys(s.sent[0].args), []);
+  s.snapshot.tower.active = false; s.click('flee');
+  assert.equal(s.sent.length, 2, '較新的 battle 狀態可撤退');
+  s.active(false); s.click('flee');
+  assert.equal(s.sent.length, 2);
 });
 
 for (const kind of ['floor', 'auto']) {

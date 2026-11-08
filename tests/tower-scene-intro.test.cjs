@@ -20,7 +20,7 @@ function setup(tab) {
   const view = { paused: false, towerActive: true };
   const runtime = { floor: 1, elapsed: 0, introCd: 2.4, dmgDealt: 0, boss: { maxHp: 600 } };
   const nodes = {};
-  for (const id of ['tw-timer', 'tch-timer', 'tower-canvas-hud', 'tch-floor', 'tch-enrage', 'tch-auto', 'tch-dps']) {
+  for (const id of ['tw-timer', 'tch-timer', 'tower-canvas-hud', 'tch-floor', 'tch-enrage', 'tch-auto', 'tch-dps', 'tch-flee']) {
     nodes[id] = { textContent: '', style: {}, classList: { toggle() {} } };
   }
   const c = {
@@ -45,6 +45,16 @@ function assertTimers(s, text) {
   assert.equal(s.nodes['tw-timer'].textContent, text);
   assert.equal(s.nodes['tch-timer'].textContent, text);
 }
+
+test('上方塔戰撤退與塔戰資訊同時顯示，退場時一併隱藏', () => {
+  const s = setup('battle');
+  s.hud();
+  assert.equal(s.nodes['tch-flee'].style.display, '');
+  s.view.towerActive = false;
+  s.hud();
+  assert.equal(s.nodes['tower-canvas-hud'].style.display, 'none');
+  assert.equal(s.nodes['tch-flee'].style.display, 'none');
+});
 
 for (const tab of ['battle', 'tower']) {
   test(tab + '：登場及等待首個開戰快照時兩處倒數固定 60 秒，不延用舊場錨點', () => {

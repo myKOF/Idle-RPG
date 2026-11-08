@@ -1,3 +1,18 @@
+## SYNC-PENDING-20261108-222816 - NPC / tower / zone BGM integration
+
+- Owner: Codex; Done (controller staging / merge commit pending), authorized integrator for pending HEAD fcfa38dbccbd406bdfe7731c38af887d3455feb5 / MERGE_HEAD 8434262e589d7a87443150e02a39bcd6434d0939 only. Scope: known conflicts, required generated data/cache/tests and this record. No delegation, staging, commits, Git metadata writes or other-worktree changes. Controller handles native Excel and merge commit.
+- Preserve 50 independent tower rows, movement/attack settings and five multipliers; apply incoming second-boss appearance/model to tower_boss_2 and its initial ten-floor copies (12/22/32/42), preserving each independent row; preserve all zone BGM, UI and source task changes. Precheck identified the explicitly authorized incoming branch overlap. Native Excel plan pending; final regeneration and validation follow the controller receipt.
+
+- First-pass validation: node --test tests/npc3d-config.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/tower-boss-move-attack.test.cjs tests/zone-music.test.cjs tests/vfx-editor-cache-versions.test.cjs passed 28/28 after correcting intermediate resolution errors; npm.cmd run build passed all 692 files. node tools/config_tables.cjs --apply NPC reports 11 literals, zero semantic changes. node tools/meshy-pipeline/src/export-tower-boss2.cjs --check verified all 29 source/export files; no asset-library changes required.
+- Excel handoff: ignored logs/sync-excel-plans/20261108-222816-a3b42cf3d7b54195b8421684c550e23f/NPC.json contains the complete NPC sheet (531 rows, 34 columns), preserving existing 50 rows / independent stats / five multipliers and 65 appearance/model cells across floors 2/12/22/32/42. Supplementary sheet is unchanged. Plan/CSV comparison found only four existing precision representations at R374:R377 C12 (Excel 2.2, CSV 2.2000000000000002); regenerate from authoritative Excel in pass two. Workbook bytes remain SHA256 4d1e6dc080fd06170b8b4203a49073f7172cfd1071aea0dd4707b85d5c4d7f14; no COM or XLSX writes performed.
+- New combined data / main UI / bridge / Worker cache version: 20261108-pending-a3b42cf3; unrelated cache versions preserved, main/editor generated String versions aligned. All original text conflicts have no markers; complete-result git diff HEAD --check passed. HEAD and MERGE_HEAD remain unchanged.
+- Status: Needs native Excel controller update and second validation pass. After receipt, regenerate NPC CSV from the authoritative workbook using existing xlsx_to_csv tooling, apply NPC JS, rerun relevant tests/build and complete-result whitespace checks. No commit, staging or final merge approval claimed; index unmerged entries are expected until controller staging. Read-only review covered required instructions, base/ours/theirs tables and code, test expectations, asset provenance and existing updater/generation tools. Browser/manual gameplay and full-suite checks were not performed in this planning pass.
+
+- Second/final pass: native Excel receipt confirms normal open (Excel 16.0, corrupt_load=0, NPC 531x34 / seven shapes; supplementary sheet 491x21 unchanged). Actual NPC.xlsx SHA256 remains 33A6F614347CEEBA2FC14F96C69575A00B76324B382866B7DC9FAD4C638B2D1D; no workbook writes or COM used in sandbox.
+- Authoritative regeneration: node tools/xlsx_to_csv.cjs with PARAMS_XLSX=config/Excel/NPC.xlsx, PARAMS_CSV_OUT=config/CSV/NPC.csv, PARAMS_SHEET=NPC first exported 531x34. That numeric-normalizing reader represented four cells as 2.2 while native raw values are 2.2000000000000002. Final export therefore uses existing config_tables.readXlsxRows / csvStringify (NPC only), matching the standard config_tables --sync pipeline without touching unrelated tables. node tools/config_tables.cjs --apply NPC --write rebuilt 11 literals, semantic changes 0; existing combined JS already matches. No assertions weakened.
+- Final regression command: node --test --test-reporter=tap --test-concurrency=2 tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/tower-boss-move-attack.test.cjs tests/npc-elite-skills.test.cjs tests/npc-vision.test.cjs tests/gm-test-map.test.cjs tests/worker-protocol.test.cjs tests/zone-music.test.cjs tests/new-battle-zones.test.cjs tests/battle-toolbar.test.cjs tests/combat-pause.test.cjs tests/tower-info-during-fight.test.cjs tests/tower-scene-intro.test.cjs tests/ui-achievement-sound.test.cjs tests/vfx-editor-cache-versions.test.cjs: 100 tests, 97 pass, 3 existing failures. Read-only in-memory fs/module overlay sourced tracked files from git show fcfa38db:<path>; baseline gm-test-map / new-battle-zones / npc-elite-skills: 24 tests, 21 pass, same three failures (requestNpc3d absent from GM test mock; NPC-SKILL-4 stale generated CSV expectation; NPC-SKILL-6 expects obsolete boss_flame image). No new regression. Remaining 14 files separately passed 76/76; new-battle-zones passed 7/7 after final export.
+- npm.cmd run build: PASS, 692 files. node tools/meshy-pipeline/src/export-tower-boss2.cjs --check: PASS, 29 source/export files; asset library unchanged. git diff HEAD --check: PASS against complete merged result, including staged incoming files. Combined cache version and main/editor/Worker references preserved from planning pass. No conflict markers remain in resolved text. HEAD / MERGE_HEAD unchanged; index unmerged entries await controller staging as designed. No ignored JSON plans staged/reported, no temporary files created. Browser/manual gameplay and full-suite testing not performed in this pass. Final status: resolved, safe for controller verification and merge commit; no game commit created here.
+
 ## TOWER-BOSS-FLOORS-20261108 — 封魔塔 BOSS 1~50 關各自一列
 
 - Owner：Claude，Done。使用者要求 1~50 關的 BOSS 數值各自獨立在 NPC 表調整；已確認：現有欄位＋戰鬥倍率、51~150 層沿用 1~50 關的列。
@@ -13,6 +28,31 @@
 - 修改：NPC.xlsx 十列 tower_boss 填入上述現值（移動速度 21、攻擊速度 3、攻擊距離 32／鋼鐵魔像 5）；config_tables 的 tower_boss 列讀寫這三欄（與 normal 列共用驗證）；tower.js makeBoss 改走 combat.js npcCombatProfile；參數表第 101 列改為只剩「控制抵抗」（a/b/c＝試煉/地獄/煉獄），apply_params、data.js TOWER_BOSS_*、formula.js bossStatsFor 移除 aspd，不留兩套攻速。Excel 皆以原生 API 修改並重開驗證。快取版本 bump（data/formula/tower/bridge、Worker 匯入）。
 - 行為差異：元素 BOSS 填了攻擊距離 32 米後依 NPC 表規則「停在射程內側站樁」（原本會走到貼身），開場 26 米已在射程內；鋼鐵魔像不變。
 - 測試：新增 tests/tower-boss-move-attack.test.cjs（5 項）；tower-boss3d 改驗表上攻速。全套件與基準相比無新增失敗（基準既有 680 項失敗，兩項比對差異為不穩定測試，單獨重跑 3/3 通過）。瀏覽器實測塔戰第 1 層正常、makeBoss 1/4/51/101 層值正確。
+
+## TOWER-BOSS2-LV2-20261108 — 骷髏王Ⅱ材質版與第2個BOSS
+
+- Owner：Codex，Done，單一主開發者。使用者提供 BOSS1_LV2.glb，明確表示為同一BOSS的另一材質，五動作沿用前版，劍重新拆分並另綁骨；指定作第2個BOSS，並確認名稱「骷髏王Ⅱ」。素材授權沿用本聊天既有自製／自行生成授權與此次套用指示。
+- 前置：第1個BOSS已具備認可握姿、披風避碰及五動作。新檔原骨架／縮放不同，先對齊幾何與UV／材質，再使用已核准動作，重新拆出新素材的劍與 Sword_R。第1個模型與其餘八種BOSS保留；不改玩法、數值、技能、存檔或解鎖。
+- 允許：新模型／頭像與製作／匯出工具、必要渲染工具參數、NPC.xlsx第483列外觀及3D欄／CSV／衍生data、bridge／主頁快取、對應測試、來源交接／LV／本段及素材庫獨立套件。不合併／推送其他分支。
+- 衝突：Claude 2247d5e2 修改NPC速度／距離欄及衍生資料、快取、任務與塔測試；使用者已確認「同意分段套用（建議）」。只改第2個BOSS外觀／動作欄與必要快取，不合入該分支；保留對方分支及數值成果供後續整合。
+- 驗收：新來源SHA／材質UV對應、劍獨立網格及單骨權重、五動作姿勢與第1模型一致、60Hz披風／握點QA、原生Excel正常重開與範圍保留、實際第2關載入與退場、相關回歸／Build、高清預覽與雙倉庫提交。後續由使用者檢視與整合。
+- 完成：新模型 boss2.glb／正式透明頭像、variant 製作及全骨蒙皮 QA 工具、獨立素材匯出器、NPC.xlsx／CSV／data 第二列、主頁／bridge與Worker資料import必要快取、npc3d-config／tower-boss3d 測試、來源交接及 LV／本段。來源新 PBR／UV 共匹配 9,975 面無缺漏，從新網格拆出436劍面、重建 RightHand 下 Sword_R，單骨100%權重；保留已認可手套／握柄、194骨與135披風避碰骨及五動作。
+- 表格：原生 Excel 只改第483列13格外觀／動作，正常重開逐格核對兩張表24,550格資料／公式及七個原生物件；CSV→data 只改 BOSS_LIST 一項，後續 `node tools/config_tables.cjs --apply NPC` 語意變更0。第一個GLB SHA仍為2e945e89…，新GLB為aadf8f4d…；其他八種BOSS配置、冰屬性／技能／數值保持。第2／12／22…層沿用第二種定義。
+- QA：Blender 5.2.3，五動作1,363個60Hz樣本，全部194骨有效蒙皮矩陣對第一個模型最大誤差0.00001711；劍骨重建後靜止軸可能換表示，故比較 pose×inverse(rest)。幾何QA披風／身體交叉對數全0，披風最低0.038m、武器最低0.03438m、握點誤差<0.000001m。已目視五動作多幀及遊戲畫面；輸出五份1080×1144 GIF與1920×1200總覽，20FPS／原速，逐檔核對幀數、播放時長及循環；預覽不納入Git。
+- 測試：`node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/tower-boss3d.test.cjs tests/npc-vision.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`，37/37通過；`npm.cmd run build`690檔通過。IAB無連線，使用隔離Edge正式主頁／原生Worker，實測第2關新名／頭像／model2、Walk及三攻擊、Die後建立1／釋放1；第3關無NPC3D，第1關仍model1，撤退後總建立2／釋放2。Console error 0；首次完整流程見兩項未修改音效的Oscillator頻率裁切warning，照實保留報告，後續重跑結果見素材庫runtime JSON，未修改音效或用模型測試消除警告。
+- 唯讀檢查：三個規範、既有來源／素材manifest、原NPC兩表資料、通用渲染／NPC3D／塔／Worker／GM與UI介面、主頁與同工作區其他配樂任務差異。其他聊天在同副本修改Zones／配樂、data與快取、LV及任務文件；本項只提交自身區段，保留其工作區成果。已自我Review；限制為烘焙披風非即時布料，未做行動真機或長時間測試；沒有未完成功能，可供驗收與合併，不合併／推送。雙庫提交SHA見交付。
+
+- 交付：素材庫提交 `d748f77d`，套件 `codex-authored/tower-boss2-lv2-20261108/` 共29個雜湊來源／輸出項；原始CC0檔以binary保存原bytes，來源與stage逐項核對。遊戲Commit為本段所在提交，見聊天交付；收尾補齊Worker data import快取，沿用已核准必要快取範圍，不改Claude的formula／tower／combat版本。測試Edge與本項18991暫存伺服器已關閉。
+
+## TOWER-FLEE-BUTTON-20261108 — 塔戰中的挑戰按鈕改為撤退
+
+- Owner：Codex；Done，單一開發者。封魔塔 BOSS 戰鬥中，左側主要挑戰按鈕改為可操作的「撤退」，沿用既有 tower.flee 指令與 String 68。連挑戰中仍停用，退出後恢復挑戰／費用，樓層與 BOSS／獎勵資訊保持可瀏覽。
+- 前置：既有 Canvas 塔戰、撤退與指令等待鎖均已完成；fetch 與逐檔衝突預檢乾淨。允許 js/ui.js 塔按鈕與事件、index.html 對應快取、tests/tower-info-during-fight.test.cjs、LV_upgrade_system.md 與本段；禁止改戰鬥結算、公式、Worker 協議、存檔、配置、素材及其他副本，不合併／推送。
+- 驗收：戰鬥中顯示可操作撤退、pending 防重複、瀏覽未解鎖樓層仍可撤退、退出恢復挑戰，連挑與既有撤退流程保持；相關回歸、Build、字串及 diff 檢查，完成後 Commit。後續由使用者驗收與整合。
+- 完成：修改上述五檔；主要按鈕不顯示挑戰費用，撤退沿用 tower 共用等待鎖，較新的 battle 開戰快照亦會切換按鈕。連挑停用不綁 pending key，避免解除等待鎖後誤啟用。主頁 UI 快取更新為 20261108-tower-flee。唯讀檢查 tower.js 結算、bridge／Worker 面板與既有指令／協議、字串來源、CSS、UI 音訊及規範；無配置、字串、素材庫或必要素材變更，不建立空素材 Commit。
+- 測試：`node --test tests/tower-info-during-fight.test.cjs tests/tower-auto-result.test.cjs tests/tower-auto-advance.test.cjs tests/tower-head-layout.test.cjs tests/tower-scene-intro.test.cjs tests/tower-rewards-ui.test.cjs tests/boss-skill-lock.test.cjs tests/inventory-command-pending.test.cjs tests/string-table.test.cjs` 為 50/53 通過；`node --test tests/init-ui-smoke.test.cjs tests/ui-worker-events.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/ui-sound.test.cjs` 為 29/30 通過。本次塔戰按鈕六項全通過。四項失敗分別為獎勵 UI 測試三項缺少 divineStoneIconHTML，啟動 smoke 一項缺少 DIVINE_FORGE_MODES；以唯讀 fs overlay 載入 HEAD 原始 ui.js，兩份測試重現完全相同四項失敗，未修改測試接受缺失或調整無關功能。
+- 瀏覽器：內建 IAB 無可用連線，改以隔離 headless Edge、正式主頁、原生 Worker 及 seed=17 新局驗證。實際倒數推進後主要按鈕顯示「撤退」、連挑 disabled、費用隱藏；點擊取得 reason=flee，確認結算後恢復挑戰。另驗連挑開始後切至未解鎖樓層仍可撤退，連挑狀態清空且退出不接下一場。Console error／warning 0，未接觸真人存檔；臨時瀏覽器與伺服器均已關閉。自動審核拒絕停止暫存 Edge 行程及遞迴清理專屬目錄的指令，僅回傳 blocked by policy、未提供細節；改以專屬 CDP 正常關閉瀏覽器，測試產物保留於系統 Temp 的 codex-tower-flee-20261108，不納入專案。
+- 交付：`npm.cmd run build` 檢查 688 檔、String 寫死 0、`git diff --check` 及收尾逐檔衝突預檢通過。已自我 Review；已知限制為上述四項既有測試失敗，未做行動真機、多瀏覽器或長時間遊玩。本項無未完成內容，可供使用者驗收與合併；Commit 為本段所在提交，SHA 見交付。建議整合後重載主頁驗收，未合併／推送。
 
 ## SYNC-MERGE-20261108-f680d5 - Pending develop merge resolution
 
@@ -9620,6 +9660,23 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 # 3. Codex 任務
 
+## ZONE-BGM-20261108 — 地圖配樂配置與荒漠循環播放
+
+- Owner：Codex；Done，單一開發者。使用者要求 Zones 加 BGM 欄，荒漠進場循環播放指定的 desert-ascendant.mp3。使用者確認已取得授權。
+- 前置：Zones 來源獨占存取通過；表格及音檔預檢乾淨。共用工具／UI／資料以本項起始快照對 Claude 現況三方試跑；快取同行重疊經使用者確認同意分段處理。
+- 允許：Zones.xlsx／CSV、config_tables 的 Zones 段、data 的荒漠 BGM、UI 場景通知、ui-sound、必要快取、音檔與來源說明、相關回歸、LV 及本段；素材庫保存音檔與來源。禁止改 NPC／塔戰／公式／Worker 協議／存檔／其他任務，不合併推送。
+- 驗收：Excel 原生儲存並正常重開、來源／CSV／JS 對齊、同場景不重播、離場停播、選單與場景互斥、音量／靜音、循環／手勢解鎖、瀏覽器及相關回歸、Build、雙庫雜湊與 Commit。後續交使用者驗收與整合。
+- 完成：BGM 位於地圖名稱旁的 D 欄，荒漠填入 audio/zones/desert-ascendant.mp3，其餘地圖留空。沿既有 Excel→CSV→config_tables 產生 ZONES.bgm，UISound 依 FULL／TICK 的 zone／towerActive 切換，同圖換關續播、其他地圖與塔戰停止、返回荒漠從曲首播放。開始畫面與場景配樂互斥，共用音樂音量／全體靜音；背景繼續循環，pagehide 暫停、pageshow 恢復。
+- 修改：config/Excel/Zones.xlsx、config/CSV/Zones.csv、tools/config_tables.cjs 的 Zones 段、js/data.js 的 desert.bgm、js/ui.js 的場景通知、js/ui-sound.js、js/bridge.js／index.html／js/worker/sim.worker.js 的資料快取、audio/zones 三檔、tests/zone-music.test.cjs、tests/new-battle-zones.test.cjs 的欄位定位、tests/ui-achievement-sound.test.cjs 的快取預期、LV 與本段。既有表格回歸改用欄名定位，保留原有地圖解鎖與上限斷言；Worker 僅同步 data.js 的快取字串。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、main／start-menu／game-settings／intro-player、Worker view／protocol、tower／gm_exec、Excel 匯出與原生編修工具、素材庫解析器、既有音檔來源與相關回歸。未改 NPC／塔戰／公式／協議／存檔；同副本骷髏王Ⅱ的進行中檔案與其他素材庫暫存項保留，不納入本項。
+- Excel：來源獨占確認，原生 API 只新增 D 欄並寫入表頭／荒漠路徑兩格，正常重開兩次通過。以修改前副本逐格比對全部 209 格資料與樣式、分頁／窗格／資料驗證／物件數，皆保留；原生 Excel 匯出修改前後 PDF 並檢查，欄名與音檔路徑完整可讀。artifact-tool 匯入在本機遇到記憶體錯誤，改用原生 Excel 驗證與輸出，未手改 XML。
+- 測試：`node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/start-menu.test.cjs tests/game-menu.test.cjs tests/intro-audio.test.cjs tests/ui-worker-events.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/new-battle-zones.test.cjs tests/god-realm-zones.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs` 共 103 項，102 通過。唯一 BIOMES-CONFIG 失敗為其他進行中任務的 NPC Excel／CSV 差異；唯讀 overlay 還原本項修改前工具、資料、Zones Excel／CSV 與測試後，同檔仍 6/7、相同 NPC 斷言失敗，未降低檢查。新增 BGM 七項全通過。
+- `node tools/config_tables.cjs --apply Zones` 語意變更 0；`npm.cmd run build` 690 檔通過；`node tools/string-table/build_string_csv.cjs --check` 寫死 0；diff 檢查通過。未改 apply_params 的數值錨點。
+- 瀏覽器：IAB 無可用連線，改用隔離 headless Edge、正式主頁／原生 Worker 及 seed=17，未讀寫使用者存檔。真實 MP3 長 180.427708 秒，驗證進場起播、原生 loop 曲尾回首、同圖換關不中斷、音量25%、靜音恢復、荒漠／冰原往返、模擬分頁隱藏時進度持續前進、塔戰開始停止與撤退確認後恢復。Console error／warning／pageerror 0，測試瀏覽器與伺服器正常關閉。此 headless Edge 指定限制旗標仍允許無手勢起播，手勢阻擋／重試及選單互斥由回歸驗證；未做行動真機或跨瀏覽器。
+- 素材：使用者已取得授權的原檔，未轉碼、非 Codex 自製；來源確認／SHA 寫入 README 與 manifest。原檔、素材庫及遊戲 SHA-256 完全一致（c52558e7adc5c0d9ddb6e13100c445eaa0f23be6694a22e621b825fb2e6a1ba1）。素材庫先提交 `747ca783`，遊戲 Commit 為本段所在提交，SHA 見回報。
+- 協作：本項以起始工作快照對 Claude 實際快照的 tools/config_tables／data／ui／任務文件三方試跑 exit0；分屬 Zones、場景通知及獨立任務段，與 NPC／塔戰修改無語意相依。data／ui／bridge 共用快取同行重疊經使用者明確同意；僅分段提交本項，保留其他任務。自我 Review 完成，功能無未完成項，可供合併；已知限制為上述既有 NPC 回歸失敗及 headless 自動播放政策實測限制。下一步由使用者整合後重載遊戲驗收，未合併／推送。
+
+
 狀態：
 
 進行中（P1 協議測試已交付並合併；下列為 P2 期間任務）
@@ -15217,3 +15274,17 @@ Worker 存活且頁面正常完成載入。
 - 修改背景程式、首頁背景快取、素材來源與程式快照／SHA、LV、介面特效及本段。工作區乾淨、fetch 及逐檔預檢通過。唯讀檢查原場景、局部風砂與主頁掛載、素材工具及規範。
 - 固定亂數比對同一強度的局部陣風，沙粒為 315→630、飄砂束為 14→28。Edge 正式 1920×869 選單確認局部霧層每幀向右位移、畫素持續變化、增加後的飛砂及邊緣淡出；減少動態、設定開關暫停及返回通過，Console error／warning 0。保留動態預覽和截圖。
 - `node --test` 以 start-menu-background、start-menu、vfx-preset-usage 與 vfx-editor-cache-versions 共 39/39 通過。Build 684 檔、字串寫死 0、diff 與雙庫 SHA 通過。素材庫程式快照提交 `225a4e77`，遊戲提交見交付。可供驗收與整合，未做行動真機及跨瀏覽器驗證。
+
+## BATTLE-TOOLBAR-20261108 — 整理戰鬥標題及共用靜音快捷鍵
+
+- Owner：Codex；Done，單一開發者。將敵情／數字／效能、暫停／統計等操作移到場景上方，整理關卡與工具排列，自動推進改 AUTO 按鈕，新增與設置相通的全體靜音。使用者確認血／魔球、技能及 BUFF 保留場景內；塔戰撤退也移上方。
+- 前置：工作區乾淨、fetch 及逐檔衝突預檢通過。允許 index.html、js/ui.js、js/game-menu.js、css/world-map.css、css/ashen-forge.css、String.xlsx／CSV／生成字串及編輯器快取、相關測試、LV 與本段。禁止改戰鬥公式、Worker 協議、存檔、素材、其他工作區及合併推送。
+- 驗收：桌面／全螢幕排列、AUTO 指令等待及回復、靜音雙向同步與持久化、塔戰撤退、Canvas／DOM 備援、原 HUD、相關回歸、Build、Excel 原生重開、字串與 diff 檢查。完成後 Commit，交使用者驗收整合。
+- 完成：標題／關卡／操作分三排，左右兩組工具同高對齊，窄容器可換排。移除 Canvas 啟動時搬入暫停按鈕的邏輯，統計在 DOM 備援亦可操作。敵情改為原生按鈕並保留滑入及點擊提示；塔戰撤退沿原指令與等待鎖。AUTO 用 aria-pressed／亮色顯示，維持 header 權威快照、等待時防連點及失敗還原。靜音直接寫 GameSettings.mute，設定勾選、音量區停用與喇叭圖示即時雙向同步，不重設音量。
+- 修改：index.html、js/ui.js、js/game-menu.js、css/world-map.css、css/ashen-forge.css、String.xlsx／CSV／strings_data、tools/vfx/editor/index.html 字串快取、tests/battle-toolbar.test.cjs／combat-pause.test.cjs／tower-scene-intro.test.cjs、LV 與本段。String 2433／2434 透過既有原生 Excel API 寫入8格，兩次正常重開核對全表及物件，CSV 只新增兩列；來源獨占確認、語法、字串同步／寫死0及 diff 檢查通過。無獨立美術或音檔變更，喇叭為 HTML SVG 程式圖形，素材庫無變更，不建立空素材 Commit。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、main／game-settings／ui-sound／sfx／sfx-synth、Worker protocol、battle renderer／HUD、塔戰與世界地圖流程、Excel／String 工具及相關回歸；沒有改戰鬥、配置數值、存檔或解鎖條件。自我 Review 已完成。
+- 測試：`node --test tests/battle-toolbar.test.cjs tests/combat-pause.test.cjs tests/battle-fullscreen.test.cjs tests/battle-ui-rework.test.cjs tests/settings-tabs.test.cjs tests/tower-scene-intro.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-camera-distance.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs tests/stage-jump-ui.test.cjs tests/stage-rework.test.cjs tests/inventory-command-pending.test.cjs tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/game-menu.test.cjs tests/game-menu-pause.test.cjs tests/game-menu-save.test.cjs tests/tower-info-during-fight.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/ui-worker-events.test.cjs` 共164項、162通過。兩項 stage-rework 失敗仍預期舊塔 BOSS 烈焰魔君與荒漠舊倍率；相關測試／NPC／Zones／掉落／data 全與 HEAD 相同，唯讀 overlay 還原 HEAD 字串後同檔仍8/10、相同兩項失敗，未降低斷言。`npm.cmd run build`689檔通過。
+- 瀏覽器：內建 IAB 無可用連線，使用隔離 Edge／正式主頁、原生 Worker 及 seed=17，不接觸使用者存檔。1920×1080、1366×768、390×844、568×320 及戰鬥全螢幕各按鈕均在場景上方，無重疊；HUD 保持原位。實測 AUTO 滑鼠／Space／Enter、靜音雙向同步／重載、模擬觸控、暫停／恢復、敵情滑入及點擊、統計開關、塔戰撤退（結算 reason=flee）及 canvas=0 的暫停／統計。Console error／pageerror 0；GM升至100級時既有 sfx-synth.js:127 出現一次高頻超出 AudioContext 取樣範圍的 warning，該檔未改。測試瀏覽器與伺服器已正常關閉，預覽留在聊天 visualizations。
+- 交付：本項無未完成，可供使用者合併後重新載入驗收；Commit 為本段所在提交，SHA 見回報。已知限制為兩項既有回歸失敗及上述既有音訊 warning；未做行動真機、跨瀏覽器或長時間遊玩。沒有合併／推送。
+
+- 收尾協作：Claude 在本項完成後提交 2247d5e2，首頁只改 data／formula／tower／bridge 快取，與本次標記／UI／String／樣式快取分屬不同行，沒有語意相依；以共同祖先對實際對方快照三方試跑 exit0。任務文件的新紀錄改放檔尾，以本次 HEAD 為修改基準對實際 ai/claude 文件試跑 exit0；共同祖先仍有本次開始前既存 TOWER-FLEE 紀錄與對方新紀錄的檔首插入衝突，後續整合須保留兩項，與本次檔尾內容無關。沒有合併或修改對方工作區。

@@ -33,6 +33,7 @@ var UISound = (function () {
   var context = null, initialized = false, generation = 0, gestureReceived = false;
   var buffers = {}, loading = {}, sources = {}, lastPlayed = {};
   var menuVisible = false, menuEpoch = 0, startScreenActive = false, menuMusic = null;
+  var sceneTrack = '', sceneMusic = null;
 
   function now() { return performance.now(); }
   function stop(kind) {
@@ -79,7 +80,41 @@ var UISound = (function () {
   function setStartScreenActive(value) {
     if (startScreenActive === value) return;
     startScreenActive = value;
-    syncMenuMusic();
+    syncMusic();
+  }
+  function syncSceneMusic() {
+    var volume = typeof GameSettings === 'undefined' ? .5 :
+      (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
+    var shouldPlay = !startScreenActive && !!sceneTrack && volume > 0;
+    try {
+      if (shouldPlay && !sceneMusic) {
+        sceneMusic = new window.Audio();
+        sceneMusic.preload = 'auto';
+        sceneMusic.loop = true;
+        sceneMusic.src = sceneTrack;
+      }
+      if (!sceneMusic) return;
+      sceneMusic.volume = volume;
+      if (!shouldPlay) sceneMusic.pause();
+      else if (sceneMusic.paused) Promise.resolve(sceneMusic.play()).catch(function () {});
+    } catch (_) { /* 音檔或播放裝置失效不影響遊戲。 */ }
+  }
+  function syncMusic() {
+    // 先停止離開的畫面，避免兩首配樂同時播放。
+    if (startScreenActive) { syncSceneMusic(); syncMenuMusic(); }
+    else { syncMenuMusic(); syncSceneMusic(); }
+  }
+  function setScene(view) {
+    if (!view) return;
+    var zone = typeof ZONES !== 'undefined' && ZONES[view.zone];
+    var track = !view.towerActive && zone && zone.bgm || '';
+    if (track === sceneTrack) return;
+    sceneTrack = track;
+    if (sceneMusic) {
+      try { sceneMusic.pause(); sceneMusic.currentTime = 0; } catch (_) {}
+      sceneMusic = null;
+    }
+    syncSceneMusic();
   }
   function setStartMenuVisible(value) {
     if (menuVisible === value) return;
@@ -111,7 +146,7 @@ var UISound = (function () {
   function unlock(event) {
     if (!event || !event.isTrusted || document.hidden) return;
     gestureReceived = true;
-    if (startScreenActive) syncMenuMusic();
+    syncMusic();
     try {
       ensureContext();
       if (!context) return;
@@ -194,22 +229,24 @@ var UISound = (function () {
     document.addEventListener('pointerover', menuPointerOver, true);
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) stopAll();
-      else syncMenuMusic();
+      else syncMusic();
     });
     window.addEventListener('pagehide', function () {
       stopAll();
       if (menuMusic) menuMusic.pause();
+      if (sceneMusic) sceneMusic.pause();
     });
-    window.addEventListener('pageshow', syncMenuMusic);
+    window.addEventListener('pageshow', syncMusic);
     if (typeof GameSettings !== 'undefined') {
       GameSettings.subscribe(function (name) {
-        if (name === 'mute' || name === 'musicVolume') syncMenuMusic();
+        if (name === 'mute' || name === 'musicVolume') syncMusic();
         if (sfxGain() <= 0) stop('menuHover');
       });
     }
   }
   init();
   return { commandResult: commandResult, preloadStartMenuAudio: preloadStartMenuAudio,
+    setScene: setScene,
     setStartScreenActive: setStartScreenActive, setStartMenuVisible: setStartMenuVisible,
     achievementUnlocked: function () { play('achievement'); } };
 })();

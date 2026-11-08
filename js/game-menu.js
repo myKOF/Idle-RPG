@@ -106,6 +106,20 @@ var GameMenu = (function () {
   }
   function bindSettingsControls() {
     var gs = typeof GameSettings !== 'undefined' ? GameSettings : null;
+    var muteButton = el('btn-battle-mute');
+    function syncMuteControls() {
+      if (!gs) return;
+      var muted = !!gs.get('mute');
+      var box = el('set-mute');
+      if (box) box.checked = muted;
+      if (muteButton) muteButton.setAttribute('aria-pressed', muted ? 'true' : 'false');
+      syncAudioGroupState();
+    }
+    if (gs) {
+      syncMuteControls();
+      gs.subscribe(function (name) { if (name === 'mute') syncMuteControls(); });
+      if (muteButton) muteButton.addEventListener('click', function () { gs.set('mute', !gs.get('mute')); });
+    }
     SETTINGS_TABS.forEach(function (key, index) {
       var tab = el('settings-tab-' + key);
       if (!tab) return;

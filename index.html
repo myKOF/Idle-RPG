@@ -11,14 +11,14 @@
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
   <link rel="stylesheet" href="css/style.css?v=20261105-ancient-star-baked-glow">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=1.0.103">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=20261108-battle-toolbar">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.9">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.5">
   <link rel="stylesheet" href="css/achievements.css?v=1.0.15">
-  <link rel="stylesheet" href="css/world-map.css?v=1.0.13">
+  <link rel="stylesheet" href="css/world-map.css?v=1.0.14">
   <link rel="stylesheet" href="css/divine-forge.css?v=1.0.15">
   <link rel="stylesheet" href="css/equipment-chaos.css?v=1.0.6">
   <link rel="stylesheet" href="css/equipment-tooltip.css?v=20261105-simple-ancient-stars-v1">
@@ -583,7 +583,6 @@
           </div>
           <div id="stage-bar">
             <div class="stage-main-controls">
-              <label class="chk"><input type="checkbox" id="st-auto" checked> <span data-str="571"></span></label>
               <div class="stage-navigation">
                 <button id="st-prev" class="btn sm" type="button" data-tip-placement="stage-left" data-str-attr="aria-label:572;data-tt-title:572;data-tt-desc:573"><svg class="ui-ico ui-ico-prev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M15 5.5L8.5 12l6.5 6.5"/></svg></button>
                 <span id="stage-label" data-str="574"></span>
@@ -592,7 +591,24 @@
                 <span id="stage-best" class="dim-text" data-str="579"></span>
               </div>
             </div>
+            <div class="battle-utility-controls">
+              <button id="btn-enemy-tip" class="btn sm info-btn" type="button" data-str-attr="aria-label:475">!</button>
+              <button id="btn-toggle-damage" class="info-btn damage-toggle-btn" type="button" data-str-attr="aria-label:584;data-tt-title:114;data-tt-desc:115">
+                <svg class="icon-eye-open" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                <svg class="icon-eye-closed" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              </button>
+              <button id="btn-toggle-perf" class="info-btn damage-toggle-btn" type="button" data-str-attr="aria-label:585;data-tt-title:586;data-tt-desc:587">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              </button>
+              <button id="btn-battle-mute" class="btn sm" type="button" aria-pressed="false" data-str-attr="aria-label:2333;data-tt-title:2333;data-tt-desc:2434">
+                <svg class="ui-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M11 5L6 9H3v6h3l5 4z"/><path class="ln sound-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="ln sound-muted" d="M16 9l6 6m0-6l-6 6"/></svg>
+              </button>
+            </div>
             <div class="stage-tools">
+              <button id="st-auto" class="btn sm" type="button" aria-pressed="true" data-str="2433" data-str-attr="aria-label:571;data-tt-title:571"></button>
+              <button id="btn-combat-pause" class="btn sm warn" type="button" aria-pressed="false" data-str-attr="data-tt-title:633;data-tt-desc:635" data-str="632"></button>
+              <button id="btn-battle-info" class="btn sm" type="button" data-str-attr="aria-label:591;data-tt-title:591;data-tt-desc:592">📊</button>
+              <button id="tch-flee" class="btn sm warn" type="button" style="display:none" data-str="68"></button>
               <button id="btn-battle-fullscreen" class="btn sm" type="button" aria-pressed="false" aria-controls="combat-area" data-str-attr="data-tip:187" data-str="186"></button>
               <button id="btn-pip" class="btn sm" data-str-attr="data-tt-title:582;data-tt-desc:583;aria-label:582"><svg class="ui-ico ui-ico-pip" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect class="ln" x="3" y="5" width="18" height="14" rx="2"/><rect class="fa" x="12" y="11" width="6.5" height="5" rx="1"/></svg></button>
             </div>
@@ -609,25 +625,13 @@
             <span id="tch-auto" class="tch-auto" style="display:none"></span>
             <span id="tch-enrage" class="tch-enrage" style="display:none"></span>
             <span id="tch-dps" class="tch-dps"></span>
-            <button id="tch-flee" class="btn sm warn" type="button" data-str="68"></button>
           </div>
-          <div id="btn-enemy-tip" class="info-btn">!</div>
-          <button id="btn-toggle-damage" class="info-btn damage-toggle-btn" type="button" data-str-attr="aria-label:584;data-tt-title:114;data-tt-desc:115">
-            <svg class="icon-eye-open" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            <svg class="icon-eye-closed" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-          </button>
-          <button id="btn-toggle-perf" class="info-btn damage-toggle-btn" type="button" data-str-attr="aria-label:585;data-tt-title:586;data-tt-desc:587">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-          </button>
           <div id="battle-fps" class="battle-fps-counter" style="display:none;" aria-hidden="true"></div>
           <div id="battle-frenzy" style="position:absolute;right:12px;top:44px;z-index:12;color:white;font-weight:bold;pointer-events:auto;cursor:help;text-shadow:0 1px 3px #000" data-str-attr="data-tt-title:588;data-tt-desc:589" data-str="590"></div>
           <!-- Canvas 戰鬥模式（js/battle-renderer.js）：PixiJS 畫布動態插入為第一個子節點。
                初始化成功時 body 會掛上 battle-canvas-mode，下方 .battle-scene 隱藏；
                失敗（?canvas=0 / WebGL 不可用）時本容器維持 display:none，原畫面照舊。 -->
           <div id="battle-canvas-host">
-            <div id="battle-canvas-buttons">
-              <button id="btn-battle-info" class="btn sm" type="button" data-str-attr="data-tt-title:591;data-tt-desc:592">📊</button>
-            </div>
             <output id="battle-camera-distance" hidden></output>
             <div id="battle-hud">
               <div id="battle-health-orb" class="battle-resource-orb health-orb" tabindex="0" role="img" data-str-attr="aria-label:593;data-tt-title:593">
@@ -672,7 +676,6 @@
           <div class="log-title" data-str="594"></div>
           <div class="log-header-actions">
             <button id="btn-summary" class="btn sm" data-str-attr="data-tt-title:595;data-tt-desc:592" data-str="596"></button>
-            <button id="btn-combat-pause" class="btn sm warn" type="button" aria-pressed="false" data-str-attr="data-tt-title:633;data-tt-desc:635" data-str="632"></button>
             <button id="btn-detail-log" class="btn sm" type="button" data-str-attr="data-tt-title:597;data-tt-desc:598" data-str="599"></button>
             <select id="log-filter" class="log-filter">
             <option value="all" data-str="110"></option>
@@ -1149,11 +1152,11 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=10ba87d1"></script>
+  <script src="js/strings_data.js?v=370a19ab"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=20261108-tower-boss-floors"></script>
+  <script src="js/data.js?v=20261108-pending-a3b42cf3"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=20261106-ai-integration"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
@@ -1207,8 +1210,8 @@
   <script src="js/tower.js?v=20261108-tower-boss-floors"></script>
   <script src="js/save.js?v=20261106-start-menu"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui-sound.js?v=20261107-start-menu-audio-v3"></script>
-  <script src="js/ui.js?v=20261108-tower-boss-floors"></script>
+  <script src="js/ui-sound.js?v=20261108-zone-bgm-v1"></script>
+  <script src="js/ui.js?v=20261108-pending-a3b42cf3"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
@@ -1232,7 +1235,7 @@
   <script src="js/intro-motion.js?v=1.0.0"></script>
   <script src="js/intro-audio.js?v=1.0.0"></script>
   <script src="js/intro-player.js?v=20261106-manual-intro-v1"></script>
-  <script src="js/bridge.js?v=20261108-tower-boss-floors"></script>
+  <script src="js/bridge.js?v=20261108-pending-a3b42cf3"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -1241,7 +1244,7 @@
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
   <script src="js/lagprobe.js?v=1.0.19"></script>
-  <script src="js/game-menu.js?v=1.0.8"></script>
+  <script src="js/game-menu.js?v=20261108-battle-mute"></script>
   <script src="js/start-menu-background.js?v=1.0.5"></script>
   <script src="js/start-menu.js?v=1.0.3"></script>
   <script src="js/ai-key-setting.js?v=20261105-settings-tabs"></script>
