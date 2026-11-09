@@ -1729,6 +1729,20 @@
       gmDirty();
       return { ok: true, message: '遺物【' + relicDef.name + '】+' + count + ' 件（Lv.' + relicLevel(relicDef.id) + '）' };
     }
+    if (command === 'offline') {
+      /* offline <小時>：模擬「離線 N 小時後回來」——把存檔時間往前撥、立刻跑一次離線結算（與開機同一支 applyOfflineProgress，
+         分批處理不卡畫面），完成後跳出離線收益彈窗，再把存檔時間設回現在，避免下次開機重複結算。
+         離線結算只在開機時發生、存檔又在 IndexedDB，測試離線類遺物（長夜沙漏、夜班熔爐、夢境捕手、晨鐘、星圖殘頁）沒有別的辦法。 */
+      var offHours = gmNumber(args[0], 0.02, 1000);
+      if (offHours === null) return { ok: false, message: '格式：offline 小時（0.02～1000，可小數）' };
+      G.savedAt = Date.now() - offHours * 3600 * 1000;
+      applyOfflineProgress({ chunkSize: 24, done: function () {
+        G.savedAt = Date.now();
+        if (typeof requestPersist === 'function' && typeof PERSIST_KINDS !== 'undefined') requestPersist(PERSIST_KINDS.AUTO);
+      } });
+      G.savedAt = Date.now();
+      return { ok: true, message: '模擬離線 ' + offHours + ' 小時：結算中，完成後跳出離線收益彈窗（上限 ' + relicOfflineMaxHours() + ' 小時；沒有擊殺則不跳）' };
+    }
     if (command === 'runeword') {
       // runeword <符文真言id|list>：把該組配方的符文放進庫存（拿去鑲嵌即成形）
       var wordKey = String(args[0] || '');
