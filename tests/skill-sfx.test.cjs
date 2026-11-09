@@ -31,6 +31,11 @@ test('配方登記表：每個音效都有合成函式與合法類型', () => {
   }
 });
 
+test('播放音量 level：2026-11-10 整體縮成 65%，本來就很小聲的反擊／突刺／深淵漩渦不縮', () => {
+  const keep = new Set(['counter', 'thrust', 'abyss-vortex']);
+  for (const id of synth.ids()) assert.equal(synth.def(id).level, keep.has(id) ? 1 : 0.65, id);
+});
+
 test('Skills2 填的音效名稱全部登記過，觸發音效只出現在有接線的角色', () => {
   const c = context(), ids = new Set(synth.ids());
   let body = 0, trig = 0;
