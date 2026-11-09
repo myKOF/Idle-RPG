@@ -39,7 +39,12 @@ try {
  $book=$excel.Workbooks.Open($tempBook,0,$false)
  $shapeCount=0;foreach($ws in $book.Worksheets){$shapeCount+=$ws.Shapes.Count}
  foreach($sheet in $data.sheets){
-  $ws=$book.Worksheets.Item([string]$sheet.name)
+  # 說明頁（replace=true）不存在時才新增在最後面（2026-11-09 遺物表）；資料頁不存在一律中止。
+  $ws=$null;foreach($w in $book.Worksheets){if($w.Name -eq [string]$sheet.name){$ws=$w}}
+  if(-not $ws){
+   if(-not $sheet.replace){throw "找不到工作表「$($sheet.name)」"}
+   $ws=$book.Worksheets.Add([Type]::Missing,$book.Worksheets.Item($book.Worksheets.Count));$ws.Name=[string]$sheet.name
+  }
   $rows=$sheet.rows;$rowCount=$rows.Count;$colCount=($rows|ForEach-Object{$_.Count}|Measure-Object -Maximum).Maximum
   if($sheet.replace){
    $ws.UsedRange.ClearContents() | Out-Null

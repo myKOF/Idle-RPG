@@ -167,14 +167,18 @@ function doSalvage(it, silent, bonus) {
   var goldSluiceGold = Math.round(currentEnemyGold * Math.max(0, Number(raw('goldSluice')) || 0) / 100);
   res.gold += goldSluiceGold;
 
-  // 產量倍率：碎片熔煉爐
-  res.scrap = Math.max(1, Math.round(res.scrap * (1 + raw('scrapForge') / 100)));
+  // 產量倍率：碎片熔煉爐＋遺物「黃銅齒輪」（同一個加成括號相加）
+  var relicV = function (key) { return typeof relicValue === 'function' ? relicValue(key) : 0; };
+  res.scrap = Math.max(1, Math.round(res.scrap * (1 + (raw('scrapForge') + relicV('salvageScrap')) / 100)));
+  // 遺物「附魔印章」「篩金網」：附魔精華、金幣另外乘上 (1 + 數值%)；精華是小整數，用機率取整保住期望值
+  if (res.essence && relicV('salvageEssence') > 0) res.essence = relicRoundChance(res.essence * (1 + relicV('salvageEssence') / 100));
+  if (res.gold && relicV('salvageGold') > 0) res.gold = Math.round(res.gold * (1 + relicV('salvageGold') / 100));
   var extras = []; // 額外掉落 / 事件（記入日誌）
   if (goldSluiceGold > 0) extras.push(STR(1044, fmt(goldSluiceGold)));
 
   // 寶石採集器：成功時先保留掉落，等幸運之心判定後再一次入帳。
   var gemDrops = [];
-  var gemChance = raw('gemCollector');
+  var gemChance = raw('gemCollector') + relicV('salvageGemChance');   // 遺物「寶石回收器」與寶石採集器相加
   if (gemChance > 0 && chance(gemChance)) {
     var gemType = randomGemType();
     if (gemType) gemDrops.push({ type: gemType, level: 1, count: 1 });
@@ -182,7 +186,7 @@ function doSalvage(it, silent, bonus) {
 
   // 知識核心固定取得「當前關卡敵人經驗」的指定百分比，不是額外機率。
   var xpGain = 0;
-  var knowledgeRate = raw('knowledgeCore');
+  var knowledgeRate = raw('knowledgeCore') + relicV('salvageXp');   // 遺物「智慧分揀器」與知識核心相加
   if (knowledgeRate > 0) {
     var currentStage = Math.max(1, Math.floor(Number(G.stage && G.stage.current) || 1));
     var currentEnemy = (typeof monsterStatsFor === 'function') ? monsterStatsFor(currentStage, false, false) : null;
@@ -454,6 +458,11 @@ function tryUpgrade(it) {
     G.player.gold -= cost.gold;
     G.player.scrap -= cost.scrap;
     it.upgrade = (it.upgrade || 0) + 1;
+    // 遺物「強化槌」：成功時有機率變成 2 次強化（強化等級再 +1，不另扣費用）
+    if (typeof relicRoll === 'function' && relicRoll('upgradeDouble')) {
+      it.upgrade += 1;
+      if (typeof blog === 'function') blog(STR(2469, it.upgrade), 'good');
+    }
     G.factory.stats.upgraded++;
     markStatsDirty();
     UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.header = true;

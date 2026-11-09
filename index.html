@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.9">
+  <link rel="stylesheet" href="css/relic.css?v=20261109-relics">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.5">
   <link rel="stylesheet" href="css/achievements.css?v=1.0.15">
@@ -96,6 +97,7 @@
         <button class="tab-btn" data-tab="skills"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/skills.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="41"></span></button>
         <button class="tab-btn" data-tab="newforge"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/newforge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="64"></span></button>
         <button class="tab-btn" data-tab="gems"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/gems.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="122"></span></button>
+        <button class="tab-btn" data-tab="relics"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/relics.png?v=20261109-relics" alt="" width="128" height="128" draggable="false"></span></span><span data-str="2455"></span></button>
         <button class="tab-btn" data-tab="runes"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/runes.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="150"></span></button>
         <button class="tab-btn" data-tab="tower"><span class="nav-tab-icon"><span id="tower-merchant-alert" class="merchant-alert" hidden data-str-attr="aria-label:2439">!</span><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/tower.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="103"></span></button>
         <button class="tab-btn" data-tab="talents"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/talents.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="65"></span></button>
@@ -429,6 +431,18 @@
 
             </div>
           </div>
+        </section>
+
+        <!-- ============ 遺物（js/relic.js、js/ui-relic.js；配置表 config/Excel/Relics.xlsx）============ -->
+        <section id="tab-relics" class="tab">
+          <div class="pg-top">
+            <h2 class="pg-title" data-str="2455"></h2>
+            <span class="pg-pill"><span data-str="2456"></span> <b id="relic-owned">0/0</b></span>
+            <span class="pg-pill"><span data-str="2457"></span> <b id="relic-levels">0/0</b></span>
+            <span id="relic-buff" class="pg-pill rl-buff" hidden></span>
+            <button type="button" class="pg-help" data-str-attr="aria-label:2464;data-tt-title:2465;data-tt-desc:2468">?</button>
+          </div>
+          <div id="relic-list" class="rl-list"></div>
         </section>
 
         <!-- ============ 符文（符文真言；js/ui-runeword.js）============ -->
@@ -1154,16 +1168,18 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=d1a42cb9"></script>
+  <script src="js/strings_data.js?v=55527ad3"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=20261109-mystery-merchant"></script>
+  <script src="js/data.js?v=20261109-relics"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=20261106-ai-integration"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
   <script src="js/achievement_data.js?v=20261103-equipment-rarity-v3"></script>
-  <script src="js/formula.js?v=20261109-tower-boss-cap5"></script>
+  <script src="js/relic_data.js?v=20261109-relics"></script>
+  <script src="js/relic.js?v=20261109-relics"></script>
+  <script src="js/formula.js?v=20261109-relics"></script>
   <script src="js/battle-terrain.js?v=1.0.6"></script>
   <script src="js/battlefield.js?v=20261109-treant-audio-sync-a54d6904"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
@@ -1198,25 +1214,26 @@
   <script src="js/sfx-synth.js?v=20261108-counter-louder"></script>
   <script src="js/sfx.js?v=20261108-field-tick-sfx"></script>
   <script src="js/stats.js?v=20261109-mystery-merchant"></script>
-  <script src="js/item.js?v=20261109-mystery-merchant"></script>
+  <script src="js/item.js?v=20261109-relics"></script>
   <script src="js/gem_resonance.js?v=1.0.10"></script>
-  <script src="js/runeword.js?v=20261102_merged_ai_latest"></script>
+  <script src="js/runeword.js?v=20261109-relics"></script>
   <script src="js/skills.js?v=20261106-skill-sfx"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
   <script src="js/skills2.js?v=20261109-tower-boss-cap5"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=20261106-t4-talents"></script>
-  <script src="js/player.js?v=20261109-mystery-merchant"></script>
+  <script src="js/player.js?v=20261109-relics"></script>
   <script src="js/system-unlocks.js?v=20261103-unlock-hints"></script>
   <script src="js/combat.js?v=20261108-tower-boss-floors"></script>
-  <script src="js/tower.js?v=20261109-mystery-merchant"></script>
-  <script src="js/save.js?v=20261109-mystery-merchant"></script>
+  <script src="js/tower.js?v=20261109-relics"></script>
+  <script src="js/save.js?v=20261109-relics"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261108-zone-playlist-v1"></script>
-  <script src="js/ui.js?v=20261109-mystery-merchant"></script>
+  <script src="js/ui.js?v=20261109-relics"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
+  <script src="js/ui-relic.js?v=20261109-relics"></script>
   <script src="js/ui-achievements.js?v=20261106-start-menu-v2"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.22"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.3"></script>
@@ -1228,7 +1245,7 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- ?? Worker ???????? main.js ????????? -->
-  <script src="js/worker/protocol.js?v=20261109-ai-merge-v1"></script>
+  <script src="js/worker/protocol.js?v=20261109-relics"></script>
   <script src="js/storage.js?v=1.0.2"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
@@ -1237,7 +1254,7 @@
   <script src="js/intro-motion.js?v=1.0.0"></script>
   <script src="js/intro-audio.js?v=1.0.0"></script>
   <script src="js/intro-player.js?v=20261106-manual-intro-v1"></script>
-  <script src="js/bridge.js?v=20261109-ai-merge-v1"></script>
+  <script src="js/bridge.js?v=20261109-relics"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

@@ -81,7 +81,9 @@ var UI_PANEL_SUBSCRIPTIONS_BY_TAB = {
   talents: ['talents', 'header'],
   tower: ['tower', 'header'],
   newforge: ['newforge', 'factory', 'header'],
-  forge: ['forge', 'inv', 'gems', 'header']
+  forge: ['forge', 'inv', 'gems', 'header'],
+  /* 遺物頁（js/ui-relic.js）：遺物等級隨 header.player 投影，不另開面板。 */
+  relics: ['header']
 };
 var UI_PERSISTENT_PANEL_SUBSCRIPTIONS = ['talents', 'header', 'battle']; // talent visibility + always-visible header/battle
 
@@ -2827,6 +2829,7 @@ function switchTab(name) {
   // 若只標記 UI dirty，切回技能頁時會繼續顯示舊技能點／裝載欄數量。
   if (validUiPanelKey(name)) requestPanelData(name, true);
   if (name === 'runes') { requestPanelData('gems', true); requestPanelData('equip', true); }
+  if (name === 'relics') { requestPanelData('header', true); if (typeof renderRelics === 'function') renderRelics(true); }
   var activeTabButton = document.querySelector('.tab-btn.active');
   var nextTabButton = document.querySelector('.tab-btn[data-tab="' + name + '"]');
   if (activeTabButton && activeTabButton !== nextTabButton) activeTabButton.classList.remove('active');
@@ -5454,8 +5457,8 @@ function renderInventory() {
   var expandPending = typeof isUiCommandPending === 'function' &&
     isUiCommandPending(nodePendingKey('inv-expand'));
   if (btn) {
-    if (cap >= INVENTORY_MAX) {
-      btn.textContent = STR(1193, INVENTORY_MAX);
+    if (cap >= inventoryExpandMax()) {
+      btn.textContent = STR(1193, inventoryExpandMax());
       btn.disabled = true;
     } else {
       btn.innerHTML = STR(1194, fmt(inventoryExpandCost(player.invUpgrades || 0))) + '<img src="images/icon_gold.png" class="res-icon">)';
@@ -7744,6 +7747,8 @@ function uiTick() {
   if (d.gems && UI.tab === 'gems') { renderGems(); d.gems = false; }
   // 符文頁同時看 gems（庫存）與 equip（穿戴中成形）；兩個旗標都在這裡消耗，否則 equip 旗標會讓這一頁每拍重畫
   if ((d.gems || d.equip) && UI.tab === 'runes' && typeof renderRunes === 'function') { renderRunes(); d.gems = false; d.equip = false; }
+  // 遺物頁：資料在 header 面板（每拍都在變），renderRelics 自己比對遺物資料，沒變就不重畫
+  if (UI.tab === 'relics' && typeof renderRelics === 'function') renderRelics();
   if (UI.tab === 'tower' && towerSnapshot && towerSnapshot.merchant && towerSnapshot.merchant.active) {
     updateShopCountdown({ shop: towerSnapshot.merchant.shop });
   }
@@ -8343,6 +8348,9 @@ function showOfflineSummary(sum) {
   if (sum.scrap) loot.push(STR(2062, fmt(sum.scrap)));
   h += '<div class="offline-sum-title">' + STR(2063) + '</div>';
   h += '<div class="offline-sum-loot">' + (loot.length ? loot.join('　') : STR(2064)) + '</div>';
+  // 遺物：星圖殘頁（額外的封魔塔 BOSS 獎勵）、晨鐘（回到遊戲後的限時加成）
+  if (sum.towerRewards) h += '<div class="offline-sum-row">' + esc(STR(2466, fmt(sum.towerRewards.times), sum.towerRewards.floor)) + '</div>';
+  if (sum.returnBuff) h += '<div class="offline-sum-row">' + esc(STR(2467, sum.returnBuff.minutes, sum.returnBuff.pct)) + '</div>';
   if (sum.forge && sum.forge.salvaged > 0) {
     var fo = sum.forge, forgeOut = [STR(1048, fmt(fo.scrap)), STR(1049, fmt(fo.gold))];
     if (fo.essence) forgeOut.push(STR(1050, fmt(fo.essence)));
@@ -13369,7 +13377,8 @@ function showPendingTowerResultModalIfReady() {
     runtime.dmgDealt || 0,
     runtime.bossDmgDealt || 0,
     result.autoCountdown
-      ? { autoCountdown: true, countdown: TOWER_AUTO_RESULT_DELAY }
+      // 遺物「急行令」：連續挑戰（result.autoTotal）的場間倒數一起縮短；自動推進下一層不算連續挑戰
+      ? { autoCountdown: true, countdown: TOWER_AUTO_RESULT_DELAY / (result.autoTotal && typeof relicTowerAutoSpeedMult === 'function' ? relicTowerAutoSpeedMult() : 1) }
       : null
   );
 }

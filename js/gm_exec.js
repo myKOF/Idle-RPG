@@ -1706,6 +1706,29 @@
       addRune(runeKey, count);
       return { ok: true, message: '增加 ' + runeLabel(runeKey) + ' x' + count };
     }
+    if (command === 'relic') {
+      // relic <編號|all> [數量]：給遺物件數（未解鎖的自動解鎖 Lv.1）；relic max：全部直接滿級；relic reset：清空（js/relic.js）
+      var relicKey = String(args[0] || '').toLowerCase();
+      if (relicKey === 'max' || relicKey === 'reset') {
+        G.player.relics = {};
+        if (relicKey === 'max') RELICS.forEach(function (r) { G.player.relics[r.id] = { lv: r.levels.length, n: 0 }; });
+        relicEffectChanged();
+        gmDirty();
+        return { ok: true, message: relicKey === 'max' ? '全部 ' + RELICS.length + ' 件遺物設為滿級' : '已清空所有遺物' };
+      }
+      count = gmNumber(args[1] === undefined ? '1' : args[1], 1, 1e6);
+      if (count === null) return { ok: false, message: '格式：relic 編號|all|max|reset [數量]' };
+      if (relicKey === 'all') {
+        RELICS.forEach(function (r) { relicGrant(r.id, count); });
+        gmDirty();
+        return { ok: true, message: '全部 ' + RELICS.length + ' 件遺物各 +' + count + ' 件' };
+      }
+      var relicDef = RELIC_BY_ID[Number(relicKey)];
+      if (!relicDef) return { ok: false, message: '格式：relic 編號(1~' + RELICS.length + ')|all|max|reset [數量]' };
+      relicGrant(relicDef.id, count);
+      gmDirty();
+      return { ok: true, message: '遺物【' + relicDef.name + '】+' + count + ' 件（Lv.' + relicLevel(relicDef.id) + '）' };
+    }
     if (command === 'runeword') {
       // runeword <符文真言id|list>：把該組配方的符文放進庫存（拿去鑲嵌即成形）
       var wordKey = String(args[0] || '');

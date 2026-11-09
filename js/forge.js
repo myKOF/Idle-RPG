@@ -261,7 +261,12 @@ function forgeAutoNext() {
 function forgeApplyImprint(it, stones) {
   delete it.imprint;
   var kinds = ['sacredAffix', 'ancientAffix', 'sacredSocket', 'extraAffix', 'extraAncient', 'legendary', 'refund'];
-  var kind = wpick(kinds.map(function (key) { return [key, DIVINE_FORGE[key + 'Weight']]; }));
+  // 遺物「神賜之戒」：傳奇特效的權重另外乘上 (1 + 數值%)
+  var kind = wpick(kinds.map(function (key) {
+    var w = DIVINE_FORGE[key + 'Weight'];
+    if (key === 'legendary' && typeof relicPct === 'function') w *= 1 + relicPct('imprintLegendary');
+    return [key, w];
+  }));
   var candidates = [], imprint = { kind: kind };
   if (kind === 'sacredAffix' || kind === 'ancientAffix') {
     it.affixes.forEach(function (a, i) { if (!!a.ancient === (kind === 'sacredAffix')) candidates.push(i); });
@@ -328,6 +333,11 @@ function doForge() {
   G.player.gold -= info.cost;
   var materialKey = divineForgeMaterialKey(mode);
   G.player[materialKey] = (G.player[materialKey] || 0) - info.materialCost;
+  // 遺物「精煉神石」：消耗神性之石的模式有機率返還 25%（太古精鑄用太古精華，不適用）
+  if (materialKey === 'dust' && info.materialCost > 0 && typeof relicRoll === 'function' && relicRoll('forgeDustRefund')) {
+    var dustBack = Math.floor(info.materialCost * RELIC_FORGE_REFUND_RATE);
+    if (dustBack > 0) { G.player.dust += dustBack; blog(STR(2471, dustBack), 'good', 'factory'); }
+  }
   f.slots = [null, null, null, null, null, null];
   delete f.equipmentOrigin;
   f.stones = 0; f.result = null;

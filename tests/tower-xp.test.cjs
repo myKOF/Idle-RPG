@@ -75,7 +75,9 @@ test('高塔通關流程會發放 BOSS 經驗並套用經驗加成', () => {
   const html = readExpanded(path.join(root, 'index.html'));
   const ui = readExpanded(path.join(root, 'js/ui.js'));
   const tower = readExpanded(path.join(root, 'js/tower.js'));
-  assert.match(tower, /var xpGain = Math\.round\(\(b\.xp \|\| 0\) \* \(1 \+ st2\.xpBonus \/ 100\)\)/);
+  // 2026-11-09 獎勵抽成 grantTowerBossRewards（離線「星圖殘頁」共用）：勝利時傳入 BOSS 實體的經驗
+  assert.match(tower, /grantTowerBossRewards\(floor, firstClear, b \? b\.xp : 0, result\.rewards\)/);
+  assert.match(tower, /var xpGain = Math\.round\(\(bossXp \|\| 0\) \* \(1 \+ st2\.xpBonus \/ 100\)\)/);
   assert.match(tower, /gainXp\(xpGain\)/);
   assert.match(tower, /hellSoulOriginDropChance\(floor\)/);
   assert.match(html, /id="r-soul-origin"/);

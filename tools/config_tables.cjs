@@ -43,7 +43,8 @@ const JS = {
   runes: path.join(ROOT, 'js', 'runeword_data.js'),
   elite: path.join(ROOT, 'js', 'elite_data.js'),
   gemRes: path.join(ROOT, 'js', 'gem_resonance_data.js'),
-  ach: path.join(ROOT, 'js', 'achievement_data.js')
+  ach: path.join(ROOT, 'js', 'achievement_data.js'),
+  relic: path.join(ROOT, 'js', 'relic_data.js')
 };
 const WRITE = process.argv.includes('--write');
 
@@ -2647,7 +2648,66 @@ SCHEMAS.Zones = {
     return list.map((id,i)=>{const z=zones[id];return [i+1,id,z.name,z.bgm||'',z.bgm2||'',z.realm,z.maxStage,z.reqZone||'',z.reqStage||'',z.reqReincarnation||0,z.hpMult,z.atkMult,z.defMult,z.aspdMult,z.rewardMult].concat(ZONE_ENCOUNTER_COLS.map(c=>zoneCellText(c,enc[id][c.key]))).map(String);});
   }
 };
-const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance', 'Achievement'];
+/* ---- Relics ← RELICS（js/relic_data.js）遺物表（2026-11-09） ----
+   一列＝一件遺物的一個等級。同一件遺物的各等級列共用「編號」，名稱／分類／效果鍵每列都要填且必須一致。
+   等級必須從 1 連續編到最高級；「升級數量」＝從上一級升到這一級要消耗幾件同名遺物（第 1 級＝取得時的第一件）。
+   「數值強度」是這一級的效果數值（單位由效果鍵決定，見 js/relic.js RELIC_EFFECT_KEYS 的說明）；
+   「效果說明」顯示給玩家，可寫 {v} 代入數值強度。效果鍵必須是程式已接線的鍵，否則整次中止。
+   xlsx 由 Excel 本身維護，--gen 只寫 CSV。 */
+const RELIC_EFFECT_KEYS = ['offlineHours', 'offlineXp', 'offlineEquipDrop', 'returnBuffMinutes', 'offlineTowerReward',
+  'salvageScrap', 'salvageEssence', 'salvageXp', 'salvageGold', 'synthBuffer', 'salvageGemChance',
+  'inventoryMax', 'inventoryExpandDiscount',
+  'merchantDiscount', 'merchantHighGem', 'merchantHighEquip', 'merchantHighRune', 'merchantTicketDrop',
+  'gemComposeSave', 'runeComposeSave', 'runeDismantleBonus', 'runeEraseKeep',
+  'rerollEssenceDiscount', 'upgradeScrapDiscount', 'upgradeDouble', 'forgeDustRefund', 'imprintLegendary',
+  'towerAutoSpeed', 'towerBossTime',
+  'chestSpeed', 'chestRelicChance', 'chestDouble'];
+SCHEMAS.Relics = {
+  name: 'Relics', jsFile: 'relic', sheet: 'Relics', vars: ['RELICS'], noXlsxGen: true,
+  header: ['編號', '名稱', '分類', '效果鍵', '等級', '升級數量', '數值強度', '效果說明'],
+  extract(src) {
+    const out = [];
+    evalLiteral(extractLiteral(src, 'RELICS').literal).forEach(r => r.levels.forEach((lv, i) =>
+      out.push([numStr(r.id), r.name, r.cat, r.effect, numStr(i + 1), numStr(lv.cost), numStr(lv.value), lv.desc])));
+    return out;
+  },
+  rebuild(dataRows, header) {
+    const get = rowGetter(header);
+    const fail = msg => { throw new Error(msg); };
+    const byId = new Map();
+    dataRows.forEach((r, i) => {
+      if (get(r, '編號').trim() === '') return;
+      const where = 'Relics 表 第' + (i + 2) + '列';
+      const num = (col, check, hint) => {
+        let n; try { n = toNum(get(r, col)); } catch (e) { fail(where + '的「' + col + '」' + e.message); }
+        if (!check(n)) fail(where + '：「' + col + '」' + hint);
+        return n;
+      };
+      const id = num('編號', n => Number.isInteger(n) && n >= 1, '必須是正整數');
+      const lv = num('等級', n => Number.isInteger(n) && n >= 1, '必須是正整數');
+      const cost = num('升級數量', n => Number.isInteger(n) && n >= 1, '必須是正整數');
+      const value = num('數值強度', n => n >= 0, '不得為負數');
+      const name = get(r, '名稱').trim(), cat = get(r, '分類').trim(), effect = get(r, '效果鍵').trim(), desc = get(r, '效果說明').trim();
+      if (!name) fail(where + '（編號 ' + id + '）：「名稱」不可空白');
+      if (!cat) fail(where + '（編號 ' + id + '）：「分類」不可空白');
+      if (!desc) fail(where + '（編號 ' + id + '）：「效果說明」不可空白');
+      if (!RELIC_EFFECT_KEYS.includes(effect)) fail(where + '（編號 ' + id + '）：「效果鍵」未知：「' + effect + '」（可用：' + RELIC_EFFECT_KEYS.join('／') + '）');
+      let relic = byId.get(id);
+      if (!relic) { relic = { id, name, cat, effect, levels: [] }; byId.set(id, relic); }
+      else if (relic.name !== name || relic.cat !== cat || relic.effect !== effect) fail(where + '（編號 ' + id + '）：同一件遺物各等級的名稱／分類／效果鍵必須一致');
+      if (lv !== relic.levels.length + 1) fail(where + '（編號 ' + id + '）：等級必須從 1 連續排列，這列應為第 ' + (relic.levels.length + 1) + ' 級');
+      relic.levels.push({ cost, value, desc });
+    });
+    if (!byId.size) fail('Relics 表沒有任何遺物列');
+    const effects = new Set();
+    byId.forEach(r => { if (effects.has(r.effect)) fail('Relics 表：效果鍵「' + r.effect + '」被兩件遺物使用（編號 ' + r.id + '）'); effects.add(r.effect); });
+    const entries = Array.from(byId.values()).map(r => '  { id: ' + r.id + ', name: ' + quoteStr(r.name) + ', cat: ' + quoteStr(r.cat) +
+      ', effect: ' + quoteStr(r.effect) + ', levels: [\n' + r.levels.map(l => '    ' + jsLit(l)).join(',\n') + '\n  ] }');
+    return { RELICS: 'var RELICS = [\n' + entries.join(',\n') + '\n];' };
+  }
+};
+
+const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance', 'Achievement', 'Relics'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -2810,9 +2870,9 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance|Achievement]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance|Achievement|Relics]');
   process.exit(1);
 }
 
 }
-module.exports={annotateRuneRows,runewordCells,RW_ACT_PARAMS,SCHEMAS,csvParse,csvStringify,readXlsxRows,extractLiteral,evalLiteral,validateVfxTable};
+module.exports={RELIC_EFFECT_KEYS,annotateRuneRows,runewordCells,RW_ACT_PARAMS,SCHEMAS,csvParse,csvStringify,readXlsxRows,extractLiteral,evalLiteral,validateVfxTable};

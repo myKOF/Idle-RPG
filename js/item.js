@@ -97,7 +97,9 @@ function composeGems(type, lv) {
   var cost = FUSE_GOLD_COST[lv];
   if (G.player.gold < cost) return STR(42, fmt(cost));
   G.player.gold -= cost;
-  addGem(type, lv, -needed);
+  // 遺物「刻工鑿」：有機率少消耗一顆素材
+  var saved = (typeof relicRoll === 'function' && relicRoll('gemComposeSave')) ? 1 : 0;
+  addGem(type, lv, -(needed - saved));
   addGem(type, lv + 1, 1);
   // 任務進度：累計合成次數（與 upgraded / enchanted 同住 factory.stats）
   if (G.factory && G.factory.stats) G.factory.stats.gemComposed = (G.factory.stats.gemComposed || 0) + 1;
@@ -255,7 +257,10 @@ var MYSTERY_MERCHANT_PROVIDERS = {
   gem: {
     available: function () { return Object.keys(GEM_TYPES).some(isGemEnabled); },
     roll: function (level) {
-      var lv = wpick(GEM_SHOP_TIER_TABLE[level - 1] || GEM_SHOP_TIER_TABLE[0]);
+      var tiers = GEM_SHOP_TIER_TABLE[level - 1] || GEM_SHOP_TIER_TABLE[0];
+      // 遺物「熔晶坩堝」：7 級以上寶石的權重另外乘上 (1 + 數值%)
+      if (typeof relicBoostWeights === 'function') tiers = relicBoostWeights(tiers, 'merchantHighGem', function (lv) { return lv >= RELIC_MERCHANT_HIGH_GEM_LEVEL; });
+      var lv = wpick(tiers);
       return { kind: 'gem', type: randomGemType(), lv: lv, price: gemShopPrice(lv), sold: false };
     },
     canBuy: function (it) { return isGemEnabled(it.type) ? null : STR(1542); },
@@ -267,7 +272,11 @@ var MYSTERY_MERCHANT_PROVIDERS = {
       var cfg = MYSTERY_MERCHANT_SETTINGS;
       var level = Math.max(1, Math.floor(G.player.level * cfg.equipmentLevelMultiplier));
       var range = merchantEquipmentRarityRange();
-      var rarity = ri(range.min, range.max);
+      // 品質原本等機率；遺物「神祕裝備券」：傳說以上的權重另外乘上 (1 + 數值%)
+      var rarityPairs = [];
+      for (var rr = range.min; rr <= range.max; rr++) rarityPairs.push([rr, 1]);
+      if (typeof relicBoostWeights === 'function') rarityPairs = relicBoostWeights(rarityPairs, 'merchantHighEquip', function (r) { return r >= RELIC_MERCHANT_HIGH_EQUIP_RARITY; });
+      var rarity = wpick(rarityPairs);
       var ancientCount = wpick(MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE.filter(function (pair) { return pair[1] > 0; }));
       var equipment = makeEquipment(G.stage && G.stage.current || 1, { level: level, rarity: rarity, ancientCount: ancientCount });
       return { kind: 'equipment', equipment: equipment, price: Math.round(cfg.equipmentPriceBase * equipment.level * (equipment.rarity + 1)), sold: false };
@@ -284,7 +293,10 @@ var MYSTERY_MERCHANT_PROVIDERS = {
   rune: {
     available: function () { return merchantRunePool().length > 0; },
     roll: function () {
-      var rune = pick(merchantRunePool());
+      // 符文原本等機率；遺物「符文刻印」：19 階以上的權重另外乘上 (1 + 數值%)
+      var runePairs = merchantRunePool().map(function (r) { return [r, 1]; });
+      if (typeof relicBoostWeights === 'function') runePairs = relicBoostWeights(runePairs, 'merchantHighRune', function (r) { return r.tier >= RELIC_MERCHANT_HIGH_RUNE_TIER; });
+      var rune = wpick(runePairs);
       return { kind: 'rune', runeId: rune.id, price: Math.round(MYSTERY_MERCHANT_SETTINGS.runePriceBase * Math.pow(rune.tier, MYSTERY_MERCHANT_SETTINGS.runePriceExponent)), sold: false };
     },
     canBuy: function (it) { return RUNE_BY_ID[it.runeId] ? null : STR(2443); },
@@ -374,7 +386,10 @@ function upgradeGemShop() {
   return null;
 }
 function merchantItemPrice(it) {
-  return it && Number.isFinite(it.price) && it.price >= 0 ? it.price : (it && !it.kind ? gemShopPrice(it.lv) : Infinity);
+  var price = it && Number.isFinite(it.price) && it.price >= 0 ? it.price : (it && !it.kind ? gemShopPrice(it.lv) : Infinity);
+  // 遺物「優惠金卡」：購買價 -N%（標價不變，結帳與顯示都讀這支；兩端共載）
+  if (Number.isFinite(price) && typeof relicDiscount === 'function') price = Math.round(relicDiscount('merchantDiscount', price));
+  return price;
 }
 function buyShopGem(idx) {
   if (!MYSTERY_MERCHANT_OPEN) return STR(2441);

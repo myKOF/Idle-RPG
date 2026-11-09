@@ -1,0 +1,94 @@
+/* ============ 遺物頁（js/ui-relic.js）============
+   版型沿用寶石／符文頁的語彙：深色面板、金色強調；已解鎖的卡片金框，未取得的卡片壓暗。 */
+
+#workspace-area main > #tab-relics.active {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#tab-relics .rl-buff { border-color: #6b5a2c; color: #f6dd9a; }
+#tab-relics .rl-buff[hidden] { display: none; }
+
+#tab-relics .rl-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+#tab-relics .rl-cat { margin-bottom: 16px; }
+
+#tab-relics .rl-cat-title {
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #2a2d34;
+  color: #c9a96a;
+  font-family: var(--af-serif);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .1em;
+}
+
+#tab-relics .rl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 8px;
+}
+
+#tab-relics .rl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid #23262d;
+  border-radius: 8px;
+  background: #14161a;
+  color: #ece6d8;
+  font-size: 12px;
+}
+
+#tab-relics .rl-card.is-owned { border-color: #5c4a2c; background: linear-gradient(180deg, #1b1812, #14161a); }
+#tab-relics .rl-card.is-ready { border-color: #c5a15f; box-shadow: inset 0 0 14px -6px #e0b45a; }
+#tab-relics .rl-card.is-max { border-color: #c5a15f; background: linear-gradient(180deg, #241c11, #16140f); }
+#tab-relics .rl-card.is-locked { opacity: .62; }
+
+#tab-relics .rl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+#tab-relics .rl-name { font-size: 14px; color: #f0cf86; }
+#tab-relics .rl-card.is-locked .rl-name { color: #a39d90; }
+#tab-relics .rl-lv { flex: 0 0 auto; color: #c9c3b5; font-variant-numeric: tabular-nums; }
+
+#tab-relics .rl-pips { display: flex; gap: 3px; }
+#tab-relics .rl-pip { flex: 1 1 0; height: 4px; border-radius: 2px; background: #262a31; }
+#tab-relics .rl-pip.on { background: linear-gradient(90deg, #b88934, #f0cf86); }
+
+#tab-relics .rl-eff { color: #ece6d8; line-height: 1.5; }
+#tab-relics .rl-eff.is-preview { color: #8d887c; }
+#tab-relics .rl-next { color: #8fb7a4; line-height: 1.5; }
+
+#tab-relics .rl-foot { display: flex; align-items: center; gap: 8px; min-height: 26px; margin-top: auto; }
+
+#tab-relics .rl-prog {
+  position: relative;
+  flex: 1 1 auto;
+  height: 18px;
+  overflow: hidden;
+  border: 1px solid #2a2d34;
+  border-radius: 999px;
+  background: #0e1013;
+}
+#tab-relics .rl-prog-fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #4b3a1c, #8a6a2e); }
+#tab-relics .rl-prog-text {
+  position: relative;
+  display: block;
+  line-height: 16px;
+  text-align: center;
+  color: #ece6d8;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+#tab-relics .rl-up { flex: 0 0 auto; height: 26px; padding: 0 14px; font-size: 12px; }
+#tab-relics .rl-count { flex: 1 1 auto; color: #8d887c; }
+#tab-relics .rl-max { flex: 0 0 auto; color: #f0cf86; letter-spacing: .1em; }

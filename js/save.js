@@ -1240,7 +1240,11 @@ function applyOfflineProgress(options) {
   if (!G.savedAt) return;
   var elapsed = (Date.now() - G.savedAt) / 1000;
   if (elapsed < 60) return; // 一分鐘內不計
-  elapsed = Math.min(elapsed, OFFLINE_MAX_HOURS * 3600);
+  // 上限含遺物「長夜沙漏」（js/relic.js；只載入本檔的測試沒有遺物，退回參數表值）
+  elapsed = Math.min(elapsed, (typeof relicOfflineMaxHours === 'function' ? relicOfflineMaxHours() : OFFLINE_MAX_HOURS) * 3600);
+  /* 遺物（js/relic.js）：夜班熔爐＝離線經驗、夢境捕手＝離線裝備掉落，皆為「另外乘上」的倍率。 */
+  var relicXpMult = 1 + (typeof relicPct === 'function' ? relicPct('offlineXp') : 0);
+  var relicEquipMult = 1 + (typeof relicPct === 'function' ? relicPct('offlineEquipDrop') : 0);
 
   var st = getStats();
   var kills = offlineKillCount(elapsed, 0);
@@ -1256,7 +1260,7 @@ function applyOfflineProgress(options) {
 
   // 金幣 / 經驗：單殺值（含場景倍率與加成）× 擊殺數
   var goldPer = Math.round(m.gold * rw * (1 + st.goldBonus / 100));
-  var xpPer = Math.round(m.xp * rw * (1 + st.xpBonus / 100));
+  var xpPer = Math.round(m.xp * rw * (1 + st.xpBonus / 100) * relicXpMult);
   var gold = goldPer * kills, xp = xpPer * kills;
   G.player.gold += gold;
   if (typeof achAddGold === 'function') achAddGold(gold);
@@ -1297,7 +1301,7 @@ function applyOfflineProgress(options) {
     // 裝備（各品質獨立擲骰；輸送帶滿載時折算碎片，不丟失）
     for (var r = 0; r < rates.length; r++) {
       if (!rates[r]) continue;
-      var n = rollDropCount(rates[r] * dropMult);
+      var n = rollDropCount(rates[r] * dropMult * relicEquipMult);
       for (var i = 0; i < n; i++) {
         sum.equips[r] = (sum.equips[r] || 0) + 1;
         if (!conveyorFull) {
@@ -1329,6 +1333,22 @@ function applyOfflineProgress(options) {
 
   function finishOfflineProgress() {
     if (sum.scrap) G.player.scrap += sum.scrap;
+    /* 遺物「星圖殘頁」：每 N 小時額外 1 次「已通關最高層」封魔塔 BOSS 獎勵（不含首通解鎖）。
+       遺物「晨鐘」：回到遊戲後的限時經驗／掉寶加成從這一刻起算。 */
+    var towerEvery = typeof relicValue === 'function' ? relicValue('offlineTowerReward') : 0;
+    var towerFloor = Math.floor(Number(G.tower && G.tower.highest) || 0);
+    if (towerEvery > 0 && towerFloor >= 1 && typeof grantTowerBossRewards === 'function') {
+      var towerTimes = Math.floor(elapsed / 3600 / towerEvery);
+      for (var tt = 0; tt < towerTimes; tt++) grantTowerBossRewards(towerFloor, false);
+      if (towerTimes > 0) {
+        sum.towerRewards = { times: towerTimes, floor: towerFloor };
+        blog(STR(2466, towerTimes, towerFloor), 'good');
+      }
+    }
+    if (typeof relicStartReturnBuff === 'function') {
+      var buffMin = relicStartReturnBuff();
+      if (buffMin > 0) { sum.returnBuff = { minutes: buffMin, pct: RELIC_RETURN_BUFF_PCT }; blog(STR(2467, buffMin, RELIC_RETURN_BUFF_PCT), 'good'); }
+    }
   UI.dirty.header = true; UI.dirty.factory = true; UI.dirty.gems = true;
 
   var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);

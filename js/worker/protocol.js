@@ -111,7 +111,8 @@
 // v74：battle.tower.arena 為權威固定世界中心／範圍及法陣基準畫面；不改指令或存檔。
 // v75：塔BOSS ACT 支援 attack/cast；lockMs 為整段停步動作時間，tb-float 定址敵方。
 // v76：神祕商人開關指令、tower.merchant、混合商品及邀請券庫存。
-var WORKER_PROTOCOL_VERSION = 76;
+// v77（2026-11-09 遺物）：新增 relic.upgrade({relicId:int})（98→99）；遺物存檔 player.relics／relicReturnUntil 隨 header.player 投影，不新增面板。
+var WORKER_PROTOCOL_VERSION = 77;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -381,6 +382,9 @@ var COMMANDS = {
   'gem.resonanceUpgrade':  { fn: 'upgradeResonanceHole',  args: { region: 'int', hole: 'int' }, limit: { region: { min: 0 }, hole: { min: 0 } }, dirty: ['gems', 'header'] },
   'merchant.open': { fn: 'openMysteryMerchant', args: {}, dirty: ['tower', 'header', 'gems'] },
   'merchant.close': { fn: 'closeMysteryMerchant', args: {}, dirty: ['tower', 'header'] },
+  /* -- 遺物（js/relic.js）：升一級，消耗下一級的升級數量件同名遺物。成功回 null，失敗回錯誤字串。
+     等級會改背包上限、高塔限時等兩端共算的數值，所以 inv／tower 一起標髒。 -- */
+  'relic.upgrade':         { fn: 'relicUpgrade',     args: { relicId: 'int' }, limit: { relicId: { min: 1 } }, dirty: ['header', 'inv', 'tower'] },
   'gem.shopBuy':           { fn: 'buyShopGem',      args: { index: 'int' },                      dirty: ['gems', 'header', 'tower', 'inv'] },
   'gem.shopBuyAll':        { fn: 'buyAllShopGems',   args: {},                                    dirty: ['gems', 'header', 'tower', 'inv'] },
   'gem.shopRefresh':       { fn: 'refreshGemShop',   args: {},                                    dirty: ['gems', 'header', 'tower', 'inv'] },
