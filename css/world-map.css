@@ -37,6 +37,14 @@
   #ui-shell #btn-hero3d { margin-inline-start: 12px; }
   #ui-shell .stage-tools { justify-content: flex-start; }
 }
+/* 全螢幕把兩側工具展開至標題同排，釋放場景上方的第二排。 */
+#ui-shell.battle-fullscreen .battle-navigation { grid-template-columns: auto minmax(max-content, 1fr) auto minmax(max-content, 1fr) auto; grid-template-rows: 35px; gap: 0 12px; margin: 8px 16px; }
+#ui-shell.battle-fullscreen .battle-toolbar { display: contents; }
+#ui-shell.battle-fullscreen #current-zone-name { grid-column: 1; grid-row: 1; }
+#ui-shell.battle-fullscreen .battle-utility-controls { grid-column: 2; grid-row: 1; justify-self: start; align-self: start; flex-wrap: nowrap; }
+#ui-shell.battle-fullscreen .stage-navigation { grid-column: 3; grid-row: 1; align-self: start; }
+#ui-shell.battle-fullscreen .stage-tools { grid-column: 4; grid-row: 1; justify-self: end; align-self: start; flex-wrap: nowrap; }
+#ui-shell.battle-fullscreen .zone-bar-tools { grid-column: 5; grid-row: 1; align-self: start; }
 body.world-map-open { overflow: hidden; }
 .world-map-overlay[hidden], .world-map-overlay [hidden] { display: none !important; }
 .world-map-overlay { position: fixed; inset: 0; z-index: 15000; display: flex; align-items: center; justify-content: center; padding: 8px; background: rgba(0,0,0,.88); }

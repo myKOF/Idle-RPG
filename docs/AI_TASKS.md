@@ -15614,3 +15614,16 @@ Worker 存活且頁面正常完成載入。
 - 驗證：沿用正式CSS與原遺物渲染器的隔離Edge顯示fixture，1172／760／520px比較修改前後實測差值，五欄／名稱與等級、鎖定／可升／不足／滿級／最大安全整數庫存（長需求換行）、選取切換與收起後32卡位置高度／scrollTop固定、資訊不越框、窄屏水平捲動、JS及Console零error／warning，共32項PASS。首輪54px操作區對超長數量不足，保留64px後重驗全過，未降低驗收標準。
 - node --test --test-reporter=tap tests/relic-ui.test.cjs tests/relics.test.cjs，16/16；npm.cmd run build通過705檔；git diff／stat／check與自我Review通過。未改程式邏輯、資料表或素材，素材庫無變更不建空Commit。只修改css/relic.css、index.html、LV_upgrade_system.md及本段；唯讀檢查規範／Workflow／原ui-relic／既有回歸、前版QA與Claude音效差異，保留全部10項外部修改。
 - 交付：無本項未完成，可供Review與使用者合併；未合併／推送，未驗跨瀏覽器／行動真機。截圖selected／unselected及QA／TAP／Build在本聊天visualizations/relic-compact-20261110，臨時fixture／候選清理。Commit為本段所在「[Codex] fix: 縮短遺物外框與列間留白」，SHA見聊天；下一步重新載入驗收。
+
+## BATTLE-FULLSCREEN-ROW-20261110 — 全螢幕置頂控制列縮為單排
+
+- Owner：Codex；Done，單一開發者。依使用者截圖將全螢幕左右快捷／操作列移到頂部，與場景名稱、中央關卡及世界地圖共用一排高度；一般模式保持原排列。
+- 前置：既有戰鬥工具列與全螢幕完成。允許css/world-map.css全螢幕覆寫、index僅該CSS快取、LV與本段；禁止JS／配置／字串／素材／Worker／存檔與其他工作區，不合併推送。現有6份配置／data修改、Zones.xlsx及4份未追蹤配樂保留。
+- 衝突：首頁與Claude e2d399c2同檔不同區段，對方只改音效script快取三行，本次第22行樣式引用；以對方提交父版為base、本次單行候選為ours、實際ai/claude為theirs，git merge-file -p退出0，兩組內容保留且無語意相依。其他逐檔預檢乾淨，分段修改。
+- 驗收：實際Edge全靜音新局，桌面／窄視窗普通及全螢幕前後幾何、單排及無重疊、場景高度增量、三位數關卡／塔戰撤退／3D隱藏／HUD、原生操作與相關回歸／Build／diff；獨立Commit交使用者重載驗收。
+- 完成：只新增全螢幕CSS覆寫，將原工具列設為display:contents，場景名稱／快捷／關卡／操作／世界地圖排成單列，35px列高、所有按鈕頂緣相同；維持原按鈕尺寸與內測3D間距。一般模式CSS與HTML結構不變，world-map快取更新fullscreen-row-v1，LV同步。沒有新增字串、獨立素材或音檔，素材庫無變更，不建空Commit。
+- 實測：隔離Edge／seed=17正式主頁與原生Worker，啟動前注入本機mute=true，每次載入再確認GameSettings全靜音；不接觸使用者存檔。1920×869、1366×768、900×1000、390×844、568×320五種尺寸先以原CSS載入取樣、再用新版取樣，全螢幕標頭clientHeight73→35，畫布增加41／41／41／41／42個介面像素，一般模式標頭與畫布高度逐項相同。全部按鈕頂緣差0、無兩兩重疊且皆在標頭界內；另經正式GM跳迷霧森林200關並等待DOM更新後重驗同樣通過。塔戰撤退實際點擊後結算確認已撤退，額外撤退按鈕仍單排；世界地圖開關、Esc保留全螢幕及3D hidden時寬度0皆通過，HUD不移動。
+- 驗證指令：node --test tests/battle-toolbar.test.cjs tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-camera-distance.test.cjs tests/hero3d-internal-toggle.test.cjs tests/world-map-ui.test.cjs tests/vfx-editor-cache-versions.test.cjs，52/52通過；npm.cmd run build，705檔通過；node tools/string-table/build_string_csv.cjs --check，寫死0；git diff／stat／check及自我Review通過。沒有為純CSS修改新增鏡像測試。
+- 修改4檔：css/world-map.css、index.html、LV_upgrade_system.md、本段。唯讀檢查規範／AGENTS／Workflow／prompts、使用者截圖、舊版一般／全螢幕樣式、battle HUD、ui.js切換／地圖／塔戰指令、GM跳關、字串來源、相關回歸與Build工具。
+- 已知限制：Console error／pageerror 0；全靜音仍有既有sfx-synth高頻Oscillator超出AudioContext範圍warning，與上輪相同且音訊程式未改。未做行動真機／跨瀏覽器／長玩。實測過程暫停戰鬥中的換圖會讓演出停在遮幕，僅以完成DOM更新後的標頭幾何驗收三位數關卡，不宣稱換圖演出驗收。測試瀏覽器與伺服器均已正常關閉，幾何QA／標頭截圖位於本聊天fullscreen-row-20261110；不納入Git。
+- 交付：本項無未完成或已知新增缺陷，可供使用者重載驗收及合併。Commit為本段所在「[Codex] fix: 將戰鬥全螢幕控制列對齊為單排」，SHA見聊天。既有配置／data／Zones.xlsx及4份配樂完整保留未提交；未合併／推送develop或main。
