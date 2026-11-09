@@ -1558,9 +1558,18 @@ var BattleRenderer = (function () {
   var NPC_RANK_STYLES = {
     elite: { rim: 0x329dff, inner: 0x70cfff, glow: NPC_ELITE_GLOW_ALPHA, blend: NPC_ELITE_BLEND_ALPHA },
     elite_adv: { rim: 0xffcf32, inner: 0xffe878, glow: NPC_ELITE_ADV_GLOW_ALPHA, blend: NPC_ELITE_ADV_BLEND_ALPHA },
-    boss: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0.3 }
+    boss: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0.3 },
+    /* 封魔塔 BOSS 依塔區換光色（使用者 2026-11-09）：1~50 層藍、51~100 層紫、101~150 層紅。
+       分段沿用塔區旗標（formula.js isHellTowerFloor／isPurgatoryTowerFloor，界線在 data.js TOWER_*_MAX_FLOOR）。 */
+    towerTrial: { rim: 0x329dff, inner: 0x70cfff, glow: 1, blend: 0.3 },
+    towerHell: { rim: 0xb45cff, inner: 0xdcaaff, glow: 1, blend: 0.3 },
+    towerPurgatory: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0.3 }
   };
   function npcRankStyle(data) {
+    if (data.towerBoss) {
+      return data.purgatory ? NPC_RANK_STYLES.towerPurgatory
+        : (data.hell ? NPC_RANK_STYLES.towerHell : NPC_RANK_STYLES.towerTrial);
+    }
     if (data.isBoss || data._tier === 'boss' || data._tier === 'tower') return NPC_RANK_STYLES.boss;
     if (data._tier === 'elite_adv') return NPC_RANK_STYLES.elite_adv;
     if (data.elite || data._tier === 'elite') return NPC_RANK_STYLES.elite;
