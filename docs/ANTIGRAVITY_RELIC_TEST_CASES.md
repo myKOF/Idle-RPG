@@ -22,7 +22,8 @@
 
 ## 2. 環境與準備
 
-- 打開 http://localhost:8331/。這個瀏覽器若沒有這個網址的存檔，直接按「新遊戲」建拋棄式存檔即可。
+- 打開 http://localhost:8331/，**先在 Console 執行 `GameSettings.set('mute', true)` 把遊戲全靜音**（AI_RULES 第 17 節），再進遊戲。
+- 這個瀏覽器若沒有這個網址的存檔，直接按「新遊戲」建拋棄式存檔即可。
 - GM 指令在 DevTools Console 執行（一次一行）：
 
 ```js
