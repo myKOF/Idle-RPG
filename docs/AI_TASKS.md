@@ -9810,6 +9810,20 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 # 3. Codex 任務
 
+## ZONE-BGM-TIMING-20261109 — Loading 揭幕後起播與曲間十秒
+
+- Owner：Codex；Done，單一開發者。使用者要求場景 BGM 等 Loading 結束才開始，每首播完停留約十秒再播下一首。
+- 前置：既有雙曲輪播已完成，fetch 與逐檔預檢無外部分支衝突。允許 ui-sound 的場景播放／計時、main 的 Loading 揭幕通知、必要首頁快取、BGM／啟動相關回歸、音樂 README／素材庫同份說明、LV 與本段。禁止改 Excel／音檔／選單曲目／戰鬥／協議／存檔／其他遺物任務，不合併推送。
+- 驗收：Loading 期間 Worker 已送場景、手勢及音量變動仍不搶播；揭幕後起播；真實曲尾至下一首約十秒；等待期間不被同圖快照／手勢／設定跳過，離場取消舊計時、單曲亦有間隔；靜音／背景／pagehide／pageshow、相關回歸、Build、自我 Review 與分段 Commit。後續交使用者驗收整合。
+- 完成：場景音樂預設未就緒，main 的啟動 Loading 設為未就緒，實際 revealGame 隱藏黑幕並放行 Worker 後才啟用。每首原生 ended 後以真實時間等待十秒，再依 BGM／BGM2 順序播放；單曲也等待後重播。等待時切換音量、靜音、手勢、相同場景快照與 Loading 狀態不會跳過；離場取消計時並以播放物件／期限核對丟棄過期回呼，背景與頁面恢復沿原生命週期處理。
+- 修改：js/ui-sound.js 的場景門檻／曲間計時、js/main.js 的啟動／揭幕通知、index.html 上述兩支的快取、tests/zone-music.test.cjs 的可控計時與四項新增情境、tests/ui-achievement-sound.test.cjs 的快取預期、audio/zones/README.md、LV 與本段。未改音檔、Zones／String Excel、配置數值、Worker／協議、開始選單曲目、戰鬥或存檔。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／既有BGM交接、UI 場景通知、Loading 的 inline show／hide、啟動／場景就緒回歸、GameSettings／開始選單生命週期與素材庫解析。工作區起始的 RELIC-REDESIGN 紀錄及後續 relic／config_tables 修改完整保留，不納入本項；UISound 只動場景段，沒有修改遺物音效。
+- 測試：`node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/loading-screen.test.cjs tests/scene-startup-ready.test.cjs tests/start-menu.test.cjs tests/game-menu.test.cjs tests/update-check.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/intro-audio.test.cjs tests/string-table.test.cjs tests/tab-lock.test.cjs` 共101/101通過。新增案例確認 Loading 收到快照／手勢／設定不搶播、揭幕先後、9999ms仍停／10000ms起播、不能略過與離場過期計時。既有單曲／雙曲／靜音／背景／選單／頁面生命週期均保留並按新間隔驗收。
+- `npm.cmd run build` 704檔通過；`node tools/string-table/build_string_csv.cjs --check` 寫死0；diff檢查通過。沒有新增玩家顯示文字或數值參數錨點。
+- 瀏覽器：IAB無可用連線，改用隔離 headless Edge、正式主頁／原生 Worker 及 seed=17，不碰使用者存檔。只延遲 desert 原地板資源，確認 Worker 已送荒漠快照、真實點擊及音量／靜音變動後 Loading 仍靜音；放行資源後真實 MP3 起播時黑幕均已隱藏。兩次原生曲尾換曲分別等待10013.7ms、10004.2ms，第二次模擬背景；同圖換關、手勢與設定沒有跳過空檔。以修改前 index／main／ui-sound 的唯讀 HTTP 覆映重跑，確認舊版在 Loading 中已播放（earlyBgm=true），沒有修改原始檔或降低門檻。
+- 瀏覽器限制：功能驗證通過、error／pageerror為0；首次輔助程式因要求 warning 全0而回傳失敗，記錄兩項未修改 sfx-synth 的 Oscillator 頻率限幅及一項原有 dark-gold-seal 預載未使用提示。修改前30秒基準未重現這三項 warning，不能宣稱全部已在本輪基準重現或 Console 全淨；音訊時機與兩個實測間隔的功能斷言均已通過。未更改既有合成音效／預載來配合測試，未做行動真機／跨瀏覽器／長時間遊玩。瀏覽器與測試伺服器皆正常關閉。
+- 素材／交付：兩首既有 MP3 的 SHA 與 manifest 均一致，音檔無修改；只同步素材庫的同份 README，先提交 `872f482f`。遊戲 Commit 為本段所在提交，SHA 見交付。自我 Review 完成，BGM需求無未完成，可供使用者合併後重載驗收；已知限制如上，其他進行中任務保留，未合併／推送。
+
 ## ZONE-BGM2-20261108 — 荒漠兩首背景音樂依序循環
 
 - Owner：Codex；Done，單一開發者。使用者提供 desert-ascendant_2.mp3，確認第二首亦已取得授權，要求 Zones 再加欄位並按第一首→第二首→第一首循環。

@@ -51,11 +51,13 @@ function revealGame() {
   });
   if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
   WorkerBridge.releaseStartupHold();
+  if (typeof UISound !== 'undefined') UISound.setSceneReady(true);
 }
 
 /* initUI 只建立介面；存檔、面板與 Canvas 都仍可能在非同步載入。
    等目前分頁的資料齊全並完成首次渲染，才讓 Loading 露出遊戲。 */
 function waitForStartupUi() {
+  if (typeof UISound !== 'undefined') UISound.setSceneReady(false);
   if (typeof showLoadingScreen === 'function') showLoadingScreen();
   var finished = false;
   var rendered = false;

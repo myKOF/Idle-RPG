@@ -11,9 +11,10 @@ const { SCHEMAS, csvParse, readXlsxRows, extractLiteral } = require('../tools/co
 const track = 'audio/zones/desert-ascendant.mp3';
 const track2 = 'audio/zones/desert-ascendant_2.mp3';
 
-function mount(blocked = false) {
+function mount(blocked = false, ready = true) {
   const events = {}, music = [], settings = { mute: false, musicVolume: 50, sfxVolume: 50 };
-  let changed, allowed = !blocked;
+  let changed, allowed = !blocked, clock = 1000, timerId = 0;
+  const timers = new Map();
   class Audio {
     constructor() { this.paused = true; this.currentTime = 0; this.starts = 0; this.ended = false; music.push(this); }
     get src() { return this._src; }
@@ -27,16 +28,30 @@ function mount(blocked = false) {
     pause() { this.paused = true; }
   }
   const c = {
+    Date: { now: () => clock },
+    setTimeout(fn, ms) { const id = ++timerId; timers.set(id, { fn, at: clock + ms }); return id; },
+    clearTimeout(id) { timers.delete(id); },
     ZONES: { desert: { bgm: track, bgm2: track2 }, Icefield: {}, test: { bgm: 'audio/test.mp3' }, secondOnly: { bgm2: track2 } },
     document: { hidden: false, addEventListener: (name, fn) => { events[name] = fn; } },
     window: { Audio, addEventListener: (name, fn) => { events[name] = fn; } },
     GameSettings: { get: key => settings[key], sfxGain: () => 1, subscribe: fn => { changed = fn; } }
   };
   vm.createContext(c); vm.runInContext(read('js/ui-sound.js'), c);
+  if (ready) c.UISound.setSceneReady(true);
   return { c, music, events,
     scene: (zone, towerActive = false) => c.UISound.setScene({ zone, towerActive }),
     setting: (key, value) => { settings[key] = value; changed(key); },
     finish: audio => { audio.ended = true; audio.paused = true; audio.onended(); },
+    pending: () => [...timers.values()],
+    advance(ms) {
+      const target = clock + ms;
+      for (;;) {
+        const next = [...timers.entries()].sort((a, b) => a[1].at - b[1].at)[0];
+        if (!next || next[1].at > target) break;
+        clock = next[1].at; timers.delete(next[0]); next[1].fn();
+      }
+      clock = target;
+    },
     allow: () => { allowed = true; }
   };
 }
@@ -93,6 +108,10 @@ test('two tracks play first then second then first; same-map snapshots retain th
   const audio = m.music[0];
   m.finish(audio);
   assert.equal(audio.src, track2);
+  assert.equal(audio.paused, true);
+  m.advance(9999);
+  assert.equal(audio.paused, true);
+  m.advance(1);
   assert.equal(audio.paused, false);
   assert.equal(audio.loop, false);
   audio.currentTime = 42;
@@ -105,16 +124,22 @@ test('two tracks play first then second then first; same-map snapshots retain th
   m.finish(audio);
   assert.equal(audio.src, track);
   assert.equal(audio.currentTime, 0);
+  assert.equal(audio.paused, true);
+  m.advance(10000);
   assert.equal(audio.starts, 3);
   assert.equal(m.music.length, 1);
 });
 
-test('single-track and second-column-only maps loop; stale old-scene end events stay silent', () => {
+test('single-track and second-column-only maps wait before repeating; stale scene ends stay silent', () => {
   const m = mount(); m.scene('test');
-  assert.equal(m.music[0].loop, true);
+  assert.equal(m.music[0].loop, false);
+  m.finish(m.music[0]);
+  assert.equal(m.music[0].paused, true);
+  m.advance(10000);
+  assert.equal(m.music[0].paused, false);
   m.scene('secondOnly');
   assert.equal(m.music[1].src, track2);
-  assert.equal(m.music[1].loop, true);
+  assert.equal(m.music[1].loop, false);
   m.scene('desert');
   const old = m.music[2];
   m.scene('Icefield'); m.finish(old);
@@ -128,18 +153,20 @@ test('single-track and second-column-only maps loop; stale old-scene end events 
 test('track ends respect mute, start-screen and page-exit pause; resume preserves the selected track', () => {
   const m = mount(); m.scene('desert');
   const audio = m.music[0];
-  m.finish(audio); audio.currentTime = 12;
+  m.finish(audio); m.advance(10000); audio.currentTime = 12;
   m.setting('mute', true); m.setting('mute', false);
   assert.equal(audio.src, track2);
   assert.equal(audio.currentTime, 12);
   m.setting('mute', true); m.finish(audio);
   assert.equal(audio.src, track);
   assert.equal(audio.paused, true);
+  m.advance(10000);
   m.setting('mute', false);
   assert.equal(audio.paused, false);
   m.c.UISound.setStartScreenActive(true); m.finish(audio);
   assert.equal(audio.src, track2);
   assert.equal(audio.paused, true);
+  m.advance(10000);
   m.c.UISound.setStartScreenActive(false);
   assert.equal(audio.paused, false);
   m.events.pagehide(); m.finish(audio);
@@ -147,6 +174,7 @@ test('track ends respect mute, start-screen and page-exit pause; resume preserve
   assert.equal(audio.paused, true);
   m.setting('musicVolume', 30);
   assert.equal(audio.paused, true);
+  m.advance(10000);
   m.events.pageshow();
   assert.equal(audio.src, track);
   assert.equal(audio.paused, false);
@@ -219,6 +247,65 @@ test('blocked autoplay retries only after real interaction and always uses the l
   assert.equal(m.music[0].paused, true);
   m.c.window.Audio = function () { throw new Error('No output device'); };
   assert.doesNotThrow(() => m.scene('desert'));
+});
+
+test('loading blocks scene snapshots, gestures and settings until the game is revealed', () => {
+  const m = mount(false, false); m.scene('desert');
+  m.events.keydown({ isTrusted: true });
+  m.setting('musicVolume', 25);
+  assert.equal(m.music.length, 0);
+  m.c.UISound.setSceneReady(true);
+  const audio = m.music[0];
+  assert.equal(audio.paused, false);
+  assert.equal(audio.volume, .25);
+  audio.currentTime = 12;
+  m.c.UISound.setSceneReady(false);
+  assert.equal(audio.paused, true);
+  m.c.UISound.setSceneReady(true);
+  assert.equal(audio.currentTime, 12);
+  assert.equal(audio.paused, false);
+});
+
+test('settings, gestures, same-map ticks and loading toggles cannot bypass the ten-second gap', () => {
+  const m = mount(); m.scene('desert'); const audio = m.music[0];
+  m.finish(audio); m.advance(5000);
+  m.scene('desert'); m.setting('musicVolume', 75);
+  m.setting('mute', true); m.setting('mute', false);
+  m.events.keydown({ isTrusted: true }); m.events.pageshow();
+  m.c.UISound.setSceneReady(false); m.c.UISound.setSceneReady(true);
+  assert.equal(audio.paused, true);
+  assert.equal(audio.starts, 1);
+  m.advance(4999); assert.equal(audio.paused, true);
+  m.advance(1); assert.equal(audio.paused, false);
+  assert.equal(audio.src, track2);
+  assert.equal(audio.starts, 2);
+});
+
+test('leaving during the gap cancels its timer and a stale callback cannot start the new scene', () => {
+  const m = mount(); m.scene('desert'); const old = m.music[0];
+  m.finish(old); const late = m.pending()[0].fn; m.advance(5000);
+  m.scene('Icefield'); assert.equal(m.pending().length, 0);
+  m.scene('desert'); const current = m.music[1];
+  late(); m.advance(5000);
+  assert.equal(old.paused, true);
+  assert.equal(current.src, track);
+  assert.equal(current.starts, 1);
+});
+
+test('startup audio readiness is enabled only after the actual loading veil is hidden', () => {
+  const src = read('js/main.js'), log = [], elements = { topbar: { inert: true }, 'game-layout': { inert: true } };
+  const c = {
+    UISound: { setSceneReady: ready => log.push('audio:' + ready) },
+    document: { getElementById: id => elements[id] },
+    showLoadingScreen: () => log.push('show'), hideLoadingScreen: () => log.push('hide'),
+    WorkerBridge: { on() {}, releaseStartupHold: () => log.push('release') },
+    MSG_OUT: { BOOTED: 'booted' }, requestAnimationFrame() {}
+  };
+  vm.createContext(c);
+  vm.runInContext(src.slice(src.indexOf('function revealGame()'), src.indexOf('function enterGame(')), c);
+  c.waitForStartupUi(); assert.deepEqual(log, ['audio:false', 'show']);
+  c.revealGame(); assert.deepEqual(log, ['audio:false', 'show', 'hide', 'release', 'audio:true']);
+  assert.equal(elements.topbar.inert, false);
 });
 
 test('authoritative full and tick views update audio even when tower state does not change', () => {
