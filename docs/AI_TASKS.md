@@ -25,7 +25,7 @@
 
 ## HERO3D-ROLE6-20261109 — 六轉金甲、原畫新劍及左臂盾
 
-- Owner：Codex；In Progress，單一開發者。使用者提供Role6.glb及原畫，已逐項確認模型／原畫本遊戲使用、修改及依圖製作授權；新增右手原畫造型劍，拆下背盾裝左前臂，接入六轉並沿用既有動作，交付遊戲GIF。保留0～5轉及黃金騎士。
+- Owner：Codex；Done（確認版隨HERO3D-ROLE7-20261109正式接入），單一開發者。使用者提供Role6.glb及原畫，已逐項確認模型／原畫本遊戲使用、修改及依圖製作授權；新增右手原畫造型劍，拆下背盾裝左前臂，接入六轉並沿用既有動作，交付遊戲GIF。保留0～5轉及黃金騎士。
 - 前置：ai/codex HEAD f6ac3ff6，工作區已有另一聊天樹人第2／3階進行中修改（NPC Excel／CSV／data、bridge／Worker、index資料快取、模型／頭像／工具／測試與LV／任務段），全部保留不納入。本項不改NPC／戰鬥／存檔／數值／轉生條件，不合併推送。
 - 範圍：Role6人物／新劍／盾與原圖旁載／修復資料、Blender製作及匯出／相關測試、hero3d六轉選擇、index僅hero3d快取、LV及本段；素材庫保留授權原檔／原畫、可編輯Blend、成品／依賴／SHA及原生QA。使用既有MakeHuman手部／Blender骨架工作流程，不另造人體或改舊人物。
 - 來源：Role6 SHA cdfe8ccab67419b94dffb805a45b06d5370196dd21b43d36a8945a38a77be901，19670頂點／一骨架68節點／Running，T姿勢，三圖2048px。只取新外觀與盾，沿用核准Role1骨架／六動作／右手正握及原出刃邏輯；新劍依本次金色彎鉤護手與銀色長刃原畫由Blender製作，不再使用四／五轉紅紋劍。
@@ -49,6 +49,7 @@
 - 專案保存：tools/meshy-pipeline/candidates/role6-20261109七份候選輸出／旁載圖、五支Blender製作／驗證工具、兩支Node匯出／動作驗證工具、docs/assets/HERO3D_ROLE6_CANDIDATE.md及本段。沿用素材庫解析器，export-role6-candidate --apply／--check核對25項來源／輸出、受保留的原模型及stage SHA；不依賴原桌面／聊天暫存位置。候選未連至角色入口，沒有修改正式hero3d／index快取、LV、戰鬥、表格、解鎖或存檔。
 - 提交前重驗：Blender --python-exit-code 1 --python tools/meshy-pipeline/blender/validate_role6_candidate.py -- PACKAGE ROLE1 RESULT通過（原生Blend六動作／三原圖打包、骨架／IBM／非腕軌逐位、四指接觸位移0、拇指指節長度）；node tools/meshy-pipeline/src/validate-role6-motion.cjs CANDIDATE RESULT通過（120Hz、攻擊握點／腕角斷言，保留Death放劍）；node tools/meshy-pipeline/src/export-role6-candidate.cjs --check通過25項；五支Python AST、兩支Node --check、npm.cmd run build通過699檔、雙庫diff／stat／check及索引SHA核對。Node既有Three模組型別提示保留，未為此改package設定；未重跑全庫或正式轉生場景。
 - 清理：刪除本任務生成的Python快取、已歸檔QA的重複日誌／暫存報告、除錯腳本／圖、GIF逐幀輸出及Blend自動備份；保留使用者已收到的最終GIF／近景、可編輯來源與正式候選。其他聊天修改已於開始本輪前自行提交，本輪未代改／刪除。後續由使用者決定續修或正式接入；現階段可合併的是候選保存與工具，不能據此宣稱六轉已上線或全動作無穿模，未合併／推送任何分支。
+- 後續接入（2026-11-09）：使用者在七轉任務明確選擇將確認版6轉與新7轉一起正式接入；已以相同SHA匯出正式Role6與原三圖，啟用6轉URL及快取。實際Worker轉生切換、六轉存檔落地重載與七轉缺貼圖回退均通過；原候選／原素材庫未改，先前確認版少量接觸作已接受限制保留。正式提交、雙庫SHA及完整驗證見下方HERO3D-ROLE7-20261109，本項不再列為未接入。
 
 ## TOWER-TREANT-LV2-20261109 — 樹人第2階沿用全動作
 
@@ -15532,3 +15533,18 @@ Worker 存活且頁面正常完成載入。
 - 衝突解法：`index.html` 同時保留主線的 BOSS 3D 光暈成果與 incoming 的 1024px 主角清晰度成果，hero3d 使用新合併快取 `20261109-ai-merge-v1`。Worker 載入同時保留主線的封魔塔 BOSS 公式／技能版本與 incoming 的神秘商人 data／stats／item／player／tower／save 版本；Bridge、Protocol 與 Worker asset cache 同步為同一新版本。其餘已自動合入成果及 controller 的 EOF 空白機械修正原樣保留。
 - Excel／素材：原始衝突沒有 XLSX；提示內 `config/Excel/Name.xlsx` 是 controller 未替換的範例且倉庫不存在，因此沒有建立虛構 DATA plan、沒有修改任何 workbook bytes。無額外素材庫交付。
 - 驗證：`node --check` 通過 Worker 與 Bridge；Worker protocol、神秘商人、主角清晰度、塔 BOSS 3D、NPC 3D、樹人素材與 cache 專項共 35/35 通過。完整 build、完整 merged-result `git diff HEAD --check`、衝突標記與 HEAD／MERGE_HEAD 最終核對列於 controller 交付結果；索引維持 unmerged 是等待 controller 依回報檔案 stage 的預期狀態。
+
+## HERO3D-ROLE7-20261109 — 七轉換材質人物、新劍與左臂盾
+
+- Owner：Codex；Done，單一開發者。使用者提供Role7.glb，已明確確認本遊戲使用／修改授權；要求沿用六轉動作與手部設計、自製一把新劍，拆下背盾。沿用前輪盾移左前臂、70%短桿、右手正握、原手／獨立手甲及48度腕角設定，保留0～6轉及黃金騎士。
+- 前置：六轉確認的候選已保存於e4b8b83a／素材庫116aa99，尚未連至正式角色入口。本輪先製作七轉可檢視成果，正式接入範圍另確認，不擅改六轉保存版本。Role7 SHA 43017e0faa6a242afb923741648882993b51807fea666566d344b1c54a556a01；與原Role6同19670頂點／30501索引／68節點，UV與索引逐位一致，位置差最大2.98e-8m，可完整沿用已修好的六轉幾何與動作，採七轉原PBR三圖。
+- 允許：本段、獨立Role7製作／新劍／驗證／匯出工具、候選或核准輸出、來源交接、素材庫獨立套件及必要的外觀接入／測試；不改戰鬥、數值、解鎖或存檔，不合併／推送。預檢新工具／來源文件／本段無外部變更。驗收來源拓樸／UV與原貼圖SHA、新劍右握點、背盾清除與左臂盾、六動作完全沿用六轉確認版、原生Blend、清晰攻擊預覽、雙庫來源／輸出核對及適當回歸。
+- 使用者已明確選擇「把已確認6轉與新7轉一起正式接入」。範圍擴至js/hero3d.js的6／7轉外觀URL與選擇、index相應快取、images/models/hero3d/role6／role7及旁載圖、LV與相關測試；六轉保存候選及其舊套件原樣保留，只匯出相同SHA成品。最新預檢上述共享檔已無其他分支修改來源，先前六轉紀錄的舊快取衝突目前不存在。新劍採七轉紅白金色系，自製造型，握柄尺寸與既有握點保持。
+- 完成：6轉使用確認版Role6、7轉以上使用新Role7；七轉原三張2048px圖原檔保留，非武器全部頂點／UV／權重及25骨架／IBM、六動作全部取樣／插值與六轉確認版逐位相同。只另製銀刃、對稱金銀翼形護手、紅寶石及酒紅纏柄新劍，握柄與固定環尺寸保持；背盾拆下綁左前臂，70%短桿與原手甲／握姿保持。Role7成品SHA a77c2a8063c1bf3652914c11973164a1f959f0532bd602243086d40e4a58d771，新劍d61a41a1f1174bc8704197f9b1d97f90f36449058f034fef3c8fbbfc5348078f。0～5轉及黃金騎士不變，主頁hero3d快取20261109-role6-role7-v1；未改表格／玩家字串、Worker、數值、動作時序／四招規則、存檔或解鎖。
+- 修改：js/hero3d.js、index、LV、本段與docs/assets/HERO3D_ROLE6_ROLE7_SOURCE.md；正式role6／role7.glb與各JSON／三原圖；三支Blender製作／原生驗證工具、一支Node匯出器；hero3d-rebirth-skin與新hero3d-role6-role7回歸。唯讀檢查AI_RULES／AGENTS／Workflow／prompts、原Role6／Role7及確認候選、PBR與角色生命週期、BattleRenderer換模／四招、GM／Worker／Save與選單、原模型／素材匯出器及相關測試；未改其他聊天或其他工作區。
+- 原生QA：Blender4.5.10背景製作及重開兩個Blend，人物六actions／三原圖打包；validate_role7.py逐位驗證所有非武器幾何、全動畫、骨架及原PBR SHA，新劍全綁Sword、盾／固定帶全綁LeftForeArm，四指對新柄實際BVH接觸最小間隙0.079～0.176mm。validate-role6-motion.cjs以120Hz驗攻擊握點漂移小於0.00000025m、腕角最大48.044度，保留Death原放劍。三Python AST及Node --check通過。
+- 回歸指令：PowerShell選tests/*.test.cjs名稱符合^(hero3d-|vfx-editor-cache-versions|battle-camera-distance|battle-arena-bounds)，node --test --test-concurrency=2 --test-reporter=tap共91/91；另定向兩檔22/22，npm.cmd run build通過700檔。新回歸包括正式6轉等於確認候選、七轉全動作／手盾幾何相同、原貼圖SHA、新武器剛性與來源、5→6→7狀態保存、7／8不重載、競態／失敗及存檔開局；沒有放寬原行為斷言。雙庫diff／stat／check與來源／索引SHA核對通過。
+- 實機：隔離Edge、新局、正式主頁／原生Worker與真實GM轉生0→5→6→7→8→6→7，確認header／模型URL／角色身體一致、8沿用7且不重載、舊控制器dispose及context loss；7轉與6轉各自saveAutoNow落地、重新載入並按繼續，正確恢復。刻意404七轉baseColor確認保留6轉且3D開關不關，解除攔截再6→7可載入。真實四招隨機均出現且不連續同招。正常phase page error0，預期失敗phase另記404／回退警告。
+- 瀏覽器提示：第一次輔助程式因要求console warning全0，在功能驗證通過後被音訊限幅及未使用預載提示擋下。以原HEAD dcc45f28的index／hero3d唯讀覆蓋重作同流程，重現音訊頻率限幅；另確認預載為原index相同dark-gold-seal宣告，短暫基準閒置未重現，未宣稱兩者全重現。最終game-validation.json分列功能PASS、基準提示與原始報告SHA；不改音訊／預載或產品／測試配合驗證，不宣稱console全淨。
+- 素材：新獨立套件codex-authored/hero3d-role7-20261109含22項來源／成品／製作器／原生與瀏覽器QA，加8項六轉來源依賴與manifest；新匯出器核對30項及既有角色SHA，原六轉候選匯出器仍核對25項。先提交素材庫f5724533ca11f89379ded95a4aa2f80bc19344ca；遊戲提交為本段所在「[Codex] feat: 接入六轉與七轉劍盾角色外觀」。兩個庫逐項stage SHA核對後提交，不合併／推送。
+- 預覽與交付：聊天role7-20261109保存1920×1080／30FPS／84幀原速Attack4前後雙視圖GIF及新劍／手盾／正式戰場近景，Pillow驗84幀、loop0、兩側均動並目視讀回。這是相同正式GLB／Hero3D／PBR的放大診斷鏡頭；最終媒體保留，逐幀PNG及除錯暫存清理。無本項未完成實作，可供使用者重載驗收及合併；已接受六轉少量盾／護腕接觸沿用，沒有宣稱全動作／衣甲自身或過渡無穿模，未做行動真機／跨瀏覽器／長玩。未合併／推送develop或main，後續由使用者驗收與整合者同步。

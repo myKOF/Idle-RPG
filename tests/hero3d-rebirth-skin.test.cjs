@@ -14,14 +14,16 @@ function setup(count=0,enabled=true){
  assert.ok(start>=0&&end>start);vm.runInContext(source.slice(start,end),c);
  return{c,S,initial,oldBody,pending,warnings,ctrl,Hero3D};
 }
-test('0轉Role、1轉Role1、2轉Role2、3轉Role3、4轉Role4、5轉以上Role5；無效數值保持基礎外觀',()=>{
+test('0～7轉使用對應Role，7轉以上沿用Role7；無效數值保持基礎外觀',()=>{
  const c=vm.createContext({});vm.runInContext(fs.readFileSync(root+'/js/hero3d.js','utf8'),c);
  for(const n of [0,-1,undefined,NaN])assert.match(c.Hero3D.modelForReincarnations(n),/\/role\.glb\?/);
  for(const n of [1,'1'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role1\.glb\?/);
  for(const n of [2,'2'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role2\.glb\?/);
  for(const n of [3,'3'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role3\.glb\?/);
  for(const n of [4,'4'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role4\.glb\?/);
- for(const n of [5,6,30,'5'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role5\.glb\?/);
+ for(const n of [5,'5'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role5\.glb\?/);
+ for(const n of [6,'6'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role6\.glb\?/);
+ for(const n of [7,8,30,'7'])assert.match(c.Hero3D.modelForReincarnations(n),/\/role7\.glb\?/);
 });
 test('當場1轉交換身體及輪廓，保留實際動作秒數、速度與朝向並釋放舊資源',async()=>{
  const h=setup(),texture=h.oldBody.texture,outline=h.oldBody.hero3dOutlineTex;
@@ -126,10 +128,35 @@ test('3／4轉請求競態、4轉載入失敗及已4轉存檔開局',async()=>{
  const back=setup(3),pending=back.c.syncHero3dAppearance(4);back.c.syncHero3dAppearance(3);const old=back.ctrl(4);back.pending[0].resolve(old);await pending;assert.equal(old.disposed,true);assert.equal(back.S.hero3d,back.initial);
 });
 
-test('4轉升5轉保存攻擊狀態；6轉沿用Role5；已5轉存檔直接載入',async()=>{
+test('4轉升5轉保存攻擊狀態；同一5轉不重載；已5轉存檔直接載入',async()=>{
  const h=setup(4),p=h.c.syncHero3dAppearance(5);assert.equal(h.pending[0].opts.reincarnations,5);const next=h.ctrl(5);h.pending[0].resolve(next);await p;
- assert.equal(h.S.hero3d,next);assert.equal(next.state,h.initial.state);assert.equal(h.S.player.body.hero3d,next);assert.equal(h.S.player.curAnim,'attack4');assert.equal(h.initial.disposed,true);assert.equal(h.c.syncHero3dAppearance(6),null);assert.equal(h.pending.length,1);
+ assert.equal(h.S.hero3d,next);assert.equal(next.state,h.initial.state);assert.equal(h.S.player.body.hero3d,next);assert.equal(h.S.player.curAnim,'attack4');assert.equal(h.initial.disposed,true);assert.equal(h.c.syncHero3dAppearance(5),null);assert.equal(h.pending.length,1);
  const s=setup(5),boot=s.c.loadHero3d();assert.equal(s.pending[0].opts.reincarnations,5);const fresh=s.ctrl(5);s.pending[0].resolve(fresh);await boot;assert.equal(s.S.hero3d,fresh);
+});
+
+for(const skin of [6,7])test((skin-1)+'轉升'+skin+'轉保存攻擊狀態、同皮膚不重載、讀檔直接載入',async()=>{
+ const h=setup(skin-1),p=h.c.syncHero3dAppearance(skin);
+ assert.equal(h.pending[0].opts.reincarnations,skin);
+ const next=h.ctrl(skin);h.pending[0].resolve(next);await p;
+ assert.equal(h.S.hero3d,next);assert.equal(next.state,h.initial.state);
+ assert.equal(h.S.player.body.hero3d,next);assert.equal(h.S.player.curAnim,'attack4');assert.equal(h.initial.disposed,true);
+ assert.equal(h.c.syncHero3dAppearance(skin),null);assert.equal(h.pending.length,1);
+ const saved=setup(skin),boot=saved.c.loadHero3d();assert.equal(saved.pending[0].opts.reincarnations,skin);
+ const restored=saved.ctrl(skin);saved.pending[0].resolve(restored);await boot;assert.equal(saved.S.hero3d,restored);
+});
+
+test('6／7轉載入競態只採最新7轉，失敗保留6轉且不重複下載',async()=>{
+ const h=setup(5),a=h.c.syncHero3dAppearance(6),b=h.c.syncHero3dAppearance(7);
+ const stale=h.ctrl(6),latest=h.ctrl(7);h.pending[0].resolve(stale);await a;
+ assert.equal(stale.disposed,true);assert.equal(h.S.hero3d,h.initial);
+ h.pending[1].resolve(latest);await b;assert.equal(h.S.hero3d,latest);
+ assert.equal(h.c.syncHero3dAppearance(8),null);assert.equal(h.pending.length,2);
+ const f=setup(6),p=f.c.syncHero3dAppearance(7);f.pending[0].reject(Error('unavailable'));await p;
+ assert.equal(f.S.hero3d,f.initial);assert.equal(f.initial.disposed,false);
+ assert.equal(f.c.syncHero3dAppearance(7),null);assert.equal(f.pending.length,1);
+ const back=setup(6),pending=back.c.syncHero3dAppearance(7);back.c.syncHero3dAppearance(6);
+ const old=back.ctrl(7);back.pending[0].resolve(old);await pending;
+ assert.equal(old.disposed,true);assert.equal(back.S.hero3d,back.initial);
 });
 test('4／5轉交錯僅最新5轉生效；5轉失敗或返回4轉保留現況',async()=>{
  const h=setup(3),a=h.c.syncHero3dAppearance(4),b=h.c.syncHero3dAppearance(5),stale=h.ctrl(4),next=h.ctrl(5);h.pending[0].resolve(stale);await a;assert.equal(stale.disposed,true);h.pending[1].resolve(next);await b;assert.equal(h.S.hero3d,next);
