@@ -25,8 +25,10 @@
   var THIRD_REBIRTH_MODEL_URL = 'images/models/hero3d/role3.glb?v=20261104-role3-v1';
   var FOURTH_REBIRTH_MODEL_URL = 'images/models/hero3d/role4.glb?v=20261105-role4-v1';
   var FIFTH_REBIRTH_MODEL_URL = 'images/models/hero3d/role5.glb?v=20261105-role5-v1';
-  function skinForReincarnations(count) { return Number(count) >= 5 ? 5 : Number(count) >= 4 ? 4 : Number(count) >= 3 ? 3 : Number(count) >= 2 ? 2 : Number(count) >= 1 ? 1 : 0; }
-  function modelForReincarnations(count) { var skin = skinForReincarnations(count); return skin === 5 ? FIFTH_REBIRTH_MODEL_URL : skin === 4 ? FOURTH_REBIRTH_MODEL_URL : skin === 3 ? THIRD_REBIRTH_MODEL_URL : skin === 2 ? SECOND_REBIRTH_MODEL_URL : skin === 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
+  var SIXTH_REBIRTH_MODEL_URL = 'images/models/hero3d/role6.glb?v=20261109-role6-v1';
+  var SEVENTH_REBIRTH_MODEL_URL = 'images/models/hero3d/role7.glb?v=20261109-role7-v1';
+  function skinForReincarnations(count) { return Number(count) >= 7 ? 7 : Number(count) >= 6 ? 6 : Number(count) >= 5 ? 5 : Number(count) >= 4 ? 4 : Number(count) >= 3 ? 3 : Number(count) >= 2 ? 2 : Number(count) >= 1 ? 1 : 0; }
+  function modelForReincarnations(count) { var skin = skinForReincarnations(count); return skin === 7 ? SEVENTH_REBIRTH_MODEL_URL : skin === 6 ? SIXTH_REBIRTH_MODEL_URL : skin === 5 ? FIFTH_REBIRTH_MODEL_URL : skin === 4 ? FOURTH_REBIRTH_MODEL_URL : skin === 3 ? THIRD_REBIRTH_MODEL_URL : skin === 2 ? SECOND_REBIRTH_MODEL_URL : skin === 1 ? REBIRTH_MODEL_URL : MODEL_URL; }
   var GLTF_URL = 'js/vendor/three/loaders/GLTFLoader.js';
   var CLOTH_URL = 'images/models/hero3d/sunbrand-cloth.json';   // 布料頂點清單（披風、腰前布襠、關節處的藍布）：和 tools/meshy-pipeline/src/fix-grips.mjs 共用
 
