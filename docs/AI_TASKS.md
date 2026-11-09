@@ -15562,3 +15562,19 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器提示：第一次輔助程式因要求console warning全0，在功能驗證通過後被音訊限幅及未使用預載提示擋下。以原HEAD dcc45f28的index／hero3d唯讀覆蓋重作同流程，重現音訊頻率限幅；另確認預載為原index相同dark-gold-seal宣告，短暫基準閒置未重現，未宣稱兩者全重現。最終game-validation.json分列功能PASS、基準提示與原始報告SHA；不改音訊／預載或產品／測試配合驗證，不宣稱console全淨。
 - 素材：新獨立套件codex-authored/hero3d-role7-20261109含22項來源／成品／製作器／原生與瀏覽器QA，加8項六轉來源依賴與manifest；新匯出器核對30項及既有角色SHA，原六轉候選匯出器仍核對25項。先提交素材庫f5724533ca11f89379ded95a4aa2f80bc19344ca；遊戲提交為本段所在「[Codex] feat: 接入六轉與七轉劍盾角色外觀」。兩個庫逐項stage SHA核對後提交，不合併／推送。
 - 預覽與交付：聊天role7-20261109保存1920×1080／30FPS／84幀原速Attack4前後雙視圖GIF及新劍／手盾／正式戰場近景，Pillow驗84幀、loop0、兩側均動並目視讀回。這是相同正式GLB／Hero3D／PBR的放大診斷鏡頭；最終媒體保留，逐幀PNG及除錯暫存清理。無本項未完成實作，可供使用者重載驗收及合併；已接受六轉少量盾／護腕接觸沿用，沒有宣稱全動作／衣甲自身或過渡無穿模，未做行動真機／跨瀏覽器／長玩。未合併／推送develop或main，後續由使用者驗收與整合者同步。
+
+## RELIC-REDESIGN-20261109 — 遺物二十級與圖標介面改造
+
+- Owner：Codex；Done，單一開發者。使用者授權32件遺物20級、首件解鎖／重複件配置消耗、取消分類每行五件、精緻圓形圖標、名稱等級與懸停tips、點選展開升級按鈕及數量、中央升級演出及音效。
+- 前置：既有遺物Worker／header／存檔及Relics表完成，fetch後逐檔預檢無外部衝突。允許relic與UI／CSS、Relics／String原生Excel與衍生CSV／JS、必要載入與Worker快取、UISound、獨立圖標／來源匯出／回歸及LV／本段；禁止改其他玩法／協議／存檔契約或其他AI工作區，不合併推送。
+- 設計：保留前十級，補十一至二十級配置；首件固定解鎖，之後按下一級表格費用手動升級。32張獨立imagegen原創插畫，Mote可連線但其像素繪圖方式不適合本輪精細插畫。沿既有UI音效系統，演出只在Worker成功回覆後觸發；減量動態與重複點擊保護。
+- 驗收：Excel獨占及原生正常重開／來源表一致、完整20級扣件及錯誤原子性／舊存檔、五欄／鍵盤／tips／升級成功失敗／滿級與音效設定、相關回歸／build／字串／快取／雙庫SHA與自我Review。素材庫先commit再遊戲commit，交使用者Review及整合。
+
+- 完成：32件各20級，前10級320列逐格與HEAD原CSV一致，新增320列配置；11～20級費用先按等級遞增，效果延伸原趨勢，星圖殘頁保持正間隔。首件固定消耗1並解鎖，schema拒絕多件首級門檻；舊lv／n存檔結構保持。五欄圖標架、名稱／等級、懸停與鍵盤提示、點選展開按鈕及目前/需求、停用／等待／滿級與中央金光昇華完成。只有Worker確認成功才演出及播放核准成功音，4.5秒收起／關閉／Escape與減量動態完成。
+- 修改：js/relic.js／relic_data.js／ui-relic.js／ui-sound.js、css/relic.css、Relics與String的Excel／CSV及strings_data、index／bridge／sim.worker必要快取、tools/config_tables.cjs首級驗證、tools/vfx/editor/index.html共用String快取、tests/relics／relic-ui／ui-sound、images/relics的32張WebP、docs/assets/RELIC_ICONS_SOURCE.md／PROMPTS.json、tools/assets/export-relic-icons.cjs、LV及本段。原生Excel獨占確認、兩次正常重開，Relics保留既有欄位說明且更新20級／取消分類說明，延伸資料格式及篩選；兩份來源與CSV逐格相同。
+- 素材：內建image_gen每件一請求，32張精細金屬／琺瑯／寶石奇幻插畫；Mote可連線但像素編輯不適合本輪精細插畫，改用imagegen。只依名稱／作用原創，使用者截圖只作尺寸參考，未引入第三方美術。256px WebP共368,946 bytes；素材庫codex-authored/relic-icons-20261109保存32原PNG／32匯出／完整提示詞與SOURCE、66項SHA及manifest，來源與遊戲匯出／Git索引逐位元一致。素材庫先Commit `3729dc81`。升級演出為CSS，無新增VFX Preset；音效沿用已核准05-success.wav。
+- 測試指令：node --test --test-reporter=tap tests/relics.test.cjs tests/relic-ui.test.cjs tests/ui-sound.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs，56/56；npm.cmd run build通過705檔；node tools/string-table/build_string_csv.cjs --check寫死0；config_tables --apply Relics語意變更0；apply_params乾跑614參數／變更0／錨點問題0，--check-anchors擾動565數值後614錨點均一次；export-relic-icons --check及雙庫diff／stat／check通過。
+- 實機：IAB backend無法連線，改用隔離headless Edge／獨立8149測試服、新局、正式Worker與既有GM發件；不修改或偽造主端player。13項PASS：初始32件／640總級／五欄、選取需求、成功演出與音效單次、實扣升2級、tips目前及下一級、saveAutoNow落地重載、件數不足停用與Worker拒絕、全32件滿級640、760px五欄及容器、減少動態、Escape關閉、JS error0。遊戲全程靜音，另以UISound測試驗成功音共用音量／靜音；錄得既有Oscillator頻率限幅warning1筆（原音訊模組既知提示，未修改），不宣稱Console warning全0。
+- 自我Review及目視32圖總覽／鎖定／選取／tips／中央演出／窄屏完成。首輪發現通用button mouseover會收自訂pointer提示，已改接data-tt既有委派並實測通過；另兩次QA等待header早於DOM而失敗，修正驗收等待條件後重驗通過，未改產品迎合測試。Excel格式整理首輪COM列舉setter不接受CutCopyMode，原檔保持後移除非必要setter重作正常重開通過。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、原存檔player／save、Worker協議與header投影、ui.js通用提示及命令pending、既有技能／威能／主選單圖示、原Relics／String內容與原生Excel工具、素材庫解析及其他聊天BGM更新。BGM聊天期間已自行提交，保留其UISound／index改動，本項只增加獨立音效入口及本項快取；無外部衝突。未改其他玩法／協議、玩家存檔契約、其他AI工作區或其他素材。
+- 交付：本項無未完成實作，可供Review及使用者合併；未合併／推送develop或main。已知限制為未測行動真機／跨瀏覽器／長時間遊玩及既有音訊warning。遊戲Commit為本段所在「[Codex] feat: 改造遺物二十級圖標介面與升級演出」，SHA見聊天。完整圖標與正式畫面／qa-report、TAP／Build及驗證腳本留本聊天visualizations/relics；本任務臨時準備／除錯檔清理。下一步重新載入Codex遊戲驗收；若VFX編輯器仍開啟，先保留未存內容後重載共用String快取；後續由使用者指定整合者合併雙庫。

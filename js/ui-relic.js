@@ -1,102 +1,139 @@
 'use strict';
 if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
-/* ============ 遺物頁 — 主執行緒 UI（2026-11-09） ============
-   資料表 js/relic_data.js、等級與數值換算 js/relic.js（兩端共載）。
-   本檔只讀 header 面板（player.relics／player.relicReturnUntil 隨 header.player 投影）並送 relic.upgrade，不碰 G。
-
-   版面：頁首三顆膠囊（已收集、總等級、晨鐘加成剩餘）＋依分類分組的遺物卡。
-   卡片：名稱、等級（未取得顯示「未取得」）、10 格等級點、目前效果（未取得顯示第 1 級預覽）、下一級效果、件數進度與升級按鈕。
-   header 面板每拍都會更新（金幣在變），所以只在遺物資料或等待狀態真的變了才重畫（_relicUiSig）。 */
-
-var _relicUiSig = '';
-var _relicUiBound = false;
-
+/* 只讀 header.player；Worker 原子扣件。選取與昇華演出為本機暫態。 */
+var _relicUiSig = '', _relicUiBound = false, _relicUiSelected = 0;
+var _relicUiBusy = {}, _relicCelebrationTimer = 0, _relicCelebrationReturn = 0;
 function relicUiPlayer() {
-  var h = (typeof peekUiPanelData === 'function') ? peekUiPanelData('header') : null;
+  var h = typeof peekUiPanelData === 'function' ? peekUiPanelData('header') : null;
   return (h && h.player) || null;
 }
 function relicUiPending(id) {
-  return typeof isUiCommandPending === 'function' && isUiCommandPending(nodePendingKey('relic:' + id));
+  return !!_relicUiBusy[id] || (typeof isUiCommandPending === 'function' && isUiCommandPending(nodePendingKey('relic:' + id)));
 }
-function relicUiEsc(s) { return (typeof esc === 'function') ? esc(s) : String(s); }
-
-function relicCardHTML(relic, store) {
+function relicUiEsc(s) { return esc(String(s)); }
+function relicIconPath(id) { return 'images/relics/relic-' + String(id).padStart(2, '0') + '.webp?v=20261109-v1'; }
+function relicIconHTML(relic) {
+  return '<span class="rl-icon"><img src="' + relicIconPath(relic.id) + '" alt="" width="256" height="256" draggable="false"></span>';
+}
+function relicTooltipDesc(relic, store) {
   var cur = relicEntry(relic.id, store), max = relicMaxLevel(relic);
-  var owned = cur.lv > 0, maxed = cur.lv >= max;
-  var cost = owned && !maxed ? relic.levels[cur.lv].cost : 0;
-  var pending = relicUiPending(relic.id);
-  var cls = 'rl-card' + (owned ? ' is-owned' : ' is-locked') + (maxed ? ' is-max' : '') + (owned && !maxed && cur.n >= cost ? ' is-ready' : '');
-  var pips = '';
-  for (var i = 1; i <= max; i++) pips += '<i class="rl-pip' + (i <= cur.lv ? ' on' : '') + '"></i>';
-  var h = '<div class="' + cls + '" data-relic-id="' + relic.id + '">';
-  h += '<div class="rl-head"><span class="rl-name">' + relicUiEsc(relic.name) + '</span>' +
-    '<span class="rl-lv">' + (owned ? STR(2463, cur.lv, max) : STR(2458)) + '</span></div>';
-  h += '<div class="rl-pips">' + pips + '</div>';
-  h += owned
-    ? '<div class="rl-eff">' + relicUiEsc(relicDescAt(relic, cur.lv)) + '</div>'
-    : '<div class="rl-eff is-preview">' + relicUiEsc(STR(2473, relicDescAt(relic, 1))) + '</div>';
-  if (owned && !maxed) h += '<div class="rl-next">' + relicUiEsc(STR(2461, relicDescAt(relic, cur.lv + 1))) + '</div>';
-  h += '<div class="rl-foot">';
-  if (owned && !maxed) {
-    var pct = Math.max(0, Math.min(100, cur.n / cost * 100));
-    h += '<div class="rl-prog"><span class="rl-prog-fill" style="width:' + pct.toFixed(1) + '%"></span>' +
-      '<span class="rl-prog-text">' + STR(2462, cur.n, cost) + '</span></div>';
-    h += '<button type="button" class="btn rl-up" data-relic-up="' + relic.id + '"' + (cur.n >= cost && !pending ? '' : ' disabled') + '>' + STR(2459) + '</button>';
-  } else if (maxed) {
-    h += '<span class="rl-count">' + (cur.n > 0 ? STR(2474, cur.n) : '') + '</span><span class="rl-max">' + STR(2460) + '</span>';
-  }
-  h += '</div></div>';
-  return h;
+  var html = relicUiEsc(cur.lv ? relicDescAt(relic, cur.lv) : STR(2473, relicDescAt(relic, 1)));
+  if (cur.lv && cur.lv < max) html += '<hr><span class="rl-tip-next">' + relicUiEsc(STR(2461, relicDescAt(relic, cur.lv + 1))) + '</span>';
+  if (!cur.lv) html += '<hr>' + relicUiEsc(STR(2481));
+  return html;
 }
-
+function relicTooltipHTML(relic, store) {
+  return '<div class="skt-name">' + relicUiEsc(relic.name) + '</div><div class="skt-desc">' + relicTooltipDesc(relic, store) + '</div>';
+}
+function relicShowTooltip(anchor) {
+  var relic = RELIC_BY_ID[Number(anchor.getAttribute('data-relic-select'))];
+  if (!relic) return;
+  var p = relicUiPlayer();
+  showSkillTooltipHTML($id('sk-tooltip'), relicTooltipHTML(relic, (p && p.relics) || {}), anchor);
+}
+function relicCardHTML(relic, store) {
+  var cur = relicEntry(relic.id, store), max = relicMaxLevel(relic), selected = _relicUiSelected === relic.id;
+  var owned = cur.lv > 0, maxed = cur.lv >= max, cost = relicNextCost(relic.id, store);
+  var pending = relicUiPending(relic.id), ready = owned && !maxed && cur.n >= cost;
+  var cls = 'rl-card' + (owned ? ' is-owned' : ' is-locked') + (maxed ? ' is-max' : '') + (ready ? ' is-ready' : '') + (selected ? ' is-selected' : '');
+  var h = '<article class="' + cls + '" data-relic-id="' + relic.id + '">';
+  h += '<button type="button" class="rl-select" data-relic-select="' + relic.id + '" aria-expanded="' + selected + '" aria-controls="rl-actions-' + relic.id + '" data-tt-title="' + relicUiEsc(relicUiEsc(relic.name)) + '" data-tt-desc="' + relicUiEsc(relicTooltipDesc(relic, store)) + '">';
+  h += relicIconHTML(relic) + '<span class="rl-name">' + relicUiEsc(relic.name) + '</span>';
+  h += '<span class="rl-lv">' + relicUiEsc(owned ? STR(2463, cur.lv, max) : STR(2476, max)) + '</span></button>';
+  h += '<div class="rl-actions" id="rl-actions-' + relic.id + '"' + (selected ? '' : ' hidden') + '>';
+  if (owned && !maxed) {
+    h += '<button type="button" class="btn rl-up" data-relic-up="' + relic.id + '"' + (ready && !pending ? '' : ' disabled') + '>' + STR(2459) + '</button>';
+    h += '<span class="rl-requirement' + (ready ? ' is-enough' : '') + '">' + relicUiEsc(STR(2475, cur.n, cost)) + '</span>';
+  } else {
+    h += '<button type="button" class="btn rl-up" disabled>' + STR(maxed ? 2460 : 2459) + '</button>';
+    h += '<span class="rl-requirement">' + relicUiEsc(maxed ? STR(2474, cur.n) : STR(2481)) + '</span>';
+  }
+  return h + '</div></article>';
+}
 function renderRelics(force) {
   var list = $id('relic-list');
   if (!list || typeof RELICS === 'undefined') return;
   bindRelicUi();
-  var p = relicUiPlayer();
-  var store = (p && p.relics) || {};
-  var until = Number(p && p.relicReturnUntil) || 0;
+  var p = relicUiPlayer(), store = (p && p.relics) || {}, until = Number(p && p.relicReturnUntil) || 0;
   var buffMin = until > Date.now() ? Math.ceil((until - Date.now()) / 60000) : 0;
-  var pendingIds = RELICS.filter(function (r) { return relicUiPending(r.id); }).map(function (r) { return r.id; });
-  var sig = JSON.stringify(store) + '|' + buffMin + '|' + pendingIds.join(',');
+  var sig = JSON.stringify(store) + '|' + buffMin + '|' + _relicUiSelected + '|' + RELICS.filter(function (r) { return relicUiPending(r.id); }).map(function (r) { return r.id; }).join(',');
   if (!force && sig === _relicUiSig) return;
   _relicUiSig = sig;
-
-  var ownedCount = 0, lvSum = 0, lvMax = 0;
-  RELICS.forEach(function (r) {
-    var lv = relicLevel(r.id, store);
-    if (lv > 0) ownedCount++;
-    lvSum += lv; lvMax += relicMaxLevel(r);
-  });
-  $id('relic-owned').textContent = ownedCount + '/' + RELICS.length;
-  $id('relic-levels').textContent = lvSum + '/' + lvMax;
-  var buffEl = $id('relic-buff');
-  if (buffEl) {
-    buffEl.hidden = !buffMin;
-    buffEl.textContent = buffMin ? STR(2472, buffMin) : '';
+  var owned = 0, sum = 0, max = 0;
+  RELICS.forEach(function (r) { var lv = relicLevel(r.id, store); if (lv) owned++; sum += lv; max += relicMaxLevel(r); });
+  $id('relic-owned').textContent = owned + '/' + RELICS.length;
+  $id('relic-levels').textContent = sum + '/' + max;
+  var buff = $id('relic-buff');
+  if (buff) { buff.hidden = !buffMin; buff.textContent = buffMin ? STR(2472, buffMin) : ''; }
+  var focus = document.activeElement, focusId = focus && (focus.getAttribute('data-relic-select') || focus.getAttribute('data-relic-up'));
+  var focusKind = focus && focus.hasAttribute('data-relic-up') ? 'up' : 'select';
+  var tipAnchor = UI.tooltipAnchor, tipId = tipAnchor && tipAnchor.getAttribute('data-relic-select');
+  if (tipId) hideTooltip();
+  list.innerHTML = '<div class="rl-grid">' + RELICS.map(function (r) { return relicCardHTML(r, store); }).join('') + '</div>';
+  if (focusId) {
+    var restore = list.querySelector('[data-relic-' + focusKind + '="' + focusId + '"]');
+    if (!restore || restore.disabled) restore = list.querySelector('[data-relic-select="' + focusId + '"]');
+    if (restore) restore.focus({ preventScroll: true });
   }
-
-  var html = '';
-  relicCategories().forEach(function (cat) {
-    html += '<section class="rl-cat"><h3 class="rl-cat-title">' + relicUiEsc(cat.name) + '</h3><div class="rl-grid">';
-    cat.list.forEach(function (r) { html += relicCardHTML(r, store); });
-    html += '</div></section>';
-  });
-  list.innerHTML = html;
+  if (tipId) {
+    var anchor = list.querySelector('[data-relic-select="' + tipId + '"]');
+    if (anchor && anchor.matches(':hover')) relicShowTooltip(anchor);
+  }
 }
-
+function relicCloseCelebration() {
+  clearTimeout(_relicCelebrationTimer);
+  var el = $id('relic-celebration');
+  if (!el || el.hidden) return;
+  el.hidden = true;
+  var anchor = $id('relic-list').querySelector('[data-relic-select="' + _relicCelebrationReturn + '"]');
+  if (anchor && UI.tab === 'relics') anchor.focus({ preventScroll: true });
+}
+function relicCelebrate(relic, before) {
+  if (UI.tab !== 'relics' || document.hidden) return;
+  hideTooltip();
+  var overlay = $id('relic-celebration');
+  if (!overlay) {
+    overlay = document.createElement('div'); overlay.id = 'relic-celebration'; overlay.className = 'rl-celebration'; overlay.hidden = true;
+    overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-modal', 'true'); overlay.setAttribute('aria-labelledby', 'rl-celebration-title');
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay || e.target.closest('[data-relic-dismiss]')) relicCloseCelebration(); });
+    overlay.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); relicCloseCelebration(); } if (e.key === 'Tab') { e.preventDefault(); overlay.querySelector('button').focus(); } });
+  }
+  clearTimeout(_relicCelebrationTimer); _relicCelebrationReturn = relic.id;
+  overlay.innerHTML = '<div class="rl-ascension"><span class="rl-ascension-title" id="rl-celebration-title">' + STR(2477) + '</span>' +
+    '<div class="rl-ascension-art"><span class="rl-halo"></span><span class="rl-orbit"></span><span class="rl-rays"></span>' + relicIconHTML(relic) + '</div>' +
+    '<h3>' + relicUiEsc(relic.name) + '</h3><div class="rl-level-rise">' + relicUiEsc(STR(2478, before, before + 1)) + '</div>' +
+    '<div class="rl-effect-before">' + relicUiEsc(STR(2479, relicDescAt(relic, before))) + '</div>' +
+    '<div class="rl-effect-after">' + relicUiEsc(STR(2480, relicDescAt(relic, before + 1))) + '</div>' +
+    '<button type="button" class="btn" data-relic-dismiss>' + STR(155) + '</button></div>';
+  overlay.hidden = false;
+  overlay.querySelector('button').focus({ preventScroll: true });
+  _relicCelebrationTimer = setTimeout(relicCloseCelebration, 4500);
+}
 function bindRelicUi() {
   if (_relicUiBound) return;
-  var list = $id('relic-list');
-  if (!list) return;
+  var list = $id('relic-list'); if (!list) return;
   _relicUiBound = true;
   list.addEventListener('click', function (e) {
-    var btn = e.target && e.target.closest ? e.target.closest('[data-relic-up]') : null;
-    if (!btn || btn.disabled) return;
-    var id = Number(btn.getAttribute('data-relic-up'));
-    if (!RELIC_BY_ID[id]) return;
-    btn.disabled = true;
-    sendGemUiCommand('relic.upgrade', { relicId: id }, 'relic:' + id, ['header', 'inv', 'tower']);
-    renderRelics(true);
+    var up = e.target.closest('[data-relic-up]');
+    if (up) {
+      var id = Number(up.getAttribute('data-relic-up')), relic = RELIC_BY_ID[id];
+      if (!relic || up.disabled || relicUiPending(id)) return;
+      var p = relicUiPlayer(), before = relicLevel(id, (p && p.relics) || {});
+      _relicUiBusy[id] = true;
+      var action = sendGemUiCommand('relic.upgrade', { relicId: id }, 'relic:' + id, ['header', 'inv', 'tower'], function () {
+        if (typeof UISound !== 'undefined') UISound.relicUpgraded();
+        relicCelebrate(relic, before);
+      });
+      renderRelics(true);
+      Promise.resolve(action).finally(function () { delete _relicUiBusy[id]; renderRelics(true); });
+      return;
+    }
+    var select = e.target.closest('[data-relic-select]');
+    if (select) { var selected = Number(select.getAttribute('data-relic-select')); _relicUiSelected = selected === _relicUiSelected ? 0 : selected; renderRelics(true); }
   });
+  // 滑鼠沿用 ui.js 的 data-tt-* 委派；避免通用按鈕分支將自訂 pointerover 提示收起。
+  list.addEventListener('focusin', function (e) { if (e.target.matches('[data-relic-select]')) relicShowTooltip(e.target); });
+  list.addEventListener('focusout', function (e) { if (e.target.matches('[data-relic-select]')) hideTooltip(); });
+  list.addEventListener('scroll', function () { if (UI.tooltipAnchor && UI.tooltipAnchor.hasAttribute('data-relic-select')) hideTooltip(); }, { passive: true });
 }

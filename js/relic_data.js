@@ -1,7 +1,7 @@
 'use strict';
 /* ============ 遺物表（配置表 Relics → 本檔） ============
    RELICS 區塊由 tools/config_tables.cjs 從 config/CSV/Relics.csv 整段重建，區塊內的註解不會保留，說明一律寫在這裡。
-   一件遺物：id 編號｜name 名稱｜cat 分類（遺物頁分組）｜effect 效果鍵（接線見 js/relic.js RELIC_EFFECT_KEYS 上方說明）｜
+   一件遺物：id 編號｜name 名稱｜cat 分類（只作配置整理）｜effect 效果鍵（接線見 js/relic.js RELIC_EFFECT_KEYS 上方說明）｜
              levels[等級-1] = { cost 升到這一級要消耗的件數, value 數值強度, desc 效果說明（{v} 代入 value） }。
    兩端共載：主執行緒畫遺物頁與費用預覽、Worker 結算效果。 */
 var RELICS = [
@@ -15,7 +15,17 @@ var RELICS = [
     { cost: 3, value: 7, desc: '離線收益時間上限 +{v} 小時' },
     { cost: 4, value: 8, desc: '離線收益時間上限 +{v} 小時' },
     { cost: 4, value: 9, desc: '離線收益時間上限 +{v} 小時' },
-    { cost: 5, value: 10, desc: '離線收益時間上限 +{v} 小時' }
+    { cost: 5, value: 10, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 6, value: 11, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 6, value: 12, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 7, value: 13, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 7, value: 14, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 8, value: 15, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 8, value: 16, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 9, value: 17, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 9, value: 18, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 10, value: 19, desc: '離線收益時間上限 +{v} 小時' },
+    { cost: 10, value: 20, desc: '離線收益時間上限 +{v} 小時' }
   ] },
   { id: 2, name: '夜班熔爐', cat: '離線與時間', effect: 'offlineXp', levels: [
     { cost: 1, value: 10, desc: '離線經驗 +{v}%' },
@@ -27,7 +37,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '離線經驗 +{v}%' },
     { cost: 4, value: 80, desc: '離線經驗 +{v}%' },
     { cost: 4, value: 90, desc: '離線經驗 +{v}%' },
-    { cost: 5, value: 100, desc: '離線經驗 +{v}%' }
+    { cost: 5, value: 100, desc: '離線經驗 +{v}%' },
+    { cost: 6, value: 110, desc: '離線經驗 +{v}%' },
+    { cost: 6, value: 120, desc: '離線經驗 +{v}%' },
+    { cost: 7, value: 130, desc: '離線經驗 +{v}%' },
+    { cost: 7, value: 140, desc: '離線經驗 +{v}%' },
+    { cost: 8, value: 150, desc: '離線經驗 +{v}%' },
+    { cost: 8, value: 160, desc: '離線經驗 +{v}%' },
+    { cost: 9, value: 170, desc: '離線經驗 +{v}%' },
+    { cost: 9, value: 180, desc: '離線經驗 +{v}%' },
+    { cost: 10, value: 190, desc: '離線經驗 +{v}%' },
+    { cost: 10, value: 200, desc: '離線經驗 +{v}%' }
   ] },
   { id: 3, name: '夢境捕手', cat: '離線與時間', effect: 'offlineEquipDrop', levels: [
     { cost: 1, value: 10, desc: '離線裝備掉落 +{v}%' },
@@ -39,7 +59,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '離線裝備掉落 +{v}%' },
     { cost: 4, value: 80, desc: '離線裝備掉落 +{v}%' },
     { cost: 4, value: 90, desc: '離線裝備掉落 +{v}%' },
-    { cost: 5, value: 100, desc: '離線裝備掉落 +{v}%' }
+    { cost: 5, value: 100, desc: '離線裝備掉落 +{v}%' },
+    { cost: 6, value: 110, desc: '離線裝備掉落 +{v}%' },
+    { cost: 6, value: 120, desc: '離線裝備掉落 +{v}%' },
+    { cost: 7, value: 130, desc: '離線裝備掉落 +{v}%' },
+    { cost: 7, value: 140, desc: '離線裝備掉落 +{v}%' },
+    { cost: 8, value: 150, desc: '離線裝備掉落 +{v}%' },
+    { cost: 8, value: 160, desc: '離線裝備掉落 +{v}%' },
+    { cost: 9, value: 170, desc: '離線裝備掉落 +{v}%' },
+    { cost: 9, value: 180, desc: '離線裝備掉落 +{v}%' },
+    { cost: 10, value: 190, desc: '離線裝備掉落 +{v}%' },
+    { cost: 10, value: 200, desc: '離線裝備掉落 +{v}%' }
   ] },
   { id: 4, name: '晨鐘', cat: '離線與時間', effect: 'returnBuffMinutes', levels: [
     { cost: 1, value: 6, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
@@ -51,7 +81,17 @@ var RELICS = [
     { cost: 3, value: 42, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
     { cost: 4, value: 48, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
     { cost: 4, value: 54, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 5, value: 60, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' }
+    { cost: 5, value: 60, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 6, value: 66, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 6, value: 72, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 7, value: 78, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 7, value: 84, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 8, value: 90, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 8, value: 96, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 9, value: 102, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 9, value: 108, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 10, value: 114, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
+    { cost: 10, value: 120, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' }
   ] },
   { id: 5, name: '星圖殘頁', cat: '離線與時間', effect: 'offlineTowerReward', levels: [
     { cost: 1, value: 10, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
@@ -63,7 +103,17 @@ var RELICS = [
     { cost: 3, value: 4, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
     { cost: 4, value: 3, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
     { cost: 4, value: 2, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 5, value: 1, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' }
+    { cost: 5, value: 1, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 6, value: 0.909, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 6, value: 0.833, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 7, value: 0.769, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 7, value: 0.714, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 8, value: 0.667, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 8, value: 0.625, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 9, value: 0.588, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 9, value: 0.556, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 10, value: 0.526, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 10, value: 0.5, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' }
   ] },
   { id: 6, name: '黃銅齒輪', cat: '熔爐與工廠', effect: 'salvageScrap', levels: [
     { cost: 1, value: 10, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
@@ -75,7 +125,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
     { cost: 4, value: 80, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
     { cost: 4, value: 90, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
-    { cost: 5, value: 100, desc: '熔爐拆解裝備碎片額外產出 +{v}%' }
+    { cost: 5, value: 100, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 6, value: 110, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 6, value: 120, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 7, value: 130, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 7, value: 140, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 8, value: 150, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 8, value: 160, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 9, value: 170, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 9, value: 180, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 10, value: 190, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },
+    { cost: 10, value: 200, desc: '熔爐拆解裝備碎片額外產出 +{v}%' }
   ] },
   { id: 7, name: '附魔印章', cat: '熔爐與工廠', effect: 'salvageEssence', levels: [
     { cost: 1, value: 10, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
@@ -87,7 +147,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
     { cost: 4, value: 80, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
     { cost: 4, value: 90, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
-    { cost: 5, value: 100, desc: '熔爐拆解附魔精華額外產出 +{v}%' }
+    { cost: 5, value: 100, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 6, value: 110, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 6, value: 120, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 7, value: 130, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 7, value: 140, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 8, value: 150, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 8, value: 160, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 9, value: 170, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 9, value: 180, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 10, value: 190, desc: '熔爐拆解附魔精華額外產出 +{v}%' },
+    { cost: 10, value: 200, desc: '熔爐拆解附魔精華額外產出 +{v}%' }
   ] },
   { id: 8, name: '智慧分揀器', cat: '熔爐與工廠', effect: 'salvageXp', levels: [
     { cost: 1, value: 5, desc: '熔爐拆解經驗值額外 +{v}%' },
@@ -99,7 +169,17 @@ var RELICS = [
     { cost: 3, value: 35, desc: '熔爐拆解經驗值額外 +{v}%' },
     { cost: 4, value: 40, desc: '熔爐拆解經驗值額外 +{v}%' },
     { cost: 4, value: 45, desc: '熔爐拆解經驗值額外 +{v}%' },
-    { cost: 5, value: 50, desc: '熔爐拆解經驗值額外 +{v}%' }
+    { cost: 5, value: 50, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 6, value: 55, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 6, value: 60, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 7, value: 65, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 7, value: 70, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 8, value: 75, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 8, value: 80, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 9, value: 85, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 9, value: 90, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 10, value: 95, desc: '熔爐拆解經驗值額外 +{v}%' },
+    { cost: 10, value: 100, desc: '熔爐拆解經驗值額外 +{v}%' }
   ] },
   { id: 9, name: '篩金網', cat: '熔爐與工廠', effect: 'salvageGold', levels: [
     { cost: 1, value: 10, desc: '熔爐拆解金幣額外 +{v}%' },
@@ -111,7 +191,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '熔爐拆解金幣額外 +{v}%' },
     { cost: 4, value: 80, desc: '熔爐拆解金幣額外 +{v}%' },
     { cost: 4, value: 90, desc: '熔爐拆解金幣額外 +{v}%' },
-    { cost: 5, value: 100, desc: '熔爐拆解金幣額外 +{v}%' }
+    { cost: 5, value: 100, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 6, value: 110, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 6, value: 120, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 7, value: 130, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 7, value: 140, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 8, value: 150, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 8, value: 160, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 9, value: 170, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 9, value: 180, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 10, value: 190, desc: '熔爐拆解金幣額外 +{v}%' },
+    { cost: 10, value: 200, desc: '熔爐拆解金幣額外 +{v}%' }
   ] },
   { id: 10, name: '蓄能瓶', cat: '熔爐與工廠', effect: 'synthBuffer', levels: [
     { cost: 1, value: 100, desc: '合成暫存區容量 +{v} 個' },
@@ -123,7 +213,17 @@ var RELICS = [
     { cost: 3, value: 700, desc: '合成暫存區容量 +{v} 個' },
     { cost: 4, value: 800, desc: '合成暫存區容量 +{v} 個' },
     { cost: 4, value: 900, desc: '合成暫存區容量 +{v} 個' },
-    { cost: 5, value: 1000, desc: '合成暫存區容量 +{v} 個' }
+    { cost: 5, value: 1000, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 6, value: 1100, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 6, value: 1200, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 7, value: 1300, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 7, value: 1400, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 8, value: 1500, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 8, value: 1600, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 9, value: 1700, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 9, value: 1800, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 10, value: 1900, desc: '合成暫存區容量 +{v} 個' },
+    { cost: 10, value: 2000, desc: '合成暫存區容量 +{v} 個' }
   ] },
   { id: 11, name: '寶石回收器', cat: '熔爐與工廠', effect: 'salvageGemChance', levels: [
     { cost: 1, value: 1, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
@@ -135,7 +235,17 @@ var RELICS = [
     { cost: 3, value: 7, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
     { cost: 4, value: 8, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
     { cost: 4, value: 9, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
-    { cost: 5, value: 10, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' }
+    { cost: 5, value: 10, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 6, value: 11, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 6, value: 12, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 7, value: 13, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 7, value: 14, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 8, value: 15, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 8, value: 16, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 9, value: 17, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 9, value: 18, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 10, value: 19, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' },
+    { cost: 10, value: 20, desc: '熔爐拆解時寶石碎片出現機率額外 +{v}%' }
   ] },
   { id: 12, name: '次元行囊', cat: '背包與裝備管理', effect: 'inventoryMax', levels: [
     { cost: 1, value: 50, desc: '背包容量擴充上限額外 +{v} 個' },
@@ -147,7 +257,17 @@ var RELICS = [
     { cost: 3, value: 350, desc: '背包容量擴充上限額外 +{v} 個' },
     { cost: 4, value: 400, desc: '背包容量擴充上限額外 +{v} 個' },
     { cost: 4, value: 450, desc: '背包容量擴充上限額外 +{v} 個' },
-    { cost: 5, value: 500, desc: '背包容量擴充上限額外 +{v} 個' }
+    { cost: 5, value: 500, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 6, value: 550, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 6, value: 600, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 7, value: 650, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 7, value: 700, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 8, value: 750, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 8, value: 800, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 9, value: 850, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 9, value: 900, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 10, value: 950, desc: '背包容量擴充上限額外 +{v} 個' },
+    { cost: 10, value: 1000, desc: '背包容量擴充上限額外 +{v} 個' }
   ] },
   { id: 13, name: '鍍金鈕扣', cat: '背包與裝備管理', effect: 'inventoryExpandDiscount', levels: [
     { cost: 1, value: 2.5, desc: '背包擴充費用 -{v}%' },
@@ -159,7 +279,17 @@ var RELICS = [
     { cost: 3, value: 17.5, desc: '背包擴充費用 -{v}%' },
     { cost: 4, value: 20, desc: '背包擴充費用 -{v}%' },
     { cost: 4, value: 22.5, desc: '背包擴充費用 -{v}%' },
-    { cost: 5, value: 25, desc: '背包擴充費用 -{v}%' }
+    { cost: 5, value: 25, desc: '背包擴充費用 -{v}%' },
+    { cost: 6, value: 27.5, desc: '背包擴充費用 -{v}%' },
+    { cost: 6, value: 30, desc: '背包擴充費用 -{v}%' },
+    { cost: 7, value: 32.5, desc: '背包擴充費用 -{v}%' },
+    { cost: 7, value: 35, desc: '背包擴充費用 -{v}%' },
+    { cost: 8, value: 37.5, desc: '背包擴充費用 -{v}%' },
+    { cost: 8, value: 40, desc: '背包擴充費用 -{v}%' },
+    { cost: 9, value: 42.5, desc: '背包擴充費用 -{v}%' },
+    { cost: 9, value: 45, desc: '背包擴充費用 -{v}%' },
+    { cost: 10, value: 47.5, desc: '背包擴充費用 -{v}%' },
+    { cost: 10, value: 50, desc: '背包擴充費用 -{v}%' }
   ] },
   { id: 14, name: '優惠金卡', cat: '神祕商人', effect: 'merchantDiscount', levels: [
     { cost: 1, value: 2, desc: '神祕商人購買物品金幣消耗 -{v}%' },
@@ -171,7 +301,17 @@ var RELICS = [
     { cost: 3, value: 14, desc: '神祕商人購買物品金幣消耗 -{v}%' },
     { cost: 4, value: 16, desc: '神祕商人購買物品金幣消耗 -{v}%' },
     { cost: 4, value: 18, desc: '神祕商人購買物品金幣消耗 -{v}%' },
-    { cost: 5, value: 20, desc: '神祕商人購買物品金幣消耗 -{v}%' }
+    { cost: 5, value: 20, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 6, value: 22, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 6, value: 24, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 7, value: 26, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 7, value: 28, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 8, value: 30, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 8, value: 32, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 9, value: 34, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 9, value: 36, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 10, value: 38, desc: '神祕商人購買物品金幣消耗 -{v}%' },
+    { cost: 10, value: 40, desc: '神祕商人購買物品金幣消耗 -{v}%' }
   ] },
   { id: 15, name: '熔晶坩堝', cat: '神祕商人', effect: 'merchantHighGem', levels: [
     { cost: 1, value: 10, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
@@ -183,7 +323,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
     { cost: 4, value: 80, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
     { cost: 4, value: 90, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
-    { cost: 5, value: 100, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' }
+    { cost: 5, value: 100, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 6, value: 110, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 6, value: 120, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 7, value: 130, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 7, value: 140, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 8, value: 150, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 8, value: 160, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 9, value: 170, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 9, value: 180, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 10, value: 190, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' },
+    { cost: 10, value: 200, desc: '神祕商人刷出 7 級以上寶石的機率 +{v}%' }
   ] },
   { id: 16, name: '神祕裝備券', cat: '神祕商人', effect: 'merchantHighEquip', levels: [
     { cost: 1, value: 10, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
@@ -195,7 +345,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
     { cost: 4, value: 80, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
     { cost: 4, value: 90, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
-    { cost: 5, value: 100, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' }
+    { cost: 5, value: 100, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 6, value: 110, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 6, value: 120, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 7, value: 130, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 7, value: 140, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 8, value: 150, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 8, value: 160, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 9, value: 170, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 9, value: 180, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 10, value: 190, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' },
+    { cost: 10, value: 200, desc: '神祕商人刷出傳說以上裝備的機率 +{v}%' }
   ] },
   { id: 17, name: '符文刻印', cat: '神祕商人', effect: 'merchantHighRune', levels: [
     { cost: 1, value: 10, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
@@ -207,7 +367,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
     { cost: 4, value: 80, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
     { cost: 4, value: 90, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
-    { cost: 5, value: 100, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' }
+    { cost: 5, value: 100, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 6, value: 110, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 6, value: 120, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 7, value: 130, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 7, value: 140, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 8, value: 150, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 8, value: 160, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 9, value: 170, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 9, value: 180, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 10, value: 190, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' },
+    { cost: 10, value: 200, desc: '神祕商人刷出 19 階以上符文的機率 +{v}%' }
   ] },
   { id: 18, name: '神祕殘券', cat: '神祕商人', effect: 'merchantTicketDrop', levels: [
     { cost: 1, value: 10, desc: '神祕邀請券掉落率 +{v}%' },
@@ -219,7 +389,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '神祕邀請券掉落率 +{v}%' },
     { cost: 4, value: 80, desc: '神祕邀請券掉落率 +{v}%' },
     { cost: 4, value: 90, desc: '神祕邀請券掉落率 +{v}%' },
-    { cost: 5, value: 100, desc: '神祕邀請券掉落率 +{v}%' }
+    { cost: 5, value: 100, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 6, value: 110, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 6, value: 120, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 7, value: 130, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 7, value: 140, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 8, value: 150, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 8, value: 160, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 9, value: 170, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 9, value: 180, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 10, value: 190, desc: '神祕邀請券掉落率 +{v}%' },
+    { cost: 10, value: 200, desc: '神祕邀請券掉落率 +{v}%' }
   ] },
   { id: 19, name: '刻工鑿', cat: '符文/寶石', effect: 'gemComposeSave', levels: [
     { cost: 1, value: 3, desc: '寶石合成時，{v}% 機率少消耗一顆' },
@@ -231,7 +411,17 @@ var RELICS = [
     { cost: 3, value: 21, desc: '寶石合成時，{v}% 機率少消耗一顆' },
     { cost: 4, value: 24, desc: '寶石合成時，{v}% 機率少消耗一顆' },
     { cost: 4, value: 27, desc: '寶石合成時，{v}% 機率少消耗一顆' },
-    { cost: 5, value: 30, desc: '寶石合成時，{v}% 機率少消耗一顆' }
+    { cost: 5, value: 30, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 6, value: 33, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 6, value: 36, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 7, value: 39, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 7, value: 42, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 8, value: 45, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 8, value: 48, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 9, value: 51, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 9, value: 54, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 10, value: 57, desc: '寶石合成時，{v}% 機率少消耗一顆' },
+    { cost: 10, value: 60, desc: '寶石合成時，{v}% 機率少消耗一顆' }
   ] },
   { id: 20, name: '刻工鑿', cat: '符文/寶石', effect: 'runeComposeSave', levels: [
     { cost: 1, value: 3, desc: '符文合成時，{v}% 機率少消耗一顆' },
@@ -243,7 +433,17 @@ var RELICS = [
     { cost: 3, value: 21, desc: '符文合成時，{v}% 機率少消耗一顆' },
     { cost: 4, value: 24, desc: '符文合成時，{v}% 機率少消耗一顆' },
     { cost: 4, value: 27, desc: '符文合成時，{v}% 機率少消耗一顆' },
-    { cost: 5, value: 30, desc: '符文合成時，{v}% 機率少消耗一顆' }
+    { cost: 5, value: 30, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 6, value: 33, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 6, value: 36, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 7, value: 39, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 7, value: 42, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 8, value: 45, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 8, value: 48, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 9, value: 51, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 9, value: 54, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 10, value: 57, desc: '符文合成時，{v}% 機率少消耗一顆' },
+    { cost: 10, value: 60, desc: '符文合成時，{v}% 機率少消耗一顆' }
   ] },
   { id: 21, name: '碎石錘', cat: '符文/寶石', effect: 'runeDismantleBonus', levels: [
     { cost: 1, value: 3, desc: '符文拆解時，{v}% 機率產量 +1' },
@@ -255,7 +455,17 @@ var RELICS = [
     { cost: 3, value: 21, desc: '符文拆解時，{v}% 機率產量 +1' },
     { cost: 4, value: 24, desc: '符文拆解時，{v}% 機率產量 +1' },
     { cost: 4, value: 27, desc: '符文拆解時，{v}% 機率產量 +1' },
-    { cost: 5, value: 30, desc: '符文拆解時，{v}% 機率產量 +1' }
+    { cost: 5, value: 30, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 6, value: 33, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 6, value: 36, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 7, value: 39, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 7, value: 42, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 8, value: 45, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 8, value: 48, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 9, value: 51, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 9, value: 54, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 10, value: 57, desc: '符文拆解時，{v}% 機率產量 +1' },
+    { cost: 10, value: 60, desc: '符文拆解時，{v}% 機率產量 +1' }
   ] },
   { id: 22, name: '符文精工鑽', cat: '符文/寶石', effect: 'runeEraseKeep', levels: [
     { cost: 1, value: 5, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
@@ -267,7 +477,17 @@ var RELICS = [
     { cost: 3, value: 35, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
     { cost: 4, value: 40, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
     { cost: 4, value: 45, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
-    { cost: 5, value: 50, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' }
+    { cost: 5, value: 50, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 6, value: 55, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 6, value: 60, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 7, value: 65, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 7, value: 70, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 8, value: 75, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 8, value: 80, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 9, value: 85, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 9, value: 90, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 10, value: 95, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' },
+    { cost: 10, value: 100, desc: '符文抹除時，{v}% 機率該符文不會消失（退回符文庫）' }
   ] },
   { id: 23, name: '節約瓶', cat: '強化/洗煉與神鑄', effect: 'rerollEssenceDiscount', levels: [
     { cost: 1, value: 1.5, desc: '洗煉所需精華 -{v}%' },
@@ -279,7 +499,17 @@ var RELICS = [
     { cost: 3, value: 10.5, desc: '洗煉所需精華 -{v}%' },
     { cost: 4, value: 12, desc: '洗煉所需精華 -{v}%' },
     { cost: 4, value: 13.5, desc: '洗煉所需精華 -{v}%' },
-    { cost: 5, value: 15, desc: '洗煉所需精華 -{v}%' }
+    { cost: 5, value: 15, desc: '洗煉所需精華 -{v}%' },
+    { cost: 6, value: 16.5, desc: '洗煉所需精華 -{v}%' },
+    { cost: 6, value: 18, desc: '洗煉所需精華 -{v}%' },
+    { cost: 7, value: 19.5, desc: '洗煉所需精華 -{v}%' },
+    { cost: 7, value: 21, desc: '洗煉所需精華 -{v}%' },
+    { cost: 8, value: 22.5, desc: '洗煉所需精華 -{v}%' },
+    { cost: 8, value: 24, desc: '洗煉所需精華 -{v}%' },
+    { cost: 9, value: 25.5, desc: '洗煉所需精華 -{v}%' },
+    { cost: 9, value: 27, desc: '洗煉所需精華 -{v}%' },
+    { cost: 10, value: 28.5, desc: '洗煉所需精華 -{v}%' },
+    { cost: 10, value: 30, desc: '洗煉所需精華 -{v}%' }
   ] },
   { id: 24, name: '碎片再生爐', cat: '強化/洗煉與神鑄', effect: 'upgradeScrapDiscount', levels: [
     { cost: 1, value: 1.5, desc: '強化所需裝備碎片 -{v}%' },
@@ -291,7 +521,17 @@ var RELICS = [
     { cost: 3, value: 10.5, desc: '強化所需裝備碎片 -{v}%' },
     { cost: 4, value: 12, desc: '強化所需裝備碎片 -{v}%' },
     { cost: 4, value: 13.5, desc: '強化所需裝備碎片 -{v}%' },
-    { cost: 5, value: 15, desc: '強化所需裝備碎片 -{v}%' }
+    { cost: 5, value: 15, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 6, value: 16.5, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 6, value: 18, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 7, value: 19.5, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 7, value: 21, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 8, value: 22.5, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 8, value: 24, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 9, value: 25.5, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 9, value: 27, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 10, value: 28.5, desc: '強化所需裝備碎片 -{v}%' },
+    { cost: 10, value: 30, desc: '強化所需裝備碎片 -{v}%' }
   ] },
   { id: 25, name: '強化槌', cat: '強化/洗煉與神鑄', effect: 'upgradeDouble', levels: [
     { cost: 1, value: 1, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
@@ -303,7 +543,17 @@ var RELICS = [
     { cost: 3, value: 7, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
     { cost: 4, value: 8, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
     { cost: 4, value: 9, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
-    { cost: 5, value: 10, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' }
+    { cost: 5, value: 10, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 6, value: 11, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 6, value: 12, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 7, value: 13, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 7, value: 14, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 8, value: 15, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 8, value: 16, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 9, value: 17, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 9, value: 18, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 10, value: 19, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' },
+    { cost: 10, value: 20, desc: '強化成功時，{v}% 機率變為 2 次強化（強化等級 +2）' }
   ] },
   { id: 26, name: '精煉神石', cat: '強化/洗煉與神鑄', effect: 'forgeDustRefund', levels: [
     { cost: 1, value: 3, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
@@ -315,7 +565,17 @@ var RELICS = [
     { cost: 3, value: 21, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
     { cost: 4, value: 24, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
     { cost: 4, value: 27, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
-    { cost: 5, value: 30, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' }
+    { cost: 5, value: 30, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 6, value: 33, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 6, value: 36, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 7, value: 39, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 7, value: 42, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 8, value: 45, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 8, value: 48, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 9, value: 51, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 9, value: 54, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 10, value: 57, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' },
+    { cost: 10, value: 60, desc: '神鑄時，{v}% 機率返還本次消耗的 25% 神性之石' }
   ] },
   { id: 27, name: '神賜之戒', cat: '強化/洗煉與神鑄', effect: 'imprintLegendary', levels: [
     { cost: 1, value: 10, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
@@ -327,7 +587,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
     { cost: 4, value: 80, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
     { cost: 4, value: 90, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
-    { cost: 5, value: 100, desc: '神聖刻印出現傳奇特效的機率 +{v}%' }
+    { cost: 5, value: 100, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 6, value: 110, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 6, value: 120, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 7, value: 130, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 7, value: 140, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 8, value: 150, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 8, value: 160, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 9, value: 170, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 9, value: 180, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 10, value: 190, desc: '神聖刻印出現傳奇特效的機率 +{v}%' },
+    { cost: 10, value: 200, desc: '神聖刻印出現傳奇特效的機率 +{v}%' }
   ] },
   { id: 28, name: '急行令', cat: '封魔塔', effect: 'towerAutoSpeed', levels: [
     { cost: 1, value: 10, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
@@ -339,7 +609,17 @@ var RELICS = [
     { cost: 3, value: 70, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
     { cost: 4, value: 80, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
     { cost: 4, value: 90, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
-    { cost: 5, value: 100, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' }
+    { cost: 5, value: 100, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 6, value: 110, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 6, value: 120, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 7, value: 130, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 7, value: 140, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 8, value: 150, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 8, value: 160, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 9, value: 170, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 9, value: 180, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 10, value: 190, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' },
+    { cost: 10, value: 200, desc: '封魔塔連續挑戰時，戰鬥速度 +{v}%' }
   ] },
   { id: 29, name: '封魔令', cat: '封魔塔', effect: 'towerBossTime', levels: [
     { cost: 1, value: 1, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
@@ -351,7 +631,17 @@ var RELICS = [
     { cost: 3, value: 7, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
     { cost: 4, value: 8, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
     { cost: 4, value: 9, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
-    { cost: 5, value: 10, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' }
+    { cost: 5, value: 10, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 6, value: 11, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 6, value: 12, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 7, value: 13, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 7, value: 14, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 8, value: 15, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 8, value: 16, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 9, value: 17, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 9, value: 18, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 10, value: 19, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' },
+    { cost: 10, value: 20, desc: '封魔塔 BOSS 戰鬥時間 +{v} 秒' }
   ] },
   { id: 30, name: '幸運寶箱', cat: '寶箱', effect: 'chestSpeed', levels: [
     { cost: 1, value: 5, desc: '寶箱累積速度 +{v}%' },
@@ -363,7 +653,17 @@ var RELICS = [
     { cost: 3, value: 35, desc: '寶箱累積速度 +{v}%' },
     { cost: 4, value: 40, desc: '寶箱累積速度 +{v}%' },
     { cost: 4, value: 45, desc: '寶箱累積速度 +{v}%' },
-    { cost: 5, value: 50, desc: '寶箱累積速度 +{v}%' }
+    { cost: 5, value: 50, desc: '寶箱累積速度 +{v}%' },
+    { cost: 6, value: 55, desc: '寶箱累積速度 +{v}%' },
+    { cost: 6, value: 60, desc: '寶箱累積速度 +{v}%' },
+    { cost: 7, value: 65, desc: '寶箱累積速度 +{v}%' },
+    { cost: 7, value: 70, desc: '寶箱累積速度 +{v}%' },
+    { cost: 8, value: 75, desc: '寶箱累積速度 +{v}%' },
+    { cost: 8, value: 80, desc: '寶箱累積速度 +{v}%' },
+    { cost: 9, value: 85, desc: '寶箱累積速度 +{v}%' },
+    { cost: 9, value: 90, desc: '寶箱累積速度 +{v}%' },
+    { cost: 10, value: 95, desc: '寶箱累積速度 +{v}%' },
+    { cost: 10, value: 100, desc: '寶箱累積速度 +{v}%' }
   ] },
   { id: 31, name: '幸運符', cat: '寶箱', effect: 'chestRelicChance', levels: [
     { cost: 1, value: 5, desc: '寶箱開出遺物機率 +{v}%' },
@@ -375,7 +675,17 @@ var RELICS = [
     { cost: 3, value: 35, desc: '寶箱開出遺物機率 +{v}%' },
     { cost: 4, value: 40, desc: '寶箱開出遺物機率 +{v}%' },
     { cost: 4, value: 45, desc: '寶箱開出遺物機率 +{v}%' },
-    { cost: 5, value: 50, desc: '寶箱開出遺物機率 +{v}%' }
+    { cost: 5, value: 50, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 6, value: 55, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 6, value: 60, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 7, value: 65, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 7, value: 70, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 8, value: 75, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 8, value: 80, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 9, value: 85, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 9, value: 90, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 10, value: 95, desc: '寶箱開出遺物機率 +{v}%' },
+    { cost: 10, value: 100, desc: '寶箱開出遺物機率 +{v}%' }
   ] },
   { id: 32, name: '雙開戒', cat: '寶箱', effect: 'chestDouble', levels: [
     { cost: 1, value: 1, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
@@ -387,6 +697,16 @@ var RELICS = [
     { cost: 3, value: 7, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
     { cost: 4, value: 8, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
     { cost: 4, value: 9, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
-    { cost: 5, value: 10, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' }
+    { cost: 5, value: 10, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 6, value: 11, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 6, value: 12, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 7, value: 13, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 7, value: 14, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 8, value: 15, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 8, value: 16, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 9, value: 17, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 9, value: 18, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 10, value: 19, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' },
+    { cost: 10, value: 20, desc: '寶箱開啟時，{v}% 機率開出雙份獎勵' }
   ] }
 ];

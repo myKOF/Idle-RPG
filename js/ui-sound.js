@@ -278,5 +278,6 @@ var UISound = (function () {
   return { commandResult: commandResult, preloadStartMenuAudio: preloadStartMenuAudio,
     setScene: setScene, setSceneReady: setSceneReady,
     setStartScreenActive: setStartScreenActive, setStartMenuVisible: setStartMenuVisible,
+    relicUpgraded: function () { play('success'); },
     achievementUnlocked: function () { play('achievement'); } };
 })();

@@ -1,0 +1,258 @@
+[
+  {
+    "id": 1,
+    "name": "長夜沙漏",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: THE LONG NIGHT HOURGLASS, an intricate ancient brass hourglass with sculpted crescent moon supports, deep midnight-blue glass, luminous golden sand and tiny stars suspended inside. Exquisite hand-painted game item illustration, realistic dimensional materials, polished brass filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 78 percent of a square image, uncluttered nearly black charcoal vignette background. Composition must fit comfortably in a circular crop. No letters, numbers, text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-01.png",
+    "export": "images/relics/relic-01.webp"
+  },
+  {
+    "id": 2,
+    "name": "夜班熔爐",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Nightshift Furnace: a squat richly engraved black-iron and copper smelting furnace, glowing orange coals inside a crescent-shaped opening, tiny indigo-blue night embers. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-02.png",
+    "export": "images/relics/relic-02.webp"
+  },
+  {
+    "id": 3,
+    "name": "夢境捕手",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Dreamcatcher: an intricate silver and aged gold dreamcatcher with a violet crystal at the center, luminous blue woven silk, layered raven feathers. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-03.png",
+    "export": "images/relics/relic-03.webp"
+  },
+  {
+    "id": 4,
+    "name": "晨鐘",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Dawn Bell: a heavy ancient golden temple handbell with a radiant sunrise crystal clapper, carved angel wing motifs and pale ivory enamel. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-04.png",
+    "export": "images/relics/relic-04.webp"
+  },
+  {
+    "id": 5,
+    "name": "星圖殘頁",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Fragmented Star Chart: a curled torn parchment page held by a golden celestial astrolabe clip, painted glowing cyan constellations and a delicate brass compass, no writing. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-05.png",
+    "export": "images/relics/relic-05.webp"
+  },
+  {
+    "id": 6,
+    "name": "黃銅齒輪",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Brass Gear: a large ornate solid brass gear with detailed bevels, smaller internal clockwork and an emerald core, a strong manufactured fantasy object. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-06.png",
+    "export": "images/relics/relic-06.webp"
+  },
+  {
+    "id": 7,
+    "name": "附魔印章",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Enchanting Seal: an antique gold signet stamp with violet faceted gemstone handle resting on a wax seal, magical purple vapor and engraved metal. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-07.png",
+    "export": "images/relics/relic-07.webp"
+  },
+  {
+    "id": 8,
+    "name": "智慧分揀器",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Wisdom Sorter: a compact ornate brass arcane sorting mechanism with tiny mechanical jaws, azure crystal lens and several sorting trays of glowing fragments. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-08.png",
+    "export": "images/relics/relic-08.webp"
+  },
+  {
+    "id": 9,
+    "name": "篩金網",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Gold Sifting Net: a fine woven bronze gold-panning sieve, detailed wire mesh capturing bright gold nuggets, teal patinated frame and sculpted handle. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-09.png",
+    "export": "images/relics/relic-09.webp"
+  },
+  {
+    "id": 10,
+    "name": "蓄能瓶",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Energy Flask: a round thick glass bottle wrapped in detailed brass ribs, luminous amber energy swirling inside, blue gemstone stopper. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-10.png",
+    "export": "images/relics/relic-10.webp"
+  },
+  {
+    "id": 11,
+    "name": "寶石回收器",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Gem Recycler: an intricate little copper and steel recycling apparatus with ruby and emerald fragments in a hopper, faceted sapphire glow at its heart. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-11.png",
+    "export": "images/relics/relic-11.webp"
+  },
+  {
+    "id": 12,
+    "name": "次元行囊",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Dimensional Satchel: a luxurious deep-violet leather adventurer satchel with gold filigree buckles, a tiny glowing blue dimensional portal emerging from the mouth. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-12.png",
+    "export": "images/relics/relic-12.webp"
+  },
+  {
+    "id": 13,
+    "name": "鍍金鈕扣",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Gilded Button: a single richly sculpted gold cloak button embossed with a winged lion, dark red enamel inlays and a polished beveled rim. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-13.png",
+    "export": "images/relics/relic-13.webp"
+  },
+  {
+    "id": 14,
+    "name": "優惠金卡",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Golden Privilege Card: an ornate thick gold merchant privilege card, beveled engraved borders, emerald cabochon center and sculpted laurel flourishes, absolutely no writing. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-14.png",
+    "export": "images/relics/relic-14.webp"
+  },
+  {
+    "id": 15,
+    "name": "熔晶坩堝",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Crystal Melting Crucible: an engraved dark bronze alchemical crucible with molten magenta crystal inside and jagged cyan gemstones around the lip. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-15.png",
+    "export": "images/relics/relic-15.webp"
+  },
+  {
+    "id": 16,
+    "name": "神祕裝備券",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Mysterious Equipment Voucher: an aged ivory vellum voucher rolled at two corners, a red wax seal with a tiny embossed silver breastplate and sword emblem, golden edging, no letters. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-16.png",
+    "export": "images/relics/relic-16.webp"
+  },
+  {
+    "id": 17,
+    "name": "符文刻印",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Runic Imprint: a heavy angular blue stone tablet carrying a single abstract glowing cyan runic carving in a silver filigree harness, no readable writing. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-17.png",
+    "export": "images/relics/relic-17.webp"
+  },
+  {
+    "id": 18,
+    "name": "神祕殘券",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Mysterious Ticket Fragment: a torn burgundy velvet invitation ticket with elaborate golden scrollwork, a broken crimson wax seal and faint violet sparkle, no writing. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-18.png",
+    "export": "images/relics/relic-18.webp"
+  },
+  {
+    "id": 19,
+    "name": "刻工鑿",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Gem Engraving Chisel: an exquisite golden-handled jeweler chisel with a narrow polished steel tip beside a cut emerald and tiny crystal shavings, tool centered diagonally. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-19.png",
+    "export": "images/relics/relic-19.webp"
+  },
+  {
+    "id": 20,
+    "name": "刻工鑿",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Rune Engraving Chisel: an ornate indigo-wrapped silver engraving chisel with a glowing violet crystal tip carving a small dark rune stone, tool centered diagonally. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-20.png",
+    "export": "images/relics/relic-20.webp"
+  },
+  {
+    "id": 21,
+    "name": "碎石錘",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Stonebreaker Hammer: a compact heavy silver stone hammer with a sculpted bronze handle, engraved stone-textured head with glowing sapphire veins and small broken rock chips. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-21.png",
+    "export": "images/relics/relic-21.webp"
+  },
+  {
+    "id": 22,
+    "name": "符文精工鑽",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Runic Precision Drill: an intricate ornate hand-powered gold and silver jeweler drill with spiraled needle tip, blue crystal power chamber and ruby bearings, diagonal composition. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-22.png",
+    "export": "images/relics/relic-22.webp"
+  },
+  {
+    "id": 23,
+    "name": "節約瓶",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Thrifty Essence Bottle: a small deep emerald-green potion bottle in gold filigree, a delicate droplet held within the glass, faceted stopper and alchemical condensation. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-23.png",
+    "export": "images/relics/relic-23.webp"
+  },
+  {
+    "id": 24,
+    "name": "碎片再生爐",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Fragment Regeneration Furnace: an elegant compact dark iron regeneration furnace with silver scraps orbiting a glowing green central crucible and elaborate copper braces. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-24.png",
+    "export": "images/relics/relic-24.webp"
+  },
+  {
+    "id": 25,
+    "name": "強化槌",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Enhancement Mallet: a magnificent small forge mallet with a wide engraved golden head, red gemstone inlay, leather-wrapped grip and bright orange magical sparks. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-25.png",
+    "export": "images/relics/relic-25.webp"
+  },
+  {
+    "id": 26,
+    "name": "精煉神石",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Divine Refinement Stone: a large luminous ivory-gold divine crystal floating in an ornate dark bronze cradle, delicate gold mineral veins, tiny pearl highlights. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-26.png",
+    "export": "images/relics/relic-26.webp"
+  },
+  {
+    "id": 27,
+    "name": "神賜之戒",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Godgiven Ring: a detailed sacred golden signet ring with luminous white opal, tiny sculpted angel wings, engraved band and soft heavenly light. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-27.png",
+    "export": "images/relics/relic-27.webp"
+  },
+  {
+    "id": 28,
+    "name": "急行令",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Swift March Order: an elaborate bronze military command medallion shaped as a winged boot and arrow, ruby accents, tiny red silk tassel trailing behind. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-28.png",
+    "export": "images/relics/relic-28.webp"
+  },
+  {
+    "id": 29,
+    "name": "封魔令",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Demon Sealing Order: a tall dark jade demon-sealing talisman with intricate gold metalwork, a deep violet crystal at center and two red silk tassels, abstract nonlinguistic engravings. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-29.png",
+    "export": "images/relics/relic-29.webp"
+  },
+  {
+    "id": 30,
+    "name": "幸運寶箱",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Lucky Treasure Chest: a miniature ornate emerald-enamel treasure chest with gold lion feet, slightly open lid spilling warm gold light and a few jewels. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-30.png",
+    "export": "images/relics/relic-30.webp"
+  },
+  {
+    "id": 31,
+    "name": "幸運符",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Lucky Charm: an exquisite gold four-leaf clover amulet holding an emerald heart, tiny pearl droplets and silk green cord curled underneath. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-31.png",
+    "export": "images/relics/relic-31.webp"
+  },
+  {
+    "id": 32,
+    "name": "雙開戒",
+    "prompt": "Use case: stylized-concept. Asset type: one premium dark fantasy RPG relic inventory icon. Subject: Twin Opening Ring: a beautiful pair of interlocked golden bands forming one relic, sapphire and ruby gems and mirrored ornate scrollwork, two tiny stars of magical light. Exquisite hand-painted game item illustration, realistic dimensional materials, polished metal filigree with weathered dark recesses, dramatic warm highlights and cool rim light, richly detailed yet exceptionally clear silhouette at 100px. Single isolated object centered, filling 74 percent of a square image, uncluttered nearly black charcoal vignette background. Entire silhouette must fit comfortably inside a circular crop with room around the object. No letters, numbers, readable text, watermark, UI or outer frame. Not flat vector, not simple geometry. Unique original design. Cohesive premium fantasy inventory collection.",
+    "tool": "built-in image_gen",
+    "original": "originals/relic-32.png",
+    "export": "images/relics/relic-32.webp"
+  }
+]
