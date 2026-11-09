@@ -9,7 +9,7 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=20261109-ancient-star-size90-glow5">
+  <link rel="stylesheet" href="css/style.css?v=20261109-mystery-merchant">
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=20261109-character-portrait">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
@@ -97,7 +97,7 @@
         <button class="tab-btn" data-tab="newforge"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/newforge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="64"></span></button>
         <button class="tab-btn" data-tab="gems"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/gems.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="122"></span></button>
         <button class="tab-btn" data-tab="runes"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/runes.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="150"></span></button>
-        <button class="tab-btn" data-tab="tower"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/tower.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="103"></span></button>
+        <button class="tab-btn" data-tab="tower"><span class="nav-tab-icon"><span id="tower-merchant-alert" class="merchant-alert" hidden data-str-attr="aria-label:2439">!</span><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/tower.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="103"></span></button>
         <button class="tab-btn" data-tab="talents"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/talents.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="65"></span></button>
         <button class="tab-btn" data-tab="forge" style="display:none"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/forge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="66"></span><span id="forge-run-ind" class="forge-run-ind" style="display:none"></span></button>
       </nav>
@@ -426,21 +426,7 @@
                 </div>
               </div>
 
-              <div class="gx-panel" data-gem-panel="shop" hidden>
-                <div class="shop-title-row">
-                  <div class="sec-sub"><span data-str="1512"></span> <span class="dim-text" id="shop-reset-cd"></span></div>
-                  <div class="shop-upgrade-box">
-                    <span id="gem-shop-level" class="shop-level-label" data-str="1513"></span>
-                    <button id="shop-upgrade" class="btn sm" data-str="166"></button>
-                  </div>
-                </div>
-                <div id="gem-shop-grid"></div>
-                <div class="gx-actions">
-                  <button id="shop-buy-all" class="btn" data-str="1514"></button>
-                  <button id="shop-refresh" class="btn warn" data-str="1515"></button>
-                </div>
-                <div class="hint" data-str="1516"></div>
-              </div>
+
             </div>
           </div>
         </section>
@@ -498,6 +484,22 @@
         </section>
 
         <section id="tab-tower" class="tab">
+              <div id="mystery-merchant-panel" hidden>
+                <div class="merchant-heading"><h2 class="pg-title" data-str="2435"></h2><span id="merchant-ticket-count" class="pg-pill"></span><button id="merchant-back" class="btn sm" data-str="2440"></button></div>
+                <div class="shop-title-row">
+                  <div class="sec-sub"><span data-str="1512"></span> <span class="dim-text" id="shop-reset-cd"></span></div>
+                  <div class="shop-upgrade-box">
+                    <span id="gem-shop-level" class="shop-level-label" data-str="1513"></span>
+                    <button id="shop-upgrade" class="btn sm" data-str="166"></button>
+                  </div>
+                </div>
+                <div id="gem-shop-grid"></div><div class="hint" data-str="2445"></div>
+                <div class="gx-actions">
+                  <button id="shop-buy-all" class="btn" data-str="1514"></button>
+                  <button id="shop-refresh" class="btn warn" data-str="1515"></button>
+                </div>
+                <div class="hint" data-str="2446"></div>
+              </div>
           <div id="tower-fight" style="display:none">
             <div class="tower-head">
               <span class="tw-title" data-str="1807"></span>
@@ -544,6 +546,7 @@
             <div class="pg-top">
               <h2 class="pg-title" data-str="103"></h2>
               <div id="tower-tiers" class="twx-tiers" role="tablist" data-str-attr="aria-label:1811"></div>
+              <span class="merchant-entry-tip" data-str-attr="data-tt-title:2435;data-tt-desc:2437"><button type="button" id="mystery-merchant-open" class="btn sm merchant-entry" disabled data-str="2435"></button></span>
               <label class="twx-advance" data-str-attr="data-tip:2241"><input type="checkbox" id="tw-auto-advance" checked><span data-str="2240"></span></label>
               <span class="pg-pill twx-highest"><span data-str="1812"></span> <b id="tower-highest" data-str="1882"></b></span>
               <button type="button" class="pg-help twx-help" data-str-attr="aria-label:1813;data-tt-desc:1814;data-tt-title:103">?</button>
@@ -1151,11 +1154,11 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=370a19ab"></script>
+  <script src="js/strings_data.js?v=d1a42cb9"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=20261109-treant-lv2"></script>
+  <script src="js/data.js?v=20261109-mystery-merchant"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=20261106-ai-integration"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
@@ -1194,8 +1197,8 @@
   <script src="js/battle-renderer.js?v=20261109-treant-audio-sync-a54d6904"></script>
   <script src="js/sfx-synth.js?v=20261108-counter-louder"></script>
   <script src="js/sfx.js?v=20261108-field-tick-sfx"></script>
-  <script src="js/stats.js?v=1.0.8"></script>
-  <script src="js/item.js?v=20261106-legendary-inactive-note"></script>
+  <script src="js/stats.js?v=20261109-mystery-merchant"></script>
+  <script src="js/item.js?v=20261109-mystery-merchant"></script>
   <script src="js/gem_resonance.js?v=1.0.10"></script>
   <script src="js/runeword.js?v=20261102_merged_ai_latest"></script>
   <script src="js/skills.js?v=20261106-skill-sfx"></script>
@@ -1203,14 +1206,14 @@
   <script src="js/skills2.js?v=20261106-skill-sfx"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=20261106-t4-talents"></script>
-  <script src="js/player.js?v=20261106-ai-integration"></script>
+  <script src="js/player.js?v=20261109-mystery-merchant"></script>
   <script src="js/system-unlocks.js?v=20261103-unlock-hints"></script>
   <script src="js/combat.js?v=20261108-tower-boss-floors"></script>
-  <script src="js/tower.js?v=20261109-treant-audio-sync-a54d6904"></script>
-  <script src="js/save.js?v=20261106-start-menu"></script>
+  <script src="js/tower.js?v=20261109-mystery-merchant"></script>
+  <script src="js/save.js?v=20261109-mystery-merchant"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261108-zone-playlist-v1"></script>
-  <script src="js/ui.js?v=20261109-character-portraits-0-6"></script>
+  <script src="js/ui.js?v=20261109-mystery-merchant"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
@@ -1225,7 +1228,7 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- ?? Worker ???????? main.js ????????? -->
-  <script src="js/worker/protocol.js?v=20261109-treant-audio-sync-a54d6904"></script>
+  <script src="js/worker/protocol.js?v=20261109-mystery-merchant"></script>
   <script src="js/storage.js?v=1.0.2"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
@@ -1234,7 +1237,7 @@
   <script src="js/intro-motion.js?v=1.0.0"></script>
   <script src="js/intro-audio.js?v=1.0.0"></script>
   <script src="js/intro-player.js?v=20261106-manual-intro-v1"></script>
-  <script src="js/bridge.js?v=20261109-treant-lv2"></script>
+  <script src="js/bridge.js?v=20261109-mystery-merchant"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

@@ -106,7 +106,7 @@ test('參數表藍／黃光暈與混色濃度各自獨立套用到外框光暈�
   try {
     for (const file of ['tools/apply_params.cjs', 'js/data.js', 'js/formula.js', 'js/combat.js',
       'js/item.js', 'js/player.js', 'js/save.js', 'js/battle-renderer.js',
-      'config/CSV/Zones.csv', 'config/CSV/Zone_Stage_Drops.csv',
+      'config/CSV/Zones.csv', 'config/CSV/Zone_Stage_Drops.csv', 'config/CSV/Store.csv',
       'config/CSV/system_unlock.csv', 'config/CSV/Equipment_Affix.csv']) {
       const target = path.join(temp, file);
       fs.mkdirSync(path.dirname(target), { recursive: true });

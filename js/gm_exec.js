@@ -1686,6 +1686,13 @@
     if (command === 'legend' || command === 'legendary') {
       return gmLegend(args);
     }
+    if (command === 'invite') {
+      var inviteCount = Number(args[0]);
+      if (args.length !== 1 || !Number.isSafeInteger(inviteCount) || inviteCount <= 0) return { ok: false, message: '格式：invite 正整數' };
+      addMerchantInvitations(inviteCount);
+      gmDirty();
+      return { ok: true, message: '神祕邀請券 +' + inviteCount };
+    }
     if (command === 'rune') {
       // rune <符文id|all> [數量]：r01～r33；all＝每種各給 N 顆
       var runeKey = String(args[0] || '').toLowerCase();

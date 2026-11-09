@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-  importScripts('protocol.js?v=20261109-treant-audio-sync-a54d6904', '../game-clock.js?v=1.0.1', 'shim.js?v=20261109-treant-audio-sync-a54d6904');
+  importScripts('protocol.js?v=20261109-mystery-merchant', '../game-clock.js?v=1.0.1', 'shim.js?v=20261109-treant-audio-sync-a54d6904');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,17 +20,17 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261109-treant-lv2', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261108-tower-boss-floors', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261028-develop-merge-a8acfe',
-  '../item.js?v=20261106-legendary-inactive-note', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261102_merged_ai_latest',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261109-mystery-merchant', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261108-tower-boss-floors', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
+  '../item.js?v=20261109-mystery-merchant', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261102_merged_ai_latest',
   '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261106-skill-sfx', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
-  '../player.js?v=20261106-ai-integration', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261108-tower-boss-floors', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261109-treant-audio-sync-a54d6904',
-  '../factory.js?v=20261103-equipment-rarity-v3', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261104-ancient-essence-cost', '../save.js?v=20261106-start-menu',
+  '../player.js?v=20261109-mystery-merchant', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
+  '../combat.js?v=20261108-tower-boss-floors', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261023-str-battle', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261109-mystery-merchant',
+  '../factory.js?v=20261103-equipment-rarity-v3', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261104-ancient-essence-cost', '../save.js?v=20261109-mystery-merchant',
   '../tasks.js?v=20261105-forge-fine-task', '../achievements.js?v=20261103-equipment-rarity-v3'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20261106-gm-legend');
+importScripts('../gm_exec.js?v=20261109-mystery-merchant');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
@@ -295,20 +295,9 @@ function backfillItemSockets() {
   if (typeof newForgeAllQueuedItems === 'function') walk(newForgeAllQueuedItems(G));
 }
 
-/* 寶石商店維護：首次鋪貨與 8 小時定時重置。
-   原本由 UI 呼叫 rollGemShop / shopHourlyReset（兩者都在 INTERNAL_ONLY 名單上），
-   等於「有沒有打開寶石頁」決定商店會不會刷新。移到這裡由模擬層自己維護。
-
-   首次鋪貨的條件是 items 為空。買光不會讓它變空——buyShopGem 是設 item.sold = true
-   而非移除項目（item.js:318），所以不會出現免費重刷。 */
+/* 商人只在已消耗邀請券的會話中維護，不在背景免費鋪貨。 */
 function maintainGemShop() {
-  if (typeof gemShop !== 'function') return;
-  if (typeof shopHourlyReset === 'function') shopHourlyReset();
-  var s = gemShop();
-  if (typeof rollGemShop === 'function' && (!s.items || !s.items.length)) {
-    rollGemShop();
-    UI.dirty.gems = true;
-  }
+  if (typeof MYSTERY_MERCHANT_OPEN !== 'undefined' && MYSTERY_MERCHANT_OPEN && typeof shopHourlyReset === 'function') shopHourlyReset();
 }
 
 /* 戰鬥中每個 emit 週期都把 battle 標髒。
@@ -970,7 +959,7 @@ function buildPanel(name, params) {
       return { factory: G.factory, salvageSettings: p.salvageSettings };
     case 'tower':
       // gt 同 battle：塔內技能冷卻也是「還剩幾秒」，主執行緒要據此把倒數補到現在
-      return { gt: GT, tower: G.tower, runtime: (typeof TOWER !== 'undefined') ? TOWER : null };
+      return { gt: GT, tower: G.tower, runtime: (typeof TOWER !== 'undefined') ? TOWER : null, merchant: merchantPanelView() };
     case 'gems':
       // 一般寶石是 { type: { lv: n } } 計數；融合寶石才是個別實體
       return {
@@ -1771,6 +1760,7 @@ function boot(msg) {
   if (msg.save) {
     loaded = (typeof migrateSave === 'function') ? migrateSave(msg.save) : msg.save;
   }
+  MYSTERY_MERCHANT_OPEN = false;
   G = loaded || newGameState();
   if (!loaded) G.runId = _maxRunId;
   // 存檔中的 xp 可能是舊升級公式留下的溢出值；先完成升級再建立戰鬥實體。

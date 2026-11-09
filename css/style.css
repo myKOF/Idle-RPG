@@ -12725,3 +12725,19 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   transform: translate(-50%, -50%);
   box-shadow: inset 0 0 36px 14px #000, 0 0 0 300vmax #000;
 }
+
+/* 神祕商人：入口與塔頁提醒。 */
+.merchant-entry-tip { display:inline-flex; }
+.merchant-entry[disabled] { opacity:.4; cursor:default; pointer-events:none; }
+#mystery-merchant-open.is-ready { color:#ffe7a0 !important; border-color:#d4ad4f !important; background:linear-gradient(180deg,#59421d,#241a0c) !important; opacity:1; animation:merchant-invite-glow 1.4s ease-in-out infinite alternate; }
+@keyframes merchant-invite-glow { from { box-shadow:0 0 2px #c89b35; } to { box-shadow:0 0 12px #f0cd64; background-color:#56421e; } }
+.merchant-alert { position:absolute; right:-3px; top:-2px; z-index:2; width:18px; height:18px; border-radius:50%; color:#fff; background:#db3225; border:2px solid #ffe6bd; text-align:center; font:bold 14px/14px sans-serif; }
+.merchant-alert[hidden], #mystery-merchant-panel[hidden] { display:none; }
+.merchant-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+.merchant-heading #merchant-back { margin-left:auto; }
+.merchant-equipment-icon { width:64px; height:64px; object-fit:contain; }
+#mystery-merchant-panel #gem-shop-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+#mystery-merchant-panel .shop-emoji { display:flex; align-items:center; justify-content:center; min-height:68px; }
+#mystery-merchant-panel .shop-emoji .rune-stone { width:64px; height:64px; object-fit:contain; }
+#mystery-merchant-panel .shop-name { white-space:normal; overflow-wrap:anywhere; }
+@media(prefers-reduced-motion:reduce) { #mystery-merchant-open.is-ready { animation:none; box-shadow:0 0 6px #d4ad4f; } }

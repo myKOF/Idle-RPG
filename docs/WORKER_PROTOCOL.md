@@ -1,5 +1,8 @@
 # Worker 協議 v75
 
+
+v76（2026-11-09 神祕商人）：新增 merchant.open／merchant.close（共98指令）。tower新增 merchant={active,tickets,shop}，shop沿用player.gemShop，items為gem／equipment／rune混合商品；每格含kind／price／sold及類別payload（寶石type／lv、裝備equipment、符文runeId）。header.player新增consumables.mystery_invitation；不加入高頻view或置頂材料。open先驗券、鋪貨成功後扣1券，同一會話重複open冪等；close及存檔重載結束會話，會話本身不存檔。既有gem.shop*指令全部驗證會話，購買同步tower／gems／header／inv。遺物供應器保留，未實作前不產生商品。券每次塔BOSS勝利按Store百分比掉1張，重複結果不重複發放。詳見MYSTERY_MERCHANT.md。
+
 v75（2026-11-09 塔BOSS停步出手）：`act` 支援敵方 `attack`／`cast`，`elId=tb-float`、`target=tp-float`，`lockMs` 為整段動作站定時間；不改傷害／特效原有結算時機。同一出手只送一次，顯示層與位置同樣延遲240ms，移動插值結束後才播放，動作按剩餘鎖定時間播完。BOSS暫態 `_towerActionUntil`／`_towerActionKind`／`_towerHasActed`／`_towerStopForAction`／`_towerLastMoveAt`／`_towerMovedThisTick` 只控制該場戰鬥，不存檔；跑位 `_rp.x/y` 為塔戰固定世界目標，野外仍相對玩家。`model3d.clips` 僅必填walk，其餘可空；空攻擊使用站姿、空死亡淡出，有填名稱必須存在GLB。指令96條、存檔及傷害數值不變。
 
 v74（2026-11-09 塔戰邊界）：`PANEL battle.tower.arena`新增可選暫態幾何 `{cx,cy,viewWidth,viewHeight,halfWidth,halfHeight}`，皆為有限數值、尺寸為正，單位為世界座標。場地中心在開戰時固定；基準法陣場景四邊各外擴原寬／高50%，移動區總寬高兩倍，縱向依地面投影換算。Worker限制玩家及BOSS、跑位目標與強制位移；顯示層用同一中心與基準尺寸，視窗或全螢幕不改實際戰鬥大小。退場清空，舊快照缺欄維持舊法陣構圖；指令與存檔不變。

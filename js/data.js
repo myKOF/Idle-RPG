@@ -2155,6 +2155,28 @@ var GEM_SHOP_TABLE = [
   { lv: 10, price: 1000000000000 }
 ];
 var GEM_SHOP_MAX_LEVEL = 20;
+// Store.xlsx → apply_params.cjs；商人資料沿用 gemShop 名稱以相容既有存檔。
+var MYSTERY_MERCHANT_SETTINGS = {
+  ticketDropRate: 10,
+  gemWeight: 50,
+  equipmentWeight: 30,
+  runeWeight: 20,
+  relicWeight: 0,
+  equipmentMinRarity: 2,
+  equipmentMaxRarity: 11,
+  equipmentPriceBase: 25000,
+  equipmentLevelMultiplier: 1,
+  runeMinTier: 1,
+  runeMaxTier: 20,
+  runePriceBase: 20000,
+  runePriceExponent: 2.5,
+  relicPriceBase: 1000000,
+  relicMinTier: 1,
+  relicMaxTier: 5
+};
+var MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE = [
+  [0, 75], [3, 20], [4, 5]
+];
 // 每列為 [刷出數量, 機率%]，對應圖表「商店等級 / 刷出數量」。
 var GEM_SHOP_COUNT_TABLE = [
   [[5, 50], [6, 50]],
