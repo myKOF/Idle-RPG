@@ -96,6 +96,46 @@ test('說明文字：{v} 代入該級數值強度', () => {
   }));
 });
 
+test('全部遺物20級：既有10級與庫存保留，11～20級逐級扣表格需求，失敗不扣件', () => {
+  const c = loadGameContext();
+  assert.equal(c.RELICS.length, 32);
+  for (const relic of c.RELICS) {
+    assert.equal(relic.levels.length, 20, relic.name);
+    assert.equal(relic.levels[0].cost, 1);
+    c.G.player.relics[relic.id] = { lv: 10, n: 2 };
+    for (let lv = 11; lv <= 20; lv++) {
+      const cost = relic.levels[lv - 1].cost;
+      assert.ok(Number.isInteger(cost) && cost >= 1);
+      const entry = c.relicEntry(relic.id);
+      if (entry.n < cost) {
+        assert.equal(c.relicUpgrade(relic.id), c.STR(2453, cost, entry.n));
+        assert.deepEqual({...c.relicEntry(relic.id)}, {...entry});
+        c.relicGrant(relic.id, cost - entry.n);
+      }
+      assert.equal(c.relicUpgrade(relic.id), null);
+      assert.equal(c.relicLevel(relic.id), lv);
+      assert.equal(c.relicEntry(relic.id).n, 0);
+      assert.equal(c.relicValue(relic.effect), relic.levels[lv - 1].value);
+    }
+    c.relicGrant(relic.id, 7);
+    assert.equal(c.relicUpgrade(relic.id), c.STR(2452));
+    assert.deepEqual({...c.relicEntry(relic.id)}, {lv:20,n:7});
+  }
+  assert.ok(c.RELIC_BY_EFFECT.offlineTowerReward.levels.every(row => row.value > 0));
+});
+
+test('首件固定解鎖；配置拒絕把第1級改為多件門檻', () => {
+  const c = loadGameContext(), relic = c.RELICS[0];
+  const original = relic.levels[0].cost;
+  relic.levels[0].cost = 9;
+  c.relicGrant(relic.id, 1);
+  assert.deepEqual({...c.relicEntry(relic.id)}, {lv:1,n:0});
+  relic.levels[0].cost = original;
+  const rows = csvParse(fs.readFileSync(path.join(root,'config/CSV/Relics.csv'),'utf8'));
+  rows[1][5] = '9';
+  assert.throws(() => SCHEMAS.Relics.rebuild(rows.slice(1),rows[0]), /第 1 級/);
+});
+
 test('兩端共算的費用與上限：背包、強化碎片、洗煉精華、暫存區、封魔塔限時', () => {
   const c = loadGameContext();
   const it = { level: 300, rarity: 6, upgrade: 12 };

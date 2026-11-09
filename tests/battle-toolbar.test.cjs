@@ -20,7 +20,7 @@ test('場景內保留任務、狂暴、內測與原 HUD，操作按鈕僅在上�
   const start = html.indexOf('<div class="battle-navigation">');
   const scene = html.indexOf('<div class="battle-scene-wrapper"', start);
   const end = html.indexOf('<div class="log-header">', scene);
-  for (const id of ['btn-enemy-tip', 'btn-toggle-damage', 'btn-toggle-perf', 'btn-battle-mute', 'st-auto', 'btn-combat-pause', 'btn-battle-info', 'tch-flee', 'btn-battle-fullscreen', 'btn-pip']) {
+  for (const id of ['btn-enemy-tip', 'btn-toggle-damage', 'btn-toggle-perf', 'btn-battle-mute', 'btn-hero3d', 'st-auto', 'btn-combat-pause', 'btn-battle-info', 'tch-flee', 'btn-battle-fullscreen', 'btn-pip']) {
     assert.equal(html.split('id="' + id + '"').length - 1, 1, id);
     assert.ok(html.slice(start, scene).includes('id="' + id + '"'), id);
     assert.ok(!html.slice(scene, end).includes('id="' + id + '"'), id);
@@ -29,6 +29,8 @@ test('場景內保留任務、狂暴、內測與原 HUD，操作按鈕僅在上�
     assert.ok(html.slice(scene, end).includes('id="' + id + '"'), id);
   }
   assert.match(html, /<button id="st-auto"[^>]*aria-pressed="true"[^>]*data-str="2433"/);
+  const utility = html.slice(html.indexOf('<div class="battle-utility-controls">'), html.indexOf('<div class="stage-tools">'));
+  assert.ok(utility.indexOf('id="btn-hero3d"') > utility.indexOf('id="btn-battle-mute"'), '3D位於靜音按鈕之後');
 });
 
 function stageSetup() {

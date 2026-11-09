@@ -2686,6 +2686,7 @@ SCHEMAS.Relics = {
       const id = num('編號', n => Number.isInteger(n) && n >= 1, '必須是正整數');
       const lv = num('等級', n => Number.isInteger(n) && n >= 1, '必須是正整數');
       const cost = num('升級數量', n => Number.isInteger(n) && n >= 1, '必須是正整數');
+      if (lv === 1 && cost !== 1) fail(where + '：第 1 級必須消耗首件解鎖（升級數量為 1）');
       const value = num('數值強度', n => n >= 0, '不得為負數');
       const name = get(r, '名稱').trim(), cat = get(r, '分類').trim(), effect = get(r, '效果鍵').trim(), desc = get(r, '效果說明').trim();
       if (!name) fail(where + '（編號 ' + id + '）：「名稱」不可空白');

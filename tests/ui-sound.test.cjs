@@ -320,6 +320,16 @@ test('detailAction waits for accepted Worker results; rejection, missing resourc
   }
 });
 
+test('遺物成功音效共用核准成功音與音效音量／靜音', async () => {
+  const s = mount();s.fire('pointerdown');await settle();
+  s.c.UISound.relicUpgraded();await settle();
+  assert.equal(s.played.length,1);assert.match(s.played[0],/05-success.wav/);
+  s.advance(1000);s.setPreference('mute',true);s.c.UISound.relicUpgraded();await settle();
+  assert.equal(s.played.length,1);
+  s.setPreference('mute',false);s.setPreference('sfxVolume',0);s.c.UISound.relicUpgraded();await settle();
+  assert.equal(s.played.length,1);
+});
+
 test('runtime loads only approved immutable originals and the versioned sound module precedes UI', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.ok(html.indexOf('js/ui-sound.js?v=') < html.indexOf('js/ui.js?v='));

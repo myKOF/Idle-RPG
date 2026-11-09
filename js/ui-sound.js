@@ -36,6 +36,8 @@ var UISound = (function () {
   var buffers = {}, loading = {}, sources = {}, lastPlayed = {};
   var menuVisible = false, menuEpoch = 0, startScreenActive = false, menuMusic = null;
   var sceneTracks = [], sceneIndex = 0, sceneMusic = null, pageActive = true;
+  var sceneReady = false, sceneGapUntil = 0, sceneGapTimer = 0;
+  var SCENE_TRACK_GAP_MS = 10000;
 
   function now() { return performance.now(); }
   function stop(kind) {
@@ -87,12 +89,13 @@ var UISound = (function () {
   function syncSceneMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    var shouldPlay = pageActive && !startScreenActive && sceneTracks.length > 0 && volume > 0;
+    var shouldPlay = pageActive && sceneReady && !startScreenActive &&
+      sceneTracks.length > 0 && Date.now() >= sceneGapUntil && volume > 0;
     try {
       if (shouldPlay && !sceneMusic) {
         sceneMusic = new window.Audio();
         sceneMusic.preload = 'auto';
-        sceneMusic.loop = sceneTracks.length === 1;
+        sceneMusic.loop = false;
         sceneMusic.src = sceneTracks[sceneIndex];
         var audio = sceneMusic;
         audio.onended = function () {
@@ -101,6 +104,14 @@ var UISound = (function () {
           sceneIndex = (sceneIndex + 1) % sceneTracks.length;
           audio.src = sceneTracks[sceneIndex];
           audio.currentTime = 0;
+          var deadline = Date.now() + SCENE_TRACK_GAP_MS;
+          sceneGapUntil = deadline;
+          sceneGapTimer = setTimeout(function () {
+            if (sceneMusic !== audio || sceneGapUntil !== deadline) return;
+            sceneGapUntil = 0;
+            sceneGapTimer = 0;
+            syncSceneMusic();
+          }, SCENE_TRACK_GAP_MS);
           syncSceneMusic();
         };
       }
@@ -115,6 +126,11 @@ var UISound = (function () {
     if (startScreenActive) { syncSceneMusic(); syncMenuMusic(); }
     else { syncMenuMusic(); syncSceneMusic(); }
   }
+  function setSceneReady(value) {
+    if (sceneReady === !!value) return;
+    sceneReady = !!value;
+    syncSceneMusic();
+  }
   function setScene(view) {
     if (!view) return;
     var zone = typeof ZONES !== 'undefined' && ZONES[view.zone];
@@ -122,6 +138,9 @@ var UISound = (function () {
     if (tracks.length === sceneTracks.length && tracks.every(function (track, i) { return track === sceneTracks[i]; })) return;
     sceneTracks = tracks;
     sceneIndex = 0;
+    clearTimeout(sceneGapTimer);
+    sceneGapTimer = 0;
+    sceneGapUntil = 0;
     if (sceneMusic) {
       try { sceneMusic.pause(); sceneMusic.currentTime = 0; } catch (_) {}
       sceneMusic = null;
@@ -259,7 +278,8 @@ var UISound = (function () {
   }
   init();
   return { commandResult: commandResult, preloadStartMenuAudio: preloadStartMenuAudio,
-    setScene: setScene,
+    setScene: setScene, setSceneReady: setSceneReady,
     setStartScreenActive: setStartScreenActive, setStartMenuVisible: setStartMenuVisible,
+    relicUpgraded: function () { play('success'); },
     achievementUnlocked: function () { play('achievement'); } };
 })();

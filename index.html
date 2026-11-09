@@ -15,11 +15,11 @@
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.9">
-  <link rel="stylesheet" href="css/relic.css?v=20261109-relics">
+  <link rel="stylesheet" href="css/relic.css?v=20261110-relic-layout-v2">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.5">
   <link rel="stylesheet" href="css/achievements.css?v=1.0.15">
-  <link rel="stylesheet" href="css/world-map.css?v=1.0.14">
+  <link rel="stylesheet" href="css/world-map.css?v=20261110-fullscreen-row-v1">
   <link rel="stylesheet" href="css/divine-forge.css?v=1.0.15">
   <link rel="stylesheet" href="css/equipment-chaos.css?v=1.0.6">
   <link rel="stylesheet" href="css/equipment-tooltip.css?v=20261105-simple-ancient-stars-v1">
@@ -592,8 +592,6 @@
           <div id="zone-bar" class="world-map-current-bar">
             <span id="current-zone-name" class="world-map-current-zone" data-str="566"></span>
             <span id="zone-bar-tools" class="zone-bar-tools">
-              <!-- 內測專用：切換主角的動畫系統（2D 序列幀／3D 骨架動畫）。正式版永遠 hidden，ui.js initHero3dToggle 只在 isInternalServer() 時顯示。 -->
-              <button id="btn-hero3d" class="btn sm" type="button" hidden aria-pressed="false" data-str-attr="data-tip:2153"></button>
               <button id="btn-world-map" class="btn sm" type="button" aria-haspopup="dialog" aria-controls="world-map-modal" data-str="2121"></button>
             </span>
           </div>
@@ -607,6 +605,7 @@
                 <span id="stage-best" class="dim-text" data-str="579"></span>
               </div>
             </div>
+            <div class="battle-toolbar">
             <div class="battle-utility-controls">
               <button id="btn-enemy-tip" class="btn sm info-btn" type="button" data-str-attr="aria-label:475">!</button>
               <button id="btn-toggle-damage" class="info-btn damage-toggle-btn" type="button" data-str-attr="aria-label:584;data-tt-title:114;data-tt-desc:115">
@@ -619,6 +618,8 @@
               <button id="btn-battle-mute" class="btn sm" type="button" aria-pressed="false" data-str-attr="aria-label:2333;data-tt-title:2333;data-tt-desc:2434">
                 <svg class="ui-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="ln" d="M11 5L6 9H3v6h3l5 4z"/><path class="ln sound-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="ln sound-muted" d="M16 9l6 6m0-6l-6 6"/></svg>
               </button>
+              <!-- 內測專用：沿用原動畫切換與重載流程，正式版保持隱藏。 -->
+              <button id="btn-hero3d" class="btn sm" type="button" hidden aria-pressed="false" data-str-attr="data-tip:2153"></button>
             </div>
             <div class="stage-tools">
               <button id="st-auto" class="btn sm" type="button" aria-pressed="true" data-str="2433" data-str-attr="aria-label:571;data-tt-title:571"></button>
@@ -627,6 +628,7 @@
               <button id="tch-flee" class="btn sm warn" type="button" style="display:none" data-str="68"></button>
               <button id="btn-battle-fullscreen" class="btn sm" type="button" aria-pressed="false" aria-controls="combat-area" data-str-attr="data-tip:187" data-str="186"></button>
               <button id="btn-pip" class="btn sm" data-str-attr="data-tt-title:582;data-tt-desc:583;aria-label:582"><svg class="ui-ico ui-ico-pip" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect class="ln" x="3" y="5" width="18" height="14" rx="2"/><rect class="fa" x="12" y="11" width="6.5" height="5" rx="1"/></svg></button>
+            </div>
             </div>
           </div>
         </div>
@@ -1168,17 +1170,17 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=55527ad3"></script>
+  <script src="js/strings_data.js?v=8757a6f1"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
-  <script src="js/data.js?v=20261109-relics"></script>
+  <script src="js/data.js?v=20261110-zone-relic-merge"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=20261106-ai-integration"></script>
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
   <script src="js/achievement_data.js?v=20261103-equipment-rarity-v3"></script>
-  <script src="js/relic_data.js?v=20261109-relics"></script>
-  <script src="js/relic.js?v=20261109-relics"></script>
+  <script src="js/relic_data.js?v=20261109-relic-redesign-v1"></script>
+  <script src="js/relic.js?v=20261109-relic-redesign-v1"></script>
   <script src="js/formula.js?v=20261109-relics"></script>
   <script src="js/battle-terrain.js?v=1.0.6"></script>
   <script src="js/battlefield.js?v=20261109-treant-audio-sync-a54d6904"></script>
@@ -1228,12 +1230,12 @@
   <script src="js/tower.js?v=20261109-relics"></script>
   <script src="js/save.js?v=20261109-relics"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
-  <script src="js/ui-sound.js?v=20261110-sfx-65pct"></script>
+  <script src="js/ui-sound.js?v=20261110-sound-relic-merge"></script>
   <script src="js/ui.js?v=20261109-relics"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
-  <script src="js/ui-relic.js?v=20261109-relics"></script>
+  <script src="js/ui-relic.js?v=20261109-relic-redesign-v1"></script>
   <script src="js/ui-achievements.js?v=20261106-start-menu-v2"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.22"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.3"></script>
@@ -1254,7 +1256,7 @@
   <script src="js/intro-motion.js?v=1.0.0"></script>
   <script src="js/intro-audio.js?v=1.0.0"></script>
   <script src="js/intro-player.js?v=20261106-manual-intro-v1"></script>
-  <script src="js/bridge.js?v=20261109-relics-gm"></script>
+  <script src="js/bridge.js?v=20261110-zone-relic-merge"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -1267,7 +1269,7 @@
   <script src="js/start-menu-background.js?v=1.0.6"></script>
   <script src="js/start-menu.js?v=1.0.3"></script>
   <script src="js/ai-key-setting.js?v=20261105-settings-tabs"></script>
-  <script src="js/main.js?v=1.0.10"></script>
+  <script src="js/main.js?v=20261109-zone-bgm-timing-v1"></script>
 </body>
 
 </html>

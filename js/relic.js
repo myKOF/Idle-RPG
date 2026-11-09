@@ -6,7 +6,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
      主執行緒 遺物頁與費用預覽（強化碎片、洗煉精華、背包擴充…）讀同一組數值
 
    存檔：G.player.relics = { 編號: { lv: 目前等級（0＝尚未解鎖）, n: 尚未用掉的件數 } }。
-   取得一件＝n+1；尚未解鎖時，件數一到第 1 級的「升級數量」就自動解鎖（第 1 級預設 1，所以拿到就是 Lv.1）。
+   取得第一件固定消耗一件並解鎖 Lv.1；之後重複件累積，按配置表升級。
    之後升級由玩家在遺物頁按下（relic.upgrade），消耗下一級的「升級數量」。滿級後件數照樣累積，不會消失。
 
    各系統一律透過 relicValue(效果鍵) 讀「目前等級的數值強度」（沒有這件遺物＝0），
@@ -107,7 +107,7 @@ function relicGrant(id, n) {
   if (!relic || n <= 0) return 0;
   var store = relicStore(), cur = relicEntry(id, store);
   cur.n = Math.min(Number.MAX_SAFE_INTEGER, cur.n + n);
-  if (cur.lv === 0 && cur.n >= relic.levels[0].cost) { cur.n -= relic.levels[0].cost; cur.lv = 1; relicEffectChanged(); }
+  if (cur.lv === 0 && cur.n >= 1) { cur.n -= 1; cur.lv = 1; relicEffectChanged(); }
   store[id] = cur;
   if (typeof UI !== 'undefined' && UI.dirty) UI.dirty.header = true;
   return n;
@@ -204,16 +204,6 @@ function relicBoostWeights(pairs, effect, isHigh) {
 function relicChestSpeedMult() { return 1 + relicPct('chestSpeed'); }
 function relicChestRelicChanceMult() { return 1 + relicPct('chestRelicChance'); }
 function relicChestDoubleChance() { return relicValue('chestDouble'); }
-
-/* ---- 遺物頁（主執行緒）用的整理 ---- */
-function relicCategories() {
-  var cats = [], seen = {};
-  (typeof RELICS !== 'undefined' ? RELICS : []).forEach(function (r) {
-    if (!seen[r.cat]) { seen[r.cat] = { name: r.cat, list: [] }; cats.push(seen[r.cat]); }
-    seen[r.cat].list.push(r);
-  });
-  return cats;
-}
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { RELIC_EFFECT_KEYS: RELIC_EFFECT_KEYS, relicValue: relicValue, relicGrant: relicGrant, relicUpgrade: relicUpgrade };

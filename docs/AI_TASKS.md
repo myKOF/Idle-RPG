@@ -1,3 +1,14 @@
+## SYNC-MERGE-20261110-015525 ? pending develop integration
+
+- Owner: Codex; Done (pending controller staging/merge commit). Explicit user authorization for this pending merge only; original HEAD aeaac9a6, incoming 6c84d97a, base 268f2bcc. No delegation, staging, commits, Git metadata writes or other-worktree changes.
+- Scope: index.html / achievement sound test conflicts, necessary cache corrections, validation and this record. Preserve all staged incoming deliverables and controller EOF corrections; no originally conflicted Excel workbooks or Excel edits.
+- Three-way inspection: ours adds 65% SFX levels (hover unchanged); theirs adds scene-ready and ten-second BGM gaps plus relic success playback. Runtime merges independently. Replace competing sound URLs with a fresh combined cache token and keep the exact-version assertion. Incoming Zones data changed without a data.js bump: synchronize fresh main/Worker data and bridge/Worker asset versions. Editor only shares strings_data, whose incoming hash remains synchronized.
+- Conflict precheck identifies the already authorized incoming source; other-worktree status is unavailable under ownership restrictions, and no broader trust changes were attempted. Controller is the subsequent integrator and commit owner.
+- Validation: node --test --test-concurrency=2 --test-reporter=tap tests/ui-achievement-sound.test.cjs tests/ui-sound.test.cjs tests/zone-music.test.cjs tests/relics.test.cjs tests/relic-ui.test.cjs tests/battle-toolbar.test.cjs tests/hero3d-internal-toggle.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs tests/worker-protocol.test.cjs tests/scene-startup-ready.test.cjs tests/loading-screen.test.cjs tests/skill-sfx.test.cjs: 110/110 pass, logs/sync-20261110-015525-tests.tap. Initial 109/110 isolated a stale desert-only playlist assertion; original aeaac9a6 read-only fs/module overlay passes 10/10, incoming 6c84d97a overlay reproduces the identical stale assertion (13/14). Baseline logs: logs/sync-20261110-015525-{baseline,incoming}.tap. Test now pins exact configured Icefield/mist_forest/thunder_peak tracks, keeps empty-track assertions on remaining maps and all Excel/CSV/runtime/reverse-extraction equality checks, and checks referenced files exist; no behavior or assertions weakened.
+- Existing readXlsxRows/csvStringify exported and verified Relics/Zones/String CSV from their unchanged Excel sources; node tools/config_tables.cjs --apply Relics --write and --apply Zones --write report zero semantic changes; node tools/string-table/apply_strings.cjs reports unchanged 2468 strings/hash 8757a6f1. No workbook bytes edited. npm.cmd run build: 705 files pass, logs/sync-20261110-015525-build.log. node tools/assets/export-relic-icons.cjs --check verifies 66 sources/exports. Complete git diff HEAD --check passes; HEAD/MERGE_HEAD unchanged, index intentionally remains unmerged for controller staging.
+- Assets: preserved six existing incoming MP3s byte-for-byte with SHA/size/source-commit manifest under asset-library third-party/user-supplied/zone-music-20261110. No downloads, generated audio or new selection; blades-of-the-rising-sun is preserved although not currently configured. Incoming user-authored BGM adjustment commit supplies provenance; further source/license documentation was not supplied and is not inferred here. Existing relic library exports need no modification. No asset/game staging or commits performed. Subsequent controller must commit the seven reported library files before the merge commit.
+- Modified conflict/cache/test/record files: index.html, tests/ui-achievement-sound.test.cjs, tests/zone-music.test.cjs, js/bridge.js, js/worker/sim.worker.js, this record; regenerated CSV outputs retain incoming semantics. All other incoming deliverables preserved. Read-only inspected rules/workflow/prompts, common base/ours/theirs diffs, runtime audio paths, config generators, cache regression and asset provenance/export workflow. No browser listening, native Excel reopening or full-suite run claimed; no known new merge regression or remaining conflict markers. No commit SHA for this pass by explicit instruction. Ready for controller staging and its pending merge only.
+
 ## UI-CHAR-PORTRAIT-INTEGRATE-20261109 — 核准0～6轉頭像正式接入
 
 - Owner：Codex；Done，單一開發者。使用者核准0～3轉畫風、續繪4～6轉後，明確要求將全部七張接入截圖圈選的側欄角色圖示與角色頁頭像；沿用已完成單一入口。本輪0～6轉實際接入完成。
@@ -9810,6 +9821,20 @@ Antigravity 驗證 `?worker=1` 空跑；Codex 依協議撰寫協議測試
 
 # 3. Codex 任務
 
+## ZONE-BGM-TIMING-20261109 — Loading 揭幕後起播與曲間十秒
+
+- Owner：Codex；Done，單一開發者。使用者要求場景 BGM 等 Loading 結束才開始，每首播完停留約十秒再播下一首。
+- 前置：既有雙曲輪播已完成，fetch 與逐檔預檢無外部分支衝突。允許 ui-sound 的場景播放／計時、main 的 Loading 揭幕通知、必要首頁快取、BGM／啟動相關回歸、音樂 README／素材庫同份說明、LV 與本段。禁止改 Excel／音檔／選單曲目／戰鬥／協議／存檔／其他遺物任務，不合併推送。
+- 驗收：Loading 期間 Worker 已送場景、手勢及音量變動仍不搶播；揭幕後起播；真實曲尾至下一首約十秒；等待期間不被同圖快照／手勢／設定跳過，離場取消舊計時、單曲亦有間隔；靜音／背景／pagehide／pageshow、相關回歸、Build、自我 Review 與分段 Commit。後續交使用者驗收整合。
+- 完成：場景音樂預設未就緒，main 的啟動 Loading 設為未就緒，實際 revealGame 隱藏黑幕並放行 Worker 後才啟用。每首原生 ended 後以真實時間等待十秒，再依 BGM／BGM2 順序播放；單曲也等待後重播。等待時切換音量、靜音、手勢、相同場景快照與 Loading 狀態不會跳過；離場取消計時並以播放物件／期限核對丟棄過期回呼，背景與頁面恢復沿原生命週期處理。
+- 修改：js/ui-sound.js 的場景門檻／曲間計時、js/main.js 的啟動／揭幕通知、index.html 上述兩支的快取、tests/zone-music.test.cjs 的可控計時與四項新增情境、tests/ui-achievement-sound.test.cjs 的快取預期、audio/zones/README.md、LV 與本段。未改音檔、Zones／String Excel、配置數值、Worker／協議、開始選單曲目、戰鬥或存檔。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／既有BGM交接、UI 場景通知、Loading 的 inline show／hide、啟動／場景就緒回歸、GameSettings／開始選單生命週期與素材庫解析。工作區起始的 RELIC-REDESIGN 紀錄及後續 relic／config_tables 修改完整保留，不納入本項；UISound 只動場景段，沒有修改遺物音效。
+- 測試：`node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/loading-screen.test.cjs tests/scene-startup-ready.test.cjs tests/start-menu.test.cjs tests/game-menu.test.cjs tests/update-check.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/intro-audio.test.cjs tests/string-table.test.cjs tests/tab-lock.test.cjs` 共101/101通過。新增案例確認 Loading 收到快照／手勢／設定不搶播、揭幕先後、9999ms仍停／10000ms起播、不能略過與離場過期計時。既有單曲／雙曲／靜音／背景／選單／頁面生命週期均保留並按新間隔驗收。
+- `npm.cmd run build` 704檔通過；`node tools/string-table/build_string_csv.cjs --check` 寫死0；diff檢查通過。沒有新增玩家顯示文字或數值參數錨點。
+- 瀏覽器：IAB無可用連線，改用隔離 headless Edge、正式主頁／原生 Worker 及 seed=17，不碰使用者存檔。只延遲 desert 原地板資源，確認 Worker 已送荒漠快照、真實點擊及音量／靜音變動後 Loading 仍靜音；放行資源後真實 MP3 起播時黑幕均已隱藏。兩次原生曲尾換曲分別等待10013.7ms、10004.2ms，第二次模擬背景；同圖換關、手勢與設定沒有跳過空檔。以修改前 index／main／ui-sound 的唯讀 HTTP 覆映重跑，確認舊版在 Loading 中已播放（earlyBgm=true），沒有修改原始檔或降低門檻。
+- 瀏覽器限制：功能驗證通過、error／pageerror為0；首次輔助程式因要求 warning 全0而回傳失敗，記錄兩項未修改 sfx-synth 的 Oscillator 頻率限幅及一項原有 dark-gold-seal 預載未使用提示。修改前30秒基準未重現這三項 warning，不能宣稱全部已在本輪基準重現或 Console 全淨；音訊時機與兩個實測間隔的功能斷言均已通過。未更改既有合成音效／預載來配合測試，未做行動真機／跨瀏覽器／長時間遊玩。瀏覽器與測試伺服器皆正常關閉。
+- 素材／交付：兩首既有 MP3 的 SHA 與 manifest 均一致，音檔無修改；只同步素材庫的同份 README，先提交 `872f482f`。遊戲 Commit 為本段所在提交，SHA 見交付。自我 Review 完成，BGM需求無未完成，可供使用者合併後重載驗收；已知限制如上，其他進行中任務保留，未合併／推送。
+
 ## ZONE-BGM2-20261108 — 荒漠兩首背景音樂依序循環
 
 - Owner：Codex；Done，單一開發者。使用者提供 desert-ascendant_2.mp3，確認第二首亦已取得授權，要求 Zones 再加欄位並按第一首→第二首→第一首循環。
@@ -15548,3 +15573,68 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器提示：第一次輔助程式因要求console warning全0，在功能驗證通過後被音訊限幅及未使用預載提示擋下。以原HEAD dcc45f28的index／hero3d唯讀覆蓋重作同流程，重現音訊頻率限幅；另確認預載為原index相同dark-gold-seal宣告，短暫基準閒置未重現，未宣稱兩者全重現。最終game-validation.json分列功能PASS、基準提示與原始報告SHA；不改音訊／預載或產品／測試配合驗證，不宣稱console全淨。
 - 素材：新獨立套件codex-authored/hero3d-role7-20261109含22項來源／成品／製作器／原生與瀏覽器QA，加8項六轉來源依賴與manifest；新匯出器核對30項及既有角色SHA，原六轉候選匯出器仍核對25項。先提交素材庫f5724533ca11f89379ded95a4aa2f80bc19344ca；遊戲提交為本段所在「[Codex] feat: 接入六轉與七轉劍盾角色外觀」。兩個庫逐項stage SHA核對後提交，不合併／推送。
 - 預覽與交付：聊天role7-20261109保存1920×1080／30FPS／84幀原速Attack4前後雙視圖GIF及新劍／手盾／正式戰場近景，Pillow驗84幀、loop0、兩側均動並目視讀回。這是相同正式GLB／Hero3D／PBR的放大診斷鏡頭；最終媒體保留，逐幀PNG及除錯暫存清理。無本項未完成實作，可供使用者重載驗收及合併；已接受六轉少量盾／護腕接觸沿用，沒有宣稱全動作／衣甲自身或過渡無穿模，未做行動真機／跨瀏覽器／長玩。未合併／推送develop或main，後續由使用者驗收與整合者同步。
+
+## RELIC-REDESIGN-20261109 — 遺物二十級與圖標介面改造
+
+- Owner：Codex；Done，單一開發者。使用者授權32件遺物20級、首件解鎖／重複件配置消耗、取消分類每行五件、精緻圓形圖標、名稱等級與懸停tips、點選展開升級按鈕及數量、中央升級演出及音效。
+- 前置：既有遺物Worker／header／存檔及Relics表完成，fetch後逐檔預檢無外部衝突。允許relic與UI／CSS、Relics／String原生Excel與衍生CSV／JS、必要載入與Worker快取、UISound、獨立圖標／來源匯出／回歸及LV／本段；禁止改其他玩法／協議／存檔契約或其他AI工作區，不合併推送。
+- 設計：保留前十級，補十一至二十級配置；首件固定解鎖，之後按下一級表格費用手動升級。32張獨立imagegen原創插畫，Mote可連線但其像素繪圖方式不適合本輪精細插畫。沿既有UI音效系統，演出只在Worker成功回覆後觸發；減量動態與重複點擊保護。
+- 驗收：Excel獨占及原生正常重開／來源表一致、完整20級扣件及錯誤原子性／舊存檔、五欄／鍵盤／tips／升級成功失敗／滿級與音效設定、相關回歸／build／字串／快取／雙庫SHA與自我Review。素材庫先commit再遊戲commit，交使用者Review及整合。
+
+- 完成：32件各20級，前10級320列逐格與HEAD原CSV一致，新增320列配置；11～20級費用先按等級遞增，效果延伸原趨勢，星圖殘頁保持正間隔。首件固定消耗1並解鎖，schema拒絕多件首級門檻；舊lv／n存檔結構保持。五欄圖標架、名稱／等級、懸停與鍵盤提示、點選展開按鈕及目前/需求、停用／等待／滿級與中央金光昇華完成。只有Worker確認成功才演出及播放核准成功音，4.5秒收起／關閉／Escape與減量動態完成。
+- 修改：js/relic.js／relic_data.js／ui-relic.js／ui-sound.js、css/relic.css、Relics與String的Excel／CSV及strings_data、index／bridge／sim.worker必要快取、tools/config_tables.cjs首級驗證、tools/vfx/editor/index.html共用String快取、tests/relics／relic-ui／ui-sound、images/relics的32張WebP、docs/assets/RELIC_ICONS_SOURCE.md／PROMPTS.json、tools/assets/export-relic-icons.cjs、LV及本段。原生Excel獨占確認、兩次正常重開，Relics保留既有欄位說明且更新20級／取消分類說明，延伸資料格式及篩選；兩份來源與CSV逐格相同。
+- 素材：內建image_gen每件一請求，32張精細金屬／琺瑯／寶石奇幻插畫；Mote可連線但像素編輯不適合本輪精細插畫，改用imagegen。只依名稱／作用原創，使用者截圖只作尺寸參考，未引入第三方美術。256px WebP共368,946 bytes；素材庫codex-authored/relic-icons-20261109保存32原PNG／32匯出／完整提示詞與SOURCE、66項SHA及manifest，來源與遊戲匯出／Git索引逐位元一致。素材庫先Commit `3729dc81`。升級演出為CSS，無新增VFX Preset；音效沿用已核准05-success.wav。
+- 測試指令：node --test --test-reporter=tap tests/relics.test.cjs tests/relic-ui.test.cjs tests/ui-sound.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs，56/56；npm.cmd run build通過705檔；node tools/string-table/build_string_csv.cjs --check寫死0；config_tables --apply Relics語意變更0；apply_params乾跑614參數／變更0／錨點問題0，--check-anchors擾動565數值後614錨點均一次；export-relic-icons --check及雙庫diff／stat／check通過。
+- 實機：IAB backend無法連線，改用隔離headless Edge／獨立8149測試服、新局、正式Worker與既有GM發件；不修改或偽造主端player。13項PASS：初始32件／640總級／五欄、選取需求、成功演出與音效單次、實扣升2級、tips目前及下一級、saveAutoNow落地重載、件數不足停用與Worker拒絕、全32件滿級640、760px五欄及容器、減少動態、Escape關閉、JS error0。遊戲全程靜音，另以UISound測試驗成功音共用音量／靜音；錄得既有Oscillator頻率限幅warning1筆（原音訊模組既知提示，未修改），不宣稱Console warning全0。
+- 自我Review及目視32圖總覽／鎖定／選取／tips／中央演出／窄屏完成。首輪發現通用button mouseover會收自訂pointer提示，已改接data-tt既有委派並實測通過；另兩次QA等待header早於DOM而失敗，修正驗收等待條件後重驗通過，未改產品迎合測試。Excel格式整理首輪COM列舉setter不接受CutCopyMode，原檔保持後移除非必要setter重作正常重開通過。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、原存檔player／save、Worker協議與header投影、ui.js通用提示及命令pending、既有技能／威能／主選單圖示、原Relics／String內容與原生Excel工具、素材庫解析及其他聊天BGM更新。BGM聊天期間已自行提交，保留其UISound／index改動，本項只增加獨立音效入口及本項快取；無外部衝突。未改其他玩法／協議、玩家存檔契約、其他AI工作區或其他素材。
+- 交付：本項無未完成實作，可供Review及使用者合併；未合併／推送develop或main。已知限制為未測行動真機／跨瀏覽器／長時間遊玩及既有音訊warning。遊戲Commit為本段所在「[Codex] feat: 改造遺物二十級圖標介面與升級演出」，SHA見聊天。完整圖標與正式畫面／qa-report、TAP／Build及驗證腳本留本聊天visualizations/relics；本任務臨時準備／除錯檔清理。下一步重新載入Codex遊戲驗收；若VFX編輯器仍開啟，先保留未存內容後重載共用String快取；後續由使用者指定整合者合併雙庫。
+## RELIC-LAYOUT-20261110 — 遺物名稱上移與固定升級留白
+
+- Owner：Codex；Done，單一開發者。使用者依截圖要求名稱在圖標上方、粗體等級稍壓圖標下緣、預留升級操作空間避免下列位移。前置RELIC-REDESIGN完成。
+- 允許css/relic.css卡片排列／等級／操作留白、index僅relic CSS快取、LV及本段；禁止JS／數值／配置／素材／存檔／Worker及其他工作區，不合併推送。起始既有NPC／Store／Zones／參數CSV、Zones.xlsx、data.js與兩首未追蹤BGM全部保留，不納本次。
+- 預檢CSS／LV／任務無外部來源；index的Claude e2d399c2只動script音訊快取（1214／1215／1231行），本項只動第18行relic CSS，無語意相依。以該commit父版為base、本項CSS單行候選為ours、ai/claude現況為theirs，merge-file退出0，可分段修改，不合併其他分支。
+- 驗收桌面／窄屏名稱位置、等級粗體與圖標重疊、點選不同列及鎖定／滿級／不足狀態下各卡／捲動位置固定、現有遺物相關回歸及Build。完成自我Review後獨立Commit，交使用者重載驗收與整合。
+
+- 完成：僅CSS讓名稱order=-1上移；等級700粗體、向上20px搭配原gap稍壓圖標下緣，深底襯字。卡片底部固定94px留白，升級操作72px絕對定位，支援需求文字換行；展開不參與卡片／下一列尺寸。index僅relic.css快取更新為20261110-relic-layout-v1，LV與本段同步。
+- 驗證：IAB連線失敗後改獨立headless Edge，在載入正式CSS、32件配置及原ui-relic渲染器的隔離顯示fixture，1172／760／520px各驗五欄、名稱位置、等級粗體與下緣重疊、點選不同列與收起時32卡座標／高度及scrollTop不變、鎖定／可升／不足／滿級資訊不超框，並驗520px水平捲動與JS／Console無error／warning，共27項PASS。此為CSS呈現驗收，未冒稱重驗Worker玩法；首輪fixture favicon缺檔404，補fixture handler後重跑全過，未修改產品掩蓋錯誤。
+- node --test --test-reporter=tap tests/relic-ui.test.cjs tests/relics.test.cjs，16/16；npm.cmd run build通過705檔；git diff／stat／check及自我Review通過。無新增素材、字串、JS或配置；素材庫沒有變更，不建空Commit。正式截圖selected／unselected及QA／TAP／Build保留本聊天visualizations/relic-layout-20261110，臨時候選／fixture清理。
+- 修改檔案：css/relic.css、index.html、LV_upgrade_system.md、docs/AI_TASKS.md。唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、原遺物渲染／配置、現有回歸、Claude音訊commit差異與截圖。既有8項外部配置／音訊修改保持未提交；不stage、不覆寫。無本項未完成內容，可供Review與使用者合併，未測跨瀏覽器／行動真機，未合併／推送。遊戲Commit為本段所在「[Codex] fix: 調整遺物名稱等級位置並固定升級留白」，SHA見聊天。下一步重新載入驗收。
+
+## BATTLE-LAYOUT-COMPACT-20261110 — 戰鬥標頭兩排與場景增高
+
+- Owner：Codex；Done，單一開發者。依使用者截圖將內測3D按鈕移到靜音後的箭頭位置，標籤改3D；AUTO改自動。關卡移到場景名稱同排，世界地圖按鈕寬高增加約15%、字號13→15px，將節省的一排高度交還戰鬥畫布；普通／全螢幕共用，窄容器可換排。
+- 前置：既有戰鬥工具列與鏡頭完成。允許index戰鬥標記／world-map及String快取、css/world-map.css、String.xlsx／CSV／strings_data與編輯器字串快取、battle-toolbar／hero3d-internal-toggle既有測試、LV與本段；不改js/ui.js行為、玩法／Worker／存檔／模型／其他配置或其他工作區，不合併推送。
+- 衝突預檢：除index的Claude音效commit外皆乾淨。共同祖先試跑只有任務前既存ui-sound快取差異；將三方該單一任務外版本行等值處理後，本項DOM與CSS／String快取三方試跑exit0。對方e2d399c2改音效三行，本項不同區段、無語意相依，分段修改且保持音效行原樣。
+- 驗收：原生Excel來源獨占、只改三筆字串並正常重開核對；桌面／窄視窗／全螢幕幾何與場景高度增量、3D內測隱藏／狀態與原切換重載、AUTO原行為、世界地圖操作及HUD、Console、相關回歸／Build／字串與diff。測試新局進入前GameSettings.set('mute',true)，隔離瀏覽器存檔。完成Commit後交使用者驗收整合。
+- 完成：新增工具列容器，標頭三排縮兩排；3D置於靜音後，間隔對齊截圖箭頭，保留內測hidden／aria-pressed及原重載流程。地圖外框74×30→85.1×34.5px、字號13→15px。畫布沿既有flex填滿可用高度，不新增固定高度；五種視窗一般／全螢幕皆增加34個介面像素（標頭clientHeight106→73、因像素取整差1）。維持HUD及原90%／75%鏡頭。String2151／2152皆顯示3D、2433顯示自動，僅改三格，CSV及生成資料／兩頁快取同步8757a6f1。
+- Excel：來源獨占存取確認後，以tools/excel-update-sheets.ps1只寫三格、正常模式兩次重開核對2469×7完整資料及0繪圖物件。唯讀比對來源與輸出styles.xml逐位相同、11615格樣式與列／欄寬／合併／資料驗證相同；未改其他工作簿或寫入內部XML。
+- 測試：`node --test tests/battle-toolbar.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-camera-distance.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`47/47；`npm.cmd run build`705檔通過；`node tools/string-table/apply_strings.cjs --check`同步2468條、`node tools/string-table/build_string_csv.cjs --check`寫死0，diff／stat／check及自我Review通過。只更新既有測試的按鈕位置、簡稱及pressed斷言，未放寬其他功能。
+- 瀏覽器：IAB初始化無連線，改獨立headless Edge／新局／正式主頁與原生Worker，五種1920×1080、1366×768、900×1000、390×844、568×320各驗一般／全螢幕。修改前／後畫布高度逐一比對皆+34；場景名稱與關卡中心同高、地圖字號+2與寬高比例、3D在靜音後且hidden時尺寸0。原生點擊地圖開關、自動等待／回復、3D偏好反轉與頁面重載皆通過。另用正式GM跳冰原150／127後驗三位數關卡、全部可見按鈕／名稱／最高關卡兩兩無重疊，Console error／warning皆0。初輪QA的seed=17會自動入局而等不到選單，改一般新局URL後通過，未修改產品配合測試；測試瀏覽器／伺服器正常關閉。
+- 修改10檔：index.html、css/world-map.css、config/Excel/String.xlsx、config/CSV/String.csv、js/strings_data.js、tools/vfx/editor/index.html、tests/battle-toolbar.test.cjs、tests/hero3d-internal-toggle.test.cjs、LV_upgrade_system.md與本段。唯讀檢查AI_RULES／AGENTS／Workflow／prompts、使用者截圖、js/ui.js與game-settings／start-menu／intro-player、hero3d與GM流程、參數表、字串／原生Excel工具、既有HUD／全螢幕／鏡頭測試及Build工具。沒有獨立素材變更，素材庫無本項修改，不建空素材Commit。
+- 交付：無本項未完成或已知新增缺陷；未做行動真機／跨瀏覽器／長玩。既有NPC／Store／Zones／game_parameters與data、Zones.xlsx及兩份未追蹤配樂全數保留，不納入本項。截圖與before／after／icefield報告在本聊天battle-layout-20261110；遊戲Commit為本段所在提交，SHA見回報。可供使用者重載驗收及合併；沒有合併／推送develop或main。
+
+## RELIC-COMPACT-20261110 — 遺物外框與列距各縮約一行
+
+- Owner：Codex；Done，單一開發者。使用者依截圖要求縮短選取外框及每列間隔，各約一行字。前置RELIC-LAYOUT完成，保留名稱上方／粗體等級壓圖與固定操作留白。
+- 允許css/relic.css卡片底部留白／操作區／row-gap、index僅relic CSS快取、LV與本段；禁止JS／配置／素材／存檔／Worker、其他工作區及合併推送。起始外部6份配置／data修改及4首未追蹤BGM全保留，不納入本項。
+- 預檢CSS／LV／任務乾淨；index外部Claude e2d399c2只改音效script三行，本項第18行CSS，無語意相依。本項單行候選以e2父版為base、ai/claude現況為theirs，三方試跑exit0，分段修改。
+- 設計：卡片縮18px，操作區保留64px以容納長數量換行；獨立row-gap由16px縮至0，縮去一行左右的列間留白。驗收量測前後差值、五欄／三種寬度、四種持有狀態的資訊不越框、選取不位移與既有遺物回歸／Build；獨立Commit交使用者重載驗收。
+
+- 完成：卡片底部94→76px，外框實測246.09375→228.09375px（縮18）；row-gap16→0px（縮16），每列起點間距合計縮34px。操作區72→64px，按鈕上移10px，資訊仍完整且不推動卡片；名稱／圖標／粗體等級位置保持。relic CSS快取更新v2，LV同步。
+- 驗證：沿用正式CSS與原遺物渲染器的隔離Edge顯示fixture，1172／760／520px比較修改前後實測差值，五欄／名稱與等級、鎖定／可升／不足／滿級／最大安全整數庫存（長需求換行）、選取切換與收起後32卡位置高度／scrollTop固定、資訊不越框、窄屏水平捲動、JS及Console零error／warning，共32項PASS。首輪54px操作區對超長數量不足，保留64px後重驗全過，未降低驗收標準。
+- node --test --test-reporter=tap tests/relic-ui.test.cjs tests/relics.test.cjs，16/16；npm.cmd run build通過705檔；git diff／stat／check與自我Review通過。未改程式邏輯、資料表或素材，素材庫無變更不建空Commit。只修改css/relic.css、index.html、LV_upgrade_system.md及本段；唯讀檢查規範／Workflow／原ui-relic／既有回歸、前版QA與Claude音效差異，保留全部10項外部修改。
+- 交付：無本項未完成，可供Review與使用者合併；未合併／推送，未驗跨瀏覽器／行動真機。截圖selected／unselected及QA／TAP／Build在本聊天visualizations/relic-compact-20261110，臨時fixture／候選清理。Commit為本段所在「[Codex] fix: 縮短遺物外框與列間留白」，SHA見聊天；下一步重新載入驗收。
+
+## BATTLE-FULLSCREEN-ROW-20261110 — 全螢幕置頂控制列縮為單排
+
+- Owner：Codex；Done，單一開發者。依使用者截圖將全螢幕左右快捷／操作列移到頂部，與場景名稱、中央關卡及世界地圖共用一排高度；一般模式保持原排列。
+- 前置：既有戰鬥工具列與全螢幕完成。允許css/world-map.css全螢幕覆寫、index僅該CSS快取、LV與本段；禁止JS／配置／字串／素材／Worker／存檔與其他工作區，不合併推送。現有6份配置／data修改、Zones.xlsx及4份未追蹤配樂保留。
+- 衝突：首頁與Claude e2d399c2同檔不同區段，對方只改音效script快取三行，本次第22行樣式引用；以對方提交父版為base、本次單行候選為ours、實際ai/claude為theirs，git merge-file -p退出0，兩組內容保留且無語意相依。其他逐檔預檢乾淨，分段修改。
+- 驗收：實際Edge全靜音新局，桌面／窄視窗普通及全螢幕前後幾何、單排及無重疊、場景高度增量、三位數關卡／塔戰撤退／3D隱藏／HUD、原生操作與相關回歸／Build／diff；獨立Commit交使用者重載驗收。
+- 完成：只新增全螢幕CSS覆寫，將原工具列設為display:contents，場景名稱／快捷／關卡／操作／世界地圖排成單列，35px列高、所有按鈕頂緣相同；維持原按鈕尺寸與內測3D間距。一般模式CSS與HTML結構不變，world-map快取更新fullscreen-row-v1，LV同步。沒有新增字串、獨立素材或音檔，素材庫無變更，不建空Commit。
+- 實測：隔離Edge／seed=17正式主頁與原生Worker，啟動前注入本機mute=true，每次載入再確認GameSettings全靜音；不接觸使用者存檔。1920×869、1366×768、900×1000、390×844、568×320五種尺寸先以原CSS載入取樣、再用新版取樣，全螢幕標頭clientHeight73→35，畫布增加41／41／41／41／42個介面像素，一般模式標頭與畫布高度逐項相同。全部按鈕頂緣差0、無兩兩重疊且皆在標頭界內；另經正式GM跳迷霧森林200關並等待DOM更新後重驗同樣通過。塔戰撤退實際點擊後結算確認已撤退，額外撤退按鈕仍單排；世界地圖開關、Esc保留全螢幕及3D hidden時寬度0皆通過，HUD不移動。
+- 驗證指令：node --test tests/battle-toolbar.test.cjs tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-camera-distance.test.cjs tests/hero3d-internal-toggle.test.cjs tests/world-map-ui.test.cjs tests/vfx-editor-cache-versions.test.cjs，52/52通過；npm.cmd run build，705檔通過；node tools/string-table/build_string_csv.cjs --check，寫死0；git diff／stat／check及自我Review通過。沒有為純CSS修改新增鏡像測試。
+- 修改4檔：css/world-map.css、index.html、LV_upgrade_system.md、本段。唯讀檢查規範／AGENTS／Workflow／prompts、使用者截圖、舊版一般／全螢幕樣式、battle HUD、ui.js切換／地圖／塔戰指令、GM跳關、字串來源、相關回歸與Build工具。
+- 已知限制：Console error／pageerror 0；全靜音仍有既有sfx-synth高頻Oscillator超出AudioContext範圍warning，與上輪相同且音訊程式未改。未做行動真機／跨瀏覽器／長玩。實測過程暫停戰鬥中的換圖會讓演出停在遮幕，僅以完成DOM更新後的標頭幾何驗收三位數關卡，不宣稱換圖演出驗收。測試瀏覽器與伺服器均已正常關閉，幾何QA／標頭截圖位於本聊天fullscreen-row-20261110；不納入Git。
+- 交付：本項無未完成或已知新增缺陷，可供使用者重載驗收及合併。Commit為本段所在「[Codex] fix: 將戰鬥全螢幕控制列對齊為單排」，SHA見聊天。既有配置／data／Zones.xlsx及4份配樂完整保留未提交；未合併／推送develop或main。
