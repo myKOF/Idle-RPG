@@ -52,7 +52,7 @@
 
   /* 離屏畫布與鏡頭。畫布 SIZE 像素涵蓋 SPAN 公尺（揮劍、倒地躺平時劍會伸出去，留夠邊）。
      鏡頭仰角 ELEV_DEG：2D 場景的地面縱向壓縮 0.5＝sin(30°)，用同一個仰角 3D 角色的透視才與地面一致。 */
-  var SIZE = 512;
+  var SIZE = 1024;              // 主角以較高像素密度繪製；displayScale 反向補償，畫面大小不變（NPC 自訂 size 保持）
   var SPAN = 4.4;
   var ELEV_DEG = 30;
   var TARGET_Y = 1.0;            // 鏡頭對準的高度（公尺）
@@ -733,13 +733,13 @@
     var otex = PIXI.Texture.from(oc);
     otex.source.scaleMode = 'linear';
     sp.hero3dOutlineTex = otex;
-    var OUTLINE_R = 2;   // 畫布像素；畫布縮到遊戲裡約 0.7 倍，所以螢幕上約 1.4 像素寬
+    var OUTLINE_R = 2, outlineScale = ctrl.size / 512;   // 舊 512px 畫布的輪廓形狀等比例放大，維持顯示寬度
     function drawOutline() {
       if (ctrl.outlineEnabled === false) return;
       ox.globalCompositeOperation = 'source-over';
       ox.clearRect(0, 0, oc.width, oc.height);
       for (var a = 0; a < 8; a++) {
-        ox.drawImage(ctrl.canvas, Math.round(Math.cos(a * Math.PI / 4) * OUTLINE_R), Math.round(Math.sin(a * Math.PI / 4) * OUTLINE_R));
+        ox.drawImage(ctrl.canvas, Math.round(Math.cos(a * Math.PI / 4) * OUTLINE_R) * outlineScale, Math.round(Math.sin(a * Math.PI / 4) * OUTLINE_R) * outlineScale);
       }
       ox.globalCompositeOperation = 'source-in';
       ox.fillStyle = '#fff';
@@ -749,6 +749,7 @@
       ox.globalCompositeOperation = 'source-over';
       otex.source.update();
     }
+    sp.hero3dFrame = 0;   // create() 已畫好第一幀
     sp.playing = true;
     sp.loop = true;
     sp.onComplete = null;
@@ -789,6 +790,7 @@
       ctrl.update(dt);
       tex.source.update();
       drawOutline();
+      sp.hero3dFrame++;   // 畫布換了一幀：battle-renderer 的 3D 階級光暈據此重算當幀剪影
     };
     return sp;
   }

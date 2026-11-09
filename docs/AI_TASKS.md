@@ -15415,3 +15415,17 @@ Worker 存活且頁面正常完成載入。
 - 測試：`node --test tests/tower-action-motion.test.cjs tests/tower-battlefield.test.cjs tests/tower-arena-bounds.test.cjs tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/worker-protocol.test.cjs tests/treant-asset.test.cjs` 40/40。廣泛執行npc3d-*、hero3d-*、tower-*、purgatory-tower、elite-*、npc-elite-skills、worker-protocol／shim、battlefield、vfx-editor-cache-versions、treant-asset與string-table共294項284通過。9項穩定失敗在唯讀覆蓋HEAD的同73項測試重現：elite-data規則、飛彈、塔技能資料、菁英體型、NPC技能資料2項及塔獎勵UI缺divineStoneIconHTML的3項。另火鏈4f隨機失敗：本版與HEAD各獨立6次皆5過1失敗；未降低斷言或改無關檔。`npm.cmd run build`697檔通過，String寫死0，diff檢查及舊三模型匯出SHA通過。
 - 實機：IAB無連線後，隔離Edge／正式頁面／原生Worker、seed17新局與GM鎖血，沒有碰使用者存檔。樹人817幀、骷髏王722幀，攻擊／施法姿勢與實際移動重疊0；樹人三攻擊循環、走路與死亡名稱皆核對，正常退場，Console error／warning0。早期測試把`damage 100`誤當百分比，已改正式GM的`damage 100%`後驗證死亡通過；另一測試的原生stats血量上限也已一致化，沒有修改產品以配合測試。模型五動作Blend正常重開保留、貼圖打包，高清GIF五份1080×1144及1920×1200總覽，20FPS原速，118幀總覽5.9秒，確認尺寸／時長／循環。預覽與測試畫面放聊天visualizations。
 - 交付：素材庫套件tower-treant-20261109共32個SHA項，原五檔、正式匯出、可編輯Blend與工具／QA先提交`7af7c081`；遊戲提交為本段所在提交，SHA見回報。完整來源與操作見docs/assets/TOWER_TREANT_SOURCE.md。沒有未完成實作，可供使用者合併及重載驗收；未合併／推送、未處理develop既有合併。已知限制為上述既有測試失敗及未做行動真機、跨瀏覽器、長時間效能／遊玩；動畫內部仍為使用者提供的跳躍／連擊姿勢，並無新增即時物理。
+
+
+## HERO3D-CLARITY-20261109 — 同尺寸角色清晰度與前後對照
+
+- Owner：Codex，Done，單一開發者。使用者要求改善遊戲角色清晰度、保持顯示大小、提供修改前後對照。允許js/hero3d.js、index角色快取、必要回歸、LV與本段；禁止模型／貼圖／光照／材質、玩法、Worker／存檔／解鎖及其他工作區，不合併／推送。
+- 預檢：hero3d及index與Claude 51784609重疊；使用者已明確同意分段修改並保留雙方成果。保留光暈幀標記兩行；角色內部畫布512→1024、顯示比例沿既有pxPerMeter公式、輪廓半徑按畫布補償。index只改hero3d同一快取行，保留Claude其他快取修改及同副本進行中的樹人LV2任務。LV與任務紀錄附加尾端，逐檔檢視並只提交本項差異。
+- 驗收：固定同一模型／姿勢／光照／鏡頭的同尺寸原圖與放大對照，正式戰鬥頁、腳底及顯示邊界／輪廓寬度、既有hero3d與NPC介面回歸、Build與diff檢查。無正式素材變更，預覽只放聊天visualizations，不產生素材庫空Commit。後續交使用者驗收整合。
+
+- 完成實作：主角預設1024px，NPC明確指定的512px保持；displayScale反向縮放，腳底錨點不變。外框八方向先沿原512px格點取整再等比放大，避免對角線取整導致粗細改變。Claude的hero3dFrame兩行逐字保留，hero3d三方試跑exit0；index僅hero3d快取同一行衝突，依使用者明確分段授權採新清晰度版本，沒有修改對方工作區。
+- 修改檔案：js/hero3d.js、index.html的hero3d快取行、tests/hero3d-resolution.test.cjs、LV與本段，共五檔；唯讀檢查NPC3D共用介面、BattleRenderer角色／鏡頭／透視／解析度、GLB與PBR原材質、起始選單與WorkerBridge及既有hero／NPC測試、Build工具與規範。沒有正式素材變更，素材庫無本項修改，不建立空Commit。
+- 驗證：既有hero3d-*、npc3d-runtime／locomotion與vfx-editor-cache-versions共77/77；新增解析度／尺寸／腳底／輪廓／幀標記回歸1/1，輪廓補償修正後另跑hero3d-battle-rules及本回歸13/13。最終js與測試node --check、diff檢查通過。
+- 實機及對照：隔離headless Edge、正式主頁與原生Worker、seed17新局，不讀使用者存檔。512與1024以相同CombatIdle 0.4秒及朝向繪圖，正式戰鬥的角色邊界x/y/寬/高、顯示尺寸與錨點一致（誤差<1e-9）；正常載入與回收、pageerror／Console error 0。兩版皆有同一張dark-gold-seal預載未使用的既有warning。另用正式Three→Pixi角色程式在固定網格場景比較站立／攻擊／跑步，三姿勢尺寸一致、error0；對照含相同大小原圖及等比放大3倍，沒有銳化／AI修圖。兩個批次的75幀CPU繪圖提交取樣，最後一次中位數0.5→0.8ms、p95為2.1→2.5ms，只代表隔離角色提交成本，不是整場GPU／FPS或手機保證。預覽與QA腳本／JSON在本聊天visualizations的character-clarity。
+- Build：`npm.cmd run build`共697檔通過；新增回歸在Build掃描開始後加入，另以最終檔案`node --check tests/hero3d-resolution.test.cjs`及測試確認。測試命令為`node --test tests/hero3d-*.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/vfx-editor-cache-versions.test.cjs`（執行時PowerShell展開hero3d檔案）、`node --test tests/hero3d-resolution.test.cjs tests/hero3d-battle-rules.test.cjs`。
+- 交付：無未完成實作，可供使用者驗收與合併；Commit為本段所在提交，SHA見回報。沒有合併或推送。已知限制為內部繪製像素數4倍，僅測本機Edge，未做手機／跨瀏覽器／長時間效能；現有dark-gold-seal預載warning保持。建議重載遊戲驗收服飾與頭部細節；共享工作區的樹人LV2檔案及三個共用文件的其他區段保持未提交，僅提交本項五檔差異。
