@@ -43,6 +43,6 @@ test('achievement WAV is the selected original and its manifest, runtime hash an
   const sound = fs.readFileSync(path.join(root, 'js/ui-sound.js'), 'utf8');
   assert.ok(sound.includes(manifest.file + '?v=' + hash.slice(0, 12)));
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.ok(html.includes('js/ui-sound.js?v=20261108-zone-playlist-v1'));
+  assert.ok(html.includes('js/ui-sound.js?v=20261110-sfx-65pct'));
   assert.ok(html.includes('js/ui-achievements.js?v=20261106-start-menu-v2'));
 });

@@ -64,9 +64,9 @@ test('Sfx：音量依音效音量縮放、全體靜音不發聲、我方／敵�
   s.sfx.preload(); s.sfx.play('levelUp'); await flush();
   s.sfx.preload(); await flush();
   assert.equal(s.sfx.play('levelUp'), true);
-  assert.ok(Math.abs(s.gains[s.gains.length - 1].gain.value - 0.8) < 1e-9, '50% ＝ 原音量 0.8');
+  assert.ok(Math.abs(s.gains[s.gains.length - 1].gain.value - 0.52) < 1e-9, '50% ＝ 原音量 0.52');
   gs.set('sfxVolume', 100); s.sfx.play('levelUp');
-  assert.ok(Math.abs(s.gains[s.gains.length - 1].gain.value - 1.6) < 1e-9);
+  assert.ok(Math.abs(s.gains[s.gains.length - 1].gain.value - 1.04) < 1e-9);
   const before = s.played.length;
   gs.set('mute', true); assert.equal(s.sfx.play('levelUp'), false); assert.equal(s.played.length, before);
   gs.set('mute', false);

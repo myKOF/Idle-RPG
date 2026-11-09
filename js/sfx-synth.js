@@ -8,7 +8,8 @@
      fn(ac, out, t, R, dur)  在 BaseAudioContext ac 的時間 t 起，把聲音接到 out。
                              R(a,b)＝這一次的隨機微調值；dur＝飛行／循環音效的長度（秒）。
      kind      'oneshot' 單次；'flight' 長度＝飛行時間；'loop' 持續到場域消失
-     gain      響度補償（依實測 RMS 校正，讓各音效聽感大小接近；循環音效刻意壓低）
+     gain      響度補償（依實測 RMS 校正，讓各音效聽感大小接近；循環音效刻意壓低）。渲染前套用，會經過壓縮器
+     level     播放音量倍率（Sfx 播放時線性套用，不改音色）。預設 LEVEL＝0.65；本來就很小聲的填 1
      minGapMs  同一個音效兩次發聲的最短間隔（超過就丟掉，不補播）
      maxVoices 同一個音效同時最多幾個聲音在播
      retrigger 地板／持續場域每次續命（定時作用）都重播；預設只在場域出生時播一次
@@ -609,19 +610,21 @@ var SfxSynth = (function () {
   }
 
   /* ═════════ 登記表（Skills2 音效欄填的就是這裡的 id） ═════════ */
-  function d(fn, gainV, extra) { var o = { fn: fn, kind: 'oneshot', gain: gainV }; for (var k in extra) o[k] = extra[k]; return o; }
-  var LOOP = { kind: 'loop' }, FLIGHT = { kind: 'flight' };
+  /* 2026-11-10 使用者要求音效整體縮成 65%；本來就很小聲的（反擊、突刺、深淵漩渦）維持 level 1 不縮 */
+  var LEVEL = 0.65;
+  function d(fn, gainV, extra) { var o = { fn: fn, kind: 'oneshot', gain: gainV, level: LEVEL }; for (var k in extra) o[k] = extra[k]; return o; }
+  var LOOP = { kind: 'loop' }, FLIGHT = { kind: 'flight' }, KEEP = { level: 1 };
   var RECIPES = {
     // 物理
     'knife':              d(knife, 1.8),
-    'thrust':             d(thrust, 0.52),
+    'thrust':             d(thrust, 0.52, KEEP),
     'cleave':             d(cleave, 1.1),
     'gale':               d(gale, 0.65),
     'bloodblade':         d(bloodblade, 1.15),
     'poison-drop':        d(poisonDrop, 1.4),
     'blood-burst':        d(bloodBurst, 1.4),
     'dualdance':          d(dualdance, 2.0, { minGapMs: 450 }),      // 一則事件就是四連斬，連續事件不疊播
-    'counter':            d(counter, 1.9),     // 2026-11-08 使用者要求比原本大聲 50%
+    'counter':            d(counter, 1.9, KEEP),     // 2026-11-08 使用者要求比原本大聲 50%
     'holy-burst':         d(holyBurst, 1),
     'bloodrage':          d(bloodrage, 0.75, { minGapMs: 300 }),     // 狂怒期間每次普攻都爆一次，高攻速不連環重拳
     // 火
@@ -658,7 +661,7 @@ var SfxSynth = (function () {
     'waterball':          d(waterball, 1.6),
     'water-tornado':      d(waterTornado, 0.7, LOOP),
     'tide-column':        d(tideColumn, 0.95),
-    'abyss-vortex':       d(abyssVortex, 1.73),       // 領域每拍都響，刻意比水流彈命中小聲約三成
+    'abyss-vortex':       d(abyssVortex, 1.73, KEEP),       // 領域每拍都響，刻意比水流彈命中小聲約三成
     'frostnova':          d(frostnova, 1.3),
     'blizzard':           d(blizzard, 1.1, LOOP),
     'ice-spike':          d(iceSpike, 2.0),

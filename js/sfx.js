@@ -5,11 +5,12 @@
    WebAudio 預先解碼（播放零延遲）；瀏覽器要求先有使用者操作才能發聲，
    所以在第一次點擊／按鍵時 resume。任何失敗都靜默略過——音效不能影響遊戲。 */
 var SFX_FILES = {
-  levelUp: { url: 'assets/audio/level-up.wav?v=1', volume: 0.8 },   // 原檔只留前 1.5 秒
-  /* 普攻命中音（自製，tools/audio/hit-slash.cjs 產生）：音量 0.6＝使用者要求比原本降低 40%（檔案本身另已降 30%） */
-  hitSlashA: { url: 'assets/audio/hit-slash-a.wav?v=1', volume: 0.6 },
-  hitSlashB: { url: 'assets/audio/hit-slash-b.wav?v=1', volume: 0.6 },
-  hitSword:  { url: 'assets/audio/hit-sword.wav?v=1', volume: 0.6 }
+  /* 2026-11-10 使用者要求遊戲音效整體縮成 65%：levelUp 0.8→0.52、普攻命中 0.6→0.39 */
+  levelUp: { url: 'assets/audio/level-up.wav?v=1', volume: 0.52 },   // 原檔只留前 1.5 秒
+  /* 普攻命中音（自製，tools/audio/hit-slash.cjs 產生）：0.6＝使用者要求比原本降低 40%（檔案本身另已降 30%），再 ×0.65 */
+  hitSlashA: { url: 'assets/audio/hit-slash-a.wav?v=1', volume: 0.39 },
+  hitSlashB: { url: 'assets/audio/hit-slash-b.wav?v=1', volume: 0.39 },
+  hitSword:  { url: 'assets/audio/hit-sword.wav?v=1', volume: 0.39 }
 };
 /* 音效群組：從 names 隨機挑一個（不連續兩次同一個）。
    高攻速時每秒會有很多下，所以有兩道限流，超過直接丟掉、不排隊補播（補播只會讓聲音黏成一團）：
@@ -115,7 +116,7 @@ var Sfx = (function () {
      由 VFX Runtime 在該角色真正播放的那一刻呼叫 skillRole；「施放音效」跟著施法動作（act）走。
      聲音先用 OfflineAudioContext 算成 AudioBuffer（單次音效每個備 3 種隨機變化輪流播），
      之後播放零延遲。全部失敗都靜默略過。 */
-  var SYNTH_VOLUME = 0.8;          // 合成音效整體音量（再乘設置→音訊的音效音量）
+  var SYNTH_VOLUME = 0.8;          // 合成音效整體音量（再乘各配方的 level 與設置→音訊的音效音量）
   var SYNTH_VARIANTS = 3;
   var SYNTH_LATE_SEC = 0.15;       // 第一次播放要先算聲音；算好時已經晚超過這麼多就不播
   var LOOP_MAX = 6, LOOP_FADE_IN = 0.15, LOOP_FADE_OUT = 0.35;
@@ -125,6 +126,8 @@ var Sfx = (function () {
   function synthDef(id) { return (typeof SfxSynth !== 'undefined' && id) ? SfxSynth.def(id) : null; }
   function offlineCtor() { return (typeof window !== 'undefined') && (window.OfflineAudioContext || window.webkitOfflineAudioContext); }
   function masterGain() { return (typeof GameSettings !== 'undefined') ? GameSettings.sfxGain() : 1; }
+  /* 播放音量＝整體 × 配方的 level（sfx-synth.js；播放端的線性倍率，不經過渲染時的壓縮器） */
+  function synthVolume(def) { return SYNTH_VOLUME * (def && def.level != null ? def.level : 1) * masterGain(); }
   function synthBus(c) {
     if (synthBusNode && synthBusNode.context === c) return synthBusNode;
     var g = c.createGain(), lim = c.createDynamicsCompressor();
@@ -204,7 +207,7 @@ var Sfx = (function () {
       var late = c.currentTime - target;
       if (late > SYNTH_LATE_SEC && def.kind !== 'flight') { done(); return; }
       // 飛行音效晚算好就從中段接著播，落地那一刻仍然對齊
-      startBuffer(c, buf, target, late > 0 && def.kind === 'flight' ? late : 0, SYNTH_VOLUME * masterGain(), done);
+      startBuffer(c, buf, target, late > 0 && def.kind === 'flight' ? late : 0, synthVolume(def), done);
     };
     if (def.kind === 'flight') {
       var dur = Number(opts.durSec) > 0 ? Number(opts.durSec) : 1;
@@ -262,7 +265,7 @@ var Sfx = (function () {
         if (c.state === 'suspended') c.resume();
         L.node = startBuffer(c, arr[0], c.currentTime, Math.random() * arr[0].duration, 0, null, true);
         var g = L.node.gain.gain;
-        g.setValueAtTime(0, c.currentTime); g.linearRampToValueAtTime(SYNTH_VOLUME * masterGain(), c.currentTime + LOOP_FADE_IN);
+        g.setValueAtTime(0, c.currentTime); g.linearRampToValueAtTime(synthVolume(def), c.currentTime + LOOP_FADE_IN);
       } catch (e) { delete loops[key]; }
     };
     var ready = synthBuffers[id];

@@ -7,6 +7,8 @@ var UISound = (function () {
     success: 'audio/ui-preview/05-success.wav?v=4821e4b49aad',
     achievement: 'audio/achievements/mixkit-game-level-completed-2059.wav?v=8da83b49ceb5'
   };
+  /* 2026-11-10 使用者要求音效整體縮成 65%；選單 hover 本來就很小聲，維持原音量 */
+  var LEVELS = { click: 0.65, menuHover: 1, success: 0.65, achievement: 0.65 };
   var MENU_MUSIC = 'audio/start-menu/tutti-impact.mp3?v=3b01a74c3094';
   // 有提示的可操作控制項仍有點擊音，純提示不列入操作目標。
   var HELP_TARGETS = '.pg-help, .forge-info-btn, #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip';
@@ -186,7 +188,7 @@ var UISound = (function () {
         var source = context.createBufferSource();
         source.buffer = buffer;
         var gain = context.createGain();
-        gain.gain.value = master;
+        gain.gain.value = master * (LEVELS[kind] == null ? 1 : LEVELS[kind]);
         source.connect(gain); gain.connect(context.destination);
         source.onended = function () {
           source.disconnect(); gain.disconnect();
