@@ -749,6 +749,7 @@
       ox.globalCompositeOperation = 'source-over';
       otex.source.update();
     }
+    sp.hero3dFrame = 0;   // create() 已畫好第一幀
     sp.playing = true;
     sp.loop = true;
     sp.onComplete = null;
@@ -789,6 +790,7 @@
       ctrl.update(dt);
       tex.source.update();
       drawOutline();
+      sp.hero3dFrame++;   // 畫布換了一幀：battle-renderer 的 3D 階級光暈據此重算當幀剪影
     };
     return sp;
   }

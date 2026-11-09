@@ -1558,9 +1558,18 @@ var BattleRenderer = (function () {
   var NPC_RANK_STYLES = {
     elite: { rim: 0x329dff, inner: 0x70cfff, glow: NPC_ELITE_GLOW_ALPHA, blend: NPC_ELITE_BLEND_ALPHA },
     elite_adv: { rim: 0xffcf32, inner: 0xffe878, glow: NPC_ELITE_ADV_GLOW_ALPHA, blend: NPC_ELITE_ADV_BLEND_ALPHA },
-    boss: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0.3 }
+    boss: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0.3 },
+    /* 封魔塔 BOSS 依塔區換光色（使用者 2026-11-09）：1~50 層藍、51~100 層紫、101~150 層紅。
+       分段沿用塔區旗標（formula.js isHellTowerFloor／isPurgatoryTowerFloor，界線在 data.js TOWER_*_MAX_FLOOR）。 */
+    towerTrial: { rim: 0x329dff, inner: 0x70cfff, glow: 1, blend: 0.3 },
+    towerHell: { rim: 0xb45cff, inner: 0xdcaaff, glow: 1, blend: 0.3 },
+    towerPurgatory: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0.3 }
   };
   function npcRankStyle(data) {
+    if (data.towerBoss) {
+      return data.purgatory ? NPC_RANK_STYLES.towerPurgatory
+        : (data.hell ? NPC_RANK_STYLES.towerHell : NPC_RANK_STYLES.towerTrial);
+    }
     if (data.isBoss || data._tier === 'boss' || data._tier === 'tower') return NPC_RANK_STYLES.boss;
     if (data._tier === 'elite_adv') return NPC_RANK_STYLES.elite_adv;
     if (data.elite || data._tier === 'elite') return NPC_RANK_STYLES.elite;
@@ -1650,6 +1659,65 @@ var BattleRenderer = (function () {
     NPC_RANK_MASKS.set(tex, result);
     return result;
   }
+  /* 3D 身體（Npc3D）的階級光暈：3D 畫布是同一張貼圖、內容逐幀換姿勢，不能沿用上面以貼圖為鍵的一次性快取
+     （那樣光暈會永遠停在第一幀的 2D 剪影）。改為 3D 畫布每重畫一次（body.hero3dFrame 變了）就從當幀剪影
+     重算外框光暈與內部混色，光暈貼著 3D 模型當下的輪廓走。
+     遮罩取 3D 畫布的一半解析度；半徑與模糊沿用 2D 的數值，模型約佔畫布一半高，光暈寬度與 2D 精靈的比例相當。
+     逐幀只做 Canvas 合成，不讀回像素（getImageData），也不用 Pixi Filter。 */
+  var NPC3D_RANK_MASK_PX = 256;
+  function buildNpc3dRankMasks(body) {
+    var ctrl = body.hero3d, st = body.npc3dRank;
+    if (!ctrl || !ctrl.canvas) return null;
+    if (!st) {
+      var n = NPC3D_RANK_MASK_PX;
+      var make = function () { var c = document.createElement('canvas'); c.width = c.height = n; return c; };
+      st = body.npc3dRank = { mask: make(), band: make(), outer: make(), frame: NaN };
+      st.innerTex = PIXI.Texture.from(st.mask); st.innerTex.source.scaleMode = 'linear';
+      st.outerTex = PIXI.Texture.from(st.outer); st.outerTex.source.scaleMode = 'linear';
+      st.result = { inner: st.innerTex, outer: st.outerTex, width: ctrl.size, height: ctrl.size, k: n / ctrl.size, pad: 0 };
+    }
+    if (st.frame === body.hero3dFrame) return st.result;
+    st.frame = body.hero3dFrame;
+    var mask = st.mask, w = mask.width, h = mask.height;
+    var mc = mask.getContext('2d'), bc = st.band.getContext('2d'), oc = st.outer.getContext('2d');
+    if (!mc || !bc || !oc) return null;
+    /* 當幀剪影（純白），同時就是內部混色遮罩：3D 模型沒有 2D 精靈的黑色描邊，不必另外略過黑色像素。 */
+    mc.globalCompositeOperation = 'source-over';
+    mc.clearRect(0, 0, w, h);
+    mc.drawImage(ctrl.canvas, 0, 0, w, h);
+    mc.globalCompositeOperation = 'source-in';
+    mc.fillStyle = '#ffffff'; mc.fillRect(0, 0, w, h);
+    mc.globalCompositeOperation = 'source-over';
+    /* 外框光暈：與 2D 相同的兩圈膨脹差＋模糊，只出現在輪廓外側。 */
+    function band(radius) {
+      bc.globalCompositeOperation = 'source-over';
+      bc.clearRect(0, 0, w, h);
+      bc.drawImage(mask, 0, 0);
+      for (var i = 0; i < 8; i++) {
+        var a = i * Math.PI / 4;
+        bc.drawImage(mask, Math.cos(a) * radius, Math.sin(a) * radius);
+      }
+      bc.globalCompositeOperation = 'destination-out'; bc.drawImage(mask, 0, 0);
+      bc.globalCompositeOperation = 'source-over';
+      return st.band;
+    }
+    oc.globalCompositeOperation = 'source-over'; oc.filter = 'none'; oc.globalAlpha = 1;
+    oc.clearRect(0, 0, w, h);
+    oc.globalAlpha = 0.65; oc.filter = 'blur(2.4px)'; oc.drawImage(band(3), 0, 0);
+    oc.globalAlpha = 0.35; oc.filter = 'blur(1.1px)'; oc.drawImage(band(1.2), 0, 0);
+    /* 模糊會滲回本體：扣兩次剪影，連 3D 抗鋸齒的半透明邊也幾乎不留光（取代 2D 的讀像素實心化）。 */
+    oc.filter = 'none'; oc.globalAlpha = 1; oc.globalCompositeOperation = 'destination-out';
+    oc.drawImage(mask, 0, 0); oc.drawImage(mask, 0, 0);
+    oc.globalCompositeOperation = 'source-over';
+    st.innerTex.source.update(); st.outerTex.source.update();
+    return st.result;
+  }
+  function releaseNpc3dRankMasks(body) {
+    var st = body && body.npc3dRank;
+    if (!st) return;
+    body.npc3dRank = null;
+    st.innerTex.destroy(true); st.outerTex.destroy(true);
+  }
   function solidifyNpcOcclusionPixels(pixels) {
     for (var p = 3; p < pixels.length; p += 4) {
       if (pixels[p] >= 128) pixels[p] = 255;
@@ -1671,7 +1739,7 @@ var BattleRenderer = (function () {
       if (glow) { glow.outer.destroy(); glow.inner.destroy(); ent.rankGlow = null; }
       return;
     }
-    var masks = buildNpcRankMasks(body.texture);
+    var masks = body.hero3d ? buildNpc3dRankMasks(body) : buildNpcRankMasks(body.texture);
     if (!masks) {
       if (glow) { glow.outer.visible = false; glow.inner.visible = false; }
       return;
@@ -2987,7 +3055,7 @@ var BattleRenderer = (function () {
     var ent = S.entities[id];
     if (!ent) return;
     S.lastPos[id] = { x: ent.root.x, y: ent.root.y - entityCenterHeight(ent), footY: ent.root.y, at: nowMs() };
-    if (ent.npc3d) Npc3D.dispose(ent.body);
+    if (ent.npc3d) { releaseNpc3dRankMasks(ent.body); Npc3D.dispose(ent.body); }
     ent.root.destroy({ children: true });
     delete S.entities[id];
   }

@@ -39,6 +39,16 @@ test('NPC階級以boss／tower優先，其次高級菁英與菁英；普通／�
   }
 });
 
+test('封魔塔BOSS依塔區換光色：1~50層藍、51~100層紫、101~150層紅；野外BOSS維持紅', () => {
+  const { c } = setup();
+  const tower = (extra) => Object.assign({ isBoss: true, towerBoss: true, hell: false, purgatory: false }, extra);
+  assert.equal(c.npcRankStyle(tower({})).rim, 0x329dff);
+  assert.equal(c.npcRankStyle(tower({ hell: true })).rim, 0xb45cff);
+  assert.equal(c.npcRankStyle(tower({ purgatory: true })).rim, 0xff3020);
+  assert.equal(c.npcRankStyle({ isBoss: true }).rim, 0xff3020);
+  for (const s of [tower({}), tower({ hell: true }), tower({ purgatory: true })]) assert.equal(c.npcRankStyle(s).glow, 1);
+});
+
 test('覆光與本體共用bodyWrap；成長、翻面、anchor與非零pivot各點世界位置一致', () => {
   const { c, ent } = setup(), b = ent.body;
   ent.root.position.set(230, 170); ent.root.scale.set(1.3);

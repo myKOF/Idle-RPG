@@ -2209,7 +2209,7 @@ test('【地爆天星】倒地期間不落下，倒數與狀態一起往後推',
   assert.equal(derived.length, 1, '復活後到期才落下，而且只落一發');
 });
 
-test('【地爆天星】固定扣最大生命 N%：不吃增傷乘區，高塔 BOSS 單次 20% 上限仍保留', () => {
+test('【地爆天星】固定扣最大生命 N%：不吃增傷乘區，BOSS 欄屬特殊技能指定、不受高塔 BOSS 單次 5% 上限', () => {
   const c = loadContext();
   stubVfx(c);
   maxLevels(c, 'fireball'); equip(c, 'fireball');
@@ -2227,15 +2227,19 @@ test('【地爆天星】固定扣最大生命 N%：不吃增傷乘區，高塔 B
   assert.equal(normal.hp, 1000 - 800, '普通 80%，不被乘區放大');
   assert.equal(elite.hp, 1000 - 400, '菁英 40%');
   assert.equal(boss.hp, 1000 - 200, '野外 BOSS 20%，不減半也不放大');
-  assert.equal(tower.hp, 1000 - 200, '高塔 BOSS 20%（剛好等於上限）');
-  // 高塔上限仍保留：BOSS 欄調到 50% 時被壓回 20%
+  assert.equal(tower.hp, 1000 - 200, '高塔 BOSS 照 BOSS 欄 20%，不被單次 5% 上限壓回');
+  // 特殊技能指定：BOSS 欄調到 50% 時高塔 BOSS 也照表扣
   c.SKILLS2.fireball.ult.find((x) => x.id === 'starfallCataclysm').fx.boss = 50;
   const tower2 = enemy(1000, 3 * M, 0, 't2', 'boss'); tower2.towerBoss = true;
   const field2 = enemy(1000, 3 * M, 0, 'b2', 'boss');
   ctx.getEnemies = () => [tower2, field2];
   c.sgStarfallImpact(ctx, c.sgUlt('fireball', 'starfallCataclysm'));
-  assert.equal(tower2.hp, 1000 - 200, '高塔 BOSS 單次不得超過 20%');
-  assert.equal(field2.hp, 1000 - 500, '野外 BOSS 沒有該上限');
+  assert.equal(tower2.hp, 1000 - 500, '高塔 BOSS 照表 50%');
+  assert.equal(field2.hp, 1000 - 500, '野外 BOSS 同樣 50%');
+  // 對照組：同一種高塔 BOSS 吃未指定的直接傷害時，仍壓在單次 5%
+  const tower3 = enemy(1000, 3 * M, 0, 't3', 'boss'); tower3.towerBoss = true;
+  c.applyEnemyHpDamage(tower3, 500);
+  assert.equal(tower3.hp, 1000 - 50, '未指定的直接傷害仍受單次 5% 上限');
 });
 
 test('【天霸風神斬】與【阿修羅霸王拳】倒地期間不自動發動', () => {

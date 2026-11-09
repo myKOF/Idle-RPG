@@ -12444,7 +12444,7 @@ function tickSkill2(dt, ctx) {
      ・沒裝配在技能列就不生效
      ・不扣魔、不進冷卻——這不是一次施放，是終極進化的常駐節拍
    扣血走 sgDerivedHit：這是「直接扣掉 N% 生命」而不是一次攻擊，因此不過防禦與爆擊；
-   高塔 BOSS 的單次扣血上限由 applyEnemyHpDamage 自動接手（設計的 BOSS -20% 正好同值）。 */
+   BOSS 欄是「特殊技能指定」的扣血量：不受高塔 BOSS 單次 5% 上限（2026-11-09 使用者決策）。 */
 function sgStarfallArea(ctx, follow) {
   var centre = bfPos(ctx.pEnt) || bfPlayerPos();
   var area = { x: centre.x, y: centre.y, r: bfSpawnDist() };
@@ -12556,8 +12556,8 @@ function sgStarfallImpact(ctx, u) {
     var pct = (e.isBoss || e.towerBoss) ? bossPct : (e.elite ? elitePct : normalPct);
     var amount = Math.max(0, Number(e.maxHp) || 0) * pct / 100;
     /* 地爆天星是「扣最大生命 N%」的固定值：不吃任何增傷乘區（嗜血狂化、海淵葬界易傷等），
-       也不套 bossPctHpFactor；高塔 BOSS 單次 20% 上限仍保留。 */
-    if (amount > 0) sgDerivedHit(e, amount, 'fireball', ctx.floatSel, out, '☄️', sgStaggerMs(v), undefined, { fixedPct: true });
+       也不套 bossPctHpFactor；BOSS 欄屬特殊技能指定，高塔 BOSS 照表扣、不受單次 5% 上限。 */
+    if (amount > 0) sgDerivedHit(e, amount, 'fireball', ctx.floatSel, out, '☄️', sgStaggerMs(v), undefined, { fixedPct: true, towerCapExempt: true });
   }
   if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx.onDeaths) ctx.onDeaths();
