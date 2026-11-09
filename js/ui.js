@@ -3006,12 +3006,15 @@ function applyReincarnationTitleClass(el, count) {
   el.classList.add('reinc-title-' + c);
 }
 
-// 首批0～3轉頭像；尚未繪製的階段沿用原頭圖，不借用其他轉生外觀。
+// 已核准0～6轉頭像；尚未繪製的階段沿用原頭圖。
 var CHARACTER_PORTRAITS = [
   'images/ui/hero-portraits/rebirth-0.webp',
   'images/ui/hero-portraits/rebirth-1.webp',
   'images/ui/hero-portraits/rebirth-2.webp',
-  'images/ui/hero-portraits/rebirth-3.webp'
+  'images/ui/hero-portraits/rebirth-3.webp',
+  'images/ui/hero-portraits/rebirth-4.webp',
+  'images/ui/hero-portraits/rebirth-5.webp',
+  'images/ui/hero-portraits/rebirth-6.webp'
 ];
 function updateCharacterPortrait(reincarnations) {
   var src = CHARACTER_PORTRAITS[reincarnations] || 'images/icon_avatar.png';

@@ -1,3 +1,15 @@
+## UI-CHAR-PORTRAIT-INTEGRATE-20261109 — 核准0～6轉頭像正式接入
+
+- Owner：Codex；Done，單一開發者。使用者核准0～3轉畫風、續繪4～6轉後，明確要求將全部七張接入截圖圈選的側欄角色圖示與角色頁頭像；沿用已完成單一入口。本輪0～6轉實際接入完成。
+- 前置：首批0～3轉已接入，4～6轉核准原圖及模型參考已完成。範圍僅js/ui.js圖表、index的ui快取、三份新WebP、既有頭像來源／提示詞與素材包、LV及本段；未改在製六轉3D候選、玩法、模型、Worker、String、存檔／解鎖或其他聊天內容，不合併／推送。
+- 完成：CHARACTER_PORTRAITS擴至0～6轉，兩處頭像依正式header快照使用相同路徑；原0～3轉原圖／匯出逐位元保持。核准4～6轉插畫無重畫、改色或構圖變更，Sharp等比輸出256px WebP共66,706 bytes。7～10轉暫用原icon_avatar.png，入口／轉生／等級／紅點沿用，ui快取更新20261109-character-portraits-0-6。
+- 修改：js/ui.js、index.html、LV_upgrade_system.md、本段、docs/assets/CHARACTER_PORTRAITS_SOURCE.md／CHARACTER_PORTRAITS_PROMPTS.json、images/ui/hero-portraits/rebirth-{4,5,6}.webp。唯讀檢查：規範／Workflow／既有任務、使用者截圖、0～6轉模型來源與核准插畫、既有頭像匯出器／素材庫解析、header／GM／Worker存檔及原有相關測試；未修改其他聊天Role6的四支未追蹤工具及未提交任務內容。
+- 衝突：index與Claude同檔不同區段，對方改formula／hero3d／renderer／skills2快取，本輪只改ui行。以首批頭像前bca501a8^的index為base，整組已授權頭像差異三方套到ai/claude現況merge-file exit0，無語意相依；不合併對方內容或處理其既有hero3d快取差異。僅stage本項任務段，保留Role6未提交內容。
+- 素材：沿用已確認的本聊天image_gen插畫及已授權Role4／Role5／Role6正面參考；Role6只作外觀參考，不接入在製模型。素材庫codex-authored/character-portraits-20261109保存七張原圖／參考／匯出及精確提示詞、來源與SHA manifest，共24份逐項核對；先提交9caec03。遊戲Commit為本段所在「[Codex] feat: 接入核准的0至6轉角色頭像」，SHA見聊天交付。
+- 測試：node --test --test-reporter=tap tests/header-resources.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs，20/20通過；npm.cmd run build通過698檔；node tools/string-table/build_string_csv.cjs --check寫死0；node tools/meshy-pipeline/src/export-character-portraits.cjs --check通過24份來源／輸出；git diff／stat／check通過。TAP／Build留logs/character-portraits-integration-{tests.tap,build.log}。未重跑全庫，上一輪已記錄的其他UI測試既有失敗未修改。
+- 實際驗收：隔離Edge新局、正式主頁／原生Worker，用既有GM指令真實切換0→1→2→3→4→5→6→7→8→9→10→5，兩處圖片載入與轉生文字／紅點逐階一致，單一入口與點擊頭像／等級開啟角色頁、active皆通過；再切1／1000級驗紅點隱藏／恢復。WorkerBridge.saveAutoNow落地後重新載入、按繼續遊戲，5轉存檔與兩處新圖正確恢復，無偽造header投影，Console error／warning皆0，不接觸使用者瀏覽器存檔。首輪QA暫停模擬導致GM資料不刷新，另有備援圖相同時未等待文字重繪的競態；修正測試等待流程後重驗通過，未修改產品配合測試。
+- 已目視七階遊戲截圖及重載後5轉；預覽／qa-report.json在本聊天portraits-integration。無本項未完成實作或已知新增缺陷；7～10轉尚未繪製，保持原圖備援，未做行動真機／長玩。可供Review及使用者合併；未合併／推送develop或main。下一步使用者重新載入Codex工作區遊戲驗收，後續由整合者合併；其他在製工作保持。
+
 ## UI-CHAR-PORTRAIT-20261109 — 角色頭像入口整合及0～3轉頭像預覽
 
 - Owner：Codex；Review（入口整合與首批預覽完成，待使用者檢視畫風），單一開發者。使用者要求頭像／轉生／等級／角色入口合一，最終0～10轉11張，本輪先繪0～3轉供檢視。
