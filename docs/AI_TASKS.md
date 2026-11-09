@@ -15602,3 +15602,15 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器：IAB初始化無連線，改獨立headless Edge／新局／正式主頁與原生Worker，五種1920×1080、1366×768、900×1000、390×844、568×320各驗一般／全螢幕。修改前／後畫布高度逐一比對皆+34；場景名稱與關卡中心同高、地圖字號+2與寬高比例、3D在靜音後且hidden時尺寸0。原生點擊地圖開關、自動等待／回復、3D偏好反轉與頁面重載皆通過。另用正式GM跳冰原150／127後驗三位數關卡、全部可見按鈕／名稱／最高關卡兩兩無重疊，Console error／warning皆0。初輪QA的seed=17會自動入局而等不到選單，改一般新局URL後通過，未修改產品配合測試；測試瀏覽器／伺服器正常關閉。
 - 修改10檔：index.html、css/world-map.css、config/Excel/String.xlsx、config/CSV/String.csv、js/strings_data.js、tools/vfx/editor/index.html、tests/battle-toolbar.test.cjs、tests/hero3d-internal-toggle.test.cjs、LV_upgrade_system.md與本段。唯讀檢查AI_RULES／AGENTS／Workflow／prompts、使用者截圖、js/ui.js與game-settings／start-menu／intro-player、hero3d與GM流程、參數表、字串／原生Excel工具、既有HUD／全螢幕／鏡頭測試及Build工具。沒有獨立素材變更，素材庫無本項修改，不建空素材Commit。
 - 交付：無本項未完成或已知新增缺陷；未做行動真機／跨瀏覽器／長玩。既有NPC／Store／Zones／game_parameters與data、Zones.xlsx及兩份未追蹤配樂全數保留，不納入本項。截圖與before／after／icefield報告在本聊天battle-layout-20261110；遊戲Commit為本段所在提交，SHA見回報。可供使用者重載驗收及合併；沒有合併／推送develop或main。
+
+## RELIC-COMPACT-20261110 — 遺物外框與列距各縮約一行
+
+- Owner：Codex；Done，單一開發者。使用者依截圖要求縮短選取外框及每列間隔，各約一行字。前置RELIC-LAYOUT完成，保留名稱上方／粗體等級壓圖與固定操作留白。
+- 允許css/relic.css卡片底部留白／操作區／row-gap、index僅relic CSS快取、LV與本段；禁止JS／配置／素材／存檔／Worker、其他工作區及合併推送。起始外部6份配置／data修改及4首未追蹤BGM全保留，不納入本項。
+- 預檢CSS／LV／任務乾淨；index外部Claude e2d399c2只改音效script三行，本項第18行CSS，無語意相依。本項單行候選以e2父版為base、ai/claude現況為theirs，三方試跑exit0，分段修改。
+- 設計：卡片縮18px，操作區保留64px以容納長數量換行；獨立row-gap由16px縮至0，縮去一行左右的列間留白。驗收量測前後差值、五欄／三種寬度、四種持有狀態的資訊不越框、選取不位移與既有遺物回歸／Build；獨立Commit交使用者重載驗收。
+
+- 完成：卡片底部94→76px，外框實測246.09375→228.09375px（縮18）；row-gap16→0px（縮16），每列起點間距合計縮34px。操作區72→64px，按鈕上移10px，資訊仍完整且不推動卡片；名稱／圖標／粗體等級位置保持。relic CSS快取更新v2，LV同步。
+- 驗證：沿用正式CSS與原遺物渲染器的隔離Edge顯示fixture，1172／760／520px比較修改前後實測差值，五欄／名稱與等級、鎖定／可升／不足／滿級／最大安全整數庫存（長需求換行）、選取切換與收起後32卡位置高度／scrollTop固定、資訊不越框、窄屏水平捲動、JS及Console零error／warning，共32項PASS。首輪54px操作區對超長數量不足，保留64px後重驗全過，未降低驗收標準。
+- node --test --test-reporter=tap tests/relic-ui.test.cjs tests/relics.test.cjs，16/16；npm.cmd run build通過705檔；git diff／stat／check與自我Review通過。未改程式邏輯、資料表或素材，素材庫無變更不建空Commit。只修改css/relic.css、index.html、LV_upgrade_system.md及本段；唯讀檢查規範／Workflow／原ui-relic／既有回歸、前版QA與Claude音效差異，保留全部10項外部修改。
+- 交付：無本項未完成，可供Review與使用者合併；未合併／推送，未驗跨瀏覽器／行動真機。截圖selected／unselected及QA／TAP／Build在本聊天visualizations/relic-compact-20261110，臨時fixture／候選清理。Commit為本段所在「[Codex] fix: 縮短遺物外框與列間留白」，SHA見聊天；下一步重新載入驗收。
