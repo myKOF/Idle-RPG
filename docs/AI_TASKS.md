@@ -15578,3 +15578,14 @@ Worker 存活且頁面正常完成載入。
 - 自我Review及目視32圖總覽／鎖定／選取／tips／中央演出／窄屏完成。首輪發現通用button mouseover會收自訂pointer提示，已改接data-tt既有委派並實測通過；另兩次QA等待header早於DOM而失敗，修正驗收等待條件後重驗通過，未改產品迎合測試。Excel格式整理首輪COM列舉setter不接受CutCopyMode，原檔保持後移除非必要setter重作正常重開通過。
 - 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、原存檔player／save、Worker協議與header投影、ui.js通用提示及命令pending、既有技能／威能／主選單圖示、原Relics／String內容與原生Excel工具、素材庫解析及其他聊天BGM更新。BGM聊天期間已自行提交，保留其UISound／index改動，本項只增加獨立音效入口及本項快取；無外部衝突。未改其他玩法／協議、玩家存檔契約、其他AI工作區或其他素材。
 - 交付：本項無未完成實作，可供Review及使用者合併；未合併／推送develop或main。已知限制為未測行動真機／跨瀏覽器／長時間遊玩及既有音訊warning。遊戲Commit為本段所在「[Codex] feat: 改造遺物二十級圖標介面與升級演出」，SHA見聊天。完整圖標與正式畫面／qa-report、TAP／Build及驗證腳本留本聊天visualizations/relics；本任務臨時準備／除錯檔清理。下一步重新載入Codex遊戲驗收；若VFX編輯器仍開啟，先保留未存內容後重載共用String快取；後續由使用者指定整合者合併雙庫。
+## RELIC-LAYOUT-20261110 — 遺物名稱上移與固定升級留白
+
+- Owner：Codex；Done，單一開發者。使用者依截圖要求名稱在圖標上方、粗體等級稍壓圖標下緣、預留升級操作空間避免下列位移。前置RELIC-REDESIGN完成。
+- 允許css/relic.css卡片排列／等級／操作留白、index僅relic CSS快取、LV及本段；禁止JS／數值／配置／素材／存檔／Worker及其他工作區，不合併推送。起始既有NPC／Store／Zones／參數CSV、Zones.xlsx、data.js與兩首未追蹤BGM全部保留，不納本次。
+- 預檢CSS／LV／任務無外部來源；index的Claude e2d399c2只動script音訊快取（1214／1215／1231行），本項只動第18行relic CSS，無語意相依。以該commit父版為base、本項CSS單行候選為ours、ai/claude現況為theirs，merge-file退出0，可分段修改，不合併其他分支。
+- 驗收桌面／窄屏名稱位置、等級粗體與圖標重疊、點選不同列及鎖定／滿級／不足狀態下各卡／捲動位置固定、現有遺物相關回歸及Build。完成自我Review後獨立Commit，交使用者重載驗收與整合。
+
+- 完成：僅CSS讓名稱order=-1上移；等級700粗體、向上20px搭配原gap稍壓圖標下緣，深底襯字。卡片底部固定94px留白，升級操作72px絕對定位，支援需求文字換行；展開不參與卡片／下一列尺寸。index僅relic.css快取更新為20261110-relic-layout-v1，LV與本段同步。
+- 驗證：IAB連線失敗後改獨立headless Edge，在載入正式CSS、32件配置及原ui-relic渲染器的隔離顯示fixture，1172／760／520px各驗五欄、名稱位置、等級粗體與下緣重疊、點選不同列與收起時32卡座標／高度及scrollTop不變、鎖定／可升／不足／滿級資訊不超框，並驗520px水平捲動與JS／Console無error／warning，共27項PASS。此為CSS呈現驗收，未冒稱重驗Worker玩法；首輪fixture favicon缺檔404，補fixture handler後重跑全過，未修改產品掩蓋錯誤。
+- node --test --test-reporter=tap tests/relic-ui.test.cjs tests/relics.test.cjs，16/16；npm.cmd run build通過705檔；git diff／stat／check及自我Review通過。無新增素材、字串、JS或配置；素材庫沒有變更，不建空Commit。正式截圖selected／unselected及QA／TAP／Build保留本聊天visualizations/relic-layout-20261110，臨時候選／fixture清理。
+- 修改檔案：css/relic.css、index.html、LV_upgrade_system.md、docs/AI_TASKS.md。唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、原遺物渲染／配置、現有回歸、Claude音訊commit差異與截圖。既有8項外部配置／音訊修改保持未提交；不stage、不覆寫。無本項未完成內容，可供Review與使用者合併，未測跨瀏覽器／行動真機，未合併／推送。遊戲Commit為本段所在「[Codex] fix: 調整遺物名稱等級位置並固定升級留白」，SHA見聊天。下一步重新載入驗收。
