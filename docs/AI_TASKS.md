@@ -1,3 +1,20 @@
+## TOWER-TREANT-LV2-20261109 — 樹人第2階沿用全動作
+
+- Owner：Codex，Done，單一主開發者。使用者提供 BOSS2_LV2.glb，要求第2隻BOSS第2階套用第1階全部動作、接入遊戲並提供GIF。來源與修改授權沿用已記錄的使用者自製／生成BOSS2系列及本次匯入指示。
+- 前置：第1階treant.glb及五動作已完成。第2階放第12關（50列循環的62／112層），保留第2關與其他48列。允許本段、NPC第493列外觀／動作與CSV／衍生data、必要主頁／bridge／Worker快取、獨立GLB／頭像／素材包、Blender製作／預覽／匯出工具、相關回歸與LV／來源文件。禁止傷害、技能、數值、存檔／解鎖及其他工作區；不合併／推送。
+- 驗收：Blender保留新來源外觀並套用走路、三攻擊、死亡；比對第1階動作時間與有效蒙皮變換、模型幾何及動畫、原生Excel正常重開與窄改、遊戲實際載入、五動作GIF及總覽、相關測試／Build與雙庫提交。後續交使用者驗收與整合。
+- 預檢：NPC／資料／模型／工具／文件乾淨；Claude在index另改formula／hero3d／renderer／skills2快取，本項僅改data與bridge快取，將以三方試跑確認不同區段無衝突再更新。
+- 使用者追加BOSS2_LV3.glb第3階，同樣套用全部動作並接入；授權範圍擴至第503列tower_boss_22、第3階獨立模型／頭像／素材包／匯出器／交接及同組回歸。第72／122層依既有50列循環使用第3階。第2階GIF繼續完成；第3階僅需接入及透明頭像，不額外要求五動作GIF。兩階同輪驗證／提交，其他48列及所有遊戲數值保持。
+
+- 完成：新增treant_lv2／lv3.glb與兩份1080px透明頭像、Blender製作／有效蒙皮QA／渲染／GIF工具、兩階匯出器及來源交接；更新NPC第493／503列、CSV／data、主頁data／bridge與Worker資料快取、三份相關回歸與LV／本段。原第1階及其他BOSS模型保持，通用3D／戰鬥邏輯未修改。58骨五動作原速沿用，兩階各10,433面唯一對應、三張貼圖逐位元相同；60Hz各1,103樣本最大蒙皮矩陣誤差0.00000535，Blend重開五動作／貼圖打包通過。
+- NPC／Excel：使用者確認關閉後，原生Excel兩次各13格修改及正常模式重開；每次核對28,365格與七物件。由第2階修改前基線逐格比對最終檔，僅第493／503列指定26格改動，其餘資料／公式及48列保持。24,535格樣式、樣式定義、列結構、合併／驗證／條件格式／篩選／圖形及視圖保持；Excel原生儲存依本機顯示度量正規化列高（最大2.4pt）及欄寬（最大0.0508字元），詳見素材QA。CSV／data只有兩列語意改動，NPC再次試跑0，String寫死0。
+- 衝突／同副本：index與Claude不同快取區段，merge-file試跑exit0。Worker第23行data快取與Claude formula快取同列、試跑exit1，使用者明確同意分段更新後只改data，不合併Claude分支。工作期間另有本副本主角清晰度及Role6任務；保留其修改，只提交本任務段與檔案。
+- 測試：PowerShell篩選hero3d-*、npc3d-runtime／locomotion、tower-action-motion／battlefield／arena-bounds、battlefield、worker-protocol／shim與treant-asset，node --test --test-concurrency=2 --test-reporter=tap共152/152；第3階加入後 node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/treant-asset.test.cjs tests/vfx-editor-cache-versions.test.cjs共21/21。npm.cmd run build最終698檔通過，Python四工具解析、雙階與第1階匯出SHA／diff檢查通過。
+- 實機：隔離Edge、新局、正式主頁／原生Worker，GM鎖血／跳關後實際第12及22關載入對應GLB，走路／三攻擊／死亡存在、實際施法姿勢與NPC識別核對；撤退後按正式確認按鈕正常換場，最終Console error／warning皆0。初輪直接在後端確認結果未關閉UI彈窗，已修正測試操作後重驗；初輪另記錄一筆未修改音訊模組的振盪器頻率限幅警告，完整原始及最終QA均留存，未改產品配合測試。
+- GIF：第2階五份720×784原速GIF及1920×1200總覽，走路20FPS、攻擊／死亡10FPS、總覽20FPS／118幀／5.9秒，死亡末端保持後循環。逐份驗證尺寸、時長與循環，目視檢查總覽／動作及透明頭像；第3階依追加需求接入並提供頭像，未額外要求GIF。預覽留聊天visualizations，不進Git。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、原NPC／塔戰、Hero3D／Npc3D／battle-renderer／Worker與GM契約、參數／Excel管線、既有樹人／骷髏王來源與匯出工具及他分支差異。未改傷害、技能、速度／距離／倍率、協議、存檔、開放條件或其他工作區。素材庫兩套件共59項SHA，先提交bf06d26668d9a7fa97c088dd7e6228ae5c5d10ea；遊戲提交為本段所在提交，SHA見回報。
+- 交付：本項無未完成，可供使用者Review及合併，未合併／推送develop或main。已知限制：上述Excel原生尺寸正規化、未做行動真機／跨瀏覽器／長時間效能；保留其他聊天Role6進行中段落，不納入本提交。下一步由使用者重載驗收兩階外觀，來源與重建見docs/assets/TOWER_TREANT_LV2_SOURCE.md與TOWER_TREANT_LV3_SOURCE.md。
+
 ## SYNC-DIAGNOSTIC-STAGING-20261109 — 忽略診斷輸出不阻塞合併
 
 - Owner：Codex，Done，待本提交正常同步。本輪 1 授權的樹人合併已提交72a4cbb0，接續修復原阻塞。控制器將模型回報的 ignored logs/*.tap 當作正式檔案git add，造成已完成驗證仍停止。
