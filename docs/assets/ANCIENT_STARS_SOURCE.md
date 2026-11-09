@@ -15,3 +15,4 @@
 - 匯出：`node tools/ancient-stars/export-source.cjs --apply`；驗證：`node tools/ancient-stars/export-source.cjs --check`。素材庫路徑由共用 `vfx-library-root.cjs` 解析，不記錄本機絕對路徑。
 - 2026-11-05效能修正（烘焙光暈）：上列CSS濾鏡（SVG色彩矩陣＋SVG feMorphology描邊＋三層drop-shadow）每次重繪都在CPU重算，背包上百顆星星使介面卡頓。改由 `tools/ancient-stars/bake-glow.cjs` 以相同參數（1 CSS px≈7.6圖像素；描邊1px #6b3f16；外暈1／3／6px，σ＝半徑／2；淺藍色彩矩陣）離線烘進 `images/ui/ancient-star-{gold,light-blue,blue}-glow.png`（256px，四周各留64px光暈）。CSS只換圖並以 `transform: scale(2)` 抵銷留白，星星本體尺寸／基線／間距不變，已無任何濾鏡。原128px PNG仍為母圖、SHA不變。重新烘焙：`node tools/ancient-stars/bake-glow.cjs --apply`；驗證：`--check`。
 - 2026-11-06顯示分流：裝備tips和詳情使用原有✡字形與輕文字光暈。裝備、背包和神鑄格繼續使用三色烘焙PNG，保留輪廓、光暈與窄格重疊。
+- 2026-11-09尺寸／光暈：沿現有bake-glow.cjs管線，外層主光暈原尺寸烘焙半徑6→5px、近中層1／3px與描邊保持；CSS transform 2→1.8，使圖案等比縮小10%且不影響佔位。三色256px重新烘焙並更新圖片查詢版號，仍無即時filter。素材庫新包`codex-authored/ancient-star-size90-glow5-20261109`保存三128px輸入、三256px成品、可重建工具及依賴、參數／SHA；舊包與原圖保持。tips／詳情簡易星號不改。

@@ -15446,3 +15446,14 @@ Worker 存活且頁面正常完成載入。
 - 實機及對照：隔離headless Edge、正式主頁與原生Worker、seed17新局，不讀使用者存檔。512與1024以相同CombatIdle 0.4秒及朝向繪圖，正式戰鬥的角色邊界x/y/寬/高、顯示尺寸與錨點一致（誤差<1e-9）；正常載入與回收、pageerror／Console error 0。兩版皆有同一張dark-gold-seal預載未使用的既有warning。另用正式Three→Pixi角色程式在固定網格場景比較站立／攻擊／跑步，三姿勢尺寸一致、error0；對照含相同大小原圖及等比放大3倍，沒有銳化／AI修圖。兩個批次的75幀CPU繪圖提交取樣，最後一次中位數0.5→0.8ms、p95為2.1→2.5ms，只代表隔離角色提交成本，不是整場GPU／FPS或手機保證。預覽與QA腳本／JSON在本聊天visualizations的character-clarity。
 - Build：`npm.cmd run build`共697檔通過；新增回歸在Build掃描開始後加入，另以最終檔案`node --check tests/hero3d-resolution.test.cjs`及測試確認。測試命令為`node --test tests/hero3d-*.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/vfx-editor-cache-versions.test.cjs`（執行時PowerShell展開hero3d檔案）、`node --test tests/hero3d-resolution.test.cjs tests/hero3d-battle-rules.test.cjs`。
 - 交付：無未完成實作，可供使用者驗收與合併；Commit為本段所在提交，SHA見回報。沒有合併或推送。已知限制為內部繪製像素數4倍，僅測本機Edge，未做手機／跨瀏覽器／長時間效能；現有dark-gold-seal預載warning保持。建議重載遊戲驗收服飾與頭部細節；共享工作區的樹人LV2檔案及三個共用文件的其他區段保持未提交，僅提交本項五檔差異。
+
+## ANCIENT-STAR-SIZE-GLOW-20261109 — 裝備星星縮小10%與光暈減1px
+
+- Owner：Codex；Done，單一開發者。使用者要求裝備圖片星星縮小10%、光暈減少1px。沿現有烘焙PNG管線，圖片transform由scale(2)改1.8（視覺90%、不改星列佔位），外層主光暈烘焙半徑6→5px（以原烘焙尺寸為基準），近／中層及1px描邊、三色保持；tips／詳情簡易星號不改。不恢復即時SVG／CSS濾鏡。
+- 允許：style.css對應transform及三PNG快取、index僅style快取、bake-glow.cjs一項半徑與註解、三glow PNG、LV、來源說明及本段；素材庫獨立包保留可重建128px原圖／作者工具及依賴／新256px成品／參數／SHA。禁止原128px素材／其他圖片／JS／配置／玩法／星數／精鑄順序、Role6在製內容、其他工作區與合併推送。
+- 預檢：除index皆無外部來源；Claude在index改formula／skills2／hero3d／renderer快取，本項只第12行style。全分支merge-tree有既有hero快取衝突；以本項HEAD:index為base、只改style的候選與對方實際index作merge-file exit0，無同行或語意相依，分段修改。原Role6任務段／其他未提交內容保留。
+- 驗收：三色正式格圖片變換比0.9、無即時filter、素材烘焙check／雙庫SHA、tips及原圖保持、相關回歸／Build／diff與實機預覽後，素材先Commit、遊戲後Commit。後續使用者Review及合併。
+- 完成檔案：css/style.css、index.html、tools/ancient-stars/bake-glow.cjs、三張images/ui/*-glow.png、LV_upgrade_system.md、docs/assets/ANCIENT_STARS_SOURCE.md及本段，共9檔。唯讀檢查：原128px三色PNG、export-source.cjs、vfx-raster／image-facts、tips／詳情簡易字形規則與正式格HTML、相關測試、原素材包、Claude工作區index及三份協議；沒有修改玩法JS／配置或其他工作區。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/equipment-tooltip-compare.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/vfx-editor-cache-versions.test.cjs` 21/21通過；`npm.cmd run build` 698檔通過；`node tools/ancient-stars/bake-glow.cjs --check`、`node tools/ancient-stars/export-source.cjs --check`、素材包同名bake工具`--check`及diff檢查通過。雙庫9項圖片／作者工具／依賴SHA逐一相符，原128px輸入保持。
+- 瀏覽器：隔離IAB本機fixture，取正式CSS／itemCellHTML／ancientStarBadgeHTML／itemDetailHTML，未讀玩家存檔。前後51顆圖片星星變換比皆0.9、星列排版最大差0、即時filter皆none、tips／詳情圖片皆關閉；三色及窄格重疊預覽通過。證據在聊天visualizations/2026/11/09/ancient-star-size-glow的preview.jpg與browser-results.json。比較iframe有一筆注入MutationObserver的observe參數非Node錯誤，量測仍完成；沒有宣稱完整正式遊戲／跨瀏覽器／長時間效能驗證。
+- 交付：素材庫新包先提交`9e67d02`；遊戲Commit為本段所在提交，SHA見回報。沒有未完成實作，可供使用者驗收合併，未合併／推送；工作區Role6其他變更保留。建議重新載入遊戲確認裝備與背包顯示。

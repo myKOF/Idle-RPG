@@ -584,9 +584,9 @@ body {
   inset: -2px;
   /* 1px深金描邊與三層黃色外暈已由 tools/ancient-stars/bake-glow.cjs 烘進 *-glow.png（256px＝原圖四周各留64px光暈）。
      ⚠️ 不要改回 CSS filter：SVG描邊＋drop-shadow 每次重繪都在CPU重算，背包上百顆星星會拖慢整個介面。
-     scale(2) 抵銷留白，星星本體仍是原本大小；transform 不參與排版。 */
-  background: var(--ancient-star-image, url('../images/ui/ancient-star-gold-glow.png')) center / contain no-repeat;
-  transform: scale(2);
+     scale(1.8) 抵銷留白後以原尺寸90%顯示；transform 不參與排版。 */
+  background: var(--ancient-star-image, url('../images/ui/ancient-star-gold-glow.png?v=20261109-glow5')) center / contain no-repeat;
+  transform: scale(1.8);
   pointer-events: none;
 }
 
@@ -2979,11 +2979,11 @@ textarea#save-io {
 .ancient-forged-first .ancient-star,
 .ancient-star.ancient-forged-first {
   /* 已烘焙：sRGB白色亮面映射到防禦文字藍 #7fdcf5（bake-glow.cjs 的 tone），保留原圖明暗與透明度。 */
-  --ancient-star-image: url('../images/ui/ancient-star-light-blue-glow.png');
+  --ancient-star-image: url('../images/ui/ancient-star-light-blue-glow.png?v=20261109-glow5');
 }
 .ancient-forged-second .ancient-star,
 .ancient-star.ancient-forged-second {
-  --ancient-star-image: url('../images/ui/ancient-star-blue-glow.png');
+  --ancient-star-image: url('../images/ui/ancient-star-blue-glow.png?v=20261109-glow5');
 }
 
 /* 超�??��??��??�?�相?��??�平?��?幅�??��??��?多出?��??��?中�??��?後�?顆�?*/
