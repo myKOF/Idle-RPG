@@ -1,3 +1,16 @@
+## UI-CHAR-PORTRAIT-20261109 — 角色頭像入口整合及0～3轉頭像預覽
+
+- Owner：Codex；Review（入口整合與首批預覽完成，待使用者檢視畫風），單一開發者。使用者要求頭像／轉生／等級／角色入口合一，最終0～10轉11張，本輪先繪0～3轉供檢視。
+- 前置：既有角色tab與header快照、已授權Role／Role1／Role2／Role3；六轉在製候選不引用、不修改。允許index角色入口及本項快取、css/ashen-forge.css對應樣式、js/ui.js頭像顯示、LV、本段、新獨立素材／來源記錄與匯出工具；禁止模型、戰鬥／數值、Worker、存檔／解鎖及其他進行中檔案，不合併／推送。
+- 完成：原生button合併頭像／轉生／等級，沿用data-tab=char，取消重複頭盔角色入口；0轉也由String679顯示，String63作無障礙名稱，保留可轉生紅點與active／hover／focus。0～3轉首批頭像依header自動切換，角色頁同步；4～10轉暫用原頭圖。CSS圓形金框52px，四張256px WebP共74,838 bytes；沒有新增玩家字串／配置或玩法變更。
+- 修改：index.html、css/ashen-forge.css、js/ui.js、LV、本段、docs/assets/CHARACTER_PORTRAITS_SOURCE.md及PROMPTS.json、images/ui/hero-portraits/rebirth-{0,1,2,3}.webp、tools/meshy-pipeline/src/export-character-portraits.cjs。唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、原模型與來源授權、角色切頁／header／提醒／GM鍵盤邏輯、相關測試、String及素材庫解析。不改六轉工具／模型與其他聊天的任務內容。
+- 美術：參考本專案已授權0～3轉模型；0轉另以Blender實際渲染，1～3轉使用既有模型正面預覽。RPG Mote Studio網頁工具無法存取，本輪以內建image_gen每轉各一請求重繪；原始插畫1254px無文字／圓框，Sharp只做等比WebP匯出。原圖／參考／精確提示詞與15份來源／輸出SHA核對保存在素材庫codex-authored/character-portraits-20261109，先提交23f9823；遊戲提交為本段所在「[Codex] feat: 整合角色頭像入口與首批轉生頭圖」，SHA見聊天交付。
+- 衝突：index與Claude重疊於同檔不同區段，對方改formula／hero3d／renderer／skills2快取，本項只改角色DOM及ui／ashen-forge快取。既有分支的hero3d快取差異會在完整歷史合併中衝突，本項不觸及；以任務開始前HEAD index為base，將本項差異三方套到ai/claude現況的merge-file試跑exit0。沒有合併Claude內容／解決其他聊天既有衝突。Role6未提交記錄與四份未追蹤工具完整保留，僅stage本項任務段。
+- 測試指令：node --test --test-reporter=tap tests/header-resources.test.cjs tests/ui-worker-panels.test.cjs tests/init-ui-smoke.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs，30項27通過3失敗。以唯讀fs overlay載入HEAD原js/ui.js重跑失敗所屬兩檔，逐項重現相同3個既有失敗：initUI缺DIVINE_FORGE_MODES、gem.socket靜態斷言、item.upgrade缺UI；未修改斷言／測試。原始TAP保留logs/character-portraits-{tests,baseline}.tap。
+- npm.cmd run build通過698檔；node tools/string-table/build_string_csv.cjs --check寫死0；node tools/meshy-pipeline/src/export-character-portraits.cjs --check通過15份來源／輸出；git diff／stat／check通過。既有3項測試失敗是已知限制，不宣稱全綠。
+- 實際驗收：隔離Edge新局、正式主頁及原生Worker，僅在測試瀏覽器包裝header投影為可控轉數／等級；0→1→2→3→4→10→0正確切圖／備援、兩處頭像一致、等級／轉生／紅點條件正確。圖片／等級點擊、Enter／Space及active皆通過，1920／1280／900寬度已截圖目視，Console error／warning皆0。localhost既有Enter為GM快捷鍵，改127.0.0.2驗正式遊戲環境的原生鍵盤行為；未修改GM。未做行動真機／全遊戲長玩。
+- 預覽與QA在本聊天visualizations/portraits，含四圖總覽、正式角色頁／側欄與qa-report.json。未完成：4～10轉七張依使用者「先看0～3轉」保留後續；首批可繼續依回饋調整。入口實作已可Review，畫風待使用者檢視後再決定合併及後續製作，沒有合併／推送develop或main。後續接手者為使用者與整合者。
+
 ## TOWER-TREANT-LV2-20261109 — 樹人第2階沿用全動作
 
 - Owner：Codex，Done，單一主開發者。使用者提供 BOSS2_LV2.glb，要求第2隻BOSS第2階套用第1階全部動作、接入遊戲並提供GIF。來源與修改授權沿用已記錄的使用者自製／生成BOSS2系列及本次匯入指示。

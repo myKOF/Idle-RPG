@@ -11,7 +11,7 @@
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
   <link rel="stylesheet" href="css/style.css?v=20261109-ancient-star-size90-glow5">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=20261108-battle-toolbar">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=20261109-character-portrait">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.9">
@@ -87,12 +87,11 @@
       <span class="af-frame-lines" aria-hidden="true"><i class="af-frame-line center top-c"></i><i class="af-frame-line center bottom-c"></i><i class="af-frame-line center left-c"></i><i class="af-frame-line center right-c"></i></span>
       <h1 class="af-heading" data-str="61"></h1>
       <nav id="tabs" data-str-attr="aria-label:62">
-        <div class="rail-hero" aria-hidden="true">
-          <img src="images/icon_avatar.png" alt="">
+        <button class="tab-btn rail-hero" data-tab="char" data-str-attr="aria-label:63">
+          <span class="char-tab-icon"><span class="rail-portrait-frame"><img id="rail-portrait" src="images/ui/hero-portraits/rebirth-0.webp" alt="" width="256" height="256" draggable="false"></span><span id="char-reincarnation-alert" class="char-reincarnation-alert" hidden data-str-attr="aria-label:126">!</span></span>
           <span id="rail-reincarnation" class="rail-reincarnation"></span>
           <span id="rail-level" class="rail-level">Lv.1</span>
-        </div>
-        <button class="tab-btn" data-tab="char"><span class="char-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/char.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span><span id="char-reincarnation-alert" class="char-reincarnation-alert" hidden data-str-attr="aria-label:126">!</span></span><span data-str="63"></span></button>
+        </button>
         <button class="tab-btn active" data-tab="equip"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/equip.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="46"></span></button>
         <button class="tab-btn" data-tab="skills"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/skills.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="41"></span></button>
         <button class="tab-btn" data-tab="newforge"><span class="nav-tab-icon"><span class="af-nav-icon" aria-hidden="true"><img src="images/ui/enamel-nav/newforge.png?v=20261014-single-rim" alt="" width="128" height="128" draggable="false"></span></span><span data-str="64"></span></button>
@@ -107,7 +106,7 @@
 
         <section id="tab-char" class="tab">
           <div class="char-hero">
-            <div class="sidebar-avatar char-avatar"><img src="images/icon_avatar.png" data-str-attr="alt:370"></div>
+            <div class="sidebar-avatar char-avatar"><img id="char-portrait" src="images/ui/hero-portraits/rebirth-0.webp" data-str-attr="alt:370"></div>
             <div class="char-hero-main">
               <div class="char-hero-line"><span class="sidebar-title" id="p-class" data-str="371"></span><span id="p-level" class="plevel">Lv.1</span></div>
               <div id="xp-bar">
@@ -1211,7 +1210,7 @@
   <script src="js/save.js?v=20261106-start-menu"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261108-zone-playlist-v1"></script>
-  <script src="js/ui.js?v=20261108-pending-a3b42cf3"></script>
+  <script src="js/ui.js?v=20261109-character-portrait"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>

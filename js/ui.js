@@ -3006,6 +3006,19 @@ function applyReincarnationTitleClass(el, count) {
   el.classList.add('reinc-title-' + c);
 }
 
+// 首批0～3轉頭像；尚未繪製的階段沿用原頭圖，不借用其他轉生外觀。
+var CHARACTER_PORTRAITS = [
+  'images/ui/hero-portraits/rebirth-0.webp',
+  'images/ui/hero-portraits/rebirth-1.webp',
+  'images/ui/hero-portraits/rebirth-2.webp',
+  'images/ui/hero-portraits/rebirth-3.webp'
+];
+function updateCharacterPortrait(reincarnations) {
+  var src = CHARACTER_PORTRAITS[reincarnations] || 'images/icon_avatar.png';
+  setAttrIfChanged($id('rail-portrait'), 'src', src);
+  setAttrIfChanged($id('char-portrait'), 'src', src);
+}
+
 function renderHeader() {
   var headerSnapshot = uiHeaderPanelSnapshot();
   if (!headerSnapshot || !headerSnapshot.player || !headerSnapshot.stats) return;
@@ -3072,7 +3085,8 @@ function renderHeader() {
   setTextIfChanged($id('pv-level'), levelText);
   setTextIfChanged($id('tp-level'), levelText);
   var reinc = clamp(Math.floor(Number(p.reincarnations) || 0), 0, REINCARNATION_MAX);
-  setTextIfChanged($id('rail-reincarnation'), reinc > 0 ? STR(679, reinc) : '');
+  setTextIfChanged($id('rail-reincarnation'), STR(679, reinc));
+  updateCharacterPortrait(reinc);
   var currentLevel = Math.max(0, Math.floor(Number(p.level) || 0));
   var canReincarnate = canReincarnateAt(currentLevel, reinc);
   var reincarnationAlert = $id('char-reincarnation-alert');
