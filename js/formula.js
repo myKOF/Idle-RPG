@@ -414,6 +414,12 @@ function computeStats(equipmentOverride) {
   // 4 轉威能【智慧昇華／點金昇華】與詞條、傳奇、神鑄的經驗／金幣加成相加。
   st.xpBonus = A.xpBonus + (talent.xpBonus || 0);
   st.goldBonus = A.goldBonus + (talent.goldBonus || 0);
+  /* 遺物「晨鐘」：回到遊戲後限時經驗值與掉寶率 +10%（js/relic.js；到期由 relicTick 作廢屬性快取）。
+     直接加在最終值上，不吃掉寶效果的折算倍率（DROP_RATE_EFFECT_MULT）。 */
+  if (typeof relicReturnBuffPct === 'function') {
+    var relicBuff = relicReturnBuffPct();
+    if (relicBuff) { st.loot += relicBuff; st.xpBonus += relicBuff; }
+  }
   st.luck = capValue(A.luck, STAT_CAPS.luck);                               // 幸運值上限（上限 0＝無上限）
   st.enhanceSuccess = A.enhanceSuccess;
   st.decomposeYield = A.decomposeYield;
@@ -2314,7 +2320,9 @@ function upgradeCost(it) {
   var lv = it.upgrade || 0;
   return {
     gold: Math.round(UPGRADE_COST_GOLD.coef * Math.pow(UPGRADE_COST_GOLD.base, lv) * (1 + it.level * UPGRADE_COST_GOLD.perLevel)),
-    scrap: Math.round(UPGRADE_COST_SCRAP.coef * Math.pow(UPGRADE_COST_SCRAP.base, lv) * (1 + it.level * UPGRADE_COST_SCRAP.perLevel))
+    // 遺物「碎片再生爐」：碎片 -N%（兩端共載，強化按鈕顯示的費用與實際扣款同一支）
+    scrap: Math.round((typeof relicDiscount === 'function' ? relicDiscount('upgradeScrapDiscount', 1) : 1) *
+      UPGRADE_COST_SCRAP.coef * Math.pow(UPGRADE_COST_SCRAP.base, lv) * (1 + it.level * UPGRADE_COST_SCRAP.perLevel))
   };
 }
 // 實際強化成功率 = 基礎 + 「強化成功率」屬性（夾在上限內）；失敗損失半數材料
@@ -2332,6 +2340,8 @@ function rerollCost(it) {
   var baseEssence = REROLL_ESSENCE_COST[it.rarity === 8 ? 6 : it.rarity];
   if (baseEssence === undefined) baseEssence = 1 + costTier;
   var essence = Math.floor(baseEssence * it.level / REROLL_ESSENCE_LEVEL_DIVISOR);
+  // 遺物「節約瓶」：精華 -N%（無條件捨去，與原本取整方向一致）
+  if (typeof relicDiscount === 'function') essence = Math.floor(relicDiscount('rerollEssenceDiscount', essence));
   return {
     gold: Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, costTier) * (1 + it.level * REROLL_COST_GOLD.perLevel)),
     essence: essence
@@ -2347,12 +2357,19 @@ function synthGreatChanceNow() {
 // a/b/c＝INVENTORY_EXPAND_COST_BASE/MULT/RATE（data.js，參數表「7-容量／背包擴充費用」）
 function inventoryExpandCost(upg) {
   var n = (upg || 0) + 1;
-  return Math.round(INVENTORY_EXPAND_COST_BASE + INVENTORY_EXPAND_COST_MULT * Math.pow(INVENTORY_EXPAND_COST_RATE, n));
+  var cost = INVENTORY_EXPAND_COST_BASE + INVENTORY_EXPAND_COST_MULT * Math.pow(INVENTORY_EXPAND_COST_RATE, n);
+  // 遺物「鍍金鈕扣」：費用 -N%（js/relic.js；兩端共載，主執行緒讀 header 面板的遺物等級）
+  if (typeof relicDiscount === 'function') cost = relicDiscount('inventoryExpandDiscount', cost);
+  return Math.round(cost);
+}
+// 背包擴充上限（含基礎容量）＝參數表 INVENTORY_MAX ＋ 遺物「次元行囊」。擴充按鈕、Worker 指令與面板一律讀這支。
+function inventoryExpandMax() {
+  return INVENTORY_MAX + (typeof relicValue === 'function' ? relicValue('inventoryMax') : 0);
 }
 
 // 生產線容量（皆為固定值）
 function conveyorCap() { return CONVEYOR_CAP; }                              // 輸送帶固定上限
-function synthBufCap() { return SYNTH_BUFFER_CAP; }                          // 合成暫存區固定上限
+function synthBufCap() { return SYNTH_BUFFER_CAP + (typeof relicValue === 'function' ? relicValue('synthBuffer') : 0); } // 合成暫存區上限（固定值＋遺物「蓄能瓶」）
 
 // 分解槽零件安裝格數：由初始格數起，使用金幣逐格解鎖至上限（兩者見 data.js）。
 // 舊存檔沒有 salvageSlots 欄位時由 migrateSave 保留既有格數。

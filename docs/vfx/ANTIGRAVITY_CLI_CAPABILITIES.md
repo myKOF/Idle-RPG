@@ -177,3 +177,21 @@ Options
 - 未登入、未更新、未安裝、未變更任何設定（含未執行 `--add-mcp`）
 - 未使用 PowerShell、未使用 rg
 - 未修改任何既有檔案、未變更 Git 狀態
+
+---
+
+# 9. 2026-11-09 實測 `chat`：送不進去
+
+第 5 節「未確認」的第一項已實測，結論是**連單向派工都不成立**。
+
+| 嘗試 | 結果 |
+|---|---|
+| D 槽 `Antigravity\bin\antigravity.cmd chat -m agent -a <檔> "<英文提示詞>"`（cwd＝antigravity 副本） | 退出碼 0；使用者畫面沒有任何反應（這套安裝當時沒在執行） |
+| C 槽 `Antigravity IDE\bin\antigravity-ide.cmd chat -m agent -r -a <檔> "<英文提示詞>"`（使用者正在用的那套，視窗開著） | 退出碼 0；使用者回報「還是沒反應」，對話框沒有出現提示詞 |
+
+- 退出碼 0 不代表送達。launcher 只是把參數交給 Electron 主行程，主行程收下後沒有任何可見動作。
+- 推測：`chat` 是 VS Code 內建聊天面板的入口，Antigravity 的 Agent 不走這個面板（未驗證）。
+- 使用者裝了兩套（D 槽 `Antigravity`、C 槽 `Antigravity IDE`），實際在用的是 C 槽。要確認在用哪套，看 `Get-Process` 的 `Path`。
+
+**結論維持 C，並且更確定：** Antigravity 的測試一律由 Claude 寫測試指令文件，使用者把一句短提示詞貼進 Antigravity；
+報告寫成檔案（規定最後一行寫完成標記），Claude 再去讀檔、監看工作區有沒有被改。

@@ -1706,6 +1706,43 @@
       addRune(runeKey, count);
       return { ok: true, message: '增加 ' + runeLabel(runeKey) + ' x' + count };
     }
+    if (command === 'relic') {
+      // relic <編號|all> [數量]：給遺物件數（未解鎖的自動解鎖 Lv.1）；relic max：全部直接滿級；relic reset：清空（js/relic.js）
+      var relicKey = String(args[0] || '').toLowerCase();
+      if (relicKey === 'max' || relicKey === 'reset') {
+        G.player.relics = {};
+        if (relicKey === 'max') RELICS.forEach(function (r) { G.player.relics[r.id] = { lv: r.levels.length, n: 0 }; });
+        relicEffectChanged();
+        gmDirty();
+        return { ok: true, message: relicKey === 'max' ? '全部 ' + RELICS.length + ' 件遺物設為滿級' : '已清空所有遺物' };
+      }
+      count = gmNumber(args[1] === undefined ? '1' : args[1], 1, 1e6);
+      if (count === null) return { ok: false, message: '格式：relic 編號|all|max|reset [數量]' };
+      if (relicKey === 'all') {
+        RELICS.forEach(function (r) { relicGrant(r.id, count); });
+        gmDirty();
+        return { ok: true, message: '全部 ' + RELICS.length + ' 件遺物各 +' + count + ' 件' };
+      }
+      var relicDef = RELIC_BY_ID[Number(relicKey)];
+      if (!relicDef) return { ok: false, message: '格式：relic 編號(1~' + RELICS.length + ')|all|max|reset [數量]' };
+      relicGrant(relicDef.id, count);
+      gmDirty();
+      return { ok: true, message: '遺物【' + relicDef.name + '】+' + count + ' 件（Lv.' + relicLevel(relicDef.id) + '）' };
+    }
+    if (command === 'offline') {
+      /* offline <小時>：模擬「離線 N 小時後回來」——把存檔時間往前撥、立刻跑一次離線結算（與開機同一支 applyOfflineProgress，
+         分批處理不卡畫面），完成後跳出離線收益彈窗，再把存檔時間設回現在，避免下次開機重複結算。
+         離線結算只在開機時發生、存檔又在 IndexedDB，測試離線類遺物（長夜沙漏、夜班熔爐、夢境捕手、晨鐘、星圖殘頁）沒有別的辦法。 */
+      var offHours = gmNumber(args[0], 0.02, 1000);
+      if (offHours === null) return { ok: false, message: '格式：offline 小時（0.02～1000，可小數）' };
+      G.savedAt = Date.now() - offHours * 3600 * 1000;
+      applyOfflineProgress({ chunkSize: 24, done: function () {
+        G.savedAt = Date.now();
+        if (typeof requestPersist === 'function' && typeof PERSIST_KINDS !== 'undefined') requestPersist(PERSIST_KINDS.AUTO);
+      } });
+      G.savedAt = Date.now();
+      return { ok: true, message: '模擬離線 ' + offHours + ' 小時：結算中，完成後跳出離線收益彈窗（上限 ' + relicOfflineMaxHours() + ' 小時；沒有擊殺則不跳）' };
+    }
     if (command === 'runeword') {
       // runeword <符文真言id|list>：把該組配方的符文放進庫存（拿去鑲嵌即成形）
       var wordKey = String(args[0] || '');

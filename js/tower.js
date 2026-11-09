@@ -166,6 +166,14 @@ function startTowerAuto(floor, count) {
   if (!G.tower.active) TOWER.auto = null; // 開場失敗（金幣不足 / 樓層未解鎖）
 }
 
+/* 遺物「急行令」的塔戰速度倍率：只在連續挑戰中生效；登場轉場（黑圈）期間不加速，
+   因為那段時間與主執行緒的轉場動畫綁定（TOWER_INTRO_SEC）。 */
+function towerAutoSpeedMult() {
+  if (!TOWER.auto || typeof relicTowerAutoSpeedMult !== 'function') return 1;
+  if (G.tower && G.tower.active && TOWER.introCd > 0) return 1;
+  return relicTowerAutoSpeedMult();
+}
+
 function towerTick(dt) {
   if (typeof bfClampTowerCombatants === 'function') bfClampTowerCombatants();
   try { return towerTickInsideArena(dt); }
@@ -438,91 +446,7 @@ function endTowerFight(win, reason) {
       var unlockedWords = rwUnlockTowerWords(G.tower.highest);
       if (unlockedWords) result.rewards.push(STR(1838, unlockedWords));
     }
-    // 獎勵：資源（零件改由熔爐升級取得）
-    var rw = towerRewardFor(floor, firstClear);
-    var st2 = getStats();
-    var xpGain = Math.round((b.xp || 0) * (1 + st2.xpBonus / 100));
-    gainXp(xpGain);
-    // 技能熟練度經驗（2026-07-30）：高塔通關比照野外擊殺
-    if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xpGain * SKILL_MASTERY_XP_RATE / 100));
-    UI.dirty.header = true;
-    result.rewards.push(STR(106, fmt(xpGain)));
-    var soulOriginRate = hellSoulOriginDropChance(floor);
-    if (soulOriginRate > 0 && chance(soulOriginRate)) {
-      G.player.soulOrigin = (G.player.soulOrigin || 0) + 1;
-      if (window.recordLootMat) window.recordLootMat('soulOrigin', 1, 'tower');
-      result.rewards.push(STR(1839));
-      UI.dirty.header = true;
-    }
-    // 裝備戰利品：依「BOSS 掉落表」各品質獨立擲骰（>100% 必掉 + 餘數機率）
-    var bossRates = dropRatesFor(BOSS_DROP_TABLE, floor);
-    var bossMult = 1 + st2.loot / 100;
-    var lootCounts = [];
-    for (var br = 0; br < bossRates.length; br++) {
-      if (!bossRates[br]) continue;
-      var bn = rollDropCount(bossRates[br] * bossMult);
-      if (!bn) continue;
-      for (var bk2 = 0; bk2 < bn; bk2++) {
-        pushConveyor(makeEquipment(rw.itemLevel, {
-          rarity: br,
-          level: rw.itemLevel
-        }));
-      }
-      if (window.recordLootEquip) window.recordLootEquip(br, bn, 'tower');
-      lootCounts.push(STR(1840, RARITIES[br].color, RARITIES[br].name, bn));
-    }
-    if (lootCounts.length) {
-      result.rewards.push(STR(1841));
-      for (var i = 0; i < lootCounts.length; i++) {
-        result.rewards.push(lootCounts[i]);
-      }
-    }
-    var gt1 = randomGemType(), gt2 = randomGemType();
-    addGem(gt1, rw.gemLevel, 1); addGem(gt2, rw.gemLevel, 1);
-    if (gt1 && window.recordLootGem) {
-      window.recordLootGem(gt1, rw.gemLevel, 1, 'tower');
-      window.recordLootGem(gt2, rw.gemLevel, 1, 'tower');
-    }
-    if (gt1) result.rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
-    G.player.essence += rw.essence;
-    if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
-    result.rewards.push(STR(1843, rw.essence));
-    // 符文（符文真言的素材）：樓層越高階數越高（js/runeword.js）
-    if (typeof rwRollTowerRuneDrop === 'function') {
-      var towerRunes = rwRollTowerRuneDrop(floor, st2.loot);
-      if (towerRunes.length) {
-        result.rewards.push('🔷 ' + towerRunes.map(function (rid) { return runeLabel(rid); }).join('、'));
-      }
-    }
-    // 邀請券：每次塔BOSS勝利獨立判定，配置來自 Store.xlsx。
-    if (chance(MYSTERY_MERCHANT_SETTINGS.ticketDropRate)) {
-      addMerchantInvitations(1);
-      result.rewards.push('🎟 ' + STR(2444, 1));
-      if (window.recordLootMat) window.recordLootMat('mystery_invitation', 1, 'tower');
-    }
-    // 太古精華（40 層以上；獨立機率，不受掉寶率影響）
-    var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
-    if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
-      G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
-      if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'tower');
-      result.rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="' + STR(13) + '"> ' + STR(1844));
-      UI.dirty.header = true;
-    }
-    // 魔種：僅煉獄之塔 BOSS，獨立判定 1 個
-    var demonSeedRate = demonSeedDropChanceForBoss(floor);
-    if (demonSeedRate > 0 && chance(demonSeedRate)) {
-      G.player.demonSeed = (G.player.demonSeed || 0) + 1;
-      if (window.recordLootMat) window.recordLootMat('demonSeed', 1, 'tower');
-      result.rewards.push(STR(1845));
-      UI.dirty.header = true;
-    }
-    // 魔塵（神鑄材料）：掉落率 = min(30%, 2% + 樓層 × 0.2%)（bossDustRate → formula.js §5）
-    if (chance(bossDustRate(floor))) {
-      G.player.dust = (G.player.dust || 0) + 1;
-      if (window.recordLootMat) window.recordLootMat('dust', 1, 'tower');
-      result.rewards.push(STR(1846));
-      UI.dirty.forge = true;
-    }
+    grantTowerBossRewards(floor, firstClear, b ? b.xp : 0, result.rewards);
 
     blog(STR(1847, result.rewards.join('、')), 'good', 'boss');
   } else if (reason === 'flee') {
@@ -576,7 +500,7 @@ function endTowerFight(win, reason) {
     if (typeof showTowerResultModal === 'function') {
       showTowerResultModal(result, TOWER.player, TOWER.boss, TOWER.dmgDealt, TOWER.bossDmgDealt, {
         autoCountdown: result.autoCountdown,
-        countdown: TOWER_AUTO_RESULT_DELAY
+        countdown: TOWER_AUTO_RESULT_DELAY / towerAutoSpeedMult()   // 遺物「急行令」：場間結算倒數一起縮短
       });
     } else {
       confirmTowerResult();
@@ -596,6 +520,101 @@ function endTowerFight(win, reason) {
     showTowerResultModal(result, TOWER.player, TOWER.boss, TOWER.dmgDealt, TOWER.bossDmgDealt,
       result.autoCountdown ? { autoCountdown: true, countdown: TOWER_AUTO_RESULT_DELAY } : null);
   }
+}
+
+/* 封魔塔 BOSS 勝利獎勵（2026-11-09 自 endTowerFight 抽出）：經驗、魂源、裝備、寶石、精華、符文、邀請券、太古精華、魔種、魔塵。
+   bossXp 省略時依樓層重算（離線「星圖殘頁」沒有實際的 BOSS 實體）；rewards 給陣列就把獎勵文字推進去。
+   首通才有的符文真言解鎖不在這裡，仍由 endTowerFight 處理。 */
+function grantTowerBossRewards(floor, firstClear, bossXp, rewards) {
+  rewards = rewards || [];
+  if (bossXp === undefined || bossXp === null) bossXp = bossStatsFor(floor).xp;
+  // 獎勵：資源（零件改由熔爐升級取得）
+  var rw = towerRewardFor(floor, firstClear);
+  var st2 = getStats();
+  var xpGain = Math.round((bossXp || 0) * (1 + st2.xpBonus / 100));
+  gainXp(xpGain);
+  // 技能熟練度經驗（2026-07-30）：高塔通關比照野外擊殺
+  if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xpGain * SKILL_MASTERY_XP_RATE / 100));
+  UI.dirty.header = true;
+  rewards.push(STR(106, fmt(xpGain)));
+  var soulOriginRate = hellSoulOriginDropChance(floor);
+  if (soulOriginRate > 0 && chance(soulOriginRate)) {
+    G.player.soulOrigin = (G.player.soulOrigin || 0) + 1;
+    if (window.recordLootMat) window.recordLootMat('soulOrigin', 1, 'tower');
+    rewards.push(STR(1839));
+    UI.dirty.header = true;
+  }
+  // 裝備戰利品：依「BOSS 掉落表」各品質獨立擲骰（>100% 必掉 + 餘數機率）
+  var bossRates = dropRatesFor(BOSS_DROP_TABLE, floor);
+  var bossMult = 1 + st2.loot / 100;
+  var lootCounts = [];
+  for (var br = 0; br < bossRates.length; br++) {
+    if (!bossRates[br]) continue;
+    var bn = rollDropCount(bossRates[br] * bossMult);
+    if (!bn) continue;
+    for (var bk2 = 0; bk2 < bn; bk2++) {
+      pushConveyor(makeEquipment(rw.itemLevel, {
+        rarity: br,
+        level: rw.itemLevel
+      }));
+    }
+    if (window.recordLootEquip) window.recordLootEquip(br, bn, 'tower');
+    lootCounts.push(STR(1840, RARITIES[br].color, RARITIES[br].name, bn));
+  }
+  if (lootCounts.length) {
+    rewards.push(STR(1841));
+    for (var i = 0; i < lootCounts.length; i++) {
+      rewards.push(lootCounts[i]);
+    }
+  }
+  var gt1 = randomGemType(), gt2 = randomGemType();
+  addGem(gt1, rw.gemLevel, 1); addGem(gt2, rw.gemLevel, 1);
+  if (gt1 && window.recordLootGem) {
+    window.recordLootGem(gt1, rw.gemLevel, 1, 'tower');
+    window.recordLootGem(gt2, rw.gemLevel, 1, 'tower');
+  }
+  if (gt1) rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
+  G.player.essence += rw.essence;
+  if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
+  rewards.push(STR(1843, rw.essence));
+  // 符文（符文真言的素材）：樓層越高階數越高（js/runeword.js）
+  if (typeof rwRollTowerRuneDrop === 'function') {
+    var towerRunes = rwRollTowerRuneDrop(floor, st2.loot);
+    if (towerRunes.length) {
+      rewards.push('🔷 ' + towerRunes.map(function (rid) { return runeLabel(rid); }).join('、'));
+    }
+  }
+  // 邀請券：每次塔BOSS勝利獨立判定，配置來自 Store.xlsx。
+  // 遺物「神祕殘券」：掉落率另外乘上 (1 + 數值%)（js/relic.js）
+  if (chance(MYSTERY_MERCHANT_SETTINGS.ticketDropRate * (1 + (typeof relicPct === 'function' ? relicPct('merchantTicketDrop') : 0)))) {
+    addMerchantInvitations(1);
+    rewards.push('🎟 ' + STR(2444, 1));
+    if (window.recordLootMat) window.recordLootMat('mystery_invitation', 1, 'tower');
+  }
+  // 太古精華（40 層以上；獨立機率，不受掉寶率影響）
+  var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
+  if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
+    G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
+    if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'tower');
+    rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="' + STR(13) + '"> ' + STR(1844));
+    UI.dirty.header = true;
+  }
+  // 魔種：僅煉獄之塔 BOSS，獨立判定 1 個
+  var demonSeedRate = demonSeedDropChanceForBoss(floor);
+  if (demonSeedRate > 0 && chance(demonSeedRate)) {
+    G.player.demonSeed = (G.player.demonSeed || 0) + 1;
+    if (window.recordLootMat) window.recordLootMat('demonSeed', 1, 'tower');
+    rewards.push(STR(1845));
+    UI.dirty.header = true;
+  }
+  // 魔塵（神鑄材料）：掉落率 = min(30%, 2% + 樓層 × 0.2%)（bossDustRate → formula.js §5）
+  if (chance(bossDustRate(floor))) {
+    G.player.dust = (G.player.dust || 0) + 1;
+    if (window.recordLootMat) window.recordLootMat('dust', 1, 'tower');
+    rewards.push(STR(1846));
+    UI.dirty.forge = true;
+  }
+  return rewards;
 }
 
 function confirmTowerResult() {

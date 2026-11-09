@@ -1968,7 +1968,8 @@ var TOWER_HELL_SOUL_ORIGIN_BASE_RATE = 5;
 var TOWER_HELL_SOUL_ORIGIN_PER_FLOOR = 1;
 // 高塔限時（秒）：各塔獨立（TOWER_BOSS_*.timeLimit），依樓層選塔。
 function towerTimeLimitWithTalents(floor) {
-  return towerBossCfg(floor).timeLimit;
+  // 遺物「封魔令」：BOSS 戰鬥時間 +N 秒（js/relic.js；兩端共載，主執行緒讀 header 面板的遺物等級）
+  return towerBossCfg(floor).timeLimit + (typeof relicValue === 'function' ? relicValue('towerBossTime') : 0);
 }
 var TOWER_ENRAGE_HP = 50;      // 血量高於 50% 觸發（玩家「狂暴閾值」屬性可提高此門檻）；全塔共用
 

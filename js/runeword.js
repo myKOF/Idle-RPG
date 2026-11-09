@@ -59,7 +59,9 @@ function composeRune(id) {
   }
   if (runeCount(id) < RUNE_COMPOSE_COUNT) return STR(1651, runeLabel(id), RUNE_COMPOSE_COUNT);
   var next = RUNES[r.tier];            // tier 是 1 起算，RUNES[tier] 即下一階
-  addRune(id, -RUNE_COMPOSE_COUNT);
+  // 遺物「刻工鑿」（符文）：有機率少消耗一顆
+  var saved = (typeof relicRoll === 'function' && relicRoll('runeComposeSave')) ? 1 : 0;
+  addRune(id, -(RUNE_COMPOSE_COUNT - saved));
   addRune(next.id, 1);
   if (typeof achNoteRune === 'function') achNoteRune(next.id);
   return null;
@@ -72,9 +74,11 @@ function dismantleRune(id) {
   if (r.tier <= 1) return { err: STR(1652) };
   if (runeCount(id) < 1) return { err: STR(44, runeLabel(id)) };
   var lower = RUNES[r.tier - 2];
+  // 遺物「碎石錘」：有機率產量 +1
+  var yieldN = RUNE_DISMANTLE_YIELD + ((typeof relicRoll === 'function' && relicRoll('runeDismantleBonus')) ? 1 : 0);
   addRune(id, -1);
-  addRune(lower.id, RUNE_DISMANTLE_YIELD);
-  return { n: RUNE_DISMANTLE_YIELD, id: lower.id };
+  addRune(lower.id, yieldN);
+  return { n: yieldN, id: lower.id };
 }
 
 /* ============================================================
@@ -227,6 +231,12 @@ function eraseRune(it, idx) {
   P.gold -= cost.gold;
   P.scrap -= cost.scrap;
   P.essence -= cost.essence;
+  // 遺物「符文精工鑽」：有機率符文不消失，退回符文庫
+  var keptRune = it.runes[idx];
+  if (typeof relicRoll === 'function' && relicRoll('runeEraseKeep')) {
+    addRune(keptRune, 1);
+    if (typeof blog === 'function') blog(STR(2470, runeLabel(keptRune)), 'good');
+  }
   it.runes[idx] = null;
   if (typeof markStatsDirty === 'function') markStatsDirty();
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.equip = true; UI.dirty.inv = true; UI.dirty.header = true; }
