@@ -143,8 +143,8 @@ test('ABYSS: physical/magic hits, direct damage and DoT amplify once; player and
     const before = e.hp; c.tickStatuses(e, 1); close(before - e.hp, 155);
     assert.equal(c.applyEnemyHpDamage(c.FIELD.player, 100), 100);
     e.towerBoss = true; e.maxHp = 1000; e.hp = 1000;
-    assert.equal(c.applyEnemyHpDamage(e, 1000), 200, '易傷不能突破高塔單次扣血上限');
-    assert.equal(c.resolveHit(c.FIELD.player, e, { ...cfg, atk: 1000, matk: 1000 }, def).hpDamage, 200);
+    assert.equal(c.applyEnemyHpDamage(e, 1000), 50, '易傷不能突破高塔單次扣血上限（5%）');
+    assert.equal(c.resolveHit(c.FIELD.player, e, { ...cfg, atk: 1000, matk: 1000 }, def).hpDamage, 50);
   }
 });
 

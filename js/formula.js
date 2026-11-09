@@ -777,8 +777,12 @@ function effectiveMPen(st, ent) { return ((st && st.mPen) || 0) + penBuffValue(e
    回傳 { dmg, crit, miss, blocked, killed, thorns, heal, procs[],
           randomDamageMultiplier, highCritRandomRoll }                   */
 var CRIT_HIGH_RANDOM_MULTIPLIER = 1.195; // 暴擊且隨機倍率達 119.5% 時，使用高倍率暴擊飄字樣式
-var TOWER_BOSS_DAMAGE_CAP_PCT = 20;
-// 高塔 BOSS 的單次生命傷害上限；護盾吸收仍由各傷害流程先處理，只有實際扣血量受限。
+/* 高塔（封魔塔）BOSS 的單次生命傷害上限（% 最大生命）；護盾吸收仍由各傷害流程先處理，只有實際扣血量受限。
+   2026-11-09 使用者決策：20% → 5%。例外只有兩種：
+     ・特殊技能指定：技能自己寫明對 BOSS 扣多少（如【地爆天星】的 BOSS 欄），
+       呼叫 applyEnemyHpDamage(..., { towerCapExempt: true }) 不經此上限
+     ・本機 GM 最終扣血覆寫（gmDamageOverrideAmount），原本就跳過此上限 */
+var TOWER_BOSS_DAMAGE_CAP_PCT = 5;
 function towerBossHpDamage(ent, damage) {
   var amount = Math.max(0, Number(damage) || 0);
   if (!ent || !ent.towerBoss || !(ent.maxHp > 0)) return amount;
@@ -810,7 +814,8 @@ function bossPctHpFactor(ent) {
 }
 // 非 resolveHit 的直接傷害也必須經過同一個高塔 BOSS 上限。
 // opts.fixedPct＝這一筆是「固定扣最大生命 N%」：不吃任何增傷乘區（海淵葬界的易傷等），
-// 但高塔 BOSS 單次 20% 上限仍保留（目前只有超神【地爆天星】，2026-10-26 使用者決策）。
+// 目前只有超神【地爆天星】（2026-10-26 使用者決策）。
+// opts.towerCapExempt＝特殊技能指定的 BOSS 扣血量，不受高塔 BOSS 單次 5% 上限（2026-11-09 使用者決策）。
 function applyEnemyHpDamage(ent, damage, drainHits, opts) {
   HIT_DIRECT++;
   var wasAlive = ent && ent.hp > 0;
@@ -821,7 +826,7 @@ function applyEnemyHpDamage(ent, damage, drainHits, opts) {
   if (ent && !(ent.maxHp > 0) && typeof skill2RebirthDamageTakenMultiplier === 'function') {
     amount *= skill2RebirthDamageTakenMultiplier(ent);
   }
-  amount = towerBossHpDamage(ent, amount);
+  if (!(opts && opts.towerCapExempt)) amount = towerBossHpDamage(ent, amount);
   // 菁英詞條（js/elite.js）：減傷／無敵／鏈結分擔；持續傷害與衍生傷害也要吃到
   if (ent && ent.affixes && typeof eliteIncomingDamage === 'function') amount = eliteIncomingDamage(ent, amount, null);
   var gmDamage = gmDamageOverrideAmount(ent);
