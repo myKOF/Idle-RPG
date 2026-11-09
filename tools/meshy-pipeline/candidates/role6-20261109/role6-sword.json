@@ -1,0 +1,14 @@
+{
+  "referenceSha256": "21aa2e0a0c3779dec19ac3b6d20384e2529ebf6950c9d6526813fda019065e5c",
+  "outputSha256": "45b6259f4a16c0c3e9de49ef7cdafcecb82711c9bb9458324d54fa9476a7ede6",
+  "blenderVersion": "4.5.10 LTS",
+  "license": "Role6 model and reference artwork explicitly authorized by user in chat, 2026-11-09",
+  "parts": 25,
+  "triangles": 6278,
+  "gripRadiusMeters": 0.0135,
+  "guardRootY": 0.115,
+  "bladeTipY": 0.99,
+  "pommelEndY": -0.06165,
+  "rearHiltLengthFactor": 0.45,
+  "axes": "blade +Y / edge +X / front +Z / grip at origin; source image hidden details reasonably completed"
+}

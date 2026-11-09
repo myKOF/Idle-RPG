@@ -105,6 +105,7 @@ function startTowerFight(floor) {
   UI.dirty.header = true;
   blog(STR(1825, fmt(cost)), 'info');
   var st = getStats();
+  if (typeof closeMysteryMerchant === 'function') closeMysteryMerchant();
   G.tower.active = true;
   TOWER.floor = floor;
   TOWER.boss = makeBoss(floor);
@@ -390,6 +391,7 @@ function towerTickInsideArena(dt) {
 
 /* ---- 結算與失敗分析 ---- */
 function endTowerFight(win, reason) {
+  if (TOWER.showingResult) return;
   if (!win && reason === 'death' && TOWER.player && TOWER.player.hp > 0) return;
   // 玩家技能【不屈鬥魂】【天地再造】【逆轉乾坤】（js/elite_boss.js）：BOSS 致命傷時保命／復活，戰鬥繼續，呼叫端本來就會 return
   if (win && typeof eliteBossUndying === 'function' && eliteBossUndying(TOWER.boss)) return;
@@ -491,6 +493,12 @@ function endTowerFight(win, reason) {
       if (towerRunes.length) {
         result.rewards.push('🔷 ' + towerRunes.map(function (rid) { return runeLabel(rid); }).join('、'));
       }
+    }
+    // 邀請券：每次塔BOSS勝利獨立判定，配置來自 Store.xlsx。
+    if (chance(MYSTERY_MERCHANT_SETTINGS.ticketDropRate)) {
+      addMerchantInvitations(1);
+      result.rewards.push('🎟 ' + STR(2444, 1));
+      if (window.recordLootMat) window.recordLootMat('mystery_invitation', 1, 'tower');
     }
     // 太古精華（40 層以上；獨立機率，不受掉寶率影響）
     var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);

@@ -16,10 +16,11 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
   const current = bosses(source);
   assert.equal(result.length, 50);
   for (let i = 0; i < result.length; i++) {
-    if (i === 1) {
-      assert.equal(result[i].name, '樹人');
-      assert.equal(result[i].img, 'sprites/boss/boss_treant.png');
-      assert.equal(result[i].model3d.file, 'images/models/npc3d/treant.glb');
+    if (i === 1 || i === 11 || i === 21) {
+      const suffix = i === 1 ? '' : '_lv' + (i === 11 ? 2 : 3);
+      assert.equal(result[i].name, i === 1 ? '樹人' : i === 11 ? '樹人Ⅱ' : '樹人Ⅲ');
+      assert.equal(result[i].img, 'sprites/boss/boss_treant' + suffix + '.png');
+      assert.equal(result[i].model3d.file, 'images/models/npc3d/treant' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Unsteady_Walk','Unsteady_Walk','Weapon_Combo_2','Attack','Basic_Jump','Shot_and_Fall_Forward']);
     } else if (i === 2 || i % 10 < 2) {
       const variant = i === 2 ? 3 : i % 10 + 1;

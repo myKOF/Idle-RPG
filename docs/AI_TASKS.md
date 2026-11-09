@@ -1,3 +1,72 @@
+## UI-CHAR-PORTRAIT-INTEGRATE-20261109 — 核准0～6轉頭像正式接入
+
+- Owner：Codex；Done，單一開發者。使用者核准0～3轉畫風、續繪4～6轉後，明確要求將全部七張接入截圖圈選的側欄角色圖示與角色頁頭像；沿用已完成單一入口。本輪0～6轉實際接入完成。
+- 前置：首批0～3轉已接入，4～6轉核准原圖及模型參考已完成。範圍僅js/ui.js圖表、index的ui快取、三份新WebP、既有頭像來源／提示詞與素材包、LV及本段；未改在製六轉3D候選、玩法、模型、Worker、String、存檔／解鎖或其他聊天內容，不合併／推送。
+- 完成：CHARACTER_PORTRAITS擴至0～6轉，兩處頭像依正式header快照使用相同路徑；原0～3轉原圖／匯出逐位元保持。核准4～6轉插畫無重畫、改色或構圖變更，Sharp等比輸出256px WebP共66,706 bytes。7～10轉暫用原icon_avatar.png，入口／轉生／等級／紅點沿用，ui快取更新20261109-character-portraits-0-6。
+- 修改：js/ui.js、index.html、LV_upgrade_system.md、本段、docs/assets/CHARACTER_PORTRAITS_SOURCE.md／CHARACTER_PORTRAITS_PROMPTS.json、images/ui/hero-portraits/rebirth-{4,5,6}.webp。唯讀檢查：規範／Workflow／既有任務、使用者截圖、0～6轉模型來源與核准插畫、既有頭像匯出器／素材庫解析、header／GM／Worker存檔及原有相關測試；未修改其他聊天Role6的四支未追蹤工具及未提交任務內容。
+- 衝突：index與Claude同檔不同區段，對方改formula／hero3d／renderer／skills2快取，本輪只改ui行。以首批頭像前bca501a8^的index為base，整組已授權頭像差異三方套到ai/claude現況merge-file exit0，無語意相依；不合併對方內容或處理其既有hero3d快取差異。僅stage本項任務段，保留Role6未提交內容。
+- 素材：沿用已確認的本聊天image_gen插畫及已授權Role4／Role5／Role6正面參考；Role6只作外觀參考，不接入在製模型。素材庫codex-authored/character-portraits-20261109保存七張原圖／參考／匯出及精確提示詞、來源與SHA manifest，共24份逐項核對；先提交9caec03。遊戲Commit為本段所在「[Codex] feat: 接入核准的0至6轉角色頭像」，SHA見聊天交付。
+- 測試：node --test --test-reporter=tap tests/header-resources.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs，20/20通過；npm.cmd run build通過698檔；node tools/string-table/build_string_csv.cjs --check寫死0；node tools/meshy-pipeline/src/export-character-portraits.cjs --check通過24份來源／輸出；git diff／stat／check通過。TAP／Build留logs/character-portraits-integration-{tests.tap,build.log}。未重跑全庫，上一輪已記錄的其他UI測試既有失敗未修改。
+- 實際驗收：隔離Edge新局、正式主頁／原生Worker，用既有GM指令真實切換0→1→2→3→4→5→6→7→8→9→10→5，兩處圖片載入與轉生文字／紅點逐階一致，單一入口與點擊頭像／等級開啟角色頁、active皆通過；再切1／1000級驗紅點隱藏／恢復。WorkerBridge.saveAutoNow落地後重新載入、按繼續遊戲，5轉存檔與兩處新圖正確恢復，無偽造header投影，Console error／warning皆0，不接觸使用者瀏覽器存檔。首輪QA暫停模擬導致GM資料不刷新，另有備援圖相同時未等待文字重繪的競態；修正測試等待流程後重驗通過，未修改產品配合測試。
+- 已目視七階遊戲截圖及重載後5轉；預覽／qa-report.json在本聊天portraits-integration。無本項未完成實作或已知新增缺陷；7～10轉尚未繪製，保持原圖備援，未做行動真機／長玩。可供Review及使用者合併；未合併／推送develop或main。下一步使用者重新載入Codex工作區遊戲驗收，後續由整合者合併；其他在製工作保持。
+
+## UI-CHAR-PORTRAIT-20261109 — 角色頭像入口整合及0～3轉頭像預覽
+
+- Owner：Codex；Review（入口整合與首批預覽完成，待使用者檢視畫風），單一開發者。使用者要求頭像／轉生／等級／角色入口合一，最終0～10轉11張，本輪先繪0～3轉供檢視。
+- 前置：既有角色tab與header快照、已授權Role／Role1／Role2／Role3；六轉在製候選不引用、不修改。允許index角色入口及本項快取、css/ashen-forge.css對應樣式、js/ui.js頭像顯示、LV、本段、新獨立素材／來源記錄與匯出工具；禁止模型、戰鬥／數值、Worker、存檔／解鎖及其他進行中檔案，不合併／推送。
+- 完成：原生button合併頭像／轉生／等級，沿用data-tab=char，取消重複頭盔角色入口；0轉也由String679顯示，String63作無障礙名稱，保留可轉生紅點與active／hover／focus。0～3轉首批頭像依header自動切換，角色頁同步；4～10轉暫用原頭圖。CSS圓形金框52px，四張256px WebP共74,838 bytes；沒有新增玩家字串／配置或玩法變更。
+- 修改：index.html、css/ashen-forge.css、js/ui.js、LV、本段、docs/assets/CHARACTER_PORTRAITS_SOURCE.md及PROMPTS.json、images/ui/hero-portraits/rebirth-{0,1,2,3}.webp、tools/meshy-pipeline/src/export-character-portraits.cjs。唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、原模型與來源授權、角色切頁／header／提醒／GM鍵盤邏輯、相關測試、String及素材庫解析。不改六轉工具／模型與其他聊天的任務內容。
+- 美術：參考本專案已授權0～3轉模型；0轉另以Blender實際渲染，1～3轉使用既有模型正面預覽。RPG Mote Studio網頁工具無法存取，本輪以內建image_gen每轉各一請求重繪；原始插畫1254px無文字／圓框，Sharp只做等比WebP匯出。原圖／參考／精確提示詞與15份來源／輸出SHA核對保存在素材庫codex-authored/character-portraits-20261109，先提交23f9823；遊戲提交為本段所在「[Codex] feat: 整合角色頭像入口與首批轉生頭圖」，SHA見聊天交付。
+- 衝突：index與Claude重疊於同檔不同區段，對方改formula／hero3d／renderer／skills2快取，本項只改角色DOM及ui／ashen-forge快取。既有分支的hero3d快取差異會在完整歷史合併中衝突，本項不觸及；以任務開始前HEAD index為base，將本項差異三方套到ai/claude現況的merge-file試跑exit0。沒有合併Claude內容／解決其他聊天既有衝突。Role6未提交記錄與四份未追蹤工具完整保留，僅stage本項任務段。
+- 測試指令：node --test --test-reporter=tap tests/header-resources.test.cjs tests/ui-worker-panels.test.cjs tests/init-ui-smoke.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs，30項27通過3失敗。以唯讀fs overlay載入HEAD原js/ui.js重跑失敗所屬兩檔，逐項重現相同3個既有失敗：initUI缺DIVINE_FORGE_MODES、gem.socket靜態斷言、item.upgrade缺UI；未修改斷言／測試。原始TAP保留logs/character-portraits-{tests,baseline}.tap。
+- npm.cmd run build通過698檔；node tools/string-table/build_string_csv.cjs --check寫死0；node tools/meshy-pipeline/src/export-character-portraits.cjs --check通過15份來源／輸出；git diff／stat／check通過。既有3項測試失敗是已知限制，不宣稱全綠。
+- 實際驗收：隔離Edge新局、正式主頁及原生Worker，僅在測試瀏覽器包裝header投影為可控轉數／等級；0→1→2→3→4→10→0正確切圖／備援、兩處頭像一致、等級／轉生／紅點條件正確。圖片／等級點擊、Enter／Space及active皆通過，1920／1280／900寬度已截圖目視，Console error／warning皆0。localhost既有Enter為GM快捷鍵，改127.0.0.2驗正式遊戲環境的原生鍵盤行為；未修改GM。未做行動真機／全遊戲長玩。
+- 預覽與QA在本聊天visualizations/portraits，含四圖總覽、正式角色頁／側欄與qa-report.json。未完成：4～10轉七張依使用者「先看0～3轉」保留後續；首批可繼續依回饋調整。入口實作已可Review，畫風待使用者檢視後再決定合併及後續製作，沒有合併／推送develop或main。後續接手者為使用者與整合者。
+
+## HERO3D-ROLE6-20261109 — 六轉金甲、原畫新劍及左臂盾
+
+- Owner：Codex；In Progress，單一開發者。使用者提供Role6.glb及原畫，已逐項確認模型／原畫本遊戲使用、修改及依圖製作授權；新增右手原畫造型劍，拆下背盾裝左前臂，接入六轉並沿用既有動作，交付遊戲GIF。保留0～5轉及黃金騎士。
+- 前置：ai/codex HEAD f6ac3ff6，工作區已有另一聊天樹人第2／3階進行中修改（NPC Excel／CSV／data、bridge／Worker、index資料快取、模型／頭像／工具／測試與LV／任務段），全部保留不納入。本項不改NPC／戰鬥／存檔／數值／轉生條件，不合併推送。
+- 範圍：Role6人物／新劍／盾與原圖旁載／修復資料、Blender製作及匯出／相關測試、hero3d六轉選擇、index僅hero3d快取、LV及本段；素材庫保留授權原檔／原畫、可編輯Blend、成品／依賴／SHA及原生QA。使用既有MakeHuman手部／Blender骨架工作流程，不另造人體或改舊人物。
+- 來源：Role6 SHA cdfe8ccab67419b94dffb805a45b06d5370196dd21b43d36a8945a38a77be901，19670頂點／一骨架68節點／Running，T姿勢，三圖2048px。只取新外觀與盾，沿用核准Role1骨架／六動作／右手正握及原出刃邏輯；新劍依本次金色彎鉤護手與銀色長刃原畫由Blender製作，不再使用四／五轉紅紋劍。
+- 預檢：新模型／工具／測試與LV／任務無外部來源；hero3d與Claude51784609僅在不同區段（對方hero3dFrame供輪廓動態，本項只在頂端選模型），以共同祖先3716a637及對方現況作三方merge-file exit0，可分段修改。index的hero3d快取行與Claude同值、試跑exit1，依AI_RULES3.2暫不修改，先完成模型／可審查預覽，再就該行提出明確處理確認；其他資料快取與NPC任務無語意相依。
+- 驗收：原生前後／多角度持劍與左臂盾、全六動作手盾位置及身體／劍碰撞檢查，背部無盾殘片、原PBR貼圖保持；原動作與右手／握點保持，0～6轉及存讀／失敗回退、相關回歸／Build／來源SHA與高清遊戲GIF。素材先Commit再遊戲Commit，後續使用者Review與合併。
+
+- 預覽進度（2026-11-09，尚未完成整體接入）：使用者要求先看清晰攻擊GIF，並依追加原畫修正盾牌歪斜。已將盾長軸從世界垂直改成與LeftForeArm平行、尖端朝手腕，盾面轉往左臂外側；保留原盾UV／原三張2048px貼圖，新增雙固定帶與內側支架。右護腕末端增加手腕漸變權重，避免第四招彎腕時劍柄穿入。右手正握、原25骨架與六條動畫取樣保持；新金色彎鉤護手銀刃劍由Blender製作。
+- 本次預覽修改僅兩支新工具 `tools/meshy-pipeline/blender/build_role6_sword.py`、`prepare_role6.py` 及本段；唯讀檢查Hero3D／舊Role1／原Role6與原畫、舊製作／預覽工具、PBR及他分支快取衝突。正式 `js/hero3d.js`、index、LV、0～5轉及遊戲素材尚未修改。候選GLB／可編輯Blend／旁載原圖／腳本與報告留聊天visualizations的 `role6-game-20261109`，尚未建立正式素材庫套件。
+- 驗證：Blender4.5.10LTS實際重匯入並打包貼圖、兩支Python ast.parse及git diff --check通過。製作器逐位比對全部六動作channels／samplers，身體與盾邊界0；保留核准閉合右手幾何。原生Edge使用正式Hero3D／PBR載入候選模型、只注入QA鏡頭／pose，Console error0。第四招按約60Hz取143個真實蒙皮姿勢，以BVH候選加雙向三角面線段窄檢，身體／盾、劍／盾、身體／劍表面相交均0；握柄與手指接觸不作為穿模判定。
+- GIF為1920×1080、30FPS、84幀／2.8秒、原速第四招正面及後側同步上半身近景，鏡頭跟隨角色，劍尖／下身刻意不在近景範圍；另附右手與盾內側固定處放大PNG。Pillow讀回84幀、loop0、左右兩視圖均有變化，已目視讀回圖。這是遊戲同一渲染器的候選模型診斷預覽，並非已接入正式6轉場景。
+- 未完／風險：全動作102姿勢初檢仍有Attack1的護腕／盾緣及Attack2的劍柄／護腕交叉，不能宣稱全動作無穿模；需繼續修整再正式接入。角色衣甲本身及所有動作間過渡尚未完整避碰／長玩，未跑正式接入回歸與Build。整體仍In Progress，本輪未Commit，未合併／推送；後續先供使用者檢視盾軸與握點，完成其餘避碰，再處理已明列的index同值衝突、六轉選擇／回歸與雙庫提交，不可直接合併候選。
+
+- 第2版追加（2026-11-09）：使用者指出右腕扭曲，要求連桿縮減70%、允許少量盾牌穿模，左手改握拳。已移除上一版將護腕末端混到RightHand的不當權重，將金屬護腕剛性綁RightForeArm並在綁定網格收窄腕口；核准右手的幾何／法線／權重與原握點保持。新劍只縮短柄尾以避開第四招折腕，劍刃不動。連桿本體10.4cm改為3.12cm，盾牌沿原法線靠近手臂7.28cm，長軸仍平行左前臂，未因避碰再拉遠。刪除原左張掌，將既有核准手部網格鏡像為左手後收拳／對掌拇指，在Blender重整閉合表面，僅綁LeftHand／LeftForeArm。雙手改為均勻棕色手套，移除上一版鋸齒金色頂點色塊。
+- 第2版驗證：聊天 `role6-revision2-20261109/verify-revision.py` 由獨立GLB讀取量測兩桿長度比例0.300002以內，盾位移0.0728m；309個腕部三角角點ForeArm權重均為1。六動作channels／samplers／interpolation與原IBM逐位一致、右手原網格逐位一致；新左拳5165頂點／10338面、邊界0、正體積且只使用兩根左手骨。三張原圖SHA相同；Blender原生重開Blend六動作／三張原圖打包通過；Edge同正式Hero3D與PBR原生渲染伸手、出手、收招及左拳／短連桿近景，Console error0。
+- 第2版預覽與限制：更新1080p、30FPS、84幀的第四招同步近景GIF，另保留右手伸展／命中／收招、左拳和盾固定處PNG；檔案、可編輯Blend、製作腳本、QA及輸出SHA留上述聊天資料夾。102姿勢檢查第四招身體／劍及劍／盾為0；縮短盾桿後肩甲／盾緣、Attack2劍／盾接觸保留，符合本輪允許少量盾牌穿模的指示；Attack2仍有劍柄／護腕接觸待後續正式接入前修整，未宣稱全動作無穿模。這輪仍是使用者要求先看的候選預覽，尚未改正式模型選擇／快取／LV、未建立雙庫正式素材套件，未Commit／合併／推送；整體接入任務繼續In Progress，不可直接合併候選。原0～5轉及黃金騎士不變。
+- 第3版進行中（使用者修訂）：清除後頸與腰後殘留盾面／盾緣，雙手必須使用Role6原本手掌網格與原UV／材質彎指，取消前版複製／鏡像／Remesh重做手形；右手只收握現有劍柄，左手收拳，既有六動作、右劍位置／盾軸與已縮70%連桿保持。本段及prepare_role6.py授權延續，新增pose_role6_hands.py作原生指骨彎曲／烘焙輔助，預檢無外部修改。先做原手與背面近景／攻擊預覽，正式接入與同值快取衝突仍待後續，不改舊皮膚。
+- 第3版握姿追加預覽（2026-11-09，待使用者目視）：依正反面持劍示意，將原手背甲與原前臂甲分開、分別剛性綁Hand／ForeArm，腕縫加小型棕色皮革關節，雙手指掌仍為Role6原表面及UV。新增limit_role6_wrists.py，只重取樣雙Hand rotation並限制彎腕48度、保留軸向扭轉；身體／Sword／其他軌、25骨架及IBM逐位保持，不能再稱全部動畫逐位完全一致。盾長軸／70%短桿不動，後頸及腰後殘盾另清除。
+- 本輪依使用者「四指可以、拇指仍變形／再對照示意優化」調整：拇指使用原表面細分與原UV，保留兩指節長度、圓整原橫截面、掌根收向柄側、末端扣向食指外側；UV重複點統一變形，局部ARAP整理虎口，未新增替代手指。四指實際握柄接觸點位置與已接受版本完全相同；舊最近指頭分類誤將虎口列作Index，QA明確排除該近掌部，只驗原Index遠端分支，未放寬位移容許值。四指實際劍柄BVH最小間隙0.079～0.173mm。
+- 最新候選SHA a051e9dd30526b5934110e17d3d4a9a814e5eb30c85a371fac60584aaca09a1c，保存在聊天role6-revision3-20261109，含原生Blend／三張打包原圖、四支製作器、原手／掌心／手背／拇指側近景、84幀1080p原速Attack4 GIF及獨立QA。Blender verify-native-grip.py通過四指接觸錨點位移0、雙指節長度誤差小於1e-6m、原PBR SHA／六actions／獨立手甲綁定；verify-grip-motion.cjs以120Hz真實姿勢確認攻擊握點漂移小於0.00000025m、腕角最大48.044度，Death原有放劍軌仍保留。四支工具AST及diff --check通過。此為候選檢視，未宣稱達到原畫手部精度或全六動作無穿模；正式接入、剩餘避碰、回歸／Build、雙庫素材提交仍未完成，未Commit／合併／推送，禁止直接合併候選。其他聊天新增神秘商人／寶石等工作區修改均保留未處理。
+- 保存提交（2026-11-09）：使用者接受「暫時這樣」並要求commit及清理unstaged；本次保存已確認候選與製作進度，正式接入仍待辦。新增獨立素材庫codex-authored/hero3d-role6-candidate-20261109，保存原Role6／授權原畫、Role1依賴、兩份可編輯Blend、成品／三原圖、接觸基準、QA與七支製作／驗證／匯出工具，共25項SHA加manifest。素材庫先提交116aa9994f484a7fb81fa750ce1d73a9c6c6ce83；遊戲提交為本段所在「[Codex] chore: 保存六轉劍盾候選與製作驗證工具」。
+- 專案保存：tools/meshy-pipeline/candidates/role6-20261109七份候選輸出／旁載圖、五支Blender製作／驗證工具、兩支Node匯出／動作驗證工具、docs/assets/HERO3D_ROLE6_CANDIDATE.md及本段。沿用素材庫解析器，export-role6-candidate --apply／--check核對25項來源／輸出、受保留的原模型及stage SHA；不依賴原桌面／聊天暫存位置。候選未連至角色入口，沒有修改正式hero3d／index快取、LV、戰鬥、表格、解鎖或存檔。
+- 提交前重驗：Blender --python-exit-code 1 --python tools/meshy-pipeline/blender/validate_role6_candidate.py -- PACKAGE ROLE1 RESULT通過（原生Blend六動作／三原圖打包、骨架／IBM／非腕軌逐位、四指接觸位移0、拇指指節長度）；node tools/meshy-pipeline/src/validate-role6-motion.cjs CANDIDATE RESULT通過（120Hz、攻擊握點／腕角斷言，保留Death放劍）；node tools/meshy-pipeline/src/export-role6-candidate.cjs --check通過25項；五支Python AST、兩支Node --check、npm.cmd run build通過699檔、雙庫diff／stat／check及索引SHA核對。Node既有Three模組型別提示保留，未為此改package設定；未重跑全庫或正式轉生場景。
+- 清理：刪除本任務生成的Python快取、已歸檔QA的重複日誌／暫存報告、除錯腳本／圖、GIF逐幀輸出及Blend自動備份；保留使用者已收到的最終GIF／近景、可編輯來源與正式候選。其他聊天修改已於開始本輪前自行提交，本輪未代改／刪除。後續由使用者決定續修或正式接入；現階段可合併的是候選保存與工具，不能據此宣稱六轉已上線或全動作無穿模，未合併／推送任何分支。
+
+## TOWER-TREANT-LV2-20261109 — 樹人第2階沿用全動作
+
+- Owner：Codex，Done，單一主開發者。使用者提供 BOSS2_LV2.glb，要求第2隻BOSS第2階套用第1階全部動作、接入遊戲並提供GIF。來源與修改授權沿用已記錄的使用者自製／生成BOSS2系列及本次匯入指示。
+- 前置：第1階treant.glb及五動作已完成。第2階放第12關（50列循環的62／112層），保留第2關與其他48列。允許本段、NPC第493列外觀／動作與CSV／衍生data、必要主頁／bridge／Worker快取、獨立GLB／頭像／素材包、Blender製作／預覽／匯出工具、相關回歸與LV／來源文件。禁止傷害、技能、數值、存檔／解鎖及其他工作區；不合併／推送。
+- 驗收：Blender保留新來源外觀並套用走路、三攻擊、死亡；比對第1階動作時間與有效蒙皮變換、模型幾何及動畫、原生Excel正常重開與窄改、遊戲實際載入、五動作GIF及總覽、相關測試／Build與雙庫提交。後續交使用者驗收與整合。
+- 預檢：NPC／資料／模型／工具／文件乾淨；Claude在index另改formula／hero3d／renderer／skills2快取，本項僅改data與bridge快取，將以三方試跑確認不同區段無衝突再更新。
+- 使用者追加BOSS2_LV3.glb第3階，同樣套用全部動作並接入；授權範圍擴至第503列tower_boss_22、第3階獨立模型／頭像／素材包／匯出器／交接及同組回歸。第72／122層依既有50列循環使用第3階。第2階GIF繼續完成；第3階僅需接入及透明頭像，不額外要求五動作GIF。兩階同輪驗證／提交，其他48列及所有遊戲數值保持。
+
+- 完成：新增treant_lv2／lv3.glb與兩份1080px透明頭像、Blender製作／有效蒙皮QA／渲染／GIF工具、兩階匯出器及來源交接；更新NPC第493／503列、CSV／data、主頁data／bridge與Worker資料快取、三份相關回歸與LV／本段。原第1階及其他BOSS模型保持，通用3D／戰鬥邏輯未修改。58骨五動作原速沿用，兩階各10,433面唯一對應、三張貼圖逐位元相同；60Hz各1,103樣本最大蒙皮矩陣誤差0.00000535，Blend重開五動作／貼圖打包通過。
+- NPC／Excel：使用者確認關閉後，原生Excel兩次各13格修改及正常模式重開；每次核對28,365格與七物件。由第2階修改前基線逐格比對最終檔，僅第493／503列指定26格改動，其餘資料／公式及48列保持。24,535格樣式、樣式定義、列結構、合併／驗證／條件格式／篩選／圖形及視圖保持；Excel原生儲存依本機顯示度量正規化列高（最大2.4pt）及欄寬（最大0.0508字元），詳見素材QA。CSV／data只有兩列語意改動，NPC再次試跑0，String寫死0。
+- 衝突／同副本：index與Claude不同快取區段，merge-file試跑exit0。Worker第23行data快取與Claude formula快取同列、試跑exit1，使用者明確同意分段更新後只改data，不合併Claude分支。工作期間另有本副本主角清晰度及Role6任務；保留其修改，只提交本任務段與檔案。
+- 測試：PowerShell篩選hero3d-*、npc3d-runtime／locomotion、tower-action-motion／battlefield／arena-bounds、battlefield、worker-protocol／shim與treant-asset，node --test --test-concurrency=2 --test-reporter=tap共152/152；第3階加入後 node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/treant-asset.test.cjs tests/vfx-editor-cache-versions.test.cjs共21/21。npm.cmd run build最終698檔通過，Python四工具解析、雙階與第1階匯出SHA／diff檢查通過。
+- 實機：隔離Edge、新局、正式主頁／原生Worker，GM鎖血／跳關後實際第12及22關載入對應GLB，走路／三攻擊／死亡存在、實際施法姿勢與NPC識別核對；撤退後按正式確認按鈕正常換場，最終Console error／warning皆0。初輪直接在後端確認結果未關閉UI彈窗，已修正測試操作後重驗；初輪另記錄一筆未修改音訊模組的振盪器頻率限幅警告，完整原始及最終QA均留存，未改產品配合測試。
+- GIF：第2階五份720×784原速GIF及1920×1200總覽，走路20FPS、攻擊／死亡10FPS、總覽20FPS／118幀／5.9秒，死亡末端保持後循環。逐份驗證尺寸、時長與循環，目視檢查總覽／動作及透明頭像；第3階依追加需求接入並提供頭像，未額外要求GIF。預覽留聊天visualizations，不進Git。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、原NPC／塔戰、Hero3D／Npc3D／battle-renderer／Worker與GM契約、參數／Excel管線、既有樹人／骷髏王來源與匯出工具及他分支差異。未改傷害、技能、速度／距離／倍率、協議、存檔、開放條件或其他工作區。素材庫兩套件共59項SHA，先提交bf06d26668d9a7fa97c088dd7e6228ae5c5d10ea；遊戲提交為本段所在提交，SHA見回報。
+- 交付：本項無未完成，可供使用者Review及合併，未合併／推送develop或main。已知限制：上述Excel原生尺寸正規化、未做行動真機／跨瀏覽器／長時間效能；保留其他聊天Role6進行中段落，不納入本提交。下一步由使用者重載驗收兩階外觀，來源與重建見docs/assets/TOWER_TREANT_LV2_SOURCE.md與TOWER_TREANT_LV3_SOURCE.md。
+
 ## SYNC-DIAGNOSTIC-STAGING-20261109 — 忽略診斷輸出不阻塞合併
 
 - Owner：Codex，Done，待本提交正常同步。本輪 1 授權的樹人合併已提交72a4cbb0，接續修復原阻塞。控制器將模型回報的 ignored logs/*.tap 當作正式檔案git add，造成已完成驗證仍停止。
@@ -15415,3 +15484,51 @@ Worker 存活且頁面正常完成載入。
 - 測試：`node --test tests/tower-action-motion.test.cjs tests/tower-battlefield.test.cjs tests/tower-arena-bounds.test.cjs tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/worker-protocol.test.cjs tests/treant-asset.test.cjs` 40/40。廣泛執行npc3d-*、hero3d-*、tower-*、purgatory-tower、elite-*、npc-elite-skills、worker-protocol／shim、battlefield、vfx-editor-cache-versions、treant-asset與string-table共294項284通過。9項穩定失敗在唯讀覆蓋HEAD的同73項測試重現：elite-data規則、飛彈、塔技能資料、菁英體型、NPC技能資料2項及塔獎勵UI缺divineStoneIconHTML的3項。另火鏈4f隨機失敗：本版與HEAD各獨立6次皆5過1失敗；未降低斷言或改無關檔。`npm.cmd run build`697檔通過，String寫死0，diff檢查及舊三模型匯出SHA通過。
 - 實機：IAB無連線後，隔離Edge／正式頁面／原生Worker、seed17新局與GM鎖血，沒有碰使用者存檔。樹人817幀、骷髏王722幀，攻擊／施法姿勢與實際移動重疊0；樹人三攻擊循環、走路與死亡名稱皆核對，正常退場，Console error／warning0。早期測試把`damage 100`誤當百分比，已改正式GM的`damage 100%`後驗證死亡通過；另一測試的原生stats血量上限也已一致化，沒有修改產品以配合測試。模型五動作Blend正常重開保留、貼圖打包，高清GIF五份1080×1144及1920×1200總覽，20FPS原速，118幀總覽5.9秒，確認尺寸／時長／循環。預覽與測試畫面放聊天visualizations。
 - 交付：素材庫套件tower-treant-20261109共32個SHA項，原五檔、正式匯出、可編輯Blend與工具／QA先提交`7af7c081`；遊戲提交為本段所在提交，SHA見回報。完整來源與操作見docs/assets/TOWER_TREANT_SOURCE.md。沒有未完成實作，可供使用者合併及重載驗收；未合併／推送、未處理develop既有合併。已知限制為上述既有測試失敗及未做行動真機、跨瀏覽器、長時間效能／遊玩；動畫內部仍為使用者提供的跳躍／連擊姿勢，並無新增即時物理。
+
+
+## HERO3D-CLARITY-20261109 — 同尺寸角色清晰度與前後對照
+
+- Owner：Codex，Done，單一開發者。使用者要求改善遊戲角色清晰度、保持顯示大小、提供修改前後對照。允許js/hero3d.js、index角色快取、必要回歸、LV與本段；禁止模型／貼圖／光照／材質、玩法、Worker／存檔／解鎖及其他工作區，不合併／推送。
+- 預檢：hero3d及index與Claude 51784609重疊；使用者已明確同意分段修改並保留雙方成果。保留光暈幀標記兩行；角色內部畫布512→1024、顯示比例沿既有pxPerMeter公式、輪廓半徑按畫布補償。index只改hero3d同一快取行，保留Claude其他快取修改及同副本進行中的樹人LV2任務。LV與任務紀錄附加尾端，逐檔檢視並只提交本項差異。
+- 驗收：固定同一模型／姿勢／光照／鏡頭的同尺寸原圖與放大對照，正式戰鬥頁、腳底及顯示邊界／輪廓寬度、既有hero3d與NPC介面回歸、Build與diff檢查。無正式素材變更，預覽只放聊天visualizations，不產生素材庫空Commit。後續交使用者驗收整合。
+
+- 完成實作：主角預設1024px，NPC明確指定的512px保持；displayScale反向縮放，腳底錨點不變。外框八方向先沿原512px格點取整再等比放大，避免對角線取整導致粗細改變。Claude的hero3dFrame兩行逐字保留，hero3d三方試跑exit0；index僅hero3d快取同一行衝突，依使用者明確分段授權採新清晰度版本，沒有修改對方工作區。
+- 修改檔案：js/hero3d.js、index.html的hero3d快取行、tests/hero3d-resolution.test.cjs、LV與本段，共五檔；唯讀檢查NPC3D共用介面、BattleRenderer角色／鏡頭／透視／解析度、GLB與PBR原材質、起始選單與WorkerBridge及既有hero／NPC測試、Build工具與規範。沒有正式素材變更，素材庫無本項修改，不建立空Commit。
+- 驗證：既有hero3d-*、npc3d-runtime／locomotion與vfx-editor-cache-versions共77/77；新增解析度／尺寸／腳底／輪廓／幀標記回歸1/1，輪廓補償修正後另跑hero3d-battle-rules及本回歸13/13。最終js與測試node --check、diff檢查通過。
+- 實機及對照：隔離headless Edge、正式主頁與原生Worker、seed17新局，不讀使用者存檔。512與1024以相同CombatIdle 0.4秒及朝向繪圖，正式戰鬥的角色邊界x/y/寬/高、顯示尺寸與錨點一致（誤差<1e-9）；正常載入與回收、pageerror／Console error 0。兩版皆有同一張dark-gold-seal預載未使用的既有warning。另用正式Three→Pixi角色程式在固定網格場景比較站立／攻擊／跑步，三姿勢尺寸一致、error0；對照含相同大小原圖及等比放大3倍，沒有銳化／AI修圖。兩個批次的75幀CPU繪圖提交取樣，最後一次中位數0.5→0.8ms、p95為2.1→2.5ms，只代表隔離角色提交成本，不是整場GPU／FPS或手機保證。預覽與QA腳本／JSON在本聊天visualizations的character-clarity。
+- Build：`npm.cmd run build`共697檔通過；新增回歸在Build掃描開始後加入，另以最終檔案`node --check tests/hero3d-resolution.test.cjs`及測試確認。測試命令為`node --test tests/hero3d-*.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/vfx-editor-cache-versions.test.cjs`（執行時PowerShell展開hero3d檔案）、`node --test tests/hero3d-resolution.test.cjs tests/hero3d-battle-rules.test.cjs`。
+- 交付：無未完成實作，可供使用者驗收與合併；Commit為本段所在提交，SHA見回報。沒有合併或推送。已知限制為內部繪製像素數4倍，僅測本機Edge，未做手機／跨瀏覽器／長時間效能；現有dark-gold-seal預載warning保持。建議重載遊戲驗收服飾與頭部細節；共享工作區的樹人LV2檔案及三個共用文件的其他區段保持未提交，僅提交本項五檔差異。
+
+## ANCIENT-STAR-SIZE-GLOW-20261109 — 裝備星星縮小10%與光暈減1px
+
+- Owner：Codex；Done，單一開發者。使用者要求裝備圖片星星縮小10%、光暈減少1px。沿現有烘焙PNG管線，圖片transform由scale(2)改1.8（視覺90%、不改星列佔位），外層主光暈烘焙半徑6→5px（以原烘焙尺寸為基準），近／中層及1px描邊、三色保持；tips／詳情簡易星號不改。不恢復即時SVG／CSS濾鏡。
+- 允許：style.css對應transform及三PNG快取、index僅style快取、bake-glow.cjs一項半徑與註解、三glow PNG、LV、來源說明及本段；素材庫獨立包保留可重建128px原圖／作者工具及依賴／新256px成品／參數／SHA。禁止原128px素材／其他圖片／JS／配置／玩法／星數／精鑄順序、Role6在製內容、其他工作區與合併推送。
+- 預檢：除index皆無外部來源；Claude在index改formula／skills2／hero3d／renderer快取，本項只第12行style。全分支merge-tree有既有hero快取衝突；以本項HEAD:index為base、只改style的候選與對方實際index作merge-file exit0，無同行或語意相依，分段修改。原Role6任務段／其他未提交內容保留。
+- 驗收：三色正式格圖片變換比0.9、無即時filter、素材烘焙check／雙庫SHA、tips及原圖保持、相關回歸／Build／diff與實機預覽後，素材先Commit、遊戲後Commit。後續使用者Review及合併。
+- 完成檔案：css/style.css、index.html、tools/ancient-stars/bake-glow.cjs、三張images/ui/*-glow.png、LV_upgrade_system.md、docs/assets/ANCIENT_STARS_SOURCE.md及本段，共9檔。唯讀檢查：原128px三色PNG、export-source.cjs、vfx-raster／image-facts、tips／詳情簡易字形規則與正式格HTML、相關測試、原素材包、Claude工作區index及三份協議；沒有修改玩法JS／配置或其他工作區。
+- 驗證：`node --test tests/ancient-forge-limit.test.cjs tests/equipment-tooltip-compare.test.cjs tests/inventory-ancient-filter-sort.test.cjs tests/vfx-editor-cache-versions.test.cjs` 21/21通過；`npm.cmd run build` 698檔通過；`node tools/ancient-stars/bake-glow.cjs --check`、`node tools/ancient-stars/export-source.cjs --check`、素材包同名bake工具`--check`及diff檢查通過。雙庫9項圖片／作者工具／依賴SHA逐一相符，原128px輸入保持。
+- 瀏覽器：隔離IAB本機fixture，取正式CSS／itemCellHTML／ancientStarBadgeHTML／itemDetailHTML，未讀玩家存檔。前後51顆圖片星星變換比皆0.9、星列排版最大差0、即時filter皆none、tips／詳情圖片皆關閉；三色及窄格重疊預覽通過。證據在聊天visualizations/2026/11/09/ancient-star-size-glow的preview.jpg與browser-results.json。比較iframe有一筆注入MutationObserver的observe參數非Node錯誤，量測仍完成；沒有宣稱完整正式遊戲／跨瀏覽器／長時間效能驗證。
+- 交付：素材庫新包先提交`9e67d02`；遊戲Commit為本段所在提交，SHA見回報。沒有未完成實作，可供使用者驗收合併，未合併／推送；工作區Role6其他變更保留。建議重新載入遊戲確認裝備與背包顯示。
+
+## MYSTERY-MERCHANT-20261109 — 邀請券召喚與多類商品
+
+- Owner：Codex；Done，單一開發者。使用者授權寶石商人改神祕商人、封魔塔入口／主頁籤驚嘆號、每次召喚消耗1張神祕邀請券、顯示剩餘數量、多類商品／遺物預留及Store獨立表。追加塔BOSS掉券（先10%，Store可調，不列置頂材料）、裝備品質受已通關最高層BOSS掉落上限限制、太古詞條數以機率陣列配置（先0=75／3=20／4=5）。
+- 範圍：item／player／save／tower及Worker指令／投影、UI／主頁／樣式／快取、Store新Excel／CSV、game_parameters搬移商店列、String來源／衍生資料、apply_params接線、相關回歸、LV／協議與本段。禁止未授權素材／其他工作區／main發布；不合併或推送。角色Role6在製記錄與四個未追蹤工具完整保留，不stage。
+- 預檢：商人相關功能檔／表乾淨；Claude bad019fc改Worker import同一行，使用者已明確答覆「同意分段更新（建議）」。只改商人相關載入版本及Worker投影／維護，不改其BOSS傷害成果；index依必要快取分段。原formula不用修改。
+- 設計：券為player.consumables.mystery_invitation，新局0／舊檔補0；商人會話不存檔。首次召喚原子扣券且鋪貨，重複open冪等；返回塔頁、離開封魔塔頁或重載結束會話，再召喚消耗新券。沿用商店等級／金幣升級與刷新／既有20級商品數量表，正權重且可供貨的類別至少一格；遺物供應器未實作前不產生假商品或扣款。裝備一次生成，買入不經自動熔解，滿包拒絕；符文走正式addRune。最高通關為0時取第1層，Store品質範圍仍受塔BOSS上限約束。太古抽樣若超過該件可用詞條數沿原生成器截斷。
+- 驗收：Excel獨占／正常重開、44列搬移與其他儲存格／格式保持、Store到JS乾跑0變更／錨點擾動、無券拒絕／最後一券／重複指令／重載／存檔相容／BOSS勝敗及重複結算、商品購買／滿包／不重複扣款／品質門檻／太古機率／遺物關閉、桌面與窄畫面入口／tips／提示／頁面切換、相關回歸／全庫必要檢查／Build。完成後獨立Commit並交付，無新增美術素材，不建素材庫空Commit。
+- 完成：封魔塔入口替換原寶石頁隱藏商店，正式Worker原子扣券／產貨／購買，無券tips、持券金色閃爍／主頁籤驚嘆號、頁內剩餘券數與返回、離頁關閉均完成。裝備有完整懸停詳情、滿包拒買、一次生成不重擲；太古機率獨立且零權重不會在亂數0時中選，超出可用詞條數沿生成器封頂。券由每次塔BOSS勝利獨立掉落並列在結果／掉落統計，不列置頂材料。遺物依需求只保留供應器／配置，未實作前不產生或扣款。沒有未完成實作。
+- 表格：原生Excel新建Store並正常重開；game_parameters與計算表兩張分頁各移除相同44列，Store保留一份商品來源。逐ID逐格核對其餘兩頁資料、font／fill／border／alignment／number_format／protection皆一致，5,310個既有公式保留且無REF錯誤；新Store說明換行／列高可讀。String新增15列及必要更名／提示；原生儲存與正常重開通過。apply_params為597→614個錨點（新增17，舊商店錨點未漏），乾跑614一致／0變更／0問題；擾動565個數值後614個錨點各命中一次。
+- 修改檔案：config/Excel與CSV的Store／game_parameters／String；js/data.js、item.js、player.js、save.js、tower.js、stats.js、gm_exec.js、ui.js、strings_data.js、bridge.js、worker/protocol.js、worker/sim.worker.js；index.html、css/style.css、tools/apply_params.cjs、tools/vfx/editor/index.html；tests/mystery-merchant.test.cjs與既有gem-shop／gem-enabled／gem-compose-all／npc-rank-glow／worker-protocol；LV_upgrade_system.md、docs/WORKER_PROTOCOL.md、docs/MYSTERY_MERCHANT.md及本段。協議v76，主端／Worker必要快取同步；VFX編輯器僅共用String版號，未改Preset或編輯資料。無新增素材，沿用專案既有圖示及emoji，附圖只作入口位置參考；素材庫無本項變更，不建空Commit。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex與既有任務、原寶石商店／寶石開放池／符文發放／裝備生成、最高通關與BOSS掉落表、原生Excel更新器／XLSX讀取器／BAT自動掃表、scripts/sim/engine.js、Worker shim／主端面板訂閱／存檔流程、其餘配置及相關既有測試。未改傷害公式、掉寶率加成、NPC／技能資料或其他工作區。
+- 測試：`node --test tests/mystery-merchant.test.cjs tests/gem-compose-all.test.cjs tests/header-resources.test.cjs tests/worker-protocol.test.cjs tests/gem-shop.test.cjs tests/gem-enabled.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/npc-rank-glow.test.cjs tests/tower-info-during-fight.test.cjs tests/ui-worker-g-dependency.test.cjs`最終80/80；mystery-merchant新增10項涵蓋完整玩法／投影／表格／統計。stats-panel另9/10，既有「野外戰鬥、高塔與分解已掛上統計記錄」仍預期塔內recordLootGold，HEAD亦失敗，未改斷言。`node tools/apply_params.cjs`、`--check-anchors`、`node tools/string-table/build_string_csv.cjs --check`（寫死0）、`npm.cmd run build`（699檔）及diff檢查通過。
+- 全庫：首輪`node --test --test-concurrency=2 --test-reporter=tap "tests/*.test.cjs"`共5,737項，5,042過／693失敗／跳過2，耗時約23分鐘。以起始HEAD c74ae19d唯讀fs overlay及必要fixture複製／子行程覆蓋，按失敗案例逐一比對：682項同名失敗在HEAD重現；本輪9項為主／塔頁helper的測試隔離、UI讀G守衛、商店移頁斷言及NPC臨時配置少Store依賴，均已修正並由80項重跑通過，沒有降低功能正確性；另2項Windows原生Excel／Git fixture暫態在HEAD通過，現版獨立重跑2/2亦通過。未再執行整套23分鐘全庫，不宣稱全庫全綠。原始與比對TAP／JSON／Build／Excel核對留logs/mystery-merchant。
+- 實機：隔離Edge正式主頁／原生Worker、新局與本機GM，不碰使用者存檔。1920×1080、1366×768、900×900目視；無券置灰／tips、持券閃爍金色（computed color核對）／驚嘆號、雙擊只扣1、全部圖示載入、寶石／裝備／符文購買、裝備詳情／倒數、返回／離頁再耗券、最後一券、原生自動存檔再載入均通過，重載保券但不恢復商人會話，置頂材料無券。最後一輪Console error0，部分隨機戰鬥出現既有sfx-synth超取樣頻率warning；前輪亦曾warning0，未改音訊。QA曾誤用seed自動進遊戲後等選單、以Lv文字找實際無Lv的詳情、忽略按鈕色彩過渡，均修正QA等待條件；產品已確認最終高亮。測試瀏覽器／伺服器均關閉；預覽與qa-report在本聊天mystery-merchant資料夾。
+- 協作：NPC測試與Claude def9386c只重疊同檔不同區段，對方新增塔區光色測試，本項只補Store.csv fixture；以HEAD為base與對方現況三方試跑exit0，無語意相依。Worker同行快取依本聊天使用者分段授權更新，未合併／覆蓋Claude BOSS5%成果；後續整合須保留兩邊版本。六轉在製工具／記錄留原處，只stage本項任務段。
+- 交付：Commit為本段所在「[Codex] feat: 封魔塔神祕商人邀請券與多類商品」，SHA見聊天。可供Review與使用者合併；未合併／推送develop或main。已知限制為全庫既有失敗、上述環境暫態／音訊warning及未測行動真機／跨瀏覽器／長時間遊玩；遺物尚未實作為原需求明確預留。建議重新載入遊戲驗收，數值由Store調整；若VFX編輯器仍開著，先保留未存內容再重載共用String快取。
+## SYNC-MERGE-DA9FBD7C-E4B8B83A-20261109 — 神秘商人、角色清晰度與封魔塔成果整合
+
+- Owner：Codex；Done（指定整合者，待 controller stage／建立 merge commit）。原始 HEAD `da9fbd7c8bd461075d56024e56119eaf2c46dc8f`、MERGE_HEAD `e4b8b83a1ac046132fb5b3730dd2ea81e38e5cf5`；原始衝突僅 `index.html`、`js/worker/sim.worker.js`，未執行 add、commit、push 或修改 Git metadata。
+- 衝突解法：`index.html` 同時保留主線的 BOSS 3D 光暈成果與 incoming 的 1024px 主角清晰度成果，hero3d 使用新合併快取 `20261109-ai-merge-v1`。Worker 載入同時保留主線的封魔塔 BOSS 公式／技能版本與 incoming 的神秘商人 data／stats／item／player／tower／save 版本；Bridge、Protocol 與 Worker asset cache 同步為同一新版本。其餘已自動合入成果及 controller 的 EOF 空白機械修正原樣保留。
+- Excel／素材：原始衝突沒有 XLSX；提示內 `config/Excel/Name.xlsx` 是 controller 未替換的範例且倉庫不存在，因此沒有建立虛構 DATA plan、沒有修改任何 workbook bytes。無額外素材庫交付。
+- 驗證：`node --check` 通過 Worker 與 Bridge；Worker protocol、神秘商人、主角清晰度、塔 BOSS 3D、NPC 3D、樹人素材與 cache 專項共 35/35 通過。完整 build、完整 merged-result `git diff HEAD --check`、衝突標記與 HEAD／MERGE_HEAD 最終核對列於 controller 交付結果；索引維持 unmerged 是等待 controller 依回報檔案 stage 的預期狀態。

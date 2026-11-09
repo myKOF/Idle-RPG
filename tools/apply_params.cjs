@@ -44,7 +44,12 @@ function parseCsv(text) {
   if (f.length || row.length) { row.push(f); rows.push(row); }
   return rows;
 }
-const allRows = parseCsv(fs.readFileSync(CSV_PATH, 'utf8')).filter(r => r.length > 1);
+const parameterRows = parseCsv(fs.readFileSync(CSV_PATH, 'utf8')).filter(r => r.length > 1);
+const STORE_CSV_PATH = process.env.STORE_CSV || path.join(ROOT, 'config', 'CSV', 'Store.csv');
+const storeRows = parseCsv(fs.readFileSync(STORE_CSV_PATH, 'utf8')).filter(r => r.length > 1);
+if (JSON.stringify(parameterRows[0]) !== JSON.stringify(storeRows[0])) throw new Error('Store.csv 表頭必須與 game_parameters.csv 相同');
+if (parameterRows.slice(1).some(r => /^8-寶(?:石商店|店刷出)/.test(r[2]))) throw new Error('商人參數只能存在 Store.csv');
+const allRows = parameterRows.concat(storeRows.slice(1));
 // 地圖專屬資料由獨立地圖表管理；game_parameters 只保留通用公式與計算參數。
 const ZONES_CSV_PATH = process.env.ZONES_CSV || path.join(ROOT, 'config', 'CSV', 'Zones.csv');
 const zoneRows = parseCsv(fs.readFileSync(ZONES_CSV_PATH, 'utf8')).filter(r => r.length > 1);
@@ -142,6 +147,19 @@ function P(cat, name, i) {
   const v = index[cat][name][i];
   if (v === undefined || v === '') throw new Error('CSV 缺少參數：' + cat + ' / ' + name + ' 參數#' + i);
   return v.trim();
+}
+// 直接編輯 Store 時及早拒絕無法產生有效商品的配置，避免扣款後才發現壞資料。
+function storeNumber(name, min, max, integer) {
+  const v = Number(P('神祕商人', name, 0));
+  if (!Number.isFinite(v) || v < min || v > max || (integer && !Number.isInteger(v))) throw new Error('Store 神祕商人 / ' + name + ' 超出有效範圍');
+  return v;
+}
+storeNumber('最高等級', 1, 20, true);
+storeNumber('邀請券掉落率', 0, 100);
+['寶石權重','裝備權重','符文權重','遺物權重','裝備價格基數','符文價格基數','符文價格指數','遺物價格基數'].forEach(n => storeNumber(n,0,Number.MAX_SAFE_INTEGER));
+storeNumber('裝備等級倍率', Number.MIN_VALUE, Number.MAX_SAFE_INTEGER);
+for (const [lo,hi,min,max] of [['裝備最低品質','裝備最高品質',0,11],['符文最低階級','符文最高階級',1,33],['遺物最低階級','遺物最高階級',1,Number.MAX_SAFE_INTEGER]]) {
+  if (storeNumber(lo,min,max,true) > storeNumber(hi,min,max,true)) throw new Error('Store ' + lo + ' 不得大於 ' + hi);
 }
 
 /* ---------- 編輯清單：每筆 = {file, re(單一群組), value, label} ---------- */
@@ -496,7 +514,23 @@ scalar('data', 'GEM_FORGE_MAX_LEVEL', '表-固定參數', '寶石一般上限 / 
 scalar('data', 'GEM_COMPOSE_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 0);
 scalar('data', 'GEM_COMPOSE_HIGH_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 1);
 scalar('data', 'GEM_COMPOSE_TOP_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 2);
-scalarValue('data', 'GEM_SHOP_MAX_LEVEL', 20, 'GEM_SHOP_MAX_LEVEL');
+scalar('data', 'GEM_SHOP_MAX_LEVEL', '神祕商人', '最高等級', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'ticketDropRate', '神祕商人', '邀請券掉落率', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'gemWeight', '神祕商人', '寶石權重', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'equipmentWeight', '神祕商人', '裝備權重', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runeWeight', '神祕商人', '符文權重', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicWeight', '神祕商人', '遺物權重', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'equipmentMinRarity', '神祕商人', '裝備最低品質', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'equipmentMaxRarity', '神祕商人', '裝備最高品質', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'equipmentPriceBase', '神祕商人', '裝備價格基數', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'equipmentLevelMultiplier', '神祕商人', '裝備等級倍率', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runeMinTier', '神祕商人', '符文最低階級', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runeMaxTier', '神祕商人', '符文最高階級', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runePriceBase', '神祕商人', '符文價格基數', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runePriceExponent', '神祕商人', '符文價格指數', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicPriceBase', '神祕商人', '遺物價格基數', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicMinTier', '神祕商人', '遺物最低階級', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicMaxTier', '神祕商人', '遺物最高階級', 0);
 scalar('data', 'GEM_SHOP_REFRESH_BASE', '8-寶石商店', '手動刷新費用', 0);
 scalar('data', 'GEM_SHOP_REFRESH_EXPONENT', '8-寶石商店', '手動刷新費用', 1);
 // 升級費用：參數表早就有「8-寶石商店／升級費用」這一列（a + 等級^b × c），但一直沒接上，
@@ -737,6 +771,14 @@ function rebuildPairTable(varName, group) {
 }
 rebuildPairTable('GEM_SHOP_COUNT_TABLE', '8-寶店刷出數量');
 rebuildPairTable('GEM_SHOP_TIER_TABLE', '8-寶店刷出階級');
+// 商人太古詞條分佈以具名資料表錨點接線，不綁內嵌程式碼。
+const ancientCountPairs = index['神祕商人']['裝備太古詞條機率'].filter(x => x !== '' && x !== '0').map(text => {
+  const pair = text.split('=').map(Number);
+  if (pair.length !== 2 || !Number.isInteger(pair[0]) || pair[0] < 0 || !Number.isFinite(pair[1]) || pair[1] < 0) throw new Error('Store 裝備太古詞條機率需填「非負整數條數=機率%」');
+  return pair;
+});
+if (!ancientCountPairs.length || new Set(ancientCountPairs.map(p => p[0])).size !== ancientCountPairs.length || Math.abs(ancientCountPairs.reduce((sum,p) => sum + p[1],0) - 100) > 1e-8) throw new Error('Store 裝備太古詞條機率不得重複條數，且總和須為100%');
+arrayContent('data', 'MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE', '\n  ' + ancientCountPairs.map(p => '[' + p.join(', ') + ']').join(', ') + '\n', '商人裝備太古詞條機率');
 
 /* ---- formula.js 具名常數 ---- */
 scalar('formula', 'GLOBAL_DMG_RED_CAP', '2-屬性派生', '全局減傷', 0);

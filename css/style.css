@@ -584,9 +584,9 @@ body {
   inset: -2px;
   /* 1px深金描邊與三層黃色外暈已由 tools/ancient-stars/bake-glow.cjs 烘進 *-glow.png（256px＝原圖四周各留64px光暈）。
      ⚠️ 不要改回 CSS filter：SVG描邊＋drop-shadow 每次重繪都在CPU重算，背包上百顆星星會拖慢整個介面。
-     scale(2) 抵銷留白，星星本體仍是原本大小；transform 不參與排版。 */
-  background: var(--ancient-star-image, url('../images/ui/ancient-star-gold-glow.png')) center / contain no-repeat;
-  transform: scale(2);
+     scale(1.8) 抵銷留白後以原尺寸90%顯示；transform 不參與排版。 */
+  background: var(--ancient-star-image, url('../images/ui/ancient-star-gold-glow.png?v=20261109-glow5')) center / contain no-repeat;
+  transform: scale(1.8);
   pointer-events: none;
 }
 
@@ -2979,11 +2979,11 @@ textarea#save-io {
 .ancient-forged-first .ancient-star,
 .ancient-star.ancient-forged-first {
   /* 已烘焙：sRGB白色亮面映射到防禦文字藍 #7fdcf5（bake-glow.cjs 的 tone），保留原圖明暗與透明度。 */
-  --ancient-star-image: url('../images/ui/ancient-star-light-blue-glow.png');
+  --ancient-star-image: url('../images/ui/ancient-star-light-blue-glow.png?v=20261109-glow5');
 }
 .ancient-forged-second .ancient-star,
 .ancient-star.ancient-forged-second {
-  --ancient-star-image: url('../images/ui/ancient-star-blue-glow.png');
+  --ancient-star-image: url('../images/ui/ancient-star-blue-glow.png?v=20261109-glow5');
 }
 
 /* 超�??��??��??�?�相?��??�平?��?幅�??��??��?多出?��??��?中�??��?後�?顆�?*/
@@ -12725,3 +12725,19 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   transform: translate(-50%, -50%);
   box-shadow: inset 0 0 36px 14px #000, 0 0 0 300vmax #000;
 }
+
+/* 神祕商人：入口與塔頁提醒。 */
+.merchant-entry-tip { display:inline-flex; }
+.merchant-entry[disabled] { opacity:.4; cursor:default; pointer-events:none; }
+#mystery-merchant-open.is-ready { color:#ffe7a0 !important; border-color:#d4ad4f !important; background:linear-gradient(180deg,#59421d,#241a0c) !important; opacity:1; animation:merchant-invite-glow 1.4s ease-in-out infinite alternate; }
+@keyframes merchant-invite-glow { from { box-shadow:0 0 2px #c89b35; } to { box-shadow:0 0 12px #f0cd64; background-color:#56421e; } }
+.merchant-alert { position:absolute; right:-3px; top:-2px; z-index:2; width:18px; height:18px; border-radius:50%; color:#fff; background:#db3225; border:2px solid #ffe6bd; text-align:center; font:bold 14px/14px sans-serif; }
+.merchant-alert[hidden], #mystery-merchant-panel[hidden] { display:none; }
+.merchant-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+.merchant-heading #merchant-back { margin-left:auto; }
+.merchant-equipment-icon { width:64px; height:64px; object-fit:contain; }
+#mystery-merchant-panel #gem-shop-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+#mystery-merchant-panel .shop-emoji { display:flex; align-items:center; justify-content:center; min-height:68px; }
+#mystery-merchant-panel .shop-emoji .rune-stone { width:64px; height:64px; object-fit:contain; }
+#mystery-merchant-panel .shop-name { white-space:normal; overflow-wrap:anywhere; }
+@media(prefers-reduced-motion:reduce) { #mystery-merchant-open.is-ready { animation:none; box-shadow:0 0 6px #d4ad4f; } }

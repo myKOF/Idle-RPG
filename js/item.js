@@ -226,96 +226,180 @@ function removeFusedGem(id) {
 }
 
 
-/* ================ 寶石商店 ================ */
+/* ================ 神祕商人 ================ */
+// 會話只存在模擬執行期間，重新載入不會免費恢復已離去的商人。
+var MYSTERY_MERCHANT_OPEN = false;
+var MYSTERY_INVITATION_ID = 'mystery_invitation';
+function merchantInvitationCount(player) {
+  var n = Number(player && player.consumables && player.consumables[MYSTERY_INVITATION_ID]);
+  return Number.isSafeInteger(n) && n > 0 ? n : 0;
+}
+function addMerchantInvitations(n) {
+  if (!Number.isSafeInteger(n) || n <= 0) return 0;
+  var p = G.player;
+  if (!p.consumables || typeof p.consumables !== 'object' || Array.isArray(p.consumables)) p.consumables = {};
+  p.consumables[MYSTERY_INVITATION_ID] = Math.min(Number.MAX_SAFE_INTEGER, merchantInvitationCount(p) + n);
+  UI.dirty.header = true; UI.dirty.tower = true;
+  return n;
+}
 function gemShop() {
-  if (!G.player.gemShop) {
-    G.player.gemShop = { level: 1, items: [], refreshCount: 0, hourStart: Date.now() };
-  }
+  if (!G.player.gemShop) G.player.gemShop = { level: 1, items: [], refreshCount: 0, hourStart: Date.now() };
   var s = G.player.gemShop;
   s.level = clamp(s.level || 1, 1, GEM_SHOP_MAX_LEVEL);
   return s;
 }
-var GEM_SHOP_REFRESH_HOURS = 8;   // 寶石商店自動刷新週期（小時）
+var GEM_SHOP_REFRESH_HOURS = 8;
+// 遺物系統完成後可提供 relic 的 available / roll / canBuy / grant 供應器。
+// 未註冊供應器時，即使表格權重為正也不會產生或販售該類商品。
+var MYSTERY_MERCHANT_PROVIDERS = {
+  gem: {
+    available: function () { return Object.keys(GEM_TYPES).some(isGemEnabled); },
+    roll: function (level) {
+      var lv = wpick(GEM_SHOP_TIER_TABLE[level - 1] || GEM_SHOP_TIER_TABLE[0]);
+      return { kind: 'gem', type: randomGemType(), lv: lv, price: gemShopPrice(lv), sold: false };
+    },
+    canBuy: function (it) { return isGemEnabled(it.type) ? null : STR(1542); },
+    grant: function (it) { addGem(it.type, it.lv, 1); }
+  },
+  equipment: {
+    available: function () { return true; },
+    roll: function () {
+      var cfg = MYSTERY_MERCHANT_SETTINGS;
+      var level = Math.max(1, Math.floor(G.player.level * cfg.equipmentLevelMultiplier));
+      var range = merchantEquipmentRarityRange();
+      var rarity = ri(range.min, range.max);
+      var ancientCount = wpick(MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE.filter(function (pair) { return pair[1] > 0; }));
+      var equipment = makeEquipment(G.stage && G.stage.current || 1, { level: level, rarity: rarity, ancientCount: ancientCount });
+      return { kind: 'equipment', equipment: equipment, price: Math.round(cfg.equipmentPriceBase * equipment.level * (equipment.rarity + 1)), sold: false };
+    },
+    canBuy: function () {
+      var cap = typeof inventoryCapacityWithTalents === 'function' ? inventoryCapacityWithTalents() : INVENTORY_CAP + (G.player.invUpgrades || 0);
+      return G.inventory.length >= cap ? STR(2442) : null;
+    },
+    grant: function (it) {
+      // 先驗證空間後直接入背包，商店購入不走自動熔解／穿戴規則。
+      G.inventory.push(it.equipment); UI.dirty.inv = true;
+    }
+  },
+  rune: {
+    available: function () { return merchantRunePool().length > 0; },
+    roll: function () {
+      var rune = pick(merchantRunePool());
+      return { kind: 'rune', runeId: rune.id, price: Math.round(MYSTERY_MERCHANT_SETTINGS.runePriceBase * Math.pow(rune.tier, MYSTERY_MERCHANT_SETTINGS.runePriceExponent)), sold: false };
+    },
+    canBuy: function (it) { return RUNE_BY_ID[it.runeId] ? null : STR(2443); },
+    grant: function (it) { addRune(it.runeId, 1); }
+  }
+};
+function merchantRunePool() {
+  if (typeof RUNES === 'undefined') return [];
+  return RUNES.filter(function (r) { return r.tier >= MYSTERY_MERCHANT_SETTINGS.runeMinTier && r.tier <= MYSTERY_MERCHANT_SETTINGS.runeMaxTier; });
+}
+function merchantEquipmentRarityRange() {
+  // 已通關最高層只決定品質上限，不看目前選取層數；尚未通關以首層為基準。
+  var floor = Math.max(1, Math.floor(Number(G.tower && G.tower.highest) || 0));
+  var rates = dropRatesFor(BOSS_DROP_TABLE, floor), cap = 0;
+  for (var i = 0; i < rates.length; i++) if (rates[i] > 0) cap = i;
+  var max = Math.min(cap, MYSTERY_MERCHANT_SETTINGS.equipmentMaxRarity, RARITIES.length - 1);
+  return { min: Math.min(MYSTERY_MERCHANT_SETTINGS.equipmentMinRarity, max), max: max };
+}
+function merchantCategoryPairs() {
+  return ['gem', 'equipment', 'rune', 'relic'].filter(function (kind) {
+    var provider = MYSTERY_MERCHANT_PROVIDERS[kind];
+    return MYSTERY_MERCHANT_SETTINGS[kind + 'Weight'] > 0 && provider && provider.available();
+  }).map(function (kind) { return [kind, MYSTERY_MERCHANT_SETTINGS[kind + 'Weight']]; });
+}
+function merchantPanelView() {
+  return { active: MYSTERY_MERCHANT_OPEN, tickets: merchantInvitationCount(G.player), shop: gemShop() };
+}
+function openMysteryMerchant() {
+  if (MYSTERY_MERCHANT_OPEN) return null;
+  if (G.tower && G.tower.active) return STR(2441);
+  if (!merchantInvitationCount(G.player)) return STR(2437);
+  if (!merchantCategoryPairs().length) return STR(2449);
+  // 成功鋪貨後才扣券，重複指令在同一會話不重扣。
+  rollGemShop();
+  if (!gemShop().items.length) return STR(2449);
+  G.player.consumables[MYSTERY_INVITATION_ID]--;
+  MYSTERY_MERCHANT_OPEN = true;
+  UI.dirty.header = true; UI.dirty.tower = true;
+  return null;
+}
+function closeMysteryMerchant() {
+  MYSTERY_MERCHANT_OPEN = false;
+  UI.dirty.tower = true;
+  return null;
+}
 function shopHourlyReset() {
+  if (!MYSTERY_MERCHANT_OPEN) return;
   var s = gemShop();
   if (Date.now() - s.hourStart >= GEM_SHOP_REFRESH_HOURS * 3600 * 1000) {
-    s.refreshCount = 0;
-    s.hourStart = Date.now();
+    s.refreshCount = 0; s.hourStart = Date.now();
     rollGemShop();
-    UI.dirty.gems = true;
   }
 }
-function shopResetCountdown() { // 秒
+function shopResetCountdown() {
   return Math.max(0, Math.ceil((gemShop().hourStart + GEM_SHOP_REFRESH_HOURS * 3600 * 1000 - Date.now()) / 1000));
 }
 function rollGemShop() {
-  var s = gemShop();
-  s.items = [];
-  var level = s.level;
-  var countPairs = GEM_SHOP_COUNT_TABLE[level - 1] || GEM_SHOP_COUNT_TABLE[0];
-  var tierPairs = GEM_SHOP_TIER_TABLE[level - 1] || GEM_SHOP_TIER_TABLE[0];
-  var size = wpick(countPairs);
-  for (var i = 0; i < size; i++) {
-    var lv = wpick(tierPairs);
-    var type = randomGemType();
-    if (!type) break;
-    s.items.push({ type: type, lv: lv, sold: false });
+  var s = gemShop(), pairs = merchantCategoryPairs();
+  var countPairs = GEM_SHOP_COUNT_TABLE[s.level - 1] || GEM_SHOP_COUNT_TABLE[0];
+  var size = wpick(countPairs), items = [];
+  for (var i = 0; pairs.length && i < size; i++) {
+    var kind = i < pairs.length ? pairs[i][0] : wpick(pairs);
+    items.push(MYSTERY_MERCHANT_PROVIDERS[kind].roll(s.level));
   }
-  UI.dirty.gems = true;
+  s.items = items;
+  UI.dirty.gems = true; UI.dirty.tower = true;
 }
-// 刷新費用公式 shopRefreshCost → js/formula.js §8
-// 手動刷新（消耗金幣，次數每小時重置）
 function refreshGemShop() {
+  if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
+  if (!merchantCategoryPairs().length) return STR(2449);
   shopHourlyReset();
   var cost = shopRefreshCost();
   if (G.player.gold < cost) return STR(1539, fmt(cost));
-  G.player.gold -= cost;
-  gemShop().refreshCount++;
-  rollGemShop();
+  G.player.gold -= cost; gemShop().refreshCount++; rollGemShop();
   UI.dirty.header = true;
   return null;
 }
-// 升級寶石商店：扣除金幣後立即依新等級重刷商品
 function upgradeGemShop() {
+  if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
   var s = gemShop();
   shopHourlyReset();
   if (s.level >= GEM_SHOP_MAX_LEVEL) return STR(1540);
   var cost = gemShopUpgradeCost(s.level);
   if (G.player.gold < cost) return STR(1539, fmt(cost));
-  G.player.gold -= cost;
-  s.level++;
-  rollGemShop();
-  UI.dirty.header = true; UI.dirty.gems = true;
+  G.player.gold -= cost; s.level++; rollGemShop();
+  UI.dirty.header = true;
   return null;
 }
+function merchantItemPrice(it) {
+  return it && Number.isFinite(it.price) && it.price >= 0 ? it.price : (it && !it.kind ? gemShopPrice(it.lv) : Infinity);
+}
 function buyShopGem(idx) {
-  var s = gemShop();
-  var item = s.items[idx];
+  if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
+  if (!Number.isInteger(idx) || idx < 0) return STR(1541);
+  var item = gemShop().items[idx];
   if (!item || item.sold) return STR(1541);
-  if (!isGemEnabled(item.type)) return STR(1542);
-  var price = gemShopPrice(item.lv);
+  var provider = MYSTERY_MERCHANT_PROVIDERS[item.kind || 'gem'];
+  if (!provider) return STR(2443);
+  var error = provider.canBuy(item);
+  if (error) return error;
+  var price = merchantItemPrice(item);
+  if (!Number.isFinite(price)) return STR(2443);
   if (G.player.gold < price) return STR(1539, fmt(price));
-  G.player.gold -= price;
-  item.sold = true;
-  addGem(item.type, item.lv, 1);
-  UI.dirty.gems = true; UI.dirty.header = true;
+  provider.grant(item);
+  G.player.gold -= price; item.sold = true;
+  UI.dirty.gems = true; UI.dirty.header = true; UI.dirty.tower = true;
   return null;
 }
 function buyAllShopGems() {
-  var s = gemShop();
-  var bought = 0, spent = 0;
-  for (var i = 0; i < s.items.length; i++) {
-    var item = s.items[i];
-    if (item.sold || !isGemEnabled(item.type)) continue;
-    var price = gemShopPrice(item.lv);
-    if (G.player.gold < price) break;
-    G.player.gold -= price;
-    item.sold = true;
-    addGem(item.type, item.lv, 1);
-    bought++;
-    spent += price;
+  if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
+  var bought = 0, spent = 0, items = gemShop().items;
+  for (var i = 0; i < items.length; i++) {
+    var price = merchantItemPrice(items[i]);
+    if (!items[i].sold && buyShopGem(i) === null) { bought++; spent += price; }
   }
-  UI.dirty.gems = true; UI.dirty.header = true;
   return { bought: bought, spent: spent };
 }
 

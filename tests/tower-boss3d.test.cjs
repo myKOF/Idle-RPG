@@ -27,7 +27,15 @@ test('first tower boss becomes Skeleton King without changing stats; floor 11 us
   assert.equal(context.makeBoss(13).model3d,null,'independent floor 13 keeps its original appearance');
   assert.equal(context.makeBoss(53).model3d.file,third.model3d.file);
   assert.equal(context.makeBoss(12).npcId,'tower_boss_12');
-  assert.equal(context.makeBoss(12).model3d.file,'images/models/npc3d/boss2.glb');
+  assert.equal(context.makeBoss(12).model3d.file,'images/models/npc3d/treant_lv2.glb');
+  assert.equal(context.makeBoss(12).name,'12 樹人Ⅱ');
+  assert.equal(context.makeBoss(62).model3d.file,'images/models/npc3d/treant_lv2.glb');
+  assert.equal(context.makeBoss(112).model3d.file,'images/models/npc3d/treant_lv2.glb');
+  assert.equal(context.makeBoss(22).model3d.file,'images/models/npc3d/treant_lv3.glb');
+  assert.equal(context.makeBoss(22).name,'22 樹人Ⅲ');
+  assert.equal(context.makeBoss(72).model3d.file,'images/models/npc3d/treant_lv3.glb');
+  assert.equal(context.makeBoss(122).model3d.file,'images/models/npc3d/treant_lv3.glb');
+  assert.equal(context.makeBoss(32).model3d.file,'images/models/npc3d/boss2.glb','other independent rows retain their previous appearance');
   assert.equal(context.makeBoss(2).name,'2 樹人');
   const f11=context.makeBoss(11);
   assert.equal(f11.npcId,'tower_boss_11');

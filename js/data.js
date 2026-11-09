@@ -1875,7 +1875,7 @@ var BOSS_LIST = [
   { name: '風暴泰坦', emoji: '🌩️', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_storm.png', id: 'tower_boss_9', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_tornado', 'e_lightningspear'], rnd: [4, 6] } },
   { name: '混沌之影', emoji: '🌑', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_chaos.png', id: 'tower_boss_10', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_curse', 'e_manadrain'], rnd: [4, 6] } },
   { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_11', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
-  { name: '骷髏王Ⅱ', emoji: '💀', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_skeleton_king_lv2.png', id: 'tower_boss_12', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/boss2.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
+  { name: '樹人Ⅱ', emoji: '🌳', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_treant_lv2.png', id: 'tower_boss_12', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/treant_lv2.glb', clips: { idle: 'Unsteady_Walk', walk: 'Unsteady_Walk', attack1: 'Weapon_Combo_2', attack2: 'Attack', attack3: 'Basic_Jump', die: 'Shot_and_Fall_Forward' } }, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
   { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_thunder.png', id: 'tower_boss_13', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
   { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_14', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 5, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
   { name: '劇毒之母', emoji: '🕷️', elem: 'poison', attr: 'poison', img: 'sprites/boss/boss_poison.png', id: 'tower_boss_15', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
@@ -1885,7 +1885,7 @@ var BOSS_LIST = [
   { name: '風暴泰坦', emoji: '🌩️', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_storm.png', id: 'tower_boss_19', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_tornado', 'e_lightningspear'], rnd: [4, 6] } },
   { name: '混沌之影', emoji: '🌑', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_chaos.png', id: 'tower_boss_20', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_curse', 'e_manadrain'], rnd: [4, 6] } },
   { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_21', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
-  { name: '骷髏王Ⅱ', emoji: '💀', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_skeleton_king_lv2.png', id: 'tower_boss_22', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/boss2.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
+  { name: '樹人Ⅲ', emoji: '🌳', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_treant_lv3.png', id: 'tower_boss_22', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/treant_lv3.glb', clips: { idle: 'Unsteady_Walk', walk: 'Unsteady_Walk', attack1: 'Weapon_Combo_2', attack2: 'Attack', attack3: 'Basic_Jump', die: 'Shot_and_Fall_Forward' } }, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
   { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_thunder.png', id: 'tower_boss_23', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
   { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_24', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 5, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
   { name: '劇毒之母', emoji: '🕷️', elem: 'poison', attr: 'poison', img: 'sprites/boss/boss_poison.png', id: 'tower_boss_25', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
@@ -2155,6 +2155,28 @@ var GEM_SHOP_TABLE = [
   { lv: 10, price: 1000000000000 }
 ];
 var GEM_SHOP_MAX_LEVEL = 20;
+// Store.xlsx → apply_params.cjs；商人資料沿用 gemShop 名稱以相容既有存檔。
+var MYSTERY_MERCHANT_SETTINGS = {
+  ticketDropRate: 10,
+  gemWeight: 50,
+  equipmentWeight: 30,
+  runeWeight: 20,
+  relicWeight: 0,
+  equipmentMinRarity: 2,
+  equipmentMaxRarity: 11,
+  equipmentPriceBase: 25000,
+  equipmentLevelMultiplier: 1,
+  runeMinTier: 1,
+  runeMaxTier: 20,
+  runePriceBase: 20000,
+  runePriceExponent: 2.5,
+  relicPriceBase: 1000000,
+  relicMinTier: 1,
+  relicMaxTier: 5
+};
+var MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE = [
+  [0, 75], [3, 20], [4, 5]
+];
 // 每列為 [刷出數量, 機率%]，對應圖表「商店等級 / 刷出數量」。
 var GEM_SHOP_COUNT_TABLE = [
   [[5, 50], [6, 50]],

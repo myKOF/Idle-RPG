@@ -110,7 +110,8 @@
 // v73（2026-11-06 技能音效）：vfx 事件新增可選 sfx＝{ cast, attack, projectile, hit, ground, field } 角色 → 音效 id；act 新增可選 sfx（施放音效）。
 // v74：battle.tower.arena 為權威固定世界中心／範圍及法陣基準畫面；不改指令或存檔。
 // v75：塔BOSS ACT 支援 attack/cast；lockMs 為整段停步動作時間，tb-float 定址敵方。
-var WORKER_PROTOCOL_VERSION = 75;
+// v76：神祕商人開關指令、tower.merchant、混合商品及邀請券庫存。
+var WORKER_PROTOCOL_VERSION = 76;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -378,10 +379,12 @@ var COMMANDS = {
   'gem.resonanceSocket':   { fn: 'socketResonanceGem',   args: { region: 'int', hole: 'int', type: 'str', level: 'int?' }, limit: { region: { min: 0 }, hole: { min: 0 }, level: { min: 1 } }, dirty: ['gems', 'header'] },
   'gem.resonanceUnsocket': { fn: 'unsocketResonanceGem', args: { region: 'int', hole: 'int', index: 'int' }, limit: { region: { min: 0 }, hole: { min: 0 }, index: { min: 0 } }, dirty: ['gems', 'header'] },
   'gem.resonanceUpgrade':  { fn: 'upgradeResonanceHole',  args: { region: 'int', hole: 'int' }, limit: { region: { min: 0 }, hole: { min: 0 } }, dirty: ['gems', 'header'] },
-  'gem.shopBuy':           { fn: 'buyShopGem',      args: { index: 'int' },                      dirty: ['gems', 'header'] },
-  'gem.shopBuyAll':        { fn: 'buyAllShopGems',   args: {},                                    dirty: ['gems', 'header'] },
-  'gem.shopRefresh':       { fn: 'refreshGemShop',   args: {},                                    dirty: ['gems', 'header'] },
-  'gem.shopUpgrade':       { fn: 'upgradeGemShop',   args: {},                                    dirty: ['gems', 'header'] },
+  'merchant.open': { fn: 'openMysteryMerchant', args: {}, dirty: ['tower', 'header', 'gems'] },
+  'merchant.close': { fn: 'closeMysteryMerchant', args: {}, dirty: ['tower', 'header'] },
+  'gem.shopBuy':           { fn: 'buyShopGem',      args: { index: 'int' },                      dirty: ['gems', 'header', 'tower', 'inv'] },
+  'gem.shopBuyAll':        { fn: 'buyAllShopGems',   args: {},                                    dirty: ['gems', 'header', 'tower', 'inv'] },
+  'gem.shopRefresh':       { fn: 'refreshGemShop',   args: {},                                    dirty: ['gems', 'header', 'tower', 'inv'] },
+  'gem.shopUpgrade':       { fn: 'upgradeGemShop',   args: {},                                    dirty: ['gems', 'header', 'tower', 'inv'] },
 
   /* -- 角色 -- */
   'player.reincarnate':      { fn: 'reincarnate',       args: {},                                 dirty: ['header', 'equip', 'inv', 'skills', 'talents'] },
@@ -510,7 +513,7 @@ var COMMANDS = {
 /* ---- Worker 內部函式，禁止列為指令 ----
    這些是模擬層的內部流程，目前被 ui.js 直接呼叫，屬於 UI 越界驅動模擬內部。
    P3 必須把這些呼叫點移除或改成正式指令，不得為它們新增指令通道。 */
-var INTERNAL_ONLY = ['addToInventory', 'rollGemShop', 'shopHourlyReset', 'forgeLog',
+var INTERNAL_ONLY = ['addMerchantInvitations', 'addToInventory', 'rollGemShop', 'shopHourlyReset', 'forgeLog',
                      'newForgeReturnUnroutable'];
 
 /* ---- 查詢函式（惰性初始化，不是指令）----

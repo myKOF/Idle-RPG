@@ -12,6 +12,7 @@ var LOOT_MAT_DEFS = [
   { key: 'ancientEssence', name: STR(13),     icon: 'images/icon_ancient_essence.png' },
   { key: 'dust',           name: STR(100),     icon: 'images/icon_divine_stone.png' },
   { key: 'soulOrigin',     name: STR(101),     emoji: '🧿' },
+  { key: 'mystery_invitation', name: STR(2436), emoji: '🎟' },
   { key: 'book',           name: STR(102),       icon: 'images/icon_books.png' },
   { key: 'part',           name: STR(385), emoji: '🔧' }
 ];

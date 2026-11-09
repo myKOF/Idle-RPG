@@ -634,6 +634,11 @@ function migrateSave(data) {
     data.player.level = MAX_LEVEL;
     data.player.xp = 0;
   }
+  // 邀請券庫存與舊檔相容；商人會話不寫入存檔。
+  if (!data.player.consumables || typeof data.player.consumables !== 'object' || Array.isArray(data.player.consumables)) data.player.consumables = {};
+  var invitationCount = Number(data.player.consumables.mystery_invitation);
+  data.player.consumables.mystery_invitation = Number.isSafeInteger(invitationCount) && invitationCount > 0 ? invitationCount : 0;
+  if (typeof closeMysteryMerchant === 'function') closeMysteryMerchant();
   // 寶石商店等級相容：舊存檔沒有 level 時沿用 Lv.1，並限制在 1~20 級。
   if (data.player && data.player.gemShop) {
     data.player.gemShop.level = clamp(data.player.gemShop.level || 1, 1, GEM_SHOP_MAX_LEVEL);

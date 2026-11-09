@@ -11,9 +11,9 @@
 
    比例：星星的 ::after 盒（字形盒外擴 2px）在徽章與詞條中都約 16.7 CSS px 寬，
    128px 原圖 contain 進去 → 1 CSS px ≈ 7.6 圖像素。濾鏡長度（描邊 1px、
-   光暈 1／3／6px）都依此換算；drop-shadow 的模糊半徑換成高斯 σ＝半徑／2。
-   畫布四周各加 64px 給光暈（6px 光暈 σ＝3px，64px ≈ 2.8σ，尾端 <1%），
-   成品 256px，CSS 端以 transform: scale(2) 抵銷，星星本體大小與原本相同。
+   光暈 1／3／5px）都依此換算；drop-shadow 的模糊半徑換成高斯 σ＝半徑／2。
+   畫布四周各加 64px 給光暈，成品 256px。以上沿用原尺寸烘焙基準，
+   顯示端以 transform: scale(1.8) 抵銷留白後，將星星縮小為原尺寸90%。
 
    用法：node tools/ancient-stars/bake-glow.cjs --apply  重新烘焙
          node tools/ancient-stars/bake-glow.cjs --check  驗證成品與原圖一致
@@ -38,7 +38,7 @@ const OUTLINE = { radius: 1, color: [0x6b, 0x3f, 0x16] };
 const SHADOWS = [
   { blur: 1, color: [0xff, 0xf4, 0xae], alpha: 1 },
   { blur: 3, color: [0xff, 0xd8, 0x4a], alpha: 1 },
-  { blur: 6, color: [0xff, 0xbb, 0x23], alpha: 0.9 }
+  { blur: 5, color: [0xff, 0xbb, 0x23], alpha: 0.9 }
 ];
 
 /* 預乘 RGBA 浮點圖：{ size, r, g, b, a }，每個通道 0～1。 */
