@@ -15589,3 +15589,16 @@ Worker 存活且頁面正常完成載入。
 - 驗證：IAB連線失敗後改獨立headless Edge，在載入正式CSS、32件配置及原ui-relic渲染器的隔離顯示fixture，1172／760／520px各驗五欄、名稱位置、等級粗體與下緣重疊、點選不同列與收起時32卡座標／高度及scrollTop不變、鎖定／可升／不足／滿級資訊不超框，並驗520px水平捲動與JS／Console無error／warning，共27項PASS。此為CSS呈現驗收，未冒稱重驗Worker玩法；首輪fixture favicon缺檔404，補fixture handler後重跑全過，未修改產品掩蓋錯誤。
 - node --test --test-reporter=tap tests/relic-ui.test.cjs tests/relics.test.cjs，16/16；npm.cmd run build通過705檔；git diff／stat／check及自我Review通過。無新增素材、字串、JS或配置；素材庫沒有變更，不建空Commit。正式截圖selected／unselected及QA／TAP／Build保留本聊天visualizations/relic-layout-20261110，臨時候選／fixture清理。
 - 修改檔案：css/relic.css、index.html、LV_upgrade_system.md、docs/AI_TASKS.md。唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、原遺物渲染／配置、現有回歸、Claude音訊commit差異與截圖。既有8項外部配置／音訊修改保持未提交；不stage、不覆寫。無本項未完成內容，可供Review與使用者合併，未測跨瀏覽器／行動真機，未合併／推送。遊戲Commit為本段所在「[Codex] fix: 調整遺物名稱等級位置並固定升級留白」，SHA見聊天。下一步重新載入驗收。
+
+## BATTLE-LAYOUT-COMPACT-20261110 — 戰鬥標頭兩排與場景增高
+
+- Owner：Codex；Done，單一開發者。依使用者截圖將內測3D按鈕移到靜音後的箭頭位置，標籤改3D；AUTO改自動。關卡移到場景名稱同排，世界地圖按鈕寬高增加約15%、字號13→15px，將節省的一排高度交還戰鬥畫布；普通／全螢幕共用，窄容器可換排。
+- 前置：既有戰鬥工具列與鏡頭完成。允許index戰鬥標記／world-map及String快取、css/world-map.css、String.xlsx／CSV／strings_data與編輯器字串快取、battle-toolbar／hero3d-internal-toggle既有測試、LV與本段；不改js/ui.js行為、玩法／Worker／存檔／模型／其他配置或其他工作區，不合併推送。
+- 衝突預檢：除index的Claude音效commit外皆乾淨。共同祖先試跑只有任務前既存ui-sound快取差異；將三方該單一任務外版本行等值處理後，本項DOM與CSS／String快取三方試跑exit0。對方e2d399c2改音效三行，本項不同區段、無語意相依，分段修改且保持音效行原樣。
+- 驗收：原生Excel來源獨占、只改三筆字串並正常重開核對；桌面／窄視窗／全螢幕幾何與場景高度增量、3D內測隱藏／狀態與原切換重載、AUTO原行為、世界地圖操作及HUD、Console、相關回歸／Build／字串與diff。測試新局進入前GameSettings.set('mute',true)，隔離瀏覽器存檔。完成Commit後交使用者驗收整合。
+- 完成：新增工具列容器，標頭三排縮兩排；3D置於靜音後，間隔對齊截圖箭頭，保留內測hidden／aria-pressed及原重載流程。地圖外框74×30→85.1×34.5px、字號13→15px。畫布沿既有flex填滿可用高度，不新增固定高度；五種視窗一般／全螢幕皆增加34個介面像素（標頭clientHeight106→73、因像素取整差1）。維持HUD及原90%／75%鏡頭。String2151／2152皆顯示3D、2433顯示自動，僅改三格，CSV及生成資料／兩頁快取同步8757a6f1。
+- Excel：來源獨占存取確認後，以tools/excel-update-sheets.ps1只寫三格、正常模式兩次重開核對2469×7完整資料及0繪圖物件。唯讀比對來源與輸出styles.xml逐位相同、11615格樣式與列／欄寬／合併／資料驗證相同；未改其他工作簿或寫入內部XML。
+- 測試：`node --test tests/battle-toolbar.test.cjs tests/hero3d-internal-toggle.test.cjs tests/battle-fullscreen.test.cjs tests/battle-resource-orbs.test.cjs tests/battle-camera-distance.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`47/47；`npm.cmd run build`705檔通過；`node tools/string-table/apply_strings.cjs --check`同步2468條、`node tools/string-table/build_string_csv.cjs --check`寫死0，diff／stat／check及自我Review通過。只更新既有測試的按鈕位置、簡稱及pressed斷言，未放寬其他功能。
+- 瀏覽器：IAB初始化無連線，改獨立headless Edge／新局／正式主頁與原生Worker，五種1920×1080、1366×768、900×1000、390×844、568×320各驗一般／全螢幕。修改前／後畫布高度逐一比對皆+34；場景名稱與關卡中心同高、地圖字號+2與寬高比例、3D在靜音後且hidden時尺寸0。原生點擊地圖開關、自動等待／回復、3D偏好反轉與頁面重載皆通過。另用正式GM跳冰原150／127後驗三位數關卡、全部可見按鈕／名稱／最高關卡兩兩無重疊，Console error／warning皆0。初輪QA的seed=17會自動入局而等不到選單，改一般新局URL後通過，未修改產品配合測試；測試瀏覽器／伺服器正常關閉。
+- 修改10檔：index.html、css/world-map.css、config/Excel/String.xlsx、config/CSV/String.csv、js/strings_data.js、tools/vfx/editor/index.html、tests/battle-toolbar.test.cjs、tests/hero3d-internal-toggle.test.cjs、LV_upgrade_system.md與本段。唯讀檢查AI_RULES／AGENTS／Workflow／prompts、使用者截圖、js/ui.js與game-settings／start-menu／intro-player、hero3d與GM流程、參數表、字串／原生Excel工具、既有HUD／全螢幕／鏡頭測試及Build工具。沒有獨立素材變更，素材庫無本項修改，不建空素材Commit。
+- 交付：無本項未完成或已知新增缺陷；未做行動真機／跨瀏覽器／長玩。既有NPC／Store／Zones／game_parameters與data、Zones.xlsx及兩份未追蹤配樂全數保留，不納入本項。截圖與before／after／icefield報告在本聊天battle-layout-20261110；遊戲Commit為本段所在提交，SHA見回報。可供使用者重載驗收及合併；沒有合併／推送develop或main。
