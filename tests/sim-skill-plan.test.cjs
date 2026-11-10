@@ -687,3 +687,81 @@ test('威能面板與遊戲一致：等級、費用、開放與否', () => {
   /* 新角色（0 轉）一個都不該是已開放：威能要轉生後才有。 */
   assert.equal(ids.filter((id) => P.talents[id].unlocked).length, 0, '0 轉不該有任何已開放的威能');
 });
+
+/* ---- 第 2、3 套的便宜維護：低階寶石、強化到 +10（awayOnly 規則）---- */
+
+function awayPolicy() {
+  const eqRules = { equippedRarities: 'panels.inv.equipmentRarities', equipment: 'panels.inv.equipment' };
+  return createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    equipSets: { panel: 'panels.equipSets', home: 0, awayBlock: ['item.', 'gem.', 'rune.'], investAllow: [] },
+    rules: [
+      { id: 'home-up', cmd: 'item.upgrade', upgradePriority: Object.assign({ capByRarity: [0, 0, 6, 11, 17] }, eqRules) },
+      { id: 'away-up', cmd: 'item.upgrade', awayOnly: true, upgradePriority: Object.assign({ hardCap: 10, minRarity: 2 }, eqRules) },
+      { id: 'away-gem', cmd: 'gem.socket', awayOnly: true,
+        socketEmpty: { equipment: 'panels.inv.equipment', gems: 'panels.gems.gems', maxGemLevel: 3 } }
+    ]
+  });
+}
+function awayState(active, extra) {
+  return Object.assign({
+    gameTimeSec: 100, view: {},
+    panels: {
+      equipSets: { active, unlocked: [true, true, true], sets: [{ slots: {} }, { slots: {} }, { slots: {} }] },
+      tower: { tower: { active: false } },
+      inv: {
+        equipmentRarities: { helmet: 4, chest: 4, belt: 1, boots: 4 },
+        equipment: {
+          helmet: { id: 'h', upgrade: 3, sockets: [null, null] },
+          chest: { id: 'c', upgrade: 10, sockets: [null] },       // 已到 +10
+          belt: { id: 'b', upgrade: 0, sockets: [null] },         // R1：不值得強化
+          boots: { id: 'bo', upgrade: 0, sockets: [{ type: 'ruby', level: 1 }] }
+        }
+      },
+      gems: { gems: { ruby: { 1: 2, 5: 4 }, sapphire: { 2: 1 } } }
+    }
+  }, extra || {});
+}
+const byRule = (cmds, id) => cmds.filter((c) => c.ruleId === id);
+
+test('第 2、3 套維護：穿著第 1 套時不跑（awayOnly）', () => {
+  const cmds = awayPolicy().decide(awayState(0));
+  assert.equal(byRule(cmds, 'away-up').length, 0);
+  assert.equal(byRule(cmds, 'away-gem').length, 0);
+});
+
+test('第 2、3 套維護：穿著第 3 套時，強化到 +10 為止、R1 不強化；主力的強化／鑲嵌規則照舊暫停', () => {
+  const cmds = awayPolicy().decide(awayState(2));
+  assert.equal(byRule(cmds, 'home-up').length, 0, '主力規則在離開第 1 套時仍然暫停');
+  const ups = byRule(cmds, 'away-up').map((c) => c.args.itemId).sort();
+  assert.deepEqual(ups, ['bo', 'h'], '+3 與 +0 的 R4 要強化；已 +10 與 R1 不強化');
+});
+
+test('第 2、3 套維護：只用低階寶石，而且明確指定階級（遊戲預設會挑庫存最高階）', () => {
+  const cmds = byRule(awayPolicy().decide(awayState(2)), 'away-gem');
+  assert.ok(cmds.length >= 2, '空槽有 h×2、c×1、b×1');
+  for (const c of cmds) {
+    assert.ok(c.args.level >= 1 && c.args.level <= 3, `階級必須指定且 ≤ 3，實際 ${c.args.level}`);
+  }
+  assert.ok(!cmds.some((c) => c.args.level === 5), '5 階留給第 1 套');
+  const used = {};
+  for (const c of cmds) { const k = c.args.type + '@' + c.args.level; used[k] = (used[k] || 0) + 1; }
+  assert.ok((used['ruby@1'] || 0) <= 2 && (used['sapphire@2'] || 0) <= 1, '同一輪不超用庫存：' + JSON.stringify(used));
+});
+
+test('第 2、3 套維護：這一輪剛下了切換指令時不跑（面板還是舊的，會回「找不到物品」）', () => {
+  const p = createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    equipSets: { panel: 'panels.equipSets', home: 0, minFilled: 1, awayBlock: ['item.'], encounter: { elite: 2 }, investAllow: [] },
+    rules: [
+      { id: 'sw', cmd: 'player.switchEquipSet', equipSetSwitch: { panel: 'panels.equipSets', home: 0, minFilled: 1, encounter: { boss: 1, elite: 2 }, towerActive: 'panels.tower.tower.active' } },
+      { id: 'away-up', cmd: 'item.upgrade', awayOnly: true,
+        upgradePriority: { equippedRarities: 'panels.inv.equipmentRarities', equipment: 'panels.inv.equipment', hardCap: 10, minRarity: 2 } }
+    ]
+  });
+  const st = awayState(2);
+  st.panels.equipSets.sets = [{ slots: { helmet: 1 } }, { slots: { helmet: 1 } }, { slots: { helmet: 1 } }];
+  const cmds = p.decide(st);                       // 穿著第 3 套、沒有遭遇 → 規則要切回第 1 套
+  assert.ok(cmds.some((c) => c.name === 'player.switchEquipSet'), '應該切回主力');
+  assert.equal(byRule(cmds, 'away-up').length, 0, '切換後面板已過期，不能再對第 3 套的物件送強化');
+});

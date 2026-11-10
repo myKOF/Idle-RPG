@@ -408,6 +408,14 @@ const snapRows = [];
 /* 場上存活敵人數的診斷：數量分佈，以及「最近 60 秒最小平方斜率」（隻／分鐘）的分佈。
    用途是替策略的戰場負載目標（slopePerMin／windowAvg）挑門檻——門檻要看健康狀態下的分佈，
    不能憑感覺。純診斷，策略看不到，不影響模擬。 */
+/* 三套裝備各自的使用時間（遊戲秒，只算在線）。看存檔時要知道主力第 1 套實際穿了多久：
+   野外幾乎隨時有菁英，第 3 套可能佔了大半，而它只吃剩餘資源。 */
+const equipSetSec = {};
+function addEquipSetTime(sec) {
+  const G0 = engine.state();
+  const k = (G0 && G0.equipActive) || 0;
+  equipSetSec[k] = (equipSetSec[k] || 0) + sec;
+}
 const liveSeries = [];
 const FIELD_LOAD_WINDOWS = [60, 180, 300];
 const fieldLoadStats = {
@@ -496,6 +504,8 @@ function snapshot() {
     totalDeaths: lootStats.deaths || 0,
     cumGold: lootStats.gold || 0,
     /* 場上存活敵人數／戰場容量：堆到容量上限＝打怪速度追不上出怪速度。 */
+    /* 目前穿的是第幾套（0＝第 1 套）。結尾存檔的「使用中裝備」是這一套，不一定是主力的第 1 套。 */
+    equipActive: (G && G.equipActive) || 0,
     fieldLive: engine.ctx.liveFieldEnemies ? engine.ctx.liveFieldEnemies().length : 0,
     fieldCap: engine.ctx.fieldMaxLiveEnemiesFor ? engine.ctx.fieldMaxLiveEnemiesFor() : 0
   };
@@ -615,6 +625,7 @@ try {
 
       if (!observeOn) {
         engine.step(n);
+        addEquipSetTime(n * engine.dt);
       } else {
         /* 把一個行動間隔切成若干個觀測間隔。每一段之間問一次觀測——它只讀
            view.stage 與 track.monster 指到的那個面板，不碰背包。 */
@@ -622,6 +633,7 @@ try {
         while (left > 0) {
           const chunk = Math.min(stepsPerObserve, left);
           engine.step(chunk);
+          addEquipSetTime(chunk * engine.dt);
           left -= chunk;
           const oPanels = {};
           for (const p of observePanels) oPanels[p] = engine.panel(p, panelParamsFor(p));
@@ -769,6 +781,7 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
     totalBattles: 'LOOT_STATS.battles（累積）',
     totalDeaths: 'LOOT_STATS.deaths（累積）',
     cumGold: 'LOOT_STATS.gold（累積獲得，非持有）',
+    equipActive: 'G.equipActive（目前使用中的裝備組，0＝第 1 套）',
     fieldLive: 'liveFieldEnemies().length（場上存活敵人數）',
     fieldCap: 'fieldMaxLiveEnemiesFor()（戰場容量）',
     ...Object.fromEntries(SNAP_VIEW_KEYS.map((k) => [k, `buildView().${k}（目前持有，非累積）`]))
@@ -852,6 +865,7 @@ const summary = {
     const R = engine.ctx.RARITIES || [];
     return R.map((r, i) => ({ index: i, key: r.key, name: r.name }));
   })(),
+  equipSetSec: equipSetSec,
   fieldLoad: fieldLoadStats.summary(),
   performance: {
     /* 實際跑掉的步數。啟用班表時它會少於 wallHours × 36000——離線那一段沒有跑 simStep，

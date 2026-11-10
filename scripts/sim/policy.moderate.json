@@ -379,6 +379,49 @@
       }
     },
     {
+      "id": "upgrade-away-cheap",
+      "everySec": 60,
+      "cmd": "item.upgrade",
+      "why": "第 2、3 套的便宜維護：被穿著時把裝備強化到 +10（品質 R2 以上）。+10 以內金幣與碎片消耗很低，再往上留給第 1 套。與第 1 套相同的平均階梯，不會集中在某幾件。",
+      "upgradePriority": {
+        "equippedRarities": "panels.inv.equipmentRarities",
+        "equipment": "panels.inv.equipment",
+        "even": {
+          "stepLow": 1,
+          "highFrom": 20,
+          "stepHigh": 1,
+          "stepHighWithSuccess": 5,
+          "successAffix": "enhanceSuccess",
+          "priority": [
+            [
+              "weapon",
+              "weapon2",
+              "amulet",
+              "ring",
+              "ring2"
+            ],
+            [
+              "gloves",
+              "belt"
+            ],
+            [
+              "helmet",
+              "shoulder",
+              "chest",
+              "wrist",
+              "legs",
+              "boots"
+            ]
+          ],
+          "說明": "平均強化：所有部位先一起到 +1，再一起到 +2……，沒有哪一件能跑到別人前面；資源不夠時依優先序：武器與首飾（主要輸出）→ 手套、腰帶 → 各部位防具。",
+          "依據": "先前每件各自強化到上限，碎片與金幣全灌在表單排前面的幾件（實測胸甲 +17、腿甲 +12，武器與戒指還是 +0）。階梯單位：+20 以內逐級平均（1）；超過 +20 強化會失敗且損失半數材料，身上沒有「強化成功率」詞條就仍以 1 為單位，有的話放寬到 5"
+        },
+        "hardCap": 10,
+        "minRarity": 2
+      },
+      "awayOnly": true
+    },
+    {
       "id": "gem-convert",
       "everySec": 60,
       "cmd": "gem.convert",
@@ -792,6 +835,99 @@
         ]
       },
       "why": "把寶石鑲進空插槽，依 player_strategy.md 寶石鑲嵌策略分段：前50級 生命→暴擊率→吸血→物攻→魔攻；51~100 吸血→暴擊率→爆傷→生命→物攻→魔攻；101以後 一半爆傷、一半六大屬性傷害加成（mix 兩組輪流）。手上沒有偏好種類就鑲任何有貨的；階級由遊戲挑（socketGem 取庫存最高階），所以本規則排在 gem-compose 之後，先合成再鑲就會鑲到當前可得的最高品質"
+    },
+    {
+      "id": "socket-gems-away",
+      "everySec": 60,
+      "cmd": "gem.socket",
+      "socketEmpty": {
+        "equipment": "panels.inv.equipment",
+        "gems": "panels.gems.gems",
+        "levelPath": "view.level",
+        "preferByLevel": [
+          {
+            "maxLevel": 50,
+            "types": [
+              "amethyst",
+              "garnet",
+              "topaz",
+              "ruby",
+              "sapphire"
+            ],
+            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
+          },
+          {
+            "maxLevel": 100,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "51~100級：暴擊率、爆擊傷害"
+          },
+          {
+            "maxLevel": 200,
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "types": [
+              "garnet"
+            ],
+            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
+          },
+          {
+            "maxLevel": 200,
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "101以後但爆率未達100%：先把爆率補上來"
+          },
+          {
+            "when": [
+              "panels.header.stats.critRate",
+              ">=",
+              100
+            ],
+            "mix": [
+              [
+                "garnet"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark"
+              ]
+            ],
+            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
+          },
+          {
+            "types": [
+              "amethyst",
+              "garnet"
+            ],
+            "依據": "收尾段：爆率未達100%時繼續補爆擊"
+          }
+        ],
+        "minLevelByType": {
+          "topaz": 3,
+          "ruby": 3,
+          "sapphire": 3,
+          "coreFire": 6,
+          "coreIce": 6,
+          "coreLightning": 6,
+          "corePoison": 6,
+          "coreLight": 6,
+          "coreDark": 6
+        },
+        "maxGemLevel": 3
+      },
+      "why": "第 2、3 套的便宜維護：趁它們被穿著時（野外幾乎隨時有菁英，第 3 套常常穿很久）把低階寶石（3 階以下）鑲進空插槽。高階留給第 1 套；低階寶石合成後每種每階最多剩 2 顆，本來就沒人要。",
+      "awayOnly": true
     },
     {
       "id": "rune-plan",

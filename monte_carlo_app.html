@@ -785,6 +785,15 @@
         #itemDetailPanel .gem-ico.gi-inline { display: inline-block; width: 1.6em; height: 1.6em; vertical-align: -0.5em; }
         #itemDetailPanel .rune-stone { display: block; flex: 0 0 auto; width: 32px; height: 32px; }
 
+        .equip-set-tabs { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: -6px 0 14px; }
+        .equip-set-tabs .set-tab {
+            background: #0f172a; border: 1px solid #334155; color: #cbd5e1; border-radius: 8px;
+            padding: 6px 14px; cursor: pointer; font-size: 13px; font-family: inherit;
+        }
+        .equip-set-tabs .set-tab:hover { border-color: #818cf8; }
+        .equip-set-tabs .set-tab.active { background: #312e81; border-color: #818cf8; color: #fff; font-weight: 700; }
+        .equip-set-tabs .set-note { color: #94a3b8; font-size: 12px; }
+
         .item-detail-header {
             display: flex;
             align-items: center;
@@ -1232,6 +1241,7 @@
             <div class="modal-title">🛡️ 角色全身裝備與屬性快照 (Character Paperdoll & Stats Snapshot)</div>
             <button type="button" class="btn-close-modal" onclick="closeEquipmentModal()">&times;</button>
         </div>
+        <div class="equip-set-tabs" id="equipSetTabs"></div>
         <div class="paperdoll-layout">
             <!-- 👈 左側：玩家全屬性快照面板 (對齊遊戲內側欄屬性面板) -->
             <div class="player-stats-panel" id="playerStatsPanel">
@@ -1405,6 +1415,8 @@
     let currentLogPage = 1;
     const LOG_PAGE_SIZE = 50;
     let selectedEquipSlotKey = 'chest';
+    let equipSetSecLoaded = null;                        // run_summary.equipSetSec：{ 套別: 遊戲秒 }
+    let selectedEquipSetIdx = 0;                         // 紙娃娃目前看的是第幾套（0＝第 1 套）
     let finalSaveG = null;
 
     // 檔案拖曳與選擇監聽
@@ -1656,6 +1668,8 @@
                     : elapsedSec >= 60 ? Math.floor(elapsedSec / 60) + ' 分 ' + Math.round(elapsedSec % 60) + ' 秒'
                     : elapsedSec.toFixed(1) + ' 秒')
                 : '-';
+            /* 三套裝備各自的使用時間（遊戲秒）；舊資料沒有這個欄位就是 null，頁籤不顯示佔比。 */
+            equipSetSecLoaded = (summary.equipSetSec && typeof summary.equipSetSec === 'object') ? summary.equipSetSec : null;
             document.getElementById('sumSpeedup').innerText = (summary.performance && summary.performance.speedupX) ? (summary.performance.speedupX.toLocaleString() + 'x') : '-';
             document.getElementById('sumDecisions').innerText = summary.decisions ? summary.decisions.toLocaleString() : '-';
             
@@ -1739,6 +1753,15 @@
             currentSimResult = currentSimResult || {};
             currentSimResult.topRun = currentSimResult.topRun || {};
             currentSimResult.topRun.equipments = finalSaveG.equipment;
+            /* 三套裝備都記下來：存檔的 equipment 只是「結束那一刻使用中」的那一套，
+               不一定是主力第 1 套（野外幾乎隨時有菁英，常常穿著第 3 套），只看它會誤判成主力沒強化。 */
+            currentSimResult.topRun.equipmentSets = Array.isArray(finalSaveG.equipmentSets) ? finalSaveG.equipmentSets : null;
+            currentSimResult.topRun.equipActive = finalSaveG.equipActive || 0;
+            currentSimResult.topRun.equipSetNames = finalSaveG.equipSetNames || [];
+            selectedEquipSetIdx = 0;                       // 預設看主力第 1 套
+            if (currentSimResult.topRun.equipmentSets && currentSimResult.topRun.equipmentSets[0]) {
+                currentSimResult.topRun.equipments = currentSimResult.topRun.equipmentSets[0];
+            }
             currentSimResult.topRun.char = {
                 level: finalSaveG.player ? finalSaveG.player.level : 1,
                 reincarnation: finalSaveG.player ? finalSaveG.player.reincarnations : 0,
@@ -2865,6 +2888,7 @@
         };
 
         const steps = [
+            ['equipSetTabs', '裝備組頁籤', renderEquipSetTabs],
             ['playerStatsPanel', '玩家屬性面板', renderPlayerStatsPanel],
             ['paperdollGrid', '紙娃娃', renderPaperdollGrid],
             ['itemDetailPanel', '裝備詳情', () => selectPaperdollSlot('chest')],
@@ -2873,6 +2897,38 @@
         for (const [containerId, label, fn] of steps) {
             try { fn(); } catch (e) { panelFail(containerId, label, e); }
         }
+    }
+
+    /* 裝備組頁籤：第 1／2／3 套各看一次，標出「存檔結束時使用中」的那一套。
+       左邊的屬性面板是存檔當下（使用中那套）的數值，另外兩套沒有現成的屬性可讀，所以會標註。 */
+    function renderEquipSetTabs() {
+        const box = document.getElementById('equipSetTabs');
+        if (!box) return;
+        const run = currentSimResult && currentSimResult.topRun;
+        const sets = run && run.equipmentSets;
+        if (!sets || sets.length < 2) { box.style.display = 'none'; return; }
+        box.style.display = 'flex';
+        const names = run.equipSetNames || [];
+        box.innerHTML = sets.map((s, i) => {
+            const n = s ? Object.keys(s).filter((k) => s[k]).length : 0;
+            const nm = (names[i] && String(names[i]).trim()) || ('第 ' + (i + 1) + ' 套');
+            const live = (i === run.equipActive) ? '（結束時使用中）' : '';
+            const sec = equipSetSecLoaded ? (Number(equipSetSecLoaded[i]) || 0) : null;
+            const tot = equipSetSecLoaded ? Object.values(equipSetSecLoaded).reduce((a, v) => a + (Number(v) || 0), 0) : 0;
+            const share = (sec !== null && tot > 0) ? ` · 使用 ${(sec / tot * 100).toFixed(1)}%（${(sec / 3600).toFixed(1)}h）` : '';
+            return `<button type="button" class="set-tab${i === selectedEquipSetIdx ? ' active' : ''}" onclick="selectEquipSet(${i})">${nm} · ${n} 件${share}${live}</button>`;
+        }).join('')
+            + `<span class="set-note">左側屬性面板是存檔當下使用中那套的數值，切換頁籤只換紙娃娃與詳情</span>`;
+    }
+
+    function selectEquipSet(idx) {
+        const run = currentSimResult && currentSimResult.topRun;
+        if (!run || !run.equipmentSets || !run.equipmentSets[idx]) return;
+        selectedEquipSetIdx = idx;
+        run.equipments = run.equipmentSets[idx];
+        renderEquipSetTabs();
+        renderPaperdollGrid();
+        selectPaperdollSlot(selectedEquipSlotKey || 'chest');
     }
 
     function renderPlayerStatsPanel() {

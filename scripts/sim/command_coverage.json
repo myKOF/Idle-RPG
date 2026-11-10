@@ -233,6 +233,18 @@
     "tower.stopAuto": {
       "類別": "redundant",
       "理由": "tower.finish 涵蓋"
+    },
+    "merchant.open": {
+      "類別": "noRule",
+      "理由": "寶石商店現在要先消耗「神祕邀請券」召喚商人才開得了（openMysteryMerchant），player_strategy.md 沒寫邀請券的取得與使用時機。現有的 gem-shop-* 規則因此每次都被回「請先消耗神祕邀請券召喚商人」（24 小時各 50~70 次空轉）；要不要補，由設計者決定券怎麼用"
+    },
+    "merchant.close": {
+      "類別": "noRule",
+      "理由": "與 merchant.open 成對：商人開著才有關閉的問題，策略沒有開商人的規則就沒有關閉的規則"
+    },
+    "ui.markUnlockSeen": {
+      "類別": "never",
+      "理由": "純 UI：標記「新解鎖」提示已讀，與遊戲進度無關"
     }
   }
 }
