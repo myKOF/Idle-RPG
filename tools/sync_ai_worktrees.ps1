@@ -9,6 +9,7 @@ param(
     [switch]$NoAutoResolve,
     [switch]$NoIndexRecovery,
     [switch]$NoShortcutRecovery,
+    [switch]$NoAssetRecovery,
     [string]$CodexCommand = 'codex.cmd'
 )
 
@@ -202,9 +203,15 @@ function Sync-AssetLibrary {
         return 'failed'
     }
 
-    # 有未提交變更就不 pull／push。rebase 會直接拒絕，而 push 半套上去只會讓
-    # 下次更難收拾。這不是錯誤，是「這台電腦上還有沒整理完的素材」，
-    # 所以只警告並把它留給使用者決定。
+    # 僅備份上游新增受管檔同路徑的未追蹤殘留；真正的在製修改維持原保護。
+    try {
+        . (Join-Path $PSScriptRoot 'sync-asset-recovery.ps1')
+        $target = Get-GitTextSoft -Worktree $root -GitArguments @('rev-parse', "$upstream^{commit}")
+        $recovery = Invoke-SyncAssetResidualRecovery -Worktree $root -Target $target -Disabled:$NoAssetRecovery
+    } catch {
+        Write-Host ('[失敗] 素材庫殘留備份未完成，保留現場與收據：{0}' -f $_.Exception.Message) -ForegroundColor Red
+        return 'failed'
+    }
     $status = Get-GitTextSoft -Worktree $root -GitArguments @(
         'status', '--porcelain=v1', '--untracked-files=normal')
     if ($status) {
@@ -214,8 +221,9 @@ function Sync-AssetLibrary {
         return 'skipped'
     }
 
-    if ((Invoke-GitSoft -Worktree $root -GitArguments @('pull', '--rebase')) -ne 0) {
-        Write-Host '[失敗] 素材庫 pull --rebase 失敗，未 push。請人工處理後再同步一次。' -ForegroundColor Red
+    $update = if ($recovery -eq 'recovered') { @('merge', '--ff-only', $target) } else { @('pull', '--rebase') }
+    if ((Invoke-GitSoft -Worktree $root -GitArguments $update) -ne 0) {
+        Write-Host '[失敗] 素材庫更新失敗，未 push；備份持續保留。請檢查原因後再同步一次。' -ForegroundColor Red
         return 'failed'
     }
     if ((Invoke-GitSoft -Worktree $root -GitArguments @('push')) -ne 0) {

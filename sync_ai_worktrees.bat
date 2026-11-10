@@ -10,6 +10,8 @@ rem Failed fast-forward index writes are verified, backed up and repaired automa
 rem Pass -NoIndexRecovery to disable index recovery.
 rem Retired hidden Excel shortcuts are backed up before a verified BAT replacement.
 rem Pass -NoShortcutRecovery to disable that narrowly scoped recovery.
+rem Untracked asset leftovers shadowing upstream files are backed up before syncing.
+rem Backups stay in asset Git metadata; -NoAssetRecovery disables this recovery.
 rem Comments here stay ASCII on purpose: after chcp 65001, multi-byte text on a
 rem non-echo line can be re-parsed as a command. See test W8 in vfx-editor-save.
 chcp 65001 >nul

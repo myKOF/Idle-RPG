@@ -2,6 +2,16 @@
 
 執行根目錄的 `sync_ai_worktrees.bat`，維持原本的素材庫同步、三個 AI 分支推送、develop 整合及回同步流程。develop 合併發生衝突時，現在會自動呼叫本機 Codex CLI，完成三方分析、必要修改與測試，不需要另開聊天輸入「1」。
 
+## 素材庫殘留檔案自動備份
+
+素材庫 fetch 後，若只有未追蹤殘留擋住上游新增的同路徑檔案，且目前分支可直接 fast-forward 至該上游提交，BAT會自動備份並接續更新與push。適用於先前只複製一部分素材、相同內容重複留下、空白／截斷檔或與遠端不同的舊檔；本機位元組完整保留，不用先刪除或提交殘留。
+
+備份位於素材庫Git metadata下的 `sync-asset-recovery/<時間與識別碼>/files/<原相對路徑>`；`record.json`記錄來源分支／HEAD、固定上游SHA、原路徑、本機SHA256及上游blob。只逐檔移存，不整個搬走含其他素材的目錄，不刪除備份、不自動提交素材。備份完整驗證後，僅對該固定SHA執行fast-forward；主控台與每次Markdown報告都列出備份位置。
+
+中斷留下 `sync-asset-recovery/pending.json`，重跑時先核對原分支／HEAD／上游、所有來源與已完成備份，接續未移存檔案。來源或備份被修改、出現新檔、鎖定、連結／越界路徑或Git操作中的現場會保留並回報；不猜測復原、不覆寫新修改。其他未追蹤新素材、已追蹤／暫存修改、分岔歷史與忽略檔碰撞，不會被當作殘留搬走，仍沿原流程保留或停止。
+
+`-NoAssetRecovery`停用自動備份；若已有未完成收據則回報失敗並保留。`-ValidateOnly`不備份、不移動、不fetch／合併／push；`-SkipAssetLibrary`完整略過素材庫。此修復僅適用素材庫，不會搬走AI工作區的未提交檔案。
+
 ## 本機條件
 
 固定同步分支 `ai/antigravity`、`ai/claude`、`ai/codex` 與專用分支分開管理。若固定分支仍存在、但沒有簽出的工作區，工具會在 develop 所在目錄的上一層建立 `.ai-sync-worktrees/<AI名稱>` 固定副本，沿用該分支完整歷史；不切換原工作區、不重設分支，路徑已存在則停止而不覆蓋。
@@ -106,6 +116,7 @@ sync_ai_worktrees.bat -ValidateOnly
 sync_ai_worktrees.bat -NoAutoResolve
 sync_ai_worktrees.bat -NoIndexRecovery
 sync_ai_worktrees.bat -NoShortcutRecovery
+sync_ai_worktrees.bat -NoAssetRecovery
 sync_ai_worktrees.bat -SkipAssetLibrary
 sync_ai_worktrees.bat -CodexCommand "C:\path\to\codex.cmd"
 ```

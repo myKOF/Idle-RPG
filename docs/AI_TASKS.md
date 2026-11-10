@@ -1,3 +1,31 @@
+## TOWER-BOSS3-WALK-20261110 — 第3隻BOSS五動作接入
+
+- Owner：Codex，Done，單一開發者。使用者提供BOSS3_Walk.glb，要求接入第三隻BOSS的移動動作；沿用本聊天已確認的使用者自製／生成系列及遊戲使用／修改授權。
+- 前置：Npc3D可選攻擊／死亡備援已存在；逐檔預檢無外部來源。允許NPC第484列外觀／模型／動作、CSV／data與主頁／bridge／Worker資料快取、獨立GLB／頭像／Blender來源／製作及匯出器、相關回歸、LV／交接及本段。只更新第3／53／103層使用的第3列，保留名稱、圖示與數值／技能，其他49列保持；不借用前BOSS攻擊或死亡，不改戰鬥／協議／存檔／解鎖，不合併推送。
+- 驗收：原檔動作與材質保留、站立首幀及走路循環、缺攻擊／死亡合法備援、原生Excel獨占／正常重開／窄改驗證、實際遊戲載入及移動，相關測試／Build與雙庫來源SHA／提交。後續交使用者驗收及提供其他動作。
+- 使用者追加BOSS3_Attack1／Attack2／Attack3／Die.glb，授權接入三攻擊及死亡；本輪擴為完整五動作，取代缺動作備援，正式檔改用boss3_character.glb／png。新製作／匯出工具、資產回歸與交接皆在授權範圍，其他49列與戰鬥數值保持。五來源節點／靜止骨架一致，沿用既有樹人合併流程保留Walk表面與素材、追加四動畫；攻擊固定水平根位移，保留高度及其餘姿勢。
+
+- 完成：新增boss3_character.glb／1080px透明頭像、獨立合併／Blender來源／匯出工具、資產回歸及交接；更新NPC第484列G:J／AB:AH、CSV／data、主頁data／bridge與Worker資料快取、兩份既有模型回歸、LV及本段，共17檔。47關節、每動畫120通道；Running／Basic_Jump／Right_Hand_Sword_Slash／Shield_Push_Left／Shot_and_Fall_Forward原時長0.633333／5.866667／1.5／2.366667／2.166667秒。
+- 來源QA：Walk整段原始BIN在合併檔前綴逐位相同，網格／蒙皮／材質／貼圖保持。五動作時間key全部逐位相同；Walk／Die的120通道保持，三攻擊只固定一個Hips平移通道x/z、y逐key相同，其餘119通道逐位保持。Blender重開47骨／五動作／三圖打包通過；透明PNG1080×1080、alpha0～255。
+- Excel：獨占後原生窄改／正常重開，每輪核對28,365格與七物件；相對開始基線最終僅本列11格改變，其他49列及原名稱／圖示／屬性／技能／速度／距離／倍率保持。兩頁24,535格樣式及樣式XML、列高／欄寬、合併／驗證／條件格式／視圖／篩選／圖形皆一致。NPC重建再試跑語意0，String寫死0。
+- 回歸指令：node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-action-motion.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/boss3-character-asset.test.cjs tests/worker-protocol.test.cjs，共41/41；npm.cmd run build最終709檔通過。動畫逐位QA、原生Blend重開、雙庫23項SHA及diff／stat／check通過。
+- 實機：隔離Edge／正式主頁／原生Worker／新局／GM鎖血，第3關載入新GLB，移動Running有正位移及同步播放率；attack／cast依序播放三招；正式GM damage 100%後die使用Shot_and_Fall_Forward。Console error0，無模型警告，另記錄未修改音訊模組Oscillator頻率16224.8Hz限幅提示。初輪全域警告斷言碰到既有dark-gold-seal preload提示及死亡後過早等待結算確認而逾時，已按本輪模型範圍重驗並保留原始警告，不改產品或正式斷言。
+- 唯讀檢查AI_RULES／AGENTS／Workflow／prompts、樹人／骷髏王來源與工具、Hero3D／Npc3D／BattleRenderer、Worker／GM／塔戰、原NPC及Excel管線；未改共用3D／戰鬥／協議／存檔／解鎖，保留舊boss3.glb。完整來源與重建見docs/assets/TOWER_BOSS3_CHARACTER_SOURCE.md。素材庫tower-boss3-character-20261110保存五原檔、成品、可編輯Blend、工具／QA，先提交b444ee20cec8f676b7506dd46773906fd62d4125；遊戲提交為本段所在提交，SHA見回報。
+- 交付：本項無未完成，可供Review及使用者合併，未合併或推送。未做行動真機／跨瀏覽器／長時間效能；音訊／預載提示不在本輪範圍，名稱沿用NPC目前設定。本次未要求GIF，暫存輸出歸檔後清理，保留最終遊戲截圖；下一步由使用者重載驗收第三隻BOSS。
+
+- 提交分段：結束前使用者套表另產生Relics／String／Zones／game_parameters來源與CSV、formula及data防禦轉生倍率2→1.5變更；與本BOSS列無語意相依。本項只stage data的tower_boss_3 hunk，其餘參數與表格修改原樣保留，不納入本提交。
+
+## SYNC-ASSET-RESIDUAL-20261110 — 素材庫殘留檔案自動備份與接續同步
+
+- Owner：Codex；Done，單一開發者。使用者明確要求把本次素材庫未追蹤殘留擋住更新的修復納入sync_ai_worktrees.bat，之後自動備份並繼續。
+- 前置：規範／Workflow／既有任務及逐檔衝突預檢已讀，無其他修改來源。範圍：BAT、tools/sync_ai_worktrees.ps1、新獨立素材備份模組／行為回歸、docs/SYNC_AI_WORKTREES.md及本段；不修改素材內容、Excel、玩法、其他AI進行中腳本、main或隔離來源。
+- 實作：僅處理可fast-forward且與上游新增受管檔同路徑的未追蹤殘留；保留差異與空檔原始位元組，以來源SHA、路徑／連結／鎖定檢查及Git metadata收據備份，接續正常同步；無關新素材或已追蹤修改仍保留。支援中斷接續、唯讀及停用選項，主控台與Markdown報告列出備份。
+- 驗收：隔離本機Git遠端／實際BAT測試正常修復與重跑、非殘留保護、零位元組／不同內容、中文空白路徑、鎖定與連結、中斷／備份變更及來源移動；相關既有回歸、PowerShell語法／Build／diff。完成後獨立Commit；不擅自處理Antigravity驗證檔，不以真實素材製造測試故障。
+- 完成：新tools/sync-asset-recovery.ps1將逐檔SHA驗證的原始位元組移存至素材庫Git metadata的sync-asset-recovery/<時間-GUID>/files，保存record.json及中斷pending.json；正常完成僅移除pending指標、所有歷史備份保留。接續固定上游SHA的ff-only與既有push，錯誤維持素材／程式碼同步的獨立回報。-NoAssetRecovery可停用；唯讀／略過不改素材。拒絕已追蹤／暫存修改、無關新素材、分岔、忽略檔碰撞、鎖定／連結／路徑越界、收據竄改及來源／備份變更；不自動commit／reset／clean。
+- 驗證：node --test --test-reporter=tap --test-force-exit tests/sync-asset-recovery.test.cjs tests/sync-ai-worktrees.test.cjs覆蓋24案例；23項先通過，另1項驗證已追蹤檔保留的fixture因Windows自動CRLF而失敗，改以執行前後原始位元組比較後，--test-name-pattern='tampered pending receipt'重驗1/1通過（保留更嚴格的逐位元組斷言）。前一輪16項已全通過，含真實BAT完整雙倉庫／三AI分支同步、Markdown備份路徑、第二次冪等、三種停用／唯讀模式。另既有sync-auto-conflicts的PowerShell/BAT編碼及兩種Full sync asset gate共3/3通過，補齊其fixture新模組依賴，未弱化既有斷言。不同案例共27項驗證通過。npm.cmd run build通過708檔；Windows PowerShell 5原生解析、兩份測試node --check及diff --check通過。未跑全庫或在真實素材製造故障；TAP及Build在logs/sync-asset-*.tap／sync-asset-recovery-build.log。
+- 修改：BAT、tools/sync_ai_worktrees.ps1、新備份模組、新tests/sync-asset-recovery.test.cjs、既有tests/sync-auto-conflicts.test.cjs的fixture／解析清單、操作文件與本段。唯讀檢查規範／Workflow／Agent、原素材同步／index修復／報告及既有相關測試、真實各工作區與素材庫狀態；未改素材／Excel／玩法／LV／String／快取，沒有素材庫變更或空Commit。
+- 交付：自我Review發現並封住竄改收據移走已追蹤檔的路徑，補回歸驗證；Commit為本段所在[Codex] fix: 自動備份素材庫同步殘留檔案，SHA見交付。僅提交Codex分支，未合併／推送develop或操作其他AI未提交報告。可供Review及後續正常整合；已知限制是只有明確可ff的同路徑未追蹤殘留自動處理，其他在製內容仍保留。下一步使用Codex新版BAT或由使用者／整合者合併後在develop使用。
+
 ## SYNC-MERGE-20261110-OFFLINE — 遺物離線獎勵與20級資料整合
 
 - Owner：Codex；Done（本次衝突解決及驗證完成，後續完整同步由既有同步器執行並留報告）。使用者要求解決同步中斷；保留 develop 20級遺物／新增字串、Claude 離線小時獎勵及 Codex 最新數值成果，再同步三個固定 AI 工作區；codex/background-catchup 明確隔離維持。
