@@ -1,3 +1,14 @@
+## SYNC-ASSET-RESIDUAL-20261110 — 素材庫殘留檔案自動備份與接續同步
+
+- Owner：Codex；Done，單一開發者。使用者明確要求把本次素材庫未追蹤殘留擋住更新的修復納入sync_ai_worktrees.bat，之後自動備份並繼續。
+- 前置：規範／Workflow／既有任務及逐檔衝突預檢已讀，無其他修改來源。範圍：BAT、tools/sync_ai_worktrees.ps1、新獨立素材備份模組／行為回歸、docs/SYNC_AI_WORKTREES.md及本段；不修改素材內容、Excel、玩法、其他AI進行中腳本、main或隔離來源。
+- 實作：僅處理可fast-forward且與上游新增受管檔同路徑的未追蹤殘留；保留差異與空檔原始位元組，以來源SHA、路徑／連結／鎖定檢查及Git metadata收據備份，接續正常同步；無關新素材或已追蹤修改仍保留。支援中斷接續、唯讀及停用選項，主控台與Markdown報告列出備份。
+- 驗收：隔離本機Git遠端／實際BAT測試正常修復與重跑、非殘留保護、零位元組／不同內容、中文空白路徑、鎖定與連結、中斷／備份變更及來源移動；相關既有回歸、PowerShell語法／Build／diff。完成後獨立Commit；不擅自處理Antigravity驗證檔，不以真實素材製造測試故障。
+- 完成：新tools/sync-asset-recovery.ps1將逐檔SHA驗證的原始位元組移存至素材庫Git metadata的sync-asset-recovery/<時間-GUID>/files，保存record.json及中斷pending.json；正常完成僅移除pending指標、所有歷史備份保留。接續固定上游SHA的ff-only與既有push，錯誤維持素材／程式碼同步的獨立回報。-NoAssetRecovery可停用；唯讀／略過不改素材。拒絕已追蹤／暫存修改、無關新素材、分岔、忽略檔碰撞、鎖定／連結／路徑越界、收據竄改及來源／備份變更；不自動commit／reset／clean。
+- 驗證：node --test --test-reporter=tap --test-force-exit tests/sync-asset-recovery.test.cjs tests/sync-ai-worktrees.test.cjs覆蓋24案例；23項先通過，另1項驗證已追蹤檔保留的fixture因Windows自動CRLF而失敗，改以執行前後原始位元組比較後，--test-name-pattern='tampered pending receipt'重驗1/1通過（保留更嚴格的逐位元組斷言）。前一輪16項已全通過，含真實BAT完整雙倉庫／三AI分支同步、Markdown備份路徑、第二次冪等、三種停用／唯讀模式。另既有sync-auto-conflicts的PowerShell/BAT編碼及兩種Full sync asset gate共3/3通過，補齊其fixture新模組依賴，未弱化既有斷言。不同案例共27項驗證通過。npm.cmd run build通過708檔；Windows PowerShell 5原生解析、兩份測試node --check及diff --check通過。未跑全庫或在真實素材製造故障；TAP及Build在logs/sync-asset-*.tap／sync-asset-recovery-build.log。
+- 修改：BAT、tools/sync_ai_worktrees.ps1、新備份模組、新tests/sync-asset-recovery.test.cjs、既有tests/sync-auto-conflicts.test.cjs的fixture／解析清單、操作文件與本段。唯讀檢查規範／Workflow／Agent、原素材同步／index修復／報告及既有相關測試、真實各工作區與素材庫狀態；未改素材／Excel／玩法／LV／String／快取，沒有素材庫變更或空Commit。
+- 交付：自我Review發現並封住竄改收據移走已追蹤檔的路徑，補回歸驗證；Commit為本段所在[Codex] fix: 自動備份素材庫同步殘留檔案，SHA見交付。僅提交Codex分支，未合併／推送develop或操作其他AI未提交報告。可供Review及後續正常整合；已知限制是只有明確可ff的同路徑未追蹤殘留自動處理，其他在製內容仍保留。下一步使用Codex新版BAT或由使用者／整合者合併後在develop使用。
+
 ## SYNC-MERGE-20261110-OFFLINE — 遺物離線獎勵與20級資料整合
 
 - Owner：Codex；Done（本次衝突解決及驗證完成，後續完整同步由既有同步器執行並留報告）。使用者要求解決同步中斷；保留 develop 20級遺物／新增字串、Claude 離線小時獎勵及 Codex 最新數值成果，再同步三個固定 AI 工作區；codex/background-catchup 明確隔離維持。
