@@ -1,3 +1,14 @@
+## TOWER-BGM-20261110 — 封魔塔挑戰立即切換配樂
+
+- Owner：Codex；Done，單一開發者。使用者指定既有audio/zones/blades-of-the-rising-sun.mp3為封魔塔BOSS戰配樂，按挑戰立即開始；前置為既有場景音樂與Worker挑戰流程。
+- 允許js/ui-sound.js、js/ui.js、index.html快取、相關音訊回歸、audio/zones/README.md、LV_upgrade_system.md與本段；禁止變更戰鬥／Worker／存檔／解鎖／其他配置或工作區，不合併推送。逐檔預檢乾淨。
+- 沿用現有音樂生命週期／音量／靜音，手動與連續挑戰送出時先切曲；權威塔戰快照接管，拒絕／傳送失敗回復野外，連續塔戰快照不重播。既有音檔原樣沿用，無素材變更。
+- 驗收即時起播、過期野外快照／曲間計時、挑戰失敗回復、塔戰／結算／撤退、音量／靜音／Loading／選單及相關回歸／Build／diff；自我Review及Commit後交使用者重載驗收與整合。
+- 完成：UISound加入專用塔戰曲，手動／連挑共用送出前切曲入口，等待ACK期間保護曲目；ACK後依原生Worker下一份tick（連挑正常回傳void）接管，active:false／字串或err拒絕／Promise傳送失敗回復場景。新增等待鎖防雙擊；同曲塔戰快照保留進度。首頁兩支JS快取同步tower-bgm-v1，README及LV更新。
+- 修改9檔：js/ui-sound.js、js/ui.js、index.html、tests/zone-music.test.cjs、tests/ui-achievement-sound.test.cjs、tests/tower-info-during-fight.test.cjs、audio/zones/README.md、LV_upgrade_system.md與本段。唯讀檢查共通規範／Workflow／prompts、Worker指令ACK→emitTick順序及連挑void回傳、tower結算／退場／自動續戰、main Loading、Zones來源及素材庫manifest／status。音檔雙庫SHA一致1fde84906a3c99253a95381b28ce01c565f8fc4f8026a7d9d4b545df35014119；沿用使用者既有提交6c84d97a，無素材變更，素材庫乾淨不建空Commit。
+- 測試：node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/tower-scene-intro.test.cjs tests/tower-auto-result.test.cjs tests/scene-startup-ready.test.cjs tests/vfx-editor-cache-versions.test.cjs，49/49；node --test tests/tower-info-during-fight.test.cjs，6/6。後者首輪抽取函式fixture尚未載入新入口而兩項失敗，修正為載入實際新函式／原錯誤辨識及Promise stub，保留原斷言並加等待鎖驗證後全過。npm.cmd run build通過709檔；String寫死0，git diff／stat／check與自我Review通過。
+- 交付：無未完成實作，可供Review及使用者合併；未合併／推送develop或main。Commit為本段所在「[Codex] feat: 封魔塔挑戰立即播放專用戰鬥配樂」，SHA見聊天。已知限制：本輪以音訊與UI函式回歸驗證，未做瀏覽器實際聆聽／跨瀏覽器測試，首次音檔冷載入仍依瀏覽器下載／解碼速度；播放要求在點擊同步送出、不等Worker或登場演出。下一步由使用者重新載入Codex遊戲驗收。
+
 ## TOWER-BOSS3-WALK-20261110 — 第3隻BOSS五動作接入
 
 - Owner：Codex，Done，單一開發者。使用者提供BOSS3_Walk.glb，要求接入第三隻BOSS的移動動作；沿用本聊天已確認的使用者自製／生成系列及遊戲使用／修改授權。

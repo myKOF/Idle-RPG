@@ -1205,6 +1205,21 @@ function applyUiBossFightView(view) {
   syncBossConfigControls();
 }
 
+function sendTowerChallengeCommand(commandName, args) {
+  if (typeof UISound !== 'undefined') UISound.beginTowerChallenge();
+  return sendUiCommand(commandName, args, {
+    keys: [nodePendingKey('tower')],
+    panels: ['tower', 'battle', 'header']
+  }).then(function (result) {
+    var accepted = !uiCommandResultError(result, commandName) && !(result && result.active === false);
+    if (typeof UISound !== 'undefined') UISound.finishTowerChallenge(accepted);
+    return result;
+  }, function (error) {
+    if (typeof UISound !== 'undefined') UISound.finishTowerChallenge(false);
+    throw error;
+  });
+}
+
 function skillLoadoutButtonAttributes(key) {
   return bossFightConfigLocked()
     ? ' disabled data-tip="' + STR(734) + '"'
@@ -12801,12 +12816,9 @@ function initUI() {
     }
     var tf = e.target.closest('[data-tower-floor]');
     if (tf) {
-      if (tf.disabled || towerViewActive(uiTowerPanelSnapshot()) || (viewState() || {}).towerActive) return;
+      if (tf.disabled || isUiCommandPending(nodePendingKey('tower')) || towerViewActive(uiTowerPanelSnapshot()) || (viewState() || {}).towerActive) return;
       var towerFloor = parseInt(tf.getAttribute('data-tower-floor'), 10);
-      sendUiCommand('tower.start', { floor: towerFloor }, {
-        keys: [nodePendingKey('tower')],
-        panels: ['tower', 'battle', 'header']
-      }).catch(function (error) {
+      sendTowerChallengeCommand('tower.start', { floor: towerFloor }).catch(function (error) {
         reportUiCommandFailure(STR(1902), error, ['tower', 'header']);
       });
       switchTab('tower');
@@ -12815,14 +12827,11 @@ function initUI() {
     // 高塔連續挑戰（次數取自 #tw-auto-count 輸入框）
     var ta = e.target.closest('[data-tower-auto]');
     if (ta) {
-      if (ta.disabled || towerViewActive(uiTowerPanelSnapshot()) || (viewState() || {}).towerActive) return;
+      if (ta.disabled || isUiCommandPending(nodePendingKey('tower')) || towerViewActive(uiTowerPanelSnapshot()) || (viewState() || {}).towerActive) return;
       var taInput = $id('tw-auto-count');
       var autoFloor = parseInt(ta.getAttribute('data-tower-auto'), 10);
       var autoCount = taInput ? parseInt(taInput.value, 10) : 0;
-      sendUiCommand('tower.startAuto', { floor: autoFloor, count: autoCount }, {
-        keys: [nodePendingKey('tower')],
-        panels: ['tower', 'battle', 'header']
-      }).catch(function (error) {
+      sendTowerChallengeCommand('tower.startAuto', { floor: autoFloor, count: autoCount }).catch(function (error) {
         reportUiCommandFailure(STR(1903), error, ['tower', 'header']);
       });
       switchTab('tower');

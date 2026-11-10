@@ -10,6 +10,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const { SCHEMAS, csvParse, readXlsxRows, extractLiteral } = require('../tools/config_tables.cjs');
 const track = 'audio/zones/desert-ascendant.mp3';
 const track2 = 'audio/zones/desert-ascendant_2.mp3';
+const towerTrack = 'audio/zones/blades-of-the-rising-sun.mp3';
 
 function mount(blocked = false, ready = true) {
   const events = {}, music = [], settings = { mute: false, musicVolume: 50, sfxVolume: 50 };
@@ -192,16 +193,87 @@ test('track ends respect mute, start-screen and page-exit pause; resume preserve
   assert.equal(audio.paused, false);
 });
 
-test('tower, blank and unknown maps stop field music; another configured map replaces it', () => {
+test('tower replaces field music; blank and unknown maps stop it', () => {
   const m = mount();
   m.scene('desert'); m.scene('desert', true);
   assert.equal(m.music[0].paused, true);
+  assert.equal(m.music[1].src, towerTrack);
+  assert.equal(m.music[1].paused, false);
   m.scene('desert'); m.scene('test');
   assert.equal(m.music[1].paused, true);
-  assert.equal(m.music[2].src, 'audio/test.mp3');
-  assert.equal(m.music[2].paused, false);
-  m.scene('missing');
   assert.equal(m.music[2].paused, true);
+  assert.equal(m.music[3].src, 'audio/test.mp3');
+  assert.equal(m.music[3].paused, false);
+  m.scene('missing');
+  assert.equal(m.music[3].paused, true);
+});
+
+test('challenge switches immediately during a field gap, ignores pre-ACK field ticks and preserves tower playback', () => {
+  const m = mount(); m.scene('desert'); m.finish(m.music[0]);
+  const late = m.pending()[0].fn;
+  m.c.UISound.beginTowerChallenge();
+  const boss = m.music[1];
+  assert.equal(boss.src, towerTrack); assert.equal(boss.paused, false);
+  assert.equal(m.pending().length, 0);
+  m.scene('desert'); late();
+  assert.equal(boss.paused, false); assert.equal(m.music.length, 2);
+  m.c.UISound.finishTowerChallenge(true);
+  boss.currentTime = 12;
+  for (let i = 0; i < 10; i++) m.scene('desert', true);
+  assert.equal(boss.currentTime, 12); assert.equal(boss.starts, 1);
+  m.scene('desert');
+  assert.equal(boss.paused, true); assert.equal(m.music[2].src, track);
+  assert.equal(m.music.filter(a => !a.paused).length, 1);
+});
+
+test('rejected challenges restore field music; void auto ACK is resolved by the next authority tick', () => {
+  const m = mount(); m.scene('desert'); m.c.UISound.beginTowerChallenge();
+  m.c.UISound.finishTowerChallenge(false);
+  assert.equal(m.music[1].paused, true); assert.equal(m.music[2].src, track);
+  m.c.UISound.beginTowerChallenge(); m.c.UISound.finishTowerChallenge(true);
+  m.scene('desert', false);
+  assert.equal(m.music[3].paused, true); assert.equal(m.music[4].src, track);
+  m.c.UISound.beginTowerChallenge(); m.c.UISound.finishTowerChallenge(true);
+  m.scene('desert', true);
+  const boss = m.music[5];
+  m.setting('musicVolume', 25); assert.equal(boss.volume, .25);
+  boss.currentTime = 7;
+  m.setting('mute', true); assert.equal(boss.paused, true);
+  m.setting('mute', false); assert.equal(boss.currentTime, 7); assert.equal(boss.paused, false);
+  m.events.pagehide(); assert.equal(boss.paused, true);
+  m.events.pageshow(); assert.equal(boss.paused, false);
+  m.c.UISound.setStartScreenActive(true); assert.equal(boss.paused, true);
+});
+
+test('manual and auto UI commands start music before dispatch and roll back false, error and transport rejection', async () => {
+  const src = read('js/ui.js');
+  const fn = src.slice(src.indexOf('function sendTowerChallengeCommand('), src.indexOf('function skillLoadoutButtonAttributes'));
+  for (const command of ['tower.start', 'tower.startAuto']) {
+    for (const result of [{ active: true }, undefined, { active: false }, { err: 'rejected' }, 'rejected', new Error('offline')]) {
+      const m = mount(); m.scene('desert');
+      const c = m.c;
+      c.nodePendingKey = () => 'node:tower';
+      c.uiCommandResultError = r => typeof r === 'string' ? r : r && r.err;
+      let release, fail;
+      c.sendUiCommand = (name, args, options) => {
+        assert.equal(name, command); assert.equal(args.floor, 1);
+        assert.equal(options.keys[0], 'node:tower');
+        assert.equal(m.music.at(-1).src, towerTrack); assert.equal(m.music.at(-1).paused, false);
+        return new Promise((resolve, reject) => { release = resolve; fail = reject; });
+      };
+      vm.runInContext(fn, c);
+      const action = c.sendTowerChallengeCommand(command, { floor: 1, count: 2 });
+      m.scene('desert'); assert.equal(m.music[1].paused, false);
+      if (result instanceof Error) { fail(result); await assert.rejects(action, /offline/); }
+      else { release(result); await action; }
+      const accepted = result === undefined || result.active === true;
+      if (accepted) m.scene('desert', true);
+      assert.equal(m.music.at(-1).src, accepted ? towerTrack : track);
+      assert.equal(m.music.filter(a => !a.paused).length, 1);
+    }
+  }
+  assert.match(src, /sendTowerChallengeCommand\('tower.start',/);
+  assert.match(src, /sendTowerChallengeCommand\('tower.startAuto',/);
 });
 
 test('menu and scene music are mutually exclusive through start-screen transitions', () => {
