@@ -480,6 +480,12 @@ scalar('data', 'DUST_BOSS_CAP', '4-高塔BOSS', '高塔 BOSS 魔塵', 0);
 rangeBound('data', 'TOWER_TRIAL_MAX_FLOOR', '4-高塔BOSS', '試練之塔範圍', 0, 2);
 rangeBound('data', 'TOWER_HELL_MAX_FLOOR', '4-高塔BOSS', '試練之塔範圍', 1, 2);
 rangeBound('data', 'TOWER_PURGATORY_MAX_FLOOR', '4-高塔BOSS', '試練之塔範圍', 2, 2);
+// 舊版 Excel 將攻速與控制抵抗交錯存放；僅相容控制抵抗，攻速仍由 NPC 表管理。
+const towerCtrlLegacy = !(index['4-高塔BOSS'] && index['4-高塔BOSS']['控制抵抗'])
+  && !!(index['4-高塔BOSS'] && index['4-高塔BOSS']['攻速 / 控制抵抗']);
+if (towerCtrlLegacy) {
+  console.log('[舊版參數表相容] 控制抵抗讀取「攻速 / 控制抵抗」的 b/d/f 欄；舊攻速 a/c/e 欄不套用，攻速以 NPC.xlsx 的 tower_boss 列為準。');
+}
 [['TOWER_BOSS_TRIAL', '試煉', 0], ['TOWER_BOSS_HELL', '地獄', 1], ['TOWER_BOSS_PURGATORY', '煉獄', 2]].forEach(([anchor, tag, t]) => {
   const L = (f) => '高塔' + tag + '-' + f;
   objFieldML('data', anchor, 'refStageBase', '4-高塔BOSS', '對應野外階段', t * 2, L('refStageBase'));
@@ -491,7 +497,7 @@ rangeBound('data', 'TOWER_PURGATORY_MAX_FLOOR', '4-高塔BOSS', '試練之塔範
   objFieldML('data', anchor, 'atkMult', '4-高塔BOSS', '攻擊', t, L('atkMult'));
   objFieldML('data', anchor, 'defMult', '4-高塔BOSS', '物/魔防', t, L('defMult'));
   // 攻速 2026-11-08 移到 NPC 表 tower_boss 列（逐隻設定，見 tools/config_tables.cjs）；這列只剩控制抵抗
-  objFieldML('data', anchor, 'ctrlRes', '4-高塔BOSS', '控制抵抗', t, L('ctrlRes'));
+  objFieldML('data', anchor, 'ctrlRes', '4-高塔BOSS', towerCtrlLegacy ? '攻速 / 控制抵抗' : '控制抵抗', towerCtrlLegacy ? t * 2 + 1 : t, L('ctrlRes'));
   objFieldML('data', anchor, 'dodgeBase', '4-高塔BOSS', '閃避率', t * 3, L('dodgeBase'));
   objFieldML('data', anchor, 'dodgeCap', '4-高塔BOSS', '閃避率', t * 3 + 1, L('dodgeCap'));
   objFieldML('data', anchor, 'dodgePerFloor', '4-高塔BOSS', '閃避率', t * 3 + 2, L('dodgePerFloor'));

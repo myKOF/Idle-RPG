@@ -5,6 +5,7 @@
 - 範圍：本次衝突 Excel／CSV／生成資料、index／bridge／Worker快取、本段及必要驗證；Excel 僅原生 API、獨占確認及來源備份，正常模式重開驗證。先前被拒絕的暫存目錄清理不重試。
 - 驗證：原生 Excel 正常重開兩次，Relics 寫83格、String寫2格；來源獨占備份、全部計畫值／CSV逐格一致，既有樣式、尺寸、凍結、篩選、驗證及物件保留。已目視前後預覽。node --test --test-reporter=tap --test-force-exit 的 relics／relic-ui／tower-xp／offline-rewards／sim-offline-schedule／string-table 共47項通過；vfx-editor-cache-versions另3項通過。初次快取測試發現編輯器String版本落後，修正後重驗全綠。npm.cmd run build通過706檔；git diff --check通過；未聲稱全庫或瀏覽器實玩驗證。
 - 交付：本段所在 [Codex] merge 提交整合 c6a0cfee，SHA見Git歷史；後續待整合Codex提交為ab4c2253／a93d654d，完整同步以logs/sync-ai-worktrees最新報告為準。驗證紀錄與原生Excel receipts在logs/manual-merge-20261110；未改sync工具／未重試拒絕清理／未發行main。隔離分支codex/background-catchup保持08013b4db0e3f03f336810a128cd801547f89f6d。
+- 後續整合：4a183b48完成遺物合併後，同步器合併a93d654d時只在本紀錄與APPLY-PARAMS紀錄的開頭插入區衝突；兩邊全文保留。保留來源四份Excel位元組、全部數值及工具相容修正，補齊data／formula／skills2主頁與Worker、bridge快取。Equipment_Affix／Gems／Skills2生成器試跑均0語意差異，apply_params試跑614項一致、0變更／錨點問題；六份工作簿與CSV核對一致（正規化換行，參數表4格Excel浮點字面值數值相等）。整合後新增高塔控制抵抗／參數相容測試連同遺物／離線／字串／快取共54項通過，build通過707檔；未跑全庫。第二次本段所在merge提交納入ab4c2253及a93d654d，後續由原同步器對齊並推送固定AI分支，結果見最新報告。
 
 ## SYNC-MERGE-20261110-015525 ? pending develop integration
 
@@ -16,6 +17,18 @@
 - Existing readXlsxRows/csvStringify exported and verified Relics/Zones/String CSV from their unchanged Excel sources; node tools/config_tables.cjs --apply Relics --write and --apply Zones --write report zero semantic changes; node tools/string-table/apply_strings.cjs reports unchanged 2468 strings/hash 8757a6f1. No workbook bytes edited. npm.cmd run build: 705 files pass, logs/sync-20261110-015525-build.log. node tools/assets/export-relic-icons.cjs --check verifies 66 sources/exports. Complete git diff HEAD --check passes; HEAD/MERGE_HEAD unchanged, index intentionally remains unmerged for controller staging.
 - Assets: preserved six existing incoming MP3s byte-for-byte with SHA/size/source-commit manifest under asset-library third-party/user-supplied/zone-music-20261110. No downloads, generated audio or new selection; blades-of-the-rising-sun is preserved although not currently configured. Incoming user-authored BGM adjustment commit supplies provenance; further source/license documentation was not supplied and is not inferred here. Existing relic library exports need no modification. No asset/game staging or commits performed. Subsequent controller must commit the seven reported library files before the merge commit.
 - Modified conflict/cache/test/record files: index.html, tests/ui-achievement-sound.test.cjs, tests/zone-music.test.cjs, js/bridge.js, js/worker/sim.worker.js, this record; regenerated CSV outputs retain incoming semantics. All other incoming deliverables preserved. Read-only inspected rules/workflow/prompts, common base/ours/theirs diffs, runtime audio paths, config generators, cache regression and asset provenance/export workflow. No browser listening, native Excel reopening or full-suite run claimed; no known new merge regression or remaining conflict markers. No commit SHA for this pass by explicit instruction. Ready for controller staging and its pending merge only.
+
+## APPLY-PARAMS-TOWER-CONTROL-20261110 — 舊版高塔控制抵抗列相容
+
+- Owner：Codex；Done，單一開發者。使用者回報套用參數.bat在「4-高塔BOSS / 控制抵抗」缺列中斷；現有Excel匯出的仍是「攻速 / 控制抵抗」，三塔控制抵抗位於b／d／f。
+- 前置：規範／Workflow／Agent及相關任務已讀，fetch與逐檔衝突預檢無外部來源。允許tools/apply_params.cjs、獨立回歸及本段；不修改Excel／CSV來源、其他遊戲功能、玩家文字、素材或其他工作區，不合併／推送。保留使用者既有表格與data未提交調整。
+- 實作：新版控制抵抗列優先；只在新版缺列時讀舊合併列的三個控制抵抗欄，明示舊攻速欄已停用且以NPC表為準；兩種格式均缺列或必要格缺值仍拒絕套用。
+- 驗收：隔離副本涵蓋新舊格式不同三塔值、兩列並存、新列缺格與雙列缺失、寫入與二次冪等及不覆蓋攻速；乾跑／錨點擾動／相關與必要全庫測試／Build／diff。完成後獨立Commit，由使用者與整合者後續Review及合併。
+- 專項完成：新增6項回歸全部通過；原錨點／科學記號4項亦通過。另跑params-direct-edit及tower-boss-move-attack，合計17項16通過，唯一TBMA-5仍要求來源表只能存在新版列名，與使用者目前舊Excel不符；該測試與HEAD逐位元相同，不弱化斷言或修改來源表。BOSS_LIST逐位元保持，三塔ctrlRes以不同值驗證正確欄位，新舊皆不新增aspd。
+- 完整BAT：將當下所有Excel／CSV／JS及實際BAT與工具複製至隔離副本，素材以唯讀使用的目錄junction供合法性檢查。真實Excel→CSV→config_tables→String→apply_params連續兩次成功，首次套用使用者原有10項待套數值、二次零變更；最終614項一致／將變更0／錨點問題0。僅讀原工作區，副本與junction均已清除。正式工作區乾跑仍保留10項待套，未提前寫入使用者參數。
+- 驗證補充：`node tools/apply_params.cjs --check-anchors`擾動565值後614錨點全部命中一次，參數總數未減；`npm.cmd run build`705檔通過。HEAD原工具搭配相同CSV重現截圖缺列錯誤，修正版已無該錯誤。完整`node --test --test-concurrency=2 --test-reporter=tap "tests/*.test.cjs"`執行31分44秒，5761項5061通過／698失敗／跳過2，未宣稱全庫全綠。10個引用apply_params的失敗測試檔共17個案例，以fs唯讀／copy overlay換回HEAD原工具並只跑原失敗名稱，17/17皆重現；另TBMA-5的舊表列名檢查亦沿用HEAD原始斷言。其餘失敗涉及既有玩法期待、配置一致性與同步／環境等，未逐一做完整HEAD重跑，不概稱698項全數已做基準驗證。原始TAP、BAT兩輪、乾跑及基準對照在logs/apply-params-tower-control。
+- 修改／檢查：僅tools/apply_params.cjs、新tests/apply-params-tower-control.test.cjs與本段。唯讀檢查兩個BAT入口、xlsx_to_csv／config_tables／apply_strings、原參數與NPC來源欄位、data三塔配置／BOSS_LIST、原參數／攻速／BAT測試與專案規範。無素材變更、不建素材庫空Commit；只修內部套表相容，無玩家功能／解鎖／字串變動，毋須LV／String或瀏覽器快取調整。使用者原有Excel／CSV／data未提交變更保留，不納入本項提交。
+- 交付：自我Review及diff／stat／check通過，只提交本項三檔，Commit為本段所在「[Codex] fix: 相容舊版高塔控制抵抗參數列」，SHA見聊天；未合併／推送。測試期間另有Gems.xlsx／Skills2.xlsx更新，原樣保留；完整BAT驗證使用複製當下的來源快照，不宣稱已驗證之後的表格編輯。無本項未完成實作，可供Review及使用者合併；已知限制為全庫未全綠、正式工作區仍保留待套參數。下一步先儲存並關閉Excel，再重跑套用參數.bat；封魔塔BOSS攻速仍在NPC表調整，舊主參數列攻速欄只會提示停用。
 
 ## UI-CHAR-PORTRAIT-INTEGRATE-20261109 — 核准0～6轉頭像正式接入
 

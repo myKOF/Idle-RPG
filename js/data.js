@@ -178,7 +178,7 @@ var ANCIENT_COUNT_WEIGHTS = {
 var ANCIENT_ESSENCE_BOSS_BASE_RATE = 10;
 var ANCIENT_ESSENCE_BOSS_LEVEL_RATE = 2;
 var ANCIENT_ESSENCE_BOSS_RATE_CAP = 100;
-var ANCIENT_ESSENCE_SALVAGE_CHANCE = { 4: 0.5, 5: 1, 6: 10, 7: 100, 8: 10, 9: 100, 10: 0, 11: 0 };
+var ANCIENT_ESSENCE_SALVAGE_CHANCE = { 4: 0.5, 5: 1, 6: 10, 7: 100, 8: 100, 9: 0, 10: 0, 11: 0 };
 var AFFIX_MAX_VALUE_MULT = 1.2;       // 詞條最大值：一般詞條上限／基準值的倍率
 var ANCIENT_AFFIX_VALUE_MULT = 1.35;  // 太古倍率：太古詞條再乘的倍率
 var ANCIENT_LUCK_WEIGHT_MULT = 0.5;
@@ -710,7 +710,7 @@ var STAT_CAPS = {
 
 var PRIMARY_STAT_EFFECTS = {
   strAtk: 1,
-  strDef: 0.5,
+  strDef: 0.25,
   strHpRegen: 0.03, // 生命恢復/秒每點力量
   agiCritRate: 0,
   agiCritDmg: 1,    // 暴擊傷害%每點敏捷
@@ -721,7 +721,7 @@ var PRIMARY_STAT_EFFECTS = {
   intMpRegen: 0.01,
   intMatk: 1,
   intMdef: 0,
-  vitHp: 10,
+  vitHp: 5,
   vitDef: 1,
   vitMdef: 1,
   vitHpRegen: 0.06, // 生命恢復/秒每點體質
@@ -733,12 +733,12 @@ var PRIMARY_STAT_EFFECTS = {
 var DERIVED_COEF = {
   atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2,
   matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2,
-  defBase: 3, defFlatMult: 0.75, defReincBase: 2,
-  mdefBase: 2, mdefFlatMult: 0.75, mdefReincBase: 2,
+  defBase: 3, defFlatMult: 0.5, defReincBase: 2,
+  mdefBase: 2, mdefFlatMult: 0.5, mdefReincBase: 2,
   /* 以下原本是 computeStats 裡的內嵌字面值，套用參數表時靠「錨定程式碼片段」改寫
      （例如錨點 'st.base.mp = '）。那種錨點綁的是程式碼長相，任何一次重構都可能讓它
      0 命中，而套用參數只會安靜地少套幾個值。收進這裡之後錨點改綁欄位名。 */
-  hpBase: 500, hpPerLevel: 50,
+  hpBase: 400, hpPerLevel: 30,
   mpBase: 100,
   mpRegenBase: 1,
   critRateBase: 5, critDmgBase: 150,
@@ -795,28 +795,28 @@ var GODFORGE_POOL = {
    lv: 每裝備等級成長係數, pct: 是否百分比顯示,
    weight: 出現權重, minR: 最低稀有度, slots: 限定部位（省略=全部）      */
 var AFFIX_POOL = {
-  atkFlat: { name: '物理攻擊', base: 4, lv: 2.2, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
+  atkFlat: { name: '物理攻擊', base: 4, lv: 0.2, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   atkPct: { name: '物理攻擊%', base: 4, lv: 0.08, pct: true, weight: 6, slots: ['weapon', 'belt', 'gloves', 'ring', 'amulet'] },
-  matkFlat: { name: '魔法攻擊', base: 4, lv: 2.2, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
+  matkFlat: { name: '魔法攻擊', base: 4, lv: 0.2, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   matkPct: { name: '魔法攻擊%', base: 4, lv: 0.08, pct: true, weight: 6, slots: ['weapon', 'belt', 'gloves', 'ring', 'amulet'] },
-  hpFlat: { name: '生命值', base: 50, lv: 66, pct: false, weight: 8, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
-  hpPct: { name: '生命值%', base: 4, lv: 0.1, pct: true, weight: 6, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
-  hpRegen: { name: '生命恢復/秒', base: 3, lv: 0.225, pct: false, weight: 5, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
-  mpFlat: { name: '法力值', base: 10, lv: 12, pct: false, weight: 5, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
+  hpFlat: { name: '生命值', base: 40, lv: 20, pct: false, weight: 8, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
+  hpPct: { name: '生命值%', base: 3, lv: 0.05, pct: true, weight: 6, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
+  hpRegen: { name: '生命恢復/秒', base: 2, lv: 0.2, pct: false, weight: 5, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
+  mpFlat: { name: '法力值', base: 12, lv: 6, pct: false, weight: 5, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
   mpRegen: { name: '法力恢復/秒', base: 1, lv: 0.02, pct: false, weight: 4, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
   str: { name: '力量', base: 3, lv: 1.2, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   agi: { name: '敏捷', base: 3, lv: 1.2, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   int: { name: '智力', base: 3, lv: 1.2, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   vit: { name: '體質', base: 3, lv: 1.2, pct: false, weight: 8, slots: ['weapon', 'helmet', 'shoulder', 'chest', 'belt', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
-  defFlat: { name: '物理防禦', base: 3, lv: 1.05, pct: false, weight: 9, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
-  defPct: { name: '物理防禦%', base: 4, lv: 0.08, pct: true, weight: 6, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
-  mdefFlat: { name: '魔法防禦', base: 3, lv: 1.05, pct: false, weight: 9, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
-  mdefPct: { name: '魔法防禦%', base: 4, lv: 0.08, pct: true, weight: 6, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
+  defFlat: { name: '物理防禦', base: 2, lv: 0.75, pct: false, weight: 9, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
+  defPct: { name: '物理防禦%', base: 2, lv: 0.07, pct: true, weight: 6, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
+  mdefFlat: { name: '魔法防禦', base: 2, lv: 0.75, pct: false, weight: 9, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
+  mdefPct: { name: '魔法防禦%', base: 2, lv: 0.07, pct: true, weight: 6, slots: ['helmet', 'shoulder', 'chest', 'gloves', 'wrist', 'legs', 'boots', 'amulet'] },
   globalDmgRed: { name: '全局減傷', base: 3, lv: 1.05, pct: false, weight: 9, minR: 4, slots: ['helmet', 'shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   normalDmgRed: { name: '普通敵人傷害抗性', base: 30, lv: 2.1, pct: false, weight: 9, minR: 4, slots: ['shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   eliteDmgRed: { name: '菁英傷害抗性', base: 30, lv: 2.1, pct: false, weight: 9, minR: 4, slots: ['shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   bossDmgRed: { name: 'BOSS傷害抗性', base: 30, lv: 2.1, pct: false, weight: 9, minR: 4, slots: ['shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
-  aspd: { name: '攻擊速度%', base: 3, lv: 0.036, pct: true, weight: 6, slots: ['weapon', 'gloves', 'ring', 'amulet'] },
+  aspd: { name: '攻擊速度%', base: 3, lv: 3.6, pct: true, weight: 6, slots: ['weapon', 'gloves', 'ring', 'amulet'] },
   critRate: { name: '暴擊率%', base: 1, lv: 0.024, pct: true, weight: 6, slots: ['weapon', 'belt', 'ring', 'amulet'] },
   critDmg: { name: '暴擊傷害%', base: 5, lv: 0.4, pct: true, weight: 5, slots: ['weapon', 'belt', 'ring', 'amulet'] },
   pPen: { name: '物理穿透%', base: 20, lv: 0.045, pct: true, weight: 4, minR: 4, slots: ['weapon', 'gloves', 'wrist', 'ring', 'amulet'] },
@@ -828,7 +828,7 @@ var AFFIX_POOL = {
   manaSteal: { name: '吸魔', base: 1, lv: 0.005, pct: false, weight: 3, minR: 4, slots: ['chest', 'wrist', 'legs', 'ring', 'amulet'] },
   eliteDmg: { name: '對菁英傷害%', base: 2, lv: 0.08, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
   bossDmg: { name: '對BOSS傷害%', base: 2, lv: 0.08, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
-  normalDmg: { name: '對普通敵人傷害%', base: 2, lv: 0.105, pct: true, weight: 7, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
+  normalDmg: { name: '對普通敵人傷害%', base: 2, lv: 0.1, pct: true, weight: 7, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
   dmgVsFire: { name: '對火屬性敵人傷害%', base: 5, lv: 0.075, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   dmgVsIce: { name: '對冰屬性敵人傷害%', base: 5, lv: 0.075, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
   dmgVsLightning: { name: '對雷屬性敵人傷害%', base: 5, lv: 0.075, pct: true, weight: 3, minR: 3, slots: ['weapon', 'ring', 'amulet'] },
@@ -2061,9 +2061,9 @@ var GEM_NAMES = ['', STR(1360), STR(1361), STR(1362), STR(1363), STR(1364), STR(
 var GEM_TYPES = {
   ruby: { name: '紅寶石', emoji: '🔴', stat: 'atkFlat', statName: '物理攻擊', pct: false, values: [8, 12, 20, 32, 50, 100, 200, 400, 800, 1600], enabled: true },
   sapphire: { name: '藍寶石', emoji: '🔵', stat: 'matkFlat', statName: '魔法攻擊', pct: false, values: [8, 12, 20, 32, 50, 100, 200, 400, 800, 1600], enabled: true },
-  topaz: { name: '黃玉', emoji: '🟡', stat: 'hpFlat', statName: '生命值', pct: false, values: [50, 100, 160, 250, 375, 750, 1500, 3000, 6000, 12000], enabled: true },
+  topaz: { name: '黃玉', emoji: '🟡', stat: 'hpFlat', statName: '生命值', pct: false, values: [30, 75, 140, 190, 250, 500, 1000, 2000, 4000, 8000], enabled: true },
   emerald: { name: '綠寶石', emoji: '🟢', stat: 'hpRegen', statName: '生命恢復/秒', pct: false, values: [3, 7, 12, 20, 30, 60, 120, 240, 480, 960], enabled: true },
-  iolite: { name: '堇青石', emoji: '🔮', stat: 'mpFlat', statName: '法力值', pct: false, values: [20, 40, 65, 100, 150, 300, 600, 1200, 2400, 4800], enabled: true },
+  iolite: { name: '堇青石', emoji: '🔮', stat: 'mpFlat', statName: '法力值', pct: false, values: [10, 20, 35, 60, 100, 200, 400, 800, 1600, 3200], enabled: true },
   kyanite: { name: '藍晶石', emoji: '💧', stat: 'mpRegen', statName: '法力恢復/秒', pct: false, values: [1, 2.5, 4.4, 6.4, 10, 20, 40, 80, 160, 320], enabled: true },
   diamond: { name: '鑽石', emoji: '⚪', stat: 'defFlat', statName: '物理防禦', pct: false, values: [8, 12, 20, 30, 50, 100, 200, 400, 800, 1600], enabled: true },
   lapis: { name: '青金石', emoji: '🔷', stat: 'mdefFlat', statName: '魔法防禦', pct: false, values: [8, 12, 20, 30, 50, 100, 200, 400, 800, 1600], enabled: true },
