@@ -1194,6 +1194,11 @@ function updateSetContext(state, policy, memo) {
   if (!state.ctx) state.ctx = {};
   var P = peekPath(state, sets.panel || 'panels.equipSets');       // 沒有這個面板的策略也會走到這裡，缺值是正常的
   state.ctx.setAway = !!(policy.equipSets && P && P.active !== undefined && P.active !== (sets.home || 0));
+  /* awayNow：面板上使用中的真的是第 2／3 套。與 setAway 不同：setAway 在「這一輪剛下了切換指令」時
+     也會被設成 true（為了擋住針對舊面板的規則），而 awayNow 只反映面板當下的事實。
+     awayOnly 規則要的是前者的反面——必須真的穿在身上，才解析得到那套的物件。 */
+  state.ctx.awayNow = state.ctx.setAway;
+  state.ctx.switchedThisTick = false;
   /* 上一個決策點為了強化而切到另一套，這一輪那套是使用中的：強化規則可以跑。
      （item.upgrade 只解析得到「背包＋使用中那套」的物件，所以要強化第 2 套，它必須先是使用中的。） */
   var sw = memo && memo.setSwitch;
@@ -1206,7 +1211,17 @@ function investAllows(r, policy, state) {
   return (policy.equipSets.investAllow || []).indexOf(r.id) >= 0;
 }
 
+/* awayOnly 規則：只在「真的穿著第 2／3 套」時才跑，而且不受 awayBlock 擋。
+   用途是第 2、3 套的便宜維護（低階寶石、強化到 +10）：item.upgrade／gem.socket 只解析得到
+   「背包＋使用中那套」，所以要維護它們就得趁它們被穿著的時候做——野外幾乎隨時有菁英，第 3 套常常穿很久。 */
+function awayOnlyBlocked(r, state) {
+  if (!r.awayOnly) return false;
+  var c = state.ctx || {};
+  return !(c.awayNow && !c.switchedThisTick);
+}
+
 function setAwayBlocks(r, policy, state) {
+  if (r.awayOnly) return false;
   if (!policy.equipSets || !state.ctx || !state.ctx.setAway) return false;
   if (investAllows(r, policy, state)) return false;
   if (r.equipSetBuild || r.equipSetSwitch) return false;          // 這兩條自己指定套別，不受影響
@@ -1536,6 +1551,7 @@ function planEquipSetSwitch(state, cfg, ruleId, memo, policy) {
        對已經不在使用中的那套的物件送強化／洗煉，只會被遊戲回「找不到物品」。
        所以任何切換都讓同一輪後面針對使用中裝備的規則停手。 */
     ctx.setAway = true;
+    ctx.switchedThisTick = true;                           // 這一輪已下切換指令：後面的 awayOnly 規則對的是舊面板，不跑
     return [{ name: 'player.switchEquipSet', args: { index: i }, ruleId: ruleId }];
   }
 
@@ -1602,6 +1618,7 @@ function decide(state, policy, memo) {
   for (var i = 0; i < policy.rules.length; i++) {
     var r = policy.rules[i];
     if (setAwayBlocks(r, policy, state)) continue;
+    if (awayOnlyBlocked(r, state)) continue;
     if (r.once && memo.fired[r.id]) continue;
     if (r.everySec && !investAllows(r, policy, state)) {
       var last = memo.lastAt[r.id];
@@ -1752,6 +1769,22 @@ function decide(state, policy, memo) {
       var sCfg = r.socketEmpty;
       var sEquip = pathVal(state, sCfg.equipment) || {};
       var heldGems = pathVal(state, sCfg.gems) || {};
+      /* maxGemLevel：只動這個階級以下的寶石，而且鑲嵌時明確指定階級（遊戲預設會挑庫存最高階）。
+         給第 2、3 套用——高階寶石留給第 1 套，低階的餘貨本來就沒人要（合成每 3 顆併一階，
+         每種每階最多剩 2 顆）。 */
+      var sMaxLv = (typeof sCfg.maxGemLevel === 'number') ? sCfg.maxGemLevel : null;
+      if (sMaxLv !== null) {
+        var lowGems = {};
+        for (var lgt in heldGems) {
+          var lgrow = heldGems[lgt];
+          for (var lgl in lgrow) {
+            if (Number(lgl) <= sMaxLv && (Number(lgrow[lgl]) || 0) > 0) {
+              (lowGems[lgt] = lowGems[lgt] || {})[lgl] = Number(lgrow[lgl]);
+            }
+          }
+        }
+        heldGems = lowGems;
+      }
 
       /* ⚠️ 不能寫死寶石種類。socketGem() 找不到那種寶石就直接回「沒有這種寶石」
          （js/item.js:368），實測寫死 garnet 的話 1,421 次呼叫全部落空——
@@ -1792,7 +1825,17 @@ function decide(state, policy, memo) {
           if (!pick) break;                       // 庫存見底
           sStock.stockOf[pick]--;
           /* 每個部位一次只送一顆：鑲上之後空槽與庫存都會變，下個決策點再算一次即可。 */
-          out.push({ name: r.cmd, args: { itemId: sItem.id, type: pick }, ruleId: r.id });
+          var sArgs = { itemId: sItem.id, type: pick };
+          if (sMaxLv !== null) {
+            var pickLv = 0;
+            for (var plv in heldGems[pick]) {
+              if ((Number(heldGems[pick][plv]) || 0) > 0 && Number(plv) > pickLv) pickLv = Number(plv);
+            }
+            if (!pickLv) continue;
+            sArgs.level = pickLv;
+            heldGems[pick][pickLv] = (Number(heldGems[pick][pickLv]) || 0) - 1;    // 同一輪不重複用同一顆
+          }
+          out.push({ name: r.cmd, args: sArgs, ruleId: r.id });
         }
       }
     } else if (r.salvageBelowEquipped) {
@@ -3267,12 +3310,22 @@ function decide(state, policy, memo) {
         var rv = Number(uRarities[rk]);
         if (rv > maxRarity) maxRarity = rv;
       }
+      /* hardCap：所有部位一律不超過這個等級（不分品質、不給最高品質豁免）。
+         給第 2、3 套的便宜維護用——強化到 +10 的材料與金幣都很少，再往上就該留給第 1 套。
+         minRarity：低於它的不強化（普通／精良強化了也是丟掉）。 */
+      var hardCap = (typeof uCfg.hardCap === 'number') ? uCfg.hardCap : null;
+      var minRar = (typeof uCfg.minRarity === 'number') ? uCfg.minRarity : 0;
       /* 先挑出「這一輪有資格被強化」的部位：有裝備，而且（是身上最高品質，或還沒到該品質的上限）。 */
       var uEligible = [];
       for (var sk in uRarities) {
         var eqItem = uEquip[sk];
         if (!eqItem || !eqItem.id) continue;
         var slotRarity = Number(uRarities[sk]);
+        if (hardCap !== null) {
+          if (slotRarity < minRar || (eqItem.upgrade || 0) >= hardCap) continue;
+          uEligible.push({ slot: sk, item: eqItem, lv: eqItem.upgrade || 0 });
+          continue;
+        }
         if (slotRarity !== maxRarity) {
           /* 非最高品質：查上限表。表上沒列到的品質視為不強化，
              避免「忘了填就變成無限強化」這種靜默的資源黑洞。 */
