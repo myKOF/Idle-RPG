@@ -27,7 +27,12 @@ test('first tower boss becomes Skeleton King without changing stats; floor 11 us
   assert.equal(third.model3d.clips.die,'Shot_and_Fall_Forward');
   assert.equal(third.name,'3 骷髏王Ⅲ');
   assert.equal(third.maxHp,stats.hp);assert.equal(third.aspd,bosses[2].atkSpeed);
-  assert.equal(context.makeBoss(13).model3d,null,'independent floor 13 keeps its original appearance');
+  assert.equal(context.makeBoss(13).model3d.file,'images/models/npc3d/boss3_character_lv2.glb');
+  assert.equal(context.makeBoss(13).name,'13 雷霆巨獸','the existing configured name remains');
+  assert.deepEqual(context.makeBoss(13).model3d.clips,third.model3d.clips);
+  assert.equal(context.makeBoss(63).model3d.file,'images/models/npc3d/boss3_character_lv2.glb');
+  assert.equal(context.makeBoss(113).model3d.file,'images/models/npc3d/boss3_character_lv2.glb');
+  assert.equal(context.makeBoss(23).model3d,null,'other independent rows retain their appearance');
   assert.equal(context.makeBoss(53).model3d.file,third.model3d.file);
   assert.equal(context.makeBoss(103).model3d.file,third.model3d.file);
   assert.equal(context.makeBoss(12).npcId,'tower_boss_12');

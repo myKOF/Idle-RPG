@@ -1,6 +1,25 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 
+test('second-stage third boss retains every joint and all five first-stage clip timings',()=>{
+ function load(file){const b=fs.readFileSync(require.resolve('../images/models/npc3d/'+file+'.glb')),n=b.readUInt32LE(12);return{d:JSON.parse(b.subarray(20,20+n)),bin:b.subarray(28+n)}}
+ const first=load('boss3_character').d,{d,bin}=load('boss3_character_lv2');
+ assert.equal(d.meshes.length,1);assert.equal(d.skins.length,1);assert.equal(d.skins[0].joints.length,47);
+ const names=j=>j.skins[0].joints.map(i=>j.nodes[i].name).sort();assert.deepEqual(names(d),names(first));
+ assert.deepEqual(d.animations.map(a=>a.name).sort(),first.animations.map(a=>a.name).sort());
+ for(const a of d.animations){
+  const original=first.animations.find(x=>x.name===a.name),duration=(j,c)=>Math.max(...c.samplers.map(s=>j.accessors[s.input].max[0]));
+  assert.ok(Math.abs(duration(d,a)-duration(first,original))<1e-5);
+  const targets=new Set(a.channels.map(c=>d.nodes[c.target.node].name+':'+c.target.path));
+  for(const c of original.channels)assert.ok(targets.has(first.nodes[c.target.node].name+':'+c.target.path));
+  for(const sampler of a.samplers){const access=d.accessors[sampler.output],v=d.bufferViews[access.bufferView],n={SCALAR:1,VEC3:3,VEC4:4}[access.type];
+   assert.equal(access.componentType,5126);assert.ok(n);
+   for(let i=0;i<access.count;i++)for(let k=0;k<n;k++)assert.ok(Number.isFinite(bin.readFloatLE((v.byteOffset||0)+(access.byteOffset||0)+i*(v.byteStride||n*4)+k*4)));
+  }
+ }
+ assert.equal(d.accessors[d.meshes[0].primitives[0].indices].count/3,10452);
+});
+
 test('third boss has its own original skin and five finite clips; strikes stay horizontally in-place',()=>{
  const bytes=fs.readFileSync(require.resolve('../images/models/npc3d/boss3_character.glb'));
  const size=bytes.readUInt32LE(12),d=JSON.parse(bytes.subarray(20,20+size)),bin=bytes.subarray(28+size);

@@ -1,3 +1,17 @@
+## TOWER-BOSS3-LV2-20261110 — 第3隻BOSS第2階共用五動作
+
+- Owner：Codex，Done，單一開發者。使用者提供BOSS3_2.glb，指定BOSS3第2階、動作與第1階完全一致並接入。沿用本聊天使用者自製／生成系列及修改／遊戲使用授權。
+- 前置：第1階boss3_character.glb五動作已完成；逐檔預檢乾淨、NPC來源可獨占。允許第494列tower_boss_13的G:J及AB:AH、CSV／data／必要快取、獨立模型／透明頭像／Blender製作與匯出／來源交接、三份相關回歸、LV及本段；保留名稱、圖示、全部數值／技能及其他49列，不改通用執行期／戰鬥／協議／存檔／解鎖，不合併推送。
+- 驗收：新外觀PBR／UV精確轉入，沿第1階網格／權重／骨架及五動作，比對全部關節有效蒙皮矩陣與時間；原生Blend正常重開、NPC原生Excel窄改／正常重開／全資料格式比對、正式遊戲第13關移動／三攻擊／死亡、63／113等映射、相關回歸／Build與雙庫提交。後續由使用者驗收及整合。
+
+- 完成16檔：新增boss3_character_lv2.glb／透明頭像、Blender變體製作器／獨立匯出器及來源交接；更新NPC第494列G:J／AB:AH、CSV／data、index／bridge／Worker資料快取、三份模型／塔層回歸、LV及本段。第13／63／113層使用新外觀，第3／53／103層原模型與其他49列保持。
+- 製作：新來源16,450頂點／10,452面，身高正規化2.12對齊第1階2.14，比例1.0094339998；全部三角面唯一對應、最大表面差0.000000885m。保留第1階幾何／權重／47骨及五動作，轉入新PBR與逐角UV，三張貼圖逐位元相同；匯出因新UV接縫分割為16,462頂點，表面與面數保持。47骨、60Hz共757樣本最大有效蒙皮矩陣誤差0.000008271，五動作時長與名稱保持；原生Blend重開五動作／六張打包圖通過。
+- NPC：獨占後原生Excel窄改11格、正常模式重開，28,365格資料／公式與七物件核對；相對基線僅本列11格改變，其他49列及原名稱／圖示／屬性／技能／所有數值保持。兩頁24,535格樣式、樣式XML、列高／欄寬、合併／驗證／條件格式／視圖／篩選／圖形一致；NPC重建再試跑語意0、String寫死0。沒有修改通用3D、戰鬥、協議、存檔或解鎖。
+- 驗證指令：node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-action-motion.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/boss3-character-asset.test.cjs tests/worker-protocol.test.cjs，共42/42；npm.cmd run build通過709檔。Blender全關節QA、原生Blend重開、貼圖／來源SHA、原生Excel資料格式與diff／stat／check通過，原第1階23項匯出來源亦核對保持。
+- 實機：隔離Edge／新局／正式主頁／原生Worker，第13關載入新模型，移動有正位移且同步播放率；三個attack／cast依序使用第1階相同動作；命中後死亡使用Shot_and_Fall_Forward。Console error0，無模型警告，另記錄未修改音訊振盪器16267.7／16607.6Hz限幅提示。首輪damage 100%只設定下一次命中覆寫，10秒內未命中而等待死亡逾時；以正式GM命中999／攻速5測試基準重驗後完成，不改產品或正式回歸配合驗收。
+- 唯讀檢查AI_RULES／AGENTS／Workflow／prompts、原BOSS3／樹人變體與來源／QA／匯出工具、Hero3D／Npc3D／BattleRenderer、塔戰／Worker／GM、NPC與Excel管線及相關測試。素材庫tower-boss3-lv2-20261110共21項SHA，原檔／已認可第1階動作／可編輯Blend／成品／工具與QA先提交0fd9982554b6d2135d8413c50defb4127e9a75ea；遊戲提交為本段所在提交，SHA見回報。來源及重建見docs/assets/TOWER_BOSS3_LV2_SOURCE.md。
+- 交付：無未完成，可供Review及使用者合併；未合併或推送develop／main。未要求本階GIF，僅接入與透明頭像；原音訊提示及未做行動真機／跨瀏覽器／長時間效能為已知限制。暫存資料歸檔後清理，保留最終戰場截圖，下一步由使用者重載驗收第二階外觀。
+
 ## TOWER-BGM-20261110 — 封魔塔挑戰立即切換配樂
 
 - Owner：Codex；Done，單一開發者。使用者指定既有audio/zones/blades-of-the-rising-sun.mp3為封魔塔BOSS戰配樂，按挑戰立即開始；前置為既有場景音樂與Worker挑戰流程。
