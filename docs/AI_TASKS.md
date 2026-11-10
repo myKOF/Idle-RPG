@@ -1,3 +1,17 @@
+## TOWER-BOSS3-LV3-20261110 — 第3隻BOSS第3階共用五動作
+
+- Owner：Codex，Done，單一開發者。使用者提供BOSS3_3.glb，指定第3階且動作與第1階完全一致，沿用本聊天使用者自製／生成系列及遊戲使用／修改授權。
+- 前置：第1階五動作已完成；逐檔預檢乾淨。允許NPC第504列tower_boss_23的G:J及AB:AH、CSV／data／必要快取、獨立GLB／透明頭像／匯出與來源交接、三份相關回歸、LV及本段；保留名稱／圖示／全部數值與技能、其他49列，不改通用執行期／戰鬥／協議／存檔／解鎖，不合併推送。
+- 驗收：新外觀UV／PBR轉入第1階網格／權重／骨架及五動作；全骨骼蒙皮矩陣／時間QA、原生Blend重開、Excel獨占／窄改／正常重開／全資料格式核對，正式遊戲23層五動作與73／123映射、相關回歸／Build與雙庫提交。
+
+- 完成15檔：新增boss3_character_lv3.glb／透明頭像、獨立export-tower-boss3-lv3.cjs及docs/assets/TOWER_BOSS3_LV3_SOURCE.md；更新NPC第504列G:J／AB:AH、CSV／data、index／bridge／Worker資料快取、三份模型／塔層回歸、LV及本段。第23／73／123層使用第3階，第1、2階與其他49列保持；原名稱、圖示、數值與技能保持。通用變體工具直接沿用，不改原工具或舊階段來源。
+- 模型：新來源16,452頂點／10,452面、47骨；身高2.16等比例0.9907407862對齊第1階2.14。全部三角面唯一匹配，最大表面差0.000002161m。保留第1階網格／權重／骨架／五動作，轉入逐角UV及PBR；三張貼圖逐位元相同。匯出因UV接縫分割為16,462頂點，面數保持。60Hz全47骨757樣本最大有效蒙皮矩陣誤差0.000008271，五動作名稱與時長保持；Blend正常重開五動作及六打包圖通過，1080px RGBA頭像實際渲染且alpha0～255。
+- 配置：獨占後原生Excel窄改11格／正常重開，28,365格資料／公式與七物件保持，僅指定11格改變；兩頁24,535格樣式、樣式XML、列高／欄寬、合併／驗證／條件格式／視圖／篩選／圖形一致。NPC生成後試跑11字面值／語意0、String寫死0。未修改通用3D／戰鬥／協議／存檔／解鎖。
+- 測試指令：node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-action-motion.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/boss3-character-asset.test.cjs tests/worker-protocol.test.cjs，共43/43；npm.cmd run build通過709檔。Blender蒙皮／原生Blend重開／貼圖SHA、Excel資料／格式及diff／stat／check通過；三階匯出器--check分別23／21／21項來源保持。
+- 實機：隔離Edge新局、正式主頁與原生Worker，第23層載入新模型全部五動作；18筆正位移及同步播放率、三attack／cast動作完整輪播、正式GM命中後死亡使用Shot_and_Fall_Forward。Console error0、無模型警告；保留既有音訊16405.7Hz振盪器限幅提示，不在本輪修改。73／123由塔層回歸驗證映射。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、前兩階模型／來源／匯出、Blender變體／骨骼QA／頭像工具、Npc3D／Hero3D／BattleRenderer、塔戰／GM／Worker、NPC與Excel生成管線及上述測試。素材庫tower-boss3-lv3-20261110保存原檔／第1階動作來源／可編輯Blend／成品／工具／QA共21項SHA，先提交48c4d2a7d31a884abeb0f8b7c93fff8710b21ee6；遊戲Commit為本段所在提交，SHA見回報。
+- 交付：無未完成，可供Review與使用者合併，未合併／推送develop或main。未做行動真機／跨瀏覽器／長時間效能驗證；本次未要求GIF。暫存來源與QA歸檔後清理，保留最終戰場截圖；下一步由使用者重載Codex遊戲驗收第三階外觀。完整來源及重建見docs/assets/TOWER_BOSS3_LV3_SOURCE.md。
+
 ## TOWER-BOSS3-LV2-20261110 — 第3隻BOSS第2階共用五動作
 
 - Owner：Codex，Done，單一開發者。使用者提供BOSS3_2.glb，指定BOSS3第2階、動作與第1階完全一致並接入。沿用本聊天使用者自製／生成系列及修改／遊戲使用授權。

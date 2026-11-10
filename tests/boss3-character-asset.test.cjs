@@ -1,9 +1,9 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 
-test('second-stage third boss retains every joint and all five first-stage clip timings',()=>{
+for (const stage of [2, 3]) test('third boss stage '+stage+' retains every joint and all five first-stage clip timings',()=>{
  function load(file){const b=fs.readFileSync(require.resolve('../images/models/npc3d/'+file+'.glb')),n=b.readUInt32LE(12);return{d:JSON.parse(b.subarray(20,20+n)),bin:b.subarray(28+n)}}
- const first=load('boss3_character').d,{d,bin}=load('boss3_character_lv2');
+ const first=load('boss3_character').d,{d,bin}=load('boss3_character_lv'+stage);
  assert.equal(d.meshes.length,1);assert.equal(d.skins.length,1);assert.equal(d.skins[0].joints.length,47);
  const names=j=>j.skins[0].joints.map(i=>j.nodes[i].name).sort();assert.deepEqual(names(d),names(first));
  assert.deepEqual(d.animations.map(a=>a.name).sort(),first.animations.map(a=>a.name).sort());
