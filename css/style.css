@@ -10568,6 +10568,11 @@ textarea:disabled,
   border-bottom: 1px solid var(--border);
 }
 
+.offline-sum-primary {
+  font-size: 16px;
+  font-weight: 700;
+}
+
 .offline-sum-loot {
   color: var(--text);
   line-height: 2;
@@ -10584,6 +10589,8 @@ textarea:disabled,
 
 .offline-modal-actions .btn {
   min-width: 120px;
+  justify-content: center;
+  text-align: center;
 }
 
 .talent-modal-head {

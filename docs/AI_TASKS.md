@@ -15747,3 +15747,14 @@ Worker 存活且頁面正常完成載入。
 - 修改4檔：css/world-map.css、index.html、LV_upgrade_system.md、本段。唯讀檢查規範／AGENTS／Workflow／prompts、使用者截圖、舊版一般／全螢幕樣式、battle HUD、ui.js切換／地圖／塔戰指令、GM跳關、字串來源、相關回歸與Build工具。
 - 已知限制：Console error／pageerror 0；全靜音仍有既有sfx-synth高頻Oscillator超出AudioContext範圍warning，與上輪相同且音訊程式未改。未做行動真機／跨瀏覽器／長玩。實測過程暫停戰鬥中的換圖會讓演出停在遮幕，僅以完成DOM更新後的標頭幾何驗收三位數關卡，不宣稱換圖演出驗收。測試瀏覽器與伺服器均已正常關閉，幾何QA／標頭截圖位於本聊天fullscreen-row-20261110；不納入Git。
 - 交付：本項無未完成或已知新增缺陷，可供使用者重載驗收及合併。Commit為本段所在「[Codex] fix: 將戰鬥全螢幕控制列對齊為單排」，SHA見聊天。既有配置／data／Zones.xlsx及4份配樂完整保留未提交；未合併／推送develop或main。
+
+## OFFLINE-SUMMARY-LAYOUT-20261110 — 離線收益資訊排序與淡黃確認按鈕
+
+- Owner：Codex；Done，單一開發者。使用者指定由上至下經驗／金幣粗體放大2px、熔爐分解、擊殺資訊、掉落物；標題改「掉落物 (裝備已送入熔爐)」，確認去除綠勾、置中並用參考圖淡黃金色。
+- 前置既有收益摘要與字串表完成；fetch、逐檔衝突預檢乾淨，String來源可獨占。允許js/ui.js、css/style.css、index.html必要樣式／JS快取及按鈕class、String.xlsx／CSV／strings_data、LV與本段；禁止收益計算、掉落規則、Worker／存檔／解鎖、素材與其他工作區，不合併推送。
+- 驗收原生Excel窄改兩格與正常重開／資料格式保持、相關離線／字串／UI回歸、Build、隔離瀏覽器正式樣式與函式目視／順序／字號／按鈕及關閉操作。完成自我Review與Commit後，交使用者重載驗收與整合。
+- 完成9檔：js/ui.js重排收益／熔爐／遺物收益與回歸加成／擊殺／掉落；css/style.css經驗金幣16px／700粗體、按鈕置中；index.html確認加primary並更新UI／CSS／String快取；String.xlsx透過既有excel-update-sheets原生API僅改E2124與E2204，CSV及strings_data生成；tools/vfx/editor/index.html僅同步共用String版本17cf392d（另跑逐檔預檢乾淨）；LV及本段同步。無新增或修改素材，素材庫不建空Commit。
+- 唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、使用者兩張截圖、docs/STRING_TABLE、Excel更新／轉CSV／字串生成工具、css/dialogs共用primary、js/save離線摘要與既有UI關閉事件、四份通過回歸與init-ui-smoke；上述未修改。
+- 驗證：node --test tests/offline-rewards.test.cjs tests/offline-stage-params.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs，32/32；npm.cmd run build通過709檔；String寫死0，Excel全部儲存格僅上述兩格不同，逐格樣式／樣式XML及工作表版面一致，原生工具正常重開驗證。git diff／stat／check及自我Review通過。
+- 畫面：隔離Edge與本機8163，正式index離線DOM／全部CSS與正式UI函式、可控收益資料；靜音、不啟動Worker／不碰玩家存檔。900×720及390×844目視，16px／700相對一般14px，按鈕文字確認、淡金文字#f4d79c／背景#3a3021／金邊沿用共用primary，置中且點擊關閉；手機無橫向溢出，含遺物收益／回歸加成仍在掉落前，Console error／warning及pageerror均0。截圖留本聊天visualizations/offline-summary。
+- 已知限制：另跑init-ui-smoke為1/2，未修改的HEAD原ui唯讀替換亦重現DIVINE_FORGE_MODES未定義，既有測試fixture缺依賴，沒有放寬或修改該測試。畫面屬正式DOM／CSS／函式隔離展示，未完整啟動Worker或跨瀏覽器長玩；不新增收益／掉落內容或解鎖。無本項未完成內容，可供Review及使用者合併；未合併／推送。Commit為本段所在「[Codex] feat: 調整離線收益資訊順序與確認按鈕」，SHA見聊天。下一步重載Codex遊戲驗收。

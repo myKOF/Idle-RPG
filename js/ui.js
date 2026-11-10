@@ -8343,8 +8343,17 @@ function showOfflineSummary(sum) {
   /* 怪物種類由參數表決定（formula.js §10 OFFLINE_ELITE），不能寫死「菁英怪」。
      舊的離線摘要沒有 elite 欄位，視為菁英以維持原本的顯示。 */
   var offKind = (sum.elite === false) ? STR(2052) : STR(2053);
+  h += '<div class="offline-sum-row offline-sum-primary">' + STR(2055, fmt(sum.xp), fmt(sum.gold)) + '</div>';
+  if (sum.forge && sum.forge.salvaged > 0) {
+    var fo = sum.forge, forgeOut = [STR(1048, fmt(fo.scrap)), STR(1049, fmt(fo.gold))];
+    if (fo.essence) forgeOut.push(STR(1050, fmt(fo.essence)));
+    if (fo.ancientEssence) forgeOut.push(STR(1046, fmt(fo.ancientEssence)));
+    h += '<div class="offline-sum-row">' + STR(2409, fmt(fo.salvaged), forgeOut.join('、')) + '</div>';
+  }
+  // 遺物獎勵與回歸加成列在收益區，讓掉落物維持在最後。
+  if (sum.towerRewards) h += '<div class="offline-sum-row">' + esc(STR(2466, fmt(sum.towerRewards.hours), fmt(sum.towerRewards.pct), sum.towerRewards.floor)) + '</div>';
+  if (sum.returnBuff) h += '<div class="offline-sum-row">' + esc(STR(2467, sum.returnBuff.minutes, sum.returnBuff.pct)) + '</div>';
   h += '<div class="offline-sum-row">' + STR(2054, fmt(sum.stage), esc(sum.zoneName || ''), offKind, fmt(sum.kills)) + '</div>';
-  h += '<div class="offline-sum-row">' + STR(2055, fmt(sum.xp), fmt(sum.gold)) + '</div>';
   var loot = [];
   for (var r = 0; r < RARITIES.length; r++) {
     if (sum.equips && sum.equips[r]) {
@@ -8363,15 +8372,6 @@ function showOfflineSummary(sum) {
   if (sum.scrap) loot.push(STR(2062, fmt(sum.scrap)));
   h += '<div class="offline-sum-title">' + STR(2063) + '</div>';
   h += '<div class="offline-sum-loot">' + (loot.length ? loot.join('　') : STR(2064)) + '</div>';
-  // 遺物：星圖殘頁（額外的封魔塔 BOSS 獎勵）、晨鐘（回到遊戲後的限時加成）
-  if (sum.towerRewards) h += '<div class="offline-sum-row">' + esc(STR(2466, fmt(sum.towerRewards.hours), fmt(sum.towerRewards.pct), sum.towerRewards.floor)) + '</div>';
-  if (sum.returnBuff) h += '<div class="offline-sum-row">' + esc(STR(2467, sum.returnBuff.minutes, sum.returnBuff.pct)) + '</div>';
-  if (sum.forge && sum.forge.salvaged > 0) {
-    var fo = sum.forge, forgeOut = [STR(1048, fmt(fo.scrap)), STR(1049, fmt(fo.gold))];
-    if (fo.essence) forgeOut.push(STR(1050, fmt(fo.essence)));
-    if (fo.ancientEssence) forgeOut.push(STR(1046, fmt(fo.ancientEssence)));
-    h += '<div class="offline-sum-row">' + STR(2409, fmt(fo.salvaged), forgeOut.join('、')) + '</div>';
-  }
   body.innerHTML = h;
   overlay.style.display = 'flex';
 }
