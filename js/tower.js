@@ -524,21 +524,25 @@ function endTowerFight(win, reason) {
 
 /* 封魔塔 BOSS 勝利獎勵（2026-11-09 自 endTowerFight 抽出）：經驗、魂源、裝備、寶石、精華、符文、邀請券、太古精華、魔種、魔塵。
    bossXp 省略時依樓層重算（離線「星圖殘頁」沒有實際的 BOSS 實體）；rewards 給陣列就把獎勵文字推進去。
-   首通才有的符文真言解鎖不在這裡，仍由 endTowerFight 處理。 */
-function grantTowerBossRewards(floor, firstClear, bossXp, rewards) {
+   首通才有的符文真言解鎖不在這裡，仍由 endTowerFight 處理。
+   scale＝獎勵比例（省略＝1，一場完整獎勵）。0～1 之間給「部分獎勵」（離線「星圖殘頁」的零頭，2026-11-10）：
+   經驗按比例；每種掉落的機率／掉落率乘上比例；固定數量（2 顆寶石、附魔精華）按比例機率取整——期望值＝完整獎勵 × scale。 */
+function grantTowerBossRewards(floor, firstClear, bossXp, rewards, scale) {
   rewards = rewards || [];
+  scale = (scale === undefined || scale === null) ? 1 : Math.max(0, Math.min(1, Number(scale) || 0));
+  var scaledCount = function (n) { var x = n * scale, base = Math.floor(x); return base + (chance((x - base) * 100) ? 1 : 0); };
   if (bossXp === undefined || bossXp === null) bossXp = bossStatsFor(floor).xp;
   // 獎勵：資源（零件改由熔爐升級取得）
   var rw = towerRewardFor(floor, firstClear);
   var st2 = getStats();
-  var xpGain = Math.round((bossXp || 0) * (1 + st2.xpBonus / 100));
+  var xpGain = Math.round((bossXp || 0) * (1 + st2.xpBonus / 100) * scale);
   gainXp(xpGain);
   // 技能熟練度經驗（2026-07-30）：高塔通關比照野外擊殺
   if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xpGain * SKILL_MASTERY_XP_RATE / 100));
   UI.dirty.header = true;
   rewards.push(STR(106, fmt(xpGain)));
   var soulOriginRate = hellSoulOriginDropChance(floor);
-  if (soulOriginRate > 0 && chance(soulOriginRate)) {
+  if (soulOriginRate > 0 && chance(soulOriginRate * scale)) {
     G.player.soulOrigin = (G.player.soulOrigin || 0) + 1;
     if (window.recordLootMat) window.recordLootMat('soulOrigin', 1, 'tower');
     rewards.push(STR(1839));
@@ -550,7 +554,7 @@ function grantTowerBossRewards(floor, firstClear, bossXp, rewards) {
   var lootCounts = [];
   for (var br = 0; br < bossRates.length; br++) {
     if (!bossRates[br]) continue;
-    var bn = rollDropCount(bossRates[br] * bossMult);
+    var bn = rollDropCount(bossRates[br] * bossMult * scale);
     if (!bn) continue;
     for (var bk2 = 0; bk2 < bn; bk2++) {
       pushConveyor(makeEquipment(rw.itemLevel, {
@@ -567,18 +571,24 @@ function grantTowerBossRewards(floor, firstClear, bossXp, rewards) {
       rewards.push(lootCounts[i]);
     }
   }
-  var gt1 = randomGemType(), gt2 = randomGemType();
-  addGem(gt1, rw.gemLevel, 1); addGem(gt2, rw.gemLevel, 1);
-  if (gt1 && window.recordLootGem) {
-    window.recordLootGem(gt1, rw.gemLevel, 1, 'tower');
-    window.recordLootGem(gt2, rw.gemLevel, 1, 'tower');
+  // 寶石 2 顆（部分獎勵按比例機率取整）
+  var gemLabels = [];
+  for (var gi = scaledCount(2); gi > 0; gi--) {
+    var gt = randomGemType();
+    if (!gt) break;
+    addGem(gt, rw.gemLevel, 1);
+    if (window.recordLootGem) window.recordLootGem(gt, rw.gemLevel, 1, 'tower');
+    gemLabels.push(gemLabel(gt, rw.gemLevel));
   }
-  if (gt1) rewards.push('💎 ' + gemLabel(gt1, rw.gemLevel) + '、' + gemLabel(gt2, rw.gemLevel));
-  G.player.essence += rw.essence;
-  if (window.recordLootMat) window.recordLootMat('essence', rw.essence, 'tower');
-  rewards.push(STR(1843, rw.essence));
-  // 符文（符文真言的素材）：樓層越高階數越高（js/runeword.js）
-  if (typeof rwRollTowerRuneDrop === 'function') {
+  if (gemLabels.length) rewards.push('💎 ' + gemLabels.join('、'));
+  var essenceGain = scale >= 1 ? rw.essence : scaledCount(rw.essence);
+  if (essenceGain > 0) {
+    G.player.essence += essenceGain;
+    if (window.recordLootMat) window.recordLootMat('essence', essenceGain, 'tower');
+    rewards.push(STR(1843, essenceGain));
+  }
+  // 符文（符文真言的素材）：樓層越高階數越高（js/runeword.js）；部分獎勵以比例機率決定這次有沒有符文判定
+  if (typeof rwRollTowerRuneDrop === 'function' && (scale >= 1 || chance(scale * 100))) {
     var towerRunes = rwRollTowerRuneDrop(floor, st2.loot);
     if (towerRunes.length) {
       rewards.push('🔷 ' + towerRunes.map(function (rid) { return runeLabel(rid); }).join('、'));
@@ -586,14 +596,14 @@ function grantTowerBossRewards(floor, firstClear, bossXp, rewards) {
   }
   // 邀請券：每次塔BOSS勝利獨立判定，配置來自 Store.xlsx。
   // 遺物「神祕殘券」：掉落率另外乘上 (1 + 數值%)（js/relic.js）
-  if (chance(MYSTERY_MERCHANT_SETTINGS.ticketDropRate * (1 + (typeof relicPct === 'function' ? relicPct('merchantTicketDrop') : 0)))) {
+  if (chance(MYSTERY_MERCHANT_SETTINGS.ticketDropRate * (1 + (typeof relicPct === 'function' ? relicPct('merchantTicketDrop') : 0)) * scale)) {
     addMerchantInvitations(1);
     rewards.push('🎟 ' + STR(2444, 1));
     if (window.recordLootMat) window.recordLootMat('mystery_invitation', 1, 'tower');
   }
   // 太古精華（40 層以上；獨立機率，不受掉寶率影響）
   var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
-  if (ancientEssenceRate > 0 && chance(ancientEssenceRate)) {
+  if (ancientEssenceRate > 0 && chance(ancientEssenceRate * scale)) {
     G.player.ancientEssence = (G.player.ancientEssence || 0) + 1;
     if (window.recordLootMat) window.recordLootMat('ancientEssence', 1, 'tower');
     rewards.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="' + STR(13) + '"> ' + STR(1844));
@@ -601,14 +611,14 @@ function grantTowerBossRewards(floor, firstClear, bossXp, rewards) {
   }
   // 魔種：僅煉獄之塔 BOSS，獨立判定 1 個
   var demonSeedRate = demonSeedDropChanceForBoss(floor);
-  if (demonSeedRate > 0 && chance(demonSeedRate)) {
+  if (demonSeedRate > 0 && chance(demonSeedRate * scale)) {
     G.player.demonSeed = (G.player.demonSeed || 0) + 1;
     if (window.recordLootMat) window.recordLootMat('demonSeed', 1, 'tower');
     rewards.push(STR(1845));
     UI.dirty.header = true;
   }
   // 魔塵（神鑄材料）：掉落率 = min(30%, 2% + 樓層 × 0.2%)（bossDustRate → formula.js §5）
-  if (chance(bossDustRate(floor))) {
+  if (chance(bossDustRate(floor) * scale)) {
     G.player.dust = (G.player.dust || 0) + 1;
     if (window.recordLootMat) window.recordLootMat('dust', 1, 'tower');
     rewards.push(STR(1846));

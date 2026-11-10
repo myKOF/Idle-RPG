@@ -1333,20 +1333,22 @@ function applyOfflineProgress(options) {
 
   function finishOfflineProgress() {
     if (sum.scrap) G.player.scrap += sum.scrap;
-    /* 遺物「星圖殘頁」：每 N 小時額外 1 次「已通關最高層」封魔塔 BOSS 獎勵（不含首通解鎖）。
-       遺物「晨鐘」：回到遊戲後的限時經驗／掉寶加成從這一刻起算。 */
-    var towerEvery = typeof relicValue === 'function' ? relicValue('offlineTowerReward') : 0;
+    /* 遺物「星圖殘頁」（2026-11-10 改）：每離線 1 小時（取整）額外獲得「已通關最高層」封魔塔 BOSS 獎勵的 N%（不含首通解鎖）。
+       合計比例拆成整場數＋零頭：整場給完整獎勵，零頭給一次部分獎勵（grantTowerBossRewards 的 scale）。
+       遺物「晨鐘」（2026-11-10 改）：回到遊戲後的限時經驗／掉寶加成，時間＝每離線 1 小時（取整）N 分鐘，從這一刻起算。 */
+    var offHours = Math.floor(elapsed / 3600);
+    var towerPctPerHour = typeof relicValue === 'function' ? relicValue('offlineTowerReward') : 0;
     var towerFloor = Math.floor(Number(G.tower && G.tower.highest) || 0);
-    if (towerEvery > 0 && towerFloor >= 1 && typeof grantTowerBossRewards === 'function') {
-      var towerTimes = Math.floor(elapsed / 3600 / towerEvery);
-      for (var tt = 0; tt < towerTimes; tt++) grantTowerBossRewards(towerFloor, false);
-      if (towerTimes > 0) {
-        sum.towerRewards = { times: towerTimes, floor: towerFloor };
-        blog(STR(2466, towerTimes, towerFloor), 'good');
-      }
+    var towerPct = Math.round(offHours * towerPctPerHour * 1000) / 1000;
+    if (towerPct > 0 && towerFloor >= 1 && typeof grantTowerBossRewards === 'function') {
+      var towerFull = Math.floor(towerPct / 100), towerPart = (towerPct - towerFull * 100) / 100;
+      for (var tt = 0; tt < towerFull; tt++) grantTowerBossRewards(towerFloor, false);
+      if (towerPart > 0) grantTowerBossRewards(towerFloor, false, null, null, towerPart);
+      sum.towerRewards = { hours: offHours, pct: towerPct, floor: towerFloor };
+      blog(STR(2466, offHours, towerPct, towerFloor), 'good');
     }
     if (typeof relicStartReturnBuff === 'function') {
-      var buffMin = relicStartReturnBuff();
+      var buffMin = relicStartReturnBuff(null, offHours);
       if (buffMin > 0) { sum.returnBuff = { minutes: buffMin, pct: RELIC_RETURN_BUFF_PCT }; blog(STR(2467, buffMin, RELIC_RETURN_BUFF_PCT), 'good'); }
     }
   UI.dirty.header = true; UI.dirty.factory = true; UI.dirty.gems = true;

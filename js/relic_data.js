@@ -42,28 +42,28 @@ var RELICS = [
     { cost: 5, value: 100, desc: '離線裝備掉落 +{v}%' }
   ] },
   { id: 4, name: '晨鐘', cat: '離線與時間', effect: 'returnBuffMinutes', levels: [
-    { cost: 1, value: 6, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 1, value: 12, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 1, value: 18, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 2, value: 24, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 2, value: 30, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 3, value: 36, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 3, value: 42, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 4, value: 48, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 4, value: 54, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' },
-    { cost: 5, value: 60, desc: '回到遊戲後 {v} 分鐘內，經驗值及掉寶率 +10%' }
+    { cost: 1, value: 5, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' },
+    { cost: 1, value: 10, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' },
+    { cost: 1, value: 15, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' },
+    { cost: 2, value: 20, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' },
+    { cost: 2, value: 25, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' },
+    { cost: 3, value: 30, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' },
+    { cost: 3, value: 35, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' },
+    { cost: 4, value: 40, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' },
+    { cost: 4, value: 45, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' },
+    { cost: 5, value: 50, desc: '回到遊戲後，每離線 1 小時給予 {v} 分鐘的經驗值及掉寶率 +50%' }
   ] },
   { id: 5, name: '星圖殘頁', cat: '離線與時間', effect: 'offlineTowerReward', levels: [
-    { cost: 1, value: 10, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 1, value: 9, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 1, value: 8, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 2, value: 7, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 2, value: 6, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 3, value: 5, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 3, value: 4, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 4, value: 3, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 4, value: 2, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' },
-    { cost: 5, value: 1, desc: '離線結算時，每 {v} 小時額外獲得 1 次已通關最高層封魔塔 BOSS 獎勵' }
+    { cost: 1, value: 5, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 1, value: 10, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 1, value: 15, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 2, value: 20, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 2, value: 25, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 3, value: 30, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 3, value: 35, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 4, value: 40, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 4, value: 45, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' },
+    { cost: 5, value: 50, desc: '離線獎勵結算時，每離線 1 小時額外獲得 {v}% 已通關最高層封魔塔 BOSS 獎勵' }
   ] },
   { id: 6, name: '黃銅齒輪', cat: '熔爐與工廠', effect: 'salvageScrap', levels: [
     { cost: 1, value: 10, desc: '熔爐拆解裝備碎片額外產出 +{v}%' },

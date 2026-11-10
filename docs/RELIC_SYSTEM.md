@@ -45,8 +45,8 @@ relicChestDoubleChance()        // 雙開戒：雙份獎勵機率（%）
 | 1 | 長夜沙漏 | offlineHours | save.js 離線上限 |
 | 2 | 夜班熔爐 | offlineXp | save.js 離線經驗另乘 |
 | 3 | 夢境捕手 | offlineEquipDrop | save.js 離線裝備掉落率另乘（寶石、材料不受影響） |
-| 4 | 晨鐘 | returnBuffMinutes | save.js 離線結算時開始計時；formula.js computeStats 經驗與掉寶 +10%（直接加在最終值） |
-| 5 | 星圖殘頁 | offlineTowerReward | save.js → tower.js `grantTowerBossRewards`（已通關最高層、非首通） |
+| 4 | 晨鐘 | returnBuffMinutes | save.js 離線結算時開始計時，時間＝每離線 1 小時（取整）N 分鐘，進行中的加成不會被縮短；formula.js computeStats 經驗與掉寶 +50%（`RELIC_RETURN_BUFF_PCT`，直接加在最終值）（2026-11-10 改） |
+| 5 | 星圖殘頁 | offlineTowerReward | save.js → tower.js `grantTowerBossRewards`（已通關最高層、非首通）。每離線 1 小時（取整）給 N%；合計每滿 100% 一場完整獎勵，零頭以 `scale` 給一次部分獎勵（經驗按比例、各掉落機率乘比例、固定數量按比例機率取整）（2026-11-10 改） |
 | 6～9, 11 | 熔爐拆解 | salvage* | factory.js doSalvage（碎片、寶石機率、經驗與熔爐零件相加；精華、金幣另乘） |
 | 10 | 蓄能瓶 | synthBuffer | formula.js synthBufCap |
 | 12, 13 | 背包 | inventoryMax／inventoryExpandDiscount | formula.js inventoryExpandMax／inventoryExpandCost |

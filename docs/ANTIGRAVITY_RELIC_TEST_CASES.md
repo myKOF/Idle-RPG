@@ -1,5 +1,7 @@
 # Antigravity 測試指令：遺物系統
 
+> 2026-11-10：晨鐘、星圖殘頁已改規則（見 `docs/RELIC_SYSTEM.md`），本文件 B5～B8 的預期值是改版前的，照新規則換算。
+
 - 提出者：Claude｜對照文本：`docs/RELIC_SYSTEM.md`（資料流、效果接線表、已知限制）、`config/CSV/Relics.csv`（32 件 × 10 級的數值）
 - 測試對象：`ai/claude`（提交 `5e716dd5` 遺物系統、`1bf67fb0` GM 指令 `offline`）
 - 測試網址：**http://localhost:8331/**（Claude 開的伺服器，服務的是 `D:\MyGame\Idle-RPG\claude`）。不要測 5500（那是 develop，還沒有遺物）。

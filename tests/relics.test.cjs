@@ -150,38 +150,52 @@ test('離線：長夜沙漏延長上限，夜班熔爐／夢境捕手另外乘�
   assert.equal(sum.equips[0], per * kills);
 });
 
-test('離線：星圖殘頁每 N 小時給 1 次已通關最高層 BOSS 獎勵；沒通關過就不給', () => {
+test('離線：星圖殘頁每離線 1 小時給最高層 BOSS 獎勵的 N%；滿 100% 給整場、零頭給部分獎勵；沒通關過就不給', () => {
   const c = loadGameContext();
   const calls = [];
-  c.grantTowerBossRewards = (floor, firstClear) => { calls.push([floor, firstClear]); return []; };
+  c.grantTowerBossRewards = (floor, firstClear, bossXp, rewards, scale) => { calls.push([floor, firstClear, scale]); return []; };
   c.G.stage.best = 50;
   setLevel(c, 'offlineTowerReward', 5);
-  const every = valueAt(c, 'offlineTowerReward', 5);
-  c.G.savedAt = Date.now() - 10 * 3600 * 1000;
+  const perHour = valueAt(c, 'offlineTowerReward', 5);
+  c.G.savedAt = Date.now() - 10.9 * 3600 * 1000;
   c.applyOfflineProgress();
   assert.equal(calls.length, 0, '封魔塔沒通關過（highest 0）不給');
 
   c.G.tower.highest = 37;
-  c.G.savedAt = Date.now() - 10 * 3600 * 1000;
+  c.G.savedAt = Date.now() - 10.9 * 3600 * 1000;   // 不滿 1 小時的零頭不算：10 小時
   const sum = c.applyOfflineProgress();
-  const times = Math.floor(10 / every);
-  assert.equal(calls.length, times);
+  const pct = 10 * perHour, full = Math.floor(pct / 100), part = (pct - full * 100) / 100;
+  assert.equal(calls.filter((x) => x[2] === undefined).length, full, '整場數');
+  const partial = calls.filter((x) => x[2] !== undefined);
+  assert.equal(partial.length, part > 0 ? 1 : 0, '零頭只給一次部分獎勵');
+  if (part > 0) assert.ok(Math.abs(partial[0][2] - part) < 1e-9, '部分獎勵的比例＝零頭');
   assert.ok(calls.every(([floor, first]) => floor === 37 && first === false), '固定給最高層、非首通');
-  assert.deepEqual({ ...sum.towerRewards }, { times, floor: 37 });
+  assert.deepEqual({ ...sum.towerRewards }, { hours: 10, pct, floor: 37 });
 });
 
-test('晨鐘：離線結算後限時加經驗與掉寶，到期後屬性回原值', () => {
+test('晨鐘：時間＝每離線 1 小時 N 分鐘；不滿 1 小時沒有；限時加經驗與掉寶，到期後屬性回原值；不會縮短進行中的加成', () => {
   const c = loadGameContext();
   c.G.stage.best = 30;
   const before = c.getStats();
   const loot0 = before.loot, xp0 = before.xpBonus;
   setLevel(c, 'returnBuffMinutes', 1);
-  c.G.savedAt = Date.now() - 2 * 3600 * 1000;
+  c.G.savedAt = Date.now() - 0.5 * 3600 * 1000;
+  assert.equal(c.applyOfflineProgress().returnBuff, undefined, '不滿 1 小時沒有加成');
+
+  c.G.savedAt = Date.now() - 2.5 * 3600 * 1000;
   const sum = c.applyOfflineProgress();
-  assert.equal(sum.returnBuff.minutes, valueAt(c, 'returnBuffMinutes', 1));
+  assert.equal(sum.returnBuff.minutes, 2 * valueAt(c, 'returnBuffMinutes', 1));
+  assert.equal(sum.returnBuff.pct, c.RELIC_RETURN_BUFF_PCT);
   c.markStatsDirty();
   assert.equal(c.getStats().loot, loot0 + c.RELIC_RETURN_BUFF_PCT);
   assert.equal(c.getStats().xpBonus, xp0 + c.RELIC_RETURN_BUFF_PCT);
+
+  const longUntil = Date.now() + 10 * 3600 * 1000;
+  c.G.player.relicReturnUntil = longUntil;
+  c.G.savedAt = Date.now() - 1.2 * 3600 * 1000;
+  c.applyOfflineProgress();
+  assert.equal(c.G.player.relicReturnUntil, longUntil, '較短的新加成不會蓋掉進行中較長的加成');
+
   c.G.player.relicReturnUntil = Date.now() - 1;   // 到期
   c.relicTick();
   assert.equal(c.getStats().loot, loot0, 'relicTick 要在到期時作廢屬性快取');
