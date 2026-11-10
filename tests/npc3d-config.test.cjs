@@ -22,10 +22,11 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
       assert.equal(result[i].img, 'sprites/boss/boss_treant' + suffix + '.png');
       assert.equal(result[i].model3d.file, 'images/models/npc3d/treant' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Unsteady_Walk','Unsteady_Walk','Weapon_Combo_2','Attack','Basic_Jump','Shot_and_Fall_Forward']);
-    } else if (i === 2) {
+    } else if (i === 2 || i === 12 || i === 22) {
+      const suffix = i === 2 ? '' : '_lv' + (i === 12 ? 2 : 3);
       assert.equal(result[i].name, current[i].name);
-      assert.equal(result[i].img, 'sprites/boss/boss3_character.png');
-      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss3_character.glb');
+      assert.equal(result[i].img, 'sprites/boss/boss3_character' + suffix + '.png');
+      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss3_character' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Running','Running','Basic_Jump','Right_Hand_Sword_Slash','Shield_Push_Left','Shot_and_Fall_Forward']);
     } else if (i % 10 < 2) {
       const variant = i % 10 + 1;

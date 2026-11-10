@@ -710,7 +710,7 @@ var STAT_CAPS = {
 
 var PRIMARY_STAT_EFFECTS = {
   strAtk: 1,
-  strDef: 0.25,
+  strDef: 0.1,
   strHpRegen: 0.03, // 生命恢復/秒每點力量
   agiCritRate: 0,
   agiCritDmg: 1,    // 暴擊傷害%每點敏捷
@@ -722,8 +722,8 @@ var PRIMARY_STAT_EFFECTS = {
   intMatk: 1,
   intMdef: 0,
   vitHp: 5,
-  vitDef: 1,
-  vitMdef: 1,
+  vitDef: 0.5,
+  vitMdef: 0.5,
   vitHpRegen: 0.06, // 生命恢復/秒每點體質
   vitMpRegen: 0.02  // 法力恢復/秒每點體質
 };
@@ -1876,7 +1876,7 @@ var BOSS_LIST = [
   { name: '混沌之影', emoji: '🌑', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_chaos.png', id: 'tower_boss_10', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_curse', 'e_manadrain'], rnd: [4, 6] } },
   { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_11', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
   { name: '樹人Ⅱ', emoji: '🌳', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_treant_lv2.png', id: 'tower_boss_12', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/treant_lv2.glb', clips: { idle: 'Unsteady_Walk', walk: 'Unsteady_Walk', attack1: 'Weapon_Combo_2', attack2: 'Attack', attack3: 'Basic_Jump', die: 'Shot_and_Fall_Forward' } }, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
-  { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_thunder.png', id: 'tower_boss_13', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
+  { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss3_character_lv2.png', id: 'tower_boss_13', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/boss3_character_lv2.glb', clips: { idle: 'Running', walk: 'Running', attack1: 'Basic_Jump', attack2: 'Right_Hand_Sword_Slash', attack3: 'Shield_Push_Left', die: 'Shot_and_Fall_Forward' } }, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
   { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_14', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 5, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
   { name: '劇毒之母', emoji: '🕷️', elem: 'poison', attr: 'poison', img: 'sprites/boss/boss_poison.png', id: 'tower_boss_15', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
   { name: '深淵領主', emoji: '😈', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_abyss.png', id: 'tower_boss_16', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_darkzone', 'e_darkorbs'], rnd: [4, 6] } },
@@ -1886,7 +1886,7 @@ var BOSS_LIST = [
   { name: '混沌之影', emoji: '🌑', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_chaos.png', id: 'tower_boss_20', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_curse', 'e_manadrain'], rnd: [4, 6] } },
   { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_21', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
   { name: '樹人Ⅲ', emoji: '🌳', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_treant_lv3.png', id: 'tower_boss_22', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/treant_lv3.glb', clips: { idle: 'Unsteady_Walk', walk: 'Unsteady_Walk', attack1: 'Weapon_Combo_2', attack2: 'Attack', attack3: 'Basic_Jump', die: 'Shot_and_Fall_Forward' } }, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
-  { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss_thunder.png', id: 'tower_boss_23', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
+  { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss3_character_lv3.png', id: 'tower_boss_23', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/boss3_character_lv3.glb', clips: { idle: 'Running', walk: 'Running', attack1: 'Basic_Jump', attack2: 'Right_Hand_Sword_Slash', attack3: 'Shield_Push_Left', die: 'Shot_and_Fall_Forward' } }, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
   { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_24', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 5, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
   { name: '劇毒之母', emoji: '🕷️', elem: 'poison', attr: 'poison', img: 'sprites/boss/boss_poison.png', id: 'tower_boss_25', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
   { name: '深淵領主', emoji: '😈', elem: 'dark', attr: 'dark', img: 'sprites/boss/boss_abyss.png', id: 'tower_boss_26', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_darkzone', 'e_darkorbs'], rnd: [4, 6] } },

@@ -249,6 +249,24 @@ test('新雲端解析取代舊解析，舊finally不能清掉新請求的取消�
   assert.equal(env.sent.length, 0);
 });
 
+test('Enter送出立即收框，延遲白話翻譯仍執行一次且不重新開框', async () => {
+  const env = setup();
+  const panel = env.context.document.body.children[0];
+  const pending = deferred(); env.context.respond = () => pending.promise;
+  env.context.document.listeners.keydown({ key: 'Enter', preventDefault() {} });
+  assert.equal(panel.style.display, 'block');
+  env.type(unknownPrompt);
+  assert.equal(panel.style.display, 'none', '不等待雲端回覆便收框');
+  assert.equal(env.input.value, '');
+  await flush();
+  assert.equal(env.calls[0].options.signal.aborted, false);
+  assert.equal(env.sent.length, 0);
+  pending.resolve(success()); await flush();
+  assert.deepEqual(env.sent.map(s => s.line), ['gold 123']);
+  assert.equal(panel.style.display, 'none');
+  assert.equal(env.timers.size, 0);
+});
+
 test('Escape關閉指令框取消解析，晚到成功結果不能執行', async () => {
   const env = setup();
   const pending = deferred(); env.context.respond = () => pending.promise;

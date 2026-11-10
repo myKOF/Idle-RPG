@@ -609,8 +609,15 @@ function bskIndomitable(b, d, c) {
   if (typeof blog === 'function') blog(STR(555, (b.name || 'BOSS'), d.emoji, d.name), 'log-enemy-skill', 'combat');
   if (mp) {
     if (c.v.attack2) eliteBurstFx(mp.x, mp.y, r, c.v.attack2, 0);
-    if (c.v.hit2) eliteHitFx(b.floatSel, c.v.hit2);
-    if (c.v.ground2) eliteWarn(mp.x, mp.y, r, c.v.ground2, bskU(c, 'lightSec', 2), 'psind');
+    // 與玩家版共用腳底跟隨／作者尺寸；白光與護罩各自使用對應壽命，不當作受擊或範圍預警。
+    if (c.v.hit2) eliteFx({
+      fxKind: 'aura', variant: 'indomitable-light', dur: bskU(c, 'lightSec', 2),
+      targets: [b.floatSel], vfx: { ground: c.v.hit2 }
+    });
+    if (c.v.ground2) eliteFx({
+      fxKind: 'aura', variant: 'indomitable-guard', dur: rt.invulnUntil - GT,
+      targets: [b.floatSel], vfx: { ground: c.v.ground2 }
+    });
     var pp = elitePos();
     if (eliteDist(pp.x, pp.y, mp.x, mp.y) <= r) {
       elitePushPlayer(mp.x, mp.y, bskLen(bskU(c, 'pushM', 30)) * 0.5);

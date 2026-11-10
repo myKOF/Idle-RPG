@@ -175,16 +175,27 @@ test('本機 GM Enter/Escape 行為符合需求', async () => {
     { name: 'gm.exec', args: { line: 'gold 100' } }
   ]);
   assert.equal(context.G.player.gold, 100, '主執行緒面板不得直接變更遊戲狀態');
-  assert.equal(panel.style.display, 'block');
-  assert.equal(input.value, ''); // 指令執行後自動清空
+  assert.equal(panel.style.display, 'none');
+  assert.equal(input.value, ''); // 指令執行後自動清空並關閉
   await Promise.resolve();
   assert.equal(panel.children[1].textContent, 'Worker 已執行');
   assert.equal(panel.children[1].className, 'gm-status good');
+  assert.equal(panel.style.display, 'none', '非同步回覆不重新開啟指令框');
+  document.listeners.keydown(event('Enter'));
+  assert.equal(panel.style.display, 'block');
+  input.value = 'gold 200';
+  input.listeners.keydown({ ...event('Enter'), shiftKey: true });
+  assert.equal(panel.style.display, 'block');
+  assert.equal(input.value, 'gold 200');
+  assert.equal(context.gmMessages.length, 1, 'Shift+Enter不送出指令');
   input.listeners.keydown(event('Escape'));
   assert.equal(panel.style.display, 'none');
   document.listeners.keydown(event('Enter'));
   assert.equal(panel.style.display, 'block');
   assert.equal(input.value, ''); // 重新開啟介面時也是空白
+  input.listeners.keydown(event('Enter'));
+  assert.equal(panel.style.display, 'none', '空Enter仍關閉面板');
+  assert.equal(context.gmMessages.length, 1);
 });
 
 test('金幣與材料允許負數扣減，但物品負數不會發放', () => {

@@ -10,6 +10,7 @@ var UISound = (function () {
   /* 2026-11-10 使用者要求音效整體縮成 65%；選單 hover 本來就很小聲，維持原音量 */
   var LEVELS = { click: 0.65, menuHover: 1, success: 0.65, achievement: 0.65 };
   var MENU_MUSIC = 'audio/start-menu/tutti-impact.mp3?v=3b01a74c3094';
+  var TOWER_MUSIC = 'audio/zones/blades-of-the-rising-sun.mp3';
   // 有提示的可操作控制項仍有點擊音，純提示不列入操作目標。
   var HELP_TARGETS = '.pg-help, .forge-info-btn, #btn-enemy-tip, #btn-boss-tip, #btn-tower-result-boss-tip';
   // 委派至document，涵蓋重繪／彈窗的新節點。
@@ -37,6 +38,7 @@ var UISound = (function () {
   var menuVisible = false, menuEpoch = 0, startScreenActive = false, menuMusic = null;
   var sceneTracks = [], sceneIndex = 0, sceneMusic = null, pageActive = true;
   var sceneReady = false, sceneGapUntil = 0, sceneGapTimer = 0;
+  var sceneView = null, towerChallengePending = false;
   var SCENE_TRACK_GAP_MS = 10000;
 
   function now() { return performance.now(); }
@@ -84,6 +86,7 @@ var UISound = (function () {
   function setStartScreenActive(value) {
     if (startScreenActive === value) return;
     startScreenActive = value;
+    if (value) finishTowerChallenge(false);
     syncMusic();
   }
   function syncSceneMusic() {
@@ -133,8 +136,11 @@ var UISound = (function () {
   }
   function setScene(view) {
     if (!view) return;
+    sceneView = view;
+    if (view.towerActive) towerChallengePending = false;
     var zone = typeof ZONES !== 'undefined' && ZONES[view.zone];
-    var tracks = !view.towerActive && zone ? [zone.bgm, zone.bgm2].filter(Boolean) : [];
+    var tracks = view.towerActive || towerChallengePending ? [TOWER_MUSIC] :
+      (zone ? [zone.bgm, zone.bgm2].filter(Boolean) : []);
     if (tracks.length === sceneTracks.length && tracks.every(function (track, i) { return track === sceneTracks[i]; })) return;
     sceneTracks = tracks;
     sceneIndex = 0;
@@ -146,6 +152,15 @@ var UISound = (function () {
       sceneMusic = null;
     }
     syncSceneMusic();
+  }
+  function beginTowerChallenge() {
+    towerChallengePending = true;
+    setScene(sceneView || {});
+  }
+  function finishTowerChallenge(accepted) {
+    towerChallengePending = false;
+    // ACK之後的權威快照接管（連挑回傳void）；拒絕／斷線則立即回復最新場景。
+    if (!accepted) setScene(sceneView || {});
   }
   function setStartMenuVisible(value) {
     if (menuVisible === value) return;
@@ -279,6 +294,7 @@ var UISound = (function () {
   init();
   return { commandResult: commandResult, preloadStartMenuAudio: preloadStartMenuAudio,
     setScene: setScene, setSceneReady: setSceneReady,
+    beginTowerChallenge: beginTowerChallenge, finishTowerChallenge: finishTowerChallenge,
     setStartScreenActive: setStartScreenActive, setStartMenuVisible: setStartMenuVisible,
     relicUpgraded: function () { play('success'); },
     achievementUnlocked: function () { play('achievement'); } };

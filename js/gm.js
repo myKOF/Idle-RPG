@@ -315,6 +315,8 @@
         }
         submitGMCommand(val);
         input.value = '';
+        // 送出只收起面板；closeGM會取消仍在解析中的白話指令。
+        panel.style.display = 'none';
       } else if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();

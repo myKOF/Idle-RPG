@@ -1,3 +1,73 @@
+## QUEST-REWARD-NO-TARGET-SCALE-20261110 — 任務獎勵抵達目的地不縮放
+
+- Owner：Codex；Done，單一開發者。使用者要求任務領獎圖示飛到材料或背包後，目的地不再放大縮小，保留飛行演出。前置既有任務領獎動畫完成，fetch及逐檔衝突預檢乾淨。
+- 允許js/ui.js飛行結束回呼、css/style.css專用res-hit-bump樣式、index.html兩者快取、既有quest-fly-effect回歸、LV與本段；禁止獎勵數量／領取規則、Worker、存檔、解鎖、素材及其他工作區，不合併推送。
+- 驗收材料／背包目的地不再掛縮放class、飛行／拖尾／抵達清理仍正常、任務與時鐘相關回歸、Build及diff；自我Review與Commit後交使用者重載驗收。
+- 完成6檔：js/ui.js刪除抵達後res-hit-bump觸發與清除計時；css/style.css刪除專用class及resHitBumpAnim；index兩者快取更新quest-no-target-scale-v1；tests/quest-fly-effect改檢查縮放已移除並維持飛行／拖尾／領獎閃光檢查；LV及本段同步。素材與String無變更，素材庫不建空Commit。
+- 驗證指令：node --test tests/quest-fly-effect.test.cjs tests/task-system.test.cjs tests/game-clock.test.cjs tests/vfx-editor-cache-versions.test.cjs，25/25；npm.cmd run build通過709檔；node tools/string-table/build_string_csv.cjs --check寫死0；git diff／stat／check及自我Review通過。唯讀檢查共通規範與前次提交差異、使用者截圖、任務領獎／動畫時鐘／目的地對應與四份既有回歸；未修改任務邏輯、時鐘及其他UI。
+- 瀏覽器：隔離無音訊Edge fixture載入正式spawnQuestRewardFlyFx原函式，八類gold／scrap／essence／gem／book／rune／skillXp／equip同時飛行，初始8圖示，抵達後0圖示，MutationObserver記錄全部目的地屬性修改0、矩形及HTML保持，1.5秒後拖尾0。未啟動遊戲／Worker或接觸玩家存檔，未做完整遊戲／跨瀏覽器長玩；沒有本項已知新增風險或未完成內容。
+- 交付：可供Review及使用者合併，未合併／推送；Commit為本段所在「[Codex] fix: 移除任務獎勵抵達目的地的縮放動畫」，SHA見聊天。下一步重新載入Codex遊戲領獎驗收。
+
+## START-MENU-RUBY-20261110 — 標題紅寶石閃耀紅光
+
+- Owner：Codex；Done，單一開發者。依使用者截圖，在開始選單中央劍柄紅寶石新增高品質紅光，大小與亮度交錯脈動。前置既有1440×737標題原圖與選單完成；使用者追加要求先提供高清GIF預覽。
+- 允許css/start-menu.css、index標題包裝／CSS快取、LV與本段；必要時同步既有選單回歸。禁止改標題原素材、選單功能／背景／音訊／玩法／配置／其他工作區，不合併推送。fetch及逐檔預檢乾淨。
+- 純CSS原創多層柔光／核心／細星芒，以原圖紅寶石座標等比例定位；支援窄屏、短屏、減少動態偏好與隱藏面板不耗動畫。無新增獨立素材／Preset，無需圖像生成或美術軟體；本項不使用第三方素材。實際畫面目視與幾何／動態驗證、既有選單回歸／Build／diff後Commit，交使用者驗收。
+- 完成4檔：css/start-menu.css新增柔和外暈、暖紅內光、旋轉細星芒及短暫亮閃，4.8／3.2／9.6秒交錯脈動，總週期9.6秒；index把原標題img包在等比例定位盒，加純裝飾aria-hidden光效並更新CSS快取ruby-glow-v1；LV及本段同步。高度限制納入盒寬計算，避免原object-fit留白使寶石定位漂移，保留原標題實際顯示尺寸與響應位置。減少動態時用靜態柔光，不增JS、Timer、玩家字串或獨立素材；素材庫無本項變更，不建空Commit。
+- 實機：IAB本機8157正式選單新origin，經設定→音訊全體靜音後驗收，未啟動新局／Worker或接觸玩家存檔。1280×720、390×844、568×320、900×550四種視窗的圖中(721,128)寶石中心與光效中心誤差均<0.02px；還原viewport。正式選單目視、重新載入後Console error／warning皆0。減少動態與隱藏行為依CSS自我Review核對，未宣稱實測OS偏好。
+- GIF：沿用正式HTML標題與同一份正式CSS的獨立特寫頁，只放大標題取景並使用既有靜態戰場背景，無另製或後製動畫。IAB實錄122張JPEG影格／9.636秒，以原始時間輸出1280×720、20fps／192格、9.6秒無限循環GIF，3,091,305 bytes。目視最弱／最強影格，紅光位置穩定、寶石切面及金屬輪廓清楚；寶石周邊紅通道均值97.72→121.20驗證變化。GIF與正式選單截圖及gif-qa.json留本聊天visualizations/ruby-glow，交付時先附GIF；中間影格／錄製清單／臨時伺服器清理。
+- 驗證：node --test tests/start-menu.test.cjs tests/start-menu-background.test.cjs tests/vfx-editor-cache-versions.test.cjs，12/12；npm.cmd run build通過709檔；node tools/string-table/build_string_csv.cjs --check寫死0，git diff／stat／check及自我Review通過。唯讀檢查AI_RULES／AGENTS／Workflow／prompts、使用者截圖與原標題／TITLE_SOURCE、原start-menu／background／相關回歸及Loading／音訊設定；未修改標題原檔／選單邏輯／背景／音訊／玩法／配置。
+- 交付：本項無未完成，可供Review及使用者驗收／合併；未合併／推送develop或main。Commit為本段所在「[Codex] feat: 開始選單紅寶石多層閃耀紅光」，SHA見聊天。已知限制：GIF為放大特寫、背景靜態，正式遊戲保持原標題大小及動態背景；未做跨瀏覽器／行動真機或OS減少動態實測。下一步先觀看GIF，再重載Codex遊戲驗收實際尺寸。
+
+## GM-ENTER-CLOSE-20261110 — Enter送出GM指令後關閉面板
+
+- Owner：Codex；Done，單一開發者。使用者要求輸入GM指令按Enter執行時一併關閉整個指令框。前置既有GM面板與本機／白話解析已完成。
+- 允許js/gm.js送出後收起、index僅GM快取、既有GM指令／翻譯回歸、LV_upgrade_system.md與本段；不改Worker執行／解析規則／配置／存檔／其他工作區，不合併推送。fetch及逐檔衝突預檢乾淨。
+- 使用Enter送出後清空並收起面板，不呼叫會取消解析的closeGM；保持Escape取消、空Enter關閉、Shift+Enter換行及本機環境限制。驗證原指令仍執行、延遲白話解析不被取消、原鍵盤行為、相關回歸／Build／diff；完成後Commit並交使用者重載驗收。
+- 修改6檔：js/gm.js僅送出後兩行收框／註解、index.html僅GM快取20261110-enter-close、tests/gm-command.test.cjs、tests/gm-natural-timeout.test.cjs、LV_upgrade_system.md及本段。唯讀檢查共通規範／Workflow／prompts及其相對前任務差異、使用者截圖、GM白話解析／cancelPendingParse與closeGM、既有翻譯／逾時回歸。本次無素材修改，素材庫不建空Commit。
+- 測試指令：node --test tests/gm-command.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-translation-cache.test.cjs tests/vfx-editor-cache-versions.test.cjs，57/57；新增延遲雲端回覆回歸，確認按Enter即收框但不取消請求、只送一次Worker且回覆不開框；原鍵盤回歸同步新需求並保留Shift+Enter、Escape、空Enter、重新開框及主端不得改遊戲狀態等斷言。node tools/string-table/build_string_csv.cjs --check寫死0；git diff／stat／check及自我Review通過。
+- 已知限制：本輪為函式／鍵盤事件回歸，未做真實瀏覽器操作或呼叫真實雲端API；使用隔離回覆驗證非同步解析，無已知新增缺陷。沒有改Worker執行、解析或取消政策、玩家存檔與解鎖；沒有合併／推送。後續交使用者重載驗收與整合。
+- Build：npm.cmd run build通過709檔。本項無未完成內容，可供Review及使用者合併。Commit為本段所在「[Codex] fix: GM指令按Enter送出後關閉面板」，SHA見聊天。
+
+## TOWER-BOSS3-LV3-20261110 — 第3隻BOSS第3階共用五動作
+
+- Owner：Codex，Done，單一開發者。使用者提供BOSS3_3.glb，指定第3階且動作與第1階完全一致，沿用本聊天使用者自製／生成系列及遊戲使用／修改授權。
+- 前置：第1階五動作已完成；逐檔預檢乾淨。允許NPC第504列tower_boss_23的G:J及AB:AH、CSV／data／必要快取、獨立GLB／透明頭像／匯出與來源交接、三份相關回歸、LV及本段；保留名稱／圖示／全部數值與技能、其他49列，不改通用執行期／戰鬥／協議／存檔／解鎖，不合併推送。
+- 驗收：新外觀UV／PBR轉入第1階網格／權重／骨架及五動作；全骨骼蒙皮矩陣／時間QA、原生Blend重開、Excel獨占／窄改／正常重開／全資料格式核對，正式遊戲23層五動作與73／123映射、相關回歸／Build與雙庫提交。
+
+- 完成15檔：新增boss3_character_lv3.glb／透明頭像、獨立export-tower-boss3-lv3.cjs及docs/assets/TOWER_BOSS3_LV3_SOURCE.md；更新NPC第504列G:J／AB:AH、CSV／data、index／bridge／Worker資料快取、三份模型／塔層回歸、LV及本段。第23／73／123層使用第3階，第1、2階與其他49列保持；原名稱、圖示、數值與技能保持。通用變體工具直接沿用，不改原工具或舊階段來源。
+- 模型：新來源16,452頂點／10,452面、47骨；身高2.16等比例0.9907407862對齊第1階2.14。全部三角面唯一匹配，最大表面差0.000002161m。保留第1階網格／權重／骨架／五動作，轉入逐角UV及PBR；三張貼圖逐位元相同。匯出因UV接縫分割為16,462頂點，面數保持。60Hz全47骨757樣本最大有效蒙皮矩陣誤差0.000008271，五動作名稱與時長保持；Blend正常重開五動作及六打包圖通過，1080px RGBA頭像實際渲染且alpha0～255。
+- 配置：獨占後原生Excel窄改11格／正常重開，28,365格資料／公式與七物件保持，僅指定11格改變；兩頁24,535格樣式、樣式XML、列高／欄寬、合併／驗證／條件格式／視圖／篩選／圖形一致。NPC生成後試跑11字面值／語意0、String寫死0。未修改通用3D／戰鬥／協議／存檔／解鎖。
+- 測試指令：node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-action-motion.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/boss3-character-asset.test.cjs tests/worker-protocol.test.cjs，共43/43；npm.cmd run build通過709檔。Blender蒙皮／原生Blend重開／貼圖SHA、Excel資料／格式及diff／stat／check通過；三階匯出器--check分別23／21／21項來源保持。
+- 實機：隔離Edge新局、正式主頁與原生Worker，第23層載入新模型全部五動作；18筆正位移及同步播放率、三attack／cast動作完整輪播、正式GM命中後死亡使用Shot_and_Fall_Forward。Console error0、無模型警告；保留既有音訊16405.7Hz振盪器限幅提示，不在本輪修改。73／123由塔層回歸驗證映射。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts、前兩階模型／來源／匯出、Blender變體／骨骼QA／頭像工具、Npc3D／Hero3D／BattleRenderer、塔戰／GM／Worker、NPC與Excel生成管線及上述測試。素材庫tower-boss3-lv3-20261110保存原檔／第1階動作來源／可編輯Blend／成品／工具／QA共21項SHA，先提交48c4d2a7d31a884abeb0f8b7c93fff8710b21ee6；遊戲Commit為本段所在提交，SHA見回報。
+- 交付：無未完成，可供Review與使用者合併，未合併／推送develop或main。未做行動真機／跨瀏覽器／長時間效能驗證；本次未要求GIF。暫存來源與QA歸檔後清理，保留最終戰場截圖；下一步由使用者重載Codex遊戲驗收第三階外觀。完整來源及重建見docs/assets/TOWER_BOSS3_LV3_SOURCE.md。
+
+## TOWER-BOSS3-LV2-20261110 — 第3隻BOSS第2階共用五動作
+
+- Owner：Codex，Done，單一開發者。使用者提供BOSS3_2.glb，指定BOSS3第2階、動作與第1階完全一致並接入。沿用本聊天使用者自製／生成系列及修改／遊戲使用授權。
+- 前置：第1階boss3_character.glb五動作已完成；逐檔預檢乾淨、NPC來源可獨占。允許第494列tower_boss_13的G:J及AB:AH、CSV／data／必要快取、獨立模型／透明頭像／Blender製作與匯出／來源交接、三份相關回歸、LV及本段；保留名稱、圖示、全部數值／技能及其他49列，不改通用執行期／戰鬥／協議／存檔／解鎖，不合併推送。
+- 驗收：新外觀PBR／UV精確轉入，沿第1階網格／權重／骨架及五動作，比對全部關節有效蒙皮矩陣與時間；原生Blend正常重開、NPC原生Excel窄改／正常重開／全資料格式比對、正式遊戲第13關移動／三攻擊／死亡、63／113等映射、相關回歸／Build與雙庫提交。後續由使用者驗收及整合。
+
+- 完成16檔：新增boss3_character_lv2.glb／透明頭像、Blender變體製作器／獨立匯出器及來源交接；更新NPC第494列G:J／AB:AH、CSV／data、index／bridge／Worker資料快取、三份模型／塔層回歸、LV及本段。第13／63／113層使用新外觀，第3／53／103層原模型與其他49列保持。
+- 製作：新來源16,450頂點／10,452面，身高正規化2.12對齊第1階2.14，比例1.0094339998；全部三角面唯一對應、最大表面差0.000000885m。保留第1階幾何／權重／47骨及五動作，轉入新PBR與逐角UV，三張貼圖逐位元相同；匯出因新UV接縫分割為16,462頂點，表面與面數保持。47骨、60Hz共757樣本最大有效蒙皮矩陣誤差0.000008271，五動作時長與名稱保持；原生Blend重開五動作／六張打包圖通過。
+- NPC：獨占後原生Excel窄改11格、正常模式重開，28,365格資料／公式與七物件核對；相對基線僅本列11格改變，其他49列及原名稱／圖示／屬性／技能／所有數值保持。兩頁24,535格樣式、樣式XML、列高／欄寬、合併／驗證／條件格式／視圖／篩選／圖形一致；NPC重建再試跑語意0、String寫死0。沒有修改通用3D、戰鬥、協議、存檔或解鎖。
+- 驗證指令：node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-action-motion.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/boss3-character-asset.test.cjs tests/worker-protocol.test.cjs，共42/42；npm.cmd run build通過709檔。Blender全關節QA、原生Blend重開、貼圖／來源SHA、原生Excel資料格式與diff／stat／check通過，原第1階23項匯出來源亦核對保持。
+- 實機：隔離Edge／新局／正式主頁／原生Worker，第13關載入新模型，移動有正位移且同步播放率；三個attack／cast依序使用第1階相同動作；命中後死亡使用Shot_and_Fall_Forward。Console error0，無模型警告，另記錄未修改音訊振盪器16267.7／16607.6Hz限幅提示。首輪damage 100%只設定下一次命中覆寫，10秒內未命中而等待死亡逾時；以正式GM命中999／攻速5測試基準重驗後完成，不改產品或正式回歸配合驗收。
+- 唯讀檢查AI_RULES／AGENTS／Workflow／prompts、原BOSS3／樹人變體與來源／QA／匯出工具、Hero3D／Npc3D／BattleRenderer、塔戰／Worker／GM、NPC與Excel管線及相關測試。素材庫tower-boss3-lv2-20261110共21項SHA，原檔／已認可第1階動作／可編輯Blend／成品／工具與QA先提交0fd9982554b6d2135d8413c50defb4127e9a75ea；遊戲提交為本段所在提交，SHA見回報。來源及重建見docs/assets/TOWER_BOSS3_LV2_SOURCE.md。
+- 交付：無未完成，可供Review及使用者合併；未合併或推送develop／main。未要求本階GIF，僅接入與透明頭像；原音訊提示及未做行動真機／跨瀏覽器／長時間效能為已知限制。暫存資料歸檔後清理，保留最終戰場截圖，下一步由使用者重載驗收第二階外觀。
+
+## TOWER-BGM-20261110 — 封魔塔挑戰立即切換配樂
+
+- Owner：Codex；Done，單一開發者。使用者指定既有audio/zones/blades-of-the-rising-sun.mp3為封魔塔BOSS戰配樂，按挑戰立即開始；前置為既有場景音樂與Worker挑戰流程。
+- 允許js/ui-sound.js、js/ui.js、index.html快取、相關音訊回歸、audio/zones/README.md、LV_upgrade_system.md與本段；禁止變更戰鬥／Worker／存檔／解鎖／其他配置或工作區，不合併推送。逐檔預檢乾淨。
+- 沿用現有音樂生命週期／音量／靜音，手動與連續挑戰送出時先切曲；權威塔戰快照接管，拒絕／傳送失敗回復野外，連續塔戰快照不重播。既有音檔原樣沿用，無素材變更。
+- 驗收即時起播、過期野外快照／曲間計時、挑戰失敗回復、塔戰／結算／撤退、音量／靜音／Loading／選單及相關回歸／Build／diff；自我Review及Commit後交使用者重載驗收與整合。
+- 完成：UISound加入專用塔戰曲，手動／連挑共用送出前切曲入口，等待ACK期間保護曲目；ACK後依原生Worker下一份tick（連挑正常回傳void）接管，active:false／字串或err拒絕／Promise傳送失敗回復場景。新增等待鎖防雙擊；同曲塔戰快照保留進度。首頁兩支JS快取同步tower-bgm-v1，README及LV更新。
+- 修改9檔：js/ui-sound.js、js/ui.js、index.html、tests/zone-music.test.cjs、tests/ui-achievement-sound.test.cjs、tests/tower-info-during-fight.test.cjs、audio/zones/README.md、LV_upgrade_system.md與本段。唯讀檢查共通規範／Workflow／prompts、Worker指令ACK→emitTick順序及連挑void回傳、tower結算／退場／自動續戰、main Loading、Zones來源及素材庫manifest／status。音檔雙庫SHA一致1fde84906a3c99253a95381b28ce01c565f8fc4f8026a7d9d4b545df35014119；沿用使用者既有提交6c84d97a，無素材變更，素材庫乾淨不建空Commit。
+- 測試：node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/ui-achievement-sound.test.cjs tests/tower-scene-intro.test.cjs tests/tower-auto-result.test.cjs tests/scene-startup-ready.test.cjs tests/vfx-editor-cache-versions.test.cjs，49/49；node --test tests/tower-info-during-fight.test.cjs，6/6。後者首輪抽取函式fixture尚未載入新入口而兩項失敗，修正為載入實際新函式／原錯誤辨識及Promise stub，保留原斷言並加等待鎖驗證後全過。npm.cmd run build通過709檔；String寫死0，git diff／stat／check與自我Review通過。
+- 交付：無未完成實作，可供Review及使用者合併；未合併／推送develop或main。Commit為本段所在「[Codex] feat: 封魔塔挑戰立即播放專用戰鬥配樂」，SHA見聊天。已知限制：本輪以音訊與UI函式回歸驗證，未做瀏覽器實際聆聽／跨瀏覽器測試，首次音檔冷載入仍依瀏覽器下載／解碼速度；播放要求在點擊同步送出、不等Worker或登場演出。下一步由使用者重新載入Codex遊戲驗收。
+
 ## TOWER-BOSS3-WALK-20261110 — 第3隻BOSS五動作接入
 
 - Owner：Codex，Done，單一開發者。使用者提供BOSS3_Walk.glb，要求接入第三隻BOSS的移動動作；沿用本聊天已確認的使用者自製／生成系列及遊戲使用／修改授權。
@@ -15687,3 +15757,27 @@ Worker 存活且頁面正常完成載入。
 - 修改4檔：css/world-map.css、index.html、LV_upgrade_system.md、本段。唯讀檢查規範／AGENTS／Workflow／prompts、使用者截圖、舊版一般／全螢幕樣式、battle HUD、ui.js切換／地圖／塔戰指令、GM跳關、字串來源、相關回歸與Build工具。
 - 已知限制：Console error／pageerror 0；全靜音仍有既有sfx-synth高頻Oscillator超出AudioContext範圍warning，與上輪相同且音訊程式未改。未做行動真機／跨瀏覽器／長玩。實測過程暫停戰鬥中的換圖會讓演出停在遮幕，僅以完成DOM更新後的標頭幾何驗收三位數關卡，不宣稱換圖演出驗收。測試瀏覽器與伺服器均已正常關閉，幾何QA／標頭截圖位於本聊天fullscreen-row-20261110；不納入Git。
 - 交付：本項無未完成或已知新增缺陷，可供使用者重載驗收及合併。Commit為本段所在「[Codex] fix: 將戰鬥全螢幕控制列對齊為單排」，SHA見聊天。既有配置／data／Zones.xlsx及4份配樂完整保留未提交；未合併／推送develop或main。
+
+## OFFLINE-SUMMARY-LAYOUT-20261110 — 離線收益資訊排序與淡黃確認按鈕
+
+- Owner：Codex；Done，單一開發者。使用者指定由上至下經驗／金幣粗體放大2px、熔爐分解、擊殺資訊、掉落物；標題改「掉落物 (裝備已送入熔爐)」，確認去除綠勾、置中並用參考圖淡黃金色。
+- 前置既有收益摘要與字串表完成；fetch、逐檔衝突預檢乾淨，String來源可獨占。允許js/ui.js、css/style.css、index.html必要樣式／JS快取及按鈕class、String.xlsx／CSV／strings_data、LV與本段；禁止收益計算、掉落規則、Worker／存檔／解鎖、素材與其他工作區，不合併推送。
+- 驗收原生Excel窄改兩格與正常重開／資料格式保持、相關離線／字串／UI回歸、Build、隔離瀏覽器正式樣式與函式目視／順序／字號／按鈕及關閉操作。完成自我Review與Commit後，交使用者重載驗收與整合。
+- 完成9檔：js/ui.js重排收益／熔爐／遺物收益與回歸加成／擊殺／掉落；css/style.css經驗金幣16px／700粗體、按鈕置中；index.html確認加primary並更新UI／CSS／String快取；String.xlsx透過既有excel-update-sheets原生API僅改E2124與E2204，CSV及strings_data生成；tools/vfx/editor/index.html僅同步共用String版本17cf392d（另跑逐檔預檢乾淨）；LV及本段同步。無新增或修改素材，素材庫不建空Commit。
+- 唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、使用者兩張截圖、docs/STRING_TABLE、Excel更新／轉CSV／字串生成工具、css/dialogs共用primary、js/save離線摘要與既有UI關閉事件、四份通過回歸與init-ui-smoke；上述未修改。
+- 驗證：node --test tests/offline-rewards.test.cjs tests/offline-stage-params.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs，32/32；npm.cmd run build通過709檔；String寫死0，Excel全部儲存格僅上述兩格不同，逐格樣式／樣式XML及工作表版面一致，原生工具正常重開驗證。git diff／stat／check及自我Review通過。
+- 畫面：隔離Edge與本機8163，正式index離線DOM／全部CSS與正式UI函式、可控收益資料；靜音、不啟動Worker／不碰玩家存檔。900×720及390×844目視，16px／700相對一般14px，按鈕文字確認、淡金文字#f4d79c／背景#3a3021／金邊沿用共用primary，置中且點擊關閉；手機無橫向溢出，含遺物收益／回歸加成仍在掉落前，Console error／warning及pageerror均0。截圖留本聊天visualizations/offline-summary。
+- 已知限制：另跑init-ui-smoke為1/2，未修改的HEAD原ui唯讀替換亦重現DIVINE_FORGE_MODES未定義，既有測試fixture缺依賴，沒有放寬或修改該測試。畫面屬正式DOM／CSS／函式隔離展示，未完整啟動Worker或跨瀏覽器長玩；不新增收益／掉落內容或解鎖。無本項未完成內容，可供Review及使用者合併；未合併／推送。Commit為本段所在「[Codex] feat: 調整離線收益資訊順序與確認按鈕」，SHA見聊天。下一步重載Codex遊戲驗收。
+
+## BOSS-SKILL-GROUND-ANCHOR-20261110 — BOSS不屈鬥魂光柱與護罩接地
+
+- Owner：Codex；Done，單一開發者。使用者指出第46層BOSS不屈鬥魂白光照在身體中心，要求接地並檢查其他BOSS專屬技能。
+- 前置既有BOSS玩家技能引擎與玩家版不屈特效完成；fetch及逐檔衝突預檢乾淨。允許js/elite_boss.js不屈視覺派送、bridge／sim.worker／index必要快取、新定位回歸、LV與本段；禁止傷害／控場／數值／配置／Preset素材／存檔／協議及其他工作區，不合併推送。
+- 沿用玩家indomitable-light／guard入口：目標為BOSS腳底，保留作者尺寸、白光按lightSec、護罩按無敵期間播放；原擊退爆發及實際判定保持。盤點69個玩家專屬技能及NPC專屬的受擊／柱體／場域入口，回歸釘住腳底、移動跟隨、尺寸及回收；執行BOSS／不屈／VFX回歸、Build及隔離瀏覽器目視，完成自我Review與Commit交使用者驗收合併。
+- 完成7檔：js/elite_boss.js將白光由eliteHitFx身體受擊改為indomitable-light腳底跟隨；護罩由eliteWarn範圍預警改為indomitable-guard，保留作者尺寸且壽命等於實際無敵。js/worker/sim.worker.js更新該模組快取、js/bridge.js更新WORKER_ASSET_VERSION、index.html同步bridge版本；新增tests/boss-skill-vfx-anchor.test.cjs，LV與本段同步。無配置、字串、Preset／素材或協議欄位修改，素材庫無本項變更、不建空Commit。
+- 其他BOSS檢查：盤點69個玩家型技能與35個NPC專屬技能的定義／播放路徑，實際施放全部主動技能及觸發五種玩家被動（共95種），其餘九種NPC被動核對受擊、死亡與狀態入口。涵蓋不屈白光、光／地復活柱、岩柱、紫雷柱、雷幕及普通落雷七種接地柱體；其餘沒有發現同樣的身體受擊誤接問題。天地再造／逆轉乾坤使用世界落點、光耀殿堂使用pillar腳底語意、落雷與場域使用原地面落點；狀態光環亦從腳底取得位置。此為程式與事件盤點，未宣稱104種技能逐一瀏覽器目視。
+- 測試：node --test tests/boss-skill-vfx-anchor.test.cjs，3/3，包含致命傷實際保命／擊退爆發參數、正式事件→Runtime→Core的腳底定位／移動跟隨、兩種身高×三種場景倍率／groundR=0、作者尺寸與白光2秒／護罩5秒分別回收、104種技能盤點及其中95種施放／觸發派送；唯讀fs overlay改載HEAD原elite_boss後同3項皆失敗，證明有攔截原缺陷。
+- 擴大回歸：node --test --test-reporter=tap tests/boss-player-skill.test.cjs tests/indomitable-vfx.test.cjs tests/indomitable-revival.test.cjs tests/vfx-tower.test.cjs tests/vfx-ground-plane.test.cjs tests/vfx-runtime.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs，196項181通過15失敗。上述唯讀HEAD overlay原封重跑亦196／181／15，失敗名稱逐項完全相同：BPS-16原第32層外觀／技能期待1項、玩家不屈復活9項、既有VFX Runtime／素材期待5項；未修改或放寬測試。加新回歸合計199項184通過15既有失敗，不宣稱全綠。
+- Build：npm.cmd run build通過710檔；node tools/string-table/build_string_csv.cjs --check寫死0；diff／stat／check及自我Review通過。唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、使用者截圖、elite.js／elite_data／elite_boss_recipes、玩家skills2／Status、Runtime／Core／Pixi backend／vfx-tower、七種柱體與護罩Preset、shipped-assets與NPC技能來源、Worker協議、GM／StartMenu／主頁啟動與相關回歸，未修改上述檔案。
+- 瀏覽器：獨立headless Edge、新origin／seed17正式主頁與原生Worker，啟動前全體靜音、不接觸使用者存檔。透過正式gm.exec鎖血／等級／金幣／tower_jump46／damage100%，正式tower.start46後真實致命傷觸發白光與護罩，記錄tb-float目標、dur2／5、area=null及0遺失Preset，目視正式戰場白光及護罩均接地，Console error／warning與pageerror均0。截圖及game-qa.json、current／baseline TAP、test-report.json在本聊天visualizations/boss-anchor；瀏覽器與測試服正常關閉。
+- 交付：本項無未完成實作，可供Review與使用者合併；限制為上述15項既有失敗及未驗跨瀏覽器／行動真機／其他103種技能實戰畫面，沒有新增已知缺陷。遊戲Commit為本段所在「[Codex] fix: 修正BOSS不屈鬥魂光柱與護罩接地」，SHA見聊天；未合併／推送develop或main。下一步重新載入Codex遊戲驗收，再由使用者指定整合。

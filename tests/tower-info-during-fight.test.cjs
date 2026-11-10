@@ -31,11 +31,11 @@ function setup() {
     bindTowerBossImageFallback() {}, setTextIfChanged(el, text) { el.textContent = text; },
     towerChallengeCost: () => 100, fmt: String, esc: String,
     nodePendingKey: () => 'node:tower', isUiCommandPending: () => c.pending, pending: false,
-    sendUiCommand: (name, args) => { sent.push({ name, args }); return { catch() {} }; },
+    sendUiCommand: (name, args) => { sent.push({ name, args }); return Promise.resolve({ active: true }); },
     switchTab() {}, reportUiCommandFailure() {}
   };
   vm.createContext(c);
-  vm.runInContext(['pendingUiButtonAttributes', 'towerActionsHTML', 'renderTower', 'towerViewActive'].map(fn).join('\n'), c);
+  vm.runInContext(['pendingUiButtonAttributes', 'towerActionsHTML', 'renderTower', 'towerViewActive', 'sendTowerChallengeCommand', 'uiCommandResultError'].map(fn).join('\n'), c);
   const clickStart = ui.indexOf("    var flee = e.target.closest('[data-tower-flee]');");
   const clickEnd = ui.indexOf('\n  });', clickStart);
   assert.ok(clickStart >= 0 && clickEnd > clickStart);
@@ -122,6 +122,7 @@ for (const kind of ['floor', 'auto']) {
     s.click(kind, true);
     s.snapshot.tower.active = true; s.click(kind);
     s.snapshot.tower.active = false; s.view.towerActive = true; s.click(kind);
+    s.view.towerActive = false; s.c.pending = true; s.click(kind); s.c.pending = false;
     assert.equal(s.sent.length, 0);
     s.view.towerActive = false; s.click(kind);
     assert.equal(s.sent.length, 1);

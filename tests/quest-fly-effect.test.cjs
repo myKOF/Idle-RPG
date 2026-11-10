@@ -10,9 +10,10 @@ test('spawnQuestRewardFlyFx and quest-claim-flash styles exist', () => {
   assert.match(css, /questClaimFlashAnim/);
   assert.match(css, /\.quest-fly-reward/);
   assert.match(css, /\.fly-trail-particle/);
-  assert.match(css, /\.res-hit-bump/);
+  assert.doesNotMatch(css, /res-hit-bump|resHitBumpAnim/);
 
   const ui = fs.readFileSync(path.join(__dirname, '../js/ui.js'), 'utf8');
   assert.match(ui, /function spawnQuestRewardFlyFx/);
   assert.match(ui, /spawnQuestRewardFlyFx\(rewardType/);
+  assert.doesNotMatch(ui, /res-hit-bump/);
 });
