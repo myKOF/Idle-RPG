@@ -1,3 +1,15 @@
+## APPLY-PARAMS-TOWER-CONTROL-20261110 — 舊版高塔控制抵抗列相容
+
+- Owner：Codex；Done，單一開發者。使用者回報套用參數.bat在「4-高塔BOSS / 控制抵抗」缺列中斷；現有Excel匯出的仍是「攻速 / 控制抵抗」，三塔控制抵抗位於b／d／f。
+- 前置：規範／Workflow／Agent及相關任務已讀，fetch與逐檔衝突預檢無外部來源。允許tools/apply_params.cjs、獨立回歸及本段；不修改Excel／CSV來源、其他遊戲功能、玩家文字、素材或其他工作區，不合併／推送。保留使用者既有表格與data未提交調整。
+- 實作：新版控制抵抗列優先；只在新版缺列時讀舊合併列的三個控制抵抗欄，明示舊攻速欄已停用且以NPC表為準；兩種格式均缺列或必要格缺值仍拒絕套用。
+- 驗收：隔離副本涵蓋新舊格式不同三塔值、兩列並存、新列缺格與雙列缺失、寫入與二次冪等及不覆蓋攻速；乾跑／錨點擾動／相關與必要全庫測試／Build／diff。完成後獨立Commit，由使用者與整合者後續Review及合併。
+- 專項完成：新增6項回歸全部通過；原錨點／科學記號4項亦通過。另跑params-direct-edit及tower-boss-move-attack，合計17項16通過，唯一TBMA-5仍要求來源表只能存在新版列名，與使用者目前舊Excel不符；該測試與HEAD逐位元相同，不弱化斷言或修改來源表。BOSS_LIST逐位元保持，三塔ctrlRes以不同值驗證正確欄位，新舊皆不新增aspd。
+- 完整BAT：將當下所有Excel／CSV／JS及實際BAT與工具複製至隔離副本，素材以唯讀使用的目錄junction供合法性檢查。真實Excel→CSV→config_tables→String→apply_params連續兩次成功，首次套用使用者原有10項待套數值、二次零變更；最終614項一致／將變更0／錨點問題0。僅讀原工作區，副本與junction均已清除。正式工作區乾跑仍保留10項待套，未提前寫入使用者參數。
+- 驗證補充：`node tools/apply_params.cjs --check-anchors`擾動565值後614錨點全部命中一次，參數總數未減；`npm.cmd run build`705檔通過。HEAD原工具搭配相同CSV重現截圖缺列錯誤，修正版已無該錯誤。完整`node --test --test-concurrency=2 --test-reporter=tap "tests/*.test.cjs"`執行31分44秒，5761項5061通過／698失敗／跳過2，未宣稱全庫全綠。10個引用apply_params的失敗測試檔共17個案例，以fs唯讀／copy overlay換回HEAD原工具並只跑原失敗名稱，17/17皆重現；另TBMA-5的舊表列名檢查亦沿用HEAD原始斷言。其餘失敗涉及既有玩法期待、配置一致性與同步／環境等，未逐一做完整HEAD重跑，不概稱698項全數已做基準驗證。原始TAP、BAT兩輪、乾跑及基準對照在logs/apply-params-tower-control。
+- 修改／檢查：僅tools/apply_params.cjs、新tests/apply-params-tower-control.test.cjs與本段。唯讀檢查兩個BAT入口、xlsx_to_csv／config_tables／apply_strings、原參數與NPC來源欄位、data三塔配置／BOSS_LIST、原參數／攻速／BAT測試與專案規範。無素材變更、不建素材庫空Commit；只修內部套表相容，無玩家功能／解鎖／字串變動，毋須LV／String或瀏覽器快取調整。使用者原有Excel／CSV／data未提交變更保留，不納入本項提交。
+- 交付：自我Review及diff／stat／check通過，只提交本項三檔，Commit為本段所在「[Codex] fix: 相容舊版高塔控制抵抗參數列」，SHA見聊天；未合併／推送。測試期間另有Gems.xlsx／Skills2.xlsx更新，原樣保留；完整BAT驗證使用複製當下的來源快照，不宣稱已驗證之後的表格編輯。無本項未完成實作，可供Review及使用者合併；已知限制為全庫未全綠、正式工作區仍保留待套參數。下一步先儲存並關閉Excel，再重跑套用參數.bat；封魔塔BOSS攻速仍在NPC表調整，舊主參數列攻速欄只會提示停用。
+
 ## UI-CHAR-PORTRAIT-INTEGRATE-20261109 — 核准0～6轉頭像正式接入
 
 - Owner：Codex；Done，單一開發者。使用者核准0～3轉畫風、續繪4～6轉後，明確要求將全部七張接入截圖圈選的側欄角色圖示與角色頁頭像；沿用已完成單一入口。本輪0～6轉實際接入完成。
