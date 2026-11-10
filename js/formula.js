@@ -482,7 +482,7 @@ function computeStats(equipmentOverride) {
 
    三個係數取自參數表「3-戰鬥核心／防禦減傷率」a／b／c，由 tools/apply_params.cjs 寫入，
    不在這裡複述數值——複述的那一份不會跟著參數表變，只會變成謊話。 */
-var DEF_REDUCTION_CONST = 50000;   // 參數表「3-戰鬥核心／防禦減傷率」a
+var DEF_REDUCTION_CONST = 100000;   // 參數表「3-戰鬥核心／防禦減傷率」a
 var DEF_REDUCTION_PER_LEVEL = 100; // 同上 b
 var DEF_REDUCTION_FLOOR = 1000;    // 同上 c
 function defReduction(def, attackerLevel, defenderLevel) {

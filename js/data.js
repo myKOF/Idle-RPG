@@ -733,8 +733,8 @@ var PRIMARY_STAT_EFFECTS = {
 var DERIVED_COEF = {
   atkBase: 20, atkFlatMult: 1.2, atkReincBase: 2,
   matkBase: 16, matkFlatMult: 1.2, matkReincBase: 2,
-  defBase: 3, defFlatMult: 0.5, defReincBase: 2,
-  mdefBase: 2, mdefFlatMult: 0.5, mdefReincBase: 2,
+  defBase: 3, defFlatMult: 0.5, defReincBase: 1.5,
+  mdefBase: 2, mdefFlatMult: 0.5, mdefReincBase: 1.5,
   /* 以下原本是 computeStats 裡的內嵌字面值，套用參數表時靠「錨定程式碼片段」改寫
      （例如錨點 'st.base.mp = '）。那種錨點綁的是程式碼長相，任何一次重構都可能讓它
      0 命中，而套用參數只會安靜地少套幾個值。收進這裡之後錨點改綁欄位名。 */
