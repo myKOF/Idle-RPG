@@ -1,5 +1,17 @@
 # PATCH.md
 
+## 數值平衡全面更新與減傷公式測算 V5 報告（Antigravity 2026-11-10）
+
+- **新增數值平衡全面更新與減傷公式測算總表（[`docs/DAMAGE_REDUCTION_CALCULATION_REPORT_V5.md`](file:///d:/MyGame/Idle-RPG/antigravity/docs/DAMAGE_REDUCTION_CALCULATION_REPORT_V5.md)）**：
+  - **對照組與基準架構**：承襲 [`docs/DAMAGE_REDUCTION_CALCULATION_REPORT_V4.md`](file:///d:/MyGame/Idle-RPG/antigravity/docs/DAMAGE_REDUCTION_CALCULATION_REPORT_V4.md) 之高對比 Markdown 呈現格式與全矩陣大表，全方位涵蓋 1轉～10轉、R0～R11 共 15 張完整大表（情境一至三之 HP、MP、Str、Def、減傷率矩陣）。
+  - **最新減傷平衡（Commit `2cc24876`）核心異動納入**：
+    1. **轉生定值強化底數下修（紅色下降 ▼）**：轉生定值強化指數底數 $c$（`defReincBase` / `mdefReincBase`）由 `2` 下修為 **`1.5`**。10轉定值加成係數由 512 暴降至 **28.83**（定值倍率由 513 縮減至 29.83，減少 94.2%）。10轉/1轉總防禦增幅由 **87 倍暴衝** 收斂至平滑健康的 **7.12 倍**！
+    2. **防禦減傷常數翻倍擴大（紅色下降 ▼）**：防禦減傷率分母常數 $a$ 由 50,000 上調至 **100,000**。對戰 Lv.650 怪物（等級差 -350）時，分母常數由 V4 的 15,000 放大至 **65,000**（放大 4.33 倍，相較 V3 放大 65 倍）。
+    3. **物理總防禦整體收斂**：10轉 R11 純裝備由 105.55 億下修為 **8.29 億**，滿威能頂配由 233.38 億下修為 **18.29 億**（降幅約 92.2%），徹底告別百億虛高膨脹。
+    4. **永恒神殿 650 級 BOSS 真實傷害實裝**：嚴格依遊戲公式對標永恒神殿真實攻擊力（普通怪普攻 $1.29 \times 10^{16}$、BOSS普攻 $5.18 \times 10^{16}$、BOSS暴擊 $1.55 \times 10^{17}$、技能爆發 $2.59 \times 10^{17}$）。
+  - **多層獨立減傷實戰驗證**：四層獨立連乘後總穿透率由 $2.018 \times 10^{-14}$ 適度提升至 **$1.115 \times 10^{-12}$**（穿透殘留承傷率放大 55.3 倍）。面對 650 級 BOSS 普攻（5.18 萬兆）實質扣血 **約 5.8 萬點**、技能爆發（25.9 萬兆）扣血 **約 28.9 萬點**。相對於玩家 **238 億** 血量完全無暴斃風險，同時徹底擺脫過去「不管是小怪還是頂級神級 BOSS 都強制扣 1 點血」的假打感，正式確立頂級戰鬥打擊反饋。
+
+
 ## 數值平衡全面更新與減傷公式測算 V4 報告（Antigravity 2026-11-10）
 
 - **新增數值平衡全面更新與減傷公式測算總表（[`docs/DAMAGE_REDUCTION_CALCULATION_REPORT_V4.md`](file:///d:/MyGame/Idle-RPG/antigravity/docs/DAMAGE_REDUCTION_CALCULATION_REPORT_V4.md)）**：
