@@ -1,3 +1,11 @@
+## SYNC-MERGE-20261110-OFFLINE — 遺物離線獎勵與20級資料整合
+
+- Owner：Codex；Done（本次衝突解決及驗證完成，後續完整同步由既有同步器執行並留報告）。使用者要求解決同步中斷；保留 develop 20級遺物／新增字串、Claude 離線小時獎勵及 Codex 最新數值成果，再同步三個固定 AI 工作區；codex/background-catchup 明確隔離維持。
+- 現場：HEAD 1fa03686、MERGE_HEAD c6a0cfee。前次自動執行未修改 Excel；唯讀三方核對發現候選 String 漏掉編號2466的兩格新版文字，Relics 候選漏掉欄位說明頁。重新由來源導出合併計畫，保留既有格式／20級資料與新字串。
+- 範圍：本次衝突 Excel／CSV／生成資料、index／bridge／Worker快取、本段及必要驗證；Excel 僅原生 API、獨占確認及來源備份，正常模式重開驗證。先前被拒絕的暫存目錄清理不重試。
+- 驗證：原生 Excel 正常重開兩次，Relics 寫83格、String寫2格；來源獨占備份、全部計畫值／CSV逐格一致，既有樣式、尺寸、凍結、篩選、驗證及物件保留。已目視前後預覽。node --test --test-reporter=tap --test-force-exit 的 relics／relic-ui／tower-xp／offline-rewards／sim-offline-schedule／string-table 共47項通過；vfx-editor-cache-versions另3項通過。初次快取測試發現編輯器String版本落後，修正後重驗全綠。npm.cmd run build通過706檔；git diff --check通過；未聲稱全庫或瀏覽器實玩驗證。
+- 交付：本段所在 [Codex] merge 提交整合 c6a0cfee，SHA見Git歷史；後續待整合Codex提交為ab4c2253／a93d654d，完整同步以logs/sync-ai-worktrees最新報告為準。驗證紀錄與原生Excel receipts在logs/manual-merge-20261110；未改sync工具／未重試拒絕清理／未發行main。隔離分支codex/background-catchup保持08013b4db0e3f03f336810a128cd801547f89f6d。
+
 ## SYNC-MERGE-20261110-015525 ? pending develop integration
 
 - Owner: Codex; Done (pending controller staging/merge commit). Explicit user authorization for this pending merge only; original HEAD aeaac9a6, incoming 6c84d97a, base 268f2bcc. No delegation, staging, commits, Git metadata writes or other-worktree changes.

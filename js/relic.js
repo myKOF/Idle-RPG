@@ -18,8 +18,8 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 /* 效果鍵（新增鍵要同步 tools/config_tables.cjs 的 RELIC_EFFECT_KEYS）。單位與接線位置：
      offlineHours 小時｜save.js applyOfflineProgress 離線上限（relicOfflineMaxHours）
      offlineXp %｜save.js 離線經驗　　offlineEquipDrop %｜save.js 離線裝備掉落率
-     returnBuffMinutes 分鐘｜save.js 離線結算時啟動（relicStartReturnBuff）、formula.js computeStats 加成
-     offlineTowerReward 小時｜save.js 離線結算 → tower.js grantTowerBossRewards
+     returnBuffMinutes 每離線 1 小時給幾分鐘｜save.js 離線結算時啟動（relicStartReturnBuff）、formula.js computeStats 加成
+     offlineTowerReward 每離線 1 小時給最高層 BOSS 獎勵的 %｜save.js 離線結算 → tower.js grantTowerBossRewards（scale＝零頭）
      salvageScrap／salvageEssence／salvageGold %｜factory.js doSalvage
      salvageXp %｜factory.js doSalvage（與知識核心零件相加）　salvageGemChance %｜同上（與寶石採集器相加）
      synthBuffer 個｜formula.js synthBufCap
@@ -41,7 +41,7 @@ var RELIC_EFFECT_KEYS = ['offlineHours', 'offlineXp', 'offlineEquipDrop', 'retur
   'chestSpeed', 'chestRelicChance', 'chestDouble'];
 
 /* 固定參數（Excel 設計稿的文字裡寫死的數字；要調再搬進參數表）。 */
-var RELIC_RETURN_BUFF_PCT = 10;          // 晨鐘：回到遊戲後經驗值與掉寶率 +10%
+var RELIC_RETURN_BUFF_PCT = 50;          // 晨鐘：回到遊戲後經驗值與掉寶率 +50%（2026-11-10 由 10 改 50）
 var RELIC_FORGE_REFUND_RATE = 0.25;      // 精煉神石：返還本次消耗神性之石的 25%
 var RELIC_MERCHANT_HIGH_GEM_LEVEL = 7;   // 熔晶坩堝：7 級（含）以上寶石
 var RELIC_MERCHANT_HIGH_EQUIP_RARITY = 5; // 神祕裝備券：傳說（R5）以上
@@ -164,11 +164,13 @@ function relicTowerAutoSpeedMult() { return 1 + relicPct('towerAutoSpeed'); }
 
 /* ---- 晨鐘：回到遊戲後的限時加成 ----
    離線結算成功時開始計時（G.player.relicReturnUntil，絕對時間毫秒，隨存檔）；
+   時間＝數值強度（每離線 1 小時給幾分鐘）× 離線小時數（取整，2026-11-10 改；離線不滿 1 小時沒有加成）。
    屬性快取在到期那一刻要作廢，由 relicTick 檢查。 */
-function relicStartReturnBuff(now) {
-  var minutes = relicValue('returnBuffMinutes');
+function relicStartReturnBuff(now, offlineHours) {
+  var minutes = relicValue('returnBuffMinutes') * Math.max(0, Math.floor(Number(offlineHours) || 0));
   if (!(minutes > 0) || typeof G === 'undefined' || !G || !G.player) return 0;
-  G.player.relicReturnUntil = (now || Date.now()) + minutes * 60000;
+  // 加成還沒結束時再結算一次：取較晚的到期時間，不會因為這次離線較短而縮短
+  G.player.relicReturnUntil = Math.max(Number(G.player.relicReturnUntil) || 0, (now || Date.now()) + minutes * 60000);
   _relicBuffWasActive = true;   // 讓 relicTick 一定看得到「到期」這個轉變，即使開始與到期之間沒跑過 tick
   if (typeof markStatsDirty === 'function') markStatsDirty();
   return minutes;

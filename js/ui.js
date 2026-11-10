@@ -8349,7 +8349,7 @@ function showOfflineSummary(sum) {
   h += '<div class="offline-sum-title">' + STR(2063) + '</div>';
   h += '<div class="offline-sum-loot">' + (loot.length ? loot.join('　') : STR(2064)) + '</div>';
   // 遺物：星圖殘頁（額外的封魔塔 BOSS 獎勵）、晨鐘（回到遊戲後的限時加成）
-  if (sum.towerRewards) h += '<div class="offline-sum-row">' + esc(STR(2466, fmt(sum.towerRewards.times), sum.towerRewards.floor)) + '</div>';
+  if (sum.towerRewards) h += '<div class="offline-sum-row">' + esc(STR(2466, fmt(sum.towerRewards.hours), fmt(sum.towerRewards.pct), sum.towerRewards.floor)) + '</div>';
   if (sum.returnBuff) h += '<div class="offline-sum-row">' + esc(STR(2467, sum.returnBuff.minutes, sum.returnBuff.pct)) + '</div>';
   if (sum.forge && sum.forge.salvaged > 0) {
     var fo = sum.forge, forgeOut = [STR(1048, fmt(fo.scrap)), STR(1049, fmt(fo.gold))];
