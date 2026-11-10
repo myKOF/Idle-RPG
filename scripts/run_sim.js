@@ -496,6 +496,8 @@ function snapshot() {
     totalDeaths: lootStats.deaths || 0,
     cumGold: lootStats.gold || 0,
     /* 場上存活敵人數／戰場容量：堆到容量上限＝打怪速度追不上出怪速度。 */
+    /* 目前穿的是第幾套（0＝第 1 套）。結尾存檔的「使用中裝備」是這一套，不一定是主力的第 1 套。 */
+    equipActive: (G && G.equipActive) || 0,
     fieldLive: engine.ctx.liveFieldEnemies ? engine.ctx.liveFieldEnemies().length : 0,
     fieldCap: engine.ctx.fieldMaxLiveEnemiesFor ? engine.ctx.fieldMaxLiveEnemiesFor() : 0
   };
@@ -769,6 +771,7 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
     totalBattles: 'LOOT_STATS.battles（累積）',
     totalDeaths: 'LOOT_STATS.deaths（累積）',
     cumGold: 'LOOT_STATS.gold（累積獲得，非持有）',
+    equipActive: 'G.equipActive（目前使用中的裝備組，0＝第 1 套）',
     fieldLive: 'liveFieldEnemies().length（場上存活敵人數）',
     fieldCap: 'fieldMaxLiveEnemiesFor()（戰場容量）',
     ...Object.fromEntries(SNAP_VIEW_KEYS.map((k) => [k, `buildView().${k}（目前持有，非累積）`]))
