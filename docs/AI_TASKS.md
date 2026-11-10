@@ -1,3 +1,14 @@
+## START-MENU-RUBY-20261110 — 標題紅寶石閃耀紅光
+
+- Owner：Codex；Done，單一開發者。依使用者截圖，在開始選單中央劍柄紅寶石新增高品質紅光，大小與亮度交錯脈動。前置既有1440×737標題原圖與選單完成；使用者追加要求先提供高清GIF預覽。
+- 允許css/start-menu.css、index標題包裝／CSS快取、LV與本段；必要時同步既有選單回歸。禁止改標題原素材、選單功能／背景／音訊／玩法／配置／其他工作區，不合併推送。fetch及逐檔預檢乾淨。
+- 純CSS原創多層柔光／核心／細星芒，以原圖紅寶石座標等比例定位；支援窄屏、短屏、減少動態偏好與隱藏面板不耗動畫。無新增獨立素材／Preset，無需圖像生成或美術軟體；本項不使用第三方素材。實際畫面目視與幾何／動態驗證、既有選單回歸／Build／diff後Commit，交使用者驗收。
+- 完成4檔：css/start-menu.css新增柔和外暈、暖紅內光、旋轉細星芒及短暫亮閃，4.8／3.2／9.6秒交錯脈動，總週期9.6秒；index把原標題img包在等比例定位盒，加純裝飾aria-hidden光效並更新CSS快取ruby-glow-v1；LV及本段同步。高度限制納入盒寬計算，避免原object-fit留白使寶石定位漂移，保留原標題實際顯示尺寸與響應位置。減少動態時用靜態柔光，不增JS、Timer、玩家字串或獨立素材；素材庫無本項變更，不建空Commit。
+- 實機：IAB本機8157正式選單新origin，經設定→音訊全體靜音後驗收，未啟動新局／Worker或接觸玩家存檔。1280×720、390×844、568×320、900×550四種視窗的圖中(721,128)寶石中心與光效中心誤差均<0.02px；還原viewport。正式選單目視、重新載入後Console error／warning皆0。減少動態與隱藏行為依CSS自我Review核對，未宣稱實測OS偏好。
+- GIF：沿用正式HTML標題與同一份正式CSS的獨立特寫頁，只放大標題取景並使用既有靜態戰場背景，無另製或後製動畫。IAB實錄122張JPEG影格／9.636秒，以原始時間輸出1280×720、20fps／192格、9.6秒無限循環GIF，3,091,305 bytes。目視最弱／最強影格，紅光位置穩定、寶石切面及金屬輪廓清楚；寶石周邊紅通道均值97.72→121.20驗證變化。GIF與正式選單截圖及gif-qa.json留本聊天visualizations/ruby-glow，交付時先附GIF；中間影格／錄製清單／臨時伺服器清理。
+- 驗證：node --test tests/start-menu.test.cjs tests/start-menu-background.test.cjs tests/vfx-editor-cache-versions.test.cjs，12/12；npm.cmd run build通過709檔；node tools/string-table/build_string_csv.cjs --check寫死0，git diff／stat／check及自我Review通過。唯讀檢查AI_RULES／AGENTS／Workflow／prompts、使用者截圖與原標題／TITLE_SOURCE、原start-menu／background／相關回歸及Loading／音訊設定；未修改標題原檔／選單邏輯／背景／音訊／玩法／配置。
+- 交付：本項無未完成，可供Review及使用者驗收／合併；未合併／推送develop或main。Commit為本段所在「[Codex] feat: 開始選單紅寶石多層閃耀紅光」，SHA見聊天。已知限制：GIF為放大特寫、背景靜態，正式遊戲保持原標題大小及動態背景；未做跨瀏覽器／行動真機或OS減少動態實測。下一步先觀看GIF，再重載Codex遊戲驗收實際尺寸。
+
 ## GM-ENTER-CLOSE-20261110 — Enter送出GM指令後關閉面板
 
 - Owner：Codex；Done，單一開發者。使用者要求輸入GM指令按Enter執行時一併關閉整個指令框。前置既有GM面板與本機／白話解析已完成。
