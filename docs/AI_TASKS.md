@@ -15768,3 +15768,16 @@ Worker 存活且頁面正常完成載入。
 - 驗證：node --test tests/offline-rewards.test.cjs tests/offline-stage-params.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs，32/32；npm.cmd run build通過709檔；String寫死0，Excel全部儲存格僅上述兩格不同，逐格樣式／樣式XML及工作表版面一致，原生工具正常重開驗證。git diff／stat／check及自我Review通過。
 - 畫面：隔離Edge與本機8163，正式index離線DOM／全部CSS與正式UI函式、可控收益資料；靜音、不啟動Worker／不碰玩家存檔。900×720及390×844目視，16px／700相對一般14px，按鈕文字確認、淡金文字#f4d79c／背景#3a3021／金邊沿用共用primary，置中且點擊關閉；手機無橫向溢出，含遺物收益／回歸加成仍在掉落前，Console error／warning及pageerror均0。截圖留本聊天visualizations/offline-summary。
 - 已知限制：另跑init-ui-smoke為1/2，未修改的HEAD原ui唯讀替換亦重現DIVINE_FORGE_MODES未定義，既有測試fixture缺依賴，沒有放寬或修改該測試。畫面屬正式DOM／CSS／函式隔離展示，未完整啟動Worker或跨瀏覽器長玩；不新增收益／掉落內容或解鎖。無本項未完成內容，可供Review及使用者合併；未合併／推送。Commit為本段所在「[Codex] feat: 調整離線收益資訊順序與確認按鈕」，SHA見聊天。下一步重載Codex遊戲驗收。
+
+## BOSS-SKILL-GROUND-ANCHOR-20261110 — BOSS不屈鬥魂光柱與護罩接地
+
+- Owner：Codex；Done，單一開發者。使用者指出第46層BOSS不屈鬥魂白光照在身體中心，要求接地並檢查其他BOSS專屬技能。
+- 前置既有BOSS玩家技能引擎與玩家版不屈特效完成；fetch及逐檔衝突預檢乾淨。允許js/elite_boss.js不屈視覺派送、bridge／sim.worker／index必要快取、新定位回歸、LV與本段；禁止傷害／控場／數值／配置／Preset素材／存檔／協議及其他工作區，不合併推送。
+- 沿用玩家indomitable-light／guard入口：目標為BOSS腳底，保留作者尺寸、白光按lightSec、護罩按無敵期間播放；原擊退爆發及實際判定保持。盤點69個玩家專屬技能及NPC專屬的受擊／柱體／場域入口，回歸釘住腳底、移動跟隨、尺寸及回收；執行BOSS／不屈／VFX回歸、Build及隔離瀏覽器目視，完成自我Review與Commit交使用者驗收合併。
+- 完成7檔：js/elite_boss.js將白光由eliteHitFx身體受擊改為indomitable-light腳底跟隨；護罩由eliteWarn範圍預警改為indomitable-guard，保留作者尺寸且壽命等於實際無敵。js/worker/sim.worker.js更新該模組快取、js/bridge.js更新WORKER_ASSET_VERSION、index.html同步bridge版本；新增tests/boss-skill-vfx-anchor.test.cjs，LV與本段同步。無配置、字串、Preset／素材或協議欄位修改，素材庫無本項變更、不建空Commit。
+- 其他BOSS檢查：盤點69個玩家型技能與35個NPC專屬技能的定義／播放路徑，實際施放全部主動技能及觸發五種玩家被動（共95種），其餘九種NPC被動核對受擊、死亡與狀態入口。涵蓋不屈白光、光／地復活柱、岩柱、紫雷柱、雷幕及普通落雷七種接地柱體；其餘沒有發現同樣的身體受擊誤接問題。天地再造／逆轉乾坤使用世界落點、光耀殿堂使用pillar腳底語意、落雷與場域使用原地面落點；狀態光環亦從腳底取得位置。此為程式與事件盤點，未宣稱104種技能逐一瀏覽器目視。
+- 測試：node --test tests/boss-skill-vfx-anchor.test.cjs，3/3，包含致命傷實際保命／擊退爆發參數、正式事件→Runtime→Core的腳底定位／移動跟隨、兩種身高×三種場景倍率／groundR=0、作者尺寸與白光2秒／護罩5秒分別回收、104種技能盤點及其中95種施放／觸發派送；唯讀fs overlay改載HEAD原elite_boss後同3項皆失敗，證明有攔截原缺陷。
+- 擴大回歸：node --test --test-reporter=tap tests/boss-player-skill.test.cjs tests/indomitable-vfx.test.cjs tests/indomitable-revival.test.cjs tests/vfx-tower.test.cjs tests/vfx-ground-plane.test.cjs tests/vfx-runtime.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs，196項181通過15失敗。上述唯讀HEAD overlay原封重跑亦196／181／15，失敗名稱逐項完全相同：BPS-16原第32層外觀／技能期待1項、玩家不屈復活9項、既有VFX Runtime／素材期待5項；未修改或放寬測試。加新回歸合計199項184通過15既有失敗，不宣稱全綠。
+- Build：npm.cmd run build通過710檔；node tools/string-table/build_string_csv.cjs --check寫死0；diff／stat／check及自我Review通過。唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、使用者截圖、elite.js／elite_data／elite_boss_recipes、玩家skills2／Status、Runtime／Core／Pixi backend／vfx-tower、七種柱體與護罩Preset、shipped-assets與NPC技能來源、Worker協議、GM／StartMenu／主頁啟動與相關回歸，未修改上述檔案。
+- 瀏覽器：獨立headless Edge、新origin／seed17正式主頁與原生Worker，啟動前全體靜音、不接觸使用者存檔。透過正式gm.exec鎖血／等級／金幣／tower_jump46／damage100%，正式tower.start46後真實致命傷觸發白光與護罩，記錄tb-float目標、dur2／5、area=null及0遺失Preset，目視正式戰場白光及護罩均接地，Console error／warning與pageerror均0。截圖及game-qa.json、current／baseline TAP、test-report.json在本聊天visualizations/boss-anchor；瀏覽器與測試服正常關閉。
+- 交付：本項無未完成實作，可供Review與使用者合併；限制為上述15項既有失敗及未驗跨瀏覽器／行動真機／其他103種技能實戰畫面，沒有新增已知缺陷。遊戲Commit為本段所在「[Codex] fix: 修正BOSS不屈鬥魂光柱與護罩接地」，SHA見聊天；未合併／推送develop或main。下一步重新載入Codex遊戲驗收，再由使用者指定整合。
