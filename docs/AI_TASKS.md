@@ -1,3 +1,13 @@
+## GM-ENTER-CLOSE-20261110 — Enter送出GM指令後關閉面板
+
+- Owner：Codex；Done，單一開發者。使用者要求輸入GM指令按Enter執行時一併關閉整個指令框。前置既有GM面板與本機／白話解析已完成。
+- 允許js/gm.js送出後收起、index僅GM快取、既有GM指令／翻譯回歸、LV_upgrade_system.md與本段；不改Worker執行／解析規則／配置／存檔／其他工作區，不合併推送。fetch及逐檔衝突預檢乾淨。
+- 使用Enter送出後清空並收起面板，不呼叫會取消解析的closeGM；保持Escape取消、空Enter關閉、Shift+Enter換行及本機環境限制。驗證原指令仍執行、延遲白話解析不被取消、原鍵盤行為、相關回歸／Build／diff；完成後Commit並交使用者重載驗收。
+- 修改6檔：js/gm.js僅送出後兩行收框／註解、index.html僅GM快取20261110-enter-close、tests/gm-command.test.cjs、tests/gm-natural-timeout.test.cjs、LV_upgrade_system.md及本段。唯讀檢查共通規範／Workflow／prompts及其相對前任務差異、使用者截圖、GM白話解析／cancelPendingParse與closeGM、既有翻譯／逾時回歸。本次無素材修改，素材庫不建空Commit。
+- 測試指令：node --test tests/gm-command.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-translation-cache.test.cjs tests/vfx-editor-cache-versions.test.cjs，57/57；新增延遲雲端回覆回歸，確認按Enter即收框但不取消請求、只送一次Worker且回覆不開框；原鍵盤回歸同步新需求並保留Shift+Enter、Escape、空Enter、重新開框及主端不得改遊戲狀態等斷言。node tools/string-table/build_string_csv.cjs --check寫死0；git diff／stat／check及自我Review通過。
+- 已知限制：本輪為函式／鍵盤事件回歸，未做真實瀏覽器操作或呼叫真實雲端API；使用隔離回覆驗證非同步解析，無已知新增缺陷。沒有改Worker執行、解析或取消政策、玩家存檔與解鎖；沒有合併／推送。後續交使用者重載驗收與整合。
+- Build：npm.cmd run build通過709檔。本項無未完成內容，可供Review及使用者合併。Commit為本段所在「[Codex] fix: GM指令按Enter送出後關閉面板」，SHA見聊天。
+
 ## TOWER-BOSS3-LV3-20261110 — 第3隻BOSS第3階共用五動作
 
 - Owner：Codex，Done，單一開發者。使用者提供BOSS3_3.glb，指定第3階且動作與第1階完全一致，沿用本聊天使用者自製／生成系列及遊戲使用／修改授權。
