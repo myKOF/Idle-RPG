@@ -710,7 +710,7 @@ var STAT_CAPS = {
 
 var PRIMARY_STAT_EFFECTS = {
   strAtk: 1,
-  strDef: 0.25,
+  strDef: 0.1,
   strHpRegen: 0.03, // 生命恢復/秒每點力量
   agiCritRate: 0,
   agiCritDmg: 1,    // 暴擊傷害%每點敏捷
@@ -722,8 +722,8 @@ var PRIMARY_STAT_EFFECTS = {
   intMatk: 1,
   intMdef: 0,
   vitHp: 5,
-  vitDef: 1,
-  vitMdef: 1,
+  vitDef: 0.5,
+  vitMdef: 0.5,
   vitHpRegen: 0.06, // 生命恢復/秒每點體質
   vitMpRegen: 0.02  // 法力恢復/秒每點體質
 };
