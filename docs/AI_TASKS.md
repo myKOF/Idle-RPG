@@ -1,3 +1,13 @@
+## QUEST-REWARD-NO-TARGET-SCALE-20261110 — 任務獎勵抵達目的地不縮放
+
+- Owner：Codex；Done，單一開發者。使用者要求任務領獎圖示飛到材料或背包後，目的地不再放大縮小，保留飛行演出。前置既有任務領獎動畫完成，fetch及逐檔衝突預檢乾淨。
+- 允許js/ui.js飛行結束回呼、css/style.css專用res-hit-bump樣式、index.html兩者快取、既有quest-fly-effect回歸、LV與本段；禁止獎勵數量／領取規則、Worker、存檔、解鎖、素材及其他工作區，不合併推送。
+- 驗收材料／背包目的地不再掛縮放class、飛行／拖尾／抵達清理仍正常、任務與時鐘相關回歸、Build及diff；自我Review與Commit後交使用者重載驗收。
+- 完成6檔：js/ui.js刪除抵達後res-hit-bump觸發與清除計時；css/style.css刪除專用class及resHitBumpAnim；index兩者快取更新quest-no-target-scale-v1；tests/quest-fly-effect改檢查縮放已移除並維持飛行／拖尾／領獎閃光檢查；LV及本段同步。素材與String無變更，素材庫不建空Commit。
+- 驗證指令：node --test tests/quest-fly-effect.test.cjs tests/task-system.test.cjs tests/game-clock.test.cjs tests/vfx-editor-cache-versions.test.cjs，25/25；npm.cmd run build通過709檔；node tools/string-table/build_string_csv.cjs --check寫死0；git diff／stat／check及自我Review通過。唯讀檢查共通規範與前次提交差異、使用者截圖、任務領獎／動畫時鐘／目的地對應與四份既有回歸；未修改任務邏輯、時鐘及其他UI。
+- 瀏覽器：隔離無音訊Edge fixture載入正式spawnQuestRewardFlyFx原函式，八類gold／scrap／essence／gem／book／rune／skillXp／equip同時飛行，初始8圖示，抵達後0圖示，MutationObserver記錄全部目的地屬性修改0、矩形及HTML保持，1.5秒後拖尾0。未啟動遊戲／Worker或接觸玩家存檔，未做完整遊戲／跨瀏覽器長玩；沒有本項已知新增風險或未完成內容。
+- 交付：可供Review及使用者合併，未合併／推送；Commit為本段所在「[Codex] fix: 移除任務獎勵抵達目的地的縮放動畫」，SHA見聊天。下一步重新載入Codex遊戲領獎驗收。
+
 ## START-MENU-RUBY-20261110 — 標題紅寶石閃耀紅光
 
 - Owner：Codex；Done，單一開發者。依使用者截圖，在開始選單中央劍柄紅寶石新增高品質紅光，大小與亮度交錯脈動。前置既有1440×737標題原圖與選單完成；使用者追加要求先提供高清GIF預覽。

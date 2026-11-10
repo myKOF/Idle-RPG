@@ -13825,15 +13825,6 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
     } else {
       // 飛行結束
       if (flyEl && flyEl.parentNode) flyEl.parentNode.removeChild(flyEl);
-      // 到達目的地觸發脈衝彈跳
-      if (destEl && destEl.classList) {
-        destEl.classList.remove('res-hit-bump');
-        void destEl.offsetWidth;
-        destEl.classList.add('res-hit-bump');
-        UI_GAME_TIMING.setTimeout(function () {
-          if (destEl && destEl.classList) destEl.classList.remove('res-hit-bump');
-        }, 400);
-      }
     }
   }
 
