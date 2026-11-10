@@ -1,3 +1,20 @@
+## TOWER-BOSS3-WALK-20261110 — 第3隻BOSS五動作接入
+
+- Owner：Codex，Done，單一開發者。使用者提供BOSS3_Walk.glb，要求接入第三隻BOSS的移動動作；沿用本聊天已確認的使用者自製／生成系列及遊戲使用／修改授權。
+- 前置：Npc3D可選攻擊／死亡備援已存在；逐檔預檢無外部來源。允許NPC第484列外觀／模型／動作、CSV／data與主頁／bridge／Worker資料快取、獨立GLB／頭像／Blender來源／製作及匯出器、相關回歸、LV／交接及本段。只更新第3／53／103層使用的第3列，保留名稱、圖示與數值／技能，其他49列保持；不借用前BOSS攻擊或死亡，不改戰鬥／協議／存檔／解鎖，不合併推送。
+- 驗收：原檔動作與材質保留、站立首幀及走路循環、缺攻擊／死亡合法備援、原生Excel獨占／正常重開／窄改驗證、實際遊戲載入及移動，相關測試／Build與雙庫來源SHA／提交。後續交使用者驗收及提供其他動作。
+- 使用者追加BOSS3_Attack1／Attack2／Attack3／Die.glb，授權接入三攻擊及死亡；本輪擴為完整五動作，取代缺動作備援，正式檔改用boss3_character.glb／png。新製作／匯出工具、資產回歸與交接皆在授權範圍，其他49列與戰鬥數值保持。五來源節點／靜止骨架一致，沿用既有樹人合併流程保留Walk表面與素材、追加四動畫；攻擊固定水平根位移，保留高度及其餘姿勢。
+
+- 完成：新增boss3_character.glb／1080px透明頭像、獨立合併／Blender來源／匯出工具、資產回歸及交接；更新NPC第484列G:J／AB:AH、CSV／data、主頁data／bridge與Worker資料快取、兩份既有模型回歸、LV及本段，共17檔。47關節、每動畫120通道；Running／Basic_Jump／Right_Hand_Sword_Slash／Shield_Push_Left／Shot_and_Fall_Forward原時長0.633333／5.866667／1.5／2.366667／2.166667秒。
+- 來源QA：Walk整段原始BIN在合併檔前綴逐位相同，網格／蒙皮／材質／貼圖保持。五動作時間key全部逐位相同；Walk／Die的120通道保持，三攻擊只固定一個Hips平移通道x/z、y逐key相同，其餘119通道逐位保持。Blender重開47骨／五動作／三圖打包通過；透明PNG1080×1080、alpha0～255。
+- Excel：獨占後原生窄改／正常重開，每輪核對28,365格與七物件；相對開始基線最終僅本列11格改變，其他49列及原名稱／圖示／屬性／技能／速度／距離／倍率保持。兩頁24,535格樣式及樣式XML、列高／欄寬、合併／驗證／條件格式／視圖／篩選／圖形皆一致。NPC重建再試跑語意0，String寫死0。
+- 回歸指令：node --test --test-reporter=tap tests/npc3d-config.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-floors.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-action-motion.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/boss3-character-asset.test.cjs tests/worker-protocol.test.cjs，共41/41；npm.cmd run build最終709檔通過。動畫逐位QA、原生Blend重開、雙庫23項SHA及diff／stat／check通過。
+- 實機：隔離Edge／正式主頁／原生Worker／新局／GM鎖血，第3關載入新GLB，移動Running有正位移及同步播放率；attack／cast依序播放三招；正式GM damage 100%後die使用Shot_and_Fall_Forward。Console error0，無模型警告，另記錄未修改音訊模組Oscillator頻率16224.8Hz限幅提示。初輪全域警告斷言碰到既有dark-gold-seal preload提示及死亡後過早等待結算確認而逾時，已按本輪模型範圍重驗並保留原始警告，不改產品或正式斷言。
+- 唯讀檢查AI_RULES／AGENTS／Workflow／prompts、樹人／骷髏王來源與工具、Hero3D／Npc3D／BattleRenderer、Worker／GM／塔戰、原NPC及Excel管線；未改共用3D／戰鬥／協議／存檔／解鎖，保留舊boss3.glb。完整來源與重建見docs/assets/TOWER_BOSS3_CHARACTER_SOURCE.md。素材庫tower-boss3-character-20261110保存五原檔、成品、可編輯Blend、工具／QA，先提交b444ee20cec8f676b7506dd46773906fd62d4125；遊戲提交為本段所在提交，SHA見回報。
+- 交付：本項無未完成，可供Review及使用者合併，未合併或推送。未做行動真機／跨瀏覽器／長時間效能；音訊／預載提示不在本輪範圍，名稱沿用NPC目前設定。本次未要求GIF，暫存輸出歸檔後清理，保留最終遊戲截圖；下一步由使用者重載驗收第三隻BOSS。
+
+- 提交分段：結束前使用者套表另產生Relics／String／Zones／game_parameters來源與CSV、formula及data防禦轉生倍率2→1.5變更；與本BOSS列無語意相依。本項只stage data的tower_boss_3 hunk，其餘參數與表格修改原樣保留，不納入本提交。
+
 ## SYNC-ASSET-RESIDUAL-20261110 — 素材庫殘留檔案自動備份與接續同步
 
 - Owner：Codex；Done，單一開發者。使用者明確要求把本次素材庫未追蹤殘留擋住更新的修復納入sync_ai_worktrees.bat，之後自動備份並繼續。
