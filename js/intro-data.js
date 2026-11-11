@@ -148,5 +148,70 @@ var INTRO_TIMELINES = {
       { kind: 'text', str: 48, cls: 'intro-text-title', at: 4000, dur: 3000, fadeIn: 800, fadeOut: 500,
         from: { y: 2 }, to: { y: 0 }, easing: 'ease-out' }
     ]
+  },
+
+  /* 繪本式序章（重製中，目前只有第一鏡，待使用者確認後再往下做；GM：intro storybook）。
+     舊書頁上的墨線插畫，背景各層與天使各部位拆開控制（js/intro-scene.js）：
+       鏡頭：整頁由近拉遠
+       背景：天光放射線慢轉＋呼吸、遠／中／近三層雲帶不同速度、反方向視差漂移
+       天使：整體由上降下再緩緩浮動；兩對翅膀由收合展開後以肩胛為軸各自擺動（上下翼相位錯開）；
+             披風以肩線為軸搖曳、劍微幅晃動、劍光沿劍刃滑過、光環浮動、背後光暈呼吸
+       前景：金色微塵上飄、書頁焦邊與墨線邊框
+     素材：images/intro-storybook/（tools/intro/storybook-paper.py、storybook-art.cjs 原創程序生成）。
+     座標：1920×1080 設計座標；天使群組內座標以 600×840 的本體圖為準（上翼肩胛約在 (262, 190)／(338, 190)，下翼約在 (275, 300)／(325, 300)，握劍的拳在 (185, 478)）。 */
+  storybook: {
+    duration: 10000,
+    skipDelay: 800,
+    layers: [
+      { kind: 'scene', at: 0, dur: 10000, fadeIn: 1200, fadeOut: 900,
+        camera: { origin: '50% 45%', easing: 'cubic-bezier(.25,.1,.25,1)',
+          path: [{ t: 0, scale: 1.1, y: 30 }, { t: 1, scale: 1, y: 0 }] },
+        parts: [
+          { id: 'paper', src: 'images/intro-storybook/paper.webp?v=1', cls: 'sb-paper', box: [-60, -40, 2040, 1160] },
+          { id: 'rays', src: 'images/intro-storybook/rays.svg?v=3', box: [260, -270, 1400, 1400], at: 300, fadeIn: 1800,
+            path: [{ rotate: 0 }, { rotate: 7 }], easing: 'linear',
+            loop: { frames: [{ scale: 0.97 }, { scale: 1.03 }], dur: 3200, alternate: true, alpha: [0.72, 1] } },
+          { id: 'clouds-far', src: 'images/intro-storybook/clouds-far.svg?v=3', box: [-240, 560, 2400, 360], at: 200, fadeIn: 1600,
+            path: [{ x: 0 }, { x: -90 }], easing: 'linear' },
+          { id: 'angel', kind: 'group', box: [660, 190, 600, 840], origin: '50% 30%', at: 900, fadeIn: 1500,
+            path: [{ t: 0, y: -130, scale: 0.86 }, { t: 0.55, y: 0, scale: 0.9 }, { t: 1, y: 10, scale: 0.9 }], easing: 'ease-out',
+            loop: { frames: [{ y: 0 }, { y: -12 }], dur: 2800, alternate: true },
+            children: [
+              { id: 'aura', kind: 'shape', cls: 'sb-aura', box: [-100, -140, 800, 800],
+                loop: { frames: [{ scale: 0.94 }, { scale: 1.06 }], dur: 2600, alternate: true, alpha: [0.45, 0.7] } },
+              { id: 'wing-upper-l', src: 'images/intro-storybook/wing-upper.svg?v=3', box: [-578, -280, 900, 780], origin: '93.3% 60.3%',
+                path: [{ t: 0, rotate: 32 }, { t: 0.42, rotate: -5 }, { t: 0.6, rotate: 0 }], easing: 'ease-out',
+                loop: { frames: [{ rotate: 0 }, { rotate: -4 }], dur: 3000, alternate: true } },
+              { id: 'wing-upper-r', src: 'images/intro-storybook/wing-upper.svg?v=3', flip: true, box: [278, -280, 900, 780], origin: '6.7% 60.3%',
+                path: [{ t: 0, rotate: -32 }, { t: 0.42, rotate: 5 }, { t: 0.6, rotate: 0 }], easing: 'ease-out',
+                loop: { frames: [{ rotate: 0 }, { rotate: 4 }], dur: 3000, alternate: true } },
+              { id: 'wing-lower-l', src: 'images/intro-storybook/wing-lower.svg?v=3', box: [-375, 210, 700, 620], origin: '92.9% 14.5%',
+                path: [{ t: 0, rotate: -26 }, { t: 0.5, rotate: 3 }, { t: 0.66, rotate: 0 }], easing: 'ease-out',
+                loop: { frames: [{ rotate: 0 }, { rotate: 5 }], dur: 3400, alternate: true, phase: 0.5 } },
+              { id: 'wing-lower-r', src: 'images/intro-storybook/wing-lower.svg?v=3', flip: true, box: [275, 210, 700, 620], origin: '7.1% 14.5%',
+                path: [{ t: 0, rotate: 26 }, { t: 0.5, rotate: -3 }, { t: 0.66, rotate: 0 }], easing: 'ease-out',
+                loop: { frames: [{ rotate: 0 }, { rotate: -5 }], dur: 3400, alternate: true, phase: 0.5 } },
+              { id: 'cape', src: 'images/intro-storybook/cape.svg?v=3', box: [0, 0, 600, 840], origin: '50% 28%',
+                loop: { frames: [{ rotate: -1.4 }, { rotate: 1.4 }], dur: 3600, alternate: true } },
+              { id: 'sword', src: 'images/intro-storybook/sword.svg?v=3', box: [-65, 438, 300, 460], origin: '83.3% 8.7%',
+                loop: { frames: [{ rotate: -1.2 }, { rotate: 1.2 }], dur: 4200, alternate: true, phase: 0.3 } },
+              { id: 'body', src: 'images/intro-storybook/body.svg?v=3', box: [0, 0, 600, 840] },
+              { id: 'halo', src: 'images/intro-storybook/halo.svg?v=3', box: [180, -20, 240, 80],
+                loop: { frames: [{ y: 0 }, { y: -5 }], dur: 2200, alternate: true, phase: 0.3, alpha: [0.8, 1] } },
+              { id: 'glint', kind: 'shape', cls: 'sb-glint', box: [121, 521, 60, 60], at: 3700, dur: 900, fadeIn: 150, fadeOut: 350,
+                path: [{ x: 0, y: 0, scale: 0.6 }, { x: -134, y: 291, scale: 1.2 }] }
+            ] },
+          { id: 'clouds-mid', src: 'images/intro-storybook/clouds-mid.svg?v=3', box: [-240, 760, 2400, 400], at: 500, fadeIn: 1600,
+            path: [{ x: 0 }, { x: 130 }], easing: 'linear' },
+          { id: 'clouds-near', src: 'images/intro-storybook/clouds-near.svg?v=3', box: [-340, 880, 2600, 460], at: 300, fadeIn: 1400,
+            path: [{ x: 0 }, { x: -240 }], easing: 'linear' },
+          { id: 'motes', kind: 'particles', cls: 'sb-mote', box: [360, 160, 1200, 820], at: 1400, fadeIn: 1200,
+            count: 26, seed: 7, size: [4, 11], rise: [180, 380], drift: [20, 70], dur: [4500, 8000] },
+          { id: 'frame', src: 'images/intro-storybook/frame.svg?v=3', box: [0, 0, 1920, 1080] },
+          { id: 'paper-edge', src: 'images/intro-storybook/paper-edge.webp?v=1', box: [-60, -40, 2040, 1160] },
+          { id: 'caption', kind: 'text', str: 2482, cls: 'sb-ink-text', box: [260, 885, 1400, 150], at: 2600, dur: 6300, fadeIn: 900, fadeOut: 700,
+            path: [{ y: 6 }, { y: 0 }], easing: 'ease-out' }
+        ] }
+    ]
   }
 };
