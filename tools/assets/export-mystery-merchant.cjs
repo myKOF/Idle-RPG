@@ -16,7 +16,7 @@ for (const file of manifest.files) {
     throw Error('Merchant asset source hash mismatch: ' + file.source);
   }
 }
-for (const exportName of ['mystery-merchant.webp', 'mystery-merchant-shop.webp']) {
+for (const exportName of ['mystery-merchant.webp', 'mystery-merchant-shop.webp', 'mystery-merchant-tray.webp']) {
   const expected = manifest.files.find(file => file.source === exportName);
   if (!expected) throw Error('Missing merchant asset export: ' + exportName);
   const output = path.resolve(__dirname, '../../images/ui', exportName);

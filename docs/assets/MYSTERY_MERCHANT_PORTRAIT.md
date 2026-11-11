@@ -6,4 +6,6 @@
 
 2026-11-11 以 Codex 內建 imagegen 繪製商店背景。琥珀燈照亮石牆與木製貨架，陳列寶石、符文石、盔甲、劍、藥水及雜貨。背景和蒙面立繪分層，畫面下緣由 CSS 加深以提高操作文字可讀性。使用者截圖提供擺放範圍，完整提示詞及背景來源和成品的 SHA-256 皆在同一 manifest。
 
-執行 `node tools/assets/export-mystery-merchant.cjs --apply`，將立繪和商店背景匯出至 `images/ui/mystery-merchant.webp` 與 `images/ui/mystery-merchant-shop.webp`。使用 `--check` 核對來源與遊戲成品。RPG Mote Studio 已確認可連線，主要為像素繪圖工具。商店內景和透明角色稿需要手繪質感，本次採 imagegen 製作。
+以同一工具另繪商品區底座。深色橫木板襯底，四角用雕花金屬與紅寶石收邊，外緣保留透明度。使用者截圖提供木製商牌的風格參考，完整提示詞與檔案雜湊收錄於同一 manifest。
+
+執行 `node tools/assets/export-mystery-merchant.cjs --apply`，匯出立繪、店內背景與商品區底座，分別位於 `images/ui/mystery-merchant.webp`、`images/ui/mystery-merchant-shop.webp` 及 `images/ui/mystery-merchant-tray.webp`。使用 `--check` 核對來源與遊戲成品。RPG Mote Studio 已確認可連線，主要為像素繪圖工具。商人素材需要手繪質感，本次採 imagegen 製作。

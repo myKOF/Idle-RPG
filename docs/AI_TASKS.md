@@ -15809,3 +15809,11 @@ Worker 存活且頁面正常完成載入。
 - 完成4檔：`css/style.css` 設商品區為立繪區寬度94%、上距26px，以九宮格裁切沿用既有古銅雕花鑲寶框，內層保留橫向捲動；73px列高、20px圖示、24px格底購買鈕，維持40格。`index.html` 接外框及更新CSS快取，`LV_upgrade_system.md` 與本段同步。沿用 `images/ui/achievements/done-frame.png`，素材庫無本項變更。
 - 驗證：隔離全靜音Edge正式首頁與原生Worker，1920×912商品外框約953×328px，寬94%、上距26px。1920×912、1366×768、900×900均維持4列各10格、買鈕同高且與商品說明有間距、金幣比例正常。進店／刷新／購買／無券流程通過，無Console error或pageerror。實際畫面預覽留本聊天 `visualizations/merchant-stock-frame/preview.png`。
 - `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build` 710檔通過，字串檢查寫死0，`git diff --check` 通過。唯讀檢查AI_RULES／Workflow、使用者截圖、原商人布局、既有鑲寶框／九宮格用法及上述回歸。驗證範圍為Edge與上述案例，可供使用者重載驗收與整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-ENTRY-TRAY-20261111 — 持券頭像與雕花木板商品區
+
+- Owner：Codex，Done，單一主開發者。從 `0746ac0e` 延伸，依使用者的入口位置與木製商牌參考圖，右移入口並加持券頭像，調整商品區造型與格位。逐檔預檢乾淨，既有獨立的配置修改留在工作區。
+- 完成7檔：`css/style.css` 右移40px、持券顯示34px圓形頭像並加強金色脈動，沿用立繪裁切與減少動態效果設定；商品區以新木板底座搭配雕花金屬及紅寶石，10欄4列正方格、8px間距、24px格底購買鈕與窄視窗橫向捲動。`index.html` 更新CSS快取；新增 `images/ui/mystery-merchant-tray.webp`、擴充既有匯出器，同步 `LV_upgrade_system.md`、素材來源文件與本段。
+- 素材庫 `00a4fda` 保存原始PNG、1820×728透明WebP及完整ImageGen提示詞／尺寸／SHA-256。RPG Mote Studio 以像素繪圖為主，原創木紋與雕花底座採用內建 imagegen，參考圖用於風格。
+- 正式Edge新局全靜音驗收：零券禁用、領券後即時出現頭像／脈動，亮度1至1.45，減少動態時頭像仍顯示，券用完後隱藏；1920×912外框910×394px、格位約76.6px見方。三種視窗均為40個正方格、間距8px、購買按鈕對齊，窄視窗可捲至最右欄。進店、刷新、購買、無券拒絕通過，Console error與pageerror均0。預覽 `visualizations/merchant-tray/entry.png` 與 `tray.png`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18；`npm.cmd run build`、字串檢查、素材匯出 `--check` 與雙庫diff檢查通過。唯讀檢查共通規範、使用者截圖、商人入口狀態、共用塔頁頂列、原立繪與匯出流程。實測範圍為Edge及相關案例，可供重載驗收與整合，遊戲SHA見交付。

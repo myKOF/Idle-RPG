@@ -12714,13 +12714,30 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 }
 
 /* 神祕商人：入口與塔頁提醒。 */
-.merchant-entry-tip { display:inline-flex; }
+.merchant-entry-tip { display:inline-flex; margin-inline-start:40px; }
+.merchant-entry { position:relative; }
 .merchant-entry[disabled] { opacity:.4; cursor:default; pointer-events:none; }
 #mystery-merchant-open.is-ready { color:#ffe7a0 !important; border-color:#d4ad4f !important; background:linear-gradient(180deg,#59421d,#241a0c) !important; opacity:1; }
-#tab-tower.active #mystery-merchant-open.is-ready { animation:merchant-invite-glow 1.4s ease-in-out infinite alternate; }
+#mystery-merchant-open.is-ready::before {
+  content:'';
+  position:absolute;
+  inset-inline-end:calc(100% + 6px);
+  top:50%;
+  transform:translateY(-50%);
+  box-sizing:border-box;
+  width:34px;
+  height:34px;
+  border:1px solid #e0b455;
+  border-radius:50%;
+  background:
+    url('../images/ui/mystery-merchant.webp') 58% 2% / 265% no-repeat,
+    radial-gradient(circle at 55% 36%, #5b3a21, #17100b 72%);
+  box-shadow:0 0 0 1px #20160c, 0 0 7px rgba(236,183,78,.45);
+}
+#tab-tower.active #mystery-merchant-open.is-ready { animation:merchant-invite-glow 1.2s ease-in-out infinite alternate; }
 @keyframes merchant-invite-glow {
-  from { box-shadow:0 0 4px #c89b35; filter:brightness(1); }
-  to { box-shadow:0 0 13px #f0cd64; filter:brightness(1.35); }
+  from { box-shadow:0 0 3px #c89b35; filter:brightness(1); }
+  to { box-shadow:0 0 14px 2px #f0cd64, inset 0 0 8px #aa7127; filter:brightness(1.45); }
 }
 .merchant-alert { position:absolute; right:-3px; top:-2px; z-index:2; width:18px; height:18px; border-radius:50%; color:#fff; background:#db3225; border:2px solid #ffe6bd; text-align:center; font:bold 14px/14px sans-serif; }
 .merchant-alert[hidden], #mystery-merchant-panel[hidden] { display:none; }
@@ -12755,13 +12772,10 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 }
 .merchant-stock-frame {
   box-sizing:border-box;
-  width:94%;
-  margin:26px auto 0;
-  padding:11px 14px;
-  border:1px solid #765539;
-  border-image:url('../images/ui/achievements/done-frame.png?v=2') 48 / 30px stretch;
-  border-radius:12px;
-  background:radial-gradient(ellipse at top, #302219, #16110e 64%);
+  width:min(94%, 910px);
+  margin:18px auto 0;
+  padding:32px 36px;
+  background:url('../images/ui/mystery-merchant-tray.webp') center / 100% 100% no-repeat;
 }
 .merchant-stock-scroll {
   overflow-x:auto;
@@ -12770,28 +12784,34 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 }
 #mystery-merchant-panel #gem-shop-grid {
   grid-template-columns:repeat(10, minmax(0, 1fr));
-  grid-auto-rows:73px;
-  min-width:680px;
+  grid-auto-rows:auto;
+  min-width:722px;
   margin-top:0;
   padding:0;
   border:0;
   background:none;
-  gap:4px;
+  gap:8px;
 }
-#mystery-merchant-panel .shop-card { box-sizing:border-box; padding:1px 2px; gap:1px; }
+#mystery-merchant-panel .shop-card {
+  box-sizing:border-box;
+  aspect-ratio:1;
+  min-height:0;
+  padding:1px 2px;
+  gap:1px;
+}
 #mystery-merchant-panel .shop-card.empty {
   visibility:visible;
-  border-color:rgba(175,152,111,.18);
-  background:rgba(10,11,13,.35);
+  border-color:rgba(184,135,81,.28);
+  background:rgba(18,10,7,.48);
 }
 #mystery-merchant-panel .shop-emoji {
   display:flex;
   align-items:center;
   justify-content:center;
-  height:20px;
-  flex:none;
+  min-height:0;
+  flex:1 1 0;
 }
-#mystery-merchant-panel .shop-emoji img { width:20px; height:20px; object-fit:contain; }
+#mystery-merchant-panel .shop-emoji img { width:24px; height:100%; max-height:24px; object-fit:contain; }
 #mystery-merchant-panel .shop-name,
 #mystery-merchant-panel .shop-stat {
   width:100%;
