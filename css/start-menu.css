@@ -34,59 +34,117 @@
   width: 10%;
   aspect-ratio: 1;
   translate: -50% -50%;
-  background: radial-gradient(circle, rgb(255 139 96 / 62%), rgb(229 30 29 / 40%) 12%,
-    rgb(171 0 18 / 21%) 28%, rgb(119 0 12 / 7%) 46%, transparent 68%);
+  background: radial-gradient(circle, #ffe5c9, rgb(255 105 76 / 92%) 8%,
+    rgb(252 38 48 / 69%) 19%, rgb(184 8 31 / 37%) 35%, rgb(139 0 19 / 14%) 51%, transparent 70%);
   mix-blend-mode: screen;
   pointer-events: none;
-  animation: title-ruby-breathe 12s ease-in-out infinite;
+  animation: title-ruby-flicker 3s ease-in-out infinite;
 }
-@keyframes title-ruby-breathe {
-  0%, 100% { opacity: .32; transform: scale(.8); }
-  50% { opacity: .86; transform: scale(1.12); }
+#start-menu .start-menu-ruby::after {
+  content: "";
+  position: absolute;
+  inset: 15%;
+  rotate: 23deg;
+  background:
+    radial-gradient(circle, #fff8e5, rgb(255 166 126 / 86%) 9%, transparent 24%),
+    radial-gradient(ellipse 49% 6% at center, #ffe2c6, rgb(255 78 72 / 58%) 32%, transparent 100%),
+    radial-gradient(ellipse 5% 39% at center, #ffe2c6, rgb(255 74 68 / 54%) 30%, transparent 100%);
+  animation: title-ruby-glint 3s ease-in-out infinite;
+}
+@keyframes title-ruby-flicker {
+  0%, 82%, 100% { opacity: .12; transform: scale(.76); }
+  25% { opacity: 1; transform: scale(1.18); }
+  38% { opacity: .27; transform: scale(.88); }
+  53% { opacity: .79; transform: scale(1.07); }
+}
+@keyframes title-ruby-glint {
+  0%, 14%, 38%, 76%, 100% { opacity: 0; }
+  25% { opacity: 1; }
+  53% { opacity: .56; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #start-menu .start-menu-ruby { animation: none; opacity: .44; }
+  #start-menu .start-menu-ruby { animation: none; opacity: .38; }
+  #start-menu .start-menu-ruby::after { animation: none; opacity: 0; }
 }
 #start-menu .start-menu-controls {
+  --menu-padding: 4px;
   z-index: 1;
   box-sizing: border-box;
-  width: min(100%, var(--menu-width));
+  /* 只縮放按鈕寬度，保留左右留白。 */
+  width: min(100%, calc((var(--menu-width) - 2 * var(--menu-padding)) * 8 / 9 + 2 * var(--menu-padding)));
   max-height: 100%;
-  padding: 4px;
+  padding: var(--menu-padding);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 #start-menu .system-menu-actions { gap: 5px; }
 #start-menu [hidden] { display: none !important; }
 #start-menu .system-menu-actions button {
+  --rim-light: #b0946e;
+  --rim-dark: #4b3828;
+  --rim-edge: #866749;
+  --plate-top: rgb(44 41 38 / 95%);
+  --plate-glow: transparent;
+  --rivet: #af9472;
+  position: relative;
+  isolation: isolate;
   min-height: 44px !important;
-  padding: 5px 12px;
-  border: 1px solid #706252;
-  border-radius: 3px;
-  background:
-    linear-gradient(174deg, rgb(194 158 116 / 13%), transparent 44%),
-    linear-gradient(180deg, var(--plate-top, rgb(38 36 33 / 94%)), rgb(16 17 17 / 96%));
-  box-shadow: inset 0 0 0 2px rgb(9 10 10 / 68%), inset 0 2px 0 rgb(226 192 148 / 16%),
-    0 2px 4px rgb(10 8 6 / 52%);
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: #f3e3c8;
   font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
-  font-size: 18px !important;
+  font-size: 16px !important;
   font-weight: 800;
   letter-spacing: .09em;
   line-height: 1.25;
   text-shadow: 0 1px 2px #0c0907;
 }
-#start-menu .system-menu-actions button:is(:focus-visible, [aria-pressed="true"]):not(:disabled) {
-  color: #ffe8ba;
-  border-color: #ce9a59;
+#start-menu .system-menu-actions button::before,
+#start-menu .system-menu-actions button::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  --cut: 8px;
+  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut),
+    100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%,
+    0 calc(100% - var(--cut)), 0 var(--cut));
+}
+#start-menu .system-menu-actions button::before {
+  background:
+    linear-gradient(113deg, rgb(255 227 182 / 18%), transparent 32%, transparent 70%, rgb(22 12 7 / 36%)),
+    linear-gradient(166deg, var(--rim-light), var(--rim-edge) 28%, var(--rim-dark) 68%, var(--rim-edge));
+}
+#start-menu .system-menu-actions button::after {
+  --cut: 7px;
+  --rivet-stops: var(--rivet) 0 1px, #614d39 1px 1.65px, #15110d 1.65px 2.2px, transparent 2.6px;
+  inset: 2px;
+  background:
+    radial-gradient(circle at 9px 8px, var(--rivet-stops)),
+    radial-gradient(circle at calc(100% - 9px) 8px, var(--rivet-stops)),
+    radial-gradient(circle at 9px calc(100% - 8px), var(--rivet-stops)),
+    radial-gradient(circle at calc(100% - 9px) calc(100% - 8px), var(--rivet-stops)),
+    radial-gradient(ellipse at 50% 75%, var(--plate-glow), transparent 72%),
+    linear-gradient(164deg, rgb(221 185 136 / 12%), transparent 37%, rgb(184 151 119 / 6%) 38%, transparent 59%),
+    repeating-linear-gradient(107deg, rgb(210 184 147 / 3%) 0 1px, transparent 1px 4px),
+    linear-gradient(180deg, var(--plate-top), rgb(14 16 17 / 96%));
+  box-shadow: inset 0 0 0 1px #141211, inset 0 0 0 2px rgb(226 191 145 / 21%);
 }
 #start-menu .system-menu-actions button:focus-visible {
-  outline: 2px solid #f1c58b;
+  outline: 2px solid transparent;
   outline-offset: 2px;
 }
+@media (forced-colors: active) {
+  #start-menu .system-menu-actions button:focus-visible { outline-color: Highlight; }
+}
 #start-menu .system-menu-actions button:disabled {
+  --rim-light: #867b6a;
+  --rim-edge: #61564a;
+  --rivet: #786b5c;
   color: #afa598;
-  border-color: #5c564e;
   opacity: .74;
   cursor: default;
 }
@@ -94,16 +152,27 @@
 
 @media (hover: hover) {
   #start-menu .system-menu-actions button:hover:not(:disabled) {
-    --plate-top: rgb(71 49 35 / 94%);
+    --rim-light: #d1ac76;
+    --rim-edge: #aa8055;
+    --plate-top: rgb(61 46 35 / 95%);
     color: #fff0d3;
-    border-color: #b98751;
   }
 }
+#start-menu .system-menu-actions button:is(:focus-visible, [aria-pressed="true"]):not(:disabled) {
+  --rim-light: #f9d59a;
+  --rim-dark: #875c33;
+  --rim-edge: #c7975e;
+  --rivet: #efc88a;
+  --plate-glow: rgb(212 144 64 / 19%);
+  color: #ffe8ba;
+}
 #start-menu .system-menu-actions button:active:not(:disabled) {
+  --rim-light: #ffda95;
+  --rim-dark: #a95a31;
+  --rim-edge: #df9a50;
+  --plate-top: rgb(68 37 22 / 96%);
+  --plate-glow: rgb(243 122 43 / 39%);
   color: #fff1cd;
-  border-color: #f5b461;
-  box-shadow: inset 0 0 0 2px #4a2a1a, inset 0 0 15px rgb(219 106 32 / 42%),
-    0 0 9px rgb(233 116 40 / 35%);
 }
 
 @media (max-width: 720px) {
