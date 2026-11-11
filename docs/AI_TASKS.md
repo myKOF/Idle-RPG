@@ -15840,3 +15840,11 @@ Worker 存活且頁面正常完成載入。
 - 已驗證：Store Excel→CSV、六個錨點生成，`node tools/apply_params.cjs` 為617一致／0變更／0錨點問題，`--check-anchors` 562項數值擾動後617個錨點仍唯一。`node --test tests/gem-shop.test.cjs tests/gem-enabled.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 32/32與Build 710檔。隔離正式Edge與原生Worker，以試驗CSV生成Lv.1戒指／1階符文、Lv.2胸甲／33階符文（機率填最右欄），實際召喚、升級、刷新與購買通過，Console error／pageerror均0。
 - 完整 `node --test --test-concurrency=8 --test-reporter=tap "tests/*.test.cjs"` 首輪5807項，5103通過、702失敗、2跳過。697項同名失敗見過往完整紀錄，2項符文真言傷害測試在唯讀基準使用相同亂數重現，1項同步逾時獨立重跑通過。另2項寶石測試原先用通用權重隔離其他商品，改用逐級類別設定後在上述32項回歸內通過。完整及個別TAP在 `logs/merchant-layout/store-levels-*.tap`。字串及diff檢查通過。
 - 唯讀檢查共通規範、原生Excel更新器／轉CSV、現有寶石、裝備、符文及遺物加成、舊表與同檔外部差異。素材庫無本項變更，工作區既有配置與同檔詞條修改保留，資料只暫存商人區段。本項可供重載、調整與後續整合，遊戲SHA見交付。
+
+## INTRO-SHOT2-20261111 — 羊皮紙序章第一、二鏡封存
+
+- Owner：Codex，Done。使用者確認 21.80 秒審看片並指示提交。第一鏡天堂戰場與第二鏡群墜已封存，第三鏡的接續點為第二鏡全白尾幀。
+- 前置：ai/codex 起始為 a36c4c4d，素材庫 master 起始為 00a4fda。兩邊起始工作區乾淨，fetch 與逐檔預檢通過。
+- 素材庫提交 `7a0ced32966eb59ee5e9b27c17004b236462bb62` 保存 ImageGen 分層繪圖、時間軸、獨立流光翼／遠雲／煙尾／粒子、程序音軌、聲景產生器、成片和提示詞。遊戲專案收錄 `images/intro-parchment` 的 MP4、來源和清單，加入 `tools/intro/sync-parchment-shots.cjs`，同步 `LV_upgrade_system.md` 與本段。既有設定頁重播沿用完整序章。
+- 驗證：封存頁在隔離 Edge 通過播放、拖曳、轉場與結束。PCM 重建逐位元一致。成片經 ffprobe 與完整解碼確認為 1080p、30 fps、654 幀、AAC 立體聲 21.80 秒，尾幀全白。匯出 `--archive`／`--apply`／`--check`、暫存 SHA-256、`git diff --check`、`npm.cmd run build` 710 檔及字串檢查通過。
+- `node --test tests/intro-player.test.cjs tests/intro-motion.test.cjs tests/intro-audio.test.cjs tests/gm-intro.test.cjs tests/vfx-preset-usage.test.cjs` 共 57/57 通過。唯讀檢查共通規範、既有序章播放器、素材匯出流程與相關測試。本次驗證範圍為獨立影片、Edge 分層來源和既有序章回歸。可供使用者整合，正式入口後續與第三鏡一起評估。遊戲提交為本段所在的 `[Codex] feat: 封存羊皮紙序章第一、二鏡`。
