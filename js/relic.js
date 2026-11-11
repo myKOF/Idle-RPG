@@ -12,7 +12,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    各系統一律透過 relicValue(效果鍵) 讀「目前等級的數值強度」（沒有這件遺物＝0），
    不得自己翻 RELICS 或存檔。效果鍵的單位與接線位置見下方 RELIC_EFFECT_KEYS 的說明。
 
-   寶箱由使用者另外實作，本檔只提供：relicGrant（給遺物）、relicRandomId（抽一件）、
+   熔爐寶箱（js/chest.js）使用本檔提供的：relicGrant（給遺物）、relicRandomId（抽一件）、
    relicChestSpeedMult／relicChestRelicChanceMult／relicChestDoubleChance（三件寶箱遺物的數值）。 */
 
 /* 效果鍵（新增鍵要同步 tools/config_tables.cjs 的 RELIC_EFFECT_KEYS）。單位與接線位置：
@@ -30,7 +30,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
      rerollEssenceDiscount %｜formula.js rerollCost　　upgradeScrapDiscount %｜formula.js upgradeCost
      upgradeDouble %｜factory.js tryUpgrade　　forgeDustRefund %｜forge.js doForge　　imprintLegendary %｜forge.js forgeApplyImprint
      towerAutoSpeed %｜sim.worker.js simStep、tower.js towerAutoSpeedMult、ui.js 結算倒數　　towerBossTime 秒｜data.js towerTimeLimitWithTalents
-     chestSpeed／chestRelicChance／chestDouble %｜寶箱系統（另外實作）：relicChest* 三支 */
+     chestSpeed／chestRelicChance／chestDouble %｜熔爐寶箱 js/chest.js：relicChest* 三支 */
 var RELIC_EFFECT_KEYS = ['offlineHours', 'offlineXp', 'offlineEquipDrop', 'returnBuffMinutes', 'offlineTowerReward',
   'salvageScrap', 'salvageEssence', 'salvageXp', 'salvageGold', 'synthBuffer', 'salvageGemChance',
   'inventoryMax', 'inventoryExpandDiscount',
@@ -202,7 +202,7 @@ function relicBoostWeights(pairs, effect, isHigh) {
   return pairs.map(function (p) { return isHigh(p[0]) ? [p[0], p[1] * mult] : p; });
 }
 
-/* ---- 寶箱介面（寶箱系統另外實作） ---- */
+/* ---- 寶箱介面（js/chest.js 使用） ---- */
 function relicChestSpeedMult() { return 1 + relicPct('chestSpeed'); }
 function relicChestRelicChanceMult() { return 1 + relicPct('chestRelicChance'); }
 function relicChestDoubleChance() { return relicValue('chestDouble'); }

@@ -1729,6 +1729,31 @@
       gmDirty();
       return { ok: true, message: '遺物【' + relicDef.name + '】+' + count + ' 件（Lv.' + relicLevel(relicDef.id) + '）' };
     }
+    if (command === 'chest') {
+      /* chest <編號|all> [數量]：給熔爐寶箱（未解鎖的一併解鎖，上限 CHEST_MAX_COUNT）；
+         chest lv <編號|all> <等級>：直接設定寶箱等級；chest reset：清空寶箱進度（js/chest.js） */
+      var chestUsage = '格式：chest 編號(1~' + CHESTS.length + ')|all [數量]｜chest lv 編號|all 等級｜chest reset';
+      var chestKey = String(args[0] || '').toLowerCase();
+      if (chestKey === 'reset') { G.player.chests = {}; gmDirty(); return { ok: true, message: '已清空所有寶箱進度' }; }
+      var chestTargets = function (key) {
+        if (key === 'all') return CHESTS.slice();
+        return CHEST_BY_ID[Number(key)] ? [CHEST_BY_ID[Number(key)]] : null;
+      };
+      if (chestKey === 'lv') {
+        var lvTargets = chestTargets(String(args[1] || '').toLowerCase());
+        var lvWant = gmNumber(args[2], 1, CHEST_MAX_LEVEL);
+        if (!lvTargets || lvWant === null) return { ok: false, message: chestUsage };
+        lvTargets.forEach(function (def) { var st = chestState(def.id); st.on = true; st.lv = Math.min(lvWant, chestMaxLevel(def)); });
+        gmDirty();
+        return { ok: true, message: lvTargets.map(function (def) { return def.name; }).join('、') + ' 設為 Lv.' + lvWant };
+      }
+      var chestList = chestTargets(chestKey);
+      count = gmNumber(args[1] === undefined ? '1' : args[1], 1, CHEST_MAX_COUNT);
+      if (!chestList || count === null) return { ok: false, message: chestUsage };
+      chestList.forEach(function (def) { var st = chestState(def.id); st.on = true; st.n = Math.min(CHEST_MAX_COUNT, st.n + count); });
+      gmDirty();
+      return { ok: true, message: chestList.map(function (def) { return def.name + ' ' + chestState(def.id).n + ' 個'; }).join('、') };
+    }
     if (command === 'offline') {
       /* offline <小時>：模擬「離線 N 小時後回來」——把存檔時間往前撥、立刻跑一次離線結算（與開機同一支 applyOfflineProgress，
          分批處理不卡畫面），完成後跳出離線收益彈窗，再把存檔時間設回現在，避免下次開機重複結算。

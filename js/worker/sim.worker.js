@@ -20,17 +20,17 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261111-merchant-levels', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261110-relic-offline-20-merge', '../relic.js?v=20261110-relic-offline-20-merge', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261111-merchant-layout', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261111-merchant-levels', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261110-relic-offline-20-merge', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-chest-v1', '../chest.js?v=20261112-chest-v2', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261111-merchant-layout', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
   '../item.js?v=20261111-merchant-levels', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261109-relics',
   '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261110-ai-balance-offline-merge', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
-  '../player.js?v=20261111-merchant-layout', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
+  '../player.js?v=20261112-chest-v1', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261108-tower-boss-floors', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261110-relic-offline',
-  '../factory.js?v=20261109-relics', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261110-relic-offline',
+  '../factory.js?v=20261112-chest-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261112-chest-v1',
   '../tasks.js?v=20261105-forge-fine-task', '../achievements.js?v=20261103-equipment-rarity-v3'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20261109-relics-gm');
+importScripts('../gm_exec.js?v=20261112-chest-v1');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
@@ -905,6 +905,8 @@ function buildPanel(name, params) {
     case 'newforge':
       return {
         newForge: newForgePanelView(G.newForge),
+        /* 熔爐寶箱（js/chest.js）：{ 編號: { lv, xp, n, on } }；定義由主執行緒自己讀 CHESTS。 */
+        chests: typeof chestPanelView === 'function' ? chestPanelView() : {},
         /* 下一格零件格的解鎖金幣（逐爐，與 furnaces 同索引；已達上限為 null）。
            理由與上面 inv 的 expandCost 完全相同：沒有這個數字，外面只能「先送出
            再看它回金幣不足」。而且這條成本與**熔爐座數和轉生數連動**

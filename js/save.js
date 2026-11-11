@@ -702,6 +702,8 @@ function migrateSave(data) {
       data.newForge.tabSeen = false;     // 頁籤閃爍至玩家切到熔爐分頁
     }
   }
+  // 熔爐寶箱（js/chest.js）：等級／經驗／數量／解鎖旗標淨化
+  if (typeof sanitizeChests === 'function') sanitizeChests(data);
   // 舊版寶石（{1..5: 數量}）→ 轉換為隨機種類
   var gemTypeKeys = Object.keys(GEM_TYPES);
   for (var lv = 1; lv <= GEM_MAX_LEVEL; lv++) {
@@ -1286,6 +1288,8 @@ function applyOfflineProgress(options) {
   /* 熔爐離線作業：只處理「離線前佇列裡既有、尚未分解」的裝備（見 newforge.js），
      離線期間才掉的裝備不在範圍內。必須在離線掉落入佇列之前執行，
      否則新掉的裝備會被一併分解，也會佔住佇列上限。 */
+  // 熔爐寶箱：記下離線前的數量，結算完把「離線期間累積了幾個」寫進日誌與彈窗資料（js/chest.js）
+  var chestBefore = typeof chestCountsSnapshot === 'function' ? chestCountsSnapshot() : null;
   if (typeof newForgeOfflineCatchup === 'function') {
     var forgeSum = newForgeOfflineCatchup(elapsed);
     if (forgeSum && forgeSum.salvaged > 0) {
@@ -1308,9 +1312,11 @@ function applyOfflineProgress(options) {
           if (!pushConveyor(makeEquipment(stage, { rarity: r }))) {
             conveyorFull = true;
             sum.scrap += Math.round(3 * RARITIES[r].salv);
+            if (typeof chestGainSalvageXp === 'function') chestGainSalvageXp(r); // 折算碎片視同已拆解：寶箱鍛造經驗照給
           }
         } else {
           sum.scrap += Math.round(3 * RARITIES[r].salv);
+          if (typeof chestGainSalvageXp === 'function') chestGainSalvageXp(r);
         }
       }
     }
@@ -1346,6 +1352,10 @@ function applyOfflineProgress(options) {
       if (towerPart > 0) grantTowerBossRewards(towerFloor, false, null, null, towerPart);
       sum.towerRewards = { hours: offHours, pct: towerPct, floor: towerFloor };
       blog(STR(2466, offHours, towerPct, towerFloor), 'good');
+    }
+    if (chestBefore && typeof chestGainsSince === 'function') {
+      var chestGains = chestGainsSince(chestBefore);
+      if (chestGains.length) { sum.chests = chestGains; blog(STR(2494, chestGainsText(chestGains)), 'good'); }
     }
     if (typeof relicStartReturnBuff === 'function') {
       var buffMin = relicStartReturnBuff(null, offHours);

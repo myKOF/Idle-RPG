@@ -1,9 +1,11 @@
-# Worker 協議 v78
+# Worker 協議 v79
+
+v79（2026-11-12 熔爐寶箱）：新增 `chest.open({chestId:int, count:int})` 與 `chest.upgrade({chestId:int})`（99→101）。開啟成功回 `{ chestId, opened, doubled, rewards:[{k, n, …}], equip:{forge, inv, salvaged} }`，失敗（未知、未解鎖、數量 0、沒有掉落）回錯誤字串；count 超過持有數時開到持有數為止。升級成功回 null，未解鎖／滿級／金幣不足回錯誤字串，不扣任何東西。存檔新增 `player.chests = { 編號: { lv, xp, n, on } }`（缺欄由 mergeDefaults 補空、migrateSave 的 sanitizeChests 淨化）；`newforge` 面板新增 `chests` 唯讀投影。寶箱定義、升級費用與掉落機率由兩端共載的 `CHESTS`（js/chest_data.js，來源 config/Excel/Chest.xlsx）與 js/chest.js 純函式提供。說明見 docs/CHEST_SYSTEM.md。
 
 v78（2026-11-11 神祕商人）：`gem.shopRefresh({})` 在有效會話內先驗庫存，再以 1 張邀請券換貨，回傳規格與 99 條指令維持。新存檔的 `player.gemShop` 只需要 `level` 與 `items`，舊存檔的刷新計數與時鐘可讀入但無作用。召喚與手動刷新成功後以既有 `tower.merchant.tickets` 及 `header.player` 同步券數，商品最多 40 件。
 
 
-v77（2026-11-09 遺物）：新增 `relic.upgrade({relicId:int})`（98→99）——遺物升一級，消耗下一級「升級數量」件同名遺物；成功回 null，未取得／已滿級／件數不足回錯誤字串，不扣任何東西。存檔新增 `player.relics = { 編號: { lv, n } }`（lv＝等級，0 為未解鎖；n＝尚未用掉的件數）與 `player.relicReturnUntil`（晨鐘加成到期毫秒），缺欄由 mergeDefaults 補空。兩者隨既有 `header.player` 投影，不新增面板；遺物名稱、分類、各級數值與說明由兩端共載的 `RELICS`（js/relic_data.js，來源 config/Excel/Relics.xlsx）提供。效果數值一律經 js/relic.js `relicValue(效果鍵)` 讀取，主執行緒（強化碎片、洗煉精華、背包擴充上限與費用、商人售價、封魔塔限時）讀 header 面板的遺物等級，與 Worker 結算同一支函式。取得遺物（`relicGrant`）目前只有 GM 指令 `relic`，寶箱另外實作。
+v77（2026-11-09 遺物）：新增 `relic.upgrade({relicId:int})`（98→99）——遺物升一級，消耗下一級「升級數量」件同名遺物；成功回 null，未取得／已滿級／件數不足回錯誤字串，不扣任何東西。存檔新增 `player.relics = { 編號: { lv, n } }`（lv＝等級，0 為未解鎖；n＝尚未用掉的件數）與 `player.relicReturnUntil`（晨鐘加成到期毫秒），缺欄由 mergeDefaults 補空。兩者隨既有 `header.player` 投影，不新增面板；遺物名稱、分類、各級數值與說明由兩端共載的 `RELICS`（js/relic_data.js，來源 config/Excel/Relics.xlsx）提供。效果數值一律經 js/relic.js `relicValue(效果鍵)` 讀取，主執行緒（強化碎片、洗煉精華、背包擴充上限與費用、商人售價、封魔塔限時）讀 header 面板的遺物等級，與 Worker 結算同一支函式。取得遺物（`relicGrant`）來自熔爐寶箱（v79）與 GM 指令 `relic`。
 
 
 v76（2026-11-09 神祕商人）：新增 merchant.open／merchant.close（共98指令）。tower新增 merchant={active,tickets,shop}，shop沿用player.gemShop，items為gem／equipment／rune混合商品；每格含kind／price／sold及類別payload（寶石type／lv、裝備equipment、符文runeId）。header.player新增consumables.mystery_invitation；不加入高頻view或置頂材料。open先驗券、鋪貨成功後扣1券，同一會話重複open冪等；close及存檔重載結束會話，會話本身不存檔。既有gem.shop*指令全部驗證會話，購買同步tower／gems／header／inv。遺物供應器保留，未實作前不產生商品。券每次塔BOSS勝利按Store百分比掉1張，重複結果不重複發放。詳見MYSTERY_MERCHANT.md。

@@ -44,7 +44,8 @@ const JS = {
   elite: path.join(ROOT, 'js', 'elite_data.js'),
   gemRes: path.join(ROOT, 'js', 'gem_resonance_data.js'),
   ach: path.join(ROOT, 'js', 'achievement_data.js'),
-  relic: path.join(ROOT, 'js', 'relic_data.js')
+  relic: path.join(ROOT, 'js', 'relic_data.js'),
+  chest: path.join(ROOT, 'js', 'chest_data.js')
 };
 const WRITE = process.argv.includes('--write');
 
@@ -2708,7 +2709,180 @@ SCHEMAS.Relics = {
   }
 };
 
-const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance', 'Achievement', 'Relics'];
+/* ---- Chest ← CHESTS（js/chest_data.js）熔爐寶箱表（2026-11-12） ----
+   一列＝一種寶箱的一個等級（與 Relics 同樣的排法）。同一種寶箱的各等級列共用「編號」，等級從 1 連續編到最高級（最多 CHEST_TABLE_MAX_LEVEL）。
+   名稱／品質／初始解鎖／升級金幣 a、b 是整種寶箱共用的欄：第 1 級必填，之後留白＝沿用，填了就必須與第 1 級相同。
+   所需經驗、R0～R11 拆解經驗、開啟掉落數可逐級設定，留白＝沿用上一級；16 個掉落格全部留白＝沿用上一級的整組掉落。
+   升級金幣：從目前等級升一級＝ a ＋ b^目前等級（js/chest.js chestUpgradeCost）。
+   掉落格寫法「項目[:參數[:參數2]][×數量]=權重」，每次開啟抽「開啟掉落數」次，每次依權重抽一格（權重是相對值，不必加總為 100）：
+     數量與參數都可寫成範圍 a~b（含頭尾，均勻隨機）；× 也可寫 x 或 *，省略＝1 個。
+     金幣／裝備碎片／附魔精華／太古精華／神性之石／魔魂本源／邀請券／技能經驗／經驗：不帶參數
+     寶石:階級（1～10，種類隨機）　符文:階級（1～符文總數）　裝備:品質[:太古條數]（品質填 0～11 或名稱；太古省略＝自然擲骰）
+     遺物[:編號]（省略編號＝隨機一件） */
+const CHEST_TABLE_MAX_LEVEL = 20;
+const CHEST_DROP_COLS = 16;
+const CHEST_QUALITIES = { '普通': 'common', '稀有': 'rare', '史詩': 'epic', '傳說': 'legendary', '神話': 'mythic' };
+const CHEST_RARITY_NAMES = ['普通', '精良', '稀有', '獨特', '史詩', '傳說', '神話', '創世', '神鑄神話', '神鑄創世', '混沌', '神鑄混沌'];
+const CHEST_GEM_MAX_LEVEL = 10;   // ＝ js/data.js GEM_FORGE_MAX_LEVEL（tests/chest.test.cjs 核對）
+/* 項目名稱 → 程式鍵；param：none 不帶參數、need 必填、opt 選填 */
+const CHEST_ITEM_KINDS = {
+  '金幣': { k: 'gold', param: 'none' }, '裝備碎片': { k: 'scrap', param: 'none' }, '碎片': { k: 'scrap', param: 'none' },
+  '附魔精華': { k: 'essence', param: 'none' }, '太古精華': { k: 'ancientEssence', param: 'none' },
+  '神性之石': { k: 'dust', param: 'none' }, '魔魂本源': { k: 'soulOrigin', param: 'none' },
+  '邀請券': { k: 'invitation', param: 'none' }, '神祕商人邀請券': { k: 'invitation', param: 'none' },
+  '技能經驗': { k: 'skillXp', param: 'none' }, '經驗': { k: 'xp', param: 'none' }, '角色經驗': { k: 'xp', param: 'none' },
+  '寶石': { k: 'gem', param: 'need' }, '符文': { k: 'rune', param: 'need' },
+  '裝備': { k: 'equip', param: 'need' }, '遺物': { k: 'relic', param: 'opt' }
+};
+const CHEST_KIND_LABEL = { gold: '金幣', scrap: '裝備碎片', essence: '附魔精華', ancientEssence: '太古精華', dust: '神性之石',
+  soulOrigin: '魔魂本源', invitation: '邀請券', skillXp: '技能經驗', xp: '經驗', gem: '寶石', rune: '符文', equip: '裝備', relic: '遺物' };
+function chestHeader() {
+  const h = ['編號', '寶箱名稱', '寶箱品質', '初始解鎖', '等級', '升級金幣a', '升級金幣b', '寶箱鍛造經驗'];
+  CHEST_RARITY_NAMES.forEach((n, i) => h.push('拆解經驗R' + i + '\n' + n));
+  h.push('開啟掉落數');
+  for (let i = 1; i <= CHEST_DROP_COLS; i++) h.push('掉落' + i);
+  return h;
+}
+function chestRangeText(r) { return r[0] === r[1] ? numStr(r[0]) : numStr(r[0]) + '~' + numStr(r[1]); }
+function chestDropText(d) {
+  let s = CHEST_KIND_LABEL[d.k];
+  if (d.p) s += ':' + chestRangeText(d.p);
+  if (d.p2) s += ':' + chestRangeText(d.p2);
+  if (!(d.q[0] === 1 && d.q[1] === 1)) s += '×' + chestRangeText(d.q);
+  return s + '=' + numStr(d.w);
+}
+function chestRefCounts() {   // 符文總數、遺物編號：直接讀資料檔，表格寫了不存在的階級／編號就整次中止
+  const out = { runes: 0, relics: new Set() };
+  try { out.runes = evalLiteral(extractLiteral(readUtf8(JS.runes), 'RUNES').literal).length; } catch (e) {}
+  try { evalLiteral(extractLiteral(readUtf8(JS.relic), 'RELICS').literal).forEach(r => out.relics.add(r.id)); } catch (e) {}
+  return out;
+}
+function chestParseRange(text, label, isInt) {
+  const m = /^\s*(-?\d+(?:\.\d+)?)\s*(?:[~～]\s*(-?\d+(?:\.\d+)?)\s*)?$/.exec(text);
+  if (!m) throw new Error(label + '「' + text + '」不是數字或 a~b 範圍');
+  const lo = Number(m[1]), hi = m[2] === undefined ? lo : Number(m[2]);
+  if (isInt && (!Number.isInteger(lo) || !Number.isInteger(hi))) throw new Error(label + '「' + text + '」必須是整數');
+  if (hi < lo) throw new Error(label + '「' + text + '」範圍下限大於上限');
+  return [lo, hi];
+}
+function chestParseDrop(cell, where, refs) {
+  const text = String(cell).trim();
+  const eq = text.lastIndexOf('=');
+  if (eq < 0) throw new Error(where + '「' + text + '」缺少「=權重」（寫法：項目[:參數][×數量]=權重）');
+  const w = Number(text.slice(eq + 1).trim());
+  if (!(w > 0) || !isFinite(w)) throw new Error(where + '「' + text + '」的權重必須是大於 0 的數字');
+  let body = text.slice(0, eq).trim(), q = [1, 1];
+  const qm = /^(.*?)\s*[×xX*]\s*([\d.~～\s]+)$/.exec(body);
+  if (qm) { body = qm[1].trim(); q = chestParseRange(qm[2], where + '數量', true); }
+  if (q[0] < 1) throw new Error(where + '「' + text + '」數量至少為 1');
+  const parts = body.split(/[:：]/).map(s => s.trim());
+  const def = CHEST_ITEM_KINDS[parts[0]];
+  if (!def) throw new Error(where + '「' + text + '」的項目未知：「' + parts[0] + '」（可用：' + Object.keys(CHEST_ITEM_KINDS).join('／') + '）');
+  const d = { k: def.k };
+  if (parts.length > (def.k === 'equip' ? 3 : 2)) throw new Error(where + '「' + text + '」參數太多');
+  if (def.param === 'none' && parts.length > 1) throw new Error(where + '「' + text + '」：' + parts[0] + '不帶參數');
+  if (def.param === 'need' && (parts.length < 2 || parts[1] === '')) throw new Error(where + '「' + text + '」：' + parts[0] + '必須寫參數（例：' + parts[0] + ':3）');
+  if (parts.length > 1 && parts[1] !== '') {
+    let p;
+    if (def.k === 'equip') {
+      p = parts[1].split(/[~～]/).map(s => { s = s.trim(); const i = CHEST_RARITY_NAMES.indexOf(s); return i >= 0 ? String(i) : s; }).join('~');
+      p = chestParseRange(p, where + '裝備品質', true);
+      if (p[0] < 0 || p[1] >= CHEST_RARITY_NAMES.length) throw new Error(where + '「' + text + '」裝備品質須為 0～' + (CHEST_RARITY_NAMES.length - 1));
+    } else {
+      p = chestParseRange(parts[1], where + parts[0] + '參數', true);
+      if (def.k === 'gem' && (p[0] < 1 || p[1] > CHEST_GEM_MAX_LEVEL)) throw new Error(where + '「' + text + '」寶石階級須為 1～' + CHEST_GEM_MAX_LEVEL);
+      if (def.k === 'rune' && (p[0] < 1 || (refs.runes && p[1] > refs.runes))) throw new Error(where + '「' + text + '」符文階級須為 1～' + refs.runes);
+      if (def.k === 'relic') {
+        if (p[0] !== p[1]) throw new Error(where + '「' + text + '」遺物編號不可寫範圍');
+        if (refs.relics.size && !refs.relics.has(p[0])) throw new Error(where + '「' + text + '」遺物編號 ' + p[0] + ' 不存在');
+      }
+    }
+    d.p = p;
+  }
+  if (parts.length > 2 && parts[2] !== '') {
+    d.p2 = chestParseRange(parts[2], where + '太古條數', true);
+    if (d.p2[0] < 0) throw new Error(where + '「' + text + '」太古條數不可為負');
+  }
+  d.q = q; d.w = w;
+  return d;
+}
+SCHEMAS.Chest = {
+  name: 'Chest', jsFile: 'chest', sheet: 'Chest', vars: ['CHESTS'], noXlsxGen: true,
+  header: chestHeader(),
+  extract(src) {
+    const out = [];
+    evalLiteral(extractLiteral(src, 'CHESTS').literal).forEach(c => {
+      const qName = Object.keys(CHEST_QUALITIES).find(k => CHEST_QUALITIES[k] === c.quality) || c.quality;
+      c.levels.forEach((lv, i) => {
+        const row = [numStr(c.id), c.name, qName, c.init ? '是' : '否', numStr(i + 1), numStr(c.a), numStr(c.b), numStr(lv.need)]
+          .concat(lv.xp.map(numStr)).concat([numStr(lv.rolls)]);
+        for (let j = 0; j < CHEST_DROP_COLS; j++) row.push(lv.drops[j] ? chestDropText(lv.drops[j]) : '');
+        out.push(row);
+      });
+    });
+    return out;
+  },
+  rebuild(dataRows, header) {
+    const get = rowGetter(header);
+    const fail = msg => { throw new Error(msg); };
+    const refs = chestRefCounts();
+    const byId = new Map();
+    dataRows.forEach((r, i) => {
+      if (get(r, '編號').trim() === '') return;
+      const where = 'Chest 表 第' + (i + 2) + '列';
+      const num = (col, check, hint) => {
+        let n; try { n = toNum(get(r, col)); } catch (e) { fail(where + '的「' + col + '」' + e.message); }
+        if (!check(n)) fail(where + '：「' + col + '」' + hint);
+        return n;
+      };
+      const id = num('編號', n => Number.isInteger(n) && n >= 1, '必須是正整數');
+      const lv = num('等級', n => Number.isInteger(n) && n >= 1, '必須是正整數');
+      let chest = byId.get(id);
+      const prev = chest ? chest.levels[chest.levels.length - 1] : null;
+      if (lv !== (chest ? chest.levels.length : 0) + 1) fail(where + '（編號 ' + id + '）：等級必須從 1 連續排列，這列應為第 ' + ((chest ? chest.levels.length : 0) + 1) + ' 級');
+      if (lv > CHEST_TABLE_MAX_LEVEL) fail(where + '（編號 ' + id + '）：寶箱最高 ' + CHEST_TABLE_MAX_LEVEL + ' 級');
+      // 整種寶箱共用的欄：第 1 級必填，之後留白沿用、填了必須相同
+      const shared = (col, parse, field) => {
+        const raw = get(r, col).trim();
+        if (raw === '') { if (!chest) fail(where + '（編號 ' + id + '）：第 1 級的「' + col + '」不可空白'); return chest[field]; }
+        const v = parse(raw);
+        if (chest && chest[field] !== v) fail(where + '（編號 ' + id + '）：「' + col + '」整種寶箱必須一致（第 1 級為「' + chest[field] + '」）');
+        return v;
+      };
+      const name = shared('寶箱名稱', s => s, 'name');
+      const quality = shared('寶箱品質', s => { if (!CHEST_QUALITIES[s]) fail(where + '：「寶箱品質」須為 ' + Object.keys(CHEST_QUALITIES).join('／')); return CHEST_QUALITIES[s]; }, 'quality');
+      const init = shared('初始解鎖', s => toBool(s), 'init');
+      const a = shared('升級金幣a', s => { const n = Number(s); if (!(n >= 0) || !isFinite(n)) fail(where + '：「升級金幣a」必須是 ≥0 的數字'); return n; }, 'a');
+      const b = shared('升級金幣b', s => { const n = Number(s); if (!(n >= 0) || !isFinite(n)) fail(where + '：「升級金幣b」必須是 ≥0 的數字'); return n; }, 'b');
+      if (!chest) { chest = { id, name, quality, init, a, b, levels: [] }; byId.set(id, chest); }
+      const perLevel = (col, check, hint, prevVal) => {
+        if (get(r, col).trim() === '') { if (prevVal === undefined) fail(where + '（編號 ' + id + '）：第 1 級的「' + col + '」不可空白'); return prevVal; }
+        return num(col, check, hint);
+      };
+      const need = perLevel('寶箱鍛造經驗', n => n > 0, '必須大於 0', prev ? prev.need : undefined);
+      const xp = CHEST_RARITY_NAMES.map((n, ri) => perLevel('拆解經驗R' + ri, v => v >= 0, '不得為負數', prev ? prev.xp[ri] : undefined));
+      const rolls = perLevel('開啟掉落數', n => Number.isInteger(n) && n >= 1 && n <= 100, '必須是 1～100 的整數', prev ? prev.rolls : undefined);
+      let drops = [];
+      for (let j = 1; j <= CHEST_DROP_COLS; j++) {
+        const cell = get(r, '掉落' + j).trim();
+        if (cell !== '') drops.push(chestParseDrop(cell, where + '「掉落' + j + '」', refs));
+      }
+      if (!drops.length) {
+        if (!prev) fail(where + '（編號 ' + id + '）：第 1 級至少要有一個掉落格');
+        drops = prev.drops;
+      }
+      chest.levels.push({ need, xp, rolls, drops });
+    });
+    if (!byId.size) fail('Chest 表沒有任何寶箱列');
+    const entries = Array.from(byId.values()).map(c => '  { id: ' + c.id + ', name: ' + quoteStr(c.name) + ', quality: ' + quoteStr(c.quality) +
+      ', init: ' + c.init + ', a: ' + numStr(c.a) + ', b: ' + numStr(c.b) + ', levels: [\n' +
+      c.levels.map(l => '    { need: ' + numStr(l.need) + ', xp: ' + jsLit(l.xp) + ', rolls: ' + l.rolls + ', drops: [\n' +
+        l.drops.map(d => '      ' + jsLit(d)).join(',\n') + '\n    ] }').join(',\n') + '\n  ] }');
+    return { CHESTS: 'var CHESTS = [\n' + entries.join(',\n') + '\n];' };
+  }
+};
+
+const TABLE_ORDER = ['Skills2', 'Status', 'Gems', 'Talents', 'Equipment_Affix', 'NPC', 'Zones', 'Task', 'Runes', 'Gem_resonance', 'Achievement', 'Relics', 'Chest'];
 
 /* ===========================================================================
    模式：--gen / --sync / --apply
@@ -2871,7 +3045,7 @@ if (mode === 'gen') cmdGen(only);
 else if (mode === 'sync') cmdSync();
 else if (mode === 'apply') cmdApply(only);
 else {
-  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance|Achievement|Relics]');
+  console.log('用法：node tools/config_tables.cjs [--gen | --sync | --apply [--write]] [Skills2|Status|Gems|Talents|Equipment_Affix|NPC|Task|Runes|Gem_resonance|Achievement|Relics|Chest]');
   process.exit(1);
 }
 

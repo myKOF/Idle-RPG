@@ -10,7 +10,15 @@
   "指令": {
     "relic.upgrade": {
       "類別": "noRule",
-      "理由": "遺物只由寶箱取得，寶箱系統尚未實作；模擬玩家拿不到遺物。寶箱上線後由設計者在 player_strategy.md 補升級規則"
+      "理由": "遺物只由熔爐寶箱取得；player_strategy.md 尚無開寶箱與遺物升級規則，由設計者補上後再接"
+    },
+    "chest.open": {
+      "類別": "noRule",
+      "理由": "熔爐寶箱（2026-11-12）：player_strategy.md 尚無開箱時機規則（何時開、要不要留著等升級），由設計者補上後再接"
+    },
+    "chest.upgrade": {
+      "類別": "noRule",
+      "理由": "熔爐寶箱升級與零件／熔爐搶金幣，優先順序屬設計決定；player_strategy.md 補規則前不接"
     },
     "app.handoff": {
       "類別": "never",

@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=1.0.9">
   <link rel="stylesheet" href="css/relic.css?v=20261110-relic-layout-v2">
+  <link rel="stylesheet" href="css/chest.css?v=20261112-chest-v1">
   <link rel="stylesheet" href="css/gems.css?v=1.0.25">
   <link rel="stylesheet" href="css/dialogs.css?v=1.0.5">
   <link rel="stylesheet" href="css/achievements.css?v=1.0.15">
@@ -267,6 +268,9 @@
             <button type="button" id="nf-add-btn" class="btn sm nf-add-btn" data-nf-add="1" data-str="1442"></button>
             <button type="button" class="pg-help nf-help" data-str-attr="aria-label:1377;data-tt-desc:1378;data-tt-title:64">?</button>
           </div>
+
+          <!-- 置頂寶箱區（js/chest.js、js/ui-chest.js；配置表 config/Excel/Chest.xlsx）：不隨下方熔爐清單捲動 -->
+          <div id="nf-chests" class="nfc-strip"></div>
 
           <div class="nfx">
             <div class="nfx-main">
@@ -1177,7 +1181,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=80ddab3b"></script>
+  <script src="js/strings_data.js?v=f6a5d48f"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=1.0.1"></script>
   <script src="js/ui-scale.js?v=1.0.1"></script>
@@ -1187,7 +1191,9 @@
   <script src="js/gem_resonance_data.js?v=1.0.1"></script>
   <script src="js/achievement_data.js?v=20261103-equipment-rarity-v3"></script>
   <script src="js/relic_data.js?v=20261110-relic-offline-20-merge"></script>
-  <script src="js/relic.js?v=20261110-relic-offline-20-merge"></script>
+  <script src="js/relic.js?v=20261112-chest-v1"></script>
+  <script src="js/chest_data.js?v=20261112-chest-v1"></script>
+  <script src="js/chest.js?v=20261112-chest-v2"></script>
   <script src="js/formula.js?v=20261111-merchant-layout"></script>
   <script src="js/battle-terrain.js?v=1.0.6"></script>
   <script src="js/battlefield.js?v=20261109-treant-audio-sync-a54d6904"></script>
@@ -1231,18 +1237,19 @@
   <script src="js/skills2.js?v=20261110-ai-balance-offline-merge"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=20261106-t4-talents"></script>
-  <script src="js/player.js?v=20261111-merchant-layout"></script>
+  <script src="js/player.js?v=20261112-chest-v1"></script>
   <script src="js/system-unlocks.js?v=20261103-unlock-hints"></script>
   <script src="js/combat.js?v=20261108-tower-boss-floors"></script>
   <script src="js/tower.js?v=20261110-relic-offline"></script>
-  <script src="js/save.js?v=20261110-relic-offline"></script>
+  <script src="js/save.js?v=20261112-chest-v1"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261110-tower-bgm-v1"></script>
-  <script src="js/ui.js?v=20261111-merchant-layout"></script>
+  <script src="js/ui.js?v=20261112-chest-v1"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
   <script src="js/ui-relic.js?v=20261110-relic-offline-20-merge"></script>
+  <script src="js/ui-chest.js?v=20261112-chest-v2"></script>
   <script src="js/ui-achievements.js?v=20261106-start-menu-v2"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.22"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.3"></script>
@@ -1254,7 +1261,7 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- ?? Worker ???????? main.js ????????? -->
-  <script src="js/worker/protocol.js?v=20261111-storybook-merchant-merge-v1"></script>
+  <script src="js/worker/protocol.js?v=20261112-chest-v1"></script>
   <script src="js/storage.js?v=1.0.2"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
@@ -1264,7 +1271,7 @@
   <script src="js/intro-scene.js?v=1.0.2"></script>
   <script src="js/intro-audio.js?v=1.0.0"></script>
   <script src="js/intro-player.js?v=20261111-storybook-v1"></script>
-  <script src="js/bridge.js?v=20261111-storybook-merchant-merge-v1"></script>
+  <script src="js/bridge.js?v=20261112-chest-v1"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
