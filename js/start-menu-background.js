@@ -10,7 +10,7 @@ var StartMenuBackground = (function () {
   const FRAME_MS = 1000 / 30;
   const REDUCED_MOTION_SCALE = .65;
   const GATE_FOG_RATE = 1.25;
-  const MIDGROUND_FOG_SPEED = -14;
+  const MIDGROUND_FOG_SPEED = 14;
   const MIDGROUND_FOG_DENSITY = 1.30;
   const DUST_GUST_RATE = 1.30;
   const FIRE_INTENSITY = 2;
@@ -22,15 +22,19 @@ var StartMenuBackground = (function () {
   const GATE_LIGHT_BOUNDS = { x: 676, y: 94, width: 444, height: 356 };
   const GATE_LIGHT_BLEND =
     'M802 85Q846 67 891 91L922 159Q946 202 943 258L927 385L919 454H711L711 285Q710 232 749 190Z';
+  const RIGHT_ARCH_PATCH = { x: 1196, y: 334, width: 225, height: 240 };
+  const RIGHT_ARCH_BLEND =
+    'M1229 374Q1249 363 1261 383L1269 410Q1281 439 1292 466Q1328 481 1364 496' +
+    'L1396 506Q1406 524 1390 541Q1317 557 1245 539Q1221 533 1227 503L1246 478Q1244 451 1230 430Q1217 410 1229 374Z';
   const LIGHTNING_BOUNDS = { x: 700, y: 135, w: 280, h: 300 };
-  const DUST_ORIGINS = { x: 270, y: 535, w: WIDTH - 135, h: 362 };
+  const DUST_ORIGINS = { x: -135, y: 535, w: WIDTH - 135, h: 362 };
   // 紅框使用底圖座標，跟隨滿版裁切。
   const LOCAL_HAZE = { x: 208, y: 426, w: 756, h: 405 };
   const LOCAL_DUST_AMOUNT = 2;
   const LOCAL_DUST_OVERLAP = LOCAL_HAZE.y + LOCAL_HAZE.h - DUST_ORIGINS.y;
-  // 陣風從遮罩的右半起掀，保留向左消散的空間。
+  // 陣風從遮罩的左半起掀，保留向右消散的空間。
   const LOCAL_DUST_ORIGINS = {
-    x: LOCAL_HAZE.x + 235, y: DUST_ORIGINS.y, w: LOCAL_HAZE.w - 235, h: LOCAL_DUST_OVERLAP - 44
+    x: LOCAL_HAZE.x, y: DUST_ORIGINS.y, w: LOCAL_HAZE.w - 235, h: LOCAL_DUST_OVERLAP - 44
   };
   const LOCAL_DUST_RATE = DUST_GUST_RATE *
     (LOCAL_HAZE.w * LOCAL_DUST_OVERLAP) / (DUST_ORIGINS.w * DUST_ORIGINS.h);
@@ -235,6 +239,23 @@ var StartMenuBackground = (function () {
     ctx.restore();
   }
 
+  function makeRightArchPatch(image) {
+    const { x, y, width, height } = RIGHT_ARCH_PATCH;
+    const patch = canvas(width, height);
+    const ctx = patch.getContext('2d');
+    ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+
+    // 用加光前的同一座拱門覆蓋光束及地面反光，向外羽化。
+    const mask = canvas(width, height);
+    const maskContext = mask.getContext('2d');
+    maskContext.translate(-x, -y);
+    maskContext.filter = 'blur(8px)';
+    maskContext.fill(new Path2D(RIGHT_ARCH_BLEND));
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.drawImage(mask, 0, 0);
+    return patch;
+  }
+
   function makeAtmosphere() {
     const sky = canvas(768, 432);
     const skyContext = sky.getContext('2d');
@@ -250,7 +271,7 @@ var StartMenuBackground = (function () {
     };
     const groundFog = {
       tile: vaporTexture(512, 128, [161, 145, 122], 1207, true),
-      w: 1120, y: LOCAL_HAZE.y - 22, h: LOCAL_HAZE.h + 36, speed: -7.5, alpha: .38
+      w: 1120, y: LOCAL_HAZE.y - 22, h: LOCAL_HAZE.h + 36, speed: 7.5, alpha: .38
     };
     for (const cloud of [...clouds, leftBank, midground, groundFog]) cloud.pattern = skyContext.createPattern(cloud.tile, 'repeat-x');
     const leftFade = skyContext.createLinearGradient(410, 0, 640, 0);
@@ -526,12 +547,12 @@ var StartMenuBackground = (function () {
       ctx.fillRect(x - radius, y - 3 - radius, radius * 2, radius * 2);
       for (let curl = 0; curl < 8; curl++) {
         const age = mod(t * (.32 + (curl % 3) * .027) + curl * .127, 1);
-        const drift = height * (-.32 * age * age + .18 * Math.sin(age * 8 + t * 1.24 + curl) * age);
+        const drift = height * age * (.16 + .48 * age + .09 * Math.sin(age * 8 + t * 1.24 + curl));
         const w = height * (.22 + .38 * age), h = height * (.48 + .23 * age);
         const peak = Math.sin(age * Math.PI);
         ctx.save();
         ctx.translate(x + drift, y - age * height);
-        ctx.rotate(-.12 - .32 * age + Math.sin(t * 1.9 + curl) * .16);
+        ctx.rotate(.18 + .40 * age + Math.sin(t * 1.9 + curl) * .11);
         ctx.globalAlpha = .78 * strength * peak * (1 - age * .54);
         ctx.drawImage(sprite, -w / 2, -h * .72, w, h);
         ctx.restore();
@@ -548,15 +569,15 @@ var StartMenuBackground = (function () {
         ctx.lineWidth = height * (.014 + thread * .004);
         ctx.beginPath();
         ctx.moveTo(x + (thread - 1) * height * .045, y - 2);
-        ctx.bezierCurveTo(x + height * (.05 + sway * .15), y - height * .31,
-          x - height * (.19 + flow * .19), y - height * .61,
-          x - height * (.30 + sway * .17), y - height * (.72 + thread * .105));
+        ctx.bezierCurveTo(x + height * (.06 + sway * .10), y - height * .31,
+          x + height * (.36 + flow * .14), y - height * .61,
+          x + height * (.65 + sway * .14), y - height * (.72 + thread * .105));
         ctx.stroke();
       }
       ctx.fillStyle = '#b3ffe7';
       for (let mote = 0; mote < 6; mote++) {
         const age = mod(t * (.20 + mote * .019) + mote * .227, 1);
-        const drift = Math.sin(mote * 3.4 + age * 7) * age * .28 - age * .44;
+        const drift = age * (.50 + .18 * Math.sin(mote * 3.4 + age * 7));
         const size = height * (.014 + (mote % 3) * .005) * (1 - age * .4);
         ctx.globalAlpha = strength * .79 * Math.sin(age * Math.PI) ** 2;
         ctx.fillRect(x + height * drift, y - height * 1.14 * age, size, size);
@@ -580,7 +601,7 @@ var StartMenuBackground = (function () {
   function drawEmbers(ctx, embers, time, motionScale) {
     ctx.save();
     for (const { x, y, phase, speed, rise, size } of embers) {
-      const drift = mod(x - time * speed, WIDTH + 40) - 20;
+      const drift = mod(x + time * speed, WIDTH + 40) - 20;
       const lift = mod(y - 310 - time * rise, 585);
       const altitude = 310 + lift + Math.sin(time * .85 + phase) * 6;
       const flicker = .5 + .5 * Math.sin(time * 1.4 + phase);
@@ -692,7 +713,7 @@ var StartMenuBackground = (function () {
     function liftOff() {
       const along = (random() + random()) / 2;
       return {
-        x: x - along * sweep + (random() - .5) * span,
+        x: x + along * sweep + (random() - .5) * span,
         y: y + along * slope + (random() - .5) * (22 + strength * 21) * depth,
         born: start + along * release,
         spread: random() - .5,
@@ -714,7 +735,7 @@ var StartMenuBackground = (function () {
   }
 
   function sandX(particle, age, progress) {
-    return particle.x - particle.speed * age * (.77 + (.30 + particle.spread * .46) * progress);
+    return particle.x + particle.speed * age * (.77 + (.30 + particle.spread * .46) * progress);
   }
 
   function sandY(particle, progress, loft) {
@@ -742,7 +763,7 @@ var StartMenuBackground = (function () {
         ctx.translate(sandX(trail, age, progress), sandY(trail, progress, fade));
         ctx.rotate(turn);
         ctx.globalAlpha = fade * (.34 + strength * .46) * motionScale;
-        ctx.drawImage(trail.pale ? textures.sand : textures.haze, -width * .85, -height * .78, width, height);
+        ctx.drawImage(trail.pale ? textures.sand : textures.haze, -width * .15, -height * .78, width, height);
         ctx.restore();
       }
     }
@@ -810,7 +831,7 @@ var StartMenuBackground = (function () {
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const atmosphere = ctx && makeAtmosphere();
     let disposed = false, inView = false, frame = null, previous = null;
-    let sprites, fires, gateLight, time = 5.6, lastPaint = -Infinity;
+    let sprites, fires, gateLight, rightArchPatch, time = 5.6, lastPaint = -Infinity;
     const dust = { gusts: [], next: time - .9, area: DUST_ORIGINS, rate: DUST_GUST_RATE, fogHeight: 1, amount: 1 };
     // 加一條與原區域出現率相同的獨立陣風，使區內頻率加倍。
     const localDust = {
@@ -825,6 +846,7 @@ var StartMenuBackground = (function () {
       const motionScale = motion.matches ? REDUCED_MOTION_SCALE : 1;
       ctx.setTransform(surface.width / WIDTH, 0, 0, surface.height / HEIGHT, 0, 0);
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      if (rightArchPatch) ctx.drawImage(rightArchPatch, RIGHT_ARCH_PATCH.x, RIGHT_ARCH_PATCH.y);
       if (fires) drawFires(ctx, fires, time);
       if (!gateLight) drawGateLightning(ctx, atmosphere.lightningGlow, lightning, time, motionScale);
       drawClouds(ctx, atmosphere, time);
@@ -919,9 +941,17 @@ var StartMenuBackground = (function () {
       draw();
       return true;
     }, () => false) : Promise.resolve(false);
+    const archSource = new Image();
+    if (ctx) archSource.src = new URL('battlefield.webp', ASSETS);
+    const archReady = ctx ? archSource.decode().then(() => {
+      if (disposed) return false;
+      rightArchPatch = makeRightArchPatch(archSource);
+      draw();
+      return true;
+    }, () => false) : Promise.resolve(false);
 
     return {
-      ready: Promise.all([stillReady, atlasReady, gateReady])
+      ready: Promise.all([stillReady, atlasReady, gateReady, archReady])
         .then(results => !disposed && results.every(Boolean)),
       destroy() {
         if (disposed) return;
@@ -935,6 +965,7 @@ var StartMenuBackground = (function () {
         sprites = null;
         fires = null;
         gateLight = null;
+        rightArchPatch = null;
         dust.gusts.length = 0;
         localDust.gusts.length = 0;
         lightning.event = null;
