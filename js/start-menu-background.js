@@ -17,16 +17,25 @@ var StartMenuBackground = (function () {
   const GATE_CROWN = 'M729 258Q744 217 785 195L810 193 832 168 853 160 871 207 900 191Q937 212 930 258';
   const GATE_SKY_OPENING = GATE_CROWN +
     'L914 315 901 349 878 365 864 398 848 393 820 413 801 395 778 356 765 338 745 366 724 376Z';
-  // 聖光延伸到遠景霧中，輪廓沿主拱門內緣，底部再淡出。
-  const GATE_LIGHT_OPENING = GATE_CROWN +
-    'Q924 286 917 307L912 396 906 477Q830 497 722 474L722 343Z';
-  const GATE_LIGHT_BOUNDS = { x: 710, y: 129, width: 238, height: 365 };
+  // 依底圖的拱頂鏤空與主開口描出亮區，雕花石材仍在光束前面。
+  const GATE_LIGHT_OPENING =
+    'M837 94Q844 86 852 94Q860 102 854 112Q866 104 873 113Q880 124 869 130' +
+    'Q861 133 854 125Q859 137 851 143Q844 149 837 142Q829 136 836 126' +
+    'Q825 131 819 124Q812 115 821 109Q829 103 838 111Q832 101 837 94Z ' +
+    'M797 130Q804 125 809 132L807 139Q817 133 821 142Q826 151 815 153L809 150' +
+    'Q813 161 805 164Q795 166 794 157L797 150Q787 155 784 147Q782 139 794 139Q791 134 797 130Z ' +
+    'M882 139Q889 132 895 140L893 147Q904 143 907 152Q910 161 898 161L892 157' +
+    'Q896 166 889 170Q882 173 878 165L881 159Q870 164 868 156Q867 148 878 149Q876 143 882 139Z ' +
+    'M729 258Q742 224 764 206Q782 175 801 177Q814 183 820 201Q819 178 836 156' +
+    'Q846 143 857 153Q872 164 873 184L868 205Q889 178 901 188Q919 199 930 231' +
+    'Q941 252 922 278L917 307 912 396 906 477Q830 497 722 474L722 343Z';
+  const GATE_LIGHT_BOUNDS = { x: 710, y: 78, width: 238, height: 416 };
   // 雲縫的光束由左上往右下展開，使用底圖座標。
   const GATE_LIGHT_RAYS = [
-    { x: 763, y: 152, width: 64, length: 381, tilt: -.17, phase: 0 },
-    { x: 790, y: 136, width: 70, length: 392, tilt: -.21, phase: 1.7 },
-    { x: 818, y: 145, width: 58, length: 380, tilt: -.25, phase: 3.4 },
-    { x: 848, y: 154, width: 68, length: 343, tilt: -.22, phase: 4.9 }
+    { x: 746, y: 133, width: 104, length: 415, tilt: -.22, phase: 0 },
+    { x: 779, y: 115, width: 116, length: 414, tilt: -.27, phase: 1.7 },
+    { x: 813, y: 118, width: 95, length: 396, tilt: -.30, phase: 3.4 },
+    { x: 851, y: 126, width: 103, length: 363, tilt: -.26, phase: 4.9 }
   ];
   const LIGHTNING_BOUNDS = { x: 700, y: 135, w: 280, h: 300 };
   const DUST_ORIGINS = { x: 270, y: 535, w: WIDTH - 135, h: 362 };
@@ -169,37 +178,55 @@ var StartMenuBackground = (function () {
     const pixels = ctx.createImageData(ray.width, ray.height);
     for (let y = 0; y < ray.height; y++) {
       const depth = y / (ray.height - 1);
-      const spread = .35 + .65 * depth;
-      const fade = ease(clamp(depth / .19)) * ease(clamp((1 - depth) / .61));
+      const spread = .54 + .46 * depth;
+      const fade = ease(clamp(depth / .19)) * ease(clamp((1 - depth) / .73));
       for (let x = 0; x < ray.width; x++) {
         const lateral = Math.abs(2 * x / (ray.width - 1) - 1);
-        const alpha = fade * ease(clamp(1 - lateral / spread));
+        const shoulder = ease(clamp(1 - lateral / spread));
+        const core = ease(clamp(1 - lateral / (spread * .39)));
+        const alpha = fade * (.67 * shoulder + .33 * core);
         const offset = (y * ray.width + x) * 4;
         pixels.data[offset] = 255;
-        pixels.data[offset + 1] = 251;
-        pixels.data[offset + 2] = 243;
+        pixels.data[offset + 1] = 254;
+        pixels.data[offset + 2] = 248;
         pixels.data[offset + 3] = Math.round(alpha * 255);
       }
     }
     ctx.putImageData(pixels, 0, 0);
 
-    const cloudGlow = canvas(120, 120);
-    const glowContext = cloudGlow.getContext('2d');
-    const glow = glowContext.createRadialGradient(60, 60, 5, 60, 60, 60);
-    glow.addColorStop(0, 'rgba(255,251,241,.65)');
-    glow.addColorStop(.42, 'rgba(255,248,235,.32)');
-    glow.addColorStop(1, 'rgba(255,248,235,0)');
-    glowContext.fillStyle = glow;
-    glowContext.fillRect(0, 0, 120, 120);
     const { x, y, width, height } = GATE_LIGHT_BOUNDS;
+    const cloudGlow = canvas(width, height);
+    const glowContext = cloudGlow.getContext('2d');
+    const glow = glowContext.createLinearGradient(0, 0, 0, height);
+    // 先用整片雲光鋪亮拱頂，再讓光束照出霧中的明暗層次。
+    glow.addColorStop(0, 'rgba(255,254,249,.89)');
+    glow.addColorStop(.20, 'rgba(255,254,249,.71)');
+    glow.addColorStop(.29, 'rgba(255,253,246,.46)');
+    glow.addColorStop(.38, 'rgba(255,253,246,.30)');
+    glow.addColorStop(.50, 'rgba(255,251,242,.22)');
+    glow.addColorStop(.65, 'rgba(255,250,241,.09)');
+    glow.addColorStop(.82, 'rgba(255,250,241,.025)');
+    glow.addColorStop(1, 'rgba(255,250,241,0)');
+    glowContext.fillStyle = glow;
+    glowContext.fillRect(0, 0, width, height);
+
+    const spill = canvas(120, 120);
+    const spillContext = spill.getContext('2d');
+    const spillFade = spillContext.createRadialGradient(57, 54, 4, 60, 60, 60);
+    spillFade.addColorStop(0, 'rgba(255,253,247,.48)');
+    spillFade.addColorStop(.43, 'rgba(255,251,242,.23)');
+    spillFade.addColorStop(1, 'rgba(255,251,242,0)');
+    spillContext.fillStyle = spillFade;
+    spillContext.fillRect(0, 0, 120, 120);
+
     const mask = canvas(width, height);
     const maskContext = mask.getContext('2d');
     maskContext.translate(-x, -y);
-    maskContext.filter = 'blur(3px)';
+    maskContext.filter = 'blur(2px)';
     maskContext.fill(new Path2D(GATE_LIGHT_OPENING));
     maskContext.filter = 'none';
     maskContext.globalCompositeOperation = 'destination-in';
-    const fade = maskContext.createLinearGradient(0, 349, 0, 482);
+    const fade = maskContext.createLinearGradient(0, 330, 0, 482);
     fade.addColorStop(0, '#fff');
     fade.addColorStop(.57, 'rgba(255,255,255,.58)');
     fade.addColorStop(1, 'rgba(255,255,255,0)');
@@ -207,23 +234,30 @@ var StartMenuBackground = (function () {
     maskContext.fillRect(x, y, width, height);
 
     const surface = canvas(width, height);
-    return { ray, cloudGlow, mask, surface, context: surface.getContext('2d') };
+    const context = surface.getContext('2d');
+    const clouds = {
+      tile: vaporTexture(256, 86, [255, 253, 247], 823, true),
+      w: 355, y: 127, h: 153, speed: 4.4, alpha: .42
+    };
+    clouds.pattern = context.createPattern(clouds.tile, 'repeat-x');
+    return { ray, cloudGlow, clouds, spill, mask, surface, context };
   }
 
-  function drawGateLight(ctx, { ray, cloudGlow, mask, surface, context }, time, motionScale) {
+  function drawGateLight(ctx, { ray, cloudGlow, clouds, mask, surface, context }, time, motionScale) {
     const { x, y, width, height } = GATE_LIGHT_BOUNDS;
     context.clearRect(0, 0, width, height);
     context.save();
     context.translate(-x, -y);
-    context.globalAlpha = .71 + .16 * Math.sin(time * .62);
-    context.drawImage(cloudGlow, 723, 131, 205, 143);
+    context.globalAlpha = .97 + .03 * Math.sin(time * .62);
+    context.drawImage(cloudGlow, x, y);
+    cloudStrip(context, clouds, time);
     for (const rayInfo of GATE_LIGHT_RAYS) {
       const { x, y, width, length, tilt, phase } = rayInfo;
       const drift = Math.sin(time * .57 + phase);
       context.save();
       context.translate(x + 5 * drift * motionScale, y);
       context.rotate(tilt + .035 * drift * motionScale);
-      context.globalAlpha = .58 + .18 * Math.sin(time * .86 + phase);
+      context.globalAlpha = .55 + .15 * Math.sin(time * .86 + phase);
       context.drawImage(ray, -width / 2, 0, width, length);
       context.restore();
     }
@@ -299,6 +333,7 @@ var StartMenuBackground = (function () {
     skyContext.save();
     skyContext.clip(outsideGate, 'evenodd');
     for (const cloud of clouds) cloudStrip(skyContext, cloud, time);
+    skyContext.drawImage(gateLight.spill, 932, -39, 274, 238);
     skyContext.restore();
     skyContext.clip(gate);
     for (const cloud of clouds) cloudStrip(skyContext, cloud, time * GATE_FOG_RATE);
