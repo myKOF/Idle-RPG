@@ -66,6 +66,7 @@ function makeEnv(opts) {
   vm.createContext(ctx);
   vm.runInContext(read('js/intro-data.js') + '\nthis.INTRO_TIMELINES = INTRO_TIMELINES;', ctx);
   vm.runInContext(read('js/intro-motion.js'), ctx);
+  vm.runInContext(read('js/intro-scene.js') + '\nthis.IntroScene = IntroScene;', ctx);
   if (opts.motion) ctx.IntroMotion = opts.motion;
   if (opts.noPrologue) delete ctx.INTRO_TIMELINES.prologue;   // 模擬序章還沒做好的資料
   vm.runInContext(read('js/intro-player.js') + '\nthis.IntroPlayer = IntroPlayer;', ctx);

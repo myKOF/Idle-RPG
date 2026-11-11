@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840" width="600" height="840">
+<defs><filter id="ink" x="-5%" y="-5%" width="110%" height="110%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+</filter><linearGradient id="capeShade" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#7a2d1c"/>
+  <stop offset="1" stop-color="#4a1a10"/>
+</linearGradient></defs>
+
+<path d="M224 168 C188 240 166 380 150 520 C138 640 126 740 110 812 L160 788 L200 826 L246 794 L300 832 L354 794 L400 826 L440 788 L490 812 C474 740 462 640 450 520 C434 380 412 240 376 168Z" fill="url(#capeShade)"/>
+<g filter="url(#ink)" fill="none" stroke="#2a170a" stroke-linejoin="round">
+  <path d="M224 168 C188 240 166 380 150 520 C138 640 126 740 110 812 L160 788 L200 826 L246 794 L300 832 L354 794 L400 826 L440 788 L490 812 C474 740 462 640 450 520 C434 380 412 240 376 168Z" stroke-width="2.8"/>
+  <path d="M244 200 C228 380 212 580 200 820 M300 190 L300 826 M356 200 C372 380 388 580 400 820 M270 260 C258 460 250 640 246 790 M330 260 C342 460 350 640 354 790" stroke-width="1.6" opacity="0.7"/>
+</g>
+</svg>

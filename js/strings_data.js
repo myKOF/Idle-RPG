@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = '17cf392d';
+var STRING_DATA_VERSION = '4b37c795';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -2471,5 +2471,6 @@ var STRING_DATA = {
   "2478": ["Lv.{0} → Lv.{1}"],
   "2479": ["升級前：{0}"],
   "2480": ["升級後：{0}"],
-  "2481": ["取得第一件即可解鎖"]
+  "2481": ["取得第一件即可解鎖"],
+  "2482": ["很久以前，天界的守望者俯瞰著薩爾維恩，\n那片神聖與黑暗交界的土地。"]
 };

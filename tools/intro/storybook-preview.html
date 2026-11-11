@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>開頭動畫預覽</title>
+  <base href="/"><!-- 時間軸裡的素材路徑以網站根目錄為準 -->
+  <!-- 開頭動畫的獨立預覽：只載入播放器與時間軸，不跑遊戲。
+       用法：本機伺服器開 /tools/intro/storybook-preview.html?id=storybook
+         ?id=   時間軸名稱（預設 storybook）
+         ?t=    停在指定毫秒（不帶就正常播放）
+       下方滑桿可拖動時間；按「播放」從頭播。 -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/start-menu.css">
+  <link rel="stylesheet" href="/css/intro.css">
+  <style>
+    body { margin: 0; background: #111; }
+    #pv-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483647; display: flex; gap: 10px; align-items: center;
+      padding: 8px 14px; background: rgba(0, 0, 0, 0.7); color: #eee; font: 13px sans-serif; }
+    #pv-bar input[type=range] { flex: 1; }
+  </style>
+</head>
+<body>
+  <div id="pv-bar"><button id="pv-play" type="button">播放</button><input id="pv-t" type="range" min="0" max="10000" step="50" value="0"><span id="pv-label">0 ms</span></div>
+  <script src="/js/util.js"></script>
+  <script src="/js/strings_data.js"></script>
+  <script src="/js/strings.js"></script>
+  <script src="/js/intro-data.js"></script>
+  <script src="/js/intro-motion.js"></script>
+  <script src="/js/intro-scene.js"></script>
+  <script src="/js/intro-audio.js"></script>
+  <script src="/js/intro-player.js"></script>
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      var id = q.get('id') || 'storybook';
+      var tl = INTRO_TIMELINES[id];
+      var slider = document.getElementById('pv-t'), label = document.getElementById('pv-label');
+      slider.max = String(tl ? (tl.duration || 10000) : 10000);
+      function start() {
+        IntroPlayer.abort('preview');
+        IntroPlayer.play(tl, { id: id });
+      }
+      function seek(ms) {
+        if (!IntroPlayer.isPlaying()) start();
+        IntroPlayer.seek(ms);
+        slider.value = String(ms); label.textContent = ms + ' ms';
+      }
+      document.getElementById('pv-play').addEventListener('click', function (e) { e.stopPropagation(); start(); });
+      slider.addEventListener('input', function () { seek(Number(slider.value)); });
+      document.getElementById('pv-bar').addEventListener('click', function (e) { e.stopPropagation(); });
+      window.previewSeek = seek;
+      if (q.has('t')) seek(Number(q.get('t'))); else start();
+    })();
+  </script>
+</body>
+</html>

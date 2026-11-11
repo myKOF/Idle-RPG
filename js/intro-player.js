@@ -70,8 +70,13 @@ var IntroPlayer = (function () {
     if (!(timelineDuration(tl) > 0)) errs.push('總長必須大於 0');
     tl.layers.forEach(function (l, i) {
       var tag = '圖層 ' + i + '：';
-      if (l.kind !== 'text' && l.kind !== 'image' && l.kind !== 'shape' && l.kind !== 'motion') errs.push(tag + '未知的 kind ' + l.kind);
+      if (l.kind !== 'text' && l.kind !== 'image' && l.kind !== 'shape' && l.kind !== 'motion' && l.kind !== 'scene') errs.push(tag + '未知的 kind ' + l.kind);
       if (l.kind === 'motion' && typeof IntroMotion === 'undefined') errs.push(tag + '未載入IntroMotion');
+      // 分件場景（js/intro-scene.js）：部件樹各自控制，資料錯就整段不播
+      if (l.kind === 'scene') {
+        if (typeof IntroScene === 'undefined') errs.push(tag + '未載入IntroScene');
+        else IntroScene.validate(l).forEach(function (e) { errs.push(tag + e); });
+      }
       if (!(num(l.at, -1) >= 0)) errs.push(tag + 'at 必須 ≥ 0');
       if (!(num(l.dur, 0) > 0)) errs.push(tag + 'dur 必須 > 0');
       if (l.kind === 'text' && !(l.str > 0)) errs.push(tag + 'text 需要 String 表編號 str');
@@ -218,6 +223,8 @@ var IntroPlayer = (function () {
     stopMotion(c);
     c.motion.forEach(function (scene) { if (scene.dispose) scene.dispose(); });
     c.motion = [];
+    c.scenes.forEach(function (scene) { if (scene && scene.dispose) scene.dispose(); });
+    c.scenes = [];
     if (c.audio) c.audio.dispose();
     clearTimeout(c.failsafe);
     clearTimeout(c.skipTimer);
@@ -245,7 +252,7 @@ var IntroPlayer = (function () {
       id: opts.id || '', duration: timelineDuration(timeline), anims: [], paused: false, seeking: false,
       skipping: false, failsafe: 0, skipTimer: 0, onDone: opts.onDone || null,
       skippable: timeline.skippable !== false, reduced: reducedMotion(),
-      hold: null, audio: null, motion: [], motionFrame: 0
+      hold: null, audio: null, motion: [], motionFrame: 0, scenes: []
     };
     var holdAt = num(timeline.holdAt, 0);
     if (opts.hold && holdAt > 0 && holdAt < c.duration) {
@@ -280,6 +287,9 @@ var IntroPlayer = (function () {
         if (layer.kind === 'motion') {
           var scene = IntroMotion.build(layer, el, function (child, frames, options) { return animate(c, child, frames, options); }, c.reduced);
           if (scene && scene.render) c.motion.push(scene);
+        }
+        if (layer.kind === 'scene') {
+          c.scenes.push(IntroScene.build(layer, el, function (child, frames, options) { return animate(c, child, frames, options); }, c.reduced));
         }
       });
 
