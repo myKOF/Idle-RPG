@@ -824,8 +824,8 @@ var AFFIX_POOL = {
   hit: { name: '命中率%', base: 3, lv: 0.045, pct: true, weight: 5, minR: 4, slots: ['helmet', 'gloves', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   cdr: { name: '冷卻縮減%', base: 0.5, lv: 0.0025, pct: true, weight: 3, minR: 4, slots: ['helmet', 'belt', 'ring', 'amulet'] },
   castSpeed: { name: '施法速度%', base: 3, lv: 0.036, pct: true, weight: 4, slots: ['all_lock'] },
-  lifesteal: { name: '吸血', base: 3, lv: 0.045, pct: false, weight: 4, minR: 4, slots: ['chest', 'wrist', 'legs', 'ring', 'amulet'] },
-  manaSteal: { name: '吸魔', base: 1, lv: 0.005, pct: false, weight: 3, minR: 4, slots: ['chest', 'wrist', 'legs', 'ring', 'amulet'] },
+  lifesteal: { name: '吸血', base: 3, lv: 0.08, pct: false, weight: 4, minR: 4, slots: ['chest', 'wrist', 'legs', 'ring', 'amulet'] },
+  manaSteal: { name: '吸魔', base: 1, lv: 0.03, pct: false, weight: 3, minR: 4, slots: ['chest', 'wrist', 'legs', 'ring', 'amulet'] },
   eliteDmg: { name: '對菁英傷害%', base: 2, lv: 0.08, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
   bossDmg: { name: '對BOSS傷害%', base: 2, lv: 0.08, pct: true, weight: 4, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
   normalDmg: { name: '對普通敵人傷害%', base: 2, lv: 0.1, pct: true, weight: 7, minR: 3, slots: ['weapon', 'helmet', 'shoulder', 'ring', 'amulet'] },
@@ -873,7 +873,7 @@ var AFFIX_POOL = {
   hybridMutation: { name: '合成變異率%', base: 2.5, lv: 0.03, pct: true, weight: 2, slots: ['all_lock'] },
   enrageThreshold: { name: '狂暴閾值+', base: 2, lv: 0.16, pct: false, weight: 2, slots: ['all_lock'] },
   affixCap: { name: '詞條上限率%', base: 3, lv: 0.075, pct: true, weight: 2, minR: 5, slots: ['ring', 'amulet'] },
-  gemEff: { name: '寶石鑲嵌效率%', base: 4, lv: 0.08, pct: true, weight: 2, minR: 5, slots: ['ring', 'amulet'] }
+  gemEff: { name: '寶石鑲嵌效率%', base: 2, lv: 0.04, pct: true, weight: 2, minR: 5, slots: ['ring', 'amulet'] }
 };
 
 // ---- 詞條顯示分類（裝備詳情/滑過提示分色用；未列入者一律視為 util 功能類） ----
