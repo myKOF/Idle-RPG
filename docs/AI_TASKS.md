@@ -15781,3 +15781,77 @@ Worker 存活且頁面正常完成載入。
 - Build：npm.cmd run build通過710檔；node tools/string-table/build_string_csv.cjs --check寫死0；diff／stat／check及自我Review通過。唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、使用者截圖、elite.js／elite_data／elite_boss_recipes、玩家skills2／Status、Runtime／Core／Pixi backend／vfx-tower、七種柱體與護罩Preset、shipped-assets與NPC技能來源、Worker協議、GM／StartMenu／主頁啟動與相關回歸，未修改上述檔案。
 - 瀏覽器：獨立headless Edge、新origin／seed17正式主頁與原生Worker，啟動前全體靜音、不接觸使用者存檔。透過正式gm.exec鎖血／等級／金幣／tower_jump46／damage100%，正式tower.start46後真實致命傷觸發白光與護罩，記錄tb-float目標、dur2／5、area=null及0遺失Preset，目視正式戰場白光及護罩均接地，Console error／warning與pageerror均0。截圖及game-qa.json、current／baseline TAP、test-report.json在本聊天visualizations/boss-anchor；瀏覽器與測試服正常關閉。
 - 交付：本項無未完成實作，可供Review與使用者合併；限制為上述15項既有失敗及未驗跨瀏覽器／行動真機／其他103種技能實戰畫面，沒有新增已知缺陷。遊戲Commit為本段所在「[Codex] fix: 修正BOSS不屈鬥魂光柱與護罩接地」，SHA見聊天；未合併／推送develop或main。下一步重新載入Codex遊戲驗收，再由使用者指定整合。
+
+## MYSTERY-MERCHANT-LAYOUT-20261111 — 四十格商店與蒙面立繪
+
+- Owner：Codex，Done，單一主開發者。修正金幣圖示比例、購買按鈕貼齊格底、10欄4列常駐40格，召喚／手動刷新各扣1張邀請券，封魔塔切頁立即提示。原創蒙面半身立繪左手空掌邀請，圖2紅框只作大小與位置參考。
+- 前置：現行神祕商人已整合，起始 a1eed174。預檢乾淨。允許商人UI／模擬／相依模擬器與版本、Store／String來源與匯出、商人回歸、LV／商人說明、本段及新立繪匯出與雙庫來源。既有其他玩法與素材不屬本項，後續由使用者驗收整合。
+- 驗收：正式頁驗40格、金幣比例／列底對齊、持券切頁動畫、無券拒絕及原生Worker扣券、Excel重開／參數錨點、回歸與Build。核對來源／成品雜湊後雙庫提交。
+- 實作：`index.html`、`css/style.css`、`js/ui.js` 加入蒙面半身立繪、固定四十格、24px格底購買鈕與保留比例的金幣圖示；持券時切入封魔塔立即亮起，減少動態效果設定下維持靜態亮邊。`js/item.js` 統一召喚及刷新扣券，舊定時換貨及金幣刷新退場，金幣升級補貨沿用。同步 data／formula／player／Worker v78／bridge／lagprobe／模擬器／快取及相關回歸；Store來源移除舊刷新兩列，String來源更新三格並同步CSV與產物。`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`、`docs/WORKER_PROTOCOL.md` 一併更新。
+- 素材庫 `64fe615` 保存蒙面原始稿、左手空掌邀請終稿、688 × 688透明WebP及提示詞／雜湊manifest。遊戲WebP由 `tools/assets/export-mystery-merchant.cjs --apply` 匯出，`--check` 核對一致，來源見 `docs/assets/MYSTERY_MERCHANT_PORTRAIT.md`。
+- 驗證：獨立Edge正式首頁、原生Worker與全靜音測試局，1920×912、1366×768、900×900均為每列10格且固定4列、買鈕高度與底距一致、金幣保留原比例；1920下立繪實測344×347px。實際操作確認切頁高亮、進店3→2、刷新2→1且金幣不動、購買不扣券、再次進店1→0，無券按鈕置灰且正式指令拒絕並維持原貨。無Console error或pageerror。截圖與報告留本聊天visualizations/merchant-layout。
+- `npm.cmd run build` 通過710檔。原生Excel兩表正常重開，Store其餘資料一致，String僅變更1516／1624／2446三格。`node tools/apply_params.cjs` 為611一致、0變更、0錨點問題；`--check-anchors` 擾動562個數值仍命中611錨點。`node tools/string-table/build_string_csv.cjs --check` 寫死0。商人／UI／指令／協議回歸42項40通過，兩項裝備UI失敗在起始HEAD唯讀重跑重現；模擬同步／字串／編輯器快取20項全過。
+- 唯讀檢查AI_RULES／AGENTS／Workflow／使用者截圖、塔BOSS掉落與最高通關品質、存檔接線、遊戲面板來源、Excel更新匯出、素材庫根目錄解析器及VFX編輯器快取回歸。
+- 完整 `node --test --test-concurrency=5 --test-reporter=tap "tests/*.test.cjs"` 共5806項，5108通過、696失敗、2跳過。681項失敗名稱見過往全套測試紀錄，餘15項中14項在起始HEAD唯讀重跑重現。另一項VFX編輯器改名回歸的 `fetch failed` 在現版與起始HEAD獨立重跑整檔均通過。完整TAP與比較資料在 `logs/merchant-layout`。
+- 交付：本項實作與指定畫面驗證完成，限制為完整套件仍有失敗及僅實測Edge。遊戲Commit為本段所在「[Codex] feat: 改造神祕商人商品區與邀請券刷新」，SHA見交付。素材庫與遊戲提交供使用者重載驗收後整合。
+
+## MYSTERY-MERCHANT-SHOP-ART-20261111 — 神祕商人雜貨店內景
+
+- Owner：Codex，Done，單一主開發者。從 `ef6c7503` 延伸。使用者指定紅框內加入寶石、符文、裝備與藥水等雜貨店背景，並提供有商人的合成預覽。逐檔預檢乾淨。
+- 完成7檔：`css/style.css` 在立繪區載入暖燈貨架內景，以底部漸層維持文字對比；`index.html` 同步CSS快取；`images/ui/mystery-merchant-shop.webp` 新增1800×600 WebP，157692 bytes；`tools/assets/export-mystery-merchant.cjs` 沿用既有素材包匯出並查核兩張圖；同步 `LV_upgrade_system.md`、`docs/assets/MYSTERY_MERCHANT_PORTRAIT.md` 與本段。內景作為陳設，正式商店規則沿用。
+- 素材庫 `0cf4e10` 保存原始PNG、WebP與提示詞／尺寸／SHA-256。RPG Mote Studio 主要用於像素繪圖，原創手繪質感內景使用 Codex 內建 imagegen。正式遊戲以獨立背景和原透明立繪合成，無須重畫人物。
+- 驗證：獨立Edge正式頁與原生Worker，全靜音新局，素材成功解碼、三種視窗仍為10欄4列，金幣比例與格底對齊通過，切頁提示／進店／刷新／買賣／無券流程通過，Console error與pageerror均0。目視桌面與縮小畫面，預覽留本聊天 `visualizations/merchant-shop/preview.png`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18。`npm.cmd run build` 及字串檢查、素材匯出 `--check`、雙庫 `git diff --check` 通過。唯讀檢查AI_RULES／Workflow／使用者截圖、原商人UI與立繪來源、素材庫路徑解析及回歸。範圍以Edge及上述案例驗收，可供使用者重載預覽並整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-STOCK-FRAME-20261111 — 商品區縮小與雕花鑲寶外框
+
+- Owner：Codex，Done，單一主開發者。從 `e42f0f9a` 延伸，依使用者截圖紅框縮小商品區並換裝飾外框。Fetch與逐檔預檢乾淨。
+- 完成4檔：`css/style.css` 設商品區為立繪區寬度94%、上距26px，以九宮格裁切沿用既有古銅雕花鑲寶框，內層保留橫向捲動；73px列高、20px圖示、24px格底購買鈕，維持40格。`index.html` 接外框及更新CSS快取，`LV_upgrade_system.md` 與本段同步。沿用 `images/ui/achievements/done-frame.png`，素材庫無本項變更。
+- 驗證：隔離全靜音Edge正式首頁與原生Worker，1920×912商品外框約953×328px，寬94%、上距26px。1920×912、1366×768、900×900均維持4列各10格、買鈕同高且與商品說明有間距、金幣比例正常。進店／刷新／購買／無券流程通過，無Console error或pageerror。實際畫面預覽留本聊天 `visualizations/merchant-stock-frame/preview.png`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build` 710檔通過，字串檢查寫死0，`git diff --check` 通過。唯讀檢查AI_RULES／Workflow、使用者截圖、原商人布局、既有鑲寶框／九宮格用法及上述回歸。驗證範圍為Edge與上述案例，可供使用者重載驗收與整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-ENTRY-TRAY-20261111 — 持券頭像與雕花木板商品區
+
+- Owner：Codex，Done，單一主開發者。從 `0746ac0e` 延伸，依使用者的入口位置與木製商牌參考圖，右移入口並加持券頭像，調整商品區造型與格位。逐檔預檢乾淨，既有獨立的配置修改留在工作區。
+- 完成7檔：`css/style.css` 右移40px、持券顯示34px圓形頭像並加強金色脈動，沿用立繪裁切與減少動態效果設定；商品區以新木板底座搭配雕花金屬及紅寶石，10欄4列正方格、8px間距、24px格底購買鈕與窄視窗橫向捲動。`index.html` 更新CSS快取；新增 `images/ui/mystery-merchant-tray.webp`、擴充既有匯出器，同步 `LV_upgrade_system.md`、素材來源文件與本段。
+- 素材庫 `00a4fda` 保存原始PNG、1820×728透明WebP及完整ImageGen提示詞／尺寸／SHA-256。RPG Mote Studio 以像素繪圖為主，原創木紋與雕花底座採用內建 imagegen，參考圖用於風格。
+- 正式Edge新局全靜音驗收：零券禁用、領券後即時出現頭像／脈動，亮度1至1.45，減少動態時頭像仍顯示，券用完後隱藏；1920×912外框910×394px、格位約76.6px見方。三種視窗均為40個正方格、間距8px、購買按鈕對齊，窄視窗可捲至最右欄。進店、刷新、購買、無券拒絕通過，Console error與pageerror均0。預覽 `visualizations/merchant-tray/entry.png` 與 `tray.png`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18；`npm.cmd run build`、字串檢查、素材匯出 `--check` 與雙庫diff檢查通過。唯讀檢查共通規範、使用者截圖、商人入口狀態、共用塔頁頂列、原立繪與匯出流程。實測範圍為Edge及相關案例，可供重載驗收與整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-GLOW-20261111 — 持券閃爍亮暗差三倍
+
+- Owner：Codex，Done，單一主開發者。從 `40d2e227` 延伸。依使用者要求提高持券提示明暗差，逐檔預檢乾淨。
+- 完成4檔：`css/style.css` 將亮度端點從1／1.45改為0.65／2，差值0.45→1.35，並加強明暗兩端的金色光暈變化。沿用1.2秒往返的單程時間及減少動態偏好；`index.html` 同步CSS快取，`LV_upgrade_system.md` 與本段同步。素材庫無本項變更。
+- 驗證：隔離全靜音Edge正式頁與原生Worker，取動畫兩端計算值0.65／2並目視最暗／最亮截圖；領券即時亮起、用完歸灰、減少動態偏好維持靜態頭像提示。商店進入、刷新、購買及無券拒絕通過，Console error與pageerror均0。兩端截圖留本聊天 `visualizations/merchant-glow/dim.png` 和 `bright.png`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build` 與字串／diff檢查通過。唯讀檢查共通規範、原入口CSS、塔頁持券狀態及相關回歸。既有配置修改留在工作區，可供使用者重載驗收與整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-SQUARES-20261111 — 商品格等寬等高與木框角飾留白
+
+- Owner：Codex，Done，單一主開發者。從 `a68e9a0a` 延伸，依使用者兩張截圖讓木框與上方店景等寬，四角留出雕花空間。`index.html` 與 Claude `434208e7` 同檔不同段，樣式快取行三方試合乾淨，整檔既有String與序章／bridge兩個載入版本衝突在本次修改前後相同。
+- 完成4檔：`css/style.css` 以捲動容器實際寬度算同一格邊長，欄寬和列高共用65–74px的尺寸，保留10欄4列、8px格間及底部購買鈕。木框寬100%，左右內縮至少7.5%、上下保留留白，窄版可捲至最右欄。`index.html` 更新樣式快取，`LV_upgrade_system.md` 與本段同步。既有木板素材沿用，素材庫無本項變更。
+- 驗證：隔離全靜音Edge正式頁，1919×1079、1920×912、2560×1440、1280×720、900×900、640×960六種視窗。舊版可重現角飾與格位靠疊，該次實測格位仍量到正方形。新版40格寬高最大差小於0.001px，木框兩側與店景切齊，角飾區留白、兩個窄視窗可橫捲、購買鈕與商品內容無重疊；進店／刷新／買賣／無券流程通過，Console error與pageerror均0。截圖與數據留本聊天 `visualizations/merchant-squares`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build`、字串／diff檢查通過。唯讀檢查共通規範、使用者截圖、`js/ui-scale.js`、原木板與商品格渲染、Claude序章相關index差異。既有配置修改留在工作區，可供重載驗收及後續整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-STORE-LEVELS-20261111 — Store 逐級商品機率
+
+- Owner：Codex，Done，單一主開發者。從 `e9e951c2` 延伸，依要求沿用寶石逐級及 `項目=機率%` 格式，後置新增群組與參數欄。使用者儲存關閉工作簿後驗證獨占，使用者另核准分段更新與 Claude `434208e7` 序章相鄰的 `index.html` Worker 快取，後續整合保留兩方版本。
+- Excel原生流程在 Store 後方增加6組各20級，共120列，並於R欄後增加21個參數欄 `參數m` 到 `參數ag`。新增列沿用表格式，篩選擴至 A1:AM181。原 A1:R61 1,098格值核對一致，來源正常重開且重匯 CSV 一致。六組為類別、裝備品質、裝備部位、太古條數、符文階級、預留遺物階級。
+- `tools/apply_params.cjs` 生成 `js/data.js` 六個表，處理留白沿用通用值並拒絕重複、錯誤範圍或機率總和。`js/item.js` 召喚／刷新使用當級、升級使用目標等級，保留塔進度品質上限與遺物加成。`index.html`、bridge及Worker只更新所需快取。同步 `docs/MYSTERY_MERCHANT.md`、`LV_upgrade_system.md` 與回歸。
+- 已驗證：Store Excel→CSV、六個錨點生成，`node tools/apply_params.cjs` 為617一致／0變更／0錨點問題，`--check-anchors` 562項數值擾動後617個錨點仍唯一。`node --test tests/gem-shop.test.cjs tests/gem-enabled.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 32/32與Build 710檔。隔離正式Edge與原生Worker，以試驗CSV生成Lv.1戒指／1階符文、Lv.2胸甲／33階符文（機率填最右欄），實際召喚、升級、刷新與購買通過，Console error／pageerror均0。
+- 完整 `node --test --test-concurrency=8 --test-reporter=tap "tests/*.test.cjs"` 首輪5807項，5103通過、702失敗、2跳過。697項同名失敗見過往完整紀錄，2項符文真言傷害測試在唯讀基準使用相同亂數重現，1項同步逾時獨立重跑通過。另2項寶石測試原先用通用權重隔離其他商品，改用逐級類別設定後在上述32項回歸內通過。完整及個別TAP在 `logs/merchant-layout/store-levels-*.tap`。字串及diff檢查通過。
+- 唯讀檢查共通規範、原生Excel更新器／轉CSV、現有寶石、裝備、符文及遺物加成、舊表與同檔外部差異。素材庫無本項變更，工作區既有配置與同檔詞條修改保留，資料只暫存商人區段。本項可供重載、調整與後續整合，遊戲SHA見交付。
+
+## INTRO-SHOT2-20261111 — 羊皮紙序章第一、二鏡封存
+
+- Owner：Codex，Done。使用者確認 21.80 秒審看片並指示提交。第一鏡天堂戰場與第二鏡群墜已封存，第三鏡的接續點為第二鏡全白尾幀。
+- 前置：ai/codex 起始為 a36c4c4d，素材庫 master 起始為 00a4fda。兩邊起始工作區乾淨，fetch 與逐檔預檢通過。
+- 素材庫提交 `7a0ced32966eb59ee5e9b27c17004b236462bb62` 保存 ImageGen 分層繪圖、時間軸、獨立流光翼／遠雲／煙尾／粒子、程序音軌、聲景產生器、成片和提示詞。遊戲專案收錄 `images/intro-parchment` 的 MP4、來源和清單，加入 `tools/intro/sync-parchment-shots.cjs`，同步 `LV_upgrade_system.md` 與本段。既有設定頁重播沿用完整序章。
+- 驗證：封存頁在隔離 Edge 通過播放、拖曳、轉場與結束。PCM 重建逐位元一致。成片經 ffprobe 與完整解碼確認為 1080p、30 fps、654 幀、AAC 立體聲 21.80 秒，尾幀全白。匯出 `--archive`／`--apply`／`--check`、暫存 SHA-256、`git diff --check`、`npm.cmd run build` 710 檔及字串檢查通過。
+- `node --test tests/intro-player.test.cjs tests/intro-motion.test.cjs tests/intro-audio.test.cjs tests/gm-intro.test.cjs tests/vfx-preset-usage.test.cjs` 共 57/57 通過。唯讀檢查共通規範、既有序章播放器、素材匯出流程與相關測試。本次驗證範圍為獨立影片、Edge 分層來源和既有序章回歸。可供使用者整合，正式入口後續與第三鏡一起評估。遊戲提交為本段所在的 `[Codex] feat: 封存羊皮紙序章第一、二鏡`。
+## MERGE-INTRO-STORYBOOK-MERCHANT-20261111 — 序章與神祕商人整合
+
+- Owner：Codex（整合）。原 HEAD `f0ebd7cd5532c09d227597bccf21193e8021129e`，MERGE_HEAD `5f75c632fb11ae941d15145a9fc9442b7ccc8790`，base `a1eed174095033b2398d1f46d85c44fc3a354561`。使用者輸入 `1` 接續這次合併與同步。
+- Excel 唯讀三方檢查：唯一原始 XLSX 衝突是 `config/Excel/String.xlsx`。ours 相對 base 新增 String 2482（繪本式序章第一鏡旁白）；theirs 獨立更新 1516、1624、2446（神祕商人召喚／手動刷新邀請券說明）。四筆意圖無競爭值，合併 DATA plan 以 theirs 完整 String 工作表為基礎並保留 ours 新列，共 2470 列、7 欄。計畫位於忽略的 `logs/sync-excel-plans/20261111-230937-0f48f357b27645039a7d596c47d6a70a/plan.json`；本 pass 未啟動 Excel COM、未修改 XLSX bytes，也未處理非 Excel 衝突或執行最終測試／build。
+- 原生 Excel 階段已套用並正常重開。接手後核對 String.xlsx SHA256 與原生收據一致，重新匯出驗證 CSV 位元組一致，與兩側三方比對完整保留 1516、1624、2446、2482。`apply_strings.cjs --check` 核對 2469 條字串與快取 `80ddab3b`，`build_string_csv.cjs --check` 顯示 0 條硬編碼。保留 Claude 繪本序章入口、Codex 羊皮紙影片封存及神祕商人調整，主頁、編輯器、Worker protocol 與 bridge 啟動快取同步。兩套素材 `--check` 均通過，素材庫已發布提交 `7a0ced3`。
+- 合併驗證在 `logs/manual-merge-20261111/`。`node --test` 的商人、寶石、Worker、序章、字串、快取及套表相容測試 90/90，另序章場景、減傷及傳奇詞綴組合 20/22，UI Worker panel 6/8。兩側提交的隔離基準均重現相同四項失敗（gem.socket 斷言、UI 測試 fixture 缺失、兩項舊傳奇數值預期），保留測試。`npm.cmd run build` 通過 712 檔，合併差異空白檢查通過。
+- 交付為本段所在合併提交，後續執行既有同步器驗證本地與遠端四分支、已納入的來源及素材庫。保留隔離來源 `codex/background-catchup`。

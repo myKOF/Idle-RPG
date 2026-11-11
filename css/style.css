@@ -12714,17 +12714,122 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 }
 
 /* 神祕商人：入口與塔頁提醒。 */
-.merchant-entry-tip { display:inline-flex; }
+.merchant-entry-tip { display:inline-flex; margin-inline-start:40px; }
+.merchant-entry { position:relative; }
 .merchant-entry[disabled] { opacity:.4; cursor:default; pointer-events:none; }
-#mystery-merchant-open.is-ready { color:#ffe7a0 !important; border-color:#d4ad4f !important; background:linear-gradient(180deg,#59421d,#241a0c) !important; opacity:1; animation:merchant-invite-glow 1.4s ease-in-out infinite alternate; }
-@keyframes merchant-invite-glow { from { box-shadow:0 0 2px #c89b35; } to { box-shadow:0 0 12px #f0cd64; background-color:#56421e; } }
+#mystery-merchant-open.is-ready { color:#ffe7a0 !important; border-color:#d4ad4f !important; background:linear-gradient(180deg,#59421d,#241a0c) !important; opacity:1; }
+#mystery-merchant-open.is-ready::before {
+  content:'';
+  position:absolute;
+  inset-inline-end:calc(100% + 6px);
+  top:50%;
+  transform:translateY(-50%);
+  box-sizing:border-box;
+  width:34px;
+  height:34px;
+  border:1px solid #e0b455;
+  border-radius:50%;
+  background:
+    url('../images/ui/mystery-merchant.webp') 58% 2% / 265% no-repeat,
+    radial-gradient(circle at 55% 36%, #5b3a21, #17100b 72%);
+  box-shadow:0 0 0 1px #20160c, 0 0 7px rgba(236,183,78,.45);
+}
+#tab-tower.active #mystery-merchant-open.is-ready { animation:merchant-invite-glow 1.2s ease-in-out infinite alternate; }
+@keyframes merchant-invite-glow {
+  from { box-shadow:0 0 2px rgba(200,155,53,.28); filter:brightness(.65); }
+  to { box-shadow:0 0 18px 3px #e4a446, inset 0 0 10px #995917; filter:brightness(2); }
+}
 .merchant-alert { position:absolute; right:-3px; top:-2px; z-index:2; width:18px; height:18px; border-radius:50%; color:#fff; background:#db3225; border:2px solid #ffe6bd; text-align:center; font:bold 14px/14px sans-serif; }
 .merchant-alert[hidden], #mystery-merchant-panel[hidden] { display:none; }
-.merchant-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+.merchant-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:8px; }
 .merchant-heading #merchant-back { margin-left:auto; }
-.merchant-equipment-icon { width:64px; height:64px; object-fit:contain; }
-#mystery-merchant-panel #gem-shop-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
-#mystery-merchant-panel .shop-emoji { display:flex; align-items:center; justify-content:center; min-height:68px; }
-#mystery-merchant-panel .shop-emoji .rune-stone { width:64px; height:64px; object-fit:contain; }
-#mystery-merchant-panel .shop-name { white-space:normal; overflow-wrap:anywhere; }
-@media(prefers-reduced-motion:reduce) { #mystery-merchant-open.is-ready { animation:none; box-shadow:0 0 6px #d4ad4f; } }
+.merchant-showcase {
+  display:flex;
+  align-items:flex-end;
+  gap:16px;
+  border-radius:8px;
+  background:
+    linear-gradient(0deg, rgba(12,10,9,.7), transparent 30%),
+    url('../images/ui/mystery-merchant-shop.webp') right center / cover no-repeat #1a1411;
+}
+.merchant-portrait {
+  display:block;
+  width:min(344px, 48%);
+  height:clamp(200px, 38vh, 350px);
+  object-fit:contain;
+  object-position:left bottom;
+}
+.merchant-shop-controls { min-width:0; padding-bottom:8px; }
+.merchant-shop-controls .gx-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.merchant-shop-controls .btn { max-width:100%; }
+.merchant-gold-icon {
+  display:inline-block;
+  width:14px;
+  height:auto;
+  flex:none;
+  object-fit:contain;
+  vertical-align:middle;
+}
+.merchant-stock-frame {
+  box-sizing:border-box;
+  width:100%;
+  margin:18px auto 0;
+  padding:clamp(36px, 4.8%, 56px) max(46px, 7.5%);
+  background:url('../images/ui/mystery-merchant-tray.webp') center / 100% 100% no-repeat;
+}
+.merchant-stock-scroll {
+  container-type:inline-size;
+  overflow-x:auto;
+  scrollbar-color:#784a2a #0a0705;
+  scrollbar-width:thin;
+}
+#mystery-merchant-panel #gem-shop-grid {
+  --merchant-slot-gap:8px;
+  --merchant-slot-size:clamp(65px, calc((100cqi - 9 * var(--merchant-slot-gap)) / 10), 74px);
+  grid-template-columns:repeat(10, var(--merchant-slot-size));
+  grid-auto-rows:var(--merchant-slot-size);
+  width:max-content;
+  margin:0 auto;
+  padding:0;
+  border:0;
+  background:none;
+  gap:var(--merchant-slot-gap);
+}
+#mystery-merchant-panel .shop-card {
+  box-sizing:border-box;
+  min-height:0;
+  padding:1px 2px;
+  gap:1px;
+}
+#mystery-merchant-panel .shop-card.empty {
+  visibility:visible;
+  border-color:rgba(184,135,81,.28);
+  background:rgba(18,10,7,.48);
+}
+#mystery-merchant-panel .shop-emoji {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:0;
+  flex:1 1 0;
+}
+#mystery-merchant-panel .shop-emoji img { width:24px; height:100%; max-height:24px; object-fit:contain; }
+#mystery-merchant-panel .shop-name,
+#mystery-merchant-panel .shop-stat {
+  width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  line-height:10px;
+  flex:none;
+}
+#mystery-merchant-panel .shop-card .btn,
+#mystery-merchant-panel .shop-sold {
+  height:24px;
+  line-height:22px;
+  margin-top:auto;
+  flex:none;
+  gap:3px;
+}
+@media(prefers-reduced-motion:reduce) {
+  #tab-tower.active #mystery-merchant-open.is-ready { animation:none; box-shadow:0 0 6px #d4ad4f; }
+}

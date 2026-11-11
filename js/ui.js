@@ -1065,7 +1065,9 @@ function syncUiPendingControls(key) {
   var controls = document.querySelectorAll('[data-ui-pending-key="' + selectorKey + '"]');
   var pending = isUiCommandPending(key);
   for (var i = 0; i < controls.length; i++) {
-    controls[i].disabled = pending || (bossFightConfigLocked() && controls[i].matches(bossConfigControlsSelector()));
+    var control = controls[i];
+    var unavailable = control.dataset && control.dataset.merchantUnavailable !== undefined;
+    control.disabled = pending || unavailable || (bossFightConfigLocked() && control.matches(bossConfigControlsSelector()));
   }
 }
 
@@ -2859,7 +2861,11 @@ function switchTab(name) {
     markNewForgeTabSeenIfNeeded();
   }
   if (name === 'settings') refreshSettingsPanel();
-  if (name === 'tower') UI._scrollTower = true;
+  if (name === 'tower') {
+    UI._scrollTower = true;
+    var merchantHeader = uiHeaderPanelSnapshot();
+    if (merchantHeader) updateMerchantEntry(merchantHeader.player);
+  }
 }
 
 function refreshSettingsPanel() {
@@ -7322,7 +7328,7 @@ function renderTower() {
   if (merchantPanel) merchantPanel.hidden = !merchantActive;
   if (merchantActive) {
     fightBox.style.display = 'none'; listBox.style.display = 'none';
-    renderGemShop({ shop: merchant.shop }, headerSnapshot);
+    renderGemShop(merchant, headerSnapshot.player);
     var ticketCount = $id('merchant-ticket-count');
     if (ticketCount) ticketCount.textContent = STR(2438, merchant.tickets);
     return;
@@ -7764,9 +7770,6 @@ function uiTick() {
   if ((d.gems || d.equip) && UI.tab === 'runes' && typeof renderRunes === 'function') { renderRunes(); d.gems = false; d.equip = false; }
   // 遺物頁：資料在 header 面板（每拍都在變），renderRelics 自己比對遺物資料，沒變就不重畫
   if (UI.tab === 'relics' && typeof renderRelics === 'function') renderRelics();
-  if (UI.tab === 'tower' && towerSnapshot && towerSnapshot.merchant && towerSnapshot.merchant.active) {
-    updateShopCountdown({ shop: towerSnapshot.merchant.shop });
-  }
   if (d.skills && UI.tab === 'skills') { renderSkills(); d.skills = false; }
   if (UI.tab === 'talents' && !d.talents) {
     // 金幣隨收入變動、升級按鈕的可否按取決於金幣；每秒最多重算一次（金幣沒變就不重畫）。
@@ -8084,18 +8087,6 @@ function gemsViewFindFused(snapshot, id) {
     if (list[i] && list[i].id === id) return list[i];
   }
   return null;
-}
-
-function gemsViewShopRefreshCost(shop) {
-  var resetNo = (Number(shop && shop.refreshCount) || 0) + 1;
-  return Math.round(GEM_SHOP_REFRESH_BASE * Math.pow(resetNo, GEM_SHOP_REFRESH_EXPONENT));
-}
-
-function gemsViewShopCountdown(shop) {
-  var hourStart = Number(shop && shop.hourStart) || Date.now();
-  return Math.max(0, Math.ceil(
-    (hourStart + GEM_SHOP_REFRESH_HOURS * 3600 * 1000 - Date.now()) / 1000
-  ));
 }
 
 function forgeViewState(snapshot) {
@@ -10252,7 +10243,6 @@ function renderGems() {
     }
   }
   if (!resonanceOpen && UI.gemBrowse.tool === 'resonance') { UI.gemBrowse.tool = 'compose'; setGemTool('compose'); return; }
-  renderGemShop(gemsSnapshot, headerSnapshot);
   if (typeof renderGemResonance === 'function') renderGemResonance(gemsSnapshot, headerSnapshot);
 }
 
@@ -10581,15 +10571,13 @@ var GEM_TIER_COLORS = {
   // 6~10 階：神鑄寶石（僅能由神鑄法陣合成）
   6: '#fb923c', 7: '#f87171', 8: '#b8860b', 9: '#f5c542', 10: '#7df9ff'
 };
-function renderGemShop(gemsSnapshot, headerSnapshot) {
+function merchantGoldPriceHTML(price) {
+  return '<img src="images/icon_gold.png" class="merchant-gold-icon" alt=""> <span>' + fmt(price) + '</span>';
+}
+function renderGemShop(merchant, player) {
   var grid = $id('gem-shop-grid');
-  if (!grid) return;
-  gemsSnapshot = gemsSnapshot || uiGemsPanelSnapshot();
-  headerSnapshot = headerSnapshot || uiHeaderPanelSnapshot();
-  var towerMerchant = (uiTowerPanelSnapshot() || {}).merchant;
-  var s = towerMerchant && towerMerchant.active ? towerMerchant.shop : gemsSnapshot && gemsSnapshot.shop;
-  var player = headerSnapshot && headerSnapshot.player;
-  if (!s || !player) return;
+  if (!grid || !merchant.shop || !player) return;
+  var s = merchant.shop;
   var levelEl = $id('gem-shop-level');
   if (levelEl) levelEl.textContent = STR(1619, s.level);
   var shopPendingKey = nodePendingKey('gem-shop');
@@ -10598,17 +10586,19 @@ function renderGemShop(gemsSnapshot, headerSnapshot) {
     upgradeBtn.setAttribute('data-ui-pending-key', shopPendingKey);
     if (s.level >= GEM_SHOP_MAX_LEVEL) {
       upgradeBtn.textContent = STR(1620);
-      upgradeBtn.disabled = true;
+      upgradeBtn.toggleAttribute('data-merchant-unavailable', true);
       upgradeBtn.removeAttribute('data-tip');
     } else {
-      upgradeBtn.innerHTML = STR(1621) + '<img src="images/icon_gold.png" class="res-icon">' + fmt(gemShopUpgradeCost(s.level)) + '）';
-      upgradeBtn.disabled = player.gold < gemShopUpgradeCost(s.level);
+      var upgradeCost = gemShopUpgradeCost(s.level);
+      upgradeBtn.innerHTML = STR(1621) + merchantGoldPriceHTML(upgradeCost) + '）';
+      upgradeBtn.toggleAttribute('data-merchant-unavailable', player.gold < upgradeCost);
     }
   }
-  var htmls = s.items.map(function (item, i) {
+  var emptySlot = '<div class="shop-card empty" aria-hidden="true"></div>';
+  var htmls = s.items.slice(0, MYSTERY_MERCHANT_SLOTS).map(function (item, i) {
     var name, icon, stat = '', c = '#c7a65c';
     if (!item.kind || item.kind === 'gem') {
-      if (!GEM_TYPES[item.type]) return '';
+      if (!GEM_TYPES[item.type]) return emptySlot;
       var gt = GEM_TYPES[item.type];
       name = GEM_NAMES[item.lv] + gt.name; c = GEM_TIER_COLORS[item.lv];
       icon = gemIconHTML(item.type, item.lv, 'gi-shop');
@@ -10620,43 +10610,31 @@ function renderGemShop(gemsSnapshot, headerSnapshot) {
       stat = esc(RARITIES[eq.rarity].name) + ' ' + esc(STR(1563, eq.level));
     } else if (item.kind === 'rune' && RUNE_BY_ID[item.runeId]) {
       name = runeLabel(item.runeId); icon = runeStoneHTML(item.runeId, 'rs-icon');
-    } else return '';
+    } else return emptySlot;
     var price = merchantItemPrice(item);
     var unavailable = item.kind === 'gem' && !isGemEnabled(item.type);
     return '<div class="shop-card' + (item.sold ? ' sold' : '') + '"' + (item.kind === 'equipment' ? ' data-merchant-equipment="' + i + '" tabindex="0"' : '') + ' style="border-color:' + c + '">' +
       '<div class="shop-emoji">' + icon + '</div>' +
-      '<div class="shop-name" style="color:' + c + '">' + esc(name) + '</div>' +
+      '<div class="shop-name" title="' + esc(name) + '" style="color:' + c + '">' + esc(name) + '</div>' +
       '<div class="shop-stat">' + stat + '</div>' +
       (item.sold ? '<div class="shop-sold">' + STR(1622) + '</div>' :
         '<button class="btn sm" data-shop-buy="' + i + '"' + pendingUiButtonAttributes(shopPendingKey) +
-        (player.gold < price || unavailable ? ' disabled' : '') + '><img src="images/icon_gold.png" class="res-icon"> ' + fmt(price) + '</button>') + '</div>';
+        (player.gold < price || unavailable ? ' data-merchant-unavailable disabled' : '') + '>' + merchantGoldPriceHTML(price) + '</button>') + '</div>';
   });
+  while (htmls.length < MYSTERY_MERCHANT_SLOTS) htmls.push(emptySlot);
   var merchantHtml = htmls.join('');
   if (grid._merchantHtml !== merchantHtml) { grid._merchantHtml = merchantHtml; grid.innerHTML = merchantHtml; }
   var total = 0;
   s.items.forEach(function (it) { if (!it.sold) total += merchantItemPrice(it); });
   var buyAllBtn = $id('shop-buy-all');
   if (buyAllBtn) buyAllBtn.setAttribute('data-ui-pending-key', shopPendingKey);
-  if (buyAllBtn) buyAllBtn.innerHTML = STR(1623) + '<img src="images/icon_gold.png" class="res-icon">' + fmt(total) + '）';
-  if (buyAllBtn) buyAllBtn.disabled = !s.items.some(function (it) { return !it.sold && player.gold >= merchantItemPrice(it); });
+  if (buyAllBtn) buyAllBtn.innerHTML = STR(1623) + merchantGoldPriceHTML(total) + '）';
+  if (buyAllBtn) buyAllBtn.toggleAttribute('data-merchant-unavailable',
+    !s.items.some(function (it) { return !it.sold && player.gold >= merchantItemPrice(it); }));
   var refBtn = $id('shop-refresh');
-  if (refBtn) refBtn.disabled = player.gold < gemsViewShopRefreshCost(s);
+  if (refBtn) refBtn.toggleAttribute('data-merchant-unavailable', merchant.tickets < 1);
   if (refBtn) refBtn.setAttribute('data-ui-pending-key', shopPendingKey);
-  if (refBtn) refBtn.innerHTML = STR(1624) + '<img src="images/icon_gold.png" class="res-icon">' + fmt(gemsViewShopRefreshCost(s)) + '）';
   syncUiPendingControls(shopPendingKey);
-  updateShopCountdown(gemsSnapshot);
-}
-function updateShopCountdown(gemsSnapshot) {
-  var el = $id('shop-reset-cd');
-  if (!el) return;
-  gemsSnapshot = gemsSnapshot || uiGemsPanelSnapshot();
-  var shop = gemsSnapshot && gemsSnapshot.shop;
-  if (!shop) return;
-  var sec = gemsViewShopCountdown(shop);
-  var hh = Math.floor(sec / 3600);
-  var mm = Math.floor((sec % 3600) / 60);
-  var ss = sec % 60;
-  el.textContent = STR(174, shop.refreshCount, hh, (mm < 10 ? '0' : ''), mm, (ss < 10 ? '0' : ''), ss);
 }
 
 /* ============ 迷你監控視窗（子母畫面 PiP） ============

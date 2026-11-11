@@ -12,10 +12,9 @@ function loadGameContext() {
   ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/item.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
-  context.G = { player: { gold: 0, gems: {}, gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() } } };
+  context.G = { player: { gold: 0, gems: {}, gemShop: { level: 1, items: [] } } };
   context.randomGemType = () => 'garnet';
-  context.MYSTERY_MERCHANT_SETTINGS.equipmentWeight = 0;
-  context.MYSTERY_MERCHANT_SETTINGS.runeWeight = 0;
+  context.MERCHANT_CATEGORY_TABLE = Array.from({ length: 20 }, () => [['gem', 100]]);
   context.MYSTERY_MERCHANT_OPEN = true;
   context.flog = () => {};
   context.blog = () => {};
@@ -28,7 +27,7 @@ test('寶石商店機率表與價格符合 20 級規格', () => {
   assert.equal(context.GEM_SHOP_TIER_TABLE.length, 20);
   context.GEM_SHOP_COUNT_TABLE.forEach((pairs) => assert.equal(pairs.reduce((sum, pair) => sum + pair[1], 0), 100));
   context.GEM_SHOP_TIER_TABLE.forEach((pairs) => assert.equal(pairs.reduce((sum, pair) => sum + pair[1], 0), 100));
-  // CSV: config/CSV/game_parameters.csv:238。
+  // CSV: config/CSV/Store.csv。
   assert.equal(context.gemShopPrice(1), 10000);
   assert.equal(context.gemShopPrice(6), 50000000);
   assert.equal(context.gemShopPrice(10), 1000000000000);
@@ -49,14 +48,18 @@ test('商店升級費用與等級上限正確', () => {
   assert.equal(context.gemShopUpgradeCost(20), 0);
 });
 
-test('寶石商店手動刷新費用依下一次重置序號的 2.5 次方計算', () => {
+test('手動刷新扣一張券，無券保留原貨，商品上限四十件', () => {
   const context = loadGameContext();
-  context.G.player.gemShop.refreshCount = 0;
-  assert.equal(context.shopRefreshCost(), 5000);
-  context.G.player.gemShop.refreshCount = 1;
-  assert.equal(context.shopRefreshCost(), Math.round(5000 * Math.pow(2, 2.5)));
-  context.G.player.gemShop.refreshCount = 2;
-  assert.equal(context.shopRefreshCost(), Math.round(5000 * Math.pow(3, 2.5)));
+  const player = context.G.player;
+  player.consumables = { mystery_invitation: 1 };
+  context.GEM_SHOP_COUNT_TABLE[0] = [[60, 100]];
+  assert.equal(context.refreshGemShop(), null);
+  assert.equal(player.consumables.mystery_invitation, 0);
+  assert.equal(player.gold, 0);
+  assert.equal(player.gemShop.items.length, 40);
+  const stock = player.gemShop.items;
+  assert.match(context.refreshGemShop(), /邀請券/);
+  assert.equal(player.gemShop.items, stock);
 });
 
 test('商店依等級刷出對應數量與高階寶石', () => {

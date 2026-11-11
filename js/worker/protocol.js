@@ -112,7 +112,8 @@
 // v75：塔BOSS ACT 支援 attack/cast；lockMs 為整段停步動作時間，tb-float 定址敵方。
 // v76：神祕商人開關指令、tower.merchant、混合商品及邀請券庫存。
 // v77（2026-11-09 遺物）：新增 relic.upgrade({relicId:int})（98→99）；遺物存檔 player.relics／relicReturnUntil 隨 header.player 投影，不新增面板。
-var WORKER_PROTOCOL_VERSION = 77;
+// v78：手動刷新扣邀請券，商店投影不再依賴刷新計數或時鐘。
+var WORKER_PROTOCOL_VERSION = 78;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -517,7 +518,7 @@ var COMMANDS = {
 /* ---- Worker 內部函式，禁止列為指令 ----
    這些是模擬層的內部流程，目前被 ui.js 直接呼叫，屬於 UI 越界驅動模擬內部。
    P3 必須把這些呼叫點移除或改成正式指令，不得為它們新增指令通道。 */
-var INTERNAL_ONLY = ['addMerchantInvitations', 'addToInventory', 'rollGemShop', 'shopHourlyReset', 'forgeLog',
+var INTERNAL_ONLY = ['addMerchantInvitations', 'addToInventory', 'rollGemShop', 'restockMerchantWithInvitation', 'forgeLog',
                      'newForgeReturnUnroutable'];
 
 /* ---- 查詢函式（惰性初始化，不是指令）----

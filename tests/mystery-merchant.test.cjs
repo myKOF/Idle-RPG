@@ -83,7 +83,7 @@ test('全買略過滿包裝備仍能購買寶石符文；不足金幣不扣款',
 
 test('最高已通關層決定裝備品質上限，選取／當前層及高玩家等級不會越過',()=>{
   const e=game(),c=e.ctx,g=e.state();
-  c.MYSTERY_MERCHANT_SETTINGS.gemWeight=0;c.MYSTERY_MERCHANT_SETTINGS.runeWeight=0;
+  c.MERCHANT_CATEGORY_TABLE[0]=[['equipment',100]];
   c.MYSTERY_MERCHANT_SETTINGS.equipmentMaxRarity=11;
   g.player.level=1000;
   for(const [highest,cap] of [[0,5],[5,5],[6,6],[16,6],[21,7],[150,7]]) {
@@ -102,15 +102,15 @@ test('商人太古數依獨立機率表；零／三／四及超額截斷，不�
   const e=game(),c=e.ctx,g=e.state();
   const fieldWeights=JSON.stringify(c.ANCIENT_COUNT_WEIGHTS);
   assert.deepEqual(plain(c.MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE),[[0,75],[3,20],[4,5]]);
-  c.MYSTERY_MERCHANT_SETTINGS.gemWeight=0;c.MYSTERY_MERCHANT_SETTINGS.runeWeight=0;
+  c.MERCHANT_CATEGORY_TABLE[0]=[['equipment',100]];
   c.MYSTERY_MERCHANT_SETTINGS.equipmentMinRarity=5;c.MYSTERY_MERCHANT_SETTINGS.equipmentMaxRarity=5;
   g.player.level=100;
   for(const wanted of [0,3,4,99]) {
-    c.MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE=[[wanted,100]];
+    c.MERCHANT_EQUIPMENT_ANCIENT_LEVEL_TABLE[0]=[[wanted,100]];
     c.rollGemShop();
     for(const it of c.gemShop().items) assert.equal(c.getItemAncientCount(it.equipment),Math.min(wanted,it.equipment.affixes.length));
   }
-  c.MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE=[[0,0],[3,100]];
+  c.MERCHANT_EQUIPMENT_ANCIENT_LEVEL_TABLE[0]=[[0,0],[3,100]];
   c.Math.random=()=>0;
   c.rollGemShop();
   assert.ok(c.gemShop().items.every(it=>c.getItemAncientCount(it.equipment)===Math.min(3,it.equipment.affixes.length)&&it.equipment.affixes.length>0),'零權重即使亂數為0也不能中選');
@@ -119,13 +119,42 @@ test('商人太古數依獨立機率表；零／三／四及超額截斷，不�
 
 test('遺物未註冊不會產生假商品；全類別關閉不扣邀請券',()=>{
   const e=game(),c=e.ctx,p=e.state().player;
-  c.MYSTERY_MERCHANT_SETTINGS.relicWeight=100;
+  c.MERCHANT_CATEGORY_TABLE[0]=[['gem',40],['equipment',30],['rune',10],['relic',20]];
   c.addMerchantInvitations(2);success(e,'merchant.open');
   assert.ok(c.gemShop().items.every(it=>it.kind!=='relic'));
   success(e,'merchant.close');
-  c.MYSTERY_MERCHANT_SETTINGS.gemWeight=0;c.MYSTERY_MERCHANT_SETTINGS.runeWeight=0;c.MYSTERY_MERCHANT_SETTINGS.equipmentWeight=0;
+  c.MERCHANT_CATEGORY_TABLE[0]=[['gem',0],['equipment',0],['rune',0],['relic',0]];
   assert.match(e.cmd('merchant.open').result,/沒有可販售/);
   assert.equal(p.consumables.mystery_invitation,1);
+});
+
+test('召喚與升級各讀該商店等級的類別、裝備品質與部位、太古條數及符文',()=>{
+  const e=game(), c=e.ctx, g=e.state();
+  g.player.level=100;
+  g.player.gold=1e15;
+  g.tower.highest=1;
+  c.MERCHANT_CATEGORY_TABLE[0]=[['gem',0],['equipment',50],['rune',50]];
+  c.MERCHANT_CATEGORY_TABLE[1]=[['gem',20],['equipment',40],['rune',40]];
+  c.MERCHANT_EQUIPMENT_RARITY_TABLE[0]=[[2,100]];
+  c.MERCHANT_EQUIPMENT_RARITY_TABLE[1]=[[7,100]];
+  c.MERCHANT_EQUIPMENT_SLOT_TABLE[0]=[['ring',100]];
+  c.MERCHANT_EQUIPMENT_SLOT_TABLE[1]=[['chest',100]];
+  c.MERCHANT_EQUIPMENT_ANCIENT_LEVEL_TABLE[0]=[[0,100]];
+  c.MERCHANT_EQUIPMENT_ANCIENT_LEVEL_TABLE[1]=[[4,100]];
+  c.MERCHANT_RUNE_TIER_TABLE[0]=[[1,100]];
+  c.MERCHANT_RUNE_TIER_TABLE[1]=[[33,100]];
+  c.addMerchantInvitations(1);
+  success(e,'merchant.open');
+  let stock=c.gemShop().items;
+  assert.deepEqual(Array.from(new Set(stock.map(it=>it.kind))),['equipment','rune']);
+  assert.ok(stock.filter(it=>it.kind==='equipment').every(it=>it.equipment.rarity===2 && it.equipment.slot==='ring' && c.getItemAncientCount(it.equipment)===0));
+  assert.ok(stock.filter(it=>it.kind==='rune').every(it=>it.runeId==='r01'));
+  success(e,'gem.shopUpgrade');
+  assert.equal(c.gemShop().level,2);
+  stock=c.gemShop().items;
+  assert.deepEqual(Array.from(new Set(stock.map(it=>it.kind))),['gem','equipment','rune']);
+  assert.ok(stock.filter(it=>it.kind==='equipment').every(it=>it.equipment.rarity===5 && it.equipment.slot==='chest' && c.getItemAncientCount(it.equipment)===Math.min(4,it.equipment.affixes.length)));
+  assert.ok(stock.filter(it=>it.kind==='rune').every(it=>it.runeId==='r33'));
 });
 
 test('重新讀檔保留券、商店等級、已買商品庫存，但不恢復會話',()=>{
@@ -168,7 +197,10 @@ test('Store由原生Excel匯出，商店參數從主表完整搬移且古詞條�
   const excel=readXlsxRows(path.join(root,'config/Excel/Store.xlsx'),'Store');
   const csv=csvParse(fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8'));
   assert.deepEqual(excel.map(r=>r.map(String)),csv);
-  assert.equal(csv.filter(r=>/^8-寶(?:石商店|店刷出)/.test(r[2])).length,44);
+  assert.equal(csv.filter(r=>/^8-寶(?:石商店|店刷出)/.test(r[2])).length,42);
+  assert.equal(csv.filter(r=>/^8-商人/.test(r[2])).length,120);
+  assert.equal(csv[0].at(-1),'參數ag');
+  assert.ok(!csv.some(r=>r[2]==='8-寶石商店' && ['手動刷新費用','刷新週期'].includes(r[3])));
   const params=csvParse(fs.readFileSync(path.join(root,'config/CSV/game_parameters.csv'),'utf8'));
   assert.equal(params.filter(r=>/^8-寶(?:石商店|店刷出)/.test(r[2])).length,0);
   for(const sheet of ['game_parameters','計算表']) {
@@ -176,8 +208,22 @@ test('Store由原生Excel匯出，商店參數從主表完整搬移且古詞條�
     assert.equal(rows.filter(r=>/^8-寶(?:石商店|店刷出)/.test(r[2])).length,0);
   }
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'merchant-invalid-'));
-  const source=fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8').replace('3=20','3=19');
-  const file=path.join(temp,'Store.csv');fs.writeFileSync(file,source);
-  assert.throws(()=>execFileSync(process.execPath,['tools/apply_params.cjs'],{cwd:root,env:{...process.env,STORE_CSV:file},stdio:'pipe'}),/Command failed/);
-  fs.rmSync(temp,{recursive:true});
+  const source=fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8');
+  const file=path.join(temp,'Store.csv');
+  try {
+    const invalid = [
+      [source.replace('3=20','3=19'),/太古詞條機率/],
+      [source.replace(/(8-商人刷出類別,商店 Lv\.1,[^\r\n]*?)裝備=30/, '$1裝備=29'),/刷出類別.*總和須為100%/],
+      [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,34=5'),/符文階級.*有效項目/],
+      [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,19=5'),/符文階級.*不得重複/]
+    ];
+    for (const [csvText, expected] of invalid) {
+      assert.notEqual(csvText,source);
+      fs.writeFileSync(file,csvText);
+      assert.throws(()=>execFileSync(process.execPath,['tools/apply_params.cjs'],{cwd:root,env:{...process.env,STORE_CSV:file},stdio:'pipe'}),
+        error=>expected.test(String(error.stderr)));
+    }
+  } finally {
+    fs.rmSync(temp,{recursive:true});
+  }
 });

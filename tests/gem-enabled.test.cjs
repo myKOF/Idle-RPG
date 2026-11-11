@@ -122,8 +122,7 @@ test('新版拒收關閉寶石；舊法陣載入取消並完整退回',()=>{
 
 test('商店僅生成開放寶石，舊商品無法單買且全買略過', () => {
   const c = game();
-  c.MYSTERY_MERCHANT_SETTINGS.equipmentWeight = 0;
-  c.MYSTERY_MERCHANT_SETTINGS.runeWeight = 0;
+  c.MERCHANT_CATEGORY_TABLE[0] = [['gem', 100]];
   c.MYSTERY_MERCHANT_OPEN = true;
   for (let i = 0; i < 200; i++) assert.ok(c.isGemEnabled(c.randomGemType()));
   c.rollGemShop();
@@ -139,8 +138,7 @@ test('商店僅生成開放寶石，舊商品無法單買且全買略過', () =>
 
 test('全關閉時隨機獎勵／商店安全留空，不建立null種類', () => {
   const c = game();
-  c.MYSTERY_MERCHANT_SETTINGS.equipmentWeight = 0;
-  c.MYSTERY_MERCHANT_SETTINGS.runeWeight = 0;
+  c.MERCHANT_CATEGORY_TABLE[0] = [['gem', 100]];
   Object.values(c.GEM_TYPES).forEach(g => { g.enabled = false; });
   assert.equal(c.randomGemType(), null);
   c.rollGemShop();

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "sourceRoot": "codex-authored/intro-parchment-shots-20261111",
+  "sources": {
+    "source/PROMPTS.json": "914925772d38046c5f8ef513f4d7b85fef753e74f1359e18782279affa5a8735",
+    "source/index.html": "cf77e80f355fbdd5eb080a09e0aabbadbcc3a07c142c799abc4bb7605960bde8",
+    "source/preview.js": "504d7e0033a1f829cebc97029660386a6ea66805070aaa69e94f4ad76658ed1f",
+    "source/shot-timing.js": "6673ebb86ed2a606cf3c558340a5e74012b94f274e0d6da226824895b0120225",
+    "source/shot-two.js": "967cb61571046a42c36cbe398e9b8d81c9bf89b70066cf896a9200f2d8d0b6d3",
+    "source/shot.js": "0b884531ab058d0db49847ed2b0f5ee620acc1e02ad3abad338a8dee9cfc1697",
+    "source/render-video.cjs": "96d5011d9f4d8716dd44b7e7db712821ff3d4e8f48d89125ac96abedba937f33",
+    "source/build-score.cjs": "d666b6648d7551f8500f53c91fe71d1abc94532b3203c1405cb243e2dacb194f",
+    "source/assets/angel.png": "17798f6f89c19007315d3e80a7f2717e930ffc417d19e9cf590c9004f67687bb",
+    "source/assets/angels-fall-faces.png": "e52377d5882e056108fb117702668922a88e1b18073aef28c057b4dc7d7f0efc",
+    "source/assets/archangel-fall-ivory.png": "74de452a273942f46eecce793b37fe2e19747170897cf8e2bc47958b5237f2de",
+    "source/assets/cloud-abyss.png": "58434e770ba8811d7d906440d0353c90d6c1bdf6f82480ea2bda518811172a8f",
+    "source/assets/collapse-smoke.png": "97234bd8618da4f6b62c64953833fd2cd073a6108ab0b9c2021b59befb3f9891",
+    "source/assets/colossus.png": "7c0d6bdb983adb887b5c233cee2d665dafedca3c14b21218f3f3defe3abffa72",
+    "source/assets/demons.png": "fc73a990f983c33394f08225cadf9f8d1a6cedba19b24603ac0a1d99469166c7",
+    "source/assets/ember.png": "1a67936ec645785b8de198060eb817da12f83a87b2eed70548e5b1455ea58dbe",
+    "source/assets/heaven-sky.png": "63bbe866a2387ad48173d03953d18181f1087acdff1660355667f0f2e5caccd4",
+    "source/assets/ledge.png": "dfdb38969930434314ab5b639920ff943a598c7085fcc282cf0b187ddc9d5c20",
+    "source/assets/siege.png": "949b76059e7b66a9c21324d218292df1ad21316c26b15fc297aa6fe24b95fec2",
+    "source/assets/temple-details.png": "c757dd38b1e15b055ad7f464f60e1b76ceee1c71463df44f681d888d75825230",
+    "source/assets/temple-roofs.png": "d8e9c2901d8c2bbc06ed08b42fc72a3a692c9da1ca5b44250bcd13b18a0fc37d",
+    "source/assets/temple-spire.png": "f421f393a72262acd6068039fc696046a36add3f0deea4b8de724788dc7e0cf4",
+    "source/assets/temples.png": "8adc8448ffb58a4362293e0238f37a271d8fc8d6f28cddcc0d5019af62faf799",
+    "source/assets/valley-clean.png": "0acaa648d87fc2f3fbc2431ba63e059d7040f946457622753137034161709d9f",
+    "source/assets/valley.png": "ceb1dec362d323d7c9d1ca057f98ebf3d0df021cf392302a38d0ebfc1d4feef8",
+    "source/assets/wing.png": "b85e348215148a1172617b81cbc3cd998096a65e8c130aab2861f0f6ba13c1c1",
+    "source/assets/score-shot-one.wav": "5aca9024dbffba04261e679e53adde1cace912cee5c3060a663cbef01e86454f",
+    "source/assets/score.wav": "c1f899eb17f553d7c449bca7f9b8db1da7974f1e1521d556cda190c7117eca5b"
+  },
+  "exports": {
+    "shot-01-02.mp4": {
+      "source": "web/shot-01-02.mp4",
+      "sha256": "9eb3ab001aa9da04e5098341bb595d94088d05186ccba0dc0b124344dee64042"
+    },
+    "SOURCE.md": {
+      "source": "SOURCE.md",
+      "sha256": "db4a21167390ee0ccb9865ba080d0b9509395d0347b717d6cc4e7f173eb484c7"
+    }
+  }
+}
