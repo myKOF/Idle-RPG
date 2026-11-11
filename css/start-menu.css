@@ -3,7 +3,7 @@
 
 #start-menu {
   --menu-gutter: clamp(12px, 3.1vw, 64px);
-  --menu-width: clamp(176px, 18vw, 248px);
+  --menu-width: 188px;
   --title-top: clamp(12px, 4dvh, 48px);
   isolation: isolate;
   align-items: flex-end;
@@ -67,33 +67,35 @@
   #start-menu .start-menu-ruby::after { animation: none; opacity: 0; }
 }
 #start-menu .start-menu-controls {
-  --menu-padding: 4px;
   z-index: 1;
   box-sizing: border-box;
-  /* 只縮放按鈕寬度，保留左右留白。 */
-  width: min(100%, calc((var(--menu-width) - 2 * var(--menu-padding)) * 8 / 9 + 2 * var(--menu-padding)));
+  width: min(100%, var(--menu-width));
   max-height: 100%;
-  padding: var(--menu-padding);
+  padding: 4px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-#start-menu .system-menu-actions { gap: 5px; }
+#start-menu .system-menu-actions { gap: 6px; }
 #start-menu [hidden] { display: none !important; }
 #start-menu .system-menu-actions button {
-  --slate-edge: #736d61;
+  --rust-light: rgb(167 109 83 / 72%);
+  --rust-oxide: rgb(151 62 35 / 67%);
   --slate-glow: transparent;
-  position: relative;
-  min-height: 44px !important;
+  min-height: 40px !important;
   padding: 5px 10px;
-  border: 1px solid var(--slate-edge);
+  border: 3px solid transparent;
   border-radius: 0;
+  /* 岩板只畫在內側，露出的鑄鐵邊緣帶有深淺不一的鏽色。 */
   background:
-    radial-gradient(ellipse at 50% 78%, var(--slate-glow), transparent 72%),
-    linear-gradient(var(--slate-top, rgb(95 86 69 / 8%)), var(--slate-bottom, rgb(12 13 14 / 40%))),
-    var(--ui-slate-texture) var(--slate-position, 50% 48%) / 290px auto #262728;
-  box-shadow: inset 0 2px rgb(228 217 193 / 20%), inset 2px 0 rgb(184 176 159 / 14%),
-    inset 0 -3px rgb(7 8 8 / 62%), inset -2px 0 rgb(9 10 10 / 48%),
-    inset 0 0 9px rgb(9 10 10 / 26%), 0 2px 3px rgb(8 7 5 / 57%);
+    radial-gradient(ellipse at 50% 78%, var(--slate-glow), transparent 72%) padding-box,
+    linear-gradient(var(--slate-top, rgb(46 30 23 / 22%)), var(--slate-bottom, rgb(12 12 13 / 51%))) padding-box,
+    var(--ui-slate-texture) var(--slate-position, 50% 48%) / 290px auto padding-box,
+    radial-gradient(ellipse at 22% 95%, var(--rust-oxide), transparent 46%) border-box,
+    linear-gradient(164deg, var(--rust-light), rgb(109 58 43 / 62%) 25%,
+      rgb(64 35 28 / 67%) 57%, var(--rust-oxide)) border-box,
+    var(--ui-iron-texture) var(--slate-position, 50% 48%) / 138px auto border-box #28201d;
+  box-shadow: inset 0 0 0 1px rgb(24 15 12 / 81%), inset 0 2px 4px rgb(16 12 11 / 53%),
+    0 0 0 1px rgb(39 23 18 / 80%), 0 2px 3px rgb(14 9 7 / 65%);
   color: #f3e3c8;
   font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
   font-size: 16px !important;
@@ -104,23 +106,16 @@
 }
 #start-menu .system-menu-actions button:nth-child(3n + 2) { --slate-position: 35% 76%; }
 #start-menu .system-menu-actions button:nth-child(3n) { --slate-position: 65% 22%; }
-#start-menu .system-menu-actions button::before {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  border: 1px solid rgb(185 177 158 / 17%);
-  box-shadow: 0 -1px rgb(8 9 9 / 48%);
-  pointer-events: none;
-}
 #start-menu .system-menu-actions button:focus-visible {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
+  outline: 1px solid #d0a17c;
+  outline-offset: 1px;
 }
 @media (forced-colors: active) {
   #start-menu .system-menu-actions button:focus-visible { outline-color: Highlight; }
 }
 #start-menu .system-menu-actions button:disabled {
-  --slate-edge: #514e48;
+  --rust-light: rgb(117 87 74 / 64%);
+  --rust-oxide: rgb(101 58 43 / 66%);
   --slate-top: rgb(10 11 12 / 43%);
   --slate-bottom: rgb(9 10 11 / 64%);
   color: #afa598;
@@ -131,18 +126,21 @@
 
 @media (hover: hover) {
   #start-menu .system-menu-actions button:hover:not(:disabled) {
-    --slate-edge: #a99578;
+    --rust-light: rgb(198 133 101 / 78%);
+    --rust-oxide: rgb(181 80 49 / 75%);
     --slate-glow: rgb(154 122 83 / 19%);
     color: #fff0d3;
   }
 }
 #start-menu .system-menu-actions button:is(:focus-visible, [aria-pressed="true"]):not(:disabled) {
-  --slate-edge: #e3bc7f;
+  --rust-light: rgb(214 151 114 / 82%);
+  --rust-oxide: rgb(188 84 54 / 77%);
   --slate-glow: rgb(186 135 62 / 27%);
   color: #ffe8ba;
 }
 #start-menu .system-menu-actions button:active:not(:disabled) {
-  --slate-edge: #f0af68;
+  --rust-light: rgb(229 145 90 / 88%);
+  --rust-oxide: rgb(209 86 41 / 84%);
   --slate-glow: rgb(217 96 31 / 46%);
   color: #fff1cd;
 }
@@ -150,7 +148,6 @@
 @media (max-width: 720px) {
   #start-menu {
     --title-zone: clamp(74px, 32dvh, 270px);
-    --menu-width: clamp(152px, 62vw, 218px);
   }
   #start-menu .start-menu-title-lockup {
     width: min(90vw, 460px, calc((var(--title-zone) - var(--title-top) - 8px) * 1.85));
@@ -161,7 +158,7 @@
 /* 橫向短視窗讓置中標誌避開左側直列選單，選單得以使用全高。 */
 @media (min-width: 540px) and (max-height: 520px) {
   #start-menu {
-    --menu-width: clamp(144px, 23vw, 206px);
+    --menu-width: clamp(144px, 23vw, 188px);
     padding-block: 10px !important;
   }
   #start-menu .start-menu-title-lockup {
@@ -169,6 +166,6 @@
   }
   #start-menu .start-menu-controls { max-height: 100%; }
 }
-@media (pointer: fine) and (max-height: 520px) {
-  #start-menu .system-menu-actions button { min-height: 36px !important; }
+@media (pointer: coarse) {
+  #start-menu .system-menu-actions button { min-height: 44px !important; }
 }
