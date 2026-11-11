@@ -1,6 +1,6 @@
 # 遺物系統（2026-11-09）
 
-遺物是**永久生效、不需裝備**的被動效果，全部由寶箱開出（寶箱另外實作）。每件遺物 10 級，
+遺物是**永久生效、不需裝備**的被動效果，全部由熔爐寶箱開出（docs/CHEST_SYSTEM.md）。每件遺物 10 級，
 同名遺物重複取得會累積件數，件數足夠時在遺物頁按「升級」。
 
 ## 資料流
@@ -28,7 +28,7 @@ config/Excel/Relics.xlsx（使用者編輯）
 - 協議 v77：新增 `relic.upgrade({relicId})`。
 - GM：`relic 編號|all [數量]`、`relic max`、`relic reset`（見 GM_command.md）。
 
-## 寶箱介面（給寶箱實作者）
+## 寶箱介面（熔爐寶箱 js/chest.js 使用中）
 
 ```js
 relicGrant(id, n)               // 給 n 件；未解鎖時自動解鎖 Lv.1。回傳給了幾件
@@ -58,7 +58,7 @@ relicChestDoubleChance()        // 雙開戒：雙份獎勵機率（%）
 | 27 | 神賜之戒 | imprintLegendary | forge.js forgeApplyImprint（傳奇特效權重另乘） |
 | 28 | 急行令 | towerAutoSpeed | sim.worker.js simStep 額外推進塔戰；ui.js 連續挑戰結算倒數縮短 |
 | 29 | 封魔令 | towerBossTime | data.js towerTimeLimitWithTalents |
-| 30～32 | 寶箱 | chest* | 寶箱系統另外實作 |
+| 30～32 | 寶箱 | chest* | chest.js：幸運寶箱＝chestGainSalvageXp 經驗倍率、幸運符＝chestDropPairs 遺物格權重、雙開戒＝chestOpen 獎勵加倍 |
 
 新增效果：在 `js/relic.js` 的 `RELIC_EFFECT_KEYS` 與 `tools/config_tables.cjs` 的同名清單加鍵、在讀取點呼叫 `relicValue`，
 `tests/relics.test.cjs` 會檢查兩份清單一致、每個鍵都有遺物也都有讀取點。

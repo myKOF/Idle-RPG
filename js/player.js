@@ -99,6 +99,7 @@ function newGameState() {
       runes: {},              // 符文庫存 { 符文id: 數量 }（符文真言的素材，js/runeword.js）
       runewordSeen: {},       // 已激活過的符文真言 { 真言id: 1 }（圖鑑據此顯示配方與效果，js/runeword.js §2）
       relics: {},             // 遺物 { 編號: { lv: 等級(0＝未解鎖), n: 未用掉的件數 } }（js/relic.js）
+      chests: {},             // 熔爐寶箱 { 編號: { lv, xp, n, on } }（js/chest.js；缺項依表格預設補上）
       relicReturnUntil: 0,    // 遺物「晨鐘」加成到期時刻（毫秒；離線結算時設定）
       resonance: { holes: {} }, // 寶石共鳴：{ holes: { '區域:孔': { gems: [{type, level}], lv } } }（js/gem_resonance.js）
       gemShop: { level: 1, items: [] },

@@ -1,0 +1,276 @@
+/* ============ 熔爐寶箱區（js/ui-chest.js） ============
+   熔爐頁標題列下方、熔爐清單上方的置頂列：分頁是「固定標題＋下方捲動清單」，本列放在兩者之間，
+   不隨熔爐清單捲動。高度約一座熔爐卡片。品質色只換外框、名稱與背光，版面五種寶箱一致。 */
+#tab-newforge .nfc-strip {
+  position: relative;
+  flex: 0 0 auto;
+  margin: 0 0 12px;
+  padding: 10px 12px 12px;
+  border: 1px solid #5a3a24;
+  border-radius: 8px;
+  background: linear-gradient(160deg, #1d1712, #121418 60%);
+  box-shadow: inset 0 0 24px -12px #a2391a;
+}
+#tab-newforge .nfc-strip:empty { display: none; }
+
+#tab-newforge .nfc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+#tab-newforge .nfc-head-title {
+  font-family: var(--af-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: #ece6d8;
+}
+#tab-newforge .nfc-help { margin-left: 2px; }
+
+#tab-newforge .nfc-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* ---- 卡片 ---- */
+#tab-newforge .nfc-card {
+  --q: #b87333;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--q) 55%, #2a2d34);
+  border-radius: 7px;
+  background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--q) 16%, transparent), transparent 70%), #111317;
+}
+#tab-newforge .nfc-card.q-common { --q: #cd7f32; }
+#tab-newforge .nfc-card.q-rare { --q: #38bdf8; }
+#tab-newforge .nfc-card.q-epic { --q: #c084fc; }
+#tab-newforge .nfc-card.q-legendary { --q: #fb923c; }
+#tab-newforge .nfc-card.q-mythic { --q: #f5c542; }
+#tab-newforge .nfc-card.is-locked {
+  border-color: #2a2d34;
+  background: #101114;
+}
+
+#tab-newforge .nfc-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84px;
+  cursor: help;
+}
+#tab-newforge .nfc-card.is-locked .nfc-art { cursor: default; }
+#tab-newforge .nfc-art-svg {
+  width: 100px;
+  height: 84px;
+  overflow: visible;
+}
+#tab-newforge .nfc-art-glow { animation: nfc-glow 3.2s ease-in-out infinite; }
+#tab-newforge .nfc-card.is-locked .nfc-art-chest { filter: grayscale(1) brightness(.5); }
+@keyframes nfc-glow {
+  0%, 100% { opacity: .55; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #tab-newforge .nfc-art-glow { animation: none; }
+}
+
+#tab-newforge .nfc-count {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--q) 60%, #000);
+  border-radius: 4px;
+  background: rgba(10, 10, 12, .82);
+  font-size: 12px;
+  font-weight: 700;
+  color: #f1ead9;
+  font-variant-numeric: tabular-nums;
+}
+
+#tab-newforge .nfc-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+#tab-newforge .nfc-name {
+  overflow: hidden;
+  font-family: var(--af-serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--q);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+#tab-newforge .nfc-card.is-locked .nfc-name { color: #6f6a60; }
+#tab-newforge .nfc-lv {
+  flex: 0 0 auto;
+  padding: 0 5px;
+  border: 1px solid #3a3d44;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #d8cfbb;
+}
+#tab-newforge .nfc-card.is-max .nfc-lv { border-color: var(--q); color: var(--q); }
+
+#tab-newforge .nfc-locked-hint {
+  margin-top: auto;
+  padding: 6px 4px;
+  border: 1px dashed #2f3239;
+  border-radius: 5px;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+  color: #8a857a;
+}
+
+/* ---- 經驗條 ---- */
+#tab-newforge .nfc-bar {
+  position: relative;
+  height: 16px;
+  overflow: hidden;
+  border: 1px solid #2c2f36;
+  border-radius: 8px;
+  background: #0b0c0f;
+  cursor: help;
+}
+#tab-newforge .nfc-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--q) 55%, #000), var(--q));
+  transition: width .35s ease-out;
+}
+#tab-newforge .nfc-bar.is-full i { background: linear-gradient(90deg, #8a6a12, #f5c542); }
+#tab-newforge .nfc-bar span {
+  position: relative;
+  display: block;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+  color: #f4efe2;
+  text-shadow: 0 1px 2px #000;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 按鈕 ---- */
+#tab-newforge .nfc-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+#tab-newforge .nfc-btns .btn {
+  min-width: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+}
+#tab-newforge .nfc-up,
+#tab-newforge .nfc-max { grid-column: 1 / -1; }
+#tab-newforge .nfc-up {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+#tab-newforge .nfc-up .res-icon { width: 14px; height: 14px; }
+#tab-newforge .nfc-up-arrow { font-size: 11px; color: #7ee08a; }
+#tab-newforge .nfc-up.nf-part-poor { opacity: .55; }
+#tab-newforge .nfc-max {
+  padding: 3px 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--q);
+}
+
+/* ---- 掉落提示（#sk-tooltip 內） ---- */
+.nfc-tip-head { margin-bottom: 4px; color: #e7c47c; }
+.nfc-tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  white-space: nowrap;
+}
+.nfc-tip-row b { font-variant-numeric: tabular-nums; color: #f1ead9; }
+.nfc-tip-note { color: #9ee6a4; }
+
+/* ---- 開啟結果浮層 ---- */
+#tab-newforge .nfc-result {
+  --q: #cd7f32;
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 5;
+  width: min(360px, calc(100% - 20px));
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--q);
+  border-radius: 8px;
+  background: rgba(14, 15, 18, .97);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .6), 0 0 18px -6px var(--q);
+  animation: nfc-pop .18s ease-out;
+}
+#tab-newforge .nfc-result.q-rare { --q: #38bdf8; }
+#tab-newforge .nfc-result.q-epic { --q: #c084fc; }
+#tab-newforge .nfc-result.q-legendary { --q: #fb923c; }
+#tab-newforge .nfc-result.q-mythic { --q: #f5c542; }
+@keyframes nfc-pop {
+  from { opacity: 0; transform: translateY(-4px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+#tab-newforge .nfc-res-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+#tab-newforge .nfc-res-head b { font-family: var(--af-serif); color: var(--q); }
+#tab-newforge .nfc-res-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#tab-newforge .nfc-res-list li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+  color: #ddd5c3;
+}
+#tab-newforge .nfc-res-ico {
+  display: inline-flex;
+  flex: 0 0 18px;
+  justify-content: center;
+}
+#tab-newforge .nfc-res-ico img,
+#tab-newforge .nfc-res-ico .gem-ico { width: 18px; height: 18px; object-fit: contain; }
+#tab-newforge .nfc-res-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+#tab-newforge .nfc-res-list b {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: #f4efe2;
+}
+#tab-newforge .nfc-res-note {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #a39d90;
+}

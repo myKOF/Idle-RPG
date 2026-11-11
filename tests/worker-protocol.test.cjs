@@ -36,10 +36,11 @@ const EXPECTED_COMMAND_COUNTS = {
   gm: 1,
   task: 1,
   merchant: 2,
-  relic: 1
+  relic: 1,
+  chest: 2
 };
 const SIMULATION_FILES = [
-  'util.js', 'strings_data.js', 'strings.js', 'data.js', 'runeword_data.js', 'gem_resonance_data.js', 'relic_data.js', 'relic.js', 'formula.js', 'stats.js', 'item.js', 'gem_resonance.js', 'runeword.js', 'skills.js',
+  'util.js', 'strings_data.js', 'strings.js', 'data.js', 'runeword_data.js', 'gem_resonance_data.js', 'relic_data.js', 'relic.js', 'chest_data.js', 'chest.js', 'formula.js', 'stats.js', 'item.js', 'gem_resonance.js', 'runeword.js', 'skills.js',
   'skills2.js', 'talents.js', 'player.js', 'special_rules.js', 'combat.js', 'legendary.js',
   'tower.js', 'factory.js', 'newforge.js', 'forge.js', 'save.js',
   'tasks.js', 'achievements.js'
@@ -130,12 +131,13 @@ test('凍結的 Worker 指令表有 99 條且分類數量固定', () => {
   // v48：gems 面板新增 runewordSeen（成形過的符文真言），指令數不變。
   // v49：rune.unsocket 改為 rune.erase（抹除符文，扣碎片與精華、不退還），指令數不變。
   // v77：遺物——新增 relic.upgrade，98 → 99。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 78);
+  // v79：熔爐寶箱——新增 chest.open／chest.upgrade，99 → 101。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 79);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');
   const names = Object.keys(protocol.COMMANDS);
-  assert.equal(names.length, 99);
+  assert.equal(names.length, 101);
   assert.ok(!names.includes('gem.fuse'), 'gem.fuse 屬於已移除的寶石融合功能，不得復活');
   ['skill.learn', 'skill.maxUpgrade', 'skill.downgrade', 'skill.delete', 'skill.fuse', 'skill.deleteFusion']
     .forEach((name) => assert.ok(!names.includes(name), name + ' 屬於已移除的舊技能系統，不得復活'));

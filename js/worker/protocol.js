@@ -113,7 +113,8 @@
 // v76：神祕商人開關指令、tower.merchant、混合商品及邀請券庫存。
 // v77（2026-11-09 遺物）：新增 relic.upgrade({relicId:int})（98→99）；遺物存檔 player.relics／relicReturnUntil 隨 header.player 投影，不新增面板。
 // v78：手動刷新扣邀請券，商店投影不再依賴刷新計數或時鐘。
-var WORKER_PROTOCOL_VERSION = 78;
+// v79（2026-11-12 熔爐寶箱）：新增 chest.open({chestId,count})／chest.upgrade({chestId})（99→101）；newforge 面板新增 chests＝{ 編號: { lv, xp, n, on } }。
+var WORKER_PROTOCOL_VERSION = 79;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -386,6 +387,11 @@ var COMMANDS = {
   /* -- 遺物（js/relic.js）：升一級，消耗下一級的升級數量件同名遺物。成功回 null，失敗回錯誤字串。
      等級會改背包上限、高塔限時等兩端共算的數值，所以 inv／tower 一起標髒。 -- */
   'relic.upgrade':         { fn: 'relicUpgrade',     args: { relicId: 'int' }, limit: { relicId: { min: 1 } }, dirty: ['header', 'inv', 'tower'] },
+  /* -- 熔爐寶箱（js/chest.js）--
+     開啟：開 count 個（超過持有數時開到持有數為止），成功回 { chestId, opened, doubled, rewards, equip }，失敗回錯誤字串。
+     寶箱可開出遺物、裝備、寶石、符文與邀請券，所以 inv／gems／tower 一起標髒。升級：成功回 null，失敗回錯誤字串。 */
+  'chest.open':            { fn: 'chestOpen',        args: { chestId: 'int', count: 'int' }, limit: { chestId: { min: 1 }, count: { min: 1, max: 9999 } }, dirty: ['newforge', 'header', 'inv', 'gems', 'skills', 'tower'] },
+  'chest.upgrade':         { fn: 'chestUpgrade',     args: { chestId: 'int' }, limit: { chestId: { min: 1 } }, dirty: ['newforge', 'header'] },
   'gem.shopBuy':           { fn: 'buyShopGem',      args: { index: 'int' },                      dirty: ['gems', 'header', 'tower', 'inv'] },
   'gem.shopBuyAll':        { fn: 'buyAllShopGems',   args: {},                                    dirty: ['gems', 'header', 'tower', 'inv'] },
   'gem.shopRefresh':       { fn: 'refreshGemShop',   args: {},                                    dirty: ['gems', 'header', 'tower', 'inv'] },

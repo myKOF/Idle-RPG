@@ -8,6 +8,15 @@
 - 瀏覽器：隔離無音訊Edge fixture載入正式spawnQuestRewardFlyFx原函式，八類gold／scrap／essence／gem／book／rune／skillXp／equip同時飛行，初始8圖示，抵達後0圖示，MutationObserver記錄全部目的地屬性修改0、矩形及HTML保持，1.5秒後拖尾0。未啟動遊戲／Worker或接觸玩家存檔，未做完整遊戲／跨瀏覽器長玩；沒有本項已知新增風險或未完成內容。
 - 交付：可供Review及使用者合併，未合併／推送；Commit為本段所在「[Codex] fix: 移除任務獎勵抵達目的地的縮放動畫」，SHA見聊天。下一步重新載入Codex遊戲領獎驗收。
 
+## FORGE-CHEST-20261112 — 熔爐寶箱系統
+
+- Owner：Claude；Done，單一開發者。使用者要求熔爐頁上方新增約一座熔爐高的置頂寶箱區：五種品質（青銅／藍色／紫色／橘色／暗金），拆解裝備（含離線）累積鍛造經驗→每滿設定值得1箱、每種上限9999；寶箱可升級至20級（金幣＝a＋b^等級），等級越高掉落越好；未解鎖置灰＋鎖鏈圖示，首次獲得該寶箱經驗才解鎖。
+- 新增 config/Excel/Chest.xlsx／CSV（一列＝一種寶箱的一個等級；名稱、品質、初始解鎖、a／b、所需經驗、R0～R11拆解經驗、開啟掉落數、掉落1～16「項目=權重」），config_tables SCHEMAS.Chest → js/chest_data.js；掉落可涵蓋金幣、碎片、精華、太古精華、神性之石、魔魂本源、技能／角色經驗、寶石、符文、裝備、遺物、神祕商人邀請券。
+- 程式：js/chest.js（兩端共載；經驗掛在唯一拆解入口 doSalvage，離線熔爐補算與離線滿載折算一併計入；接上遺物 relicChest* 三介面）、協議 chest.open／chest.upgrade（v79）、存檔 player.chests、熔爐面板投影、js/ui-chest.js＋css、String 表、GM、LV 表、文件與測試。
+- 預檢：index.html／LV／AI_TASKS 與 ai/codex 01473a5a（開始選單）同檔不同區段，分段修改；其餘乾淨。
+- 驗證：node --test tests/chest.test.cjs 14/14（表格往返與解析、經驗／解鎖／上限、升級、每種掉落發放、裝備去向、三件寶箱遺物、存檔淨化、接線、文字）；worker-protocol／sim-command-coverage／relics／sim-forge-parts／vfx-editor-cache-versions 全過；全套測試失敗清單與基準（HEAD 乾淨副本 701 項既有失敗）逐名比對無新增；String 寫死 0；Chest.xlsx／String.xlsx 以 Excel 原生 API 建立／寫入並正常重開驗證。本機 8331（拋棄式狀態，不讀寫玩家存檔）實機：GM 給箱、全開暗金寶箱入帳與結果浮層、升級扣金、滿級、提示、重置後自然拆解累積與鎖定，Console error 0。瀏覽器面板隱藏無法截圖，外觀改以 headless Edge 載入正式 ui-chest.js／CSS 的靜態預覽目視。
+- 已知限制：預設數值為 AI 初排待企劃調整；寶箱圖為程序化 SVG（無外部素材，素材庫無變更）；模擬玩家策略未接開箱（command_coverage 記 noRule）。
+
 ## START-MENU-RUBY-20261110 — 標題紅寶石閃耀紅光
 
 - Owner：Codex；Done，單一開發者。依使用者截圖，在開始選單中央劍柄紅寶石新增高品質紅光，大小與亮度交錯脈動。前置既有1440×737標題原圖與選單完成；使用者追加要求先提供高清GIF預覽。

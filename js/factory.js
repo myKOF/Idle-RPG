@@ -236,6 +236,8 @@ function doSalvage(it, silent, bonus) {
   }
 
   G.factory.stats.salvaged++;
+  // 熔爐寶箱：所有拆解（熔爐、背包手動、滿載自動、離線補算）都在這裡累積鍛造經驗（js/chest.js）
+  if (typeof chestGainSalvageXp === 'function') chestGainSalvageXp(it.rarity);
   UI.dirty.header = true;
   if (!silent) {
     var outputs = [STR(1048, fmt(res.scrap)), STR(1049, fmt(res.gold))];

@@ -6654,6 +6654,7 @@ function renderNewForge() {
   var qc = $id('nf-queue-count');
   if (qc) qc.textContent = fmtFull(nf.queueCount !== undefined ? nf.queueCount : (nf.queue ? nf.queue.length : 0)); // 佇列顯示完整數字，不用簡寫
   renderForgeExtras(factorySnapshot, headerSnapshot); // 附魔書庫存＋強化節點（搬入本頁的面板）
+  if (typeof renderNewForgeChests === 'function') renderNewForgeChests(newForgeSnapshot, headerSnapshot); // 置頂寶箱區（js/ui-chest.js）
   var upgradeBox = $id('nf-part-upgrades');
   if (upgradeBox) setHtmlIfChanged(upgradeBox, nfPartUpgradesHTML(factory, player, nf));
   var allowed = newForgeMaxFurnaces(Math.max(0, Math.floor(Number(player.reincarnations) || 0)));

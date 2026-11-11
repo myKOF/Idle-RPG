@@ -254,7 +254,24 @@ relic all 30 （每件各給 30 件：解鎖 Lv.1 並留 29 件可升級，足�
 relic 28 1 （給 1 件第 28 號「急行令」）
 ```
 
-遺物編號與各級數值見 `config/Excel/Relics.xlsx`；遺物平常只由寶箱開出（寶箱另外實作）。
+遺物編號與各級數值見 `config/Excel/Relics.xlsx`；遺物平常只由熔爐寶箱開出。
+
+### 熔爐寶箱（2026-11-12）
+
+```text
+chest 編號|all [數量] （給寶箱；未解鎖的一併解鎖，每種最多 9999 個）
+chest lv 編號|all 等級 （直接設定寶箱等級 1～20）
+chest reset （清空所有寶箱進度：等級、經驗、數量、解鎖）
+```
+
+例如：
+
+```text
+chest all 100 （五種寶箱各給 100 個）
+chest lv 5 20 （暗金寶箱設為 Lv.20，測最高級掉落）
+```
+
+寶箱編號、所需經驗、拆解經驗與掉落見 `config/Excel/Chest.xlsx`（說明見 `docs/CHEST_SYSTEM.md`）。
 
 ### 模擬離線（2026-11-09）
 
