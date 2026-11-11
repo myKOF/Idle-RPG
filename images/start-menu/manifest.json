@@ -7,14 +7,15 @@
     "originals/battlefield-atmosphere.png": "376932678074f0220f94d7cd420ae608ce356bf153b1390f07ff781e7b93cec3",
     "originals/title-lockup-forged.png": "02eefa57113f25846ca13639408c60dc7cbbe1ac5fa20e741e421cf8a301b915",
     "ATMOSPHERE_PROMPTS.json": "2e799c5084fab31156e177a0460a9764f59f46c41e8410ee50cc606eba830377",
-    "source/start-menu-background.js": "a02348bb9c475cf27c7e295d4dccd016319cf3ba89f88d3234361f0fe97ceb4e"
+    "source/start-menu-background.js": "db310f08f724420c70da91da558ca3b20035da666cda7e5f59a10b94a84397ba"
   },
   "exports": {
     "web/battlefield.webp": "6badf424c816406a4bf441c42f3a0fb91ef6fe250a31e2171c22ea900ee4e32b",
     "web/battlefield-atmosphere.webp": "cd0da47bead6447ecc4622dd7b63a88db97f1a6e4b4d8f8f71d1cd2a3faa070e",
     "web/cloth-atlas.webp": "83b3a07b9e67e06011bc917bb8ef05bd9596e9eaa36ebe04d25ec64febad1af4",
     "web/title-lockup-forged.webp": "f3fbd489e1024281278f520ff6653accfb2365d0bd3115d8322c164012fd830b",
-    "SOURCE.md": "2f72cfad454864d174043727c0b6897a9f5cf7a487261aafd62ce3814433df1f",
+    "originals/gate-light-original.png": "7908227f0c265a1ff23d240ca76bc694600ff086606e0ad16ea8e8b067aac3c0",
+    "SOURCE.md": "804fcad69a5e969002003bca93db1d130f7e4aac09cd293cffeef3bf607b7f23",
     "TITLE_SOURCE.md": "4104ec9df5ee99e671c7d7ece8f3dae201b7c80b67eb354e2d2a6565252671bd"
   }
 }

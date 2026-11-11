@@ -22,6 +22,7 @@ const exportsByName = {
   'battlefield-atmosphere.webp': 'web/battlefield-atmosphere.webp',
   'cloth-atlas.webp': 'web/cloth-atlas.webp',
   'title-lockup-forged.webp': 'web/title-lockup-forged.webp',
+  'gate-light-original.png': 'originals/gate-light-original.png',
   'SOURCE.md': 'SOURCE.md',
   'TITLE_SOURCE.md': 'TITLE_SOURCE.md'
 };

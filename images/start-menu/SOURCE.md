@@ -23,15 +23,17 @@
 
 ## 中央拱門聖光
 
-依使用者確認授權的圖 2，以拱門右側石像與柱身對齊底圖後，比對拱頂、門洞中段與遠景的亮度。Canvas 重建整片近白色雲光、三處拱頂鏤空、拱頂右側的薄雲光，以及四束帶柔邊和亮芯的寬光束。光束彼此錯開明暗與角度，向右下散開並在遠景霧層淡出。內側羽化遮罩維持拱門石柱及雕花的遮擋，前方仍有地平霧帶。減少動態時放慢明暗變化並降低角度擺幅，沿用背景的可見性與卸載機制。
+依使用者授權與直接貼用的要求，`gate-light-original.png` 保留圖 2 的 425 × 288 RGB PNG 原始位元組，素材庫來源為 `originals/gate-light-original.png`。Canvas 依兩側柱身與石像對齊，將原圖左上定位於底圖 (604.5, 94)，比例為每 0.826 個原圖像素對應 1 個底圖像素。最上方 3 列截圖邊緣不參與合成。貼圖只在拱門及右側鄰近雲層接合處羽化，並放在畫面暗角上方，保留原圖的暖灰白色、雲紋與光束。
+
+門洞內以同張原圖的霧光做小幅位移，石柱與拱頂鏤空維持原圖位置。紅色閃電在同一場景座標下合成。減少動態時放慢並縮小霧光位移。圖片載入失敗時仍可使用選單及其餘背景。
 
 ## 接入開始選單
 
-由選單載入 `<script src="js/start-menu-background.js?v=1.0.9"></script>`，並在選單背景的定位容器掛載。
+由選單載入 `<script src="js/start-menu-background.js?v=1.0.10"></script>`，並在選單背景的定位容器掛載。
 
 ```js
 const backdrop = StartMenuBackground.mount(document.getElementById('start-menu'));
-// backdrop.ready 是 Promise<boolean>，底圖及布料可用時為 true。
+// backdrop.ready 是 Promise<boolean>，底圖、布料及拱門原圖可用時為 true。
 // 離開選單或拆卸容器時再呼叫 backdrop.destroy()。可重複呼叫。
 ```
 
