@@ -15831,3 +15831,12 @@ Worker 存活且頁面正常完成載入。
 - 完成4檔：`css/style.css` 以捲動容器實際寬度算同一格邊長，欄寬和列高共用65–74px的尺寸，保留10欄4列、8px格間及底部購買鈕。木框寬100%，左右內縮至少7.5%、上下保留留白，窄版可捲至最右欄。`index.html` 更新樣式快取，`LV_upgrade_system.md` 與本段同步。既有木板素材沿用，素材庫無本項變更。
 - 驗證：隔離全靜音Edge正式頁，1919×1079、1920×912、2560×1440、1280×720、900×900、640×960六種視窗。舊版可重現角飾與格位靠疊，該次實測格位仍量到正方形。新版40格寬高最大差小於0.001px，木框兩側與店景切齊，角飾區留白、兩個窄視窗可橫捲、購買鈕與商品內容無重疊；進店／刷新／買賣／無券流程通過，Console error與pageerror均0。截圖與數據留本聊天 `visualizations/merchant-squares`。
 - `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build`、字串／diff檢查通過。唯讀檢查共通規範、使用者截圖、`js/ui-scale.js`、原木板與商品格渲染、Claude序章相關index差異。既有配置修改留在工作區，可供重載驗收及後續整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-STORE-LEVELS-20261111 — Store 逐級商品機率
+
+- Owner：Codex，Done，單一主開發者。從 `e9e951c2` 延伸，依要求沿用寶石逐級及 `項目=機率%` 格式，後置新增群組與參數欄。使用者儲存關閉工作簿後驗證獨占，使用者另核准分段更新與 Claude `434208e7` 序章相鄰的 `index.html` Worker 快取，後續整合保留兩方版本。
+- Excel原生流程在 Store 後方增加6組各20級，共120列，並於R欄後增加21個參數欄 `參數m` 到 `參數ag`。新增列沿用表格式，篩選擴至 A1:AM181。原 A1:R61 1,098格值核對一致，來源正常重開且重匯 CSV 一致。六組為類別、裝備品質、裝備部位、太古條數、符文階級、預留遺物階級。
+- `tools/apply_params.cjs` 生成 `js/data.js` 六個表，處理留白沿用通用值並拒絕重複、錯誤範圍或機率總和。`js/item.js` 召喚／刷新使用當級、升級使用目標等級，保留塔進度品質上限與遺物加成。`index.html`、bridge及Worker只更新所需快取。同步 `docs/MYSTERY_MERCHANT.md`、`LV_upgrade_system.md` 與回歸。
+- 已驗證：Store Excel→CSV、六個錨點生成，`node tools/apply_params.cjs` 為617一致／0變更／0錨點問題，`--check-anchors` 562項數值擾動後617個錨點仍唯一。`node --test tests/gem-shop.test.cjs tests/gem-enabled.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 32/32與Build 710檔。隔離正式Edge與原生Worker，以試驗CSV生成Lv.1戒指／1階符文、Lv.2胸甲／33階符文（機率填最右欄），實際召喚、升級、刷新與購買通過，Console error／pageerror均0。
+- 完整 `node --test --test-concurrency=8 --test-reporter=tap "tests/*.test.cjs"` 首輪5807項，5103通過、702失敗、2跳過。697項同名失敗見過往完整紀錄，2項符文真言傷害測試在唯讀基準使用相同亂數重現，1項同步逾時獨立重跑通過。另2項寶石測試原先用通用權重隔離其他商品，改用逐級類別設定後在上述32項回歸內通過。完整及個別TAP在 `logs/merchant-layout/store-levels-*.tap`。字串及diff檢查通過。
+- 唯讀檢查共通規範、原生Excel更新器／轉CSV、現有寶石、裝備、符文及遺物加成、舊表與同檔外部差異。素材庫無本項變更，工作區既有配置與同檔詞條修改保留，資料只暫存商人區段。本項可供重載、調整與後續整合，遊戲SHA見交付。

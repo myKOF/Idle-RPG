@@ -267,17 +267,25 @@ var MYSTERY_MERCHANT_PROVIDERS = {
   },
   equipment: {
     available: function () { return true; },
-    roll: function () {
+    roll: function (shopLevel) {
       var cfg = MYSTERY_MERCHANT_SETTINGS;
       var level = Math.max(1, Math.floor(G.player.level * cfg.equipmentLevelMultiplier));
       var range = merchantEquipmentRarityRange();
-      // 品質原本等機率；遺物「神祕裝備券」：傳說以上的權重另外乘上 (1 + 數值%)
-      var rarityPairs = [];
-      for (var rr = range.min; rr <= range.max; rr++) rarityPairs.push([rr, 1]);
+      var rarityPairs = merchantLevelPairs(MERCHANT_EQUIPMENT_RARITY_TABLE, shopLevel);
+      if (rarityPairs) {
+        rarityPairs = rarityPairs.filter(function (pair) { return pair[0] >= range.min && pair[0] <= range.max; });
+        if (!rarityPairs.length) rarityPairs = [[range.max, 1]];
+      } else {
+        rarityPairs = [];
+        for (var rr = range.min; rr <= range.max; rr++) rarityPairs.push([rr, 1]);
+      }
       if (typeof relicBoostWeights === 'function') rarityPairs = relicBoostWeights(rarityPairs, 'merchantHighEquip', function (r) { return r >= RELIC_MERCHANT_HIGH_EQUIP_RARITY; });
       var rarity = wpick(rarityPairs);
-      var ancientCount = wpick(MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE.filter(function (pair) { return pair[1] > 0; }));
-      var equipment = makeEquipment(G.stage && G.stage.current || 1, { level: level, rarity: rarity, ancientCount: ancientCount });
+      var ancientPairs = merchantLevelPairs(MERCHANT_EQUIPMENT_ANCIENT_LEVEL_TABLE, shopLevel) ||
+        MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE.filter(function (pair) { return pair[1] > 0; });
+      var ancientCount = wpick(ancientPairs);
+      var slots = merchantLevelPairs(MERCHANT_EQUIPMENT_SLOT_TABLE, shopLevel);
+      var equipment = makeEquipment(G.stage && G.stage.current || 1, { level: level, rarity: rarity, ancientCount: ancientCount, slot: slots && wpick(slots) });
       return { kind: 'equipment', equipment: equipment, price: Math.round(cfg.equipmentPriceBase * equipment.level * (equipment.rarity + 1)), sold: false };
     },
     canBuy: function () {
@@ -290,10 +298,9 @@ var MYSTERY_MERCHANT_PROVIDERS = {
     }
   },
   rune: {
-    available: function () { return merchantRunePool().length > 0; },
-    roll: function () {
-      // 符文原本等機率；遺物「符文刻印」：19 階以上的權重另外乘上 (1 + 數值%)
-      var runePairs = merchantRunePool().map(function (r) { return [r, 1]; });
+    available: function (level) { return merchantRunePairs(level).length > 0; },
+    roll: function (level) {
+      var runePairs = merchantRunePairs(level);
       if (typeof relicBoostWeights === 'function') runePairs = relicBoostWeights(runePairs, 'merchantHighRune', function (r) { return r.tier >= RELIC_MERCHANT_HIGH_RUNE_TIER; });
       var rune = wpick(runePairs);
       return { kind: 'rune', runeId: rune.id, price: Math.round(MYSTERY_MERCHANT_SETTINGS.runePriceBase * Math.pow(rune.tier, MYSTERY_MERCHANT_SETTINGS.runePriceExponent)), sold: false };
@@ -302,9 +309,19 @@ var MYSTERY_MERCHANT_PROVIDERS = {
     grant: function (it) { addRune(it.runeId, 1); }
   }
 };
-function merchantRunePool() {
+function merchantLevelPairs(table, level) {
+  var pairs = table[level - 1];
+  return pairs && pairs.filter(function (pair) { return pair[1] > 0; });
+}
+function merchantRunePairs(level) {
   if (typeof RUNES === 'undefined') return [];
-  return RUNES.filter(function (r) { return r.tier >= MYSTERY_MERCHANT_SETTINGS.runeMinTier && r.tier <= MYSTERY_MERCHANT_SETTINGS.runeMaxTier; });
+  var pairs = merchantLevelPairs(MERCHANT_RUNE_TIER_TABLE, level);
+  if (pairs) {
+    return pairs.map(function (pair) { return [RUNES[pair[0] - 1], pair[1]]; })
+      .filter(function (pair) { return !!pair[0]; });
+  }
+  return RUNES.filter(function (r) { return r.tier >= MYSTERY_MERCHANT_SETTINGS.runeMinTier && r.tier <= MYSTERY_MERCHANT_SETTINGS.runeMaxTier; })
+    .map(function (r) { return [r, 1]; });
 }
 function merchantEquipmentRarityRange() {
   // 已通關最高層只決定品質上限，不看目前選取層數；尚未通關以首層為基準。
@@ -314,11 +331,14 @@ function merchantEquipmentRarityRange() {
   var max = Math.min(cap, MYSTERY_MERCHANT_SETTINGS.equipmentMaxRarity, RARITIES.length - 1);
   return { min: Math.min(MYSTERY_MERCHANT_SETTINGS.equipmentMinRarity, max), max: max };
 }
-function merchantCategoryPairs() {
-  return ['gem', 'equipment', 'rune', 'relic'].filter(function (kind) {
-    var provider = MYSTERY_MERCHANT_PROVIDERS[kind];
-    return MYSTERY_MERCHANT_SETTINGS[kind + 'Weight'] > 0 && provider && provider.available();
-  }).map(function (kind) { return [kind, MYSTERY_MERCHANT_SETTINGS[kind + 'Weight']]; });
+function merchantCategoryPairs(level) {
+  var pairs = merchantLevelPairs(MERCHANT_CATEGORY_TABLE, level) || ['gem', 'equipment', 'rune', 'relic'].map(function (kind) {
+    return [kind, MYSTERY_MERCHANT_SETTINGS[kind + 'Weight']];
+  });
+  return pairs.filter(function (pair) {
+    var provider = MYSTERY_MERCHANT_PROVIDERS[pair[0]];
+    return pair[1] > 0 && provider && provider.available(level);
+  });
 }
 function merchantPanelView() {
   return { active: MYSTERY_MERCHANT_OPEN, tickets: merchantInvitationCount(G.player), shop: gemShop() };
@@ -337,9 +357,10 @@ function closeMysteryMerchant() {
   return null;
 }
 function rollGemShop(level) {
-  var s = gemShop(), pairs = merchantCategoryPairs();
-  if (!pairs.length) return false;
+  var s = gemShop();
   level = level || s.level;
+  var pairs = merchantCategoryPairs(level);
+  if (!pairs.length) return false;
   var countPairs = GEM_SHOP_COUNT_TABLE[level - 1] || GEM_SHOP_COUNT_TABLE[0];
   var size = Math.min(MYSTERY_MERCHANT_SLOTS, wpick(countPairs));
   var items = [];

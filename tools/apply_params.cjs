@@ -47,8 +47,8 @@ function parseCsv(text) {
 const parameterRows = parseCsv(fs.readFileSync(CSV_PATH, 'utf8')).filter(r => r.length > 1);
 const STORE_CSV_PATH = process.env.STORE_CSV || path.join(ROOT, 'config', 'CSV', 'Store.csv');
 const storeRows = parseCsv(fs.readFileSync(STORE_CSV_PATH, 'utf8')).filter(r => r.length > 1);
-if (JSON.stringify(parameterRows[0]) !== JSON.stringify(storeRows[0])) throw new Error('Store.csv 表頭必須與 game_parameters.csv 相同');
-if (parameterRows.slice(1).some(r => /^8-寶(?:石商店|店刷出)/.test(r[2]))) throw new Error('商人參數只能存在 Store.csv');
+if (JSON.stringify(parameterRows[0]) !== JSON.stringify(storeRows[0].slice(0, parameterRows[0].length))) throw new Error('Store.csv 基本表頭必須與 game_parameters.csv 相同');
+if (parameterRows.slice(1).some(r => /^8-(?:寶石商店|寶店刷出|商人)/.test(r[2]))) throw new Error('商人參數只能存在 Store.csv');
 const allRows = parameterRows.concat(storeRows.slice(1));
 // 地圖專屬資料由獨立地圖表管理；game_parameters 只保留通用公式與計算參數。
 const ZONES_CSV_PATH = process.env.ZONES_CSV || path.join(ROOT, 'config', 'CSV', 'Zones.csv');
@@ -783,6 +783,52 @@ const ancientCountPairs = index['神祕商人']['裝備太古詞條機率'].filt
 });
 if (!ancientCountPairs.length || new Set(ancientCountPairs.map(p => p[0])).size !== ancientCountPairs.length || Math.abs(ancientCountPairs.reduce((sum,p) => sum + p[1],0) - 100) > 1e-8) throw new Error('Store 裝備太古詞條機率不得重複條數，且總和須為100%');
 arrayContent('data', 'MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE', '\n  ' + ancientCountPairs.map(p => '[' + p.join(', ') + ']').join(', ') + '\n', '商人裝備太古詞條機率');
+
+const merchantCategories = new Map([['寶石', 'gem'], ['裝備', 'equipment'], ['符文', 'rune'], ['遺物', 'relic']]);
+const merchantSlots = new Map([
+  ['武器', 'weapon'], ['頭盔', 'helmet'], ['肩甲', 'shoulder'], ['胸甲', 'chest'], ['腰帶', 'belt'],
+  ['手套', 'gloves'], ['護腕', 'wrist'], ['腿甲', 'legs'], ['靴子', 'boots'], ['戒指', 'ring'], ['項鍊', 'amulet']
+]);
+function merchantIntegerKey(min, max) {
+  return key => /^\d+$/.test(key) && Number(key) >= min && Number(key) <= max ? Number(key) : undefined;
+}
+const merchantLevelGroups = [
+  ['MERCHANT_CATEGORY_TABLE', '8-商人刷出類別', key => merchantCategories.get(key), true],
+  ['MERCHANT_EQUIPMENT_RARITY_TABLE', '8-商人裝備品質', merchantIntegerKey(0, 11)],
+  ['MERCHANT_EQUIPMENT_SLOT_TABLE', '8-商人裝備部位', key => merchantSlots.get(key)],
+  ['MERCHANT_EQUIPMENT_ANCIENT_LEVEL_TABLE', '8-商人裝備太古', merchantIntegerKey(0, Number.MAX_SAFE_INTEGER)],
+  ['MERCHANT_RUNE_TIER_TABLE', '8-商人符文階級', merchantIntegerKey(1, 33)],
+  ['MERCHANT_RELIC_TIER_TABLE', '8-商人遺物階級', merchantIntegerKey(1, Number.MAX_SAFE_INTEGER)]
+];
+const hasMerchantLevelRows = merchantLevelGroups.some(([, group]) => index[group]);
+for (const [variable, group, parseKey, canDisable] of merchantLevelGroups) {
+  const groupRows = storeRows.filter(row => row[COL_CAT] === group);
+  if (hasMerchantLevelRows && groupRows.length !== 20) throw new Error('Store ' + group + ' 須有20列商店等級');
+  const rows = Array.from({ length: 20 }, (_, i) => {
+    if (!hasMerchantLevelRows) return null;
+    const name = '商店 Lv.' + (i + 1);
+    const label = 'Store ' + group + ' / ' + name;
+    const cells = index[group] && index[group][name];
+    if (!cells) throw new Error(label + ' 缺少機率列');
+    const entries = cells.map(cell => cell.trim()).filter(cell => cell !== '' && cell !== '0');
+    if (!entries.length) return null;
+    const pairs = entries.map(cell => {
+      const parts = cell.split('=').map(part => part.trim());
+      const key = parseKey(parts[0]);
+      const chance = Number(parts[1]);
+      if (parts.length !== 2 || key === undefined || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(parts[1]) || !Number.isFinite(chance) || chance > 100) {
+        throw new Error(label + ' 的「' + cell + '」需填有效項目=機率%');
+      }
+      return [key, chance];
+    });
+    const total = pairs.reduce((sum, pair) => sum + pair[1], 0);
+    if (new Set(pairs.map(pair => pair[0])).size !== pairs.length || (!(canDisable && total === 0) && Math.abs(total - 100) > 1e-8)) {
+      throw new Error(label + ' 不得重複項目，機率總和須為100%');
+    }
+    return pairs;
+  });
+  arrayContent('data', variable, '\n  ' + rows.map(row => JSON.stringify(row).replace(/,/g, ', ')).join(',\n  ') + '\n', variable);
+}
 
 /* ---- formula.js 具名常數 ---- */
 scalar('formula', 'GLOBAL_DMG_RED_CAP', '2-屬性派生', '全局減傷', 0);
