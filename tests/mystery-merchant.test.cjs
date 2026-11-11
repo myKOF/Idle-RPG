@@ -168,7 +168,8 @@ test('Store由原生Excel匯出，商店參數從主表完整搬移且古詞條�
   const excel=readXlsxRows(path.join(root,'config/Excel/Store.xlsx'),'Store');
   const csv=csvParse(fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8'));
   assert.deepEqual(excel.map(r=>r.map(String)),csv);
-  assert.equal(csv.filter(r=>/^8-寶(?:石商店|店刷出)/.test(r[2])).length,44);
+  assert.equal(csv.filter(r=>/^8-寶(?:石商店|店刷出)/.test(r[2])).length,42);
+  assert.ok(!csv.some(r=>r[2]==='8-寶石商店' && ['手動刷新費用','刷新週期'].includes(r[3])));
   const params=csvParse(fs.readFileSync(path.join(root,'config/CSV/game_parameters.csv'),'utf8'));
   assert.equal(params.filter(r=>/^8-寶(?:石商店|店刷出)/.test(r[2])).length,0);
   for(const sheet of ['game_parameters','計算表']) {

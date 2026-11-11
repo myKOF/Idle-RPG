@@ -101,7 +101,7 @@ function newGameState() {
       relics: {},             // 遺物 { 編號: { lv: 等級(0＝未解鎖), n: 未用掉的件數 } }（js/relic.js）
       relicReturnUntil: 0,    // 遺物「晨鐘」加成到期時刻（毫秒；離線結算時設定）
       resonance: { holes: {} }, // 寶石共鳴：{ holes: { '區域:孔': { gems: [{type, level}], lv } } }（js/gem_resonance.js）
-      gemShop: { level: 1, items: [], refreshCount: 0, hourStart: Date.now() },
+      gemShop: { level: 1, items: [] },
       books: books,
       invUpgrades: 0,
       skillMastery: { level: 0, xp: 0 }, // 技能熟練度：打怪/道具給經驗，等級上限由參數表控制

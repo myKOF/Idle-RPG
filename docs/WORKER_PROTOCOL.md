@@ -1,4 +1,6 @@
-# Worker 協議 v77
+# Worker 協議 v78
+
+v78（2026-11-11 神祕商人）：`gem.shopRefresh({})` 在有效會話內先驗庫存，再以 1 張邀請券換貨，回傳規格與 99 條指令維持。新存檔的 `player.gemShop` 只需要 `level` 與 `items`，舊存檔的刷新計數與時鐘可讀入但無作用。召喚與手動刷新成功後以既有 `tower.merchant.tickets` 及 `header.player` 同步券數，商品最多 40 件。
 
 
 v77（2026-11-09 遺物）：新增 `relic.upgrade({relicId:int})`（98→99）——遺物升一級，消耗下一級「升級數量」件同名遺物；成功回 null，未取得／已滿級／件數不足回錯誤字串，不扣任何東西。存檔新增 `player.relics = { 編號: { lv, n } }`（lv＝等級，0 為未解鎖；n＝尚未用掉的件數）與 `player.relicReturnUntil`（晨鐘加成到期毫秒），缺欄由 mergeDefaults 補空。兩者隨既有 `header.player` 投影，不新增面板；遺物名稱、分類、各級數值與說明由兩端共載的 `RELICS`（js/relic_data.js，來源 config/Excel/Relics.xlsx）提供。效果數值一律經 js/relic.js `relicValue(效果鍵)` 讀取，主執行緒（強化碎片、洗煉精華、背包擴充上限與費用、商人售價、封魔塔限時）讀 header 面板的遺物等級，與 Worker 結算同一支函式。取得遺物（`relicGrant`）目前只有 GM 指令 `relic`，寶箱另外實作。
@@ -284,11 +286,7 @@ v21 補 2 條、v23 補 1 條）。
 
 ### 4.5 不開放為指令的函式
 
-`INTERNAL_ONLY`：`addToInventory`、`rollGemShop`、`shopHourlyReset`、`forgeLog`、`newForgeReturnUnroutable`。
-
-這些是模擬層內部流程，不得為它們開指令通道。P3 已移除 `ui.js` 的所有呼叫點；
-其中 `rollGemShop` / `shopHourlyReset` 改由 Worker 每 tick 自行維護（見 `maintainGemShop`）——
-原本由 UI 呼叫等於「有沒有打開寶石頁」決定商店會不會刷新。
+`INTERNAL_ONLY` 包含 `addToInventory`、`addMerchantInvitations`、`rollGemShop`、`restockMerchantWithInvitation`、`forgeLog` 與 `newForgeReturnUnroutable`。商店換貨由 Worker 內的召喚、手動刷新或升級指令觸發。UI 只送指令並渲染投影。
 
 `LAZY_QUERIES`：`forgeState`、`gemShop`、`skillLevel`、`availableSkillPoints` 是查詢（前兩者會惰性建立子狀態），只能在 Worker 端執行，主執行緒改由 snapshot／panel 取得結果。
 

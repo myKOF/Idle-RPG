@@ -76,8 +76,8 @@ function wrapEngineFns(ctx, attach, depth) {
   const origCmd = ctx.runCommand;
   ctx.simStep = function (dt) { depth.n++; try { return origStep(dt); } finally { depth.n--; } };
   ctx.runCommand = function (n, a) { depth.n++; try { return origCmd(n, a); } finally { depth.n--; } };
-  /* 5Hz 區塊那三支也會寫 G（shownRes / 商店 / 解鎖旗標），同樣要放行。 */
-  for (const fn of ['updateShownRes', 'maintainGemShop', 'checkForgeUnlockNotice']) {
+  /* 5Hz 區塊也會寫資源顯示與解鎖旗標，同樣要放行。 */
+  for (const fn of ['updateShownRes', 'checkForgeUnlockNotice']) {
     const orig = ctx[fn];
     ctx[fn] = function () { depth.n++; try { return orig.apply(null, arguments); } finally { depth.n--; } };
   }

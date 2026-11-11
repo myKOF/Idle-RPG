@@ -15781,3 +15781,16 @@ Worker 存活且頁面正常完成載入。
 - Build：npm.cmd run build通過710檔；node tools/string-table/build_string_csv.cjs --check寫死0；diff／stat／check及自我Review通過。唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、使用者截圖、elite.js／elite_data／elite_boss_recipes、玩家skills2／Status、Runtime／Core／Pixi backend／vfx-tower、七種柱體與護罩Preset、shipped-assets與NPC技能來源、Worker協議、GM／StartMenu／主頁啟動與相關回歸，未修改上述檔案。
 - 瀏覽器：獨立headless Edge、新origin／seed17正式主頁與原生Worker，啟動前全體靜音、不接觸使用者存檔。透過正式gm.exec鎖血／等級／金幣／tower_jump46／damage100%，正式tower.start46後真實致命傷觸發白光與護罩，記錄tb-float目標、dur2／5、area=null及0遺失Preset，目視正式戰場白光及護罩均接地，Console error／warning與pageerror均0。截圖及game-qa.json、current／baseline TAP、test-report.json在本聊天visualizations/boss-anchor；瀏覽器與測試服正常關閉。
 - 交付：本項無未完成實作，可供Review與使用者合併；限制為上述15項既有失敗及未驗跨瀏覽器／行動真機／其他103種技能實戰畫面，沒有新增已知缺陷。遊戲Commit為本段所在「[Codex] fix: 修正BOSS不屈鬥魂光柱與護罩接地」，SHA見聊天；未合併／推送develop或main。下一步重新載入Codex遊戲驗收，再由使用者指定整合。
+
+## MYSTERY-MERCHANT-LAYOUT-20261111 — 四十格商店與蒙面立繪
+
+- Owner：Codex，Done，單一主開發者。修正金幣圖示比例、購買按鈕貼齊格底、10欄4列常駐40格，召喚／手動刷新各扣1張邀請券，封魔塔切頁立即提示。原創蒙面半身立繪左手空掌邀請，圖2紅框只作大小與位置參考。
+- 前置：現行神祕商人已整合，起始 a1eed174。預檢乾淨。允許商人UI／模擬／相依模擬器與版本、Store／String來源與匯出、商人回歸、LV／商人說明、本段及新立繪匯出與雙庫來源。既有其他玩法與素材不屬本項，後續由使用者驗收整合。
+- 驗收：正式頁驗40格、金幣比例／列底對齊、持券切頁動畫、無券拒絕及原生Worker扣券、Excel重開／參數錨點、回歸與Build。核對來源／成品雜湊後雙庫提交。
+- 實作：`index.html`、`css/style.css`、`js/ui.js` 加入蒙面半身立繪、固定四十格、24px格底購買鈕與保留比例的金幣圖示；持券時切入封魔塔立即亮起，減少動態效果設定下維持靜態亮邊。`js/item.js` 統一召喚及刷新扣券，舊定時換貨及金幣刷新退場，金幣升級補貨沿用。同步 data／formula／player／Worker v78／bridge／lagprobe／模擬器／快取及相關回歸；Store來源移除舊刷新兩列，String來源更新三格並同步CSV與產物。`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`、`docs/WORKER_PROTOCOL.md` 一併更新。
+- 素材庫 `64fe615` 保存蒙面原始稿、左手空掌邀請終稿、688 × 688透明WebP及提示詞／雜湊manifest。遊戲WebP由 `tools/assets/export-mystery-merchant.cjs --apply` 匯出，`--check` 核對一致，來源見 `docs/assets/MYSTERY_MERCHANT_PORTRAIT.md`。
+- 驗證：獨立Edge正式首頁、原生Worker與全靜音測試局，1920×912、1366×768、900×900均為每列10格且固定4列、買鈕高度與底距一致、金幣保留原比例；1920下立繪實測344×347px。實際操作確認切頁高亮、進店3→2、刷新2→1且金幣不動、購買不扣券、再次進店1→0，無券按鈕置灰且正式指令拒絕並維持原貨。無Console error或pageerror。截圖與報告留本聊天visualizations/merchant-layout。
+- `npm.cmd run build` 通過710檔。原生Excel兩表正常重開，Store其餘資料一致，String僅變更1516／1624／2446三格。`node tools/apply_params.cjs` 為611一致、0變更、0錨點問題；`--check-anchors` 擾動562個數值仍命中611錨點。`node tools/string-table/build_string_csv.cjs --check` 寫死0。商人／UI／指令／協議回歸42項40通過，兩項裝備UI失敗在起始HEAD唯讀重跑重現；模擬同步／字串／編輯器快取20項全過。
+- 唯讀檢查AI_RULES／AGENTS／Workflow／使用者截圖、塔BOSS掉落與最高通關品質、存檔接線、遊戲面板來源、Excel更新匯出、素材庫根目錄解析器及VFX編輯器快取回歸。
+- 完整 `node --test --test-concurrency=5 --test-reporter=tap "tests/*.test.cjs"` 共5806項，5108通過、696失敗、2跳過。681項失敗名稱見過往全套測試紀錄，餘15項中14項在起始HEAD唯讀重跑重現。另一項VFX編輯器改名回歸的 `fetch failed` 在現版與起始HEAD獨立重跑整檔均通過。完整TAP與比較資料在 `logs/merchant-layout`。
+- 交付：本項實作與指定畫面驗證完成，限制為完整套件仍有失敗及僅實測Edge。遊戲Commit為本段所在「[Codex] feat: 改造神祕商人商品區與邀請券刷新」，SHA見交付。素材庫與遊戲提交供使用者重載驗收後整合。

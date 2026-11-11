@@ -25,7 +25,6 @@ function functionBody(name) {
 test('寶石頁由 Worker panel 投影渲染並以 Command 修改狀態', () => {
   const renderGems = functionBody('renderGems');
   const renderShop = functionBody('renderGemShop');
-  const countdown = functionBody('updateShopCountdown');
   const workshop = readExpanded(path.join(root, 'js/ui-gem-workshop.js'));
   assert.match(workshop, /all \? 'gem\.composeAll' : 'gem\.compose'/);
   assert.match(workshop, /startGemWorkshop\('dismantle', 'gem\.dismantleSlots'/);
@@ -36,7 +35,7 @@ test('寶石頁由 Worker panel 投影渲染並以 Command 修改狀態', () => 
   assert.match(renderGems, /uiGemsPanelSnapshot\(\)/);
   assert.match(renderGems, /gemsViewCount\(gemsSnapshot,/);
   assert.doesNotMatch(renderShop, /\b(?:gemShop|rollGemShop|shopHourlyReset)\(/);
-  assert.doesNotMatch(countdown, /\b(?:gemShop|shopHourlyReset)\(/);
+  assert.match(renderShop, /refBtn\.toggleAttribute\('data-merchant-unavailable', merchant\.tickets < 1\)/);
 
   for (const command of [
     'gem.convert',

@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-  importScripts('protocol.js?v=20261109-relics', '../game-clock.js?v=1.0.1', 'shim.js?v=20261109-treant-audio-sync-a54d6904');
+  importScripts('protocol.js?v=20261111-merchant-layout', '../game-clock.js?v=1.0.1', 'shim.js?v=20261109-treant-audio-sync-a54d6904');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,10 +20,10 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261110-boss3-lv3', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261110-relic-offline-20-merge', '../relic.js?v=20261110-relic-offline-20-merge', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261110-ai-balance-offline-merge', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
-  '../item.js?v=20261109-relics', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261109-relics',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261111-merchant-layout', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261110-relic-offline-20-merge', '../relic.js?v=20261110-relic-offline-20-merge', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261111-merchant-layout', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
+  '../item.js?v=20261111-merchant-layout', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261109-relics',
   '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261110-ai-balance-offline-merge', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
-  '../player.js?v=20261109-relics', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
+  '../player.js?v=20261111-merchant-layout', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261108-tower-boss-floors', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261110-relic-offline',
   '../factory.js?v=20261109-relics', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261110-relic-offline',
   '../tasks.js?v=20261105-forge-fine-task', '../achievements.js?v=20261103-equipment-rarity-v3'
@@ -295,11 +295,6 @@ function backfillItemSockets() {
   if (typeof newForgeAllQueuedItems === 'function') walk(newForgeAllQueuedItems(G));
 }
 
-/* 商人只在已消耗邀請券的會話中維護，不在背景免費鋪貨。 */
-function maintainGemShop() {
-  if (typeof MYSTERY_MERCHANT_OPEN !== 'undefined' && MYSTERY_MERCHANT_OPEN && typeof shopHourlyReset === 'function') shopHourlyReset();
-}
-
 /* 戰鬥中每個 emit 週期都把 battle 標髒。
 
    為什麼需要這一支：血條畫在 battle 面板裡，面板不推就不會重畫。而 combat.js 的
@@ -399,10 +394,6 @@ function slowLoopSnapshot() {
 /* 決定論測試模式的迴圈：每次計時器只走**一整步**，維護區塊固定每 N 步跑一次。
    刻意寫成獨立分支而不是在正式路徑上灑條件式——正式路徑一行都不該被這個模式影響。
 
-   為什麼連節奏都要釘死：正式路徑的維護區塊是照真實時間 5Hz 跑的，而 maintainGemShop
-   首次會呼叫 rollGemShop() 消耗亂數。它在第 2 步還是第 3 步被呼叫，取決於計時器抖動；
-   一旦與 headless 不同，之後整條亂數序列就對不上，比對結果會全錯而且看不出原因。
-
    測試模式下遊戲時間會落後真實時間（每個計時器週期只走 0.1 秒），這是刻意的：
    要的是可重現的步序，不是即時性。
 
@@ -424,7 +415,6 @@ function deterministicLoop() {
     _detSteps++;
     if (_detSteps % Math.round(TICK_EMIT_MS / TICK_MS) === 0) {
       updateShownRes();
-      maintainGemShop();
       checkForgeUnlockNotice();
       markCombatDirty();
       emitTick();
@@ -478,7 +468,6 @@ function loop() {
     if (now - _lastEmitAt >= TICK_EMIT_MS) {
       _lastEmitAt = now;
       updateShownRes();
-      maintainGemShop();
       checkForgeUnlockNotice();
       markCombatDirty();
       emitTick();

@@ -2527,12 +2527,6 @@ function gemDismantlePlan(slots) {
 function fusedGemL1Worth(fg) { return gemL1Worth(GEM_MAX_LEVEL) * (fg.leaves || ((fg.fusions || 0) + 1)); }
 function fusedGemDismantleYield(fg) { return fg.divine ? 0 : Math.floor(fusedGemL1Worth(fg) * GEM_DISMANTLE_KEEP); }
 
-// 商店手動刷新費用 = 基礎費用 ×（下一次重置序號 ^ 指數）；次數每隔固定時間重置
-function shopRefreshCost() {
-  var resetNo = (gemShop().refreshCount || 0) + 1;
-  return Math.round(GEM_SHOP_REFRESH_BASE * Math.pow(resetNo, GEM_SHOP_REFRESH_EXPONENT));
-}
-
 // 寶石商店升級費用 = GEM_SHOP_UPGRADE_BASE + 商店目前等級^GEM_SHOP_UPGRADE_EXPONENT
 //                     × GEM_SHOP_UPGRADE_COEF；達 GEM_SHOP_MAX_LEVEL 時為 0
 function gemShopUpgradeCost(level) {

@@ -245,12 +245,11 @@ function addMerchantInvitations(n) {
   return n;
 }
 function gemShop() {
-  if (!G.player.gemShop) G.player.gemShop = { level: 1, items: [], refreshCount: 0, hourStart: Date.now() };
+  if (!G.player.gemShop) G.player.gemShop = { level: 1, items: [] };
   var s = G.player.gemShop;
   s.level = clamp(s.level || 1, 1, GEM_SHOP_MAX_LEVEL);
   return s;
 }
-var GEM_SHOP_REFRESH_HOURS = 8;
 // 遺物系統完成後可提供 relic 的 available / roll / canBuy / grant 供應器。
 // 未註冊供應器時，即使表格權重為正也不會產生或販售該類商品。
 var MYSTERY_MERCHANT_PROVIDERS = {
@@ -327,14 +326,9 @@ function merchantPanelView() {
 function openMysteryMerchant() {
   if (MYSTERY_MERCHANT_OPEN) return null;
   if (G.tower && G.tower.active) return STR(2441);
-  if (!merchantInvitationCount(G.player)) return STR(2437);
-  if (!merchantCategoryPairs().length) return STR(2449);
-  // 成功鋪貨後才扣券，重複指令在同一會話不重扣。
-  rollGemShop();
-  if (!gemShop().items.length) return STR(2449);
-  G.player.consumables[MYSTERY_INVITATION_ID]--;
+  var error = restockMerchantWithInvitation();
+  if (error) return error;
   MYSTERY_MERCHANT_OPEN = true;
-  UI.dirty.header = true; UI.dirty.tower = true;
   return null;
 }
 function closeMysteryMerchant() {
@@ -342,46 +336,42 @@ function closeMysteryMerchant() {
   UI.dirty.tower = true;
   return null;
 }
-function shopHourlyReset() {
-  if (!MYSTERY_MERCHANT_OPEN) return;
-  var s = gemShop();
-  if (Date.now() - s.hourStart >= GEM_SHOP_REFRESH_HOURS * 3600 * 1000) {
-    s.refreshCount = 0; s.hourStart = Date.now();
-    rollGemShop();
-  }
-}
-function shopResetCountdown() {
-  return Math.max(0, Math.ceil((gemShop().hourStart + GEM_SHOP_REFRESH_HOURS * 3600 * 1000 - Date.now()) / 1000));
-}
-function rollGemShop() {
+function rollGemShop(level) {
   var s = gemShop(), pairs = merchantCategoryPairs();
-  var countPairs = GEM_SHOP_COUNT_TABLE[s.level - 1] || GEM_SHOP_COUNT_TABLE[0];
-  var size = wpick(countPairs), items = [];
-  for (var i = 0; pairs.length && i < size; i++) {
+  if (!pairs.length) return false;
+  level = level || s.level;
+  var countPairs = GEM_SHOP_COUNT_TABLE[level - 1] || GEM_SHOP_COUNT_TABLE[0];
+  var size = Math.min(MYSTERY_MERCHANT_SLOTS, wpick(countPairs));
+  var items = [];
+  for (var i = 0; i < size; i++) {
     var kind = i < pairs.length ? pairs[i][0] : wpick(pairs);
-    items.push(MYSTERY_MERCHANT_PROVIDERS[kind].roll(s.level));
+    items.push(MYSTERY_MERCHANT_PROVIDERS[kind].roll(level));
   }
+  if (!items.length) return false;
   s.items = items;
   UI.dirty.gems = true; UI.dirty.tower = true;
+  return true;
+}
+function restockMerchantWithInvitation() {
+  if (!merchantInvitationCount(G.player)) return STR(2437);
+  if (!rollGemShop()) return STR(2449);
+  G.player.consumables[MYSTERY_INVITATION_ID]--;
+  UI.dirty.header = true;
+  return null;
 }
 function refreshGemShop() {
   if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
-  if (!merchantCategoryPairs().length) return STR(2449);
-  shopHourlyReset();
-  var cost = shopRefreshCost();
-  if (G.player.gold < cost) return STR(1539, fmt(cost));
-  G.player.gold -= cost; gemShop().refreshCount++; rollGemShop();
-  UI.dirty.header = true;
-  return null;
+  return restockMerchantWithInvitation();
 }
 function upgradeGemShop() {
   if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
   var s = gemShop();
-  shopHourlyReset();
   if (s.level >= GEM_SHOP_MAX_LEVEL) return STR(1540);
   var cost = gemShopUpgradeCost(s.level);
   if (G.player.gold < cost) return STR(1539, fmt(cost));
-  G.player.gold -= cost; s.level++; rollGemShop();
+  if (!rollGemShop(s.level + 1)) return STR(2449);
+  G.player.gold -= cost;
+  s.level++;
   UI.dirty.header = true;
   return null;
 }

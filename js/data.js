@@ -2156,6 +2156,7 @@ var GEM_SHOP_TABLE = [
   { lv: 10, price: 1000000000000 }
 ];
 var GEM_SHOP_MAX_LEVEL = 20;
+var MYSTERY_MERCHANT_SLOTS = 40;
 // Store.xlsx → apply_params.cjs；商人資料沿用 gemShop 名稱以相容既有存檔。
 var MYSTERY_MERCHANT_SETTINGS = {
   ticketDropRate: 10,
@@ -2224,13 +2225,11 @@ var GEM_SHOP_TIER_TABLE = [
   [[1, 49.65], [2, 20], [3, 12], [4, 10], [5, 5], [6, 1.25], [7, 1.25], [8, 0.75], [9, 0.1]],
   [[1, 48.9], [2, 20], [3, 12], [4, 10], [5, 5], [6, 1.25], [7, 1.25], [8, 1], [9, 0.5], [10, 0.1]]
 ];
-var GEM_SHOP_REFRESH_BASE = 5000;
-var GEM_SHOP_REFRESH_EXPONENT = 2.5;
 // 升級費用（參數表「8-寶石商店／升級費用」的 a / b / c）；公式見 formula.js gemShopUpgradeCost
 var GEM_SHOP_UPGRADE_BASE = 100000;
 var GEM_SHOP_UPGRADE_EXPONENT = 3.5;
 var GEM_SHOP_UPGRADE_COEF = 4000000;
-function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE（刷新費用公式 shopRefreshCost → js/formula.js §8）
+function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE。
   for (var i = 0; i < GEM_SHOP_TABLE.length; i++) if (GEM_SHOP_TABLE[i].lv === lv) return GEM_SHOP_TABLE[i].price;
   return 0;
 }

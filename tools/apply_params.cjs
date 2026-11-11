@@ -537,8 +537,6 @@ objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runePriceExponent', '神祕商�
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicPriceBase', '神祕商人', '遺物價格基數', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicMinTier', '神祕商人', '遺物最低階級', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicMaxTier', '神祕商人', '遺物最高階級', 0);
-scalar('data', 'GEM_SHOP_REFRESH_BASE', '8-寶石商店', '手動刷新費用', 0);
-scalar('data', 'GEM_SHOP_REFRESH_EXPONENT', '8-寶石商店', '手動刷新費用', 1);
 // 升級費用：參數表早就有「8-寶石商店／升級費用」這一列（a + 等級^b × c），但一直沒接上，
 // 於是係數寫死在 formula.js 裡，改參數表不會生效。2026-08-10 補接。
 scalar('data', 'GEM_SHOP_UPGRADE_BASE', '8-寶石商店', '升級費用', 0);
@@ -1089,8 +1087,6 @@ scalar('formula', 'PEN_IGNORE_B', '3-戰鬥核心', '穿透忽略防禦', 1);
 scalar('formula', 'PEN_IGNORE_C', '3-戰鬥核心', '穿透忽略防禦', 2);
 // 野外菁英掉落倍率（formula.js 常數 ELITE_DROP_MULT；野外 rollFieldDrops 與離線收益共用）
 scalar('formula', 'ELITE_DROP_MULT', '4-野外怪物', '野外菁英掉落倍率', 0);
-// 寶石商店刷新週期（item.js，單一常數）
-scalar('item', 'GEM_SHOP_REFRESH_HOURS', '8-寶石商店', '刷新週期', 0);
 // 技能熟練度（2026-07-30）：經驗需求 ⌊a×L^b+c⌋；上限等級與擊殺經驗率（formula.js §9）
 scalar('formula', 'SKILL_MASTERY_XP_A', '1-成長經驗', '技能熟練度經驗需求', 0);
 scalar('formula', 'SKILL_MASTERY_XP_B', '1-成長經驗', '技能熟練度經驗需求', 1);
