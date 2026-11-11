@@ -12736,8 +12736,8 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 }
 #tab-tower.active #mystery-merchant-open.is-ready { animation:merchant-invite-glow 1.2s ease-in-out infinite alternate; }
 @keyframes merchant-invite-glow {
-  from { box-shadow:0 0 3px #c89b35; filter:brightness(1); }
-  to { box-shadow:0 0 14px 2px #f0cd64, inset 0 0 8px #aa7127; filter:brightness(1.45); }
+  from { box-shadow:0 0 2px rgba(200,155,53,.28); filter:brightness(.65); }
+  to { box-shadow:0 0 18px 3px #e4a446, inset 0 0 10px #995917; filter:brightness(2); }
 }
 .merchant-alert { position:absolute; right:-3px; top:-2px; z-index:2; width:18px; height:18px; border-radius:50%; color:#fff; background:#db3225; border:2px solid #ffe6bd; text-align:center; font:bold 14px/14px sans-serif; }
 .merchant-alert[hidden], #mystery-merchant-panel[hidden] { display:none; }

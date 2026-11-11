@@ -15817,3 +15817,10 @@ Worker 存活且頁面正常完成載入。
 - 素材庫 `00a4fda` 保存原始PNG、1820×728透明WebP及完整ImageGen提示詞／尺寸／SHA-256。RPG Mote Studio 以像素繪圖為主，原創木紋與雕花底座採用內建 imagegen，參考圖用於風格。
 - 正式Edge新局全靜音驗收：零券禁用、領券後即時出現頭像／脈動，亮度1至1.45，減少動態時頭像仍顯示，券用完後隱藏；1920×912外框910×394px、格位約76.6px見方。三種視窗均為40個正方格、間距8px、購買按鈕對齊，窄視窗可捲至最右欄。進店、刷新、購買、無券拒絕通過，Console error與pageerror均0。預覽 `visualizations/merchant-tray/entry.png` 與 `tray.png`。
 - `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18；`npm.cmd run build`、字串檢查、素材匯出 `--check` 與雙庫diff檢查通過。唯讀檢查共通規範、使用者截圖、商人入口狀態、共用塔頁頂列、原立繪與匯出流程。實測範圍為Edge及相關案例，可供重載驗收與整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-GLOW-20261111 — 持券閃爍亮暗差三倍
+
+- Owner：Codex，Done，單一主開發者。從 `40d2e227` 延伸。依使用者要求提高持券提示明暗差，逐檔預檢乾淨。
+- 完成4檔：`css/style.css` 將亮度端點從1／1.45改為0.65／2，差值0.45→1.35，並加強明暗兩端的金色光暈變化。沿用1.2秒往返的單程時間及減少動態偏好；`index.html` 同步CSS快取，`LV_upgrade_system.md` 與本段同步。素材庫無本項變更。
+- 驗證：隔離全靜音Edge正式頁與原生Worker，取動畫兩端計算值0.65／2並目視最暗／最亮截圖；領券即時亮起、用完歸灰、減少動態偏好維持靜態頭像提示。商店進入、刷新、購買及無券拒絕通過，Console error與pageerror均0。兩端截圖留本聊天 `visualizations/merchant-glow/dim.png` 和 `bright.png`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build` 與字串／diff檢查通過。唯讀檢查共通規範、原入口CSS、塔頁持券狀態及相關回歸。既有配置修改留在工作區，可供使用者重載驗收與整合，遊戲SHA見交付。
