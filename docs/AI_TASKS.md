@@ -15824,3 +15824,10 @@ Worker 存活且頁面正常完成載入。
 - 完成4檔：`css/style.css` 將亮度端點從1／1.45改為0.65／2，差值0.45→1.35，並加強明暗兩端的金色光暈變化。沿用1.2秒往返的單程時間及減少動態偏好；`index.html` 同步CSS快取，`LV_upgrade_system.md` 與本段同步。素材庫無本項變更。
 - 驗證：隔離全靜音Edge正式頁與原生Worker，取動畫兩端計算值0.65／2並目視最暗／最亮截圖；領券即時亮起、用完歸灰、減少動態偏好維持靜態頭像提示。商店進入、刷新、購買及無券拒絕通過，Console error與pageerror均0。兩端截圖留本聊天 `visualizations/merchant-glow/dim.png` 和 `bright.png`。
 - `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build` 與字串／diff檢查通過。唯讀檢查共通規範、原入口CSS、塔頁持券狀態及相關回歸。既有配置修改留在工作區，可供使用者重載驗收與整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-SQUARES-20261111 — 商品格等寬等高與木框角飾留白
+
+- Owner：Codex，Done，單一主開發者。從 `a68e9a0a` 延伸，依使用者兩張截圖讓木框與上方店景等寬，四角留出雕花空間。`index.html` 與 Claude `434208e7` 同檔不同段，樣式快取行三方試合乾淨，整檔既有String與序章／bridge兩個載入版本衝突在本次修改前後相同。
+- 完成4檔：`css/style.css` 以捲動容器實際寬度算同一格邊長，欄寬和列高共用65–74px的尺寸，保留10欄4列、8px格間及底部購買鈕。木框寬100%，左右內縮至少7.5%、上下保留留白，窄版可捲至最右欄。`index.html` 更新樣式快取，`LV_upgrade_system.md` 與本段同步。既有木板素材沿用，素材庫無本項變更。
+- 驗證：隔離全靜音Edge正式頁，1919×1079、1920×912、2560×1440、1280×720、900×900、640×960六種視窗。舊版可重現角飾與格位靠疊，該次實測格位仍量到正方形。新版40格寬高最大差小於0.001px，木框兩側與店景切齊，角飾區留白、兩個窄視窗可橫捲、購買鈕與商品內容無重疊；進店／刷新／買賣／無券流程通過，Console error與pageerror均0。截圖與數據留本聊天 `visualizations/merchant-squares`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build`、字串／diff檢查通過。唯讀檢查共通規範、使用者截圖、`js/ui-scale.js`、原木板與商品格渲染、Claude序章相關index差異。既有配置修改留在工作區，可供重載驗收及後續整合，遊戲SHA見交付。

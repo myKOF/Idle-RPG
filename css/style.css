@@ -12772,29 +12772,31 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 }
 .merchant-stock-frame {
   box-sizing:border-box;
-  width:min(94%, 910px);
+  width:100%;
   margin:18px auto 0;
-  padding:32px 36px;
+  padding:clamp(36px, 4.8%, 56px) max(46px, 7.5%);
   background:url('../images/ui/mystery-merchant-tray.webp') center / 100% 100% no-repeat;
 }
 .merchant-stock-scroll {
+  container-type:inline-size;
   overflow-x:auto;
   scrollbar-color:#784a2a #0a0705;
   scrollbar-width:thin;
 }
 #mystery-merchant-panel #gem-shop-grid {
-  grid-template-columns:repeat(10, minmax(0, 1fr));
-  grid-auto-rows:auto;
-  min-width:722px;
-  margin-top:0;
+  --merchant-slot-gap:8px;
+  --merchant-slot-size:clamp(65px, calc((100cqi - 9 * var(--merchant-slot-gap)) / 10), 74px);
+  grid-template-columns:repeat(10, var(--merchant-slot-size));
+  grid-auto-rows:var(--merchant-slot-size);
+  width:max-content;
+  margin:0 auto;
   padding:0;
   border:0;
   background:none;
-  gap:8px;
+  gap:var(--merchant-slot-gap);
 }
 #mystery-merchant-panel .shop-card {
   box-sizing:border-box;
-  aspect-ratio:1;
   min-height:0;
   padding:1px 2px;
   gap:1px;
