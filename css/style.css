@@ -12730,7 +12730,10 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   display:flex;
   align-items:flex-end;
   gap:16px;
-  background:radial-gradient(ellipse at 18% 75%, rgba(171,123,57,.12), transparent 42%);
+  border-radius:8px;
+  background:
+    linear-gradient(0deg, rgba(12,10,9,.7), transparent 30%),
+    url('../images/ui/mystery-merchant-shop.webp') right center / cover no-repeat #1a1411;
 }
 .merchant-portrait {
   display:block;

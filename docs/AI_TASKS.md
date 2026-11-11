@@ -15794,3 +15794,11 @@ Worker 存活且頁面正常完成載入。
 - 唯讀檢查AI_RULES／AGENTS／Workflow／使用者截圖、塔BOSS掉落與最高通關品質、存檔接線、遊戲面板來源、Excel更新匯出、素材庫根目錄解析器及VFX編輯器快取回歸。
 - 完整 `node --test --test-concurrency=5 --test-reporter=tap "tests/*.test.cjs"` 共5806項，5108通過、696失敗、2跳過。681項失敗名稱見過往全套測試紀錄，餘15項中14項在起始HEAD唯讀重跑重現。另一項VFX編輯器改名回歸的 `fetch failed` 在現版與起始HEAD獨立重跑整檔均通過。完整TAP與比較資料在 `logs/merchant-layout`。
 - 交付：本項實作與指定畫面驗證完成，限制為完整套件仍有失敗及僅實測Edge。遊戲Commit為本段所在「[Codex] feat: 改造神祕商人商品區與邀請券刷新」，SHA見交付。素材庫與遊戲提交供使用者重載驗收後整合。
+
+## MYSTERY-MERCHANT-SHOP-ART-20261111 — 神祕商人雜貨店內景
+
+- Owner：Codex，Done，單一主開發者。從 `ef6c7503` 延伸。使用者指定紅框內加入寶石、符文、裝備與藥水等雜貨店背景，並提供有商人的合成預覽。逐檔預檢乾淨。
+- 完成7檔：`css/style.css` 在立繪區載入暖燈貨架內景，以底部漸層維持文字對比；`index.html` 同步CSS快取；`images/ui/mystery-merchant-shop.webp` 新增1800×600 WebP，157692 bytes；`tools/assets/export-mystery-merchant.cjs` 沿用既有素材包匯出並查核兩張圖；同步 `LV_upgrade_system.md`、`docs/assets/MYSTERY_MERCHANT_PORTRAIT.md` 與本段。內景作為陳設，正式商店規則沿用。
+- 素材庫 `0cf4e10` 保存原始PNG、WebP與提示詞／尺寸／SHA-256。RPG Mote Studio 主要用於像素繪圖，原創手繪質感內景使用 Codex 內建 imagegen。正式遊戲以獨立背景和原透明立繪合成，無須重畫人物。
+- 驗證：獨立Edge正式頁與原生Worker，全靜音新局，素材成功解碼、三種視窗仍為10欄4列，金幣比例與格底對齊通過，切頁提示／進店／刷新／買賣／無券流程通過，Console error與pageerror均0。目視桌面與縮小畫面，預覽留本聊天 `visualizations/merchant-shop/preview.png`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18。`npm.cmd run build` 及字串檢查、素材匯出 `--check`、雙庫 `git diff --check` 通過。唯讀檢查AI_RULES／Workflow／使用者截圖、原商人UI與立繪來源、素材庫路徑解析及回歸。範圍以Edge及上述案例驗收，可供使用者重載預覽並整合，遊戲SHA見交付。

@@ -4,4 +4,6 @@
 
 素材庫相對路徑為 `codex-authored/mystery-merchant-20261111`。內含蒙面原始稿、左手姿勢修改後的透明 PNG、688 × 688 透明 WebP 與 manifest。兩次繪圖提示詞及每份圖像的 SHA-256 記錄在 manifest。
 
-執行 `node tools/assets/export-mystery-merchant.cjs --apply` 匯出至 `images/ui/mystery-merchant.webp`，使用 `--check` 核對來源與遊戲成品。RPG Mote Studio 已確認可連線，主要為像素繪圖工具，此次手繪質感與透明角色稿採 imagegen 製作。
+2026-11-11 以 Codex 內建 imagegen 繪製商店背景。琥珀燈照亮石牆與木製貨架，陳列寶石、符文石、盔甲、劍、藥水及雜貨。背景和蒙面立繪分層，畫面下緣由 CSS 加深以提高操作文字可讀性。使用者截圖提供擺放範圍，完整提示詞及背景來源和成品的 SHA-256 皆在同一 manifest。
+
+執行 `node tools/assets/export-mystery-merchant.cjs --apply`，將立繪和商店背景匯出至 `images/ui/mystery-merchant.webp` 與 `images/ui/mystery-merchant-shop.webp`。使用 `--check` 核對來源與遊戲成品。RPG Mote Studio 已確認可連線，主要為像素繪圖工具。商店內景和透明角色稿需要手繪質感，本次採 imagegen 製作。
