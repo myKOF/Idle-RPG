@@ -1,219 +1,171 @@
-@font-face {
-  font-family: "Start Menu Cinzel";
-  src: url("../fonts/start-menu/cinzel-bold.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F;
-}
-
-@font-face {
-  font-family: "Start Menu Noto Serif TC";
-  src: url("../fonts/start-menu/noto-serif-tc-bold.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-}
-
 .start-menu-pending { background: #080a0e; }
 .start-menu-pending :is(#topbar, #game-layout) { visibility: hidden; }
 
 #start-menu {
+  --menu-gutter: clamp(12px, 3.1vw, 64px);
+  --menu-width: 188px;
+  --title-top: clamp(12px, 4dvh, 48px);
   isolation: isolate;
   align-items: flex-end;
   justify-content: flex-start;
-  padding: 12px !important;
+  padding: clamp(12px, 5dvh, 60px) var(--menu-gutter) !important;
   background: radial-gradient(ellipse at 50% 32%, #262a30, #080a0e 75%) !important;
 }
 #start-menu .start-menu-title-lockup {
-  --title-height-limit: max(0px, calc(85dvh - 270px));
   position: absolute;
   z-index: 1;
-  top: 4.5%;
-  left: 4.75%;
-  width: min(40%, 630px, calc(var(--title-height-limit) * 1440 / 737));
-  height: auto;
-  aspect-ratio: 1440 / 737;
-  scale: .85;
-  transform-origin: top left;
+  top: var(--title-top);
+  left: 50%;
+  width: min(42vw, 660px, 64dvh);
+  translate: -50%;
   pointer-events: none;
 }
-#start-menu .start-menu-title-lockup > img { display: block; width: 100%; height: auto; }
-/* 原圖寶石中心 (721,128)／1440×737。定位與光效共用同一個等比例盒。 */
+#start-menu .start-menu-title-lockup > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 4px 5px rgb(10 7 6 / 70%));
+}
 #start-menu .start-menu-ruby {
   position: absolute;
-  left: 50.069444%;
-  top: 17.367707%;
-  width: 7.4%;
+  /* 鍛鐵版標誌的中央寶石中心，隨圖片等比縮放。 */
+  left: 50%;
+  top: 18.3%;
+  width: 10%;
   aspect-ratio: 1;
   translate: -50% -50%;
+  background: radial-gradient(circle, #ffe5c9, rgb(255 105 76 / 92%) 8%,
+    rgb(252 38 48 / 69%) 19%, rgb(184 8 31 / 37%) 35%, rgb(139 0 19 / 14%) 51%, transparent 70%);
   mix-blend-mode: screen;
   pointer-events: none;
-}
-#start-menu .start-menu-ruby::before,
-#start-menu .start-menu-ruby::after,
-#start-menu .start-menu-ruby-rays::before,
-#start-menu .start-menu-ruby-rays::after,
-#start-menu .start-menu-ruby-glint::before,
-#start-menu .start-menu-ruby-glint::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-}
-/* 低頻外暈與較快的寶石內光錯峰，保留原有切面及金屬輪廓。 */
-#start-menu .start-menu-ruby::before {
-  inset: -65%;
-  background: radial-gradient(circle, rgb(255 101 53 / 38%) 0%, rgb(255 23 25 / 35%) 12%,
-    rgb(230 0 30 / 20%) 27%, rgb(190 0 27 / 7%) 48%, transparent 70%);
-  animation: title-ruby-aura 4.8s ease-in-out infinite;
+  animation: title-ruby-flicker 3s ease-in-out infinite;
 }
 #start-menu .start-menu-ruby::after {
-  inset: 18%;
-  background: radial-gradient(circle, rgb(255 239 208 / 70%) 0%, rgb(255 158 103 / 58%) 7%,
-    rgb(255 45 40 / 46%) 20%, rgb(255 0 38 / 20%) 42%, transparent 69%);
-  animation: title-ruby-heart 3.2s ease-in-out infinite;
+  content: "";
+  position: absolute;
+  inset: 15%;
+  rotate: 23deg;
+  background:
+    radial-gradient(circle, #fff8e5, rgb(255 166 126 / 86%) 9%, transparent 24%),
+    radial-gradient(ellipse 49% 6% at center, #ffe2c6, rgb(255 78 72 / 58%) 32%, transparent 100%),
+    radial-gradient(ellipse 5% 39% at center, #ffe2c6, rgb(255 74 68 / 54%) 30%, transparent 100%);
+  animation: title-ruby-glint 3s ease-in-out infinite;
 }
-#start-menu .start-menu-ruby-rays,
-#start-menu .start-menu-ruby-glint { position: absolute; inset: -18%; }
-#start-menu .start-menu-ruby-rays {
-  rotate: -14deg;
-  animation: title-ruby-rays 9.6s ease-in-out infinite;
-}
-#start-menu .start-menu-ruby-rays::before {
-  inset: 49% -24%;
-  background: linear-gradient(90deg, transparent, rgb(255 23 45 / 18%) 12%,
-    rgb(255 127 101 / 80%) 44%, #fff5dc 50%, rgb(255 127 101 / 80%) 56%, transparent);
-}
-#start-menu .start-menu-ruby-rays::after {
-  inset: -12% 49.25%;
-  background: linear-gradient(transparent, rgb(255 71 74 / 24%) 18%,
-    rgb(255 191 161 / 80%) 45%, #fff5dc 50%, rgb(255 121 112 / 65%) 55%, transparent);
-}
-#start-menu .start-menu-ruby-glint {
-  inset: 16%;
-  rotate: 32deg;
-  animation: title-ruby-glint 4.8s ease-in-out infinite;
-}
-#start-menu .start-menu-ruby-glint::before,
-#start-menu .start-menu-ruby-glint::after {
-  background: radial-gradient(ellipse, rgb(255 245 217 / 90%), rgb(255 131 115 / 55%) 22%, transparent 70%);
-}
-#start-menu .start-menu-ruby-glint::before { inset: 46% -10%; }
-#start-menu .start-menu-ruby-glint::after { inset: -10% 46%; }
-@keyframes title-ruby-aura {
-  0%, 100% { opacity: .38; transform: scale(.72); }
-  46% { opacity: .95; transform: scale(1.22); }
-  68% { opacity: .6; transform: scale(.96); }
-}
-@keyframes title-ruby-heart {
-  0%, 100% { opacity: .42; transform: scale(.78); }
-  42% { opacity: 1; transform: scale(1.15); }
-  65% { opacity: .65; transform: scale(.96); }
-}
-@keyframes title-ruby-rays {
-  0%, 28%, 78%, 100% { opacity: .12; transform: scale(.58); }
-  49% { opacity: .9; transform: scale(1.16); }
-  60% { opacity: .36; transform: scale(.82); }
+@keyframes title-ruby-flicker {
+  0%, 82%, 100% { opacity: .12; transform: scale(.76); }
+  25% { opacity: 1; transform: scale(1.18); }
+  38% { opacity: .27; transform: scale(.88); }
+  53% { opacity: .79; transform: scale(1.07); }
 }
 @keyframes title-ruby-glint {
-  0%, 33%, 75%, 100% { opacity: 0; transform: scale(.45); }
-  52% { opacity: .85; transform: scale(1.08); }
+  0%, 14%, 38%, 76%, 100% { opacity: 0; }
+  25% { opacity: 1; }
+  53% { opacity: .56; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #start-menu .start-menu-ruby::before,
-  #start-menu .start-menu-ruby::after,
-  #start-menu .start-menu-ruby-rays,
-  #start-menu .start-menu-ruby-glint { animation: none; opacity: .55; }
-  #start-menu .start-menu-ruby-glint { opacity: .2; }
+  #start-menu .start-menu-ruby { animation: none; opacity: .38; }
+  #start-menu .start-menu-ruby::after { animation: none; opacity: 0; }
 }
 #start-menu .start-menu-controls {
   z-index: 1;
   box-sizing: border-box;
-  /* 原按鈕欄的八成（320px × 0.8），另留 8px 內距。 */
-  width: min(264px, 100%);
+  width: min(100%, var(--menu-width));
   max-height: 100%;
   padding: 4px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
-#start-menu .system-menu-actions { gap: 2px; }
+#start-menu .system-menu-actions { gap: 6px; }
 #start-menu [hidden] { display: none !important; }
 #start-menu .system-menu-actions button {
-  position: relative;
-  isolation: isolate;
-  min-height: 34px !important;
-  padding: 4px 10px;
-  border: 0;
-  background: transparent;
-  color: #f5e7cf;
-  font-family: "Start Menu Cinzel", "Start Menu Noto Serif TC", "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
-  font-size: 19px !important;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  --rust-light: rgb(167 109 83 / 72%);
+  --rust-oxide: rgb(151 62 35 / 67%);
+  --slate-glow: transparent;
+  min-height: 40px !important;
+  padding: 5px 10px;
+  border: 3px solid transparent;
+  border-radius: 0;
+  /* 岩板只畫在內側，露出的鑄鐵邊緣帶有深淺不一的鏽色。 */
+  background:
+    radial-gradient(ellipse at 50% 78%, var(--slate-glow), transparent 72%) padding-box,
+    linear-gradient(var(--slate-top, rgb(46 30 23 / 22%)), var(--slate-bottom, rgb(12 12 13 / 51%))) padding-box,
+    var(--ui-slate-texture) var(--slate-position, 50% 48%) / 290px auto padding-box,
+    radial-gradient(ellipse at 22% 95%, var(--rust-oxide), transparent 46%) border-box,
+    linear-gradient(164deg, var(--rust-light), rgb(109 58 43 / 62%) 25%,
+      rgb(64 35 28 / 67%) 57%, var(--rust-oxide)) border-box,
+    var(--ui-iron-texture) var(--slate-position, 50% 48%) / 138px auto border-box #28201d;
+  box-shadow: inset 0 0 0 1px rgb(24 15 12 / 81%), inset 0 2px 4px rgb(16 12 11 / 53%),
+    0 0 0 1px rgb(39 23 18 / 80%), 0 2px 3px rgb(14 9 7 / 65%);
+  color: #f3e3c8;
+  font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  font-size: 16px !important;
+  font-weight: 800;
+  letter-spacing: .09em;
   line-height: 1.25;
-  text-shadow: 0 1px 2px #29170e, 0 2px 5px #2b1b10, 0 0 7px #28170ed9;
+  text-shadow: 0 1px 2px #0c0907;
 }
-#start-menu button:focus-visible {
-  outline: none;
-  text-shadow: 0 1px 2px #29170e, 0 2px 5px #2b1b10, 0 0 7px #dfbe83;
+#start-menu .system-menu-actions button:nth-child(3n + 2) { --slate-position: 35% 76%; }
+#start-menu .system-menu-actions button:nth-child(3n) { --slate-position: 65% 22%; }
+#start-menu .system-menu-actions button:focus-visible {
+  outline: 1px solid #d0a17c;
+  outline-offset: 1px;
 }
-#start-menu button:disabled { opacity: .5; cursor: default; }
+@media (forced-colors: active) {
+  #start-menu .system-menu-actions button:focus-visible { outline-color: Highlight; }
+}
+#start-menu .system-menu-actions button:disabled {
+  --rust-light: rgb(117 87 74 / 64%);
+  --rust-oxide: rgb(101 58 43 / 66%);
+  --slate-top: rgb(10 11 12 / 43%);
+  --slate-bottom: rgb(9 10 11 / 64%);
+  color: #afa598;
+  opacity: .94;
+  cursor: default;
+}
 #start-menu-status { color: var(--dialog-gold); margin: 12px 0 0; text-align: center; text-shadow: 0 1px 3px #000; }
-#start-menu-modes button[aria-pressed="true"] { color: #efd7a4; }
 
 @media (hover: hover) {
-  #start-menu button:hover:not(:disabled) {
-    color: #fff2d8;
-  }
-  #start-menu button:hover:not(:disabled)::before {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    inset-inline: 0;
-    top: 50%;
-    height: 1.45em;
-    transform: translateY(-50%);
-    background: linear-gradient(transparent, rgb(249 228 191 / 38%) 13%,
-      rgb(241 221 183 / 30%) 25% 75%, rgb(249 228 191 / 38%) 87%, transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 42% 58%, transparent);
-    pointer-events: none;
+  #start-menu .system-menu-actions button:hover:not(:disabled) {
+    --rust-light: rgb(198 133 101 / 78%);
+    --rust-oxide: rgb(181 80 49 / 75%);
+    --slate-glow: rgb(154 122 83 / 19%);
+    color: #fff0d3;
   }
 }
+#start-menu .system-menu-actions button:is(:focus-visible, [aria-pressed="true"]):not(:disabled) {
+  --rust-light: rgb(214 151 114 / 82%);
+  --rust-oxide: rgb(188 84 54 / 77%);
+  --slate-glow: rgb(186 135 62 / 27%);
+  color: #ffe8ba;
+}
+#start-menu .system-menu-actions button:active:not(:disabled) {
+  --rust-light: rgb(229 145 90 / 88%);
+  --rust-oxide: rgb(209 86 41 / 84%);
+  --slate-glow: rgb(217 96 31 / 46%);
+  color: #fff1cd;
+}
 
+@media (max-width: 720px) {
+  #start-menu {
+    --title-zone: clamp(74px, 32dvh, 270px);
+  }
+  #start-menu .start-menu-title-lockup {
+    width: min(90vw, 460px, calc((var(--title-zone) - var(--title-top) - 8px) * 1.85));
+  }
+  #start-menu .start-menu-controls { max-height: calc(100dvh - var(--title-zone) - 22px); }
+}
+
+/* 橫向短視窗讓置中標誌避開左側直列選單，選單得以使用全高。 */
+@media (min-width: 540px) and (max-height: 520px) {
+  #start-menu {
+    --menu-width: clamp(144px, 23vw, 188px);
+    padding-block: 10px !important;
+  }
+  #start-menu .start-menu-title-lockup {
+    width: min(46vw, calc(100vw - (var(--menu-width) + var(--menu-gutter) + 8px) * 2), 83dvh);
+  }
+  #start-menu .start-menu-controls { max-height: 100%; }
+}
 @media (pointer: coarse) {
   #start-menu .system-menu-actions button { min-height: 44px !important; }
-  #start-menu .start-menu-title-lockup { --title-height-limit: max(0px, calc(85dvh - 340px)); }
-}
-
-@media (min-width: 601px) and (min-height: 501px) {
-  #start-menu .start-menu-controls {
-    margin-inline-start: max(-38px, -2.5vw);
-    margin-block-end: min(58px, 8.4vh);
-  }
-}
-
-@media (max-width: 600px), (max-height: 500px) {
-  /* 小視窗原本使用較薄的外框內距，按當時的按鈕欄寬縮至八成。 */
-  #start-menu .start-menu-controls { width: min(100%, calc(min(332px, 100vw - 68px) * 0.8 + 8px)); }
-}
-
-@media (max-width: 600px) {
-  #start-menu .start-menu-title-lockup {
-    left: 50%;
-    translate: -50%;
-    transform-origin: top center;
-    width: min(90%, 420px, calc(var(--title-height-limit) * 1440 / 737));
-    --title-height-limit: max(0px, calc(94dvh - 340px));
-  }
-}
-
-@media (min-width: 501px) and (max-height: 500px) {
-  #start-menu .start-menu-title-lockup {
-    top: 6.5%;
-    right: 5%;
-    left: auto;
-    translate: none;
-    transform-origin: top right;
-    width: min(43%, 410px, calc(96vw - 298px), calc(var(--title-height-limit) * 1440 / 737));
-    --title-height-limit: 84dvh;
-  }
 }

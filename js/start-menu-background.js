@@ -1,6 +1,6 @@
 'use strict';
 
-/* 裝飾層的場景座標對應 images/start-menu/battlefield.webp。
+/* 裝飾層的場景座標對應 images/start-menu/battlefield-atmosphere.webp。
    選單負責提供定位容器、掛載和卸載，這裡只管理背景自己的生命週期。 */
 var StartMenuBackground = (function () {
   const ASSETS = new URL('../images/start-menu/', document.currentScript.src);
@@ -10,20 +10,29 @@ var StartMenuBackground = (function () {
   const FRAME_MS = 1000 / 30;
   const REDUCED_MOTION_SCALE = .65;
   const GATE_FOG_RATE = 1.25;
-  const MIDGROUND_FOG_SPEED = 22.5;
+  const MIDGROUND_FOG_SPEED = 14;
   const MIDGROUND_FOG_DENSITY = 1.30;
   const DUST_GUST_RATE = 1.30;
   const FIRE_INTENSITY = 2;
   const GATE_SKY_OPENING =
     'M729 258Q744 217 785 195L810 193 832 168 853 160 871 207 900 191Q937 212 930 258' +
     'L914 315 901 349 878 365 864 398 848 393 820 413 801 395 778 356 765 338 745 366 724 376Z';
+  // 授權原圖的左上角與底圖比例，以兩側石柱及雕像對齊。
+  const GATE_LIGHT_SOURCE = { x: 604.5, y: 94, scale: 1 / .826, trimTop: 3 };
+  const GATE_LIGHT_BOUNDS = { x: 676, y: 94, width: 444, height: 356 };
+  const GATE_LIGHT_BLEND =
+    'M802 85Q846 67 891 91L922 159Q946 202 943 258L927 385L919 454H711L711 285Q710 232 749 190Z';
+  const RIGHT_ARCH_PATCH = { x: 1196, y: 334, width: 225, height: 240 };
+  const RIGHT_ARCH_BLEND =
+    'M1229 374Q1249 363 1261 383L1269 410Q1281 439 1292 466Q1328 481 1364 496' +
+    'L1396 506Q1406 524 1390 541Q1317 557 1245 539Q1221 533 1227 503L1246 478Q1244 451 1230 430Q1217 410 1229 374Z';
   const LIGHTNING_BOUNDS = { x: 700, y: 135, w: 280, h: 300 };
   const DUST_ORIGINS = { x: -135, y: 535, w: WIDTH - 135, h: 362 };
   // 紅框使用底圖座標，跟隨滿版裁切。
   const LOCAL_HAZE = { x: 208, y: 426, w: 756, h: 405 };
   const LOCAL_DUST_AMOUNT = 2;
   const LOCAL_DUST_OVERLAP = LOCAL_HAZE.y + LOCAL_HAZE.h - DUST_ORIGINS.y;
-  // 陣風在區內偏上游處掀起，留足距離讓沙霧向右展開。
+  // 陣風從遮罩的左半起掀，保留向右消散的空間。
   const LOCAL_DUST_ORIGINS = {
     x: LOCAL_HAZE.x, y: DUST_ORIGINS.y, w: LOCAL_HAZE.w - 235, h: LOCAL_DUST_OVERLAP - 44
   };
@@ -39,13 +48,14 @@ var StartMenuBackground = (function () {
     { sprite: 0, x: 1360, y: 485, w: 108, h: 48, lean: -15, drop: 22, swing: 11, haze: .25 },
     { sprite: 1, x: 1630, y: 405, w: 54, h: 16, lean: -4, drop: 22, swing: 6, haze: .45 }
   ];
+  // 底圖錨點依序為鎧甲胸縫、斷劍護手、右側肋骨與遠近殘骸。
   const WISPS = [
-    [65, 538, 64], [1085, 654, 37], [1583, 643, 68],
-    [1008, 753, 22], [1187, 702, 21], [1164, 773, 17], [1190, 772, 15]
+    [550, 615, 69, 1], [955, 810, 55, .90], [1289, 674, 68, .87],
+    [65, 538, 53, .46], [1085, 654, 37, .55], [1583, 643, 54, .67], [1187, 702, 24, .48]
   ];
   // 火源對齊底圖山稜的明亮裂隙。最遠一帶在岩脊後方，只露出較弱的火光。
   const FIRE_RIDGES = [
-    { strength: .82, points: [[1249, 284, 24], [1269, 318, 22], [1281, 313, 24], [1300, 308, 25], [1314, 301, 19]] },
+    { strength: .82, points: [[1206, 221, 22], [1249, 284, 24], [1269, 318, 22], [1281, 313, 24], [1300, 308, 25], [1314, 301, 19]] },
     { strength: .94, points: [[1411, 364, 22], [1434, 357, 22], [1457, 351, 24], [1470, 345, 24], [1507, 336, 24]] },
     { strength: .59, points: [[1566, 282, 18], [1582, 284, 20], [1599, 277, 17], [1622, 297, 19]] }
   ];
@@ -151,6 +161,101 @@ var StartMenuBackground = (function () {
     return { surface, mask, context: surface.getContext('2d') };
   }
 
+  function makeGateLight(image) {
+    const { x, y, width, height } = GATE_LIGHT_BOUNDS;
+    const source = GATE_LIGHT_SOURCE;
+    const still = canvas(width, height);
+    const stillContext = still.getContext('2d');
+    const sourceHeight = image.naturalHeight - source.trimTop;
+    stillContext.imageSmoothingQuality = 'high';
+    stillContext.drawImage(image, 0, source.trimTop, image.naturalWidth, sourceHeight,
+      source.x - x, source.y + source.trimTop * source.scale - y,
+      image.naturalWidth * source.scale, sourceHeight * source.scale);
+
+    const mask = canvas(width, height);
+    const maskContext = mask.getContext('2d');
+    maskContext.translate(-x, -y);
+    maskContext.filter = 'blur(8px)';
+    maskContext.fill(new Path2D(GATE_LIGHT_BLEND));
+    maskContext.filter = 'none';
+    maskContext.globalCompositeOperation = 'destination-in';
+    // 淡掉截圖邊緣，保留門洞內完整的原圖色調。
+    const vertical = maskContext.createLinearGradient(0, 98, 0, 442);
+    vertical.addColorStop(0, 'transparent');
+    vertical.addColorStop(.026, '#fff');
+    vertical.addColorStop(.73, '#fff');
+    vertical.addColorStop(1, 'transparent');
+    maskContext.fillStyle = vertical;
+    maskContext.fillRect(x, y, width, height);
+
+    // 右上雲層使用獨立的柔邊，避開截圖上緣的水平接縫。
+    maskContext.save();
+    maskContext.globalCompositeOperation = 'source-over';
+    maskContext.translate(1053, 138);
+    maskContext.scale(74, 40);
+    const skyFade = maskContext.createRadialGradient(0, 0, 0, 0, 0, 1);
+    skyFade.addColorStop(0, '#fff');
+    skyFade.addColorStop(.45, 'rgba(255,255,255,.62)');
+    skyFade.addColorStop(1, 'transparent');
+    maskContext.fillStyle = skyFade;
+    maskContext.fillRect(-1, -1, 2, 2);
+    maskContext.restore();
+
+    const right = maskContext.createLinearGradient(1090, 0, 1119, 0);
+    right.addColorStop(0, '#fff');
+    right.addColorStop(1, 'transparent');
+    maskContext.fillStyle = right;
+    maskContext.fillRect(x, y, width, height);
+
+    stillContext.globalCompositeOperation = 'destination-in';
+    stillContext.drawImage(mask, 0, 0);
+
+    // 只讓門洞內的霧光輕移，石材和鏤空留在靜態原圖層。
+    const mistMask = canvas(width, height);
+    const mistMaskContext = mistMask.getContext('2d');
+    mistMaskContext.translate(836 - x, 266 - y);
+    mistMaskContext.scale(75, 94);
+    const feather = mistMaskContext.createRadialGradient(0, 0, 0, 0, 0, 1);
+    feather.addColorStop(0, '#fff');
+    feather.addColorStop(.46, '#fff');
+    feather.addColorStop(1, 'transparent');
+    mistMaskContext.fillStyle = feather;
+    mistMaskContext.fillRect(-1, -1, 2, 2);
+
+    const mist = canvas(width, height);
+    const mistContext = mist.getContext('2d');
+    mistContext.drawImage(still, 0, 0);
+    mistContext.globalCompositeOperation = 'destination-in';
+    mistContext.drawImage(mistMask, 0, 0);
+    return { still, mist };
+  }
+
+  function drawGateLight(ctx, { still, mist }, time, motionScale) {
+    ctx.clearRect(0, 0, still.width, still.height);
+    ctx.drawImage(still, 0, 0);
+    ctx.save();
+    ctx.globalAlpha = .23;
+    ctx.drawImage(mist, 4 * Math.sin(time * .43) * motionScale, 3 * Math.sin(time * .32) * motionScale);
+    ctx.restore();
+  }
+
+  function makeRightArchPatch(image) {
+    const { x, y, width, height } = RIGHT_ARCH_PATCH;
+    const patch = canvas(width, height);
+    const ctx = patch.getContext('2d');
+    ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+
+    // 用加光前的同一座拱門覆蓋光束及地面反光，向外羽化。
+    const mask = canvas(width, height);
+    const maskContext = mask.getContext('2d');
+    maskContext.translate(-x, -y);
+    maskContext.filter = 'blur(8px)';
+    maskContext.fill(new Path2D(RIGHT_ARCH_BLEND));
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.drawImage(mask, 0, 0);
+    return patch;
+  }
+
   function makeAtmosphere() {
     const sky = canvas(768, 432);
     const skyContext = sky.getContext('2d');
@@ -182,7 +287,8 @@ var StartMenuBackground = (function () {
       lightningGlow: vaporTexture(192, 144, [242, 74, 65], 1751, false),
       sand: vaporTexture(192, 48, [181, 138, 89], 561, false),
       haze: vaporTexture(192, 56, [141, 108, 76], 801, false),
-      spirit: vaporTexture(64, 112, [115, 176, 154], 171, false)
+      spirit: vaporTexture(64, 112, [93, 201, 183], 171, false),
+      embers: makeEmbers()
     };
   }
 
@@ -428,29 +534,33 @@ var StartMenuBackground = (function () {
   }
 
   function drawWisps(ctx, sprite, time) {
-    for (const [index, [x, y, height]] of WISPS.entries()) {
+    ctx.save();
+    for (const [index, [x, y, height, strength]] of WISPS.entries()) {
       const t = time + index * 2.31;
-      const light = ctx.createRadialGradient(x, y - 3, 1, x, y - 3, height * .32);
-      light.addColorStop(0, 'rgba(120,185,155,.31)');
-      light.addColorStop(1, 'rgba(96,152,130,0)');
+      const radius = height * .44;
+      const light = ctx.createRadialGradient(x, y - 3, 1, x, y - 3, radius);
+      light.addColorStop(0, 'rgba(87,217,191,.56)');
+      light.addColorStop(.32, 'rgba(58,180,160,.27)');
+      light.addColorStop(1, 'rgba(49,146,150,0)');
+      ctx.globalAlpha = strength * (.84 + .16 * Math.sin(t * 1.3));
       ctx.fillStyle = light;
-      ctx.fillRect(x - height * .32, y - height * .37, height * .64, height * .65);
+      ctx.fillRect(x - radius, y - 3 - radius, radius * 2, radius * 2);
       for (let curl = 0; curl < 8; curl++) {
-        const age = mod(t * (.42 + (curl % 3) * .027) + curl * .127, 1);
-        const drift = height * (.52 * age * age + .18 * Math.sin(age * 8 + t * 1.24 + curl) * age);
+        const age = mod(t * (.32 + (curl % 3) * .027) + curl * .127, 1);
+        const drift = height * age * (.16 + .48 * age + .09 * Math.sin(age * 8 + t * 1.24 + curl));
         const w = height * (.22 + .38 * age), h = height * (.48 + .23 * age);
         const peak = Math.sin(age * Math.PI);
         ctx.save();
         ctx.translate(x + drift, y - age * height);
-        ctx.rotate(.12 + .40 * age + Math.sin(t * 1.9 + curl) * .16);
-        ctx.globalAlpha = .63 * peak * (1 - age * .54);
+        ctx.rotate(.18 + .40 * age + Math.sin(t * 1.9 + curl) * .11);
+        ctx.globalAlpha = .78 * strength * peak * (1 - age * .54);
         ctx.drawImage(sprite, -w / 2, -h * .72, w, h);
         ctx.restore();
       }
       const filament = ctx.createLinearGradient(x, y, x, y - height);
-      filament.addColorStop(0, 'rgba(173,213,176,.46)');
-      filament.addColorStop(.35, 'rgba(157,205,177,.24)');
-      filament.addColorStop(1, 'rgba(105,178,156,0)');
+      filament.addColorStop(0, 'rgba(177,252,221,.63)');
+      filament.addColorStop(.35, 'rgba(103,213,205,.33)');
+      filament.addColorStop(1, 'rgba(90,180,192,0)');
       ctx.strokeStyle = filament;
       ctx.lineCap = 'round';
       for (let thread = 0; thread < 3; thread++) {
@@ -459,12 +569,49 @@ var StartMenuBackground = (function () {
         ctx.lineWidth = height * (.014 + thread * .004);
         ctx.beginPath();
         ctx.moveTo(x + (thread - 1) * height * .045, y - 2);
-        ctx.bezierCurveTo(x - height * (.1 + sway * .15), y - height * .31,
-          x + height * (.27 + flow * .19), y - height * .61,
-          x + height * (.39 + sway * .17), y - height * (.72 + thread * .105));
+        ctx.bezierCurveTo(x + height * (.06 + sway * .10), y - height * .31,
+          x + height * (.36 + flow * .14), y - height * .61,
+          x + height * (.65 + sway * .14), y - height * (.72 + thread * .105));
         ctx.stroke();
       }
+      ctx.fillStyle = '#b3ffe7';
+      for (let mote = 0; mote < 6; mote++) {
+        const age = mod(t * (.20 + mote * .019) + mote * .227, 1);
+        const drift = age * (.50 + .18 * Math.sin(mote * 3.4 + age * 7));
+        const size = height * (.014 + (mote % 3) * .005) * (1 - age * .4);
+        ctx.globalAlpha = strength * .79 * Math.sin(age * Math.PI) ** 2;
+        ctx.fillRect(x + height * drift, y - height * 1.14 * age, size, size);
+      }
     }
+    ctx.restore();
+  }
+
+  function makeEmbers() {
+    const random = randomStream(4547);
+    return Array.from({ length: 34 }, () => ({
+      x: random() * (WIDTH + 40),
+      y: 310 + random() * 585,
+      phase: random() * TAU,
+      speed: 9 + random() * 26,
+      rise: 2 + random() * 6,
+      size: .5 + random() * 1.6
+    }));
+  }
+
+  function drawEmbers(ctx, embers, time, motionScale) {
+    ctx.save();
+    for (const { x, y, phase, speed, rise, size } of embers) {
+      const drift = mod(x + time * speed, WIDTH + 40) - 20;
+      const lift = mod(y - 310 - time * rise, 585);
+      const altitude = 310 + lift + Math.sin(time * .85 + phase) * 6;
+      const flicker = .5 + .5 * Math.sin(time * 1.4 + phase);
+      ctx.globalAlpha = .64 * motionScale * flicker ** 2 * Math.sin(lift / 585 * Math.PI);
+      ctx.fillStyle = '#b85f38';
+      ctx.fillRect(drift - size * .55, altitude - size * .55, size * 2.1, size * 2.1);
+      ctx.fillStyle = '#ffc18b';
+      ctx.fillRect(drift, altitude, size, size * .8);
+    }
+    ctx.restore();
   }
 
   function fireLight(image, x, y, radius) {
@@ -558,7 +705,7 @@ var StartMenuBackground = (function () {
     const y = area.y + random() * area.h, x = area.x + random() * area.w;
     const depth = .58 + (y - DUST_ORIGINS.y) / DUST_ORIGINS.h * .89;
     const release = .65 + random() * 2.95, strength = .31 + random() * .69;
-    const sweep = depth * (120 + random() * 235);
+    const sweep = depth * (80 + random() * 140);
     const span = depth * (185 + random() * 195), slope = (random() - .5) * 37;
     const push = .74 + strength * .64;
 
@@ -577,11 +724,11 @@ var StartMenuBackground = (function () {
     }
 
     const grains = Array.from({ length: Math.round(156 + strength * 243) * amount }, () => ({
-      ...liftOff(), speed: depth * push * (35 + random() * 111), life: .54 + random() * 1.57,
+      ...liftOff(), speed: depth * push * (22 + random() * 58), life: .54 + random() * 1.57,
       loft: depth * (2 + random() * 13), size: depth * (.25 + random() * random() * 1.35)
     }));
     const trails = Array.from({ length: Math.round(6 + strength * 12) * amount }, () => ({
-      ...liftOff(), speed: depth * push * (38 + random() * 48), life: 1.7 + random() * 2.9,
+      ...liftOff(), speed: depth * push * (21 + random() * 33), life: 1.7 + random() * 2.9,
       loft: depth * (2 + random() * 8), breadth: .66 + random() * .68, pale: random() > .46
     }));
     return { depth, strength, grains, trails, end: start + release + 4.6 };
@@ -668,18 +815,23 @@ var StartMenuBackground = (function () {
     const fill = { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover' };
     const still = layer(root, new Image(), fill);
     still.alt = '';
-    still.src = new URL('battlefield.webp', ASSETS);
+    still.src = new URL('battlefield-atmosphere.webp', ASSETS);
     const surface = layer(root, canvas(1, 1), fill);
     const ctx = surface.getContext('2d');
     layer(root, document.createElement('div'), {
       position: 'absolute', inset: '0',
       background: 'radial-gradient(ellipse at 50% 49%, rgba(17,12,12,.26), transparent 63%), radial-gradient(ellipse at 50% 45%, transparent 49%, rgba(16,10,10,.37) 100%)'
     });
+    // 原圖已帶光影，放在暗角上方，避免再把原來的色調壓暗。
+    const gateBounds = GATE_LIGHT_BOUNDS;
+    const gateSurface = layer(root, canvas(gateBounds.width, gateBounds.height), { position: 'absolute' });
+    gateSurface.className = 'start-menu-gate-light';
+    const gateContext = ctx && gateSurface.getContext('2d');
 
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const atmosphere = ctx && makeAtmosphere();
     let disposed = false, inView = false, frame = null, previous = null;
-    let sprites, fires, time = 5.6, lastPaint = -Infinity;
+    let sprites, fires, gateLight, rightArchPatch, time = 5.6, lastPaint = -Infinity;
     const dust = { gusts: [], next: time - .9, area: DUST_ORIGINS, rate: DUST_GUST_RATE, fogHeight: 1, amount: 1 };
     // 加一條與原區域出現率相同的獨立陣風，使區內頻率加倍。
     const localDust = {
@@ -694,8 +846,9 @@ var StartMenuBackground = (function () {
       const motionScale = motion.matches ? REDUCED_MOTION_SCALE : 1;
       ctx.setTransform(surface.width / WIDTH, 0, 0, surface.height / HEIGHT, 0, 0);
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      if (rightArchPatch) ctx.drawImage(rightArchPatch, RIGHT_ARCH_PATCH.x, RIGHT_ARCH_PATCH.y);
       if (fires) drawFires(ctx, fires, time);
-      drawGateLightning(ctx, atmosphere.lightningGlow, lightning, time, motionScale);
+      if (!gateLight) drawGateLightning(ctx, atmosphere.lightningGlow, lightning, time, motionScale);
       drawClouds(ctx, atmosphere, time);
       if (sprites) {
         updateClothWind(clothWind, time);
@@ -704,6 +857,14 @@ var StartMenuBackground = (function () {
       drawWisps(ctx, atmosphere.spirit, time);
       drawDust(ctx, atmosphere, dust, time, motionScale);
       drawLocalDust(ctx, atmosphere, localDust, time, motionScale);
+      drawEmbers(ctx, atmosphere.embers, time, motionScale);
+      if (gateLight) {
+        drawGateLight(gateContext, gateLight, time, motionScale);
+        gateContext.save();
+        gateContext.translate(-gateBounds.x, -gateBounds.y);
+        drawGateLightning(gateContext, atmosphere.lightningGlow, lightning, time, motionScale);
+        gateContext.restore();
+      }
     }
 
     function tick(now) {
@@ -740,6 +901,13 @@ var StartMenuBackground = (function () {
         surface.width = rasterWidth;
         surface.height = Math.round(rasterWidth * HEIGHT / WIDTH);
       }
+      const cover = Math.max(width / WIDTH, height / HEIGHT);
+      Object.assign(gateSurface.style, {
+        left: (width - WIDTH * cover) / 2 + gateBounds.x * cover + 'px',
+        top: (height - HEIGHT * cover) / 2 + gateBounds.y * cover + 'px',
+        width: gateBounds.width * cover + 'px',
+        height: gateBounds.height * cover + 'px'
+      });
       draw();
     });
     const visibility = new IntersectionObserver(([entry]) => {
@@ -765,9 +933,25 @@ var StartMenuBackground = (function () {
       draw();
       return true;
     }, () => false);
+    const gateSource = new Image();
+    if (gateContext) gateSource.src = new URL('gate-light-original.png', ASSETS);
+    const gateReady = gateContext ? gateSource.decode().then(() => {
+      if (disposed) return false;
+      gateLight = makeGateLight(gateSource);
+      draw();
+      return true;
+    }, () => false) : Promise.resolve(false);
+    const archSource = new Image();
+    if (ctx) archSource.src = new URL('battlefield.webp', ASSETS);
+    const archReady = ctx ? archSource.decode().then(() => {
+      if (disposed) return false;
+      rightArchPatch = makeRightArchPatch(archSource);
+      draw();
+      return true;
+    }, () => false) : Promise.resolve(false);
 
     return {
-      ready: Promise.all([stillReady, atlasReady])
+      ready: Promise.all([stillReady, atlasReady, gateReady, archReady])
         .then(results => !disposed && results.every(Boolean)),
       destroy() {
         if (disposed) return;
@@ -777,8 +961,11 @@ var StartMenuBackground = (function () {
         visibility.disconnect();
         document.removeEventListener('visibilitychange', syncPlayback);
         surface.width = surface.height = 0;
+        gateSurface.width = gateSurface.height = 0;
         sprites = null;
         fires = null;
+        gateLight = null;
+        rightArchPatch = null;
         dust.gusts.length = 0;
         localDust.gusts.length = 0;
         lightning.event = null;

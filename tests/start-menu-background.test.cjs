@@ -61,11 +61,11 @@ test('減少動態時背景緩慢前進，分頁隱藏後才停播', () => {
   observeVisibility([{ isIntersecting: true }]);
   const first = next(1000);
   const reduced = next(1100) - first;
-  assert.ok(reduced > 0, '減少動態時地平雲仍向右移動');
+  assert.ok(reduced > 0, '減少動態時地平霧仍向右移動');
 
   motion.matches = false;
   const normal = next(1200) - (first + reduced);
-  assert.ok(normal > reduced, '切換偏好後恢復一般速度');
+  assert.ok(normal > reduced, '切換偏好後向右移動加快');
 
   document.hidden = true;
   pageVisibilityChanged();

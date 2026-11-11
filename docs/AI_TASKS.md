@@ -1,3 +1,22 @@
+## START-MENU-BUTTON-FRAME-20261112 — 開始選單按鈕外框與寶石閃光
+
+- Codex 單一開發者，已完成。依使用者截圖以斜切古銅框、內刻線、鉚釘及細紋重做按鈕。字級由 18px 縮至 16px，按鈕寬為前版的 8/9。依追加要求，劍柄紅寶石以兩段亮峰和交叉亮芒強化明暗對比，每 3 秒循環。逐檔衝突預檢通過。
+- 修改 `css/start-menu.css`、`index.html` 樣式快取、`LV_upgrade_system.md`、`docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 及本段。唯讀檢查既有選單／設定入口、相關測試與素材匯出。效果由 CSS 生成，無獨立美術素材，素材庫無本項變更。
+- `npm.cmd run build` 通過 712 檔。以 `node --test` 執行開始選單、背景、遊戲選單、快取、VFX 登記共 46/46。String 稽核寫死 0，開始選單素材 SHA 稽核與 `git diff --check` 通過。
+- 隔離靜音 Edge 驗證 1440×810、390×844、568×320、760×520。核對字級、寬度比例、焦點、按壓、停用、模式及設定操作與觸控 44px，主控台無錯誤或警告。紅寶石兩層動畫均為 3000ms，減少動態時為靜態；實際畫格中央亮度約 105→189。桌面、手機預覽及 3 秒循環 GIF 留在聊天。手機採模擬視窗驗證。
+- 遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收與合併。
+
+## START-MENU-ATMOSPHERE-20261111 — 開始選單構圖與氛圍
+
+- Codex 單一開發者，已完成。依使用者截圖採用上方置中標誌、左側直列石板選單與右側拱門天光。原有開始選單及動態背景為前置，逐檔衝突預檢通過。
+- 範圍為開始選單的 CSS、HTML 標誌與快取、Canvas 背景、原創背景和透明標誌、素材同步及相關文檔。沿用既有選單操作及字串、風中破旗、陣風生命週期、存檔與遊戲規則。
+- 驗收寬螢幕、手機直向與橫向版面、按鈕與鍵盤焦點、寶石光的位置與減少動態、底圖及 Canvas 圖層對齊。完成建置、相關回歸及遊戲與素材庫 SHA 核對後提交兩庫。
+- 完成遠山暗紅裂隙與煙柱、右側拱門天光、鎧甲／斷劍／肋骨青綠魂火、向左漂移的風沙與餘燼。標誌採鍛鐵主標、暗金方字副標與 12 秒紅寶石呼吸，選單採粗黑體、石板底、金色焦點及按下高亮。唯讀檢查選單、音訊設定、String 與原素材，沿用原操作及字串。
+- 修改 `css/start-menu.css`、`index.html`、`js/start-menu-background.js`、`images/start-menu/` 兩個 WebP 及三份來源文件、`tools/intro/sync-start-menu.cjs`、`tests/start-menu-background.test.cjs`、VFX 清單、LV 及本段。Effects-Materials 先提交 `99c5fa29`，保留內建 ImageGen 母圖、實際提示詞與匯出。遊戲提交為本段所在提交。兩庫匯出 SHA 一致。
+- 驗證 `npm.cmd run build` 通過 712 檔，`node tools/string-table/build_string_csv.cjs --check` 寫死 0，`node tools/intro/sync-start-menu.cjs --check` 通過。以 `node --test` 執行開始選單、背景、快取、VFX 登記、存檔隔離、選單及音效七個測試檔，共 74/74。
+- 隔離靜音的 Edge 以 1440×810、390×844、568×320、760×520 實測置中、寶石錨點、鍵盤焦點、觸控尺寸、模式與設定開關。六處 Canvas 區域確認隨時間變化，減少動態時寶石停止脈動。主控台無錯誤或警告。直向滿版裁切會裁去左右遠景，手機使用模擬尺寸驗證。
+- `npm.cmd test` 比對修改前 `25fb44d4`，工作區與基準版各有 705、699 個失敗或被中止項，698 項重疊。差異中兩項在基準單跑重現，兩項在兩版單跑皆通過，其餘三項是工作區長時間未完成後中止的同步與 Preset 覆蓋檔案。開始選單相關回歸全數通過，可供驗收與合併。
+
 ## QUEST-REWARD-NO-TARGET-SCALE-20261110 — 任務獎勵抵達目的地不縮放
 
 - Owner：Codex；Done，單一開發者。使用者要求任務領獎圖示飛到材料或背包後，目的地不再放大縮小，保留飛行演出。前置既有任務領獎動畫完成，fetch及逐檔衝突預檢乾淨。
@@ -15864,3 +15883,54 @@ Worker 存活且頁面正常完成載入。
 - 原生 Excel 階段已套用並正常重開。接手後核對 String.xlsx SHA256 與原生收據一致，重新匯出驗證 CSV 位元組一致，與兩側三方比對完整保留 1516、1624、2446、2482。`apply_strings.cjs --check` 核對 2469 條字串與快取 `80ddab3b`，`build_string_csv.cjs --check` 顯示 0 條硬編碼。保留 Claude 繪本序章入口、Codex 羊皮紙影片封存及神祕商人調整，主頁、編輯器、Worker protocol 與 bridge 啟動快取同步。兩套素材 `--check` 均通過，素材庫已發布提交 `7a0ced3`。
 - 合併驗證在 `logs/manual-merge-20261111/`。`node --test` 的商人、寶石、Worker、序章、字串、快取及套表相容測試 90/90，另序章場景、減傷及傳奇詞綴組合 20/22，UI Worker panel 6/8。兩側提交的隔離基準均重現相同四項失敗（gem.socket 斷言、UI 測試 fixture 缺失、兩項舊傳奇數值預期），保留測試。`npm.cmd run build` 通過 712 檔，合併差異空白檢查通過。
 - 交付為本段所在合併提交，後續執行既有同步器驗證本地與遠端四分支、已納入的來源及素材庫。保留隔離來源 `codex/background-catchup`。
+
+## START-MENU-SLATE-GATE-LIGHT-20261112 — 直角石板按鈕與拱門聖光
+
+- Codex 單一開發者，已完成。依使用者截圖將首頁按鈕換成直角深灰石板，沿用自製岩紋，移除切角、鉚釘及規則斜紋。白色雲光與四束聖光在中央拱門內錯開明暗及角度，落到遠景霧中淡出。
+- 修改 `css/start-menu.css`、`js/start-menu-background.js`、`index.html` 的 CSS／JS 快取、`images/start-menu/SOURCE.md` 和 `manifest.json`、VFX 清單、LV 及本段。唯讀檢查石板原圖、樣式來源、開始選單入口與既有測試。Effects-Materials `b0234ed4` 封存背景程式和來源，遊戲及素材庫 SHA 一致。
+- Claude 的寶箱入口與首頁快取位於 `index.html` 不同區段，完整三方試合乾淨。Claude 的任務在 `docs/AI_TASKS.md` 開頭，本段新增於末尾，新段落三方試合乾淨。
+- `npm.cmd run build` 通過 712 檔。以 `node --test` 執行開始選單、背景、遊戲選單、快取及 VFX 登記共 46/46；String 稽核寫死 0，素材與 diff 檢查通過。
+- 隔離靜音 Edge 驗證 1920×869、390×844、568×320。按鈕為直角、有石紋、無角點，焦點、按壓、停用與觸控正常。擷取實際 Canvas 確認聖光區域隨時間變化，拱門外側及地面採樣的遮罩 alpha 為 0。主控台無錯誤或警告。手機採模擬視窗，桌面截圖與 4 秒動態預覽留在聊天。
+- 遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收與合併。
+
+## START-MENU-RUST-FRAME-20261112 — 開始選單鐵鏽外框與尺寸
+
+- Codex 單一開發者，已完成。依使用者截圖以紅褐色鏽斑疊加既有鑄鐵貼圖，圍住深灰岩板。桌面按鈕 180 × 40px，間距 6px，觸控高度 44px，短橫屏收窄並可捲動。沿用原素材，素材庫無本項變更。
+- 修改 `css/start-menu.css`、`index.html` 樣式快取、`LV_upgrade_system.md` 及本段。唯讀檢查鑄鐵原圖、石板 CSS、首頁選單、存檔開機入口及相關測試。Claude 的寶箱入口和任務位於其他區段，本次首頁快取及末段紀錄三方試合乾淨。
+- `npm.cmd run build` 通過 712 檔。以 `node --test` 執行開始選單、背景、遊戲選單、快取共 19/19。String 稽核寫死 0，素材來源與 diff 檢查通過。
+- 隔離靜音 Edge 驗證 1920×869、1280×720、390×844、568×320。以隔離測試存檔顯示七顆按鈕，量測桌面 180 × 40px、間距 6px，確認直角、兩層貼圖、停用、鍵盤焦點、模式、設定及短橫屏捲動。主控台無錯誤或警告。手機採模擬視窗，截圖留在聊天。遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收及合併。
+
+## START-MENU-GATE-LIGHT-REFERENCE-20261112 — 依授權參考圖擴大拱門聖光
+
+- Codex 單一開發者，已完成。依使用者授權的圖 2，將石柱和石像與底圖對齊，比對拱頂鏤空、門洞中段、右側薄雲和遠景亮度。以 Canvas 重建整片白色雲光與四束有亮芯的寬光束，遮罩保留石柱及雕花，光束持續緩慢變化。
+- 修改 `js/start-menu-background.js`、`index.html` 快取、`images/start-menu/SOURCE.md`、`manifest.json`、VFX 清單、LV 及本段。唯讀檢查兩張使用者截圖、荒原原畫、現有底圖、背景測試及選單入口。Effects-Materials `b1176b53` 封存程式與來源，兩庫 SHA 一致。
+- Claude 寶箱入口與首頁快取位於 `index.html` 不同區段，完整三方試合乾淨。Claude 的任務在文件開頭，本段新增於末尾，新段落三方試合乾淨。
+- `npm.cmd run build` 通過 712 檔。以 `node --test` 執行開始選單、背景、遊戲選單、快取及 VFX 登記共 46/46。String 稽核寫死 0，素材 SHA 及 diff 檢查通過。
+- 隔離靜音 Edge 驗證 1104×621 對照取景、1920×869 正式桌面與 390×844 手機模擬視窗。門洞中段同區域 alpha ≥ 96 的像素占比從約 46% 增至 94%，樣本隨時間變化，拱門外側及地面採樣的遮罩 alpha 為 0。設定和遊戲模式可正常開關，主控台無錯誤或警告。正式畫面、拱門對照及動畫留在聊天。
+- 遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收與合併。
+
+## START-MENU-GATE-LIGHT-ORIGINAL-20261112 — 貼用授權拱門原圖
+
+- Codex 單一開發者，已完成。依使用者要求將圖 2 原像素對齊貼入開始選單，光照區直接保留原圖色調，周邊羽化。門洞內的微幅霧光位移沿用同張圖，紅色閃電疊在同一場景座標。唯讀檢查授權附件、現有底圖、背景程式、選單入口與相關測試。
+- 修改背景 JS、HTML 快取、`images/start-menu/gate-light-original.png`、素材來源及清單、匯出腳本、VFX、LV 與本段。Effects-Materials 先提交 `1fa39f02`。附件、素材庫與遊戲的原圖 SHA-256 一致。
+- Claude 的寶箱入口、解鎖項與任務分別位於三個共用檔案的不同區段。首頁快取、LV 開始選單列與文件末段的新紀錄均三方試合乾淨。
+- `npm.cmd run build` 通過 712 檔。以 `node --test` 執行開始選單、背景、遊戲選單、快取及 VFX 登記共 46/46。String 稽核寫死 0，素材同步及差異檢查通過。
+- 隔離靜音 Edge 驗證原圖等比取景、1920×869 桌面及 390×844 手機模擬。拱頂與門洞取樣的平均每色道差小於 1；霧光有位移，拱頂維持原位，紅色閃電正常。驗證貼圖解碼失敗時選單仍可操作，正常與退化情境主控台皆無錯誤或警告。完整畫面及暫時隱藏 Logo 的比對近照留在聊天。
+- 遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收與合併。
+
+## START-MENU-WIND-LIGHT-20261112 — 移除右側孤光並統一風向
+
+- Codex 單一開發者，已完成。依使用者截圖，以初版荒原的同座標暗部羽化合成右側廢拱門及地面反光區。青綠煙絲、霧團與光點往右上，前景風沙、霧氣及餘燼由左往右。唯讀檢查兩張底圖、背景程式、選單入口及相關測試。
+- 修改背景 JS、HTML 快取、背景回歸、素材來源及清單、VFX、LV 與本段。Effects-Materials `898e0d7c` 封存程式與來源，沿用現有兩張底圖，素材 SHA 一致。
+- Claude 寶箱提交 `d972f088` 的入口、解鎖項及任務與本次首頁快取、LV 開始選單列及文件末段分開，三方試合乾淨。
+- `npm.cmd run build` 通過 712 檔，`node --test` 開始選單、背景、遊戲選單、快取及 VFX 登記共 46/46。String 稽核寫死 0，素材同步及差異檢查通過。
+- 隔離靜音 Edge 驗證 1435×646 桌面、390×844 手機模擬及 568×320 缺初版底圖的退化情境。光束與地面反光取樣回到初版底圖亮度，七處魂火的霧團均往各自錨點右側移動，圖層持續更新。選單及設定可操作，主控台無錯誤或警告，預覽留在聊天。
+- 遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收及合併。
+
+## SYNC-MERGE-20261112-013732 — develop 待定合併驗證
+
+- Owner：Codex integrator；Done。僅處理使用者授權的 HEAD `811970ca3cf3b6f655f5e49b22c0eeaf3a84f6bc` 與 MERGE_HEAD `da61b8358fa387a5f5b0e648c7bee8dad3a618fd`，base `25fb44d4085de81a4ab29b275175670aa8d603e7`。唯一衝突檔為本文件；保留 ours 熔爐寶箱與 theirs 開始選單全部紀錄，工作檔既有合併內容無衝突標記，僅補本段交接。
+- 唯讀檢查 AI_RULES、AGENTS、AI_WORKFLOW、prompts/codex、三方任務差異、首頁快取及寶箱入口、LV、VFX、素材同步與相關回歸。衝突預檢已執行，其他工作區的 Git ownership 限制使跨工作區檢查不完整；未擴大信任。已知合併來源由本次使用者明確授權處理。
+- `node --test tests/start-menu.test.cjs tests/start-menu-background.test.cjs tests/game-menu.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs tests/save-origin-isolation.test.cjs tests/ui-sound.test.cjs tests/chest.test.cjs tests/worker-protocol.test.cjs`：97/97。`npm.cmd run build`：716 檔通過。`node tools/intro/sync-start-menu.cjs --check`：來源與匯出 SHA 一致。`node tools/string-table/build_string_csv.cjs --check`：寫死 0。診斷保留於忽略的 `logs/sync-merge-20261112-013732/targeted.tap` 與 `build.log`。
+- 完整 `git diff HEAD --check` 通過。未改 Excel、素材庫、程式或測試；不需額外快取版本或生成資料。原有 incoming 機械修正保持。無本次新增測試失敗，未重跑已知大量失敗的全套測試或瀏覽器視覺驗收。
+- 無未完成衝突，可交 controller stage 與建立本次 merge commit；本 agent 未 stage／commit／push，HEAD 與 MERGE_HEAD 保持不變，index 未合併狀態留待 controller staging。
