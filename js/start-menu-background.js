@@ -1,6 +1,6 @@
 'use strict';
 
-/* 裝飾層的場景座標對應 images/start-menu/battlefield.webp。
+/* 裝飾層的場景座標對應 images/start-menu/battlefield-atmosphere.webp。
    選單負責提供定位容器、掛載和卸載，這裡只管理背景自己的生命週期。 */
 var StartMenuBackground = (function () {
   const ASSETS = new URL('../images/start-menu/', document.currentScript.src);
@@ -10,7 +10,7 @@ var StartMenuBackground = (function () {
   const FRAME_MS = 1000 / 30;
   const REDUCED_MOTION_SCALE = .65;
   const GATE_FOG_RATE = 1.25;
-  const MIDGROUND_FOG_SPEED = 22.5;
+  const MIDGROUND_FOG_SPEED = -14;
   const MIDGROUND_FOG_DENSITY = 1.30;
   const DUST_GUST_RATE = 1.30;
   const FIRE_INTENSITY = 2;
@@ -18,14 +18,14 @@ var StartMenuBackground = (function () {
     'M729 258Q744 217 785 195L810 193 832 168 853 160 871 207 900 191Q937 212 930 258' +
     'L914 315 901 349 878 365 864 398 848 393 820 413 801 395 778 356 765 338 745 366 724 376Z';
   const LIGHTNING_BOUNDS = { x: 700, y: 135, w: 280, h: 300 };
-  const DUST_ORIGINS = { x: -135, y: 535, w: WIDTH - 135, h: 362 };
+  const DUST_ORIGINS = { x: 270, y: 535, w: WIDTH - 135, h: 362 };
   // 紅框使用底圖座標，跟隨滿版裁切。
   const LOCAL_HAZE = { x: 208, y: 426, w: 756, h: 405 };
   const LOCAL_DUST_AMOUNT = 2;
   const LOCAL_DUST_OVERLAP = LOCAL_HAZE.y + LOCAL_HAZE.h - DUST_ORIGINS.y;
-  // 陣風在區內偏上游處掀起，留足距離讓沙霧向右展開。
+  // 陣風從遮罩的右半起掀，保留向左消散的空間。
   const LOCAL_DUST_ORIGINS = {
-    x: LOCAL_HAZE.x, y: DUST_ORIGINS.y, w: LOCAL_HAZE.w - 235, h: LOCAL_DUST_OVERLAP - 44
+    x: LOCAL_HAZE.x + 235, y: DUST_ORIGINS.y, w: LOCAL_HAZE.w - 235, h: LOCAL_DUST_OVERLAP - 44
   };
   const LOCAL_DUST_RATE = DUST_GUST_RATE *
     (LOCAL_HAZE.w * LOCAL_DUST_OVERLAP) / (DUST_ORIGINS.w * DUST_ORIGINS.h);
@@ -39,13 +39,14 @@ var StartMenuBackground = (function () {
     { sprite: 0, x: 1360, y: 485, w: 108, h: 48, lean: -15, drop: 22, swing: 11, haze: .25 },
     { sprite: 1, x: 1630, y: 405, w: 54, h: 16, lean: -4, drop: 22, swing: 6, haze: .45 }
   ];
+  // 底圖錨點依序為鎧甲胸縫、斷劍護手、右側肋骨與遠近殘骸。
   const WISPS = [
-    [65, 538, 64], [1085, 654, 37], [1583, 643, 68],
-    [1008, 753, 22], [1187, 702, 21], [1164, 773, 17], [1190, 772, 15]
+    [550, 615, 69, 1], [955, 810, 55, .90], [1289, 674, 68, .87],
+    [65, 538, 53, .46], [1085, 654, 37, .55], [1583, 643, 54, .67], [1187, 702, 24, .48]
   ];
   // 火源對齊底圖山稜的明亮裂隙。最遠一帶在岩脊後方，只露出較弱的火光。
   const FIRE_RIDGES = [
-    { strength: .82, points: [[1249, 284, 24], [1269, 318, 22], [1281, 313, 24], [1300, 308, 25], [1314, 301, 19]] },
+    { strength: .82, points: [[1206, 221, 22], [1249, 284, 24], [1269, 318, 22], [1281, 313, 24], [1300, 308, 25], [1314, 301, 19]] },
     { strength: .94, points: [[1411, 364, 22], [1434, 357, 22], [1457, 351, 24], [1470, 345, 24], [1507, 336, 24]] },
     { strength: .59, points: [[1566, 282, 18], [1582, 284, 20], [1599, 277, 17], [1622, 297, 19]] }
   ];
@@ -166,7 +167,7 @@ var StartMenuBackground = (function () {
     };
     const groundFog = {
       tile: vaporTexture(512, 128, [161, 145, 122], 1207, true),
-      w: 1120, y: LOCAL_HAZE.y - 22, h: LOCAL_HAZE.h + 36, speed: 7.5, alpha: .38
+      w: 1120, y: LOCAL_HAZE.y - 22, h: LOCAL_HAZE.h + 36, speed: -7.5, alpha: .38
     };
     for (const cloud of [...clouds, leftBank, midground, groundFog]) cloud.pattern = skyContext.createPattern(cloud.tile, 'repeat-x');
     const leftFade = skyContext.createLinearGradient(410, 0, 640, 0);
@@ -182,7 +183,8 @@ var StartMenuBackground = (function () {
       lightningGlow: vaporTexture(192, 144, [242, 74, 65], 1751, false),
       sand: vaporTexture(192, 48, [181, 138, 89], 561, false),
       haze: vaporTexture(192, 56, [141, 108, 76], 801, false),
-      spirit: vaporTexture(64, 112, [115, 176, 154], 171, false)
+      spirit: vaporTexture(64, 112, [93, 201, 183], 171, false),
+      embers: makeEmbers()
     };
   }
 
@@ -428,29 +430,33 @@ var StartMenuBackground = (function () {
   }
 
   function drawWisps(ctx, sprite, time) {
-    for (const [index, [x, y, height]] of WISPS.entries()) {
+    ctx.save();
+    for (const [index, [x, y, height, strength]] of WISPS.entries()) {
       const t = time + index * 2.31;
-      const light = ctx.createRadialGradient(x, y - 3, 1, x, y - 3, height * .32);
-      light.addColorStop(0, 'rgba(120,185,155,.31)');
-      light.addColorStop(1, 'rgba(96,152,130,0)');
+      const radius = height * .44;
+      const light = ctx.createRadialGradient(x, y - 3, 1, x, y - 3, radius);
+      light.addColorStop(0, 'rgba(87,217,191,.56)');
+      light.addColorStop(.32, 'rgba(58,180,160,.27)');
+      light.addColorStop(1, 'rgba(49,146,150,0)');
+      ctx.globalAlpha = strength * (.84 + .16 * Math.sin(t * 1.3));
       ctx.fillStyle = light;
-      ctx.fillRect(x - height * .32, y - height * .37, height * .64, height * .65);
+      ctx.fillRect(x - radius, y - 3 - radius, radius * 2, radius * 2);
       for (let curl = 0; curl < 8; curl++) {
-        const age = mod(t * (.42 + (curl % 3) * .027) + curl * .127, 1);
-        const drift = height * (.52 * age * age + .18 * Math.sin(age * 8 + t * 1.24 + curl) * age);
+        const age = mod(t * (.32 + (curl % 3) * .027) + curl * .127, 1);
+        const drift = height * (-.32 * age * age + .18 * Math.sin(age * 8 + t * 1.24 + curl) * age);
         const w = height * (.22 + .38 * age), h = height * (.48 + .23 * age);
         const peak = Math.sin(age * Math.PI);
         ctx.save();
         ctx.translate(x + drift, y - age * height);
-        ctx.rotate(.12 + .40 * age + Math.sin(t * 1.9 + curl) * .16);
-        ctx.globalAlpha = .63 * peak * (1 - age * .54);
+        ctx.rotate(-.12 - .32 * age + Math.sin(t * 1.9 + curl) * .16);
+        ctx.globalAlpha = .78 * strength * peak * (1 - age * .54);
         ctx.drawImage(sprite, -w / 2, -h * .72, w, h);
         ctx.restore();
       }
       const filament = ctx.createLinearGradient(x, y, x, y - height);
-      filament.addColorStop(0, 'rgba(173,213,176,.46)');
-      filament.addColorStop(.35, 'rgba(157,205,177,.24)');
-      filament.addColorStop(1, 'rgba(105,178,156,0)');
+      filament.addColorStop(0, 'rgba(177,252,221,.63)');
+      filament.addColorStop(.35, 'rgba(103,213,205,.33)');
+      filament.addColorStop(1, 'rgba(90,180,192,0)');
       ctx.strokeStyle = filament;
       ctx.lineCap = 'round';
       for (let thread = 0; thread < 3; thread++) {
@@ -459,12 +465,49 @@ var StartMenuBackground = (function () {
         ctx.lineWidth = height * (.014 + thread * .004);
         ctx.beginPath();
         ctx.moveTo(x + (thread - 1) * height * .045, y - 2);
-        ctx.bezierCurveTo(x - height * (.1 + sway * .15), y - height * .31,
-          x + height * (.27 + flow * .19), y - height * .61,
-          x + height * (.39 + sway * .17), y - height * (.72 + thread * .105));
+        ctx.bezierCurveTo(x + height * (.05 + sway * .15), y - height * .31,
+          x - height * (.19 + flow * .19), y - height * .61,
+          x - height * (.30 + sway * .17), y - height * (.72 + thread * .105));
         ctx.stroke();
       }
+      ctx.fillStyle = '#b3ffe7';
+      for (let mote = 0; mote < 6; mote++) {
+        const age = mod(t * (.20 + mote * .019) + mote * .227, 1);
+        const drift = Math.sin(mote * 3.4 + age * 7) * age * .28 - age * .44;
+        const size = height * (.014 + (mote % 3) * .005) * (1 - age * .4);
+        ctx.globalAlpha = strength * .79 * Math.sin(age * Math.PI) ** 2;
+        ctx.fillRect(x + height * drift, y - height * 1.14 * age, size, size);
+      }
     }
+    ctx.restore();
+  }
+
+  function makeEmbers() {
+    const random = randomStream(4547);
+    return Array.from({ length: 34 }, () => ({
+      x: random() * (WIDTH + 40),
+      y: 310 + random() * 585,
+      phase: random() * TAU,
+      speed: 9 + random() * 26,
+      rise: 2 + random() * 6,
+      size: .5 + random() * 1.6
+    }));
+  }
+
+  function drawEmbers(ctx, embers, time, motionScale) {
+    ctx.save();
+    for (const { x, y, phase, speed, rise, size } of embers) {
+      const drift = mod(x - time * speed, WIDTH + 40) - 20;
+      const lift = mod(y - 310 - time * rise, 585);
+      const altitude = 310 + lift + Math.sin(time * .85 + phase) * 6;
+      const flicker = .5 + .5 * Math.sin(time * 1.4 + phase);
+      ctx.globalAlpha = .64 * motionScale * flicker ** 2 * Math.sin(lift / 585 * Math.PI);
+      ctx.fillStyle = '#b85f38';
+      ctx.fillRect(drift - size * .55, altitude - size * .55, size * 2.1, size * 2.1);
+      ctx.fillStyle = '#ffc18b';
+      ctx.fillRect(drift, altitude, size, size * .8);
+    }
+    ctx.restore();
   }
 
   function fireLight(image, x, y, radius) {
@@ -558,7 +601,7 @@ var StartMenuBackground = (function () {
     const y = area.y + random() * area.h, x = area.x + random() * area.w;
     const depth = .58 + (y - DUST_ORIGINS.y) / DUST_ORIGINS.h * .89;
     const release = .65 + random() * 2.95, strength = .31 + random() * .69;
-    const sweep = depth * (120 + random() * 235);
+    const sweep = depth * (80 + random() * 140);
     const span = depth * (185 + random() * 195), slope = (random() - .5) * 37;
     const push = .74 + strength * .64;
 
@@ -566,7 +609,7 @@ var StartMenuBackground = (function () {
     function liftOff() {
       const along = (random() + random()) / 2;
       return {
-        x: x + along * sweep + (random() - .5) * span,
+        x: x - along * sweep + (random() - .5) * span,
         y: y + along * slope + (random() - .5) * (22 + strength * 21) * depth,
         born: start + along * release,
         spread: random() - .5,
@@ -577,18 +620,18 @@ var StartMenuBackground = (function () {
     }
 
     const grains = Array.from({ length: Math.round(156 + strength * 243) * amount }, () => ({
-      ...liftOff(), speed: depth * push * (35 + random() * 111), life: .54 + random() * 1.57,
+      ...liftOff(), speed: depth * push * (22 + random() * 58), life: .54 + random() * 1.57,
       loft: depth * (2 + random() * 13), size: depth * (.25 + random() * random() * 1.35)
     }));
     const trails = Array.from({ length: Math.round(6 + strength * 12) * amount }, () => ({
-      ...liftOff(), speed: depth * push * (38 + random() * 48), life: 1.7 + random() * 2.9,
+      ...liftOff(), speed: depth * push * (21 + random() * 33), life: 1.7 + random() * 2.9,
       loft: depth * (2 + random() * 8), breadth: .66 + random() * .68, pale: random() > .46
     }));
     return { depth, strength, grains, trails, end: start + release + 4.6 };
   }
 
   function sandX(particle, age, progress) {
-    return particle.x + particle.speed * age * (.77 + (.30 + particle.spread * .46) * progress);
+    return particle.x - particle.speed * age * (.77 + (.30 + particle.spread * .46) * progress);
   }
 
   function sandY(particle, progress, loft) {
@@ -616,7 +659,7 @@ var StartMenuBackground = (function () {
         ctx.translate(sandX(trail, age, progress), sandY(trail, progress, fade));
         ctx.rotate(turn);
         ctx.globalAlpha = fade * (.34 + strength * .46) * motionScale;
-        ctx.drawImage(trail.pale ? textures.sand : textures.haze, -width * .15, -height * .78, width, height);
+        ctx.drawImage(trail.pale ? textures.sand : textures.haze, -width * .85, -height * .78, width, height);
         ctx.restore();
       }
     }
@@ -668,7 +711,7 @@ var StartMenuBackground = (function () {
     const fill = { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover' };
     const still = layer(root, new Image(), fill);
     still.alt = '';
-    still.src = new URL('battlefield.webp', ASSETS);
+    still.src = new URL('battlefield-atmosphere.webp', ASSETS);
     const surface = layer(root, canvas(1, 1), fill);
     const ctx = surface.getContext('2d');
     layer(root, document.createElement('div'), {
@@ -704,6 +747,7 @@ var StartMenuBackground = (function () {
       drawWisps(ctx, atmosphere.spirit, time);
       drawDust(ctx, atmosphere, dust, time, motionScale);
       drawLocalDust(ctx, atmosphere, localDust, time, motionScale);
+      drawEmbers(ctx, atmosphere.embers, time, motionScale);
     }
 
     function tick(now) {

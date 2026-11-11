@@ -14,12 +14,16 @@ const game = path.join(REPO_ROOT, 'images/start-menu');
 const recipe = 'js/start-menu-background.js';
 const sources = [
   'originals/battlefield.png', 'originals/cloth-atlas.png', 'PROMPTS.json',
+  'originals/battlefield-atmosphere.png', 'originals/title-lockup-forged.png', 'ATMOSPHERE_PROMPTS.json',
   'source/start-menu-background.js'
 ];
 const exportsByName = {
   'battlefield.webp': 'web/battlefield.webp',
+  'battlefield-atmosphere.webp': 'web/battlefield-atmosphere.webp',
   'cloth-atlas.webp': 'web/cloth-atlas.webp',
-  'SOURCE.md': 'SOURCE.md'
+  'title-lockup-forged.webp': 'web/title-lockup-forged.webp',
+  'SOURCE.md': 'SOURCE.md',
+  'TITLE_SOURCE.md': 'TITLE_SOURCE.md'
 };
 
 const hash = data => createHash('sha256').update(data).digest('hex');
@@ -57,4 +61,4 @@ if (mode !== '--archive') {
     if (hash(read(game, target)) !== hashSource(source)) throw new Error('遊戲素材 SHA 不符：' + target);
   }
 }
-console.log('選單荒原底圖、透明旗布與背景程式來源 SHA 一致');
+console.log('選單荒原底圖、透明旗布、標誌與背景程式來源 SHA 一致');

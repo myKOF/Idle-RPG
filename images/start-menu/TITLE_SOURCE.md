@@ -1,5 +1,11 @@
 # 開始選單標誌
 
+遊戲目前使用 `title-lockup-forged.webp`（1440 × 736，透明 WebP）。內建 ImageGen 以原低光稿編修，保留「神力之巔」的尖銳字形及紅寶石直劍，換上磨損鍛鐵與氧化古銅。副標「無限征途」採厚實、拉開字距的暗金方字。原稿為 1754 × 896 RGBA PNG，以 Pillow 等比縮放並使用 WebP 品質 90、method 6 匯出。原稿、WebP 和完整提示詞 `ATMOSPHERE_PROMPTS.json` 存於 Effects-Materials 的 `codex-authored/start-menu-wasteland-20261106`，由 `node tools/intro/sync-start-menu.cjs --check` 核對。
+
+寶石中心為原稿約 (877, 164)，首頁的 CSS 暗紅呼吸光與圖面中心等比定位。替代文字沿用 String 表的遊戲全名。
+
+## 初版來源
+
 使用者提供的截圖用於參考金屬字面、冷藍邊光、古銅副標和中央紅寶石飾件。以內建 ImageGen 重繪獨立標誌，中央改為帶直槽的雙刃鋼劍。新版再以 ImageGen 減弱外光。輸出時以原稿及低光稿各半，按透明度加權合成為 1440 × 737 WebP。取原稿半透明藍光區域比較，藍色亮度約減少 44%，藍色相對紅色的色差約減少 47%。標誌的替代文字沿用 String 表的遊戲全名。
 
 - 原稿 1752 × 897 RGBA PNG，SHA-256 `13e939b9eaab9ddcb685e3ba34d29751b4a1ec68862ae35bdbcc76f9fd1d0a77`
