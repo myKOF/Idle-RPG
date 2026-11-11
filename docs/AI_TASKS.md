@@ -15802,3 +15802,10 @@ Worker 存活且頁面正常完成載入。
 - 素材庫 `0cf4e10` 保存原始PNG、WebP與提示詞／尺寸／SHA-256。RPG Mote Studio 主要用於像素繪圖，原創手繪質感內景使用 Codex 內建 imagegen。正式遊戲以獨立背景和原透明立繪合成，無須重畫人物。
 - 驗證：獨立Edge正式頁與原生Worker，全靜音新局，素材成功解碼、三種視窗仍為10欄4列，金幣比例與格底對齊通過，切頁提示／進店／刷新／買賣／無券流程通過，Console error與pageerror均0。目視桌面與縮小畫面，預覽留本聊天 `visualizations/merchant-shop/preview.png`。
 - `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18。`npm.cmd run build` 及字串檢查、素材匯出 `--check`、雙庫 `git diff --check` 通過。唯讀檢查AI_RULES／Workflow／使用者截圖、原商人UI與立繪來源、素材庫路徑解析及回歸。範圍以Edge及上述案例驗收，可供使用者重載預覽並整合，遊戲SHA見交付。
+
+## MYSTERY-MERCHANT-STOCK-FRAME-20261111 — 商品區縮小與雕花鑲寶外框
+
+- Owner：Codex，Done，單一主開發者。從 `e42f0f9a` 延伸，依使用者截圖紅框縮小商品區並換裝飾外框。Fetch與逐檔預檢乾淨。
+- 完成4檔：`css/style.css` 設商品區為立繪區寬度94%、上距26px，以九宮格裁切沿用既有古銅雕花鑲寶框，內層保留橫向捲動；73px列高、20px圖示、24px格底購買鈕，維持40格。`index.html` 接外框及更新CSS快取，`LV_upgrade_system.md` 與本段同步。沿用 `images/ui/achievements/done-frame.png`，素材庫無本項變更。
+- 驗證：隔離全靜音Edge正式首頁與原生Worker，1920×912商品外框約953×328px，寬94%、上距26px。1920×912、1366×768、900×900均維持4列各10格、買鈕同高且與商品說明有間距、金幣比例正常。進店／刷新／購買／無券流程通過，無Console error或pageerror。實際畫面預覽留本聊天 `visualizations/merchant-stock-frame/preview.png`。
+- `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build` 710檔通過，字串檢查寫死0，`git diff --check` 通過。唯讀檢查AI_RULES／Workflow、使用者截圖、原商人布局、既有鑲寶框／九宮格用法及上述回歸。驗證範圍為Edge與上述案例，可供使用者重載驗收與整合，遊戲SHA見交付。
