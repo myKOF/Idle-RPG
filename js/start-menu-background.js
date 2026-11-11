@@ -14,9 +14,20 @@ var StartMenuBackground = (function () {
   const MIDGROUND_FOG_DENSITY = 1.30;
   const DUST_GUST_RATE = 1.30;
   const FIRE_INTENSITY = 2;
-  const GATE_SKY_OPENING =
-    'M729 258Q744 217 785 195L810 193 832 168 853 160 871 207 900 191Q937 212 930 258' +
+  const GATE_CROWN = 'M729 258Q744 217 785 195L810 193 832 168 853 160 871 207 900 191Q937 212 930 258';
+  const GATE_SKY_OPENING = GATE_CROWN +
     'L914 315 901 349 878 365 864 398 848 393 820 413 801 395 778 356 765 338 745 366 724 376Z';
+  // 聖光延伸到遠景霧中，輪廓沿主拱門內緣，底部再淡出。
+  const GATE_LIGHT_OPENING = GATE_CROWN +
+    'Q924 286 917 307L912 396 906 477Q830 497 722 474L722 343Z';
+  const GATE_LIGHT_BOUNDS = { x: 710, y: 129, width: 238, height: 365 };
+  // 雲縫的光束由左上往右下展開，使用底圖座標。
+  const GATE_LIGHT_RAYS = [
+    { x: 763, y: 152, width: 64, length: 381, tilt: -.17, phase: 0 },
+    { x: 790, y: 136, width: 70, length: 392, tilt: -.21, phase: 1.7 },
+    { x: 818, y: 145, width: 58, length: 380, tilt: -.25, phase: 3.4 },
+    { x: 848, y: 154, width: 68, length: 343, tilt: -.22, phase: 4.9 }
+  ];
   const LIGHTNING_BOUNDS = { x: 700, y: 135, w: 280, h: 300 };
   const DUST_ORIGINS = { x: 270, y: 535, w: WIDTH - 135, h: 362 };
   // 紅框使用底圖座標，跟隨滿版裁切。
@@ -152,6 +163,78 @@ var StartMenuBackground = (function () {
     return { surface, mask, context: surface.getContext('2d') };
   }
 
+  function makeGateLight() {
+    const ray = canvas(72, 192);
+    const ctx = ray.getContext('2d');
+    const pixels = ctx.createImageData(ray.width, ray.height);
+    for (let y = 0; y < ray.height; y++) {
+      const depth = y / (ray.height - 1);
+      const spread = .35 + .65 * depth;
+      const fade = ease(clamp(depth / .19)) * ease(clamp((1 - depth) / .61));
+      for (let x = 0; x < ray.width; x++) {
+        const lateral = Math.abs(2 * x / (ray.width - 1) - 1);
+        const alpha = fade * ease(clamp(1 - lateral / spread));
+        const offset = (y * ray.width + x) * 4;
+        pixels.data[offset] = 255;
+        pixels.data[offset + 1] = 251;
+        pixels.data[offset + 2] = 243;
+        pixels.data[offset + 3] = Math.round(alpha * 255);
+      }
+    }
+    ctx.putImageData(pixels, 0, 0);
+
+    const cloudGlow = canvas(120, 120);
+    const glowContext = cloudGlow.getContext('2d');
+    const glow = glowContext.createRadialGradient(60, 60, 5, 60, 60, 60);
+    glow.addColorStop(0, 'rgba(255,251,241,.65)');
+    glow.addColorStop(.42, 'rgba(255,248,235,.32)');
+    glow.addColorStop(1, 'rgba(255,248,235,0)');
+    glowContext.fillStyle = glow;
+    glowContext.fillRect(0, 0, 120, 120);
+    const { x, y, width, height } = GATE_LIGHT_BOUNDS;
+    const mask = canvas(width, height);
+    const maskContext = mask.getContext('2d');
+    maskContext.translate(-x, -y);
+    maskContext.filter = 'blur(3px)';
+    maskContext.fill(new Path2D(GATE_LIGHT_OPENING));
+    maskContext.filter = 'none';
+    maskContext.globalCompositeOperation = 'destination-in';
+    const fade = maskContext.createLinearGradient(0, 349, 0, 482);
+    fade.addColorStop(0, '#fff');
+    fade.addColorStop(.57, 'rgba(255,255,255,.58)');
+    fade.addColorStop(1, 'rgba(255,255,255,0)');
+    maskContext.fillStyle = fade;
+    maskContext.fillRect(x, y, width, height);
+
+    const surface = canvas(width, height);
+    return { ray, cloudGlow, mask, surface, context: surface.getContext('2d') };
+  }
+
+  function drawGateLight(ctx, { ray, cloudGlow, mask, surface, context }, time, motionScale) {
+    const { x, y, width, height } = GATE_LIGHT_BOUNDS;
+    context.clearRect(0, 0, width, height);
+    context.save();
+    context.translate(-x, -y);
+    context.globalAlpha = .71 + .16 * Math.sin(time * .62);
+    context.drawImage(cloudGlow, 723, 131, 205, 143);
+    for (const rayInfo of GATE_LIGHT_RAYS) {
+      const { x, y, width, length, tilt, phase } = rayInfo;
+      const drift = Math.sin(time * .57 + phase);
+      context.save();
+      context.translate(x + 5 * drift * motionScale, y);
+      context.rotate(tilt + .035 * drift * motionScale);
+      context.globalAlpha = .58 + .18 * Math.sin(time * .86 + phase);
+      context.drawImage(ray, -width / 2, 0, width, length);
+      context.restore();
+    }
+    context.restore();
+    context.save();
+    context.globalCompositeOperation = 'destination-in';
+    context.drawImage(mask, 0, 0);
+    context.restore();
+    ctx.drawImage(surface, x, y);
+  }
+
   function makeAtmosphere() {
     const sky = canvas(768, 432);
     const skyContext = sky.getContext('2d');
@@ -177,7 +260,7 @@ var StartMenuBackground = (function () {
     const gateBounds = 'M716 145H951V426H716Z';
     return {
       sky, skyContext, clouds, leftBank, leftFade, midground, groundFog, mask: skyMask(),
-      gate: new Path2D(gateBounds),
+      gate: new Path2D(gateBounds), gateLight: makeGateLight(),
       outsideGate: new Path2D('M0 0H' + WIDTH + 'V' + HEIGHT + 'H0Z ' + gateBounds),
       localHaze: makeLocalHaze(),
       lightningGlow: vaporTexture(192, 144, [242, 74, 65], 1751, false),
@@ -200,8 +283,8 @@ var StartMenuBackground = (function () {
     ctx.restore();
   }
 
-  function drawClouds(ctx, atmosphere, time) {
-    const { sky, skyContext, mask, clouds, leftBank, leftFade, gate, outsideGate, midground } = atmosphere;
+  function drawClouds(ctx, atmosphere, time, motionScale) {
+    const { sky, skyContext, mask, clouds, leftBank, leftFade, gate, gateLight, outsideGate, midground } = atmosphere;
     skyContext.setTransform(1, 0, 0, 1, 0, 0);
     skyContext.clearRect(0, 0, sky.width, sky.height);
     skyContext.save();
@@ -225,6 +308,7 @@ var StartMenuBackground = (function () {
     skyContext.drawImage(mask, 0, 0);
     skyContext.restore();
     ctx.drawImage(sky, 0, 0, WIDTH, HEIGHT);
+    drawGateLight(ctx, gateLight, time, motionScale);
     cloudStrip(ctx, midground, time);
   }
 
@@ -739,7 +823,7 @@ var StartMenuBackground = (function () {
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       if (fires) drawFires(ctx, fires, time);
       drawGateLightning(ctx, atmosphere.lightningGlow, lightning, time, motionScale);
-      drawClouds(ctx, atmosphere, time);
+      drawClouds(ctx, atmosphere, time, motionScale);
       if (sprites) {
         updateClothWind(clothWind, time);
         drawCloth(ctx, sprites, clothWind, motionScale);

@@ -80,19 +80,20 @@
 #start-menu .system-menu-actions { gap: 5px; }
 #start-menu [hidden] { display: none !important; }
 #start-menu .system-menu-actions button {
-  --rim-light: #b0946e;
-  --rim-dark: #4b3828;
-  --rim-edge: #866749;
-  --plate-top: rgb(44 41 38 / 95%);
-  --plate-glow: transparent;
-  --rivet: #af9472;
+  --slate-edge: #736d61;
+  --slate-glow: transparent;
   position: relative;
-  isolation: isolate;
   min-height: 44px !important;
   padding: 5px 10px;
-  border: 0;
+  border: 1px solid var(--slate-edge);
   border-radius: 0;
-  background: transparent;
+  background:
+    radial-gradient(ellipse at 50% 78%, var(--slate-glow), transparent 72%),
+    linear-gradient(var(--slate-top, rgb(95 86 69 / 8%)), var(--slate-bottom, rgb(12 13 14 / 40%))),
+    var(--ui-slate-texture) var(--slate-position, 50% 48%) / 290px auto #262728;
+  box-shadow: inset 0 2px rgb(228 217 193 / 20%), inset 2px 0 rgb(184 176 159 / 14%),
+    inset 0 -3px rgb(7 8 8 / 62%), inset -2px 0 rgb(9 10 10 / 48%),
+    inset 0 0 9px rgb(9 10 10 / 26%), 0 2px 3px rgb(8 7 5 / 57%);
   color: #f3e3c8;
   font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
   font-size: 16px !important;
@@ -101,37 +102,15 @@
   line-height: 1.25;
   text-shadow: 0 1px 2px #0c0907;
 }
-#start-menu .system-menu-actions button::before,
-#start-menu .system-menu-actions button::after {
+#start-menu .system-menu-actions button:nth-child(3n + 2) { --slate-position: 35% 76%; }
+#start-menu .system-menu-actions button:nth-child(3n) { --slate-position: 65% 22%; }
+#start-menu .system-menu-actions button::before {
   content: "";
   position: absolute;
-  z-index: -1;
-  inset: 0;
+  inset: 4px;
+  border: 1px solid rgb(185 177 158 / 17%);
+  box-shadow: 0 -1px rgb(8 9 9 / 48%);
   pointer-events: none;
-  --cut: 8px;
-  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut),
-    100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%,
-    0 calc(100% - var(--cut)), 0 var(--cut));
-}
-#start-menu .system-menu-actions button::before {
-  background:
-    linear-gradient(113deg, rgb(255 227 182 / 18%), transparent 32%, transparent 70%, rgb(22 12 7 / 36%)),
-    linear-gradient(166deg, var(--rim-light), var(--rim-edge) 28%, var(--rim-dark) 68%, var(--rim-edge));
-}
-#start-menu .system-menu-actions button::after {
-  --cut: 7px;
-  --rivet-stops: var(--rivet) 0 1px, #614d39 1px 1.65px, #15110d 1.65px 2.2px, transparent 2.6px;
-  inset: 2px;
-  background:
-    radial-gradient(circle at 9px 8px, var(--rivet-stops)),
-    radial-gradient(circle at calc(100% - 9px) 8px, var(--rivet-stops)),
-    radial-gradient(circle at 9px calc(100% - 8px), var(--rivet-stops)),
-    radial-gradient(circle at calc(100% - 9px) calc(100% - 8px), var(--rivet-stops)),
-    radial-gradient(ellipse at 50% 75%, var(--plate-glow), transparent 72%),
-    linear-gradient(164deg, rgb(221 185 136 / 12%), transparent 37%, rgb(184 151 119 / 6%) 38%, transparent 59%),
-    repeating-linear-gradient(107deg, rgb(210 184 147 / 3%) 0 1px, transparent 1px 4px),
-    linear-gradient(180deg, var(--plate-top), rgb(14 16 17 / 96%));
-  box-shadow: inset 0 0 0 1px #141211, inset 0 0 0 2px rgb(226 191 145 / 21%);
 }
 #start-menu .system-menu-actions button:focus-visible {
   outline: 2px solid transparent;
@@ -141,37 +120,30 @@
   #start-menu .system-menu-actions button:focus-visible { outline-color: Highlight; }
 }
 #start-menu .system-menu-actions button:disabled {
-  --rim-light: #867b6a;
-  --rim-edge: #61564a;
-  --rivet: #786b5c;
+  --slate-edge: #514e48;
+  --slate-top: rgb(10 11 12 / 43%);
+  --slate-bottom: rgb(9 10 11 / 64%);
   color: #afa598;
-  opacity: .74;
+  opacity: .94;
   cursor: default;
 }
 #start-menu-status { color: var(--dialog-gold); margin: 12px 0 0; text-align: center; text-shadow: 0 1px 3px #000; }
 
 @media (hover: hover) {
   #start-menu .system-menu-actions button:hover:not(:disabled) {
-    --rim-light: #d1ac76;
-    --rim-edge: #aa8055;
-    --plate-top: rgb(61 46 35 / 95%);
+    --slate-edge: #a99578;
+    --slate-glow: rgb(154 122 83 / 19%);
     color: #fff0d3;
   }
 }
 #start-menu .system-menu-actions button:is(:focus-visible, [aria-pressed="true"]):not(:disabled) {
-  --rim-light: #f9d59a;
-  --rim-dark: #875c33;
-  --rim-edge: #c7975e;
-  --rivet: #efc88a;
-  --plate-glow: rgb(212 144 64 / 19%);
+  --slate-edge: #e3bc7f;
+  --slate-glow: rgb(186 135 62 / 27%);
   color: #ffe8ba;
 }
 #start-menu .system-menu-actions button:active:not(:disabled) {
-  --rim-light: #ffda95;
-  --rim-dark: #a95a31;
-  --rim-edge: #df9a50;
-  --plate-top: rgb(68 37 22 / 96%);
-  --plate-glow: rgb(243 122 43 / 39%);
+  --slate-edge: #f0af68;
+  --slate-glow: rgb(217 96 31 / 46%);
   color: #fff1cd;
 }
 

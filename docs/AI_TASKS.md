@@ -15874,3 +15874,12 @@ Worker 存活且頁面正常完成載入。
 - 原生 Excel 階段已套用並正常重開。接手後核對 String.xlsx SHA256 與原生收據一致，重新匯出驗證 CSV 位元組一致，與兩側三方比對完整保留 1516、1624、2446、2482。`apply_strings.cjs --check` 核對 2469 條字串與快取 `80ddab3b`，`build_string_csv.cjs --check` 顯示 0 條硬編碼。保留 Claude 繪本序章入口、Codex 羊皮紙影片封存及神祕商人調整，主頁、編輯器、Worker protocol 與 bridge 啟動快取同步。兩套素材 `--check` 均通過，素材庫已發布提交 `7a0ced3`。
 - 合併驗證在 `logs/manual-merge-20261111/`。`node --test` 的商人、寶石、Worker、序章、字串、快取及套表相容測試 90/90，另序章場景、減傷及傳奇詞綴組合 20/22，UI Worker panel 6/8。兩側提交的隔離基準均重現相同四項失敗（gem.socket 斷言、UI 測試 fixture 缺失、兩項舊傳奇數值預期），保留測試。`npm.cmd run build` 通過 712 檔，合併差異空白檢查通過。
 - 交付為本段所在合併提交，後續執行既有同步器驗證本地與遠端四分支、已納入的來源及素材庫。保留隔離來源 `codex/background-catchup`。
+
+## START-MENU-SLATE-GATE-LIGHT-20261112 — 直角石板按鈕與拱門聖光
+
+- Codex 單一開發者，已完成。依使用者截圖將首頁按鈕換成直角深灰石板，沿用自製岩紋，移除切角、鉚釘及規則斜紋。白色雲光與四束聖光在中央拱門內錯開明暗及角度，落到遠景霧中淡出。
+- 修改 `css/start-menu.css`、`js/start-menu-background.js`、`index.html` 的 CSS／JS 快取、`images/start-menu/SOURCE.md` 和 `manifest.json`、VFX 清單、LV 及本段。唯讀檢查石板原圖、樣式來源、開始選單入口與既有測試。Effects-Materials `b0234ed4` 封存背景程式和來源，遊戲及素材庫 SHA 一致。
+- Claude 的寶箱入口與首頁快取位於 `index.html` 不同區段，完整三方試合乾淨。Claude 的任務在 `docs/AI_TASKS.md` 開頭，本段新增於末尾，新段落三方試合乾淨。
+- `npm.cmd run build` 通過 712 檔。以 `node --test` 執行開始選單、背景、遊戲選單、快取及 VFX 登記共 46/46；String 稽核寫死 0，素材與 diff 檢查通過。
+- 隔離靜音 Edge 驗證 1920×869、390×844、568×320。按鈕為直角、有石紋、無角點，焦點、按壓、停用與觸控正常。擷取實際 Canvas 確認聖光區域隨時間變化，拱門外側及地面採樣的遮罩 alpha 為 0。主控台無錯誤或警告。手機採模擬視窗，桌面截圖與 4 秒動態預覽留在聊天。
+- 遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收與合併。

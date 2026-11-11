@@ -21,9 +21,13 @@
 
 由背景的單一畫面時鐘管理，隱藏分頁或選單時暫停，重新顯示後續播，卸載時回收事件。這些程序效果與分鏡共用畫幅，不需另載序列貼圖。
 
+## 中央拱門聖光
+
+四束近白色光從拱頂後的雲縫向右下散開，彼此錯開明暗與角度，在遠方霧層逐漸消散。光束與雲端散光由 Canvas 預先繪製，每幀在拱門內側的羽化遮罩合成，石柱保留遮擋，前方仍有地平霧帶。減少動態時放慢明暗變化並降低角度擺幅，沿用背景的可見性與卸載機制。
+
 ## 接入開始選單
 
-由選單載入 `<script src="js/start-menu-background.js?v=1.0.7"></script>`，並在選單背景的定位容器掛載。
+由選單載入 `<script src="js/start-menu-background.js?v=1.0.8"></script>`，並在選單背景的定位容器掛載。
 
 ```js
 const backdrop = StartMenuBackground.mount(document.getElementById('start-menu'));

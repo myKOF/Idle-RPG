@@ -7,14 +7,14 @@
     "originals/battlefield-atmosphere.png": "376932678074f0220f94d7cd420ae608ce356bf153b1390f07ff781e7b93cec3",
     "originals/title-lockup-forged.png": "02eefa57113f25846ca13639408c60dc7cbbe1ac5fa20e741e421cf8a301b915",
     "ATMOSPHERE_PROMPTS.json": "2e799c5084fab31156e177a0460a9764f59f46c41e8410ee50cc606eba830377",
-    "source/start-menu-background.js": "653c61d36c4ce007b12859b52a7776fa005f755c31831f8c69c03a2b6699f404"
+    "source/start-menu-background.js": "7d1f5f26f52361b3f4bf3e2c07d74637f5cca2b3c0bcae14851dae79e9e6ed30"
   },
   "exports": {
     "web/battlefield.webp": "6badf424c816406a4bf441c42f3a0fb91ef6fe250a31e2171c22ea900ee4e32b",
     "web/battlefield-atmosphere.webp": "cd0da47bead6447ecc4622dd7b63a88db97f1a6e4b4d8f8f71d1cd2a3faa070e",
     "web/cloth-atlas.webp": "83b3a07b9e67e06011bc917bb8ef05bd9596e9eaa36ebe04d25ec64febad1af4",
     "web/title-lockup-forged.webp": "f3fbd489e1024281278f520ff6653accfb2365d0bd3115d8322c164012fd830b",
-    "SOURCE.md": "35a2e7ebdd3a173dfa0fdabd6c1c3ba590703de47a77661d8dda010498eca601",
+    "SOURCE.md": "d99f1a33743bc088b9795f0ffba2e213e55754773e24fb0dcc8fd733aa6291cc",
     "TITLE_SOURCE.md": "4104ec9df5ee99e671c7d7ece8f3dae201b7c80b67eb354e2d2a6565252671bd"
   }
 }
