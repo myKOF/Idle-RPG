@@ -921,6 +921,17 @@ function sfxFromRow(get, row, columns) {
   return Object.keys(out).length ? out : null;
 }
 /* 音效名稱與觸發接線檢查：錯誤一次說清楚是哪一列、哪一欄、怎麼改 */
+/* 只有音效、沒有觸發特效的觸發列（2026-11-12）：同一個事件的外觀沿用本體，只有聲音要分開。
+   這些列不寫 triggerVfx，特效解析完全不受影響；程式在該事件明確讀 triggerSfx（js/skills2.js sgSfxTrigger）。 */
+const SFX_ONLY_TRIGGERS = {
+  'knife.3': { roles: ['hit'], note: '飛刀彈射命中（第 3 階起，含超神的彈射）只讀本列「觸發命中音效」；第一次命中仍是受擊音效。' }
+};
+function sfxTriggerEvent(gid, stage) {
+  const ev = skills2Vfx.event(gid, stage), only = SFX_ONLY_TRIGGERS[gid + '.' + stage];
+  if (!ev) return only || null;
+  if (!only) return ev;
+  return { roles: Array.from(new Set(ev.roles.concat(only.roles))) };
+}
 function validateSkillSfx(gid, stage, body, trigger) {
   const ids = sfxIds(), where = 'Skills2 ' + gid + '/' + stage;
   const check = (label, id) => {
@@ -930,7 +941,7 @@ function validateSkillSfx(gid, stage, body, trigger) {
       (near.length ? '相近名稱：' + near.join('、') + '。' : '') + '可用名稱見 js/sfx-synth.js 的 RECIPES。');
   };
   SKILL_SFX_COLUMNS.forEach(([label, role]) => { if (body && body[role]) check(label, body[role]); });
-  const ev = skills2Vfx.event(gid, stage);
+  const ev = sfxTriggerEvent(gid, stage);
   SKILL_TRIGGER_SFX_COLUMNS.forEach(([label, role]) => {
     if (!trigger || !trigger[role]) return;
     if (!ev || !ev.roles.includes(role)) {
@@ -1335,7 +1346,8 @@ const SKILLS2_GLOSSARY_ROWS = [
   ['與同名的特效欄一一對應：該角色的特效播出那一刻，這格的音效跟著響（例：受擊音效＝受擊特效出現時）；施放音效例外，跟著施法動作、在技能放出去那一刻響。'],
   ['填 js/sfx-synth.js 登記的音效名稱（例：fireball、meteor-fly、firepillar）。本體六欄留白沿前階繼承、超神空欄從第七階繼承；觸發五欄只讀本列，只能填在該觸發角色有接線的列。'],
   ['音效分三種：單次（命中、爆炸）；飛行（長度自動對齊飛行時間，例 meteor-fly）；循環（場域存在期間持續，例 firepillar（火龍捲），填在施放音效時播固定秒數）。'],
-  ['地板／持續場域欄的單次音效只在場域出生時響一次，不隨每拍續命重播。敵人技能列不接音效。']
+  ['地板／持續場域欄的單次音效預設只在場域出生時響一次；場域本身定時作用的（雷球、暴風撕裂、泥沼術）每次作用都響。敵人身上的 debuff 每跳不發聲。敵人技能列不接音效。'],
+  ['飛刀第 3 階（彈射飛刀）的「觸發命中音效」＝每次彈射命中的聲音；這一列沒有觸發特效，外觀沿用本體。第一次命中仍讀「受擊音效」。']
 ];
 /* 「冷卻時間」是群組層欄位：程式只讀階數=1 那一列，其餘列**僅供對照**，
    因此編表者可以在後續列寫自己的註記（例如各階原本設想的冷卻曲線）。
@@ -1752,7 +1764,8 @@ SCHEMAS.Skills2 = {
       const triggerSfx = sfxFromRow(get, r, SKILL_TRIGGER_SFX_COLUMNS);
       validateSkillSfx(gid, stageKey, tierSfx, triggerSfx);
       const triggerData = skills2Vfx.event(gid,stageKey)
-        ? Object.assign({triggerVfx:triggerVfx || {}}, triggerSfx ? {triggerSfx:triggerSfx} : null) : null;
+        ? Object.assign({triggerVfx:triggerVfx || {}}, triggerSfx ? {triggerSfx:triggerSfx} : null)
+        : (triggerSfx && SFX_ONLY_TRIGGERS[gid + '.' + stageKey] ? {triggerSfx:triggerSfx} : null);   // 只有音效的觸發列不寫 triggerVfx
       const sfxData = tierSfx ? { sfx: tierSfx } : null;
       const status = {};
       SKILLS2_STATUS_COLUMNS.forEach(([label, side]) => {
