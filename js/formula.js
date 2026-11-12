@@ -1880,6 +1880,15 @@ function demonSeedDropChanceForBoss(floor) {
    裝備戰利品等級 = 4 + 樓層×5，經 makeEquipment 取裝備套級（equipmentTierLevel，依 BOSS 掉落表擲骰） */
 /* 高塔通關獎勵：金幣 = 每層金幣 × 樓層（首殺加倍）；寶石階級 = 1 + ⌊樓層 ÷ 每階層數⌋；精華 = 基底 + 樓層。 */
 var TOWER_REWARD = { goldPerFloor: 200, gemFloorsPerLevel: 4, essenceBase: 3, itemLevelBase: 4, itemLevelPerFloor: 5 };
+function towerInvitationDropChance(floor, highestCleared, relicBonus) {
+  var referenceFloor = Math.max(floor, highestCleared || 0);
+  var retainedPct = Math.max(0, 100 - 20 * (referenceFloor - floor));
+  var range = MERCHANT_INVITATION_DROP_RANGES.find(function (entry) {
+    return referenceFloor >= entry[0] && referenceFloor <= entry[1];
+  });
+  return range ? Math.min(100, range[2] * retainedPct / 100 * (1 + (relicBonus || 0))) : 0;
+}
+
 function towerRewardFor(floor, firstClear) {
   return {
     gold: Math.round(TOWER_REWARD.goldPerFloor * floor * (firstClear ? 2 : 1)),

@@ -15996,3 +15996,11 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex integrator。整合 HEAD `e7079082e86fcf32ca1df5005942b96cd44b11e6` 與 MERGE_HEAD `c19b75289b6e360b87856469712f3ed3adc13969`（base `e867151762844c5da09b912eb48599604483ee4f`）。
 - `index.html` 與 `js/worker/sim.worker.js` 保留 ours 的任務／寶箱遺物資料、玩家與存檔載入版本，以及 theirs 的寶箱美術、獎勵彈窗、離線收益、Worker protocol 與開始選單更新；合併後以 `20261112-sync-chest-v3` 同步主執行緒、Worker、protocol 與 bridge 快取鏈。
 - 初始衝突僅上述兩個文字檔，沒有 XLSX；因此未修改活頁簿 bytes，也未建立 `Name.xlsx` 的虛構 DATA plan。針對性 chest／offline／Worker／start-menu／cache 測試 44/44 通過，`npm.cmd run build` 717 檔通過，完整 `git diff HEAD --check` 通過；忽略的診斷輸出保留於 `logs/sync-merge-20261112-152757/targeted.tap` 與 `build.log`。
+
+## MYSTERY-MERCHANT-TICKET-TIERS-20261112 — 邀請券樓層機率與BOSS提示
+
+- Owner：Codex，Done，單一主開發者。從 `e5aac079` 延伸。逐檔衝突預檢與 Store 獨占檢查通過。Store 第45列每格改用 `{起始層,結束層,百分比}`，三段預設均為原本的10%。原生Excel窄改 E45:I45 並正常重開，比對其他儲存格值、樣式、欄寬、篩選與視圖保持。原單一數字格式仍能匯入。
+- `js/formula.js` 共用邀請券機率，最高已通關樓層是重打低層的基準，每低一層扣20%基準，低五層起為0%；較高樓層使用該層基準。塔戰／離線獎勵使用相同公式及遺物倍率，塔詳情與戰鬥／結算BOSS提示顯示正機率。同步 `tools/apply_params.cjs` 的區間驗證、`tools/relic_sample.cjs`、主頁與Worker快取、`docs/MYSTERY_MERCHANT.md` 與 `LV_upgrade_system.md`。
+- 驗證：原生Excel→CSV逐格一致。`node tools/apply_params.cjs` 617一致／0變更／0錨點問題，`--check-anchors` 擾動561數值後仍命中617錨點。`node --test tests/mystery-merchant.test.cjs tests/tower-rewards-ui.test.cjs tests/boss-tooltip.test.cjs tests/gem-shop.test.cjs tests/worker-protocol.test.cjs` 38/38，包含20→16→12→8→4→0、跨區間、遺物、正率顯示、零率隱藏及重複結算。Build 717檔，字串檢查寫死0，遺物取樣工具 10→30%。隔離全靜音Edge正式頁，最高通關40時驗證第40／39／38／35層預覽為10／8／6／隱藏，實際滑鼠停在戰鬥欄的資訊鈕時，第39層BOSS提示顯示8%，無瀏覽器錯誤。
+- `node --test --test-concurrency=8 --test-reporter=tap "tests/*.test.cjs"` 輸出止於第5124項、VFX改名測試第2案，前段記錄637項失敗。以5路並行補跑從 `vfx-editor-rename.test.cjs` 起的47檔，尾段713項，658通過、54失敗、1跳過。兩份TAP的失敗名稱均可在過往完整紀錄找到。本項新增測試通過，診斷在 `logs/merchant-layout/ticket-tiers-*.tap`，實機畫面在 `visualizations/merchant-ticket-tiers`。
+- 唯讀檢查共通規範、Excel原生更新器、Store既有逐級配置、離線塔戰獎勵、遺物及快取接線。`git diff --check` 通過。可供重載驗收和後續整合，遊戲SHA見交付。

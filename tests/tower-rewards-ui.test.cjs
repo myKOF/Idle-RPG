@@ -16,7 +16,7 @@ function uiContext() {
   c.uiTalentPanelSnapshot = () => ({});
   c.talentViewLevels = () => ({});
   c.talentThreatTotal = () => 0;
-  for (const name of ['towerTiers', 'towerTierOf', 'towerBossOf', 'towerBossIconHTML',
+  for (const name of ['divineStoneIconHTML', 'divineStoneTextHTML', 'towerTiers', 'towerTierOf', 'towerBossOf', 'towerBossIconHTML',
     'towerRewardRows', 'towerEquipDropRows', 'towerFloorRowHTML', 'towerDetailHTML']) {
     const start = ui.indexOf('function ' + name + '(');
     assert.ok(start >= 0, name);
@@ -105,4 +105,30 @@ test('附魔開關兩種狀態均不再顯示附魔書獎勵，其他材料仍�
   assert.ok(c.towerRewardRows(35).some(r => r.label === '附魔精華'));
   c.ENCHANT_ENABLED = false;
   assert.ok(c.towerRewardRows(35).every(r => r.label !== '附魔書' && r.label !== '符文'));
+});
+
+test('塔層獎勵和BOSS提示使用相同邀請券機率，零機率時隱藏', () => {
+  const c = uiContext();
+  c.MERCHANT_INVITATION_DROP_RANGES = [[1, 50, 20]];
+  c.relicPct = () => 0.5;
+  const tooltip = { style: {} };
+  const snapshot = { tower: { highest: 40 }, runtime: { floor: 39, boss: c.makeBoss(39) } };
+  c.$id = () => tooltip;
+  c.viewState = () => ({ towerActive: true });
+  c.uiHeaderPanelSnapshot = () => ({});
+  c.uiTowerPanelSnapshot = () => snapshot;
+  c.towerViewActive = () => true;
+  const start = ui.indexOf('function showEnemyTooltip(');
+  vm.runInContext(ui.slice(start, ui.indexOf('\n}', start) + 2), c);
+  for (const id of ['btn-boss-tip', 'btn-tower-result-boss-tip', 'btn-enemy-tip']) {
+    const anchor = { id, getBoundingClientRect: () => ({ right: 100, top: 100 }) };
+    snapshot.runtime.floor = 39;
+    c.showEnemyTooltip(anchor);
+    assert.match(tooltip.innerHTML, /神祕邀請券 24% 機率/);
+    assert.match(c.towerDetailHTML(39, 40), /神祕邀請券[\s\S]*24% 機率/);
+    snapshot.runtime.floor = 35;
+    c.showEnemyTooltip(anchor);
+    assert.doesNotMatch(tooltip.innerHTML, /神祕邀請券/);
+    assert.doesNotMatch(c.towerDetailHTML(35, 40), /神祕邀請券/);
+  }
 });

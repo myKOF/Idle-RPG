@@ -144,10 +144,10 @@ both('E 神祕商人', (r) => {
     sample: JSON.stringify(c.gemShop().items.slice(0, 3)).slice(0, 300) };
 });
 
-/* E5：邀請券掉落率（只量判定式，不跑整場塔戰） */
+/* E5：第 1 層邀請券掉落率（只量判定式，不跑整場塔戰） */
 both('E5 邀請券掉落機率（%）', (r) => {
   const c = ctx(); if (r) setMax(c, 'merchantTicketDrop');
-  return c.MYSTERY_MERCHANT_SETTINGS.ticketDropRate * (1 + c.relicPct('merchantTicketDrop'));
+  return c.towerInvitationDropChance(1, 1, c.relicPct('merchantTicketDrop'));
 });
 
 console.log(JSON.stringify(out, null, 1));

@@ -594,9 +594,8 @@ function grantTowerBossRewards(floor, firstClear, bossXp, rewards, scale) {
       rewards.push('🔷 ' + towerRunes.map(function (rid) { return runeLabel(rid); }).join('、'));
     }
   }
-  // 邀請券：每次塔BOSS勝利獨立判定，配置來自 Store.xlsx。
-  // 遺物「神祕殘券」：掉落率另外乘上 (1 + 數值%)（js/relic.js）
-  if (chance(MYSTERY_MERCHANT_SETTINGS.ticketDropRate * (1 + (typeof relicPct === 'function' ? relicPct('merchantTicketDrop') : 0)) * scale)) {
+  var ticketRate = towerInvitationDropChance(floor, G.tower.highest, typeof relicPct === 'function' ? relicPct('merchantTicketDrop') : 0);
+  if (ticketRate > 0 && chance(ticketRate * scale)) {
     addMerchantInvitations(1);
     rewards.push('🎟 ' + STR(2444, 1));
     if (window.recordLootMat) window.recordLootMat('mystery_invitation', 1, 'tower');

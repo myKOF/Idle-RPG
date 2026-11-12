@@ -2158,8 +2158,13 @@ var GEM_SHOP_TABLE = [
 var GEM_SHOP_MAX_LEVEL = 20;
 var MYSTERY_MERCHANT_SLOTS = 40;
 // Store.xlsx → apply_params.cjs；商人資料沿用 gemShop 名稱以相容既有存檔。
+// Store.xlsx 邀請券掉落率：[起始層, 結束層, 掉落率%]。
+var MERCHANT_INVITATION_DROP_RANGES = [
+  [1, 50, 10],
+  [51, 100, 10],
+  [101, 150, 10]
+];
 var MYSTERY_MERCHANT_SETTINGS = {
-  ticketDropRate: 10,
   gemWeight: 50,
   equipmentWeight: 30,
   runeWeight: 20,

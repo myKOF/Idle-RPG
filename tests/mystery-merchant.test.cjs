@@ -177,13 +177,32 @@ test('重新讀檔保留券、商店等級、已買商品庫存，但不恢復�
 test('塔BOSS勝利按表掉券，敗北／撤退及重複結算不產生券',()=>{
   for(const [win,rate,want,reason] of [[true,100,1,null],[true,0,0,null],[false,100,0,'timeout'],[false,100,0,'flee']]) {
     const e=game(),c=e.ctx;
-    c.MYSTERY_MERCHANT_SETTINGS.ticketDropRate=rate;
+    c.MERCHANT_INVITATION_DROP_RANGES=[[1,150,rate]];
     c.startTowerFight(1);c.endTowerFight(win,reason);
     assert.equal(c.merchantInvitationCount(e.state().player),want);
     if(win&&want)assert.ok(c.TOWER.result.rewards.some(s=>s.includes('神祕邀請券')));
     c.endTowerFight(win,reason);
     assert.equal(c.merchantInvitationCount(e.state().player),want);
   }
+});
+
+test('邀請券由最高通關層的區間機率往下遞減，首次挑戰讀取該層區間',()=>{
+  const c=game().ctx;
+  c.MERCHANT_INVITATION_DROP_RANGES=[[1,50,20],[51,100,40]];
+  assert.deepEqual([40,39,38,37,36,35,1].map(floor=>c.towerInvitationDropChance(floor,40)),[20,16,12,8,4,0,0]);
+  assert.equal(c.towerInvitationDropChance(50,51),32);
+  assert.equal(c.towerInvitationDropChance(51,50),40);
+  assert.equal(c.towerInvitationDropChance(1,0),20);
+  assert.equal(c.towerInvitationDropChance(101,100),0);
+  assert.equal(c.towerInvitationDropChance(39,40,0.5),24);
+  assert.equal(c.towerInvitationDropChance(51,51,2),100);
+  assert.equal(c.towerInvitationDropChance(35,40,2),0);
+  c.G.tower.highest=40;
+  c.chance=rate=>rate>15;
+  c.grantTowerBossRewards(38,false,0,[]);
+  assert.equal(c.merchantInvitationCount(c.G.player),0);
+  c.grantTowerBossRewards(39,false,0,[]);
+  assert.equal(c.merchantInvitationCount(c.G.player),1);
 });
 
 test('掉落統計將邀請券顯示為道具名稱與數量',()=>{
@@ -213,6 +232,8 @@ test('Store由原生Excel匯出，商店參數從主表完整搬移且古詞條�
   try {
     const invalid = [
       [source.replace('3=20','3=19'),/太古詞條機率/],
+      [source.replace('{51,100,10}','{50,100,10}'),/邀請券掉落率樓層區間不得重疊/],
+      [source.replace('{1,50,10}','{1,50,101}'),/邀請券掉落率樓層或百分比超出範圍/],
       [source.replace(/(8-商人刷出類別,商店 Lv\.1,[^\r\n]*?)裝備=30/, '$1裝備=29'),/刷出類別.*總和須為100%/],
       [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,34=5'),/符文階級.*有效項目/],
       [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,19=5'),/符文階級.*不得重複/]
