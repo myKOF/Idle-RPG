@@ -1030,6 +1030,8 @@ const TASK_GLOSSARY_ROWS = [
   ['enchantCount＝累計附魔成功次數（被拒不計）。目標參數留空。⚠️ 附魔功能已關閉（由符文取代），目前沒有任務使用此類型。'],
   ['runeSocketCount＝累計鑲入符文的次數（成功才計；拆下再鑲會再計一次）。目標參數留空。'],
   ['composeCount＝累計寶石合成次數（「全部合成」一次合 N 組計 N）。目標參數留空。'],
+  ['chestOpenCount＝累計開啟寶箱的個數（任何品質的寶箱皆算；一次開 N 個計 N）。目標參數留空。'],
+  ['relicCount＝累計獲得的遺物件數（任何遺物皆算，重複件也算；拿去升級用掉的件數不會扣回）。目標參數留空。'],
   ['socketCount＝身上目前同時鑲嵌的寶石數（拔下即減，重複拔裝不累加）。目標參數留空。'],
   ['skillEquipCount＝目前技能欄已裝配且可用的技能數（卸下即減，重複裝卸不累加）。目標參數留空。'],
   ['skillUpgradeCount＝累計成功升級技能次數（各階學習及終極進化學習／升級皆計；失敗、降級及切換終極選項不計；降級不扣次數）。舊存檔以目前已投入技能點數作為最低累計。目標參數留空。'],
@@ -1068,12 +1070,13 @@ const TASK_GLOSSARY_ROWS = [
   ['3. 累計型（強化/洗煉/附魔/合成）跨任務共用同一個計數：例「強化10次」與「強化20次」共用，前者完成時後者即為 10/20。'],
   ['4. 品質/等級門檻是「以上皆可」：稀有任務穿史詩也算。'],
   ['5. 改完別忘了同步「獎勵顯示」欄的文字。'],
-  ['6. 2026-09-29 移除舊版技能系統：原「學習治療技能『再生術』」與「升級防禦技能『魔法屏障』至 5 級」兩個任務已刪除，skillLevel 目標類型不再存在；玩家存檔的領取進度已由存檔遷移（legacySkillRemovalV1）平移。']
+  ['6. 2026-09-29 移除舊版技能系統：原「學習治療技能『再生術』」與「升級防禦技能『魔法屏障』至 5 級」兩個任務已刪除，skillLevel 目標類型不再存在；玩家存檔的領取進度已由存檔遷移（legacySkillRemovalV1）平移。'],
+  ['7. 2026-11-12 在原第 16、31 個任務之後插入「開啟10個寶箱」與「獲得3件遺物」：已領取進度由存檔遷移（taskInsertChestRelicV1）平移，已經走過插入點的舊玩家視同略過新任務。']
 ];
 
 /* ---- Task ← TASKS（js/data.js）主線任務表（2026-08-05 任務系統） ----
    目標類型：equipSlots（參數=最低品質|最低等級）/ upgradeCount / rerollCount /
-   enchantCount / composeCount / socketCount / forgeParts / forgePartLevel /
+   enchantCount / composeCount / chestOpenCount / relicCount / socketCount / forgeParts / forgePartLevel /
    skillEquipCount / skillUpgradeCount / ancientCount / maxHp / stageClear（參數=地圖識別碼）/ towerFloor。
    獎勵類型：gold / scrap / essence / skillXp / gem（參數=寶石等級）/
    book（參數=附魔書id）/ equip（參數=品質|等級|太古數；等級 0=依當前關卡、太古空白=自然擲骰）。

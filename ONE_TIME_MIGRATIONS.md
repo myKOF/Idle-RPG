@@ -67,6 +67,25 @@
 
 ## 目前登錄與規劃中的遷移
 
+### `taskInsertChestRelicV1`：主線任務表插入「開啟寶箱」「獲得遺物」兩個任務
+
+**狀態：已實作（2026-11-12）。`js/save.js` 的 `ONE-TIME MIGRATION: taskInsertChestRelicV1` 區塊、`js/player.js` 的 `taskInsertChestRelicV1: true`。**
+
+**目的**：企劃在 Task 表索引 16 插入「開啟10個寶箱」（`chestOpenCount`）、索引 32 插入「獲得3件遺物」（`relicCount`），
+後面任務的順序值全部往後移。存檔只記 `taskState.idx`（下一個可領取的索引），不平移的話已走過插入點的玩家會把領過的任務再領一次。
+
+**執行時機**：`migrateSave(data)` 的任務索引夾限之前，排在 `legacySkillRemovalV1` 的索引平移之後（依時間先後套用）。
+於 `mergeDefaults` 前捕捉 `hadTaskInsertChestRelicV1`；新帳號由 `newGameState()` 預帶 `true`。
+
+**處理範圍**：只動 `taskState.idx`：先 `idx > 16 → +1`，再以平移後的值 `idx > 32 → +1`。
+還沒走到插入點的玩家（idx ≤ 插入點）會接著做到新任務；已經走過的視同略過新任務（不補發獎勵）。
+
+**測試方式**：`tests/task-chest-relic.test.cjs`（六個索引邊界、舊表全部領完仍是全部領完、重複讀檔冪等、新帳號不觸發；
+並守住兩個新任務仍在索引 16／32，表上位置一變就要改遷移）。
+
+**日後清理**：所有外部存檔皆完成遷移後，移除 `js/save.js` 的區塊與旗標捕捉、`js/player.js` 的預置旗標、
+測試檔中的遷移案例與索引守衛，保留本紀錄註明已下線。
+
 ### `legacySkillRemovalV1`：舊版技能系統整批移除，存檔卸載已裝備的舊技能
 
 **狀態：已實作（2026-09-29）。以程式碼為準——`js/save.js` 的 `ONE-TIME MIGRATION: legacySkillRemovalV1` 區塊、`js/player.js` 的 `legacySkillRemovalV1: true`、`js/worker/sim.worker.js` 的 `_legacySkillRemoval` 公告。**

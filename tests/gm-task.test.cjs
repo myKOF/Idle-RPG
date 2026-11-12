@@ -66,7 +66,7 @@ test('查詢純讀且顯示實際技能升級進度；非法參數與外部host�
   const before=plain(c.G);
   assert.match(c.executeGMCommand('task status').message,/第 14 個.*3\/5/);
   assert.deepEqual(plain(c.G),before);
-  for(const line of ['task','task 1.5','task -1','task NaN','task 100001','task goto','task goto 0','task goto 39','task goto 1.5','task goto 1 extra','task reset extra','task complete extra','task status extra','task 0 extra']){
+  for(const line of ['task','task 1.5','task -1','task NaN','task 100001','task goto','task goto 0','task goto '+(c.TASKS.length+1),'task goto 1.5','task goto 1 extra','task reset extra','task complete extra','task status extra','task 0 extra']){
     assert.equal(c.executeGMCommand(line).ok,false,line);
     assert.deepEqual(plain(c.G),before,line);
   }

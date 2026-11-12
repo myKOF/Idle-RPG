@@ -84,6 +84,7 @@ function newGameState() {
     loadoutCapClampV1: true,   // 裝載欄上限下修後裁切超額格數
     legacySkillRemovalV1: true, // 舊版技能系統移除：清除舊技能／融合技、任務進度索引平移
     powerThreatV1: true, // 威能十級制
+    taskInsertChestRelicV1: true, // 任務表插入「開啟寶箱」「獲得遺物」兩個任務：已領取進度索引平移
 
     equipmentRarityVersion: 2, // R0～R11 強度排序版本
     savedAt: Date.now(),
@@ -150,8 +151,8 @@ function newGameState() {
       salvageSlots: 10,
       procTimer: 0, enchTimer: 0, upTimer: 0,
       // rerolled / gemComposed（2026-08-05 任務系統）：洗煉與寶石合成的累計次數，
-      // 與 upgraded / enchanted 同屬終身統計，任務進度直接讀這裡（js/tasks.js）
-      stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, runeSocketed: 0, upgraded: 0, upgradeFailed: 0, mutated: 0, rerolled: 0, gemComposed: 0 }
+      // 與 upgraded / enchanted 同屬終身統計，任務進度直接讀這裡（js/tasks.js）；chestOpened＝累計開啟寶箱個數（2026-11-12）
+      stats: { salvaged: 0, extracted: 0, synthesized: 0, enchanted: 0, runeSocketed: 0, upgraded: 0, upgradeFailed: 0, mutated: 0, rerolled: 0, gemComposed: 0, chestOpened: 0 }
     },
     newForge: {   // 熔爐（正式版）：待處理佇列 / 熔爐清單（最多 NEW_FORGE_MAX 座）
       queue: [],

@@ -8,9 +8,10 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    進度來源分兩類：
    - 累計次數：讀 G.factory.stats 既有統計（upgraded / enchanted），洗煉與合成
      兩個新計數（rerolled / gemComposed）由 item.js 對應成功點遞增；
-     技能升級由 skills2UpgradeCount 讀成功累計，技能裝配檢查目前技能欄。
+     技能升級由 skills2UpgradeCount 讀成功累計，技能裝配檢查目前技能欄；
+     開啟寶箱（chestOpened）由 chest.js chestOpen 遞增。
    - 狀態檢查：每次讀取時依 G 現況計算（身上品質、鑲嵌數、太古數、關卡、高塔層數、
-     零件等級、生命上限），拔下再裝不會重複計數——這正是設計文檔對鑲嵌任務
+     零件等級、生命上限、遺物件數），拔下再裝不會重複計數——這正是設計文檔對鑲嵌任務
      的要求。
 
    任務領取存檔為 G.taskState = { idx }：idx 為下一個可領取的任務索引（0 起）；
@@ -97,6 +98,25 @@ function taskMaxForgePartLevel() {
   return Math.max(0, best);
 }
 
+/* 累計獲得的遺物件數（重複件也算）：由存檔現況推回，不另存計數。
+   第一件解鎖 Lv.1 固定消耗 1 件（relicGrant），之後每升一級消耗該級「升級數量」（relicUpgrade），
+   所以「已解鎖＝1 件＋各級升級數量」＋手上未用掉的件數＝歷來拿到的總件數；升級不會讓進度倒退，
+   遺物系統上線前的存檔也不必補資料。 */
+function taskCountRelicPieces() {
+  if (typeof RELICS === 'undefined' || typeof relicEntry !== 'function') return 0;
+  var store = (G.player && G.player.relics) || {};
+  var n = 0;
+  for (var i = 0; i < RELICS.length; i++) {
+    var relic = RELICS[i], e = relicEntry(relic.id, store);
+    n += e.n;
+    if (e.lv > 0) {
+      n += 1;
+      for (var lv = 1; lv < e.lv; lv++) n += Math.max(0, Math.floor(Number(relic.levels[lv].cost) || 0));
+    }
+  }
+  return n;
+}
+
 /* ---- 任務進度 ----
    回傳該任務目前的進度值；與 def.count 比較即知是否達成。
    已領取的任務（idx 之前）由呼叫端直接以 count 顯示，不再重算。 */
@@ -113,6 +133,8 @@ function taskProgressFor(def) {
     case 'enchantCount': return Math.floor(Number(stats.enchanted) || 0);   // 附魔功能已關閉（data.js ENCHANT_ENABLED），此類型不再被任何任務使用
     case 'runeSocketCount': return Math.floor(Number(stats.runeSocketed) || 0);   // 累計鑲入符文次數（socketRune 計）
     case 'composeCount': return Math.floor(Number(stats.gemComposed) || 0);
+    case 'chestOpenCount': return Math.floor(Number(stats.chestOpened) || 0);   // 累計開啟寶箱個數（chestOpen 計，任何寶箱皆算）
+    case 'relicCount': return taskCountRelicPieces();   // 累計獲得遺物件數（重複件也算）
     case 'skillEquipCount': {
       var equipped = 0;
       if (typeof SKILLS2 !== 'undefined' && typeof skills2Equipped === 'function') {

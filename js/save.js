@@ -329,6 +329,7 @@ function migrateSave(data) {
   /* 舊版技能移除遷移旗標：同樣須在 mergeDefaults 前判斷（newGameState 預帶 true）。 */
   var hadLegacySkillRemovalV1 = !!(data.legacySkillRemovalV1);
   var hadPowerThreatV1 = !!data.powerThreatV1;
+  var hadTaskInsertChestRelicV1 = !!data.taskInsertChestRelicV1;   // 任務插入遷移旗標：同樣須在 mergeDefaults 前判斷
   var hadFieldBiomesV2 = !!data.fieldBiomesV2;
   var originalEquipment = (data.equipment && typeof data.equipment === 'object') ? data.equipment : null; // 保留真正裝備參照
   var def = newGameState();
@@ -895,6 +896,18 @@ function migrateSave(data) {
      舊存檔的 factory.stats.rerolled / gemComposed 同樣由 mergeDefaults 補 0，
      語意是「從本版起開始累計」——已在進行中的老玩家從零起算，與設計相符。 */
   if (!data.taskState || typeof data.taskState !== 'object') data.taskState = { idx: 0 };
+  /* ONE-TIME MIGRATION: taskInsertChestRelicV1（2026-11-12）
+     任務表在索引 16 插入「開啟10個寶箱」、在索引 32 插入「獲得3件遺物」，後面的任務往後移。
+     idx＝下一個可領取的索引：還沒走到插入點的玩家（idx ≤ 插入點）會接著做到新任務；
+     已經走過插入點的玩家索引 +1，不會把已領過的下一個任務再領一次（新任務視同略過）。
+     順序：先平移第一個插入點，再以平移後的索引判斷第二個。旗標寫入後不再平移。 */
+  if (!hadTaskInsertChestRelicV1) {
+    var insIdx = Math.max(0, Math.floor(Number(data.taskState.idx) || 0));
+    if (insIdx > 16) insIdx += 1;
+    if (insIdx > 32) insIdx += 1;
+    data.taskState.idx = insIdx;
+  }
+  data.taskInsertChestRelicV1 = true;
   var taskMax = (typeof TASKS !== 'undefined' && TASKS) ? TASKS.length : 0;
   data.taskState.idx = clamp(Math.floor(Number(data.taskState.idx) || 0), 0, taskMax);
   // 成就（2026-10-31）：缺漏由 mergeDefaults 補；這裡只防呆（got／st 必須是物件）

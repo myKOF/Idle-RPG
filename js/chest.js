@@ -272,6 +272,7 @@ function chestOpen(chestId, count) {
     for (var r = 0; r < row.rolls; r++) chestRollInto(bag, wpick(pairs), mul);
   }
   st.n -= count;
+  if (G.factory && G.factory.stats) G.factory.stats.chestOpened = (Number(G.factory.stats.chestOpened) || 0) + count;   // 任務進度（tasks.js chestOpenCount）
   var tally = { forge: 0, inv: 0, salvaged: 0 };
   var rewards = chestGrantBag(bag, tally);
   chestLog(STR(2491, def.name, fmt(count), chestRewardsText(rewards)) + (doubled ? STR(2492, fmt(doubled)) : ''), 'good');
