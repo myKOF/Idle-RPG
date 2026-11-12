@@ -1096,6 +1096,8 @@ objFieldML('formula', 'UPGRADE_COST_SCRAP = {', 'perRarity', '7-強化', '碎片
 objFieldML('formula', 'REROLL_COST_GOLD = {', 'coef', '7-洗煉', '金幣費用', 0, '洗煉金-係數');
 objFieldML('formula', 'REROLL_COST_GOLD = {', 'base', '7-洗煉', '金幣費用', 1, '洗煉金-底');
 objFieldML('formula', 'REROLL_COST_GOLD = {', 'perLevel', '7-洗煉', '金幣費用', 2, '洗煉金-每級');
+objFieldML('formula', 'REROLL_COUNT_COST = {', 'perCount', '7-洗煉', '洗煉次數加成', 0, '洗煉次數-每次加成%');
+objFieldML('formula', 'REROLL_COUNT_COST = {', 'maxMult', '7-洗煉', '洗煉次數加成', 1, '洗煉次數-倍率上限');
 scalar('formula', 'AFFIX_REROLL_LOWER_WEIGHT', '7-洗煉', '數值洗煉分段權重', 0);
 scalar('formula', 'AFFIX_REROLL_UPPER_BASE_WEIGHT', '7-洗煉', '數值洗煉分段權重', 1);
 scalar('formula', 'AFFIX_REROLL_BIAS_EXPONENT', '7-洗煉', '數值洗煉分段權重', 2);
