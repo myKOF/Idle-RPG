@@ -606,6 +606,7 @@ function makeEquipment(stage, opts) {
     enchant: null,   // { key, val }
     sockets: [],     // 寶石插槽 [{type, level}|null, ...]
     upgrade: 0,
+    rerollCount: 0,   // 已洗煉次數（整件與單詞條共用；費用隨次數增加，見 formula.js rerollCost）
     synthesized: false,
     locked: false
   };
@@ -1095,6 +1096,7 @@ function rerollItemAffixes(it) {
   var err = rerollResourceError(cost);
   if (err) return err;
   consumeRerollResources(cost);
+  it.rerollCount = (Number(it.rerollCount) || 0) + 1;
   var affixCap = getStats().affixCap;
   // 太古位置永久固定：洗煉沿用原太古位置（必滿值換種類），非太古位置永不洗出太古
   var ancientSet = {};
@@ -1140,6 +1142,7 @@ function rerollSingleAffix(it, affixKey) {
   if (pool.length === 0) return STR(1154);
 
   consumeRerollResources(cost);
+  it.rerollCount = (Number(it.rerollCount) || 0) + 1;
 
   var affixCap = getStats().affixCap;
   var newKey = wpick(pool);

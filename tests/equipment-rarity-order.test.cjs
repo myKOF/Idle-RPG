@@ -136,7 +136,8 @@ test('新神鑄配方、成本與自動拆解保護使用正確品質；神鑄�
   assert.deepEqual([6,7,10].map(r=>c.divineForgeOutputRarity(r)),[8,9,11]);
   assert.deepEqual([8,9,11].map(r=>c.divineForgeBaseRarity(r)),[6,7,10]);
   assert.deepEqual(keys.map((_,r)=>c.isGodforgedRarity(r)),keys.map((_,r)=>[8,9,11].includes(r)));
-  assert.deepEqual([6,7,8,9,10,11].map(r=>c.rerollCost({rarity:r,level:50}).essence),[9,14,9,20,27,36]);
+  // 基礎精華量 × 洗煉品質倍率（R6 起每階多 2 倍、R8 再乘 1.4，無條件捨去）
+  assert.deepEqual([6,7,8,9,10,11].map(r=>c.rerollCost({rarity:r,level:50}).essence),[9,14,9,20,27,36].map((b,i)=>Math.floor(b*c.rerollRarityMult(i+6)+1e-9)));
   c.G.forge.seenRarity=6;
   c.forgeNoteRarity(c.makeEquipment(300,{rarity:8,slot:'chest'}));
   assert.equal(c.G.forge.seenRarity,6);

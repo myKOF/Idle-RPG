@@ -196,6 +196,12 @@ var SfxSynth = (function () {
     ring(ac, out, ti, 2950 * k, [[1, 0.6], [1.006, 0.4], [2.41, 0.35, 1.5], [3.88, 0.2, 2.2], [5.3, 0.12, 3]], 0.32, 0.22);   // 清脆「叮——」
     crackles(ac, out, ti + 0.005, 0.12, 9, 0.6, { fLo: 4000, fHi: 8000, q: 3, dMin: 0.003, dMax: 0.008, bias: 1.3, spread: 0.7 });   // 濺出的火花
   }
+  function knifeBounce(ac, out, t, R) {   // 飛刀彈射命中：「叮」＋一小撮火花（2026-11-12 使用者從 6 個候選選定「火花彈跳」）
+    var k = R(0.94, 1.06);
+    burstNoise(ac, out, t, 'highpass', 4000, 0.7, 0.0004, 0.55, 0.015, 2);
+    ring(ac, out, t, 3100 * k, [[1, 0.5], [2.4, 0.25, 1.5], [3.9, 0.12, 2.2]], 0.1, 0.2, R(-0.4, 0.4));
+    crackles(ac, out, t + 0.004, 0.07, 7, 0.55, { fLo: 4500, fHi: 8500, q: 3, dMin: 0.003, dMax: 0.008, bias: 1.3, spread: 0.7 });
+  }
   function thrust(ac, out, t, R) {   // 2026-11-08 使用者從 5 個候選選定「疾風一刺」
     var k = R(0.93, 1.08), len = 0.13, ti = t + len;
     var bp = filt(ac, 'bandpass', 800, 2.2);
@@ -617,6 +623,7 @@ var SfxSynth = (function () {
   var RECIPES = {
     // 物理
     'knife':              d(knife, 1.8),
+    'knife-bounce':       d(knifeBounce, 11),     // 彈射命中，約主音效的八成響度
     'thrust':             d(thrust, 0.52, KEEP),
     'cleave':             d(cleave, 1.1),
     'gale':               d(gale, 0.65),

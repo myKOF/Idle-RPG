@@ -5,6 +5,7 @@ const { readExpanded } = require('./helpers/str-expand.cjs');
 const synth = require('../js/sfx-synth.js');
 const vfx = require('../tools/skills2-vfx.cjs');
 const plain = x => JSON.parse(JSON.stringify(x));
+const SOUND_ONLY_TRIGGERS = { 'knife.3': ['hit'] };   // 同 tools/config_tables.cjs 的 SFX_ONLY_TRIGGERS
 function context() {
   const c = vm.createContext({ console, Math });
   vm.runInContext(readExpanded('js/skills2.js'), c);
@@ -42,13 +43,30 @@ test('Skills2 填的音效名稱全部登記過，觸發音效只出現在有接
   eachRow(c.SKILLS2, (gid, stage, row) => {
     for (const [role, id] of Object.entries(row.sfx || {})) { body++; assert.ok(ids.has(id), gid + '/' + stage + ' ' + role + '=' + id); }
     const ev = vfx.event(gid, stage);
+    const soundOnly = SOUND_ONLY_TRIGGERS[gid + '.' + stage];   // 只有音效的觸發列：沒有 triggerVfx，程式明確讀取
     for (const [role, id] of Object.entries(row.triggerSfx || {})) {
       trig++;
       assert.ok(ids.has(id), gid + '/' + stage + ' trigger ' + role + '=' + id);
-      assert.ok(ev && ev.roles.includes(role), gid + '/' + stage + ' 觸發音效角色 ' + role + ' 未接線');
+      assert.ok((ev && ev.roles.includes(role)) || (soundOnly && soundOnly.includes(role)), gid + '/' + stage + ' 觸發音效角色 ' + role + ' 未接線');
     }
   });
   assert.ok(body >= 30 && trig >= 30, '本體 ' + body + '／觸發 ' + trig);
+});
+
+test('飛刀彈射命中讀第 3 階的觸發命中音效，特效與第一次命中不受影響', () => {
+  const c = context(), row = c.SKILLS2.knife.tiers[2];
+  assert.equal(row.triggerSfx && row.triggerSfx.hit, 'knife-bounce');
+  assert.equal(row.triggerVfx, undefined, '只有音效的觸發列不能有 triggerVfx，否則特效會改走觸發規則');
+  assert.equal(c.sgSfxTrigger('knife', 3, 'hit'), 'knife-bounce');
+  // 特效與一般解析維持本體規則
+  assert.equal(c.sgVfxRoles('knife', { vfxTier: 3 }).hit, 'hit-phys');
+  assert.equal(c.sgSfxRoles('knife', { vfxTier: 3 }).hit, 'knife', '第一次命中仍是飛刀主音效');
+  // 只有彈射飛行（variant knife-bounce）的命中帶彈射音效
+  const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'skills2.js'), 'utf8');
+  assert.match(src, /p\.variant==='knife-bounce'&&!p\.soul\?sgSfxTrigger\('knife',3,'hit'\)/);
+  const spec = {};
+  c.sgAttachSfx(spec, 'knife', { sfxRoles: { hit: 'knife-bounce' } });
+  assert.deepEqual(plain(spec.sfx), { hit: 'knife-bounce' });
 });
 
 test('23 種玩家技能都有主音效（本體欄或施放音效）', () => {
