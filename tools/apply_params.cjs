@@ -1082,6 +1082,7 @@ objFieldML('formula', 'SALVAGE_GOLD = {', 'mult', '6-裝備', '分解-金幣', 1
 /* ---- §7 強化 / 洗煉 ---- */
 objFieldML('formula', 'UPGRADE_SUCCESS = {', 'floor', '7-強化', '基礎成功率', 0, '強化率下限');
 objFieldML('formula', 'UPGRADE_SUCCESS = {', 'decayPerLevel', '7-強化', '基礎成功率', 1, '強化率遞減');
+objFieldML('formula', 'UPGRADE_SUCCESS = {', 'guaranteedUpTo', '7-強化', '基礎成功率', 2, '強化必成段');
 /* 強化／洗煉費用：形如 <資源>: Math.round(係數 * Math.pow(底, 指數變數) * (1 + it.level * 每級))
    三個參數同在一行，錨點一律萬用掉其他兩個，否則套用其中一個就會打死另外兩個。
    以 lv / it.rarity 這個指數變數區分強化與洗煉，兩者的行形狀在其餘部分相同。 */
