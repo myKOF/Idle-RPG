@@ -4,7 +4,7 @@
 
 ## 規則
 
-- 五種品質：普通（青銅寶箱）、稀有（藍色寶箱）、史詩（紫色寶箱）、傳說（橘色寶箱）、神話（暗金寶箱）。
+- 五種品質：普通（青銅寶箱）、稀有（精良寶箱）、史詩（史詩寶箱）、傳說（傳說寶箱）、神話（神話寶箱）。
 - 開局只解鎖「初始解鎖＝是」的寶箱（預設青銅）。其餘寶箱在**第一次得到該寶箱的鍛造經驗**時解鎖；未解鎖前置灰並以鎖鏈與掛鎖鎖住，下方提示「拆解 X 以上裝備解鎖」（X＝表上第一個拆解經驗大於 0 的品質）。
 - 任何拆解都算：熔爐入爐、背包手動拆解、背包滿載自動拆解、GM 拆解、離線熔爐補算；離線期間熔爐佇列已滿而折算碎片的裝備也視同已拆解。全部經過 `factory.js doSalvage` → `chestGainSalvageXp(品質)`（離線折算在 `save.js`）。
 - 經驗依寶箱**目前等級那一列**的「拆解經驗R0～R11」累加；每滿「寶箱鍛造經驗」得 1 個。每種最多 9999 個，存滿後經驗停在滿格，開掉一個後下一次拆解立刻補上。
@@ -54,7 +54,8 @@
 |---|---|
 | `js/chest_data.js` | `CHESTS`（配置表產生，兩端共載） |
 | `js/chest.js` | 兩端共載。純函式：`chestEntry`、`chestUpgradeCost`、`chestDropOdds`、`chestRewardLabel`；Worker：`chestGainSalvageXp`、`chestOpen`、`chestUpgrade`、`chestPanelView`、`sanitizeChests` |
-| `js/ui-chest.js`、`css/chest.css` | 置頂寶箱列（主執行緒）：程序化 SVG 寶箱圖、經驗條、開啟／全開／升級、掉落機率提示、開啟結果浮層 |
+| `js/ui-chest.js`、`css/chest.css` | 置頂寶箱列（主執行緒）：透明 WebP 寶箱圖、經驗條、開啟／全開／升級、掉落機率提示、開啟結果浮層 |
+| `images/chests/` | 五款寶箱圖。母圖與提示詞收錄於 Effects-Materials 的 `codex-authored/forge-chests-20261112`，以 `node tools/assets/export-chest-art.cjs --apply` 匯出。 |
 
 - 存檔：`G.player.chests = { 編號: { lv, xp, n, on } }`，新局為空物件，缺項依表格預設補上；`migrateSave` 呼叫 `sanitizeChests`。表上暫時拿掉的編號原樣保留。
 - 協議 v79：`chest.open({chestId, count})`、`chest.upgrade({chestId})`；`newforge` 面板新增 `chests`（唯讀投影，建面板不改存檔）。

@@ -1,3 +1,11 @@
+## FORGE-CHEST-ART-20261112 — 熔爐寶箱改名與圖示重製
+
+- Codex 單一開發者，已完成。由左到右為青銅寶箱、精良寶箱、史詩寶箱、傳說寶箱、神話寶箱。青銅採鐵灰箱體、銀白包邊及銀灰卡框。五款圖示以內建 ImageGen 繪製，分別使用鍛鐵、藍寶石、紫晶、琥珀焰紋及黑曜石鎏金。未解鎖時顯示灰階箱體與鎖鏈掛鎖。Mote Studio 可連線，這組寫實材質採用 ImageGen 製作。
+- 修改 `config/Excel/Chest.xlsx`、匯出的 `config/CSV/Chest.csv` 與 `js/chest_data.js`、`js/ui-chest.js`、`css/chest.css`、主頁與 Worker 快取、`images/chests/`、`tools/assets/export-chest-art.cjs`、`docs/CHEST_SYSTEM.md`、LV 及本段。唯讀檢查共通規範、寶箱計算與存檔、String 來源、素材匯出與相關測試。逐檔衝突預檢通過。
+- Excel 原生 API 正常重開驗證通過，共更新 80 個名稱欄位，獨立比對其餘儲存格和格式。`node --test tests/chest.test.cjs tests/worker-protocol.test.cjs tests/relics.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 共 51/51。`npm.cmd run build`、字串硬編碼稽核、素材 SHA 與 `git diff --check` 通過。
+- 正式頁面以隔離靜音 Edge 及測試存檔驗證 1600px 桌面和 390px 模擬視窗。五張圖正常載入，預設四個鎖鏈正確顯示，GM 訊息、掉落提示與精良寶箱開啟結果顯示新名稱，開啟後數量扣除，主控台無錯誤。窄視窗沿用遊戲全頁縮放。
+- Effects-Materials 提交 `c96b9af`，保存五款透明 PNG 母圖、WebP 與提示詞。遊戲提交為本段所在提交，可在 `ai/codex` 重載熔爐頁驗收與合併。
+
 ## OFFLINE-LOOT-LAYOUT-20261112 — 離線收益掉落物排版
 
 - Codex 單一開發者，已完成。依使用者提供的圖 2 調整掉落物標籤。裝備與寶石各以三欄排列，名稱著色加框，數量在框外且同組不換行。寶石一至十級的圖示、名稱及框對應品質 R0～R9。材料文字與框採彈窗淡金色，擊殺數以千分位顯示完整整數。桌面彈窗上限由 520px 增至 600px，寶石圖示由 CSS 繪製，標籤使用現有字串。

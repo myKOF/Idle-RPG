@@ -35,7 +35,7 @@
 
 /* ---- 卡片 ---- */
 #tab-newforge .nfc-card {
-  --q: #b87333;
+  --q: #d2d7de;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -46,7 +46,6 @@
   border-radius: 7px;
   background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--q) 16%, transparent), transparent 70%), #111317;
 }
-#tab-newforge .nfc-card.q-common { --q: #cd7f32; }
 #tab-newforge .nfc-card.q-rare { --q: #38bdf8; }
 #tab-newforge .nfc-card.q-epic { --q: #c084fc; }
 #tab-newforge .nfc-card.q-legendary { --q: #fb923c; }
@@ -65,19 +64,18 @@
   cursor: help;
 }
 #tab-newforge .nfc-card.is-locked .nfc-art { cursor: default; }
-#tab-newforge .nfc-art-svg {
-  width: 100px;
-  height: 84px;
-  overflow: visible;
+#tab-newforge .nfc-art-chest,
+#tab-newforge .nfc-art-lock {
+  width: min(100%, 118px);
+  height: 100%;
+  object-fit: contain;
 }
-#tab-newforge .nfc-art-glow { animation: nfc-glow 3.2s ease-in-out infinite; }
-#tab-newforge .nfc-card.is-locked .nfc-art-chest { filter: grayscale(1) brightness(.5); }
-@keyframes nfc-glow {
-  0%, 100% { opacity: .55; }
-  50% { opacity: 1; }
+#tab-newforge .nfc-card.is-locked .nfc-art-chest {
+  filter: grayscale(1) brightness(.46);
 }
-@media (prefers-reduced-motion: reduce) {
-  #tab-newforge .nfc-art-glow { animation: none; }
+#tab-newforge .nfc-art-lock {
+  position: absolute;
+  pointer-events: none;
 }
 
 #tab-newforge .nfc-count {
@@ -204,7 +202,7 @@
 
 /* ---- 開啟結果浮層 ---- */
 #tab-newforge .nfc-result {
-  --q: #cd7f32;
+  --q: #d2d7de;
   position: absolute;
   top: 8px;
   right: 10px;
