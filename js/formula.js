@@ -2314,7 +2314,7 @@ function salvageResult(it, ancientEssenceBonus, essenceBonus) {
    ============================================================ */
 
 /* 強化基礎成功率：低強化段必成（免費段），之後每級遞減固定百分點，並有下限。 */
-var UPGRADE_SUCCESS = { guaranteedUpTo: 5, full: 100, decayPerLevel: 6, floor: 30 };
+var UPGRADE_SUCCESS = { guaranteedUpTo: 5, full: 100, decayPerLevel: 6, floor: 10 };
 function upgradeSuccessBase(nextLevel) {
   if (nextLevel <= UPGRADE_SUCCESS.guaranteedUpTo) return UPGRADE_SUCCESS.full;
   return Math.max(UPGRADE_SUCCESS.floor,
@@ -2334,10 +2334,11 @@ function upgradeCost(it) {
       UPGRADE_COST_SCRAP.coef * Math.pow(UPGRADE_COST_SCRAP.base, lv) * (1 + it.level * UPGRADE_COST_SCRAP.perLevel))
   };
 }
-// 實際強化成功率 = 基礎 + 「強化成功率」屬性（夾在上限內）；失敗損失半數材料
+// 實際強化成功率 = 基礎 × (1 + 「強化成功率」屬性%)（夾在 100% 內）；失敗損失半數材料
+// 例：基礎 20%、強化成功率 +100% → 20% × (1 + 100%) = 40%
 function upgradeSuccessChance(it) {
   var next = (it.upgrade || 0) + 1;
-  return Math.min(100, upgradeSuccessBase(next) + getStats().enhanceSuccess);
+  return Math.min(100, upgradeSuccessBase(next) * (1 + getStats().enhanceSuccess / 100));
 }
 
 /* 洗煉費用（整件或單詞條同價）：金幣 = 係數 × 底^稀有度 × (1 + 裝備等級 × 每級)；

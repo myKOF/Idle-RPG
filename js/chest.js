@@ -8,8 +8,9 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
      拆解任何裝備（factory.js doSalvage：熔爐、背包手動拆解、滿載自動拆解、離線熔爐補算）→ chestGainSalvageXp(品質)
        → 各寶箱依「目前等級列」的 R0～R11 拆解經驗累加；第一次拿到經驗即解鎖；每滿所需經驗得 1 個。
      離線期間熔爐佇列已滿而折算碎片的裝備，在 save.js 同樣呼叫 chestGainSalvageXp（視同已拆解）。
-     開啟（chest.open）：每個寶箱抽「開啟掉落數」次，每次依權重選一格掉落；遺物三件寶箱效果在此套用：
-       幸運寶箱 relicChestSpeedMult（經驗倍率）、幸運符 relicChestRelicChanceMult（遺物格權重倍率）、
+     開啟（chest.open）：每個寶箱擲「開啟掉落數」輪（可寫 a~b 隨機輪數）；每一輪裡每個掉落格各自獨立擲骰，
+       格上的數字＝該格這一輪的掉落機率（%，上限 100），沒有互相排擠；遺物三件寶箱效果在此套用：
+       幸運寶箱 relicChestSpeedMult（經驗倍率）、幸運符 relicChestRelicChanceMult（遺物格機率倍率）、
        雙開戒 relicChestDoubleChance（每開一個寶箱有機率獎勵加倍）。
      升級（chest.upgrade）：金幣 chestUpgradeCost ＝ a ＋ b^目前等級。
    兩端共載：主執行緒沒有 G，只用 chestEntry／chestUpgradeCost／chestDropOdds／chestRewardLabel 這些純函式讀面板快照；
@@ -53,22 +54,32 @@ function chestUnlockRarity(def) {
   return -1;
 }
 function chestRelicMult() { return typeof relicChestRelicChanceMult === 'function' ? relicChestRelicChanceMult() : 1; }
-/* 掉落候選與權重（遺物格套「幸運符」倍率）。 */
+/* 掉落候選與各自的獨立掉落機率（%，上限 100；遺物格套「幸運符」倍率）。 */
 function chestDropPairs(row) {
   var mult = chestRelicMult(), out = [];
   if (!row || !Array.isArray(row.drops)) return out;
   for (var i = 0; i < row.drops.length; i++) {
     var d = row.drops[i], w = Number(d.w) || 0;
     if (d.k === 'relic') w *= mult;
+    if (w > 100) w = 100;
     if (w > 0) out.push([d, w]);
   }
   return out;
 }
-/* 每次抽取各格的機率（%），介面提示用。 */
+/* 每一輪各格的獨立掉落機率（%），介面提示用。 */
 function chestDropOdds(row) {
-  var pairs = chestDropPairs(row), total = 0, i;
-  for (i = 0; i < pairs.length; i++) total += pairs[i][1];
-  return pairs.map(function (p) { return { drop: p[0], pct: total > 0 ? p[1] / total * 100 : 0 }; });
+  return chestDropPairs(row).map(function (p) { return { drop: p[0], pct: p[1] }; });
+}
+/* 開啟掉落數：整數＝固定輪數，[a, b]＝每開 1 個在 a～b 之間均勻隨機（含頭尾）。回傳 [最少, 最多]。 */
+function chestRollsRange(row) {
+  var r = row ? row.rolls : 0;
+  if (Array.isArray(r)) return [Math.max(0, Math.floor(Number(r[0]) || 0)), Math.max(0, Math.floor(Number(r[1]) || 0))];
+  var n = Math.max(0, Math.floor(Number(r) || 0));
+  return [n, n];
+}
+function chestRollsText(row) {
+  var r = chestRollsRange(row);
+  return r[0] === r[1] ? fmt(r[0]) : fmt(r[0]) + '~' + fmt(r[1]);
 }
 function chestRangeText(r) { return r[0] === r[1] ? fmt(r[0]) : fmt(r[0]) + '~' + fmt(r[1]); }
 /* 掉落格的名稱（不含數量），提示與日誌共用。 */
@@ -276,14 +287,20 @@ function chestOpen(chestId, count) {
   if (!st.on) return STR(2486, def.name);
   if (st.n <= 0) return STR(2487, def.name);
   var row = chestLevelDef(def, st.lv), pairs = chestDropPairs(row);
-  if (!pairs.length || !(row.rolls > 0)) return STR(2488, def.name);
+  if (!pairs.length || !(chestRollsRange(row)[1] > 0)) return STR(2488, def.name);
   count = Math.max(1, Math.min(st.n, Math.floor(Number(count) || 1)));
   var dbl = typeof relicChestDoubleChance === 'function' ? relicChestDoubleChance() : 0;
   var bag = {}, doubled = 0;
   for (var i = 0; i < count; i++) {
     var mul = dbl > 0 && chance(dbl) ? 2 : 1;
     if (mul > 1) doubled++;
-    for (var r = 0; r < row.rolls; r++) chestRollInto(bag, wpick(pairs), mul);
+    // 每開 1 個先決定輪數（固定或 a~b 隨機）；每一輪裡每個掉落格各自獨立擲骰
+    var rr = chestRollsRange(row), rounds = rr[0] === rr[1] ? rr[0] : ri(rr[0], rr[1]);
+    for (var r = 0; r < rounds; r++) {
+      for (var k = 0; k < pairs.length; k++) {
+        if (chance(pairs[k][1])) chestRollInto(bag, pairs[k][0], mul);
+      }
+    }
   }
   st.n -= count;
   if (G.factory && G.factory.stats) G.factory.stats.chestOpened = (Number(G.factory.stats.chestOpened) || 0) + count;   // 任務進度（tasks.js chestOpenCount）
