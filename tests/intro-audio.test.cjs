@@ -9,7 +9,7 @@ const config = { music: 'music.wav', sfx: 'sfx.wav' };
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
 function env(options = {}) {
-  const sources = [], gains = [], fetched = [], subscribers = [];
+  const sources = [], gains = [], fetched = [], subscribers = [], music = [];
   const values = { mute: false, musicVolume: 50, sfxVolume: 50 };
   let offset = 13250;
   class Context {
@@ -22,15 +22,20 @@ function env(options = {}) {
     }
     createGain() { const gain = { gain: { value: 0, setTargetAtTime(v) { this.value = v; } }, connect() {}, disconnect() { this.disconnected = true; } }; gains.push(gain); return gain; }
   }
+  class Audio {
+    constructor() { this.currentTime = 0; this.paused = true; this.starts = 0; music.push(this); }
+    play() { this.paused = false; this.starts++; return Promise.resolve(); }
+    pause() { this.paused = true; }
+  }
   const context = {
-    window: { AudioContext: Context }, document: { hidden: false },
+    window: { AudioContext: Context, Audio }, document: { hidden: false },
     navigator: { userActivation: { hasBeenActive: options.activated !== false } },
     fetch(url) { fetched.push(url); return options.fetch ? options.fetch(url) : Promise.resolve({ ok: !options.networkFails, arrayBuffer() { return Promise.resolve(new ArrayBuffer(0)); } }); },
     GameSettings: { get: name => values[name], sfxGain: () => values.mute ? 0 : values.sfxVolume / 50, subscribe: fn => subscribers.push(fn) }
   };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/intro-audio.js'), 'utf8'), context);
-  return { A: context.IntroAudio, context, sources, gains, fetched, values, subscribers, clock: () => offset, setClock: v => { offset = v; } };
+  return { A: context.IntroAudio, context, sources, gains, fetched, values, subscribers, music, clock: () => offset, setClock: v => { offset = v; } };
 }
 
 test('音樂與音效分軌，從畫面當下時間播放，靜音／兩個音量立即生效', async () => {
@@ -60,6 +65,44 @@ test('暫停／恢復不補播過期聲音，不重新下載；多次重播只�
   first.start(); await settle(); assert.equal(e.sources.length, 4, '舊控制器不再起播');
   next.start(); await settle(); assert.equal(e.sources.length, 6);
   assert.equal(e.subscribers.length, 1); next.dispose();
+});
+
+test('場景原曲以同一播放器接續，略過淡出期間只停止演出音效', async () => {
+  const e = env(), audio = e.A.create({ ...config, sceneMusic: true }, e.clock);
+  audio.start(); await settle();
+  const music = e.music[0];
+  assert.deepEqual(e.fetched, ['sfx.wav']);
+  assert.equal(music.src, 'music.wav');
+  assert.equal(music.volume, .5);
+  assert.equal(music.currentTime, 13.25);
+  e.values.sfxVolume = 0; e.values.musicVolume = 80; e.subscribers[0]();
+  assert.equal(music.volume, .8);
+  assert.equal(e.gains[0].gain.value, 0);
+  audio.pause();
+  assert.ok(music.paused);
+  e.setClock(14700); audio.start(); await settle();
+  assert.equal(music.currentTime, 14.7);
+  audio.pause(true);
+  assert.equal(music.paused, false);
+  assert.ok(e.sources.every(source => source.stopped));
+  const handoff = audio.takeSceneMusic();
+  audio.dispose();
+  assert.equal(handoff.track, 'music.wav');
+  assert.equal(handoff.audio, music);
+  assert.equal(music.paused, false);
+  assert.equal(music.starts, 2);
+});
+
+test('手勢預載解鎖音訊，影片起播前保持安靜', async () => {
+  const e = env({ suspended: true }), audio = e.A.create(config, e.clock);
+  await audio.prepare();
+  assert.deepEqual(e.fetched, ['music.wav', 'sfx.wav']);
+  assert.equal(e.sources.length, 0);
+  e.setClock(200);
+  audio.start(); await settle();
+  assert.deepEqual(e.sources.map(s => s.offset), [.2, .2]);
+  assert.equal(e.fetched.length, 2);
+  audio.dispose();
 });
 
 test('下載中略過／暫停取消非同步起播，恢復從新位置開始', async () => {

@@ -21,6 +21,41 @@ var SFX_GROUPS = {
 
 var Sfx = (function () {
   var ctx = null, buffers = {}, loading = {}, unlocked = false;
+  var introActive = false, playbackEpoch = 0, activeVoices = new Set();
+
+  function setIntroActive(value) {
+    if (introActive === value) return;
+    introActive = value;
+    if (!value) return;
+    playbackEpoch++;
+    // 取消循環與仍在排程／解碼的聲音，收起序章後只接受新事件。
+    loops = {};
+    fieldSeen = {};
+    groupState = {};
+    synthState = {};
+    if (loopTimer) { clearInterval(loopTimer); loopTimer = null; }
+    activeVoices.forEach(function (source) {
+      try { source.disconnect(); source.stop(); } catch (_) {}
+    });
+    activeVoices.clear();
+  }
+
+  function startVoice(source, gain, when, offset, onEnd) {
+    activeVoices.add(source);
+    source.onended = function (event) {
+      activeVoices.delete(source);
+      source.disconnect();
+      gain.disconnect();
+      if (onEnd) onEnd.call(source, event);
+    };
+    try { source.start(when, offset); }
+    catch (error) {
+      activeVoices.delete(source);
+      source.disconnect();
+      gain.disconnect();
+      throw error;
+    }
+  }
 
   function context() {
     if (ctx) return ctx;
@@ -59,6 +94,7 @@ var Sfx = (function () {
   }
 
   function play(name, onEnd) {
+    if (introActive) return false;
     var def = SFX_FILES[name];
     var c = context();
     if (!def || !c) return false;
@@ -72,8 +108,7 @@ var Sfx = (function () {
       src.buffer = buf;
       gain.gain.value = (def.volume == null ? 1 : def.volume) * master;
       src.connect(gain); gain.connect(c.destination);
-      if (onEnd) src.onended = onEnd;
-      src.start(0);
+      startVoice(src, gain, 0, 0, onEnd);
       return true;
     } catch (e) { return false; }
   }
@@ -105,9 +140,11 @@ var Sfx = (function () {
   }
   /* 播放群組裡的隨機一個音；delayMs＝多久之後才播（動作的「砍到」那一幀）。限流在真正要播的那一刻才判斷。 */
   function playGroup(group, delayMs, side) {
+    if (introActive) return false;
     var d = Math.max(0, Math.min(2000, Number(delayMs) || 0));
     if (d < 1) return fireGroup(group, side);
-    setTimeout(function () { fireGroup(group, side); }, d);
+    var epoch = playbackEpoch;
+    setTimeout(function () { if (epoch === playbackEpoch) fireGroup(group, side); }, d);
     return true;
   }
 
@@ -176,8 +213,7 @@ var Sfx = (function () {
     s.buffer = buf; s.loop = !!loop;
     g.gain.value = vol;
     s.connect(g); g.connect(synthBus(c));
-    if (onEnd) s.onended = onEnd;
-    s.start(Math.max(c.currentTime, when), Math.max(0, offset || 0));
+    startVoice(s, g, Math.max(c.currentTime, when), Math.max(0, offset || 0), onEnd);
     return { src: s, gain: g };
   }
   /* 限流在「預定發聲時刻」判斷：minGapMs 內同一個音效只響一次；同時在播的數量不超過 maxVoices */
@@ -192,6 +228,7 @@ var Sfx = (function () {
   }
   /* 播放一個技能音：opts＝{ delaySec, durSec（飛行）, side } */
   function playSynth(id, opts) {
+    if (introActive) return false;
     var def = synthDef(id), c = context();
     opts = opts || {};
     if (!def || !c || def.kind === 'loop' || !synthCanPlay(opts.side)) return false;
@@ -200,14 +237,16 @@ var Sfx = (function () {
     var st = synthThrottle(id, def, nowMs() + delay * 1000);
     if (!st) return false;
     var target = c.currentTime + delay;
+    var epoch = playbackEpoch;
     st.voices++;
     var done = function () { st.voices = Math.max(0, st.voices - 1); };
     var fire = function (buf) {
-      if (!buf) { done(); return; }
+      if (!buf || epoch !== playbackEpoch) { done(); return; }
       var late = c.currentTime - target;
       if (late > SYNTH_LATE_SEC && def.kind !== 'flight') { done(); return; }
       // 飛行音效晚算好就從中段接著播，落地那一刻仍然對齊
-      startBuffer(c, buf, target, late > 0 && def.kind === 'flight' ? late : 0, synthVolume(def), done);
+      try { startBuffer(c, buf, target, late > 0 && def.kind === 'flight' ? late : 0, synthVolume(def), done); }
+      catch (_) { done(); }
     };
     if (def.kind === 'flight') {
       var dur = Number(opts.durSec) > 0 ? Number(opts.durSec) : 1;
@@ -278,6 +317,7 @@ var Sfx = (function () {
      地板／持續場域：循環音效跟著場域續命；單次音效只在場域出生時播（retrigger 的每次作用都播，例如雷球放電）。
      飛行：長度＝這一則事件的飛行時間。 */
   function skillRole(spec, role, delaySec, travelSec, keepSec) {
+    if (introActive) return false;
     var id = spec && spec.sfx && spec.sfx[role], def = synthDef(id);
     if (!def) return false;
     var side = spec.cat === 'enemy' ? 'enemy' : 'ally';
@@ -299,11 +339,15 @@ var Sfx = (function () {
   }
   /* 施放音效：跟著施法動作走，在硬直結束（技能放出去）那一刻響 */
   function playCast(id, delaySec) {
+    if (introActive) return false;
     var def = synthDef(id);
     if (!def) return false;
     if (def.kind === 'loop') {
       var d = Math.max(0, Number(delaySec) || 0) * 1000;
-      setTimeout(function () { loopTouch('cast:' + id, id, def.castSec || 3, 'ally'); }, d);
+      var epoch = playbackEpoch;
+      setTimeout(function () {
+        if (epoch === playbackEpoch) loopTouch('cast:' + id, id, def.castSec || 3, 'ally');
+      }, d);
       return true;
     }
     return playSynth(id, { delaySec: delaySec, side: 'ally' });
@@ -349,6 +393,7 @@ var Sfx = (function () {
 
   return {
     play: play, playGroup: playGroup, preload: function () { unlock(); },
+    setIntroActive: setIntroActive,
     playSynth: playSynth, skillRole: skillRole, playCast: playCast,
     loopStop: function (key) { stopLoop(key); },
     preloadSynth: function (ids) { (ids || []).forEach(function (id) { loadSynth(id); }); },

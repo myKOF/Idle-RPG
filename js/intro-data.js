@@ -29,7 +29,12 @@
    ============================================================================= */
 var INTRO_REPLAY_TIMELINE = {
   video: 'images/intro-parchment/shot-01-03.mp4?v=1',
-  duration: 30300
+  duration: 30300,
+  audio: {
+    music: typeof ZONES !== 'undefined' && ZONES.desert && ZONES.desert.bgm,
+    sceneMusic: true,
+    sfx: 'images/intro-parchment/shot-01-03-sfx.mp3?v=1'
+  }
 };
 
 var INTRO_PROLOGUE_CAPTIONS = [

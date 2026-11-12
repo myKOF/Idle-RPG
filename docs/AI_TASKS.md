@@ -1,3 +1,36 @@
+## SYNC-MERGE-20261113-014228 ? ?????????
+
+- Owner?Codex?Done?????????? controller ??????????????? develop ?? pending merge?`48719af235b082d6c068f47f4dd217760a5d7c6e` ? `77a54348ad2b130fb31cc11f5ab4e7ab6ba12133`?base `1ecae5033122195c5fec3ebd6fdd3435c6289dff`?
+- ???`index.html` ???????????????? Git metadata??????? Excel????? controller ??????????
+- ?????? ours ?? knife-bounce ????theirs ????????????????????? script ??????????????????????????????? incoming ????????????? ownership ?????? trust?
+- ????????????????build??? `git diff HEAD --check`???????? HEAD?MERGE_HEAD?
+
+- ???`node --test tests/intro-audio.test.cjs tests/intro-game-audio.test.cjs tests/intro-motion.test.cjs tests/intro-player.test.cjs tests/intro-scene.test.cjs tests/skill-sfx.test.cjs tests/start-menu-background.test.cjs tests/start-menu.test.cjs tests/ui-sound.test.cjs tests/zone-music.test.cjs tests/vfx-editor-cache-versions.test.cjs`?98/99??????????? BGM ????? Node Module._compile ?? `git show 48719af:tests/zone-music.test.cjs` ??????16/17??????actual ? expected?????Zones.xlsx?CSV ? js/data.js ? original HEAD ?????????
+- `npm.cmd run build` ?? 720 ??`node tools/intro/sync-parchment-shots.cjs --check` ??????? SHA-256?`node tools/string-table/build_string_csv.cjs --check` ??? 0?`git diff HEAD --check` ????????????HEAD?MERGE_HEAD ?????? Excel ????????????? incoming ????????????
+- ?????????? index.html?sfx.js?sfx-synth.js ?????????????build ??????????????????????? ignored `logs/sync-20261113-014228-{tests,baseline}.tap` ? `{build,assets,strings}.log`???????????????????????? controller ????????? add?commit?
+
+## INTRO-SHOT1-EXTENDED-20261113 — 封存加長第一鏡核准版
+
+- Owner：Codex，Done。封存使用者核准的 16 秒魔軍增援版，供 55 秒計畫的第二鏡接續。獨立成片位於 `images/intro-parchment/shot-01-extended.mp4`，可編輯來源與音效位於 Effects-Materials `1073b1e3`。
+- 更新序章同步工具、來源說明、清單及 LV 記錄。同步工具 `--archive`、`--apply`、`--check` 通過。從封存來源重製的 480 影格成片與兩條 WAV 各自通過 SHA-256 比對。
+- 序章與相關回歸 79/79 通過，建置產出 719 個檔案，字串表檢查 0 筆硬編碼。
+
+## INTRO-DESERT-HANDOFF-20261112 — 序章配樂接續到荒漠
+
+- Owner：Codex，Done。自然播完或略過後直接回到荒漠時，場景接手同一個首曲播放器，保留位置與持續播放。首曲播完沿原十秒間隔接第二首。其他場景從自己的首曲開始，塔戰沿用塔戰配樂，開始選單恢復原配樂。
+- 修改 `js/intro-audio.js`、`js/intro-player.js`、`js/ui-sound.js`、首頁快取、三份回歸、LV 與本段。`.claude/serve.ps1` 改用非同步回應並補 MP4 類型，避免本機預覽的影片與 BGM 同時緩衝互相阻塞。唯讀檢查場景通知、Zones 首曲與次曲、既有配樂及成片。素材庫無本項修改，遊戲工作區既有 Chest.xlsx 修改保留。
+- Claude 的首頁差異位於其他區段，本次三行快取三方試合可合併，先前經使用者核准的相鄰 `sfx.js`／`sfx-synth.js` 差異仍依原決議保留兩行新版。
+- 隔離 Edge 正式遊戲新局實測。序章從 28.04 秒到荒漠接手時 30.31 秒，播放器、起播與暫停計數相同。將首曲移到尾端驗證自然換第二首，並驗證略過後同播放器繼續，以及冰原從首曲開頭播放。原本的本機預覽伺服器在修正後也通過荒漠重播及略過接手。兩次主控台錯誤與警告均為 0。
+- `node --test` 相關音訊／序章／快取／預覽伺服器共 154 項通過，1 項既有失敗仍期待熔岩山無 BGM。`npm.cmd run build` 通過 719 檔，String 寫死 0，diff 檢查通過。可重載驗收及合併，遊戲提交為本段所在提交。
+
+## INTRO-DESERT-AUDIO-20261112 — 序章使用荒漠第一首配樂
+
+- Owner：Codex，Done。從 `ZONES.desert.bgm` 共用已授權的 Desert Ascendant。前三鏡播放期間暫停場景與選單配樂，立即停止其他介面及戰鬥音效，取消尚在排程或解碼中的音效。兩條序章聲音遵循各自的音量與全體靜音，播完、略過或載入失敗時恢復適用配樂。
+- 修改序章資料／播放器／音訊、`js/ui-sound.js`、`js/sfx.js`、`index.html` 快取、五份回歸、LV、本段、序章來源／匯出工具和新音效。`index.html` 的相鄰 `sfx.js`／`sfx-synth.js` 快取經使用者核准分段更新，後續合併保留兩行新版。唯讀檢查 Zones、既有曲目授權、選單／場景音樂、戰鬥音效入口及核准成片。
+- Effects-Materials `acc9b149` 保存 `build-score.cjs --sfx`、來源及獨立音效。第一鏡只有舊混音，因此按原時間軸重做風聲、翼動和戰聲。第二、三鏡沿用原音效合成並移除背景音符。重建兩次 SHA-256 一致，既有影片、混音和荒漠原曲的雜湊核對一致。
+- 隔離靜音 Edge 操作正式設置按鈕，核對兩軌實際播放、全體靜音、獨立音量、停止已開始的音效、阻擋其他音效及正常播完／略過後恢復選單與場景配樂，主控台錯誤和警告均為 0。分頁與等待事件由回歸覆蓋。
+- `node --test` 的序章、UI／戰鬥／場景音訊、開始選單、快取和 VFX 相關測試為 143 通過，1 項既有失敗在原版測試同樣重現（舊斷言期待熔岩山無 BGM）。`npm.cmd run build` 通過 719 檔，String 寫死 0，雙庫匯出與差異檢查通過。可重新載入驗收並合併，遊戲提交為本段所在提交。
+
 ## CHEST-TABLE-LEVEL-CAP-20261112 — 由 Chest 表決定寶箱等級上限
 
 - Codex 單一開發者，已完成。Chest 表保留從 1 連續編號的驗證，移除固定上限。升級、存檔、介面與 GM 指令依各寶箱的最後配置等級運作。更新主頁與 Worker 快取、寶箱及 GM 文件、LV 總表。素材庫無本項變更。
@@ -16024,3 +16057,11 @@ Worker 存活且頁面正常完成載入。
 - 修改 `js/intro-data.js`、`js/intro-player.js`、`index.html` 序章快取、`tests/intro-player.test.cjs`、LV 與本段。唯讀檢查既有設置、GM、音訊與素材清單。`index.html` 與 Claude 強化公式快取在不同區段，三方試合乾淨。遊戲與素材庫成片 SHA-256 和清單一致，素材庫無本項變更。
 - `node --test` 執行序章、GM、開始選單、設置、快取及 VFX 相關十檔共 100/100。`npm.cmd run build` 通過 717 檔，String 稽核寫死 0，`git diff --check` 通過。
 - 隔離靜音 Edge 從開始選單點進「設置 → 說明」，確認點擊才請求成片，播放 1080p 前三鏡並自然結束。再次點擊從頭播放，按 Esc 或「略過」都返回說明頁及重播焦點。驗證靜音與音樂音量讀取，主控台錯誤及警告為 0。分頁暫停和媒體錯誤由回歸覆蓋。可供重載驗收及合併，遊戲提交為本段所在提交。
+
+## START-MENU-CLOTH-WAR-SMOKE-20261112 — 整面旗布與山脊煙塵
+
+- Owner：Codex，Done。固定旗布的桿邊，以低頻鼓動和向尾端傳遞的細波帶動整片布面。風力在不同長度的弱風和強風之間平滑變化。右上五段火線各自產生翻捲上升的煙團，底部映出火光，灰燼隨風上升並冷卻。
+- 修改背景程式、首頁快取、來源及清單、LV、特效登記和本段。唯讀檢查原始布料、荒原底圖、選單掛載、素材工具與共通規範。Claude 的飛刀音效快取及同副本的序章配樂修改各自處於不同區段，三方試合通過，分段提交。
+- 比對同風力下的實際網格，主旗 16% 寬度位置的上下幅度從約 1.16 增至 11.09 個底圖像素。34% 寬度位置的弱風與強風幅度約為 4.85 與 31.30。六面旗在最大風力的 384,000 個取樣三角形均維持正向。
+- 全靜音 Edge 實際開始選單讀取旗面變形、50 團煙及 60 顆灰燼逐幀更新。畫面確認煙與原火線銜接，設定開關暫停／恢復與減少動態仍播放，Console error／warning 0。動態特寫留在聊天。
+- `node --test` 跑開始選單、背景、遊戲選單、VFX 登記及快取共 46/46。Build 718 檔、字串寫死 0、雙庫 SHA、diff 均通過。素材庫程式快照提交 `8087fed8`，遊戲提交見交付。可供重載驗收與整合，實機驗證使用 Edge 桌面。

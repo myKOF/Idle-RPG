@@ -1,14 +1,15 @@
 'use strict';
-/* 序章聲景：兩條自製PCM軌，音樂／音效各自讀GameSettings。
+/* 序章聲景：音樂／音效分軌，各自讀 GameSettings。
    聲音跟隨IntroPlayer總時鐘；隱藏／停格／seek停止，回來只播當下位置。
    不搶UI／戰鬥音效的AudioContext，不記存檔，不繞過瀏覽器手勢限制。 */
 var IntroAudio = (function () {
   var context = null, active = null, buffers = {}, loading = {};
 
-  function level(kind) {
-    if (typeof GameSettings === 'undefined') return 1;
+  function level(kind, config) {
+    if (typeof GameSettings === 'undefined') return kind === 'music' && config.sceneMusic ? .5 : 1;
     if (GameSettings.get('mute')) return 0;
-    return kind === 'music' ? GameSettings.get('musicVolume') / 50 : GameSettings.sfxGain();
+    if (kind === 'sfx') return GameSettings.sfxGain();
+    return GameSettings.get('musicVolume') / (config.sceneMusic ? 100 : 50);
   }
   function load(url) {
     if (buffers[url]) return Promise.resolve(buffers[url]);
@@ -23,7 +24,7 @@ var IntroAudio = (function () {
   }
   function create(config, clock) {
     if (!config || typeof fetch !== 'function') return null;
-    var disposed = false, wanted = false, epoch = 0, voices = [];
+    var disposed = false, wanted = false, epoch = 0, voices = [], preparing = null, music = null;
     function clear() {
       voices.forEach(function (v) {
         try { v.source.stop(); } catch (_) {}
@@ -32,44 +33,82 @@ var IntroAudio = (function () {
       voices = [];
     }
     function update() {
-      voices.forEach(function (v) { v.gain.gain.setTargetAtTime(level(v.kind), context.currentTime, .025); });
+      voices.forEach(function (v) { v.gain.gain.setTargetAtTime(level(v.kind, config), context.currentTime, .025); });
+      if (music) music.volume = level('music', config);
     }
-    function pause() { wanted = false; epoch++; clear(); }
+    function pause(keepMusic) {
+      wanted = false;
+      epoch++;
+      clear();
+      if (music && !keepMusic) music.pause();
+    }
+    function prepareMusic() {
+      if (!config.sceneMusic || !config.music || music || typeof window.Audio !== 'function') return;
+      // 場景首曲用可移交的媒體播放器，音效仍隨畫面時鐘。
+      music = new window.Audio();
+      music.preload = 'auto';
+      music.volume = level('music', config);
+      music.src = config.music;
+    }
+    function startMusic() {
+      if (!music || music.ended) return;
+      try {
+        var position = Math.max(0, clock() / 1000);
+        if (isFinite(music.duration) && position >= music.duration) return;
+        if (Math.abs(music.currentTime - position) > .15) music.currentTime = position;
+        Promise.resolve(music.play()).catch(function () {});
+      } catch (_) { /* 音樂播放失敗時影片及演出音效仍可繼續。 */ }
+    }
+    function prepare() {
+      if (disposed || document.hidden) return Promise.resolve(null);
+      if (preparing) return preparing;
+      try {
+        if (typeof navigator !== 'undefined' && navigator.userActivation && !navigator.userActivation.hasBeenActive) return Promise.resolve(null);
+        prepareMusic();
+        if (!context) {
+          var Ctor = window.AudioContext || window.webkitAudioContext;
+          if (!Ctor) return Promise.resolve(null);
+          context = new Ctor();
+        }
+        var ready = context.state === 'suspended' ? context.resume() : Promise.resolve();
+        preparing = Promise.resolve(ready).then(function () {
+          if (disposed || context.state !== 'running') return null;
+          return Promise.all(['music', 'sfx'].map(function (kind) {
+            return config[kind] && !(kind === 'music' && config.sceneMusic) ? load(config[kind]) : Promise.resolve(null);
+          }));
+        }).catch(function () { return null; }).finally(function () { preparing = null; });
+        return preparing;
+      } catch (_) { return Promise.resolve(null); }
+    }
     function start() {
       if (disposed || wanted || document.hidden) return;
       wanted = true;
       var ticket = ++epoch;
-      try {
-        // 首次自動序章無手勢時保持安靜；設定頁重播是原生click，可正常解鎖。
-        if (typeof navigator !== 'undefined' && navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
-        if (!context) {
-          var Ctor = window.AudioContext || window.webkitAudioContext;
-          if (!Ctor) return;
-          context = new Ctor();
-        }
-        var ready = context.state === 'suspended' ? context.resume() : Promise.resolve();
-        Promise.resolve(ready).then(function () {
-          if (disposed || !wanted || epoch !== ticket || document.hidden || context.state !== 'running') return null;
-          return Promise.all(['music', 'sfx'].map(function (kind) {
-            return config[kind] ? load(config[kind]) : Promise.resolve(null);
-          }));
-        }).then(function (tracks) {
-          if (!tracks || disposed || !wanted || epoch !== ticket || document.hidden || context.state !== 'running') return;
-          var offset = Math.max(0, clock() / 1000);
-          tracks.forEach(function (buffer, index) {
-            if (!buffer || offset >= buffer.duration) return;
-            var source = context.createBufferSource(), gain = context.createGain();
-            var kind = index === 0 ? 'music' : 'sfx';
-            voices.push({ source: source, gain: gain, kind: kind });
-            source.buffer = buffer; gain.gain.value = level(kind);
-            source.connect(gain); gain.connect(context.destination);
-            source.start(0, offset);
-          });
-        }).catch(function () { if (epoch === ticket && !disposed) clear(); });
-      } catch (_) { clear(); } // 裝置／解碼／播放失敗不影響動畫或開機。
+      var ready = prepare();
+      startMusic();
+      ready.then(function (tracks) {
+        if (!tracks || disposed || !wanted || epoch !== ticket || document.hidden || context.state !== 'running') return;
+        var offset = Math.max(0, clock() / 1000);
+        tracks.forEach(function (buffer, index) {
+          if (!buffer || offset >= buffer.duration) return;
+          var source = context.createBufferSource(), gain = context.createGain();
+          var kind = index === 0 ? 'music' : 'sfx';
+          voices.push({ source: source, gain: gain, kind: kind });
+          source.buffer = buffer; gain.gain.value = level(kind, config);
+          source.connect(gain); gain.connect(context.destination);
+          source.start(0, offset);
+        });
+      }).catch(function () { if (epoch === ticket && !disposed) clear(); });
+    }
+    function takeSceneMusic() {
+      if (!config.sceneMusic) return null;
+      var transfer = { track: config.music, audio: music };
+      music = null;
+      return transfer;
     }
     var controller = {
-      start: start, pause: pause,
+      prepare: prepare, start: start, pause: pause,
+      takeSceneMusic: takeSceneMusic,
       dispose: function () { disposed = true; pause(); if (active === controller) active = null; },
       update: update
     };

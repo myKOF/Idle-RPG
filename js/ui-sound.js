@@ -39,6 +39,7 @@ var UISound = (function () {
   var sceneTracks = [], sceneIndex = 0, sceneMusic = null, pageActive = true;
   var sceneReady = false, sceneGapUntil = 0, sceneGapTimer = 0;
   var sceneView = null, towerChallengePending = false;
+  var introActive = false;
   var SCENE_TRACK_GAP_MS = 10000;
 
   function now() { return performance.now(); }
@@ -50,6 +51,13 @@ var UISound = (function () {
   function stopAll() {
     generation++;
     Object.keys(sources).forEach(stop);
+  }
+  function setIntroActive(value, introMusic) {
+    if (introActive === value) return;
+    introActive = value;
+    if (value) stopAll();
+    else if (introMusic) restoreSceneAfterIntro(introMusic);
+    syncMusic();
   }
   function sfxGain() { return typeof GameSettings === 'undefined' ? 1 : GameSettings.sfxGain(); }
   function prepareMenuMusic() {
@@ -73,7 +81,7 @@ var UISound = (function () {
   function syncMenuMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    var shouldPlay = pageActive && startScreenActive && volume > 0;
+    var shouldPlay = !introActive && pageActive && startScreenActive && volume > 0;
     try {
       if (shouldPlay) prepareMenuMusic();
       if (!menuMusic) return;
@@ -89,34 +97,60 @@ var UISound = (function () {
     if (value) finishTowerChallenge(false);
     syncMusic();
   }
+  function bindSceneMusic(audio) {
+    sceneMusic = audio;
+    audio.loop = false;
+    audio.onended = function () {
+      // 離場或換曲後才送達的舊事件，不得重新起播或再跳一首。
+      if (sceneMusic !== audio || !audio.ended) return;
+      sceneIndex = (sceneIndex + 1) % sceneTracks.length;
+      audio.src = sceneTracks[sceneIndex];
+      audio.currentTime = 0;
+      var deadline = Date.now() + SCENE_TRACK_GAP_MS;
+      sceneGapUntil = deadline;
+      sceneGapTimer = setTimeout(function () {
+        if (sceneMusic !== audio || sceneGapUntil !== deadline) return;
+        sceneGapUntil = 0;
+        sceneGapTimer = 0;
+        syncSceneMusic();
+      }, SCENE_TRACK_GAP_MS);
+      syncSceneMusic();
+    };
+  }
+  function resetSceneMusic() {
+    sceneIndex = 0;
+    clearTimeout(sceneGapTimer);
+    sceneGapTimer = 0;
+    sceneGapUntil = 0;
+    if (sceneMusic) {
+      try { sceneMusic.pause(); sceneMusic.currentTime = 0; } catch (_) {}
+      sceneMusic = null;
+    }
+  }
+  function restoreSceneAfterIntro(introMusic) {
+    var audio = introMusic.audio;
+    if (!startScreenActive) {
+      resetSceneMusic();
+      if (audio && !audio.ended && !audio.error && sceneReady && sceneView &&
+          sceneView.zone === 'desert' && !sceneView.towerActive && !towerChallengePending && sceneTracks[0] === introMusic.track) {
+        // 交接同一個實例，保留播放位置及聲音。曲尾由場景輪播接管。
+        bindSceneMusic(audio);
+        return;
+      }
+    }
+    if (audio) audio.pause();
+  }
   function syncSceneMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    var shouldPlay = pageActive && sceneReady && !startScreenActive &&
+    var shouldPlay = !introActive && pageActive && sceneReady && !startScreenActive &&
       sceneTracks.length > 0 && Date.now() >= sceneGapUntil && volume > 0;
     try {
       if (shouldPlay && !sceneMusic) {
-        sceneMusic = new window.Audio();
-        sceneMusic.preload = 'auto';
-        sceneMusic.loop = false;
-        sceneMusic.src = sceneTracks[sceneIndex];
-        var audio = sceneMusic;
-        audio.onended = function () {
-          // 離場或換曲後才送達的舊事件，不得重新起播或再跳一首。
-          if (sceneMusic !== audio || !audio.ended) return;
-          sceneIndex = (sceneIndex + 1) % sceneTracks.length;
-          audio.src = sceneTracks[sceneIndex];
-          audio.currentTime = 0;
-          var deadline = Date.now() + SCENE_TRACK_GAP_MS;
-          sceneGapUntil = deadline;
-          sceneGapTimer = setTimeout(function () {
-            if (sceneMusic !== audio || sceneGapUntil !== deadline) return;
-            sceneGapUntil = 0;
-            sceneGapTimer = 0;
-            syncSceneMusic();
-          }, SCENE_TRACK_GAP_MS);
-          syncSceneMusic();
-        };
+        var audio = new window.Audio();
+        audio.preload = 'auto';
+        audio.src = sceneTracks[sceneIndex];
+        bindSceneMusic(audio);
       }
       if (!sceneMusic) return;
       sceneMusic.volume = volume;
@@ -143,14 +177,7 @@ var UISound = (function () {
       (zone ? [zone.bgm, zone.bgm2].filter(Boolean) : []);
     if (tracks.length === sceneTracks.length && tracks.every(function (track, i) { return track === sceneTracks[i]; })) return;
     sceneTracks = tracks;
-    sceneIndex = 0;
-    clearTimeout(sceneGapTimer);
-    sceneGapTimer = 0;
-    sceneGapUntil = 0;
-    if (sceneMusic) {
-      try { sceneMusic.pause(); sceneMusic.currentTime = 0; } catch (_) {}
-      sceneMusic = null;
-    }
+    resetSceneMusic();
     syncSceneMusic();
   }
   function beginTowerChallenge() {
@@ -204,7 +231,7 @@ var UISound = (function () {
     } catch (_) { /* 沒有音訊裝置時仍可正常使用UI。 */ }
   }
   function play(kind, stillCurrent) {
-    if (!ASSETS[kind] || !context || document.hidden) return;
+    if (introActive || !ASSETS[kind] || !context || document.hidden) return;
     if (kind !== 'menuHover' && !gestureReceived) return;
     // 設置→音訊：全體靜音／音效音量（50% ＝ 原音量）。
     if (sfxGain() <= 0) return;
@@ -293,6 +320,7 @@ var UISound = (function () {
   }
   init();
   return { commandResult: commandResult, preloadStartMenuAudio: preloadStartMenuAudio,
+    setIntroActive: setIntroActive,
     setScene: setScene, setSceneReady: setSceneReady,
     beginTowerChallenge: beginTowerChallenge, finishTowerChallenge: finishTowerChallenge,
     setStartScreenActive: setStartScreenActive, setStartMenuVisible: setStartMenuVisible,
