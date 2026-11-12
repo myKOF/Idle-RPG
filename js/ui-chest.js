@@ -310,14 +310,22 @@ function chestShowResult(res) {
   ($id('ui-stage') || document.body).appendChild(el);
   el.showModal();
   var observer = rewards.total ? chestBindResultGrid(el.querySelector('.nfc-res-scroll'), rewards) : null;
-  el.addEventListener('cancel', function (e) { e.preventDefault(); });
-  el.addEventListener('keydown', function (e) { if (e.key === 'Escape') e.preventDefault(); });
-  el.querySelector('.nfc-res-confirm').addEventListener('click', function () {
+  function dismiss() {
     if (observer) observer.disconnect();
     el.close();
     el.remove();
     if (CHEST_UI.results.length) chestShowResult(CHEST_UI.results.shift());
+  }
+  el.addEventListener('cancel', function (e) {
+    e.preventDefault();
+    dismiss();
   });
+  el.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    if (!e.repeat && !e.isComposing) dismiss();
+  });
+  el.querySelector('.nfc-res-confirm').addEventListener('click', dismiss);
 }
 
 /* ---- 事件委派（容器本身不重建，只綁一次） ---- */

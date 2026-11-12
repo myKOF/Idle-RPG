@@ -5,6 +5,7 @@
 - 寶箱發放段與 Claude `cf099bd3` 的任務計數三方試合乾淨。沿用使用者核准的兩處快取更新，`20261112-chest-rewards-v2` 接續 v1。後續整合保留新版快取與 Claude 開箱任務計數。遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收。
 - `node --test` 執行 `chest`、`worker-protocol`、`vfx-editor-cache-versions`、`string-table`、`relics`、`sim-command-coverage`、`save-origin-isolation`、`ui-sound`、`offline-rewards` 九個測試檔，共 94/94。`npm.cmd run build` 通過 716 檔，字串寫死 0，差異檢查通過。
 - 隔離靜音 Edge 正式頁驗證單開、全開 450 箱，首屏 1.92 秒，148 件裝備中 110 件有太古星。核對遮罩與按鈕計算樣式和離線收益一致、遺物圓框與格位同寬 58 px、排序及最後一格，另以測試資料驗證等級 200／250 與七／八星。1920 × 900、390 × 844 模擬視窗、縮放、確認關閉與快取一致通過。主控台錯誤 0，遊戲場景偶發音訊頻率限幅警告。畫面留本聊天。
+- 追加 Esc 與「確定」共用關閉處理，更新 `js/ui-chest.js`、`index.html` 快取、寶箱文件及 LV。Edge 驗證捲動區焦點下可關閉、長按時遊戲選單不會誤開、放開後另一次 Esc 可照常開選單，以及確認按鈕與新版快取，主控台錯誤 0。相關 94 項回歸、建置與字串稽核通過。
 
 ## CHEST-REWARD-MODAL-20261112 — 全畫面寶箱獎勵
 
