@@ -60,6 +60,14 @@ var StartMenuBackground = (function () {
     { strength: .59, points: [[1566, 282, 18], [1582, 284, 20], [1599, 277, 17], [1622, 297, 19]] }
   ];
   const SAND_SHADES = ['#a9845b', '#c6a478', '#e0b780', '#f4d4a2', '#74604d'];
+  // 煙從底圖上不同遠近的火線升起。
+  const WAR_SMOKE_VENTS = [
+    { x: 1208, y: 222, rise: 150, drift: 111, spread: 26, scale: .87, opacity: .58 },
+    { x: 1260, y: 315, rise: 130, drift: 99, spread: 34, scale: .92, opacity: .67 },
+    { x: 1322, y: 299, rise: 150, drift: 126, spread: 32, scale: 1.16, opacity: .79 },
+    { x: 1451, y: 357, rise: 105, drift: 89, spread: 41, scale: .86, opacity: .62 },
+    { x: 1581, y: 284, rise: 115, drift: 82, spread: 29, scale: .71, opacity: .49 }
+  ];
 
   const ease = t => t * t * (3 - 2 * t);
   const clamp = t => Math.max(0, Math.min(1, t));
@@ -289,6 +297,7 @@ var StartMenuBackground = (function () {
       sand: vaporTexture(192, 48, [181, 138, 89], 561, false),
       haze: vaporTexture(192, 56, [141, 108, 76], 801, false),
       spirit: vaporTexture(64, 112, [93, 201, 183], 171, false),
+      warSmoke: makeWarSmoke(),
       embers: makeEmbers()
     };
   }
@@ -465,26 +474,27 @@ var StartMenuBackground = (function () {
 
   function updateClothWind(wind, time) {
     if (time >= wind.end) {
+      const rising = wind.to < .65;
       wind.start = time;
-      wind.end = time + 1.4 + Math.random() * 4.8;
       wind.from = wind.to;
-      wind.to = .20 + Math.random() * 1.14;
+      wind.to = rising ? .91 + Math.random() * .51 : .14 + Math.random() * .34;
+      wind.end = time + (rising ? 1.4 + Math.random() * 2.5 : 2.2 + Math.random() * 3.4);
     }
     const progress = (time - wind.start) / (wind.end - wind.start);
     wind.strength = wind.from + (wind.to - wind.from) * ease(progress);
-    wind.phase += (time - wind.last) * (1.9 + wind.strength * 3.4);
+    wind.phase += (time - wind.last) * (1.7 + wind.strength * 3.1);
     wind.last = time;
   }
 
   function clothPoint(flag, u, v, wind, index, motionScale) {
-    const travel = wind.phase - u * 8 + index * 1.7;
-    const flex = u * u * flag.swing * motionScale * wind.strength;
-    const fold = Math.sin(travel + v * .85);
-    const snap = Math.sin(travel * 2.38 + v * 1.2);
-    const flutter = flex * (fold + .34 * snap);
-    // 旗布沿旗桿的斜向彎曲，強風時窄布條也保有連續的網格。
+    const travel = wind.phase - u * 6.2 + index * 1.7;
+    const flex = u * (2 - u) * flag.swing * motionScale * wind.strength;
+    const fold = Math.sin(travel + v * .65);
+    const billow = Math.sin(wind.phase * .57 - u * 3.8 + v * .34 + index);
+    const flutter = flex * (.61 * fold + .49 * billow + .21 * u * Math.sin(travel * 1.9 + v * .78));
+    // 布面從固定邊開始鼓起，細波隨風傳向破損布尾。
     return {
-      x: flag.x + u * flag.w + v * flag.lean + flex * (.28 * fold - .35 + .09 * snap) + flutter * flag.lean / flag.h,
+      x: flag.x + u * flag.w + v * flag.lean + flex * (.15 * fold + .20 * billow - .23) + flutter * flag.lean / flag.h,
       y: flag.y + v * flag.h + u * flag.drop + flutter
     };
   }
@@ -515,7 +525,7 @@ var StartMenuBackground = (function () {
     for (const [index, flag] of CLOTH.entries()) {
       const sprite = sprites[flag.sprite];
       const columns = index === 0 ? 12 : 6;
-      const rows = flag.sprite === 0 ? 3 : 2;
+      const rows = index === 0 ? 4 : flag.sprite === 0 ? 3 : 2;
       const sw = sprite.width / columns, sh = sprite.height / rows;
       const mesh = [];
       for (let y = 0; y <= rows; y++) {
@@ -597,6 +607,72 @@ var StartMenuBackground = (function () {
       rise: 2 + random() * 6,
       size: .5 + random() * 1.6
     }));
+  }
+
+  function makeWarSmoke() {
+    const random = randomStream(91721);
+    const textures = [321, 573, 941].map(seed => {
+      const body = vaporTexture(112, 112, [43, 32, 30], seed, false);
+      const glow = vaporTexture(112, 112, [167, 65, 40], seed, false);
+      const ctx = glow.getContext('2d');
+      const underside = ctx.createLinearGradient(0, 0, 0, glow.height);
+      underside.addColorStop(.28, 'transparent');
+      underside.addColorStop(.75, '#000');
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.fillStyle = underside;
+      ctx.fillRect(0, 0, glow.width, glow.height);
+      return { body, glow };
+    });
+    return WAR_SMOKE_VENTS.map(vent => ({
+      ...vent,
+      billows: Array.from({ length: 10 }, (_, index) => ({
+        texture: textures[index % textures.length], life: 5.5 + random() * 4.6,
+        phase: index * .83 + random() * .7, turn: random() * TAU,
+        offset: (random() - .5) * vent.spread, size: .74 + random() * .56,
+        lift: .81 + random() * .32
+      })),
+      ash: Array.from({ length: 12 }, () => ({
+        life: 2.8 + random() * 3.4, phase: random() * 6, sway: random() * TAU,
+        offset: (random() - .5) * vent.spread, lift: .46 + random() * .53, size: .4 + random() * .95
+      }))
+    }));
+  }
+
+  function drawWarSmoke(ctx, vents, time, motionScale) {
+    ctx.save();
+    for (const vent of vents) {
+      for (const particle of vent.billows) {
+        const age = mod(time + particle.phase, particle.life) / particle.life;
+        const swirl = Math.sin(particle.turn + age * 5.8);
+        const x = vent.x + particle.offset + vent.drift * age ** 1.27 + swirl * age * 16;
+        const y = vent.y - vent.rise * particle.lift * age ** .82 + Math.cos(particle.turn + age * 7) * age * 8;
+        const size = vent.scale * particle.size * (15 + age * 97);
+        const fade = Math.sin(age * Math.PI);
+        const density = vent.opacity * fade * (1 - age * .43);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(.20 + age * .5 + swirl * .32);
+        ctx.globalAlpha = density;
+        ctx.drawImage(particle.texture.body, -size * .64, -size * .51, size * 1.28, size);
+        ctx.globalAlpha = density * Math.max(0, 1 - age * 2.1) * (.67 + .33 * Math.sin(time * 2 + particle.turn));
+        ctx.drawImage(particle.texture.glow, -size * .64, -size * .51, size * 1.28, size);
+        ctx.restore();
+      }
+      for (const flake of vent.ash) {
+        const age = mod(time + flake.phase, flake.life) / flake.life;
+        const x = vent.x + flake.offset + vent.drift * age + Math.sin(flake.sway + age * 9) * age * 14;
+        const y = vent.y - vent.rise * flake.lift * age + Math.cos(flake.sway + age * 7) * age * 9;
+        const heat = (1 - age) * (.55 + .45 * Math.sin(time * 3.7 + flake.sway));
+        const fade = vent.opacity * Math.sin(age * Math.PI) * motionScale;
+        ctx.fillStyle = '#4b352f';
+        ctx.globalAlpha = fade * .58;
+        ctx.fillRect(x, y, flake.size * 1.4, flake.size);
+        ctx.fillStyle = '#ffac6e';
+        ctx.globalAlpha = fade * heat * .92;
+        ctx.fillRect(x, y, flake.size, flake.size * .72);
+      }
+    }
+    ctx.restore();
   }
 
   function drawEmbers(ctx, embers, time, motionScale) {
@@ -848,6 +924,7 @@ var StartMenuBackground = (function () {
       ctx.setTransform(surface.width / WIDTH, 0, 0, surface.height / HEIGHT, 0, 0);
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       if (rightArchPatch) ctx.drawImage(rightArchPatch, RIGHT_ARCH_PATCH.x, RIGHT_ARCH_PATCH.y);
+      drawWarSmoke(ctx, atmosphere.warSmoke, time, motionScale);
       if (fires) drawFires(ctx, fires, time);
       if (!gateLight) drawGateLightning(ctx, atmosphere.lightningGlow, lightning, time, motionScale);
       drawClouds(ctx, atmosphere, time);
