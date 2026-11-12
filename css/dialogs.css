@@ -20,6 +20,10 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
     #worker-dead-notice, #save-origin-notice, #tab-lock-notice) {
   box-sizing: border-box;
   padding: 20px !important;
+}
+:is(.modal-overlay, .system-overlay, .detail-log-modal, #tower-result-modal,
+    #worker-dead-notice, #save-origin-notice, #tab-lock-notice),
+.nfc-result::backdrop {
   background: #050709c9 !important;
   backdrop-filter: none !important;
 }
@@ -156,7 +160,7 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
   color: #ffe3aa !important;
 }
 
-:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+:is(.modal-box, .system-card, .detail-log-box, .nfc-result, #tower-result-modal,
     #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
     #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(.btn, .system-menu-actions button) {
   border: 1px solid #686451 !important;
@@ -172,7 +176,7 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
   padding: 8px 16px;
   cursor: pointer;
 }
-:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+:is(.modal-box, .system-card, .detail-log-box, .nfc-result, #tower-result-modal,
     #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
     #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(.btn, .system-menu-actions button):hover:not(:disabled) {
   border-color: #c7a765 !important;
@@ -180,7 +184,7 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
   color: #ffe6af !important;
   filter: none;
 }
-:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+:is(.modal-box, .system-card, .detail-log-box, .nfc-result, #tower-result-modal,
     #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
     #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer)
     :is(.btn.primary, .btn.btn-primary, .btn.active, #confirm-ok, #trm-confirm):not(.danger, .warn) {
@@ -208,7 +212,7 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
   opacity: .5;
   cursor: default;
 }
-:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
+:is(.modal-box, .system-card, .detail-log-box, .nfc-result, #tower-result-modal,
     #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
     #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(button, input, select, textarea):focus-visible {
   outline: 2px solid var(--dialog-gold);

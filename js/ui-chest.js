@@ -156,7 +156,7 @@ function renderNewForgeChests(nfSnapshot, headerSnapshot) {
 }
 
 /* ---- 開箱獎勵 ---- */
-var CHEST_RESULT_PRIORITY = { relic: 0, rune: 1, gem: 2, equip: 4 };
+var CHEST_RESULT_PRIORITY = { relic: 0, rune: 1, gem: 3, equip: 4 };
 
 function chestResultImage(src) {
   return '<img src="' + chestUiEsc(src) + '" alt="" draggable="false" decoding="async">';
@@ -175,32 +175,45 @@ function chestRewardIconHTML(rw) {
     case 'xp': return '⭐';
     case 'gem': return gemIconHTML(rw.type, rw.lv);
     case 'rune': return chestResultImage(runeStoneSrc(rw.id));
-    case 'relic': return chestResultImage(relicIconPath(rw.id));
+    case 'relic': return relicIconHTML(rw);
   }
   return '';
 }
 
+function chestEquipmentBadgesHTML(item) {
+  var stars = item.ancientCount > 7
+    ? '<span class="nfc-res-ancient-count"><span class="ancient-star">✡</span>×' + item.ancientCount + '</span>'
+    : ancientStarBadgeHTML(item);
+  return '<span class="nfc-res-badges" aria-hidden="true">' + stars + '<span class="ic-lv">' + item.level + '</span></span>';
+}
+
 function chestResultSlots(rewards) {
   var sorted = rewards.slice().sort(function (a, b) {
-    var diff = (CHEST_RESULT_PRIORITY[a.k] ?? 3) - (CHEST_RESULT_PRIORITY[b.k] ?? 3);
+    var diff = (CHEST_RESULT_PRIORITY[a.k] ?? 2) - (CHEST_RESULT_PRIORITY[b.k] ?? 2);
     return diff || (a.k === 'equip' ? b.r - a.r : 0);
   });
   var slots = [], end = 0;
-  function add(rw, icon, count, quantity) {
+  function add(rw, item) {
     var rarity = rw.k === 'equip' ? RARITIES[rw.r] : rw.k === 'gem' ? RARITIES[rw.lv - 1] : null;
     var color = rarity ? ' style="--nfc-rarity:' + rarity.color + '"' : '';
-    var label = chestUiEsc(STR(2495, chestRewardName(rw), fmtFull(quantity)));
-    end += count;
-    slots.push({ end: end, html: '<li class="nfc-res-slot"' + color + ' aria-label="' + label + '"' +
-      '><span class="nfc-res-ico" aria-hidden="true">' + icon + '</span>' +
-      (quantity > 1 ? '<b aria-hidden="true">×' + fmt(quantity) + '</b>' : '') + '</li>' });
+    var cls = 'nfc-res-slot' + (rw.k === 'relic' ? ' is-relic' : '');
+    var label = chestRewardName(rw), icon, badge = '';
+    if (item) {
+      label += ' ' + STR(1146, item.level) + ' ' + STR(1184, item.ancientCount);
+      icon = item.icon ? chestResultImage('images/' + item.icon) : '⚔';
+      badge = chestEquipmentBadgesHTML(item);
+    } else {
+      label = STR(2495, label, fmtFull(rw.n));
+      icon = chestRewardIconHTML(rw);
+      if (rw.n > 1) badge = '<b aria-hidden="true">×' + fmt(rw.n) + '</b>';
+    }
+    end += item ? item.n : 1;
+    slots.push({ end: end, html: '<li class="' + cls + '"' + color + ' aria-label="' + chestUiEsc(label) + '">' +
+      '<span class="nfc-res-ico" aria-hidden="true">' + icon + '</span>' + badge + '</li>' });
   }
   sorted.forEach(function (rw) {
-    if (rw.k === 'equip') {
-      Object.entries(rw.icons).forEach(function (entry) {
-        add(rw, entry[0] ? chestResultImage('images/' + entry[0]) : '⚔', entry[1], 1);
-      });
-    } else add(rw, chestRewardIconHTML(rw), 1, rw.n);
+    if (rw.k === 'equip') rw.items.forEach(function (item) { add(rw, item); });
+    else add(rw);
   });
   return { slots: slots, total: end };
 }
@@ -292,7 +305,7 @@ function chestShowResult(res) {
     chestResultImage('images/chests/' + (CHEST_ART_FILES[def.quality] || CHEST_ART_FILES.common) + '.webp') + '</div>' +
     '<div class="nfc-res-scroll" tabindex="0"' + (rewards.total ? '' : ' hidden') + '><div class="nfc-res-track">' +
     '<ul class="nfc-res-list" role="list"></ul></div></div>' +
-    '<button type="button" class="nfc-res-confirm" autofocus>' + chestUiEsc(STR(149)) + '</button></div>';
+    '<button type="button" class="btn primary nfc-res-confirm" autofocus>' + chestUiEsc(STR(149)) + '</button></div>';
   hideTooltip();
   ($id('ui-stage') || document.body).appendChild(el);
   el.showModal();

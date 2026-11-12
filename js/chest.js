@@ -214,7 +214,7 @@ var CHEST_SIMPLE_RES = { scrap: 1, essence: 1, ancientEssence: 1, dust: 1, soulO
 /* 發放袋子內容，回傳顯示用清單（寶石依實際種類、遺物依實際編號展開）。 */
 function chestGrantBag(bag, tally) {
   var p = G.player, out = [], keys = Object.keys(bag), i, j;
-  var equipmentIcons = Object.create(null);
+  var equipmentGroups = Object.create(null);
   var stage = Math.max(1, Math.floor(Number(G.stage && G.stage.current) || 1));
   for (i = 0; i < keys.length; i++) {
     var e = bag[keys[i]], n = e.n;
@@ -233,11 +233,15 @@ function chestGrantBag(bag, tally) {
     } else if (e.k === 'equip') {
       var opts = { rarity: e.p };
       if (e.ancient !== undefined) opts.ancientCount = e.ancient;
-      var icons = equipmentIcons[e.p] || (equipmentIcons[e.p] = Object.create(null));
+      var groups = equipmentGroups[e.p] || (equipmentGroups[e.p] = new Map());
       for (j = 0; j < n; j++) {
         var item = makeEquipment(stage, opts);
         var icon = equipIconFile(item);
-        icons[icon] = (icons[icon] || 0) + 1;
+        var ancientCount = getItemAncientCount(item);
+        var key = icon + ':' + item.level + ':' + ancientCount;
+        var group = groups.get(key);
+        if (group) group.n++;
+        else groups.set(key, { icon: icon, level: item.level, ancientCount: ancientCount, n: 1 });
         chestDeliverEquipment(item, tally);
       }
       out.push({ k: 'equip', r: e.p, n: n });
@@ -256,7 +260,7 @@ function chestGrantBag(bag, tally) {
     var key = rw.k + ':' + (rw.type || '') + ':' + (rw.lv || '') + ':' + (rw.id || '') + ':' + (rw.r === undefined ? '' : rw.r);
     if (merged[key]) merged[key].n += rw.n;
     else {
-      if (rw.k === 'equip') rw.icons = equipmentIcons[rw.r];
+      if (rw.k === 'equip') rw.items = Array.from(equipmentGroups[rw.r].values());
       merged[key] = rw;
       list.push(rw);
     }

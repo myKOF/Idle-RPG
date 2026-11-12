@@ -115,7 +115,8 @@
 // v78：手動刷新扣邀請券，商店投影不再依賴刷新計數或時鐘。
 // v79（2026-11-12 熔爐寶箱）：新增 chest.open({chestId,count})／chest.upgrade({chestId})（99→101）；newforge 面板新增 chests＝{ 編號: { lv, xp, n, on } }。
 // v80：chest.open 的 equip 獎勵增加 icons＝{ images/ 下的相對圖檔路徑: 件數 }，供開箱逐件顯示。
-var WORKER_PROTOCOL_VERSION = 80;
+// v81：chest.open 的 equip 獎勵改帶 items＝[{ icon, level, ancientCount, n }]，區分等級與太古星數。
+var WORKER_PROTOCOL_VERSION = 81;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
