@@ -126,11 +126,9 @@ var IntroPlayer = (function () {
     return el;
   }
 
-  function updateVideoVolume(video) {
-    if (typeof GameSettings === 'undefined') return;
-    // 成片的 AAC 音軌已混合配樂和音效，以音樂拉條控制整條音軌。
-    video.muted = GameSettings.get('mute');
-    video.volume = GameSettings.get('musicVolume') / 100;
+  function setGameAudioSuppressed(value) {
+    if (typeof UISound !== 'undefined') UISound.setIntroActive(value);
+    if (typeof Sfx !== 'undefined') Sfx.setIntroActive(value);
   }
 
   function failVideo(c) {
@@ -143,12 +141,15 @@ var IntroPlayer = (function () {
     var video = document.createElement('video');
     video.className = 'intro-layer intro-place-full intro-image-cinema';
     video.playsInline = true;
-    updateVideoVolume(video);
+    video.muted = true;
     video.addEventListener('ended', function () { if (!c.skipping) finish(c, 'end'); });
     video.addEventListener('error', function () { failVideo(c); });
     video.addEventListener('playing', function () {
-      if (_cur === c && !c.paused && !c.skipping) armFailsafe(c);
+      if (_cur !== c || c.paused || c.skipping) return;
+      if (c.audio) c.audio.start();
+      armFailsafe(c);
     });
+    video.addEventListener('waiting', function () { if (c.audio) c.audio.pause(); });
     video.src = src;
     return video;
   }
@@ -206,7 +207,7 @@ var IntroPlayer = (function () {
     c.paused = false;
     c.anims.forEach(function (a) { try { a.play(); } catch (e) {} });
     startMotion(c);
-    if (c.audio && !c.skipping) c.audio.start();
+    if (c.audio && !c.video && !c.skipping) c.audio.start();
     if (c.video && !c.skipping) startVideo(c);
     armFailsafe(c);
   }
@@ -272,6 +273,7 @@ var IntroPlayer = (function () {
     window.removeEventListener('keydown', onKey, true);
     c.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
     if (c.root.parentNode) c.root.parentNode.removeChild(c.root);
+    setGameAudioSuppressed(false);
     try { if (c.onDone) c.onDone(reason); } catch (e) { console.error('[intro] onDone 失敗', e); }
     var waiters = _idleWaiters; _idleWaiters = [];
     waiters.forEach(function (fn) { try { fn(reason); } catch (e) { console.error('[intro] whenIdle 回呼失敗', e); } });
@@ -308,6 +310,7 @@ var IntroPlayer = (function () {
       root.appendChild(stage);
       c.root = root;
       _cur = c;
+      setGameAudioSuppressed(true);
 
       if (timeline.video) {
         c.video = buildVideo(c, timeline.video);
@@ -370,7 +373,9 @@ var IntroPlayer = (function () {
       if (revealMs) animate(c, stage, [{ opacity: 1 }, { opacity: 0 }],
         { delay: c.duration - revealMs, duration: revealMs, fill: 'both' });
       if (timeline.audio && typeof IntroAudio !== 'undefined') {
-        c.audio = IntroAudio.create(timeline.audio, function () { return num(c.clock.currentTime, 0); });
+        c.audio = IntroAudio.create(timeline.audio, function () { return playbackTime(c); });
+        // 在按下重播的手勢中解鎖並預載，等影片實際開始才起播兩軌。
+        if (c.video && c.audio) c.audio.prepare();
       }
       if (c.hold) {
         var holdEl = document.createElement('span');
@@ -457,9 +462,6 @@ var IntroPlayer = (function () {
     });
   }
   bindReplayButton();   // 本檔排在 body 最後載入，按鈕已在 DOM 裡
-  if (typeof GameSettings !== 'undefined') GameSettings.subscribe(function () {
-    if (_cur && _cur.video) updateVideoVolume(_cur.video);
-  });
 
   function state() {
     var c = _cur;

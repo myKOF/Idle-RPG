@@ -39,6 +39,7 @@ var UISound = (function () {
   var sceneTracks = [], sceneIndex = 0, sceneMusic = null, pageActive = true;
   var sceneReady = false, sceneGapUntil = 0, sceneGapTimer = 0;
   var sceneView = null, towerChallengePending = false;
+  var introActive = false;
   var SCENE_TRACK_GAP_MS = 10000;
 
   function now() { return performance.now(); }
@@ -50,6 +51,12 @@ var UISound = (function () {
   function stopAll() {
     generation++;
     Object.keys(sources).forEach(stop);
+  }
+  function setIntroActive(value) {
+    if (introActive === value) return;
+    introActive = value;
+    if (value) stopAll();
+    syncMusic();
   }
   function sfxGain() { return typeof GameSettings === 'undefined' ? 1 : GameSettings.sfxGain(); }
   function prepareMenuMusic() {
@@ -73,7 +80,7 @@ var UISound = (function () {
   function syncMenuMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    var shouldPlay = pageActive && startScreenActive && volume > 0;
+    var shouldPlay = !introActive && pageActive && startScreenActive && volume > 0;
     try {
       if (shouldPlay) prepareMenuMusic();
       if (!menuMusic) return;
@@ -92,7 +99,7 @@ var UISound = (function () {
   function syncSceneMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    var shouldPlay = pageActive && sceneReady && !startScreenActive &&
+    var shouldPlay = !introActive && pageActive && sceneReady && !startScreenActive &&
       sceneTracks.length > 0 && Date.now() >= sceneGapUntil && volume > 0;
     try {
       if (shouldPlay && !sceneMusic) {
@@ -204,7 +211,7 @@ var UISound = (function () {
     } catch (_) { /* 沒有音訊裝置時仍可正常使用UI。 */ }
   }
   function play(kind, stillCurrent) {
-    if (!ASSETS[kind] || !context || document.hidden) return;
+    if (introActive || !ASSETS[kind] || !context || document.hidden) return;
     if (kind !== 'menuHover' && !gestureReceived) return;
     // 設置→音訊：全體靜音／音效音量（50% ＝ 原音量）。
     if (sfxGain() <= 0) return;
@@ -293,6 +300,7 @@ var UISound = (function () {
   }
   init();
   return { commandResult: commandResult, preloadStartMenuAudio: preloadStartMenuAudio,
+    setIntroActive: setIntroActive,
     setScene: setScene, setSceneReady: setSceneReady,
     beginTowerChallenge: beginTowerChallenge, finishTowerChallenge: finishTowerChallenge,
     setStartScreenActive: setStartScreenActive, setStartMenuVisible: setStartMenuVisible,

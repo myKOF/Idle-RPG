@@ -57,6 +57,25 @@ function mount(blocked = false, ready = true) {
   };
 }
 
+test('序章暫停場景配樂並在離場時保留曲目和進度', () => {
+  const m = mount();
+  m.scene('desert');
+  const audio = m.music[0];
+  m.finish(audio);
+  m.advance(10000);
+  assert.equal(audio.src, track2);
+  audio.currentTime = 15;
+  m.c.UISound.setIntroActive(true);
+  m.scene('desert');
+  m.setting('musicVolume', 90);
+  m.events.visibilitychange();
+  assert.equal(audio.paused, true);
+  m.c.UISound.setIntroActive(false);
+  assert.equal(audio.paused, false);
+  assert.equal(audio.src, track2);
+  assert.equal(audio.currentTime, 15);
+});
+
 test('Zones Excel, CSV, runtime BGM and reverse extraction stay in sync with the configured map playlists', () => {
   const rows = csvParse(read('config/CSV/Zones.csv'));
   const xlsx = readXlsxRows(path.join(root, 'config/Excel/Zones.xlsx'), '地圖');

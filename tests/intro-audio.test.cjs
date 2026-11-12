@@ -62,6 +62,27 @@ test('暫停／恢復不補播過期聲音，不重新下載；多次重播只�
   assert.equal(e.subscribers.length, 1); next.dispose();
 });
 
+test('場景原曲使用和場景配樂一樣的音量比例', async () => {
+  const e = env(), audio = e.A.create({ ...config, sceneMusic: true }, e.clock);
+  audio.start(); await settle();
+  assert.deepEqual(e.gains.map(g => g.gain.value), [.5, 1]);
+  e.values.sfxVolume = 0; e.values.musicVolume = 80; e.subscribers[0]();
+  assert.deepEqual(e.gains.map(g => g.gain.value), [.8, 0]);
+  audio.dispose();
+});
+
+test('手勢預載解鎖音訊，影片起播前保持安靜', async () => {
+  const e = env({ suspended: true }), audio = e.A.create(config, e.clock);
+  await audio.prepare();
+  assert.deepEqual(e.fetched, ['music.wav', 'sfx.wav']);
+  assert.equal(e.sources.length, 0);
+  e.setClock(200);
+  audio.start(); await settle();
+  assert.deepEqual(e.sources.map(s => s.offset), [.2, .2]);
+  assert.equal(e.fetched.length, 2);
+  audio.dispose();
+});
+
 test('下載中略過／暫停取消非同步起播，恢復從新位置開始', async () => {
   let resolveFetch;
   const response = new Promise(resolve => { resolveFetch = resolve; });

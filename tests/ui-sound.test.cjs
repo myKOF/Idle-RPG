@@ -90,6 +90,31 @@ test('achievement sound skips locked and hidden notifications, never replays the
   s.c.UISound.achievementUnlocked(); await settle(); assert.equal(s.played.length, 2);
 });
 
+test('序章期間停止既有 UI 音效和選單配樂，離場後從原處續播', async () => {
+  const s = mount();
+  s.c.UISound.setStartScreenActive(true);
+  s.fire('pointerdown'); await settle();
+  s.c.UISound.achievementUnlocked(); await settle();
+  const music = s.music[0];
+  music.currentTime = 12;
+  assert.equal(music.paused, false);
+  s.c.UISound.setIntroActive(true);
+  assert.equal(music.paused, true);
+  assert.ok(s.voices[0].stopped);
+  s.advance(1000);
+  s.fire('click');
+  s.c.UISound.relicUpgraded();
+  s.setPreference('musicVolume', 75);
+  s.fire('visibilitychange'); await settle();
+  assert.equal(s.played.length, 1);
+  assert.equal(music.paused, true);
+  s.c.UISound.setIntroActive(false);
+  assert.equal(music.paused, false);
+  assert.equal(music.currentTime, 12);
+  s.fire('click'); await settle();
+  assert.equal(s.played.length, 2);
+});
+
 test('late achievement decoding and unavailable audio never block the notification or replay stale sound', async () => {
   for (const options of [{ unsupported: true }, { fail: true }]) {
     const s = mount(options); s.fire('pointerdown'); assert.doesNotThrow(() => s.c.UISound.achievementUnlocked());

@@ -14,7 +14,7 @@
     "source/shot-ash.js": "b0bff21d6edd210acd3a75eab3f534a8bc846b8bcbdbe65c34263e3b69761018",
     "source/shot-ground.js": "403998b24782e064dc2e36dfcd5ce5dfe1f3a8205a7324580ddaa477aed53a38",
     "source/render-video.cjs": "c3bd6a503c623d77d593503221e78859857c104579020eaa801910cdd3b96ecb",
-    "source/build-score.cjs": "f565e7d51dbfd9f3ac8f2895aac9718727133651acb4e9b528036de888a5bcb7",
+    "source/build-score.cjs": "772b06839e1ef2bc43a0855801e2af09ad5662180e2b400d589e408106b5d9e1",
     "source/assets/air-demon-atlas.png": "954c00d58d781e44673d6392c36741e2e17ef1725a7fa8d510f3bccdb58dbf81",
     "source/assets/angel.png": "17798f6f89c19007315d3e80a7f2717e930ffc417d19e9cf590c9004f67687bb",
     "source/assets/angels-fall-faces.png": "e52377d5882e056108fb117702668922a88e1b18073aef28c057b4dc7d7f0efc",
@@ -50,9 +50,13 @@
       "source": "web/shot-01-03.mp4",
       "sha256": "9f6e373cda85e0c5b97523f786e1bac3e5c06c50b82a8b02a98e8a235a434608"
     },
+    "shot-01-03-sfx.mp3": {
+      "source": "web/shot-01-03-sfx.mp3",
+      "sha256": "3bd3490a5720297f73493f11bed37e824b12cd6e5519cf53713a6a25d88d01d7"
+    },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "43bc022688d1b96d2a0f388e7ab39b982007bbbce2cc96c377419a67bde66971"
+      "sha256": "0c2aafe4a9a11b46d0bba607049db25062fbb8685500628fae9804429a1ffbed"
     }
   }
 }

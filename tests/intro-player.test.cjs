@@ -62,18 +62,22 @@ function makeEnv(opts) {
   Element.prototype.animate = function () {};
   const ctx = {
     console: { error() {}, warn() {}, log() {} },
-    document, window, Element, localStorage: window.localStorage,
+    document, window, Element,
+    ZONES: { desert: { bgm: 'audio/zones/desert-ascendant.mp3', bgm2: 'audio/zones/desert-ascendant_2.mp3' } },
     STR: (id) => '#' + id,
     setTimeout(fn, ms) { timers.push({ fn, ms, alive: true }); return timers.length; },
     clearTimeout(id) { if (id && timers[id - 1]) timers[id - 1].alive = false; }
   };
   if (opts.audio) ctx.IntroAudio = opts.audio;
+  if (opts.soundGate) {
+    ctx.UISound = { setIntroActive: value => opts.soundGate('ui', value) };
+    ctx.Sfx = { setIntroActive: value => opts.soundGate('battle', value) };
+  }
   if (opts.frames) {
     ctx.requestAnimationFrame = opts.frames.request;
     ctx.cancelAnimationFrame = opts.frames.cancel;
   }
   vm.createContext(ctx);
-  vm.runInContext(read('js/game-settings.js'), ctx);
   vm.runInContext(read('js/intro-data.js') + '\nthis.INTRO_TIMELINES = INTRO_TIMELINES;', ctx);
   vm.runInContext(read('js/intro-motion.js'), ctx);
   vm.runInContext(read('js/intro-scene.js') + '\nthis.IntroScene = IntroScene;', ctx);
@@ -412,15 +416,24 @@ test('重播按鈕播放核准前三鏡，播完回到按鈕且可再從頭播�
   env.P.abort();
 });
 
-test('成片重播沿用靜音、音樂音量、分頁暫停和略過', () => {
-  const env = makeEnv({ replayButton: true });
-  env.ctx.GameSettings.set('mute', true);
+test('成片以荒漠第一首配樂及獨立音效跟隨影片，離場才恢復遊戲音訊', () => {
+  const calls = [];
+  let audioConfig, audioClock;
+  const audio = { create(config, clock) {
+    audioConfig = config; audioClock = clock;
+    return { prepare() { calls.push('intro prepare'); }, start() { calls.push('intro start'); },
+      pause() { calls.push('intro pause'); }, dispose() { calls.push('intro dispose'); } };
+  } };
+  const env = makeEnv({ replayButton: true, audio, soundGate: (kind, active) => calls.push(kind + ' ' + active) });
   assert.equal(env.P.replay(), true);
   const video = env.playerRoot().children[0].children[0];
   assert.equal(video.muted, true);
-  assert.equal(video.volume, .5);
-  env.ctx.GameSettings.set('musicVolume', 20);
-  assert.equal(video.volume, .2);
+  assert.equal(audioConfig.music, env.ctx.ZONES.desert.bgm);
+  assert.ok(fs.existsSync(path.join(root, audioConfig.sfx.split('?')[0])));
+  assert.deepEqual(calls, ['ui true', 'battle true', 'intro prepare']);
+  video.listeners.playing[0]();
+  video.listeners.waiting[0]();
+  assert.deepEqual(calls.slice(-2), ['intro start', 'intro pause']);
   video.currentTime = 24;
   env.ctx.document.hidden = true;
   env.docListeners.visibilitychange[0]();
@@ -429,21 +442,28 @@ test('成片重播沿用靜音、音樂音量、分頁暫停和略過', () => {
   env.docListeners.visibilitychange[0]();
   assert.equal(video.paused, false);
   assert.equal(env.P.state().time, 24000);
+  assert.equal(audioClock(), 24000);
+  video.listeners.playing[0]();
+  assert.equal(calls.at(-1), 'intro start');
   env.P.skip();
   assert.equal(video.paused, true);
+  assert.equal(calls.at(-1), 'intro pause');
   env.anims.find(a => a.el === env.playerRoot()).onfinish();
+  assert.deepEqual(calls.slice(-3), ['intro dispose', 'ui false', 'battle false']);
   assert.equal(env.P.isPlaying(), false);
   assert.equal(env.replayBtn.focused, 1);
 });
 
 test('成片載入失敗時釋放播放器，能重新點擊重播', () => {
-  const env = makeEnv({ replayButton: true });
+  const gates = [];
+  const env = makeEnv({ replayButton: true, soundGate: (kind, active) => gates.push([kind, active]) });
   env.P.replay();
   const video = env.playerRoot().children[0].children[0];
   video.listeners.error[0]();
   assert.equal(env.playerRoot(), undefined);
   assert.ok(video.unloaded);
   assert.equal(env.replayBtn.focused, 1);
+  assert.deepEqual(gates, [['ui', true], ['battle', true], ['ui', false], ['battle', false]]);
   assert.equal(env.P.replay(), true);
   env.P.abort();
 });

@@ -30,6 +30,7 @@ const sources = [
 const exportsByName = {
   'shot-01-02.mp4': 'web/shot-01-02.mp4',
   'shot-01-03.mp4': 'web/shot-01-03.mp4',
+  'shot-01-03-sfx.mp3': 'web/shot-01-03-sfx.mp3',
   'SOURCE.md': 'SOURCE.md'
 };
 const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
