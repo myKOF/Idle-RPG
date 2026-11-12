@@ -7,15 +7,20 @@
     "originals/battlefield-atmosphere.png": "376932678074f0220f94d7cd420ae608ce356bf153b1390f07ff781e7b93cec3",
     "originals/title-lockup-forged.png": "02eefa57113f25846ca13639408c60dc7cbbe1ac5fa20e741e421cf8a301b915",
     "ATMOSPHERE_PROMPTS.json": "2e799c5084fab31156e177a0460a9764f59f46c41e8410ee50cc606eba830377",
-    "source/start-menu-background.js": "6a3beb7ea3a734a279926cd5dcf2a476521b4ac7a1909d3dd78652a63b749783"
+    "originals/battlefield-open-arch.png": "978629deb76d1b1eee685f46d1bf4ec23340356357ed0dfcf3c6ad7b66915523",
+    "originals/open-arch-dark-edit.png": "4467af49c99faa5179fb3a3c7f03d9c954fad9887af092fd060b97a88331cb1d",
+    "originals/open-arch-light-edit.png": "177225087f00928a51d548233d151d6e0f82dfff9a580c585567508bbd2c57c2",
+    "OPEN_ARCH_PROMPTS.json": "064470330337709d045f2929eba27155f57b6dc36023add66de320e468cadcc5",
+    "source/start-menu-background.js": "194a8baa7127515eb8a2b5ddc8d8f509fccc9201cb786c0e606afc9e2500e1ba"
   },
   "exports": {
     "web/battlefield.webp": "6badf424c816406a4bf441c42f3a0fb91ef6fe250a31e2171c22ea900ee4e32b",
-    "web/battlefield-atmosphere.webp": "cd0da47bead6447ecc4622dd7b63a88db97f1a6e4b4d8f8f71d1cd2a3faa070e",
+    "web/battlefield-atmosphere.webp": "a178d1cd7b908257511c6193950d47a5d4573a2f13eede50e3b249cd554581f2",
     "web/cloth-atlas.webp": "83b3a07b9e67e06011bc917bb8ef05bd9596e9eaa36ebe04d25ec64febad1af4",
     "web/title-lockup-forged.webp": "f3fbd489e1024281278f520ff6653accfb2365d0bd3115d8322c164012fd830b",
     "originals/gate-light-original.png": "7908227f0c265a1ff23d240ca76bc694600ff086606e0ad16ea8e8b067aac3c0",
-    "SOURCE.md": "5bdf3d2471273b8273e0844dbfb3a50db9148bb20f7de70eac3ff47e6c4e652d",
+    "web/gate-light-clear.png": "50e502fcd0da5b5b192fcbb181e4b9c8b3c0b3b4ff274b6288e2096882d89565",
+    "SOURCE.md": "e36f7086c9779253f34a270197855837cd6a525ab7b962fd4a12f4e115f51f47",
     "TITLE_SOURCE.md": "4104ec9df5ee99e671c7d7ece8f3dae201b7c80b67eb354e2d2a6565252671bd"
   }
 }

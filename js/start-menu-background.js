@@ -15,9 +15,9 @@ var StartMenuBackground = (function () {
   const DUST_GUST_RATE = 1.30;
   const FIRE_INTENSITY = 2;
   const GATE_SKY_OPENING =
-    'M729 258Q744 217 785 195L810 193 832 168 853 160 871 207 900 191Q937 212 930 258' +
-    'L914 315 901 349 878 365 864 398 848 393 820 413 801 395 778 356 765 338 745 366 724 376Z';
-  // 授權原圖的左上角與底圖比例，以兩側石柱及雕像對齊。
+    'M849 83C900 122 932 181 941 238L930 258 914 315 901 349 878 365 864 398' +
+    'L848 393 820 413 801 395 778 356 765 338 745 366 724 376L729 258C732 187 778 124 849 83Z';
+  // 聖光貼圖沿用授權原圖的座標與比例，以兩側石柱及雕像對齊。
   const GATE_LIGHT_SOURCE = { x: 604.5, y: 94, scale: 1 / .826, trimTop: 3 };
   const GATE_LIGHT_BOUNDS = { x: 676, y: 94, width: 444, height: 356 };
   const GATE_LIGHT_BLEND =
@@ -179,10 +179,11 @@ var StartMenuBackground = (function () {
     maskContext.fill(new Path2D(GATE_LIGHT_BLEND));
     maskContext.filter = 'none';
     maskContext.globalCompositeOperation = 'destination-in';
-    // 淡掉截圖邊緣，保留門洞內完整的原圖色調。
+    // 聖光由露出的拱尖下方漸入，避免貼圖上緣形成橫線。
     const vertical = maskContext.createLinearGradient(0, 98, 0, 442);
     vertical.addColorStop(0, 'transparent');
-    vertical.addColorStop(.026, '#fff');
+    vertical.addColorStop(.035, 'rgba(255,255,255,.23)');
+    vertical.addColorStop(.11, '#fff');
     vertical.addColorStop(.73, '#fff');
     vertical.addColorStop(1, 'transparent');
     maskContext.fillStyle = vertical;
@@ -210,7 +211,7 @@ var StartMenuBackground = (function () {
     stillContext.globalCompositeOperation = 'destination-in';
     stillContext.drawImage(mask, 0, 0);
 
-    // 只讓門洞內的霧光輕移，石材和鏤空留在靜態原圖層。
+    // 只讓門洞內的霧光輕移，拱門石材留在靜態貼圖層。
     const mistMask = canvas(width, height);
     const mistMaskContext = mistMask.getContext('2d');
     mistMaskContext.translate(836 - x, 266 - y);
@@ -815,7 +816,7 @@ var StartMenuBackground = (function () {
     const fill = { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover' };
     const still = layer(root, new Image(), fill);
     still.alt = '';
-    still.src = new URL('battlefield-atmosphere.webp', ASSETS);
+    still.src = new URL('battlefield-atmosphere.webp?v=20261112-open-arch', ASSETS);
     const surface = layer(root, canvas(1, 1), fill);
     const ctx = surface.getContext('2d');
     layer(root, document.createElement('div'), {
@@ -934,7 +935,7 @@ var StartMenuBackground = (function () {
       return true;
     }, () => false);
     const gateSource = new Image();
-    if (gateContext) gateSource.src = new URL('gate-light-original.png', ASSETS);
+    if (gateContext) gateSource.src = new URL('gate-light-clear.png', ASSETS);
     const gateReady = gateContext ? gateSource.decode().then(() => {
       if (disposed) return false;
       gateLight = makeGateLight(gateSource);

@@ -127,8 +127,56 @@ test('離線收益彈窗接線：上線時顯示擊殺/經驗/金幣/掉落明�
   const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
   const save = fs.readFileSync(path.join(root, 'js', 'save.js'), 'utf8');
   assert.match(html, /id="offline-modal"/);
+  assert.match(html, /id="offline-modal-confirm"[^>]*data-str="1932"/);
+  assert.match(ui, /\$id\('offline-modal-confirm'\)\.addEventListener\('click', closeOfflineSummary\)/);
   assert.match(ui, /function showOfflineSummary\(/);
   assert.match(save, /showOfflineSummary/);
+});
+
+test('離線裝備與寶石接續排列，材料數量置於框外，擊殺顯示完整數字', () => {
+  const c = loadGameContext();
+  const overlay = { style: {} };
+  const body = {};
+  c.$id = (id) => ({ 'offline-modal': overlay, 'offline-modal-body': body })[id];
+  const ui = fs.readFileSync(path.join(root, 'js', 'ui.js'), 'utf8');
+  vm.runInContext(ui.slice(ui.indexOf('function divineStoneIconHTML('), ui.indexOf('function divineStoneTextHTML(')), c);
+  vm.runInContext(ui.slice(ui.indexOf('function offlineLootItemHTML('), ui.indexOf('function closeOfflineSummary(')), c);
+  c.ENCHANT_ENABLED = true;
+
+  const summary = {
+    seconds: 3600, stage: 280, zoneName: '<zone>', kills: 3991, xp: 300, gold: 200,
+    equips: { 0: 2 }, gems: Object.fromEntries(Array.from({ length: 10 }, (_, i) => [i + 1, i + 1])),
+    essence: 11, dust: 12, parts: 13, scrap: 14, books: 15,
+    forge: { salvaged: 5, gold: 50, scrap: 16, essence: 17, ancientEssence: 18 },
+  };
+  c.showOfflineSummary(summary);
+  assert.equal(overlay.style.display, 'flex');
+  assert.ok(body.innerHTML.includes(c.STR(2054, 280, '&lt;zone&gt;', c.STR(2053), '3,991')));
+  assert.ok(body.innerHTML.includes(`<div class="offline-sum-row">${c.STR(2409, 5, c.STR(1049, 50))}</div>`));
+  const grids = [...body.innerHTML.matchAll(/<div class="offline-sum-grid">(.*?)<\/div>/g)];
+  assert.equal(grids.length, 1);
+  const items = grids[0][1].split('<span class="offline-sum-item">').slice(1);
+  assert.equal(items.length, 11);
+  assert.ok(items[0].includes(`style="color:${c.RARITIES[0].color}">${c.STR(45, c.RARITIES[0].name)}</span>×2</span>`));
+  for (let level = 1; level <= 10; level++) {
+    const gem = `<span class="offline-sum-badge" style="color:${c.RARITIES[level - 1].color}">` +
+      `<span class="offline-sum-gem-icon" aria-hidden="true"></span>${c.GEM_NAMES[level]}${c.STR(122)}</span>×${level}</span>`;
+    assert.equal(items[level], gem, `level ${level}`);
+  }
+  const materials = body.innerHTML.split('<div class="offline-sum-materials">')[1];
+  assert.equal((materials.match(/class="offline-sum-badge"/g) || []).length, 6);
+  for (const [id, count] of [[13, 29], [100, 12], [385, 13], [98, 30], [102, 15], [99, 17]]) {
+    assert.ok(materials.includes(`${c.STR(id)}</span>×${count}</span>`), `material ${id}`);
+  }
+  assert.ok(materials.includes(`title="${c.STR(2062, 14)}"`));
+
+  c.showOfflineSummary({ seconds: 3600, stage: 280, kills: 3, xp: 300, gold: 200, forge: summary.forge });
+  assert.ok(body.innerHTML.includes(`${c.STR(98)}</span>×16</span>`));
+  assert.ok(body.innerHTML.includes(`${c.STR(13)}</span>×18</span>`));
+  assert.doesNotMatch(body.innerHTML, /class="offline-sum-item" title=/);
+
+  c.showOfflineSummary({ seconds: 3600, stage: 280, kills: 3, xp: 300, gold: 200 });
+  assert.ok(body.innerHTML.includes(`<div class="offline-sum-loot">${c.STR(2064)}</div>`));
 });
 
 test('參數表 10-離線段：新增計算等級與擊殺速率、移除舊估算列，錨點同步', () => {

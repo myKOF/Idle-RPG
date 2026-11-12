@@ -132,7 +132,9 @@ test('凍結的 Worker 指令表有 99 條且分類數量固定', () => {
   // v49：rune.unsocket 改為 rune.erase（抹除符文，扣碎片與精華、不退還），指令數不變。
   // v77：遺物——新增 relic.upgrade，98 → 99。
   // v79：熔爐寶箱——新增 chest.open／chest.upgrade，99 → 101。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 79);
+  // v80：chest.open 回傳裝備圖示數量，指令數不變。
+  // v81：寶箱裝備顯示資料加入實際等級和太古星數。
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 81);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');

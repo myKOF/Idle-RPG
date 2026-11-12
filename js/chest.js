@@ -214,6 +214,7 @@ var CHEST_SIMPLE_RES = { scrap: 1, essence: 1, ancientEssence: 1, dust: 1, soulO
 /* 發放袋子內容，回傳顯示用清單（寶石依實際種類、遺物依實際編號展開）。 */
 function chestGrantBag(bag, tally) {
   var p = G.player, out = [], keys = Object.keys(bag), i, j;
+  var equipmentGroups = Object.create(null);
   var stage = Math.max(1, Math.floor(Number(G.stage && G.stage.current) || 1));
   for (i = 0; i < keys.length; i++) {
     var e = bag[keys[i]], n = e.n;
@@ -232,7 +233,17 @@ function chestGrantBag(bag, tally) {
     } else if (e.k === 'equip') {
       var opts = { rarity: e.p };
       if (e.ancient !== undefined) opts.ancientCount = e.ancient;
-      for (j = 0; j < n; j++) chestDeliverEquipment(makeEquipment(stage, opts), tally);
+      var groups = equipmentGroups[e.p] || (equipmentGroups[e.p] = new Map());
+      for (j = 0; j < n; j++) {
+        var item = makeEquipment(stage, opts);
+        var icon = equipIconFile(item);
+        var ancientCount = getItemAncientCount(item);
+        var key = icon + ':' + item.level + ':' + ancientCount;
+        var group = groups.get(key);
+        if (group) group.n++;
+        else groups.set(key, { icon: icon, level: item.level, ancientCount: ancientCount, n: 1 });
+        chestDeliverEquipment(item, tally);
+      }
       out.push({ k: 'equip', r: e.p, n: n });
     } else if (e.k === 'relic') {
       var byId = {};
@@ -248,7 +259,11 @@ function chestGrantBag(bag, tally) {
   out.forEach(function (rw) {
     var key = rw.k + ':' + (rw.type || '') + ':' + (rw.lv || '') + ':' + (rw.id || '') + ':' + (rw.r === undefined ? '' : rw.r);
     if (merged[key]) merged[key].n += rw.n;
-    else { merged[key] = rw; list.push(rw); }
+    else {
+      if (rw.k === 'equip') rw.items = Array.from(equipmentGroups[rw.r].values());
+      merged[key] = rw;
+      list.push(rw);
+    }
   });
   var rank = function (rw) { var i = CHEST_REWARD_ORDER.indexOf(rw.k); return (i < 0 ? 99 : i) * 1000 + (rw.lv || 0) + (rw.r || 0) + (rw.k === 'rune' && typeof RUNES !== 'undefined' ? RUNES.findIndex(function (x) { return x.id === rw.id; }) : 0); };
   list.sort(function (a, b) { return rank(a) - rank(b); });

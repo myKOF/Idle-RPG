@@ -1,3 +1,54 @@
+## CHEST-REWARD-DETAILS-20261112 — 寶箱獎勵圖示與彈窗樣式
+
+- Codex 單一開發者，已完成。沿用共用黑色遮罩和標準確認按鈕。裝備顯示實際等級及太古星數，8 星以上以星號和數量顯示。遺物使用遺物頁的圓形圖示並填滿格位。排序改為遺物、符文、金幣與材料、寶石、裝備。修正大量獎勵捲到底部後縮小視窗時格位可能短暫清空的問題。
+- 修改 `js/chest.js`、`js/ui-chest.js`、`css/chest.css`、`css/dialogs.css`、主頁及 Worker 快取與協議 v81、兩支回歸、`docs/CHEST_SYSTEM.md`、`docs/WORKER_PROTOCOL.md`、`LV_upgrade_system.md` 及本段。唯讀檢查離線收益、正常確認彈窗、背包太古星與遺物頁的標記及圖檔。素材庫無本項變更。
+- 寶箱發放段與 Claude `cf099bd3` 的任務計數三方試合乾淨。沿用使用者核准的兩處快取更新，`20261112-chest-rewards-v2` 接續 v1。後續整合保留新版快取與 Claude 開箱任務計數。遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收。
+- `node --test` 執行 `chest`、`worker-protocol`、`vfx-editor-cache-versions`、`string-table`、`relics`、`sim-command-coverage`、`save-origin-isolation`、`ui-sound`、`offline-rewards` 九個測試檔，共 94/94。`npm.cmd run build` 通過 716 檔，字串寫死 0，差異檢查通過。
+- 隔離靜音 Edge 正式頁驗證單開、全開 450 箱，首屏 1.92 秒，148 件裝備中 110 件有太古星。核對遮罩與按鈕計算樣式和離線收益一致、遺物圓框與格位同寬 58 px、排序及最後一格，另以測試資料驗證等級 200／250 與七／八星。1920 × 900、390 × 844 模擬視窗、縮放、確認關閉與快取一致通過。主控台錯誤 0，遊戲場景偶發音訊頻率限幅警告。畫面留本聊天。
+- 追加 Esc 與「確定」共用關閉處理，更新 `js/ui-chest.js`、`index.html` 快取、寶箱文件及 LV。Edge 驗證捲動區焦點下可關閉、長按時遊戲選單不會誤開、放開後另一次 Esc 可照常開選單，以及確認按鈕與新版快取，主控台錯誤 0。相關 94 項回歸、建置與字串稽核通過。
+
+## CHEST-REWARD-MODAL-20261112 — 全畫面寶箱獎勵
+
+- Codex 單一開發者，已完成。以使用者截圖為版面參考，在開啟／全開後顯示置中的無框全畫面彈窗。依遺物、符文、寶石、金幣等資源、裝備排列，裝備依品質由高到低逐件顯示。格位及圖示共用背包尺寸。首屏從左到右逐列揭示，捲動時可直接瀏覽其餘獎勵。沿用遊戲素材與「確定」字串。開箱數、加倍與裝備去向保留於無障礙摘要。
+- 修改 `js/ui-chest.js`、`css/chest.css`、`css/style.css`、`js/chest.js`、Worker 協議與載入快取、`index.html`、兩支回歸、`docs/CHEST_SYSTEM.md`、`docs/WORKER_PROTOCOL.md`、`LV_upgrade_system.md` 及本段。唯讀檢查 `js/data.js` 的裝備圖檔對應、`js/item.js` 的裝備生成與寶石圖示、`js/ui-scale.js`、原寶箱圖與字串。素材庫無本項變更。
+- 與 `ai/claude` 的 `cf099bd3` 做三方試合，`js/chest.js` 可乾淨合併並保留任務計數。使用者已核准更新 `index.html` 與 `js/worker/sim.worker.js` 重疊的 `chest.js` 快取版本。後續整合時保留 `20261112-chest-rewards-v1` 與雙方其餘載入版本。遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收。
+- `node --test` 執行 `chest`、`worker-protocol`、`vfx-editor-cache-versions`、`string-table`、`relics`、`sim-command-coverage`、`save-origin-isolation`、`ui-sound` 八個測試檔，共 86/86。`npm.cmd run build` 通過 716 檔，字串寫死 0，差異檢查通過。
+- 隔離靜音 Edge 正式頁及原生 Worker 實測單開、全開 450 箱、各類圖示與排序、逐件裝備到最後一格、左鍵與中鍵拖曳、滾輪、確認關閉與快取一致。1920 × 900 首屏完成時間 1.92 秒，格位 58 px、圖示 28 px。390 × 844 模擬視窗驗證縮放與觸控滑動。主控台錯誤 0，遊戲場景偶發音訊頻率限幅警告，桌面及窄視窗截圖留在本聊天。
+
+## OFFLINE-LOOT-ALIGN-20261112 — 離線材料對齊與分解收益合計
+
+- Codex 單一開發者，已完成。材料從新列開始，與裝備、寶石共用三欄。熔爐分解列顯示分解件數及金幣，分解的裝備碎片、附魔精華、太古精華列入下方材料，同種數量先合計再格式化。既有「領取」字串用於關閉摘要的按鈕。
+- 修改 `js/ui.js`、`css/style.css`、`index.html` 按鈕與快取、`tests/offline-rewards.test.cjs`、`LV_upgrade_system.md` 及本段。唯讀核對 `js/save.js`、`js/newforge.js`、Worker 摘要與字串。逐檔衝突預檢通過。
+- `node --test` 執行離線收益、離線參數、背景掛機、熔爐、字串及快取共 73/73。`npm.cmd run build` 通過 716 檔，String 稽核寫死 0，diff 檢查通過。隔離靜音 Edge 以截圖中的收益及不同項數在 1440、390、320px 驗證對齊、加總、僅材料、空摘要與領取關閉。320px 的較多材料組合可橫向捲動，手機為模擬視窗。主控台錯誤 0，遊戲場景偶發既有音訊限幅警告。可重新載入 Codex 工作區驗收及合併。
+
+## OFFLINE-LOOT-FLOW-20261112 — 離線掉落連續排列與材料框外數量
+
+- Codex 單一開發者，已完成。裝備與寶石共用三欄，寶石接在最後一筆裝備後。材料圖示與名稱留在淡金色框內，數量移至框外。裝備碎片沿用既有資源圖示，滿載折算說明放在滑鼠提示。
+- 修改 `js/ui.js`、`index.html` 快取、`tests/offline-rewards.test.cjs`、`LV_upgrade_system.md` 及本段。唯讀核對 `css/style.css`、字串、離線結算與 Worker 摘要。逐檔衝突預檢通過。
+- `node --test` 執行離線收益、離線參數、背景掛機、字串及快取共 42/42。`npm.cmd run build` 通過 716 檔，String 稽核寫死 0，diff 檢查通過。隔離靜音 Edge 以截圖中的掉落組合驗證 1440、390、320px 三種視窗，同列三組與材料框外數量皆通過，主控台錯誤與警告皆為 0。手機採模擬視窗。可供合併，重新載入 Codex 工作區驗收。
+
+## FORGE-CHEST-ART-20261112 — 熔爐寶箱改名與圖示重製
+
+- Codex 單一開發者，已完成。由左到右為青銅寶箱、精良寶箱、史詩寶箱、傳說寶箱、神話寶箱。青銅採鐵灰箱體、銀白包邊及銀灰卡框。五款圖示以內建 ImageGen 繪製，分別使用鍛鐵、藍寶石、紫晶、琥珀焰紋及黑曜石鎏金。未解鎖時顯示灰階箱體與鎖鏈掛鎖。Mote Studio 可連線，這組寫實材質採用 ImageGen 製作。
+- 修改 `config/Excel/Chest.xlsx`、匯出的 `config/CSV/Chest.csv` 與 `js/chest_data.js`、`js/ui-chest.js`、`css/chest.css`、主頁與 Worker 快取、`images/chests/`、`tools/assets/export-chest-art.cjs`、`docs/CHEST_SYSTEM.md`、LV 及本段。唯讀檢查共通規範、寶箱計算與存檔、String 來源、素材匯出與相關測試。逐檔衝突預檢通過。
+- Excel 原生 API 正常重開驗證通過，共更新 80 個名稱欄位，獨立比對其餘儲存格和格式。`node --test tests/chest.test.cjs tests/worker-protocol.test.cjs tests/relics.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 共 51/51。`npm.cmd run build`、字串硬編碼稽核、素材 SHA 與 `git diff --check` 通過。
+- 正式頁面以隔離靜音 Edge 及測試存檔驗證 1600px 桌面和 390px 模擬視窗。五張圖正常載入，預設四個鎖鏈正確顯示，GM 訊息、掉落提示與精良寶箱開啟結果顯示新名稱，開啟後數量扣除，主控台無錯誤。窄視窗沿用遊戲全頁縮放。
+- Effects-Materials 提交 `c96b9af`，保存五款透明 PNG 母圖、WebP 與提示詞。遊戲提交為本段所在提交，可在 `ai/codex` 重載熔爐頁驗收與合併。
+
+## OFFLINE-LOOT-LAYOUT-20261112 — 離線收益掉落物排版
+
+- Codex 單一開發者，已完成。依使用者提供的圖 2 調整掉落物標籤。裝備與寶石各以三欄排列，名稱著色加框，數量在框外且同組不換行。寶石一至十級的圖示、名稱及框對應品質 R0～R9。材料文字與框採彈窗淡金色，擊殺數以千分位顯示完整整數。桌面彈窗上限由 520px 增至 600px，寶石圖示由 CSS 繪製，標籤使用現有字串。
+- 修改 `js/ui.js`、`css/style.css`、`index.html` 快取、`tests/offline-rewards.test.cjs`、`LV_upgrade_system.md` 及本段。唯讀檢查離線結算、Worker 摘要、品質色表、字串與共用彈窗樣式。逐檔衝突預檢通過。
+- `node --test` 執行離線收益、離線參數、背景掛機、字串及快取共 42/42。`npm.cmd run build` 通過 716 檔，String 稽核寫死 0，`git diff --check` 通過。
+- 隔離靜音 Edge 以正式頁面與測試摘要驗證 1440、568、545、390、320px 五種視窗。12 種裝備及 10 級寶石各自維持三欄、無水平溢出，逐項核對配色、完整擊殺數、空結果與三種關閉操作。主控台錯誤 0，遊戲場景偶發既有音訊頻率限幅警告。手機使用模擬視窗，未使用玩家存檔。可供合併，下一步在 Codex 工作區重新載入驗收。
+
+## START-MENU-OPEN-ARCH-20261112 — 移除開始選單拱門鏤空雕飾
+
+- Codex 單一開發者，已完成。依使用者截圖移除中央拱門頂部的石雕花格。以內建 ImageGen 補回荒原底圖的暗雲和聖光貼圖的暖白雲霧，沿用外拱、柱身與兩側石像。同步調整雲霧與閃電的門洞遮罩，延長聖光上緣的漸入。
+- 修改 `images/start-menu/` 的荒原 WebP、聖光 PNG、來源說明及清單，另同步背景 JS、首頁快取、匯出腳本、LV、特效紀錄與本段。唯讀核對選單入口、標誌樣式、原始素材及相關測試。逐檔衝突預檢通過。
+- 靜音隔離 Edge 驗證 1919 × 911 與 390 × 844 畫面、素材請求及聖光載入失敗的底圖，主控台無錯誤或警告。以 `node --test` 執行開始選單、背景、遊戲選單、快取及 VFX 登記五檔，共 46/46。Build 716 檔通過，String 寫死 0，匯出 SHA 及 diff 檢查通過。手機為模擬視窗。
+- Effects-Materials 提交 `474d1b4`，保存局部生成稿、底圖母圖、匯出與提示詞。遊戲提交為本段所在提交，可重載 Codex 工作區驗收與合併。
+
 ## START-MENU-BUTTON-FRAME-20261112 — 開始選單按鈕外框與寶石閃光
 
 - Codex 單一開發者，已完成。依使用者截圖以斜切古銅框、內刻線、鉚釘及細紋重做按鈕。字級由 18px 縮至 16px，按鈕寬為前版的 8/9。依追加要求，劍柄紅寶石以兩段亮峰和交叉亮芒強化明暗對比，每 3 秒循環。逐檔衝突預檢通過。
@@ -15876,6 +15927,12 @@ Worker 存活且頁面正常完成載入。
 - 素材庫提交 `7a0ced32966eb59ee5e9b27c17004b236462bb62` 保存 ImageGen 分層繪圖、時間軸、獨立流光翼／遠雲／煙尾／粒子、程序音軌、聲景產生器、成片和提示詞。遊戲專案收錄 `images/intro-parchment` 的 MP4、來源和清單，加入 `tools/intro/sync-parchment-shots.cjs`，同步 `LV_upgrade_system.md` 與本段。既有設定頁重播沿用完整序章。
 - 驗證：封存頁在隔離 Edge 通過播放、拖曳、轉場與結束。PCM 重建逐位元一致。成片經 ffprobe 與完整解碼確認為 1080p、30 fps、654 幀、AAC 立體聲 21.80 秒，尾幀全白。匯出 `--archive`／`--apply`／`--check`、暫存 SHA-256、`git diff --check`、`npm.cmd run build` 710 檔及字串檢查通過。
 - `node --test tests/intro-player.test.cjs tests/intro-motion.test.cjs tests/intro-audio.test.cjs tests/gm-intro.test.cjs tests/vfx-preset-usage.test.cjs` 共 57/57 通過。唯讀檢查共通規範、既有序章播放器、素材匯出流程與相關測試。本次驗證範圍為獨立影片、Edge 分層來源和既有序章回歸。可供使用者整合，正式入口後續與第三鏡一起評估。遊戲提交為本段所在的 `[Codex] feat: 封存羊皮紙序章第一、二鏡`。
+## INTRO-SHOT2-APPROVED-20261112 — 羊皮紙序章前兩鏡核准版
+
+- Codex，完成。使用者核准第一、二鏡。成片 20.80 秒，第一鏡含飛行惡魔，第二鏡從疊化開始運動，更新大天使長頭罩、右手、燃燒灰煙及焦紙片，群墜尾跡收完後 0.5 秒亮起深淵光點。第三鏡從全白尾幀接續。
+- Effects-Materials 提交 `712e2aae48e991cfdf349880eb8e40732bfbd6d0`。遊戲專案同步 `images/intro-parchment` 的成片、來源說明與清單，更新匯出工具和 LV_upgrade_system。本項維持前兩鏡獨立封存，遊戲現行序章入口及其他任務差異保留。
+- 驗證：`node tools/intro/sync-parchment-shots.cjs --check`、36 個素材暫存雜湊、Edge 本機播放及拖曳、畫面 18.90／19.40 秒檢查、ffprobe 1080p30 共 624 幀及 AAC 完整解碼、序章與 VFX 57 項測試、716 檔建置和暫存差異檢查通過。可供整合。遊戲提交為本段所在的 `[Codex] feat: 封存核准的羊皮紙序章前兩鏡`。
+
 ## MERGE-INTRO-STORYBOOK-MERCHANT-20261111 — 序章與神祕商人整合
 
 - Owner：Codex（整合）。原 HEAD `f0ebd7cd5532c09d227597bccf21193e8021129e`，MERGE_HEAD `5f75c632fb11ae941d15145a9fc9442b7ccc8790`，base `a1eed174095033b2398d1f46d85c44fc3a354561`。使用者輸入 `1` 接續這次合併與同步。
@@ -15934,3 +15991,8 @@ Worker 存活且頁面正常完成載入。
 - `node --test tests/start-menu.test.cjs tests/start-menu-background.test.cjs tests/game-menu.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs tests/save-origin-isolation.test.cjs tests/ui-sound.test.cjs tests/chest.test.cjs tests/worker-protocol.test.cjs`：97/97。`npm.cmd run build`：716 檔通過。`node tools/intro/sync-start-menu.cjs --check`：來源與匯出 SHA 一致。`node tools/string-table/build_string_csv.cjs --check`：寫死 0。診斷保留於忽略的 `logs/sync-merge-20261112-013732/targeted.tap` 與 `build.log`。
 - 完整 `git diff HEAD --check` 通過。未改 Excel、素材庫、程式或測試；不需額外快取版本或生成資料。原有 incoming 機械修正保持。無本次新增測試失敗，未重跑已知大量失敗的全套測試或瀏覽器視覺驗收。
 - 無未完成衝突，可交 controller stage 與建立本次 merge commit；本 agent 未 stage／commit／push，HEAD 與 MERGE_HEAD 保持不變，index 未合併狀態留待 controller staging。
+## SYNC-MERGE-20261112-152757 — develop 寶箱與任務成果整合
+
+- Owner：Codex integrator。整合 HEAD `e7079082e86fcf32ca1df5005942b96cd44b11e6` 與 MERGE_HEAD `c19b75289b6e360b87856469712f3ed3adc13969`（base `e867151762844c5da09b912eb48599604483ee4f`）。
+- `index.html` 與 `js/worker/sim.worker.js` 保留 ours 的任務／寶箱遺物資料、玩家與存檔載入版本，以及 theirs 的寶箱美術、獎勵彈窗、離線收益、Worker protocol 與開始選單更新；合併後以 `20261112-sync-chest-v3` 同步主執行緒、Worker、protocol 與 bridge 快取鏈。
+- 初始衝突僅上述兩個文字檔，沒有 XLSX；因此未修改活頁簿 bytes，也未建立 `Name.xlsx` 的虛構 DATA plan。針對性 chest／offline／Worker／start-menu／cache 測試 44/44 通過，`npm.cmd run build` 717 檔通過，完整 `git diff HEAD --check` 通過；忽略的診斷輸出保留於 `logs/sync-merge-20261112-152757/targeted.tap` 與 `build.log`。

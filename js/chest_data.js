@@ -256,7 +256,7 @@ var CHESTS = [
       { k: 'relic', q: [1, 1], w: 1 }
     ] }
   ] },
-  { id: 2, name: '藍色寶箱', quality: 'rare', init: false, a: 50000, b: 5, levels: [
+  { id: 2, name: '精良寶箱', quality: 'rare', init: false, a: 50000, b: 5, levels: [
     { need: 150, xp: [0, 0, 1, 2, 3, 4, 6, 8, 10, 13, 18, 25], rolls: 2, drops: [
       { k: 'gold', q: [200000, 600000], w: 30 },
       { k: 'scrap', q: [300, 600], w: 20 },
@@ -518,7 +518,7 @@ var CHESTS = [
       { k: 'relic', q: [1, 1], w: 2 }
     ] }
   ] },
-  { id: 3, name: '紫色寶箱', quality: 'epic', init: false, a: 2000000, b: 6, levels: [
+  { id: 3, name: '史詩寶箱', quality: 'epic', init: false, a: 2000000, b: 6, levels: [
     { need: 200, xp: [0, 0, 0, 0, 1, 2, 3, 4, 5, 7, 10, 14], rolls: 2, drops: [
       { k: 'gold', q: [20000000, 60000000], w: 30 },
       { k: 'scrap', q: [3000, 6000], w: 20 },
@@ -800,7 +800,7 @@ var CHESTS = [
       { k: 'relic', q: [1, 1], w: 3 }
     ] }
   ] },
-  { id: 4, name: '橘色寶箱', quality: 'legendary', init: false, a: 100000000, b: 7, levels: [
+  { id: 4, name: '傳說寶箱', quality: 'legendary', init: false, a: 100000000, b: 7, levels: [
     { need: 250, xp: [0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 7, 10], rolls: 2, drops: [
       { k: 'gold', q: [2000000000, 6000000000], w: 30 },
       { k: 'scrap', q: [30000, 60000], w: 20 },
@@ -1102,7 +1102,7 @@ var CHESTS = [
       { k: 'relic', q: [1, 1], w: 4 }
     ] }
   ] },
-  { id: 5, name: '暗金寶箱', quality: 'mythic', init: false, a: 5000000000, b: 8, levels: [
+  { id: 5, name: '神話寶箱', quality: 'mythic', init: false, a: 5000000000, b: 8, levels: [
     { need: 300, xp: [0, 0, 0, 0, 0, 0, 1, 2, 2, 3, 5, 8], rolls: 2, drops: [
       { k: 'gold', q: [200000000000, 600000000000], w: 30 },
       { k: 'scrap', q: [300000, 600000], w: 20 },

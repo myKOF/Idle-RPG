@@ -15,6 +15,8 @@ const recipe = 'js/start-menu-background.js';
 const sources = [
   'originals/battlefield.png', 'originals/cloth-atlas.png', 'PROMPTS.json',
   'originals/battlefield-atmosphere.png', 'originals/title-lockup-forged.png', 'ATMOSPHERE_PROMPTS.json',
+  'originals/battlefield-open-arch.png', 'originals/open-arch-dark-edit.png',
+  'originals/open-arch-light-edit.png', 'OPEN_ARCH_PROMPTS.json',
   'source/start-menu-background.js'
 ];
 const exportsByName = {
@@ -23,6 +25,7 @@ const exportsByName = {
   'cloth-atlas.webp': 'web/cloth-atlas.webp',
   'title-lockup-forged.webp': 'web/title-lockup-forged.webp',
   'gate-light-original.png': 'originals/gate-light-original.png',
+  'gate-light-clear.png': 'web/gate-light-clear.png',
   'SOURCE.md': 'SOURCE.md',
   'TITLE_SOURCE.md': 'TITLE_SOURCE.md'
 };

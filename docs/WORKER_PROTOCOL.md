@@ -1,4 +1,8 @@
-# Worker 協議 v79
+# Worker 協議 v81
+
+v81（2026-11-12 寶箱裝備等級與太古星）：`chest.open` 的 `k: 'equip'` 獎勵保留 `r`（品質）和 `n`（總件數），以 `items: [{ icon, level, ancientCount, n }]` 取代 `icons`。同品質、同圖示、同裝備等級及同太古條數可共用一筆，UI 按 `n` 逐件呈現。等級及太古條數在 Worker 產生裝備時取得，涵蓋直接拆解的裝備。發放與存檔格式維持。
+
+v80（2026-11-12 寶箱獎勵）：`chest.open` 成功時，每筆 `k: 'equip'` 獎勵沿用 `r`（品質）與 `n`（總件數），另帶 `icons`（相對 `images/` 的圖檔路徑到件數的對照）。同圖示、同品質的件數合計，包含送入熔爐、背包及直接拆解的所有掉落裝備。主執行緒據此逐件顯示圖示。指令、發放規則及存檔格式維持。
 
 v79（2026-11-12 熔爐寶箱）：新增 `chest.open({chestId:int, count:int})` 與 `chest.upgrade({chestId:int})`（99→101）。開啟成功回 `{ chestId, opened, doubled, rewards:[{k, n, …}], equip:{forge, inv, salvaged} }`，失敗（未知、未解鎖、數量 0、沒有掉落）回錯誤字串；count 超過持有數時開到持有數為止。升級成功回 null，未解鎖／滿級／金幣不足回錯誤字串，不扣任何東西。存檔新增 `player.chests = { 編號: { lv, xp, n, on } }`（缺欄由 mergeDefaults 補空、migrateSave 的 sanitizeChests 淨化）；`newforge` 面板新增 `chests` 唯讀投影。寶箱定義、升級費用與掉落機率由兩端共載的 `CHESTS`（js/chest_data.js，來源 config/Excel/Chest.xlsx）與 js/chest.js 純函式提供。說明見 docs/CHEST_SYSTEM.md。
 

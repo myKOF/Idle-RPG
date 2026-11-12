@@ -16,9 +16,10 @@ const archive = path.join(library, sourceRoot);
 const game = path.join(REPO_ROOT, 'images/intro-parchment');
 const sources = [
   'PROMPTS.json',
-  'index.html', 'preview.js', 'shot-timing.js', 'shot-two.js', 'shot.js',
+  'index.html', 'preview.js', 'shot-timing.js', 'shot-two.js', 'shot.js', 'shot-air.js', 'shot-fire.js', 'shot-ash.js',
   'render-video.cjs', 'build-score.cjs',
-  'assets/angel.png', 'assets/angels-fall-faces.png', 'assets/archangel-fall-ivory.png',
+  'assets/air-demon-atlas.png', 'assets/angel.png', 'assets/angels-fall-faces.png',
+  'assets/archangel-fall-regalia.png', 'assets/archangel-hood-edit.png', 'assets/archangel-right-hand.png',
   'assets/cloud-abyss.png', 'assets/collapse-smoke.png', 'assets/colossus.png',
   'assets/demons.png', 'assets/ember.png', 'assets/heaven-sky.png', 'assets/ledge.png',
   'assets/siege.png', 'assets/temple-details.png', 'assets/temple-roofs.png',

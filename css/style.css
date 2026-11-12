@@ -26,6 +26,8 @@
   --bad: #b22222;
   --warn: #d49a37;
   --info: #4682b4;
+  --inventory-slot-size: 58px;
+  --inventory-icon-size: 28px;
   /* ==========================================================================
      ?�全局變數?�基礎樣式】Global Variables & Base Styling
      說�?：�?義全站�?主色彩主題�??��?系深?�調）、�??�設定、�??��??�色?��?距�??��?
@@ -2811,8 +2813,8 @@ textarea#save-io {
 
 #inventory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 58px);
-  grid-auto-rows: 58px;
+  grid-template-columns: repeat(auto-fill, var(--inventory-slot-size));
+  grid-auto-rows: var(--inventory-slot-size);
   gap: 6px;
   align-content: start;
   height: var(--inventory-visible-height, 378px);
@@ -5605,8 +5607,8 @@ textarea:disabled,
 }
 
 .item-icon {
-  width: 28px;
-  height: 28px;
+  width: var(--inventory-icon-size);
+  height: var(--inventory-icon-size);
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
   object-fit: contain;
 }
@@ -10532,7 +10534,7 @@ textarea:disabled,
 
 /* ---- ?��??��?確�?彈�? ---- */
 .offline-modal-box {
-  width: min(520px, 94vw);
+  width: min(600px, 96vw);
 }
 
 .offline-sum-row {
@@ -10554,11 +10556,81 @@ textarea:disabled,
 }
 
 .offline-sum-loot {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(max-content, 1fr));
+  gap: 6px 10px;
   color: var(--text);
-  line-height: 2;
-  padding: 6px 2px;
+  padding: 8px 2px;
   max-height: 40vh;
-  overflow-y: auto;
+  overflow: auto;
+}
+
+.offline-sum-grid,
+.offline-sum-materials {
+  display: contents;
+}
+
+.offline-sum-materials > :first-child {
+  grid-column-start: 1;
+}
+
+.offline-sum-item {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.offline-sum-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: var(--dialog-gold, var(--accent));
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.offline-sum-item .offline-sum-badge {
+  margin-inline-end: 4px;
+}
+
+.offline-sum-badge .res-icon {
+  width: 1.05em;
+  height: 1.05em;
+  margin: 0;
+  object-fit: contain;
+}
+
+.offline-sum-gem-icon {
+  width: .9em;
+  height: .8em;
+  flex: none;
+  background: linear-gradient(135deg, color-mix(in srgb, currentColor, white 40%) 35%,
+    currentColor 35% 60%, color-mix(in srgb, currentColor, black 35%) 60%);
+  clip-path: polygon(22% 0, 78% 0, 100% 34%, 50% 100%, 0 34%);
+}
+
+@media (max-width: 480px) {
+  #offline-modal.modal-overlay { padding-inline: 4px !important; }
+  #offline-modal > .offline-modal-box {
+    width: 100%;
+    max-width: none;
+    padding-inline: 6px !important;
+  }
+  .offline-sum-loot { column-gap: 4px; font-size: 12px; }
+  .offline-sum-item { font-size: 11px; }
+  .offline-sum-badge { padding-inline: 3px; }
+  .offline-sum-item .offline-sum-badge { margin-inline-end: 2px; font-size: 12px; }
+}
+
+@media (max-width: 360px) {
+  #offline-modal > .offline-modal-box { padding-inline: 4px !important; }
+  .offline-sum-loot { column-gap: 2px; padding-inline: 0; font-size: 11px; }
+  .offline-sum-item { font-size: 10px; }
+  .offline-sum-badge { padding-inline: 2px; gap: 2px; }
+  .offline-sum-item .offline-sum-badge { margin-inline-end: 1px; font-size: 11px; }
 }
 
 .offline-modal-actions {
