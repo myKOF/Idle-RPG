@@ -15926,6 +15926,12 @@ Worker 存活且頁面正常完成載入。
 - 素材庫提交 `7a0ced32966eb59ee5e9b27c17004b236462bb62` 保存 ImageGen 分層繪圖、時間軸、獨立流光翼／遠雲／煙尾／粒子、程序音軌、聲景產生器、成片和提示詞。遊戲專案收錄 `images/intro-parchment` 的 MP4、來源和清單，加入 `tools/intro/sync-parchment-shots.cjs`，同步 `LV_upgrade_system.md` 與本段。既有設定頁重播沿用完整序章。
 - 驗證：封存頁在隔離 Edge 通過播放、拖曳、轉場與結束。PCM 重建逐位元一致。成片經 ffprobe 與完整解碼確認為 1080p、30 fps、654 幀、AAC 立體聲 21.80 秒，尾幀全白。匯出 `--archive`／`--apply`／`--check`、暫存 SHA-256、`git diff --check`、`npm.cmd run build` 710 檔及字串檢查通過。
 - `node --test tests/intro-player.test.cjs tests/intro-motion.test.cjs tests/intro-audio.test.cjs tests/gm-intro.test.cjs tests/vfx-preset-usage.test.cjs` 共 57/57 通過。唯讀檢查共通規範、既有序章播放器、素材匯出流程與相關測試。本次驗證範圍為獨立影片、Edge 分層來源和既有序章回歸。可供使用者整合，正式入口後續與第三鏡一起評估。遊戲提交為本段所在的 `[Codex] feat: 封存羊皮紙序章第一、二鏡`。
+## INTRO-SHOT2-APPROVED-20261112 — 羊皮紙序章前兩鏡核准版
+
+- Codex，完成。使用者核准第一、二鏡。成片 20.80 秒，第一鏡含飛行惡魔，第二鏡從疊化開始運動，更新大天使長頭罩、右手、燃燒灰煙及焦紙片，群墜尾跡收完後 0.5 秒亮起深淵光點。第三鏡從全白尾幀接續。
+- Effects-Materials 提交 `712e2aae48e991cfdf349880eb8e40732bfbd6d0`。遊戲專案同步 `images/intro-parchment` 的成片、來源說明與清單，更新匯出工具和 LV_upgrade_system。本項維持前兩鏡獨立封存，遊戲現行序章入口及其他任務差異保留。
+- 驗證：`node tools/intro/sync-parchment-shots.cjs --check`、36 個素材暫存雜湊、Edge 本機播放及拖曳、畫面 18.90／19.40 秒檢查、ffprobe 1080p30 共 624 幀及 AAC 完整解碼、序章與 VFX 57 項測試、716 檔建置和暫存差異檢查通過。可供整合。遊戲提交為本段所在的 `[Codex] feat: 封存核准的羊皮紙序章前兩鏡`。
+
 ## MERGE-INTRO-STORYBOOK-MERCHANT-20261111 — 序章與神祕商人整合
 
 - Owner：Codex（整合）。原 HEAD `f0ebd7cd5532c09d227597bccf21193e8021129e`，MERGE_HEAD `5f75c632fb11ae941d15145a9fc9442b7ccc8790`，base `a1eed174095033b2398d1f46d85c44fc3a354561`。使用者輸入 `1` 接續這次合併與同步。

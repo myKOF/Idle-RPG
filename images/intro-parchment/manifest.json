@@ -2,17 +2,23 @@
   "version": 1,
   "sourceRoot": "codex-authored/intro-parchment-shots-20261111",
   "sources": {
-    "source/PROMPTS.json": "914925772d38046c5f8ef513f4d7b85fef753e74f1359e18782279affa5a8735",
-    "source/index.html": "cf77e80f355fbdd5eb080a09e0aabbadbcc3a07c142c799abc4bb7605960bde8",
+    "source/PROMPTS.json": "670d7e68d6aa0d6aeae891221541760f41b59f44295f98149793255eadcf83b7",
+    "source/index.html": "0d81b6762a5d8aa9eeaf85878db3a738e2420a02439dc14fdb08148fd3806313",
     "source/preview.js": "504d7e0033a1f829cebc97029660386a6ea66805070aaa69e94f4ad76658ed1f",
-    "source/shot-timing.js": "6673ebb86ed2a606cf3c558340a5e74012b94f274e0d6da226824895b0120225",
-    "source/shot-two.js": "967cb61571046a42c36cbe398e9b8d81c9bf89b70066cf896a9200f2d8d0b6d3",
-    "source/shot.js": "0b884531ab058d0db49847ed2b0f5ee620acc1e02ad3abad338a8dee9cfc1697",
-    "source/render-video.cjs": "96d5011d9f4d8716dd44b7e7db712821ff3d4e8f48d89125ac96abedba937f33",
-    "source/build-score.cjs": "d666b6648d7551f8500f53c91fe71d1abc94532b3203c1405cb243e2dacb194f",
+    "source/shot-timing.js": "fabea89c8026ee7b7cbbc04cb72c8b488d0ddbefc6c913da493fedaab04980a7",
+    "source/shot-two.js": "b491a2cbd5cbfc8411eae64e90587ead6ef1fd4a68c6b5d880468c91ae797696",
+    "source/shot.js": "09b27436d5f5e55ea5ec2b74898adfeff0f1f7f1e21d749c2f029271ba7ccf07",
+    "source/shot-air.js": "72d68195b37eaefab10431969f7d31f0040cdd4a05ab46567f1ca9d0be749b84",
+    "source/shot-fire.js": "e16cd3266242b839abefb2c122702d0b0d5b3c899d0dd62d952bc8dbbb1363c6",
+    "source/shot-ash.js": "b0bff21d6edd210acd3a75eab3f534a8bc846b8bcbdbe65c34263e3b69761018",
+    "source/render-video.cjs": "b584f8f5261aea14dbaf6828edb659aa807f4771f2ab646c50d7d2d5ddddef8d",
+    "source/build-score.cjs": "092ff8b3cf302089f25b3fd825340681ee526fe031ae2d84af350cda4e0f3af0",
+    "source/assets/air-demon-atlas.png": "954c00d58d781e44673d6392c36741e2e17ef1725a7fa8d510f3bccdb58dbf81",
     "source/assets/angel.png": "17798f6f89c19007315d3e80a7f2717e930ffc417d19e9cf590c9004f67687bb",
     "source/assets/angels-fall-faces.png": "e52377d5882e056108fb117702668922a88e1b18073aef28c057b4dc7d7f0efc",
-    "source/assets/archangel-fall-ivory.png": "74de452a273942f46eecce793b37fe2e19747170897cf8e2bc47958b5237f2de",
+    "source/assets/archangel-fall-regalia.png": "4196616f01744508f65cdf56fae9d371931f28e3a10a9013e90b97b3409aa3d2",
+    "source/assets/archangel-hood-edit.png": "37a06ea5b642d190091de00e08b7f3fce1ce22fe6662f64d97b2ca076ecd3213",
+    "source/assets/archangel-right-hand.png": "4fbefbcd0c99d9a16cedccb9e43817ee8843e5b310647576550b5a40730a4102",
     "source/assets/cloud-abyss.png": "58434e770ba8811d7d906440d0353c90d6c1bdf6f82480ea2bda518811172a8f",
     "source/assets/collapse-smoke.png": "97234bd8618da4f6b62c64953833fd2cd073a6108ab0b9c2021b59befb3f9891",
     "source/assets/colossus.png": "7c0d6bdb983adb887b5c233cee2d665dafedca3c14b21218f3f3defe3abffa72",
@@ -29,16 +35,16 @@
     "source/assets/valley.png": "ceb1dec362d323d7c9d1ca057f98ebf3d0df021cf392302a38d0ebfc1d4feef8",
     "source/assets/wing.png": "b85e348215148a1172617b81cbc3cd998096a65e8c130aab2861f0f6ba13c1c1",
     "source/assets/score-shot-one.wav": "5aca9024dbffba04261e679e53adde1cace912cee5c3060a663cbef01e86454f",
-    "source/assets/score.wav": "c1f899eb17f553d7c449bca7f9b8db1da7974f1e1521d556cda190c7117eca5b"
+    "source/assets/score.wav": "68f72349e2eb62cff49833bb40b086f2084ba3fd08e14b2148553838cf439e11"
   },
   "exports": {
     "shot-01-02.mp4": {
       "source": "web/shot-01-02.mp4",
-      "sha256": "9eb3ab001aa9da04e5098341bb595d94088d05186ccba0dc0b124344dee64042"
+      "sha256": "1cf66eb258d70b01823c216b4c7ee4199af95b90918761f08058d36db81c4535"
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "db4a21167390ee0ccb9865ba080d0b9509395d0347b717d6cc4e7f173eb484c7"
+      "sha256": "26af95bf7e5e9aeb877ffb8aa093d550c2c630b93fa030d9a5ead8934256a807"
     }
   }
 }
