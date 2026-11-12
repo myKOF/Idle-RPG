@@ -16017,3 +16017,10 @@ Worker 存活且頁面正常完成載入。
 - 驗證：原生Excel→CSV逐格一致。`node tools/apply_params.cjs` 617一致／0變更／0錨點問題，`--check-anchors` 擾動561數值後仍命中617錨點。`node --test tests/mystery-merchant.test.cjs tests/tower-rewards-ui.test.cjs tests/boss-tooltip.test.cjs tests/gem-shop.test.cjs tests/worker-protocol.test.cjs` 38/38，包含20→16→12→8→4→0、跨區間、遺物、正率顯示、零率隱藏及重複結算。Build 717檔，字串檢查寫死0，遺物取樣工具 10→30%。隔離全靜音Edge正式頁，最高通關40時驗證第40／39／38／35層預覽為10／8／6／隱藏，實際滑鼠停在戰鬥欄的資訊鈕時，第39層BOSS提示顯示8%，無瀏覽器錯誤。
 - `node --test --test-concurrency=8 --test-reporter=tap "tests/*.test.cjs"` 輸出止於第5124項、VFX改名測試第2案，前段記錄637項失敗。以5路並行補跑從 `vfx-editor-rename.test.cjs` 起的47檔，尾段713項，658通過、54失敗、1跳過。兩份TAP的失敗名稱均可在過往完整紀錄找到。本項新增測試通過，診斷在 `logs/merchant-layout/ticket-tiers-*.tap`，實機畫面在 `visualizations/merchant-ticket-tiers`。
 - 唯讀檢查共通規範、Excel原生更新器、Store既有逐級配置、離線塔戰獎勵、遺物及快取接線。`git diff --check` 通過。可供重載驗收和後續整合，遊戲SHA見交付。
+
+## INTRO-PARCHMENT-REPLAY-20261112 — 設置重播羊皮紙序章
+
+- Owner：Codex，Done。以已合併的 `3bbf4a0b` 與素材庫 `def16314` 為前置，將設置「說明」的重播按鈕接上 30.3 秒核准成片。沿用播放器的略過、分頁暫停與返回焦點。配樂及音效已混在影片裡，整軌遵循音樂音量與全體靜音。
+- 修改 `js/intro-data.js`、`js/intro-player.js`、`index.html` 序章快取、`tests/intro-player.test.cjs`、LV 與本段。唯讀檢查既有設置、GM、音訊與素材清單。`index.html` 與 Claude 強化公式快取在不同區段，三方試合乾淨。遊戲與素材庫成片 SHA-256 和清單一致，素材庫無本項變更。
+- `node --test` 執行序章、GM、開始選單、設置、快取及 VFX 相關十檔共 100/100。`npm.cmd run build` 通過 717 檔，String 稽核寫死 0，`git diff --check` 通過。
+- 隔離靜音 Edge 從開始選單點進「設置 → 說明」，確認點擊才請求成片，播放 1080p 前三鏡並自然結束。再次點擊從頭播放，按 Esc 或「略過」都返回說明頁及重播焦點。驗證靜音與音樂音量讀取，主控台錯誤及警告為 0。分頁暫停和媒體錯誤由回歸覆蓋。可供重載驗收及合併，遊戲提交為本段所在提交。

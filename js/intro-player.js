@@ -9,8 +9,8 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    GM 指令預覽與設定重播不停格。
 
    略過：點擊畫面、Esc、Space、Enter，或略過按鈕。
-   減少動態偏好：只保留淡入淡出，不位移不縮放。
-   分頁隱藏：所有動畫一起暫停，回來從原處繼續。
+   圖層時間軸在減少動態偏好下只保留淡入淡出，不位移不縮放。
+   分頁隱藏：所有動畫一起暫停，回來從原處繼續。影片以原生媒體時間為準。
    除錯：IntroPlayer.seek(毫秒) 停在指定時間點（預覽窗格隱藏時動畫不走，用這個取景）。
    ============================================================================= */
 var IntroPlayer = (function () {
@@ -63,9 +63,18 @@ var IntroPlayer = (function () {
     return end;
   }
 
+  function playbackTime(c) {
+    return c.video ? c.video.currentTime * 1000 : num(c.clock && c.clock.currentTime, 0);
+  }
+
   /* 回傳錯誤清單；空陣列＝可以播。資料寫錯寧可整段不播，也不要播一半卡住開機。 */
   function validateTimeline(tl) {
     var errs = [];
+    if (tl && tl.video !== undefined) {
+      if (typeof tl.video !== 'string' || !tl.video) errs.push('影片需要 src');
+      if (!(num(tl.duration, 0) > 0)) errs.push('總長必須大於 0');
+      return errs;
+    }
     if (!tl || !Array.isArray(tl.layers) || !tl.layers.length) { errs.push('沒有圖層'); return errs; }
     if (!(timelineDuration(tl) > 0)) errs.push('總長必須大於 0');
     tl.layers.forEach(function (l, i) {
@@ -83,17 +92,6 @@ var IntroPlayer = (function () {
       if (l.kind === 'image' && !l.src) errs.push(tag + 'image 需要 src');
     });
     return errs;
-  }
-
-  var TITLE_TIMELINE = 'title';
-  var PROLOGUE_TIMELINE = 'prologue';
-
-  /* 設定「說明」頁的重播按鈕播哪一條：有序章就播序章，否則播標題開場。 */
-  function replayTimelineId(timelines) {
-    timelines = timelines || (typeof INTRO_TIMELINES !== 'undefined' ? INTRO_TIMELINES : {});
-    var has = function (k) { return Object.prototype.hasOwnProperty.call(timelines, k); };
-    if (has(PROLOGUE_TIMELINE)) return PROLOGUE_TIMELINE;
-    return has(TITLE_TIMELINE) ? TITLE_TIMELINE : null;
   }
 
   /* ---------- DOM ---------- */
@@ -126,6 +124,40 @@ var IntroPlayer = (function () {
     el.className = 'intro-layer intro-place-' + place + (layer.cls ? ' ' + layer.cls : '');
     el.style.opacity = '0';   // 第一個動畫套上前不閃出來
     return el;
+  }
+
+  function updateVideoVolume(video) {
+    if (typeof GameSettings === 'undefined') return;
+    // 成片的 AAC 音軌已混合配樂和音效，以音樂拉條控制整條音軌。
+    video.muted = GameSettings.get('mute');
+    video.volume = GameSettings.get('musicVolume') / 100;
+  }
+
+  function failVideo(c) {
+    if (_cur !== c || c.skipping) return;
+    console.warn('[intro] 影片無法播放');
+    finish(c, 'error');
+  }
+
+  function buildVideo(c, src) {
+    var video = document.createElement('video');
+    video.className = 'intro-layer intro-place-full intro-image-cinema';
+    video.playsInline = true;
+    updateVideoVolume(video);
+    video.addEventListener('ended', function () { if (!c.skipping) finish(c, 'end'); });
+    video.addEventListener('error', function () { failVideo(c); });
+    video.addEventListener('playing', function () {
+      if (_cur === c && !c.paused && !c.skipping) armFailsafe(c);
+    });
+    video.src = src;
+    return video;
+  }
+
+  function startVideo(c) {
+    c.video.play().catch(function (error) {
+      // 隱藏分頁、略過或卸載都可能中斷尚未完成的 play()。
+      if (!c.paused && error.name !== 'AbortError') failVideo(c);
+    });
   }
 
   function animate(c, el, frames, opts) {
@@ -163,6 +195,7 @@ var IntroPlayer = (function () {
     c.paused = true;
     stopMotion(c);
     if (c.audio) c.audio.pause();
+    if (c.video) c.video.pause();
     c.anims.forEach(function (a) { try { a.pause(); } catch (e) {} });
     clearTimeout(c.failsafe); c.failsafe = 0;
   }
@@ -174,6 +207,7 @@ var IntroPlayer = (function () {
     c.anims.forEach(function (a) { try { a.play(); } catch (e) {} });
     startMotion(c);
     if (c.audio && !c.skipping) c.audio.start();
+    if (c.video && !c.skipping) startVideo(c);
     armFailsafe(c);
   }
 
@@ -203,7 +237,7 @@ var IntroPlayer = (function () {
   function armFailsafe(c) {
     clearTimeout(c.failsafe);
     if (c.hold && c.hold.holding) return;
-    var t = num(c.clock && c.clock.currentTime, 0);
+    var t = playbackTime(c);
     var remain = Math.max(0, c.duration - t) + FAILSAFE_EXTRA_MS;
     c.failsafe = setTimeout(function () {
       if (_cur === c) { console.warn('[intro] 超過預定長度仍未結束，強制收掉'); finish(c, 'failsafe'); }
@@ -226,6 +260,11 @@ var IntroPlayer = (function () {
     c.scenes.forEach(function (scene) { if (scene && scene.dispose) scene.dispose(); });
     c.scenes = [];
     if (c.audio) c.audio.dispose();
+    if (c.video) {
+      c.video.pause();
+      c.video.removeAttribute('src');
+      c.video.load();
+    }
     clearTimeout(c.failsafe);
     clearTimeout(c.skipTimer);
     if (c.hold) clearTimeout(c.hold.maxTimer);
@@ -252,7 +291,7 @@ var IntroPlayer = (function () {
       id: opts.id || '', duration: timelineDuration(timeline), anims: [], paused: false, seeking: false,
       skipping: false, failsafe: 0, skipTimer: 0, onDone: opts.onDone || null,
       skippable: timeline.skippable !== false, reduced: reducedMotion(),
-      hold: null, audio: null, motion: [], motionFrame: 0, scenes: []
+      hold: null, audio: null, video: null, motion: [], motionFrame: 0, scenes: []
     };
     var holdAt = num(timeline.holdAt, 0);
     if (opts.hold && holdAt > 0 && holdAt < c.duration) {
@@ -270,12 +309,12 @@ var IntroPlayer = (function () {
       c.root = root;
       _cur = c;
 
-      // 總時鐘：一個看不見的元素，跑完就是整段結束。不用 setTimeout 計時，分頁隱藏時才能跟著暫停。
-      var clockEl = document.createElement('span');
-      clockEl.className = 'intro-clock';
-      root.appendChild(clockEl);
+      if (timeline.video) {
+        c.video = buildVideo(c, timeline.video);
+        stage.appendChild(c.video);
+      }
 
-      timeline.layers.forEach(function (layer) {
+      (timeline.layers || []).forEach(function (layer) {
         var el = buildLayer(layer);
         stage.appendChild(el);
         var timing = { delay: num(layer.at, 0), duration: num(layer.dur, 1), fill: 'both' };
@@ -317,8 +356,14 @@ var IntroPlayer = (function () {
 
       document.body.appendChild(root);
       if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) {} }
-      c.clock = animate(c, clockEl, [{ opacity: 0 }, { opacity: 0 }], { duration: c.duration, fill: 'forwards' });
-      c.clock.onfinish = function () { if (!c.skipping) finish(c, 'end'); };
+      if (!c.video) {
+        // 圖層共用動畫時鐘；影片由原生 ended 事件結束。
+        var clockEl = document.createElement('span');
+        clockEl.className = 'intro-clock';
+        root.appendChild(clockEl);
+        c.clock = animate(c, clockEl, [{ opacity: 0 }, { opacity: 0 }], { duration: c.duration, fill: 'forwards' });
+        c.clock.onfinish = function () { if (!c.skipping) finish(c, 'end'); };
+      }
       // 視覺舞台與底色一起退去，時鐘和控制留在不透明的父層。
       // 不淡出root：Chromium可能停掉透明祖先下的零面積時鐘，卡住最後一秒。
       var revealMs = Math.min(c.duration, Math.max(0, num(timeline.revealDuration, 0)));
@@ -336,7 +381,7 @@ var IntroPlayer = (function () {
       }
       document.addEventListener('visibilitychange', onVisibility);
       if (document.hidden) pauseAll(c);
-      else { armFailsafe(c); startMotion(c); if (c.audio) c.audio.start(); }
+      else resumeAll(c);
       return true;
     } catch (e) {
       console.error('[intro] 播放失敗，直接略過', e);
@@ -352,6 +397,7 @@ var IntroPlayer = (function () {
     c.skipping = true;
     stopMotion(c);
     if (c.audio) c.audio.pause();
+    if (c.video) c.video.pause();
     clearTimeout(c.failsafe);
     var done = function () { finish(c, 'skip'); };
     try {
@@ -382,6 +428,7 @@ var IntroPlayer = (function () {
     pauseAll(c);
     c.seeking = true;
     c.anims.forEach(function (a) { try { a.currentTime = ms; } catch (e) {} });
+    if (c.video) c.video.currentTime = Math.max(0, num(ms, 0)) / 1000;
     paintMotion(c, true);
     return true;
   }
@@ -389,11 +436,10 @@ var IntroPlayer = (function () {
   /* 設定「說明」頁的重播按鈕。設定視窗留在底下不關：選單暫停照舊有效，
      看完回到原本的說明頁，焦點還給按鈕。 */
   function replay() {
-    var id = replayTimelineId();
-    if (!id || _cur) return false;
+    if (_cur || typeof INTRO_REPLAY_TIMELINE === 'undefined') return false;
     var btn = document.getElementById(REPLAY_BUTTON_ID);
-    return play(INTRO_TIMELINES[id], {
-      id: id,
+    return play(INTRO_REPLAY_TIMELINE, {
+      id: 'parchment',
       onDone: function () { if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) {} } }
     });
   }
@@ -411,13 +457,16 @@ var IntroPlayer = (function () {
     });
   }
   bindReplayButton();   // 本檔排在 body 最後載入，按鈕已在 DOM 裡
+  if (typeof GameSettings !== 'undefined') GameSettings.subscribe(function () {
+    if (_cur && _cur.video) updateVideoVolume(_cur.video);
+  });
 
   function state() {
     var c = _cur;
     if (!c) return { playing: false };
     return {
       playing: true, id: c.id, duration: c.duration, paused: c.paused, skipping: c.skipping,
-      reduced: c.reduced, time: num(c.clock && c.clock.currentTime, 0),
+      reduced: c.reduced, time: playbackTime(c),
       holding: !!(c.hold && c.hold.holding), released: !!(c.hold && c.hold.released)
     };
   }
@@ -428,8 +477,7 @@ var IntroPlayer = (function () {
     isPlaying: function () { return !!_cur; },
     _internal: {
       opacityKeyframes: opacityKeyframes, motionKeyframes: motionKeyframes, transformOf: transformOf,
-      timelineDuration: timelineDuration, validateTimeline: validateTimeline,
-      replayTimelineId: replayTimelineId
+      timelineDuration: timelineDuration, validateTimeline: validateTimeline
     }
   };
 })();

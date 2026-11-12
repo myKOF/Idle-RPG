@@ -24,8 +24,14 @@
                sx／sy 分別縮放寬高（省略時取 scale）；省略的欄位取預設 0／1
      easing    移動的緩動（預設 'ease-in-out'）
 
+   設置重播的成片以 video 指定來源，duration 提供載入或播放卡住時的保底時間。
    顯示文字一律用 String 表編號（AI_RULES 8.10），不在這裡寫字。
    ============================================================================= */
+var INTRO_REPLAY_TIMELINE = {
+  video: 'images/intro-parchment/shot-01-03.mp4?v=1',
+  duration: 30300
+};
+
 var INTRO_PROLOGUE_CAPTIONS = [
   {
     "str": 2414,

@@ -30,6 +30,15 @@ function makeEnv(opts) {
         return a;
       }
     };
+    if (tag === 'video') {
+      Object.assign(e, {
+        currentTime: 0, paused: true,
+        play() { e.paused = false; return opts.videoPlay ? opts.videoPlay() : Promise.resolve(); },
+        pause() { e.paused = true; },
+        removeAttribute(name) { delete e[name]; },
+        load() { e.unloaded = true; }
+      });
+    }
     return e;
   }
   const body = el('body');
@@ -53,7 +62,7 @@ function makeEnv(opts) {
   Element.prototype.animate = function () {};
   const ctx = {
     console: { error() {}, warn() {}, log() {} },
-    document, window, Element,
+    document, window, Element, localStorage: window.localStorage,
     STR: (id) => '#' + id,
     setTimeout(fn, ms) { timers.push({ fn, ms, alive: true }); return timers.length; },
     clearTimeout(id) { if (id && timers[id - 1]) timers[id - 1].alive = false; }
@@ -64,11 +73,11 @@ function makeEnv(opts) {
     ctx.cancelAnimationFrame = opts.frames.cancel;
   }
   vm.createContext(ctx);
+  vm.runInContext(read('js/game-settings.js'), ctx);
   vm.runInContext(read('js/intro-data.js') + '\nthis.INTRO_TIMELINES = INTRO_TIMELINES;', ctx);
   vm.runInContext(read('js/intro-motion.js'), ctx);
   vm.runInContext(read('js/intro-scene.js') + '\nthis.IntroScene = IntroScene;', ctx);
   if (opts.motion) ctx.IntroMotion = opts.motion;
-  if (opts.noPrologue) delete ctx.INTRO_TIMELINES.prologue;   // 模擬序章還沒做好的資料
   vm.runInContext(read('js/intro-player.js') + '\nthis.IntroPlayer = IntroPlayer;', ctx);
   const clock = () => anims.find((a) => a.el.className === 'intro-clock');
   const playerRoot = () => body.children.find((c) => c.className.indexOf('intro-player') === 0);
@@ -375,29 +384,77 @@ test('收掉 Loading 時會中止正在手動播放的序章', () => {
 });
 
 /* ---------- 手動重播 ---------- */
-test('重播選擇：有序章播序章，否則播標題', () => {
-  const { P } = makeEnv();
-  assert.equal(P._internal.replayTimelineId({ title: {}, prologue: {} }), 'prologue');
-  assert.equal(P._internal.replayTimelineId({ title: {}, test: {} }), 'title');
-  assert.equal(P._internal.replayTimelineId({}), null);
-});
-
-test('重播按鈕：點擊播放、不停格、不改看過紀錄；播完焦點回到按鈕；播放中再點無效', () => {
-  const env = makeEnv({ replayButton: true, noPrologue: true });
+test('重播按鈕播放核准前三鏡，播完回到按鈕且可再從頭播放', () => {
+  const env = makeEnv({ replayButton: true });
   const click = env.replayBtn.listeners.click[0];
   let stopped = false;
   click({ stopPropagation() { stopped = true; } });
   assert.ok(stopped, '點擊不冒泡');
-  assert.equal(env.P.state().id, 'title', '沒有序章時播標題');
+  const video = env.playerRoot().children[0].children[0];
+  assert.equal(video.tag, 'video');
+  assert.equal(video.src.split('?')[0], 'images/intro-parchment/shot-01-03.mp4');
+  assert.ok(fs.existsSync(path.join(root, video.src.split('?')[0])));
+  assert.ok(video.playsInline);
+  assert.equal(video.paused, false);
+  assert.equal(env.P.state().duration, 30300);
+  assert.equal(env.clock(), undefined, '影片以媒體時間為準');
   assert.ok(!env.playerRoot().children.some((c) => c.className === 'intro-hold-dots'), '重播不停格');
   assert.equal(env.P.replay(), false, '播放中再點無效');
-  env.clock().onfinish();
+  video.listeners.ended[0]();
+  assert.equal(env.P.isPlaying(), false);
+  assert.equal(env.playerRoot(), undefined);
+  assert.ok(video.unloaded, '釋放影片');
   assert.equal(env.replayBtn.focused, 1, '焦點回到按鈕');
   assert.deepStrictEqual(Object.keys(env.store), [], '不寫看過紀錄');
+  click({});
+  assert.equal(env.P.state().time, 0);
+  assert.notEqual(env.playerRoot().children[0].children[0], video);
+  env.P.abort();
+});
 
-  const withPrologue = makeEnv({ replayButton: true });
-  withPrologue.replayBtn.listeners.click[0]({});
-  assert.equal(withPrologue.P.state().id, 'prologue');
+test('成片重播沿用靜音、音樂音量、分頁暫停和略過', () => {
+  const env = makeEnv({ replayButton: true });
+  env.ctx.GameSettings.set('mute', true);
+  assert.equal(env.P.replay(), true);
+  const video = env.playerRoot().children[0].children[0];
+  assert.equal(video.muted, true);
+  assert.equal(video.volume, .5);
+  env.ctx.GameSettings.set('musicVolume', 20);
+  assert.equal(video.volume, .2);
+  video.currentTime = 24;
+  env.ctx.document.hidden = true;
+  env.docListeners.visibilitychange[0]();
+  assert.equal(video.paused, true);
+  env.ctx.document.hidden = false;
+  env.docListeners.visibilitychange[0]();
+  assert.equal(video.paused, false);
+  assert.equal(env.P.state().time, 24000);
+  env.P.skip();
+  assert.equal(video.paused, true);
+  env.anims.find(a => a.el === env.playerRoot()).onfinish();
+  assert.equal(env.P.isPlaying(), false);
+  assert.equal(env.replayBtn.focused, 1);
+});
+
+test('成片載入失敗時釋放播放器，能重新點擊重播', () => {
+  const env = makeEnv({ replayButton: true });
+  env.P.replay();
+  const video = env.playerRoot().children[0].children[0];
+  video.listeners.error[0]();
+  assert.equal(env.playerRoot(), undefined);
+  assert.ok(video.unloaded);
+  assert.equal(env.replayBtn.focused, 1);
+  assert.equal(env.P.replay(), true);
+  env.P.abort();
+});
+
+test('瀏覽器拒絕成片播放時回到重播按鈕', async () => {
+  const env = makeEnv({ replayButton: true, videoPlay: () => Promise.reject(new Error('playback denied')) });
+  env.P.replay();
+  const reason = await new Promise(resolve => env.P.whenIdle(resolve));
+  assert.equal(reason, 'error');
+  assert.equal(env.playerRoot(), undefined);
+  assert.equal(env.replayBtn.focused, 1);
 });
 
 test('重播按鈕在設定「說明」頁、文字走 String 表', () => {
