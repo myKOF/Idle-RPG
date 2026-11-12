@@ -16,18 +16,20 @@ const archive = path.join(library, sourceRoot);
 const game = path.join(REPO_ROOT, 'images/intro-parchment');
 const sources = [
   'PROMPTS.json',
-  'index.html', 'preview.js', 'shot-timing.js', 'shot-two.js', 'shot.js', 'shot-air.js', 'shot-fire.js', 'shot-ash.js',
+  'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-two.js', 'shot-three.js',
+  'shot-air.js', 'shot-fire.js', 'shot-ash.js', 'shot-ground.js',
   'render-video.cjs', 'build-score.cjs',
   'assets/air-demon-atlas.png', 'assets/angel.png', 'assets/angels-fall-faces.png',
   'assets/archangel-fall-regalia.png', 'assets/archangel-hood-edit.png', 'assets/archangel-right-hand.png',
-  'assets/cloud-abyss.png', 'assets/collapse-smoke.png', 'assets/colossus.png',
-  'assets/demons.png', 'assets/ember.png', 'assets/heaven-sky.png', 'assets/ledge.png',
+  'assets/cloud-abyss.png', 'assets/collapse-smoke.png', 'assets/colossus.png', 'assets/desert-surface.png',
+  'assets/demons.png', 'assets/ember.png', 'assets/heaven-sky.png', 'assets/ledge.png', 'assets/mortal-map.png',
   'assets/siege.png', 'assets/temple-details.png', 'assets/temple-roofs.png',
   'assets/temple-spire.png', 'assets/temples.png', 'assets/valley-clean.png',
   'assets/valley.png', 'assets/wing.png', 'assets/score-shot-one.wav', 'assets/score.wav'
 ].map(file => 'source/' + file);
 const exportsByName = {
   'shot-01-02.mp4': 'web/shot-01-02.mp4',
+  'shot-01-03.mp4': 'web/shot-01-03.mp4',
   'SOURCE.md': 'SOURCE.md'
 };
 const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
@@ -44,7 +46,7 @@ const manifest = {
 
 if (mode === '--archive') {
   fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
-  console.log('羊皮紙序章第一、二鏡的分層來源及成片已建立 SHA-256 清單');
+  console.log('羊皮紙序章前三鏡的分層來源及成片已建立 SHA-256 清單');
 } else {
   const recorded = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   if (JSON.stringify(recorded) !== JSON.stringify(manifest)) {
@@ -56,5 +58,5 @@ if (mode === '--archive') {
     if (mode === '--apply') fs.copyFileSync(path.join(archive, source), destination);
     if (hash(destination) !== archiveHash(source)) throw new Error('遊戲匯出 SHA-256 不符：' + target);
   }
-  console.log('羊皮紙序章第一、二鏡的分層來源與成片 SHA-256 一致');
+  console.log('羊皮紙序章前三鏡的分層來源與成片 SHA-256 一致');
 }
