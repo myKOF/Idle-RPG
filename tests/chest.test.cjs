@@ -92,9 +92,23 @@ test('Chest 表：解析器擋下壞格、範圍與名稱寫法正確', () => {
   // 第 2 級留白＝沿用第 1 級（含整組掉落）
   const two = parse([base(['金幣=1']), base([], { '寶箱名稱': '', '寶箱品質': '', '初始解鎖': '', '升級金幣a': '', '升級金幣b': '', '寶箱鍛造經驗': '', '開啟掉落數': '', '等級': '2' })]);
   assert.deepStrictEqual(two[0].levels[1], two[0].levels[0]);
-  [['金幣'], ['鑽石=1'], ['寶石=1'], ['寶石:11=1'], ['金幣:3=1'], ['金幣=0'], ['裝備:12=1'], ['遺物:9999=1'], ['符文:999=1']].forEach((cells) => {
+  [['金幣'], ['鑽石=1'], ['寶石=1'], ['寶石:11=1'], ['金幣:3=1'], ['金幣=0'], ['金幣=100.5'], ['裝備:12=1'], ['遺物:9999=1'], ['符文:999=1']].forEach((cells) => {
     assert.throws(() => parse([base(cells)]), undefined, '應拒絕：' + cells[0]);
   });
+  assert.equal(parse([base(['金幣=100'])])[0].levels[0].drops[0].w, 100, '機率上限 100 可填');
+  // 開啟掉落數：整數＝固定輪數；a~b＝隨機輪數；0／超過 100／下限大於上限都拒絕；留白沿用上一級
+  assert.equal(parse([base(['金幣=1'], { '開啟掉落數': '2' })])[0].levels[0].rolls, 2);
+  assert.deepStrictEqual(parse([base(['金幣=1'], { '開啟掉落數': '1~3' })])[0].levels[0].rolls, [1, 3]);
+  assert.equal(parse([base(['金幣=1'], { '開啟掉落數': '2~2' })])[0].levels[0].rolls, 2);
+  ['0', '101', '3~1', '1.5', 'x'].forEach((v) => {
+    assert.throws(() => parse([base(['金幣=1'], { '開啟掉落數': v })]), undefined, '應拒絕開啟掉落數：' + v);
+  });
+  const inherit = parse([base(['金幣=1'], { '開啟掉落數': '1~3' }), base([], { '寶箱名稱': '', '寶箱品質': '', '初始解鎖': '', '升級金幣a': '', '升級金幣b': '', '寶箱鍛造經驗': '', '開啟掉落數': '', '等級': '2' })]);
+  assert.deepStrictEqual(inherit[0].levels[1].rolls, [1, 3]);
+  // 匯出（extract）再重建，a~b 不變形
+  const schema2 = SCHEMAS.Chest;
+  const again = evalLiteral(extractLiteral(schema2.rebuild(schema2.extract('var CHESTS = ' + JSON.stringify(inherit) + ';'), header).CHESTS, 'CHESTS').literal);
+  assert.deepStrictEqual(again[0].levels[0].rolls, [1, 3]);
   assert.throws(() => parse([base(['金幣=1']), base(['金幣=1'], { '等級': '2', '寶箱名稱': 'B' })]), /一致/);
   assert.throws(() => parse([base(['金幣=1'], { '等級': '2' })]), /連續/);
 });
@@ -125,7 +139,7 @@ test('經驗：拆解依品質累積，首次得到經驗才解鎖，滿額換�
 
 test('經驗：每種上限 9999，存滿後經驗停在滿格；幸運寶箱放大經驗', () => {
   const c = loadGameContext();
-  const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(1), rolls: 1, drops: [{ k: 'gold', q: [1, 1], w: 1 }] }] });
+  const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(1), rolls: 1, drops: [{ k: 'gold', q: [1, 1], w: 100 }] }] });
   const st = c.chestState(def.id);
   st.n = c.CHEST_MAX_COUNT - 1;
   c.chestGainSalvageXp(0, 35);
@@ -165,7 +179,7 @@ test('升級：a ＋ b^目前等級、扣金幣；金幣不足與滿級不扣', 
 
 test('各寶箱依配置決定上限：Lv.100 可升級、儲存、顯示及由 GM 設定', () => {
   const c = loadGameContext();
-  const level = { need: 10, xp: xp12(1), rolls: 1, drops: [{ k: 'gold', q: [5, 5], w: 1 }] };
+  const level = { need: 10, xp: xp12(1), rolls: 1, drops: [{ k: 'gold', q: [5, 5], w: 100 }] };
   const defs = [
     { id: 1, name: 'A', quality: 'common', init: true, a: 2, b: 1, levels: Array(100).fill(level) },
     { id: 2, name: 'B', quality: 'rare', init: true, a: 2, b: 1, levels: Array(20).fill(level) },
@@ -209,7 +223,7 @@ test('各寶箱依配置決定上限：Lv.100 可升級、儲存、顯示及由 
 
 test('開啟：扣數量、依抽取次數發放；沒有寶箱或未解鎖回錯誤', () => {
   const c = loadGameContext();
-  const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 3, drops: [{ k: 'gold', q: [5, 5], w: 1 }] }] });
+  const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 3, drops: [{ k: 'gold', q: [5, 5], w: 100 }] }] });
   assert.equal(c.chestOpen(def.id, 1), c.STR(2487, def.name));
   c.chestState(def.id).n = 4;
   const gold = c.G.player.gold;
@@ -239,7 +253,7 @@ test('開啟：每一種掉落都能發放到正確的庫存', () => {
     [{ k: 'equip', p: [4, 4] }, () => c.newForgeTotalQueued() + c.G.inventory.length]
   ];
   cases.forEach(([drop, read]) => {
-    const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 1, drops: [Object.assign({ q: [2, 2], w: 1 }, drop)] }] });
+    const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 1, drops: [Object.assign({ q: [2, 2], w: 100 }, drop)] }] });
     c.chestState(def.id).n = 1;
     const before = read();
     const res = c.chestOpen(def.id, 1);
@@ -252,7 +266,7 @@ test('開啟：每一種掉落都能發放到正確的庫存', () => {
 
 test('開啟：裝備進熔爐佇列；佇列滿改放背包，背包也滿直接拆解，不會遺失', () => {
   const c = loadGameContext();
-  const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 1, drops: [{ k: 'equip', p: [6, 6], p2: [2, 2], q: [1, 1], w: 1 }] }] });
+  const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 1, drops: [{ k: 'equip', p: [6, 6], p2: [2, 2], q: [1, 1], w: 100 }] }] });
   c.chestState(def.id).n = 3;
   let res = c.chestOpen(def.id, 1);
   assert.equal(res.equip.forge, 1);
@@ -303,7 +317,7 @@ test('開啟：同品質同圖示的裝備依實際等級及太古星數分組',
 
 test('遺物：雙開戒讓獎勵加倍、幸運符放大遺物格權重', () => {
   const c = loadGameContext();
-  const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 2, drops: [{ k: 'scrap', q: [3, 3], w: 1 }] }] });
+  const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 2, drops: [{ k: 'scrap', q: [3, 3], w: 100 }] }] });
   const dbl = c.RELIC_BY_EFFECT.chestDouble;
   c.G.player.relics[dbl.id] = { lv: 1, n: 0 };
   c.chance = (pct) => pct > 0;   // 必定觸發
@@ -313,12 +327,74 @@ test('遺物：雙開戒讓獎勵加倍、幸運符放大遺物格權重', () =>
   assert.equal(res.doubled, 2);
   assert.equal(c.G.player.scrap - scrap, 2 * 2 * 3 * 2);
 
-  const row = { drops: [{ k: 'gold', q: [1, 1], w: 3 }, { k: 'relic', q: [1, 1], w: 1 }] };
-  assert.ok(Math.abs(c.chestDropOdds(row)[1].pct - 25) < 1e-9);
+  // 每格獨立機率：格上的數字就是機率（%），不受其他格影響
+  const row = { drops: [{ k: 'gold', q: [1, 1], w: 30 }, { k: 'relic', q: [1, 1], w: 1 }] };
+  assert.ok(Math.abs(c.chestDropOdds(row)[0].pct - 30) < 1e-9);
+  assert.ok(Math.abs(c.chestDropOdds(row)[1].pct - 1) < 1e-9);
   const luck = c.RELIC_BY_EFFECT.chestRelicChance;
   c.G.player.relics[luck.id] = { lv: 1, n: 0 };
   const w = 1 + luck.levels[0].value / 100;
-  assert.ok(Math.abs(c.chestDropOdds(row)[1].pct - w / (3 + w) * 100) < 1e-9);
+  assert.ok(Math.abs(c.chestDropOdds(row)[1].pct - w) < 1e-9, '幸運符只放大遺物格');
+  assert.ok(Math.abs(c.chestDropOdds(row)[0].pct - 30) < 1e-9);
+  // 放大後超過 100% 以 100% 計
+  assert.equal(c.chestDropOdds({ drops: [{ k: 'relic', q: [1, 1], w: 99 }] })[0].pct, 100);
+});
+
+test('開啟：每個掉落格每輪各自獨立擲骰（格與格不互斥、機率就是格上數字）', () => {
+  const c = loadGameContext();
+  const def = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 1, drops: [
+    { k: 'gold', q: [10, 10], w: 30 }, { k: 'scrap', q: [1, 1], w: 70 }, { k: 'essence', q: [1, 1], w: 100 }
+  ] }] });
+  const seen = [];
+  c.chance = (pct) => { seen.push(pct); return true; };   // 全部命中：同一輪三格都掉（舊版每輪只會掉一格）
+  c.chestState(def.id).n = 1;
+  const gold = c.G.player.gold, scrap = c.G.player.scrap, essence = c.G.player.essence;
+  const res = c.chestOpen(def.id, 1);
+  assert.deepStrictEqual(seen, [30, 70, 100], '每格以自己的機率各擲一次');
+  assert.equal(c.G.player.gold - gold, 10);
+  assert.equal(c.G.player.scrap - scrap, 1);
+  assert.equal(c.G.player.essence - essence, 1);
+  assert.equal(res.rewards.length, 3);
+
+  // 全部落空：一輪什麼都沒掉也合法（獎勵為空陣列、仍扣一個寶箱）
+  c.chance = () => false;
+  c.chestState(def.id).n = 1;
+  const none = c.chestOpen(def.id, 1);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(none.rewards)), []);
+  assert.equal(none.opened, 1);
+  assert.equal(c.chestState(def.id).n, 0);
+
+  // 統計：30% 的格 9000 輪約掉 2700 次（獨立於其他格）
+  const real = loadGameContext();
+  const d2 = addTestChest(real, { levels: [{ need: 10, xp: xp12(0), rolls: 1, drops: [{ k: 'gold', q: [1, 1], w: 30 }, { k: 'scrap', q: [1, 1], w: 70 }] }] });
+  real.chestState(d2.id).n = 9000;
+  const g0 = real.G.player.gold, s0 = real.G.player.scrap;
+  real.chestOpen(d2.id, 9000);
+  const goldHit = real.G.player.gold - g0, scrapHit = real.G.player.scrap - s0;
+  assert.ok(Math.abs(goldHit - 2700) < 250, '金幣約 30%，實際 ' + goldHit);
+  assert.ok(Math.abs(scrapHit - 6300) < 250, '碎片約 70%，實際 ' + scrapHit);
+});
+
+test('開啟掉落數：整數＝固定輪數；[a,b]＝每個寶箱各自在 a~b 輪間隨機', () => {
+  const c = loadGameContext();
+  const fixed = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: 2, drops: [{ k: 'gold', q: [1, 1], w: 100 }] }] });
+  c.chestState(fixed.id).n = 5;
+  const g0 = c.G.player.gold;
+  c.chestOpen(fixed.id, 5);
+  assert.equal(c.G.player.gold - g0, 5 * 2, '填 2＝每個寶箱擲 2 輪');
+
+  const ranged = addTestChest(c, { levels: [{ need: 10, xp: xp12(0), rolls: [1, 3], drops: [{ k: 'gold', q: [1, 1], w: 100 }] }] });
+  assert.deepStrictEqual(Array.from(c.chestRollsRange(ranged.levels[0])), [1, 3]);
+  assert.equal(c.chestRollsText(ranged.levels[0]), '1~3');
+  assert.equal(c.chestRollsText(fixed.levels[0]), '2');
+  const counts = new Set();
+  for (let i = 0; i < 300; i++) {
+    c.chestState(ranged.id).n = 1;
+    const before = c.G.player.gold;
+    c.chestOpen(ranged.id, 1);
+    counts.add(c.G.player.gold - before);
+  }
+  assert.deepStrictEqual(Array.from(counts).sort(), [1, 2, 3], '輪數只會是 1、2、3，且三種都出現過');
 });
 
 test('存檔淨化：壞值修正、未知編號保留、新局有空的 chests', () => {

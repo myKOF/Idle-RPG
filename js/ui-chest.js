@@ -53,13 +53,13 @@ function chestLockSVG(id) {
 function chestDropTipHTML(def, st) {
   var row = chestLevelDef(def, st.lv);
   if (!row) return '';
-  var html = '<div class="nfc-tip-head">' + chestUiEsc(STR(2511, st.lv, row.rolls)) + '</div>';
+  var html = '<div class="nfc-tip-head">' + chestUiEsc(STR(2511, st.lv, chestRollsText(row))) + '</div>';
   html += chestDropOdds(row).map(function (o) {
     var pct = o.pct >= 10 ? o.pct.toFixed(1) : o.pct >= 1 ? o.pct.toFixed(2) : o.pct.toFixed(3);
     return '<div class="nfc-tip-row"><span>' + chestUiEsc(chestDropText(o.drop)) + '</span><b>' + pct + '%</b></div>';
   }).join('');
   var next = chestLevelDef(def, st.lv + 1);
-  if (next && st.lv < chestMaxLevel(def)) html += '<hr><div class="nfc-tip-note">' + chestUiEsc(STR(2512, st.lv + 1, next.rolls)) + '</div>';
+  if (next && st.lv < chestMaxLevel(def)) html += '<hr><div class="nfc-tip-note">' + chestUiEsc(STR(2512, st.lv + 1, chestRollsText(next))) + '</div>';
   return html;
 }
 

@@ -2717,8 +2717,9 @@ SCHEMAS.Relics = {
    名稱／品質／初始解鎖／升級金幣 a、b 是整種寶箱共用的欄：第 1 級必填，之後留白＝沿用，填了就必須與第 1 級相同。
    所需經驗、R0～R11 拆解經驗、開啟掉落數可逐級設定，留白＝沿用上一級；16 個掉落格全部留白＝沿用上一級的整組掉落。
    升級金幣：從目前等級升一級＝ a ＋ b^目前等級（js/chest.js chestUpgradeCost）。
-   掉落格寫法「項目[:參數[:參數2]][×數量]=權重」，每次開啟抽「開啟掉落數」次，每次依權重抽一格（權重是相對值，不必加總為 100）：
-     數量與參數都可寫成範圍 a~b（含頭尾，均勻隨機）；× 也可寫 x 或 *，省略＝1 個。
+   掉落格寫法「項目[:參數[:參數2]][*數量]=機率」。開啟掉落數＝每開 1 個擲幾輪（整數，或 a~b 在範圍內隨機輪數）；
+   每一輪裡每個掉落格各自獨立擲骰，「=」後的數字就是該格每輪的掉落機率（%，0～100，不是權重、不必加總為 100，格與格互不排擠）：
+     數量與參數都可寫成範圍 a~b（含頭尾，均勻隨機）；數量符號建議寫 *（× 與 x 也收），省略＝1 個。
      金幣／裝備碎片／附魔精華／太古精華／神性之石／魔魂本源／邀請券／技能經驗／經驗：不帶參數
      寶石:階級（1～10，種類隨機）　符文:階級（1～符文總數）　裝備:品質[:太古條數]（品質填 0～11 或名稱；太古省略＝自然擲骰）
      遺物[:編號]（省略編號＝隨機一件） */
@@ -2750,7 +2751,7 @@ function chestDropText(d) {
   let s = CHEST_KIND_LABEL[d.k];
   if (d.p) s += ':' + chestRangeText(d.p);
   if (d.p2) s += ':' + chestRangeText(d.p2);
-  if (!(d.q[0] === 1 && d.q[1] === 1)) s += '×' + chestRangeText(d.q);
+  if (!(d.q[0] === 1 && d.q[1] === 1)) s += '*' + chestRangeText(d.q);
   return s + '=' + numStr(d.w);
 }
 function chestRefCounts() {   // 符文總數、遺物編號：直接讀資料檔，表格寫了不存在的階級／編號就整次中止
@@ -2770,9 +2771,9 @@ function chestParseRange(text, label, isInt) {
 function chestParseDrop(cell, where, refs) {
   const text = String(cell).trim();
   const eq = text.lastIndexOf('=');
-  if (eq < 0) throw new Error(where + '「' + text + '」缺少「=權重」（寫法：項目[:參數][×數量]=權重）');
+  if (eq < 0) throw new Error(where + '「' + text + '」缺少「=機率」（寫法：項目[:參數][*數量]=機率%）');
   const w = Number(text.slice(eq + 1).trim());
-  if (!(w > 0) || !isFinite(w)) throw new Error(where + '「' + text + '」的權重必須是大於 0 的數字');
+  if (!(w > 0) || !(w <= 100) || !isFinite(w)) throw new Error(where + '「' + text + '」的機率必須是大於 0、不超過 100 的數字（每輪獨立掉落機率 %）');
   let body = text.slice(0, eq).trim(), q = [1, 1];
   const qm = /^(.*?)\s*[×xX*]\s*([\d.~～\s]+)$/.exec(body);
   if (qm) { body = qm[1].trim(); q = chestParseRange(qm[2], where + '數量', true); }
@@ -2817,7 +2818,7 @@ SCHEMAS.Chest = {
       const qName = Object.keys(CHEST_QUALITIES).find(k => CHEST_QUALITIES[k] === c.quality) || c.quality;
       c.levels.forEach((lv, i) => {
         const row = [numStr(c.id), c.name, qName, c.init ? '是' : '否', numStr(i + 1), numStr(c.a), numStr(c.b), numStr(lv.need)]
-          .concat(lv.xp.map(numStr)).concat([numStr(lv.rolls)]);
+          .concat(lv.xp.map(numStr)).concat([Array.isArray(lv.rolls) ? chestRangeText(lv.rolls) : numStr(lv.rolls)]);
         for (let j = 0; j < CHEST_DROP_COLS; j++) row.push(lv.drops[j] ? chestDropText(lv.drops[j]) : '');
         out.push(row);
       });
@@ -2862,7 +2863,16 @@ SCHEMAS.Chest = {
       };
       const need = perLevel('寶箱鍛造經驗', n => n > 0, '必須大於 0', prev ? prev.need : undefined);
       const xp = CHEST_RARITY_NAMES.map((n, ri) => perLevel('拆解經驗R' + ri, v => v >= 0, '不得為負數', prev ? prev.xp[ri] : undefined));
-      const rolls = perLevel('開啟掉落數', n => Number.isInteger(n) && n >= 1 && n <= 100, '必須是 1～100 的整數', prev ? prev.rolls : undefined);
+      let rolls;   // 整數＝固定輪數；a~b＝每開 1 個在範圍內隨機輪數（存成 [a, b]）
+      const rollsRaw = get(r, '開啟掉落數').trim();
+      if (rollsRaw === '') {
+        if (!prev) fail(where + '（編號 ' + id + '）：第 1 級的「開啟掉落數」不可空白');
+        rolls = prev.rolls;
+      } else {
+        let rg; try { rg = chestParseRange(rollsRaw, '開啟掉落數', true); } catch (e) { fail(where + '的' + e.message); }
+        if (rg[0] < 1 || rg[1] > 100) fail(where + '：「開啟掉落數」必須是 1～100 的整數（或 a~b 範圍）');
+        rolls = rg[0] === rg[1] ? rg[0] : rg;
+      }
       let drops = [];
       for (let j = 1; j <= CHEST_DROP_COLS; j++) {
         const cell = get(r, '掉落' + j).trim();
@@ -2877,7 +2887,7 @@ SCHEMAS.Chest = {
     if (!byId.size) fail('Chest 表沒有任何寶箱列');
     const entries = Array.from(byId.values()).map(c => '  { id: ' + c.id + ', name: ' + quoteStr(c.name) + ', quality: ' + quoteStr(c.quality) +
       ', init: ' + c.init + ', a: ' + numStr(c.a) + ', b: ' + numStr(c.b) + ', levels: [\n' +
-      c.levels.map(l => '    { need: ' + numStr(l.need) + ', xp: ' + jsLit(l.xp) + ', rolls: ' + l.rolls + ', drops: [\n' +
+      c.levels.map(l => '    { need: ' + numStr(l.need) + ', xp: ' + jsLit(l.xp) + ', rolls: ' + jsLit(l.rolls) + ', drops: [\n' +
         l.drops.map(d => '      ' + jsLit(d)).join(',\n') + '\n    ] }').join(',\n') + '\n  ] }');
     return { CHESTS: 'var CHESTS = [\n' + entries.join(',\n') + '\n];' };
   }
