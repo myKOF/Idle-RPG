@@ -18,7 +18,7 @@ function select(c, type) {
   c.G.taskState.idx = idx;
   return c.TASKS[idx];
 }
-test('Task.xlsx、CSV與遊戲38筆定義逐欄一致，任務順序連續且型別均已接線', () => {
+test('Task.xlsx、CSV與遊戲任務定義逐欄一致，任務順序連續且型別均已接線', () => {
   const root=path.resolve(__dirname,'..');
   const excel=readXlsxRows(path.join(root,'config/Excel/Task.xlsx'))
     .filter(row=>row.some(value=>String(value).trim()!==''));
@@ -26,11 +26,11 @@ test('Task.xlsx、CSV與遊戲38筆定義逐欄一致，任務順序連續且型
     .filter(row=>row.some(value=>String(value).trim()!==''));
   const normalize=rows=>rows.map(row=>Array.from({length:11},(_,i)=>String(row[i]??'')));
   assert.deepEqual(normalize(csv),normalize(excel));
-  assert.equal(csv.length,39);
   const {c}=setup();
+  assert.equal(csv.length,c.TASKS.length+1);
   const data=SCHEMAS.Task.extract(fs.readFileSync(path.join(root,'js/data.js'),'utf8'));
   assert.deepEqual(data,csv.slice(1).map(row=>row.slice(0,9)));
-  assert.deepEqual(Array.from(c.TASKS,t=>t.order),Array.from({length:38},(_,i)=>i+1));
+  assert.deepEqual(Array.from(c.TASKS,t=>t.order),Array.from({length:c.TASKS.length},(_,i)=>i+1));
   const source=fs.readFileSync(path.join(root,'js/tasks.js'),'utf8');
   for(const t of c.TASKS) assert.ok(source.includes("case '"+t.type+"'"),t.type);
 });
