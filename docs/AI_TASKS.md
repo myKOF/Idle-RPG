@@ -15939,6 +15939,13 @@ Worker 存活且頁面正常完成載入。
 - Effects-Materials 提交 `712e2aae48e991cfdf349880eb8e40732bfbd6d0`。遊戲專案同步 `images/intro-parchment` 的成片、來源說明與清單，更新匯出工具和 LV_upgrade_system。本項維持前兩鏡獨立封存，遊戲現行序章入口及其他任務差異保留。
 - 驗證：`node tools/intro/sync-parchment-shots.cjs --check`、36 個素材暫存雜湊、Edge 本機播放及拖曳、畫面 18.90／19.40 秒檢查、ffprobe 1080p30 共 624 幀及 AAC 完整解碼、序章與 VFX 57 項測試、716 檔建置和暫存差異檢查通過。可供整合。遊戲提交為本段所在的 `[Codex] feat: 封存核准的羊皮紙序章前兩鏡`。
 
+## INTRO-SHOT3-APPROVED-20261112 — 羊皮紙序章第三鏡核准版
+
+- Codex，完成。第三鏡長 9.50 秒，20.80 秒承接第二鏡白幕。羊皮紙人界地圖的暗紫霧在荒漠神光外停住，25.98 秒開始沿光點俯衝，27.24 秒接入地表，尾幀全黑。
+- Effects-Materials 提交 `def163146ac8256cd2cfd4dd31749b6128667bcc`。素材庫收錄地圖、地表、程序特效、音軌、提示詞及可編輯來源。遊戲專案加入 `images/intro-parchment/shot-01-03.mp4`，更新來源說明、雜湊清單、匯出工具與 LV_upgrade_system。前兩鏡獨立影片與遊戲現行序章入口保留。
+- 驗證：`sync-parchment-shots.cjs --archive/--apply/--check`、41 個暫存素材 SHA-256、PCM 重建及前兩鏡 PCM 一致、Edge 本機播放與拖曳、ffprobe 1080p30 共 909 幀與 AAC 完整解碼、白幕接點及黑幕尾幀、序章與 VFX 回歸 57 項、717 檔建置與 Git 差異檢查均通過。
+- 可合併。後續分鏡可從本版黑幕銜接。遊戲提交為本段所在的 `[Codex] feat: 封存羊皮紙序章第三鏡`。
+
 ## MERGE-INTRO-STORYBOOK-MERCHANT-20261111 — 序章與神祕商人整合
 
 - Owner：Codex（整合）。原 HEAD `f0ebd7cd5532c09d227597bccf21193e8021129e`，MERGE_HEAD `5f75c632fb11ae941d15145a9fc9442b7ccc8790`，base `a1eed174095033b2398d1f46d85c44fc3a354561`。使用者輸入 `1` 接續這次合併與同步。
