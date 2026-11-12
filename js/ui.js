@@ -8341,11 +8341,9 @@ function showOfflineSummary(sum) {
      舊的離線摘要沒有 elite 欄位，視為菁英以維持原本的顯示。 */
   var offKind = (sum.elite === false) ? STR(2052) : STR(2053);
   h += '<div class="offline-sum-row offline-sum-primary">' + STR(2055, fmt(sum.xp), fmt(sum.gold)) + '</div>';
-  if (sum.forge && sum.forge.salvaged > 0) {
-    var fo = sum.forge, forgeOut = [STR(1048, fmt(fo.scrap)), STR(1049, fmt(fo.gold))];
-    if (fo.essence) forgeOut.push(STR(1050, fmt(fo.essence)));
-    if (fo.ancientEssence) forgeOut.push(STR(1046, fmt(fo.ancientEssence)));
-    h += '<div class="offline-sum-row">' + STR(2409, fmt(fo.salvaged), forgeOut.join('、')) + '</div>';
+  var forge = sum.forge || {};
+  if (forge.salvaged > 0) {
+    h += '<div class="offline-sum-row">' + STR(2409, fmt(forge.salvaged), STR(1049, fmt(forge.gold))) + '</div>';
   }
   // 遺物獎勵與回歸加成列在收益區，讓掉落物維持在最後。
   if (sum.towerRewards) h += '<div class="offline-sum-row">' + esc(STR(2466, fmt(sum.towerRewards.hours), fmt(sum.towerRewards.pct), sum.towerRewards.floor)) + '</div>';
@@ -8365,11 +8363,18 @@ function showOfflineSummary(sum) {
       }
     }
   }
+  // 離線掉落的 essence 是太古精華，熔爐的 essence 則是附魔精華。
+  var ancientEssence = (sum.essence || 0) + (forge.ancientEssence || 0);
+  var scrap = (sum.scrap || 0) + (forge.scrap || 0);
   if (sum.books && ENCHANT_ENABLED) materials.push(offlineLootItemHTML('📖' + esc(STR(102)), sum.books));
-  if (sum.essence) materials.push(offlineLootItemHTML('<img src="images/icon_ancient_essence.png" class="res-icon" alt="">' + esc(STR(13)), sum.essence));
+  if (ancientEssence) materials.push(offlineLootItemHTML('<img src="images/icon_ancient_essence.png" class="res-icon" alt="">' + esc(STR(13)), ancientEssence));
   if (sum.dust) materials.push(offlineLootItemHTML(divineStoneIconHTML() + esc(STR(100)), sum.dust));
   if (sum.parts) materials.push(offlineLootItemHTML('🔧' + esc(STR(385)), sum.parts));
-  if (sum.scrap) materials.push(offlineLootItemHTML('<img src="images/icon_scrap.png" class="res-icon" alt="">' + esc(STR(98)), sum.scrap, null, STR(2062, fmt(sum.scrap))));
+  if (scrap) {
+    var scrapTip = sum.scrap ? STR(2062, fmt(sum.scrap)) : '';
+    materials.push(offlineLootItemHTML('<img src="images/icon_scrap.png" class="res-icon" alt="">' + esc(STR(98)), scrap, null, scrapTip));
+  }
+  if (forge.essence) materials.push(offlineLootItemHTML('<img src="images/icon_essence.png" class="res-icon" alt="">' + esc(STR(99)), forge.essence));
   var loot = drops.length ? '<div class="offline-sum-grid">' + drops.join('') + '</div>' : '';
   if (materials.length) loot += '<div class="offline-sum-materials">' + materials.join('') + '</div>';
   h += '<div class="offline-sum-title">' + STR(2063) + '</div>';

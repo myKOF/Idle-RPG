@@ -10555,17 +10555,21 @@ textarea:disabled,
 
 .offline-sum-loot {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(max-content, 1fr));
+  gap: 6px 10px;
   color: var(--text);
   padding: 8px 2px;
   max-height: 40vh;
   overflow: auto;
 }
 
-.offline-sum-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(max-content, 1fr));
-  gap: 6px 10px;
+.offline-sum-grid,
+.offline-sum-materials {
+  display: contents;
+}
+
+.offline-sum-materials > :first-child {
+  grid-column-start: 1;
 }
 
 .offline-sum-item {
@@ -10590,6 +10594,13 @@ textarea:disabled,
   margin-inline-end: 4px;
 }
 
+.offline-sum-badge .res-icon {
+  width: 1.05em;
+  height: 1.05em;
+  margin: 0;
+  object-fit: contain;
+}
+
 .offline-sum-gem-icon {
   width: .9em;
   height: .8em;
@@ -10599,29 +10610,22 @@ textarea:disabled,
   clip-path: polygon(22% 0, 78% 0, 100% 34%, 50% 100%, 0 34%);
 }
 
-.offline-sum-materials {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 @media (max-width: 480px) {
-  #offline-modal > .offline-modal-box { padding-inline: 10px !important; }
-  .offline-sum-loot { font-size: 12px; }
-  .offline-sum-grid { column-gap: 5px; }
-  .offline-sum-badge { padding-inline: 3px; }
-  .offline-sum-item .offline-sum-badge { margin-inline-end: 2px; }
-}
-
-@media (max-width: 360px) {
   #offline-modal.modal-overlay { padding-inline: 4px !important; }
   #offline-modal > .offline-modal-box {
     width: 100%;
     max-width: none;
-    padding-inline: 4px !important;
+    padding-inline: 6px !important;
   }
-  .offline-sum-loot { padding-inline: 0; font-size: 11px; }
-  .offline-sum-grid { column-gap: 3px; }
+  .offline-sum-loot { column-gap: 4px; font-size: 12px; }
+  .offline-sum-item { font-size: 11px; }
+  .offline-sum-badge { padding-inline: 3px; }
+  .offline-sum-item .offline-sum-badge { margin-inline-end: 2px; font-size: 12px; }
+}
+
+@media (max-width: 360px) {
+  #offline-modal > .offline-modal-box { padding-inline: 4px !important; }
+  .offline-sum-loot { column-gap: 2px; padding-inline: 0; font-size: 11px; }
   .offline-sum-item { font-size: 10px; }
   .offline-sum-badge { padding-inline: 2px; gap: 2px; }
   .offline-sum-item .offline-sum-badge { margin-inline-end: 1px; font-size: 11px; }
