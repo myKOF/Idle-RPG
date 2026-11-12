@@ -25,15 +25,17 @@
 
 依使用者授權與直接貼用的要求，`gate-light-original.png` 保留圖 2 的 425 × 288 RGB PNG 原始位元組，素材庫來源為 `originals/gate-light-original.png`。Canvas 依兩側柱身與石像對齊，將原圖左上定位於底圖 (604.5, 94)，比例為每 0.826 個原圖像素對應 1 個底圖像素。最上方 3 列截圖邊緣不參與合成。貼圖只在拱門及右側鄰近雲層接合處羽化，並放在畫面暗角上方，保留原圖的暖灰白色、雲紋與光束。
 
-門洞內以同張原圖的霧光做小幅位移，石柱與拱頂鏤空維持原圖位置。紅色閃電在同一場景座標下合成。減少動態時放慢並縮小霧光位移。圖片載入失敗時仍可使用選單及其餘背景。
+2026-11-12 依使用者截圖移除中央拱門內懸掛的石雕花格。RPG Mote Studio 可連線，主要用於像素畫。這次以內建 ImageGen 產生兩份局部補圖，分別將暗雲和暖白霧光合成回荒原底圖與聖光貼圖，保留外拱、石柱、兩側石像及原構圖。遊戲使用更新的 `battlefield-atmosphere.webp`（1672 × 941）與 `gate-light-clear.png`（425 × 288）。原圖、局部生成稿、底圖新母圖及 `OPEN_ARCH_PROMPTS.json` 保存於同一素材庫套件。
+
+門洞內以聖光貼圖的霧光做小幅位移，石柱及拱緣維持原圖位置。雲霧及紅色閃電共用更新後的門洞遮罩。減少動態時放慢並縮小霧光位移。圖片載入失敗時仍可使用選單及其餘背景。
 
 ## 接入開始選單
 
-由選單載入 `<script src="js/start-menu-background.js?v=1.0.11"></script>`，並在選單背景的定位容器掛載。
+由選單載入 `<script src="js/start-menu-background.js?v=1.0.12"></script>`，並在選單背景的定位容器掛載。
 
 ```js
 const backdrop = StartMenuBackground.mount(document.getElementById('start-menu'));
-// backdrop.ready 是 Promise<boolean>，兩張底圖、布料及中央拱門原圖可用時為 true。
+// backdrop.ready 是 Promise<boolean>，兩張底圖、布料及中央拱門聖光貼圖可用時為 true。
 // 離開選單或拆卸容器時再呼叫 backdrop.destroy()。可重複呼叫。
 ```
 
