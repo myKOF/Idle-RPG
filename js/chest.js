@@ -16,7 +16,6 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    會改狀態的函式（chestGainSalvageXp／chestOpen／chestUpgrade／sanitizeChests）只在 Worker 執行。 */
 
 var CHEST_MAX_COUNT = 9999;   // 每種寶箱最多持有數（使用者規格）
-var CHEST_MAX_LEVEL = 20;     // 寶箱最高等級（使用者規格；實際上限＝min(本值, 表格等級列數)）
 var CHEST_BY_ID = {};
 (function () {
   if (typeof CHESTS === 'undefined') return;
@@ -24,7 +23,7 @@ var CHEST_BY_ID = {};
 })();
 
 /* ---- 純函式（兩端） ---- */
-function chestMaxLevel(def) { return def && def.levels ? Math.min(CHEST_MAX_LEVEL, def.levels.length) : 0; }
+function chestMaxLevel(def) { return def && def.levels ? def.levels.length : 0; }
 function chestLevelDef(def, lv) {
   var max = chestMaxLevel(def);
   if (!max) return null;

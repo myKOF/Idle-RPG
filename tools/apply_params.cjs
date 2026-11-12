@@ -155,7 +155,6 @@ function storeNumber(name, min, max, integer) {
   return v;
 }
 storeNumber('最高等級', 1, 20, true);
-storeNumber('邀請券掉落率', 0, 100);
 ['寶石權重','裝備權重','符文權重','遺物權重','裝備價格基數','符文價格基數','符文價格指數','遺物價格基數'].forEach(n => storeNumber(n,0,Number.MAX_SAFE_INTEGER));
 storeNumber('裝備等級倍率', Number.MIN_VALUE, Number.MAX_SAFE_INTEGER);
 for (const [lo,hi,min,max] of [['裝備最低品質','裝備最高品質',0,11],['符文最低階級','符文最高階級',1,33],['遺物最低階級','遺物最高階級',1,Number.MAX_SAFE_INTEGER]]) {
@@ -521,7 +520,6 @@ scalar('data', 'GEM_COMPOSE_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 0)
 scalar('data', 'GEM_COMPOSE_HIGH_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 1);
 scalar('data', 'GEM_COMPOSE_TOP_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 2);
 scalar('data', 'GEM_SHOP_MAX_LEVEL', '神祕商人', '最高等級', 0);
-objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'ticketDropRate', '神祕商人', '邀請券掉落率', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'gemWeight', '神祕商人', '寶石權重', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'equipmentWeight', '神祕商人', '裝備權重', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runeWeight', '神祕商人', '符文權重', 0);
@@ -775,6 +773,29 @@ function rebuildPairTable(varName, group) {
 }
 rebuildPairTable('GEM_SHOP_COUNT_TABLE', '8-寶店刷出數量');
 rebuildPairTable('GEM_SHOP_TIER_TABLE', '8-寶店刷出階級');
+
+// 邀請券：Store 每格 {起始層,結束層,掉落率%}，區間兩端皆包含。
+{
+  const cells = index['神祕商人']['邀請券掉落率'];
+  if (!cells) throw new Error('Store 缺少邀請券掉落率');
+  const entries = cells.map(cell => cell.trim()).filter(cell => cell !== '' && cell !== '0');
+  const ratePattern = /^\d+(?:\.\d+)?$/;
+  const ranges = entries.length === 1 && ratePattern.test(entries[0])
+    ? [[1, Number.MAX_SAFE_INTEGER, storeNumber('邀請券掉落率', 0, 100)]] // 舊版單一機率
+    : entries.map(cell => {
+      const match = /^\{\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+(?:\.\d+)?)\s*\}$/.exec(cell);
+      if (!match) throw new Error('Store 邀請券掉落率需填「{起始層,結束層,掉落率%}」：' + cell);
+      const [start, end, rate] = match.slice(1).map(Number);
+      if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 1 || start > end || rate > 100) {
+        throw new Error('Store 邀請券掉落率樓層或百分比超出範圍：' + cell);
+      }
+      return [start, end, rate];
+    });
+  ranges.sort((a, b) => a[0] - b[0]);
+  if (ranges.some((range, i) => i > 0 && range[0] <= ranges[i - 1][1])) throw new Error('Store 邀請券掉落率樓層區間不得重疊');
+  arrayContent('data', 'MERCHANT_INVITATION_DROP_RANGES', '\n  ' + ranges.map(range => '[' + range.join(', ') + ']').join(',\n  ') + '\n');
+}
+
 // 商人太古詞條分佈以具名資料表錨點接線，不綁內嵌程式碼。
 const ancientCountPairs = index['神祕商人']['裝備太古詞條機率'].filter(x => x !== '' && x !== '0').map(text => {
   const pair = text.split('=').map(Number);

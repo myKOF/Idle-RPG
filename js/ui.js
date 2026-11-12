@@ -7185,7 +7185,7 @@ function bindTowerBossImageFallback(root) {
 }
 
 // 通關獎勵與掉落（數值一律走 formula.js 的公式，不在這裡寫死）
-function towerRewardRows(fl) {
+function towerRewardRows(fl, highest) {
   var rw = towerRewardFor(fl, false);
   var rows = [
     { icon: '✨', label: STR(1864), value: fmt(bossStatsFor(fl).xp), note: STR(1865) },
@@ -7193,7 +7193,8 @@ function towerRewardRows(fl) {
     { icon: '💎', label: STR(1866), value: GEM_NAMES[rw.gemLevel] + ' ×2' },
     { icon: divineStoneIconHTML(), label: STR(100), value: fmt1(bossDustRate(fl)) + '%', note: STR(1868) }
   ].filter(Boolean);
-  rows.push({ icon: '🎟', label: STR(2447), value: STR(2448, fmt1(MYSTERY_MERCHANT_SETTINGS.ticketDropRate)) });
+  var ticketRate = towerInvitationDropChance(fl, highest, typeof relicPct === 'function' ? relicPct('merchantTicketDrop') : 0);
+  if (ticketRate > 0) rows.push({ icon: '🎟', label: STR(2447), value: STR(2448, Number(ticketRate.toPrecision(12))) });
   var ancientRate = ancientEssenceDropChanceForBoss(fl);
   if (ancientRate > 0) rows.push({ icon: '<img src="images/icon_ancient_essence.png" class="res-icon" alt="">', label: STR(13), value: fmt1(ancientRate) + '%' });
   if (isHellTowerFloor(fl) || isPurgatoryTowerFloor(fl)) rows.push({ icon: '🧿', label: STR(101), value: fmt1(hellSoulOriginDropChance(fl)) + '%', note: STR(1869) });
@@ -7256,7 +7257,7 @@ function towerDetailHTML(fl, highest) {
   var stat = function (k, v, c) {
     return '<span class="twx-stat"><span>' + k + '</span><b' + (c ? ' style="color:' + c + '"' : '') + '>' + v + '</b></span>';
   };
-  var rewards = towerRewardRows(fl).map(function (r) {
+  var rewards = towerRewardRows(fl, highest).map(function (r) {
     return '<span class="twx-rw"><span class="twx-rw-ico">' + r.icon + '</span><span class="twx-rw-label">' + r.label +
       (r.note ? '<i>' + r.note + '</i>' : '') + '</span><b>' + r.value + '</b></span>';
   }).join('');
@@ -9838,11 +9839,9 @@ function showEnemyTooltip(anchorEl) {
   var mayUseTower = isBossTip || !!workerView.towerActive;
   var towerSnapshot = mayUseTower ? uiTowerPanelSnapshot() : null;
   var towerRuntime = towerSnapshot && towerSnapshot.runtime;
-  var towerActive = towerViewActive(towerSnapshot);
+  var showBoss = isBossTip || towerViewActive(towerSnapshot);
   var m = null;
-  if (isBossTip) {
-    m = towerRuntime && towerRuntime.boss;
-  } else if (towerActive) {
+  if (showBoss) {
     m = towerRuntime && towerRuntime.boss;
   } else {
     var battleSnapshot = uiBattlePanelSnapshot() || {};
@@ -9873,13 +9872,13 @@ function showEnemyTooltip(anchorEl) {
 
   if (!m) return;
 
-  var title = isBossTip ? (m.name || STR(644)) : STR(645);
+  var title = showBoss ? (m.name || STR(644)) : STR(645);
 
   // 頂置區標籤：顯示敵人/地圖屬性標籤 (圖2)
   var zoneKey = (headerSnapshot.stage && headerSnapshot.stage.zone) || 'desert';
   var elemBadgeHtml = '';
 
-  if (isBossTip) {
+  if (showBoss) {
     var mAttr = m.attr || m.elem || null;
     if (mAttr && ELEM_INFO[mAttr]) {
       var info = ELEM_INFO[mAttr];
@@ -9910,12 +9909,14 @@ function showEnemyTooltip(anchorEl) {
   // 敵人屬性只列七項（生命值、攻擊力、物理防禦、魔法防禦、攻速、命中率、閃避率）；距離、移速、控制抵抗、元素審判說明不顯示。
   dropTip += '</div>';
 
-  if (isBossTip) {
+  if (showBoss) {
     var floor = (towerRuntime && towerRuntime.floor) || 1;
     var rw = towerRewardFor(floor, false);
     var dustRate = bossDustRate(floor);
     var soulOriginRate = hellSoulOriginDropChance(floor);
     var ancientEssenceRate = ancientEssenceDropChanceForBoss(floor);
+    var ticketRate = towerInvitationDropChance(floor, towerSnapshot && towerSnapshot.tower && towerSnapshot.tower.highest,
+      typeof relicPct === 'function' ? relicPct('merchantTicketDrop') : 0);
 
     var rewardLines = [];
     rewardLines.push(STR(106, fmt(m.xp)));
@@ -9924,6 +9925,7 @@ function showEnemyTooltip(anchorEl) {
     if (dustRate > 0) rewardLines.push(divineStoneTextHTML(STR(653, fmt1(dustRate))));
     if (soulOriginRate > 0) rewardLines.push(STR(654, fmt1(soulOriginRate)));
     if (ancientEssenceRate > 0) rewardLines.push(STR(655, fmt1(ancientEssenceRate)));
+    if (ticketRate > 0) rewardLines.push('🎟 ' + STR(2447) + ' ' + STR(2448, Number(ticketRate.toPrecision(12))));
 
     dropTip += '<div class="skt-name" style="margin:8px 0 6px;">' + STR(656) + '</div>' +
       '<div class="skt-desc" style="text-align:left;">' +
@@ -9942,10 +9944,8 @@ function showEnemyTooltip(anchorEl) {
     }
 
     var dustLine = '';
-    if (!towerActive) {
-      var dustRate = Number(zoneDrop.dustRate || 0);
-      if (dustRate > 0) dustLine = divineStoneTextHTML(STR(658, fmt1(dustRate)));
-    }
+    var dustRate = Number(zoneDrop.dustRate || 0);
+    if (dustRate > 0) dustLine = divineStoneTextHTML(STR(658, fmt1(dustRate)));
 
     if (equipStrs.length || dustLine) {
       dropTip += '<div class="skt-name" style="margin:8px 0 6px;">' + STR(656) + '</div><div class="skt-desc" style="text-align:left;">' + STR(659, fmt(m.gold), fmt(m.xp), (dustLine ? dustLine + (equipStrs.length ? '<br>' : '') : ''), equipStrs.join('<br>')) + '</div>';
