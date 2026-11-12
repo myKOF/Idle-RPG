@@ -6,10 +6,9 @@ var IntroAudio = (function () {
   var context = null, active = null, buffers = {}, loading = {};
 
   function level(kind, config) {
-    if (typeof GameSettings === 'undefined') return 1;
+    if (typeof GameSettings === 'undefined') return kind === 'music' && config.sceneMusic ? .5 : 1;
     if (GameSettings.get('mute')) return 0;
     if (kind === 'sfx') return GameSettings.sfxGain();
-    // 荒漠原曲沿用場景配樂的音量比例；舊序章音軌沿用其原增益。
     return GameSettings.get('musicVolume') / (config.sceneMusic ? 100 : 50);
   }
   function load(url) {
@@ -25,7 +24,7 @@ var IntroAudio = (function () {
   }
   function create(config, clock) {
     if (!config || typeof fetch !== 'function') return null;
-    var disposed = false, wanted = false, epoch = 0, voices = [], preparing = null;
+    var disposed = false, wanted = false, epoch = 0, voices = [], preparing = null, music = null;
     function clear() {
       voices.forEach(function (v) {
         try { v.source.stop(); } catch (_) {}
@@ -35,13 +34,37 @@ var IntroAudio = (function () {
     }
     function update() {
       voices.forEach(function (v) { v.gain.gain.setTargetAtTime(level(v.kind, config), context.currentTime, .025); });
+      if (music) music.volume = level('music', config);
     }
-    function pause() { wanted = false; epoch++; clear(); }
+    function pause(keepMusic) {
+      wanted = false;
+      epoch++;
+      clear();
+      if (music && !keepMusic) music.pause();
+    }
+    function prepareMusic() {
+      if (!config.sceneMusic || !config.music || music || typeof window.Audio !== 'function') return;
+      // 場景首曲用可移交的媒體播放器，音效仍隨畫面時鐘。
+      music = new window.Audio();
+      music.preload = 'auto';
+      music.volume = level('music', config);
+      music.src = config.music;
+    }
+    function startMusic() {
+      if (!music || music.ended) return;
+      try {
+        var position = Math.max(0, clock() / 1000);
+        if (isFinite(music.duration) && position >= music.duration) return;
+        if (Math.abs(music.currentTime - position) > .15) music.currentTime = position;
+        Promise.resolve(music.play()).catch(function () {});
+      } catch (_) { /* 音樂播放失敗時影片及演出音效仍可繼續。 */ }
+    }
     function prepare() {
       if (disposed || document.hidden) return Promise.resolve(null);
       if (preparing) return preparing;
       try {
         if (typeof navigator !== 'undefined' && navigator.userActivation && !navigator.userActivation.hasBeenActive) return Promise.resolve(null);
+        prepareMusic();
         if (!context) {
           var Ctor = window.AudioContext || window.webkitAudioContext;
           if (!Ctor) return Promise.resolve(null);
@@ -51,7 +74,7 @@ var IntroAudio = (function () {
         preparing = Promise.resolve(ready).then(function () {
           if (disposed || context.state !== 'running') return null;
           return Promise.all(['music', 'sfx'].map(function (kind) {
-            return config[kind] ? load(config[kind]) : Promise.resolve(null);
+            return config[kind] && !(kind === 'music' && config.sceneMusic) ? load(config[kind]) : Promise.resolve(null);
           }));
         }).catch(function () { return null; }).finally(function () { preparing = null; });
         return preparing;
@@ -61,7 +84,9 @@ var IntroAudio = (function () {
       if (disposed || wanted || document.hidden) return;
       wanted = true;
       var ticket = ++epoch;
-      prepare().then(function (tracks) {
+      var ready = prepare();
+      startMusic();
+      ready.then(function (tracks) {
         if (!tracks || disposed || !wanted || epoch !== ticket || document.hidden || context.state !== 'running') return;
         var offset = Math.max(0, clock() / 1000);
         tracks.forEach(function (buffer, index) {
@@ -75,8 +100,15 @@ var IntroAudio = (function () {
         });
       }).catch(function () { if (epoch === ticket && !disposed) clear(); });
     }
+    function takeSceneMusic() {
+      if (!config.sceneMusic) return null;
+      var transfer = { track: config.music, audio: music };
+      music = null;
+      return transfer;
+    }
     var controller = {
       prepare: prepare, start: start, pause: pause,
+      takeSceneMusic: takeSceneMusic,
       dispose: function () { disposed = true; pause(); if (active === controller) active = null; },
       update: update
     };

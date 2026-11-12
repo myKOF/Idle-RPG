@@ -17,7 +17,7 @@ function mount(blocked = false, ready = true) {
   let changed, allowed = !blocked, clock = 1000, timerId = 0;
   const timers = new Map();
   class Audio {
-    constructor() { this.paused = true; this.currentTime = 0; this.starts = 0; this.ended = false; music.push(this); }
+    constructor() { this.paused = true; this.currentTime = 0; this.starts = 0; this.pauses = 0; this.ended = false; music.push(this); }
     get src() { return this._src; }
     set src(value) { this._src = value; this.paused = true; this.ended = false; this.currentTime = 0; }
     play() {
@@ -26,7 +26,7 @@ function mount(blocked = false, ready = true) {
       this.paused = false;
       return Promise.resolve();
     }
-    pause() { this.paused = true; }
+    pause() { this.pauses++; this.paused = true; }
   }
   const c = {
     Date: { now: () => clock },
@@ -74,6 +74,57 @@ test('序章暫停場景配樂並在離場時保留曲目和進度', () => {
   assert.equal(audio.paused, false);
   assert.equal(audio.src, track2);
   assert.equal(audio.currentTime, 15);
+});
+
+test('從序章返回荒漠時沿用原播放器和當下進度，首曲播完後輪到第二首', () => {
+  const m = mount();
+  m.scene('desert');
+  const old = m.music[0];
+  m.finish(old);
+  m.advance(10000);
+  assert.equal(old.src, track2);
+  m.c.UISound.setIntroActive(true);
+  const intro = new m.c.window.Audio();
+  intro.src = track;
+  intro.currentTime = 29.9;
+  intro.play();
+  m.c.UISound.setIntroActive(false, { track, audio: intro });
+  assert.equal(old.paused, true);
+  assert.equal(intro.currentTime, 29.9);
+  assert.equal(intro.starts, 1);
+  assert.equal(intro.pauses, 0);
+  assert.equal(m.music.length, 2);
+  m.finish(old);
+  assert.equal(intro.src, track);
+  m.finish(intro);
+  assert.equal(intro.src, track2);
+  assert.equal(intro.currentTime, 0);
+  m.advance(9999);
+  assert.equal(intro.paused, true);
+  m.advance(1);
+  assert.equal(intro.paused, false);
+  assert.equal(intro.starts, 2);
+});
+
+test('從序章返回其他場景或荒漠中的塔戰時，停止序章並從場景首曲起播', () => {
+  for (const [zone, tower, expected] of [['test', false, 'audio/test.mp3'], ['desert', true, towerTrack]]) {
+    const m = mount();
+    m.scene(zone, tower);
+    const old = m.music[0];
+    old.currentTime = 19;
+    m.c.UISound.setIntroActive(true);
+    const intro = new m.c.window.Audio();
+    intro.src = track;
+    intro.currentTime = 30;
+    intro.play();
+    m.c.UISound.setIntroActive(false, { track, audio: intro });
+    assert.equal(intro.paused, true);
+    assert.equal(old.paused, true);
+    const scene = m.music[2];
+    assert.equal(scene.src, expected);
+    assert.equal(scene.currentTime, 0);
+    assert.equal(scene.paused, false);
+  }
 });
 
 test('Zones Excel, CSV, runtime BGM and reverse extraction stay in sync with the configured map playlists', () => {

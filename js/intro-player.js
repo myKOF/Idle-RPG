@@ -126,8 +126,8 @@ var IntroPlayer = (function () {
     return el;
   }
 
-  function setGameAudioSuppressed(value) {
-    if (typeof UISound !== 'undefined') UISound.setIntroActive(value);
+  function setGameAudioSuppressed(value, introMusic) {
+    if (typeof UISound !== 'undefined') UISound.setIntroActive(value, introMusic);
     if (typeof Sfx !== 'undefined') Sfx.setIntroActive(value);
   }
 
@@ -149,7 +149,7 @@ var IntroPlayer = (function () {
       if (c.audio) c.audio.start();
       armFailsafe(c);
     });
-    video.addEventListener('waiting', function () { if (c.audio) c.audio.pause(); });
+    video.addEventListener('waiting', function () { if (c.audio && !c.skipping) c.audio.pause(); });
     video.src = src;
     return video;
   }
@@ -260,7 +260,13 @@ var IntroPlayer = (function () {
     c.motion = [];
     c.scenes.forEach(function (scene) { if (scene && scene.dispose) scene.dispose(); });
     c.scenes = [];
-    if (c.audio) c.audio.dispose();
+    var introMusic;
+    if (c.audio) {
+      if ((reason === 'end' || reason === 'skip') && typeof UISound !== 'undefined' && c.audio.takeSceneMusic) {
+        introMusic = c.audio.takeSceneMusic();
+      }
+      c.audio.dispose();
+    }
     if (c.video) {
       c.video.pause();
       c.video.removeAttribute('src');
@@ -273,7 +279,7 @@ var IntroPlayer = (function () {
     window.removeEventListener('keydown', onKey, true);
     c.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
     if (c.root.parentNode) c.root.parentNode.removeChild(c.root);
-    setGameAudioSuppressed(false);
+    setGameAudioSuppressed(false, introMusic);
     try { if (c.onDone) c.onDone(reason); } catch (e) { console.error('[intro] onDone 失敗', e); }
     var waiters = _idleWaiters; _idleWaiters = [];
     waiters.forEach(function (fn) { try { fn(reason); } catch (e) { console.error('[intro] whenIdle 回呼失敗', e); } });
@@ -311,6 +317,12 @@ var IntroPlayer = (function () {
       c.root = root;
       _cur = c;
       setGameAudioSuppressed(true);
+
+      if (timeline.audio && typeof IntroAudio !== 'undefined') {
+        c.audio = IntroAudio.create(timeline.audio, function () { return playbackTime(c); });
+        // 手勢內先準備音訊，等影片實際開始才起播。
+        if (timeline.video && c.audio) c.audio.prepare();
+      }
 
       if (timeline.video) {
         c.video = buildVideo(c, timeline.video);
@@ -372,11 +384,6 @@ var IntroPlayer = (function () {
       var revealMs = Math.min(c.duration, Math.max(0, num(timeline.revealDuration, 0)));
       if (revealMs) animate(c, stage, [{ opacity: 1 }, { opacity: 0 }],
         { delay: c.duration - revealMs, duration: revealMs, fill: 'both' });
-      if (timeline.audio && typeof IntroAudio !== 'undefined') {
-        c.audio = IntroAudio.create(timeline.audio, function () { return playbackTime(c); });
-        // 在按下重播的手勢中解鎖並預載，等影片實際開始才起播兩軌。
-        if (c.video && c.audio) c.audio.prepare();
-      }
       if (c.hold) {
         var holdEl = document.createElement('span');
         holdEl.className = 'intro-clock';
@@ -401,7 +408,7 @@ var IntroPlayer = (function () {
     if (!c || c.skipping || !c.skippable) return;
     c.skipping = true;
     stopMotion(c);
-    if (c.audio) c.audio.pause();
+    if (c.audio) c.audio.pause(true);
     if (c.video) c.video.pause();
     clearTimeout(c.failsafe);
     var done = function () { finish(c, 'skip'); };

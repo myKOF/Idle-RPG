@@ -70,7 +70,7 @@ function makeEnv(opts) {
   };
   if (opts.audio) ctx.IntroAudio = opts.audio;
   if (opts.soundGate) {
-    ctx.UISound = { setIntroActive: value => opts.soundGate('ui', value) };
+    ctx.UISound = { setIntroActive: (value, music) => opts.soundGate('ui', value, music) };
     ctx.Sfx = { setIntroActive: value => opts.soundGate('battle', value) };
   }
   if (opts.frames) {
@@ -419,12 +419,18 @@ test('重播按鈕播放核准前三鏡，播完回到按鈕且可再從頭播�
 test('成片以荒漠第一首配樂及獨立音效跟隨影片，離場才恢復遊戲音訊', () => {
   const calls = [];
   let audioConfig, audioClock;
+  const handoff = { track: 'audio/zones/desert-ascendant.mp3', audio: {} };
   const audio = { create(config, clock) {
     audioConfig = config; audioClock = clock;
     return { prepare() { calls.push('intro prepare'); }, start() { calls.push('intro start'); },
-      pause() { calls.push('intro pause'); }, dispose() { calls.push('intro dispose'); } };
+      pause(keepMusic) { calls.push(keepMusic ? 'intro pause effects' : 'intro pause'); },
+      takeSceneMusic() { calls.push('intro handoff'); return handoff; },
+      dispose() { calls.push('intro dispose'); } };
   } };
-  const env = makeEnv({ replayButton: true, audio, soundGate: (kind, active) => calls.push(kind + ' ' + active) });
+  const env = makeEnv({ replayButton: true, audio, soundGate: (kind, active, music) => {
+    if (kind === 'ui' && !active) assert.equal(music, handoff);
+    calls.push(kind + ' ' + active);
+  } });
   assert.equal(env.P.replay(), true);
   const video = env.playerRoot().children[0].children[0];
   assert.equal(video.muted, true);
@@ -447,9 +453,9 @@ test('成片以荒漠第一首配樂及獨立音效跟隨影片，離場才恢�
   assert.equal(calls.at(-1), 'intro start');
   env.P.skip();
   assert.equal(video.paused, true);
-  assert.equal(calls.at(-1), 'intro pause');
+  assert.equal(calls.at(-1), 'intro pause effects');
   env.anims.find(a => a.el === env.playerRoot()).onfinish();
-  assert.deepEqual(calls.slice(-3), ['intro dispose', 'ui false', 'battle false']);
+  assert.deepEqual(calls.slice(-4), ['intro handoff', 'intro dispose', 'ui false', 'battle false']);
   assert.equal(env.P.isPlaying(), false);
   assert.equal(env.replayBtn.focused, 1);
 });

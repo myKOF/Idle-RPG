@@ -7,7 +7,7 @@ $mime = @{
   '.css'='text/css; charset=utf-8';   '.json'='application/json; charset=utf-8'
   '.png'='image/png'; '.jpg'='image/jpeg'; '.jpeg'='image/jpeg'; '.gif'='image/gif'
   '.svg'='image/svg+xml'; '.ico'='image/x-icon'; '.woff'='font/woff'; '.woff2'='font/woff2'
-  '.mp3'='audio/mpeg'; '.wav'='audio/wav'; '.ogg'='audio/ogg'
+  '.mp3'='audio/mpeg'; '.wav'='audio/wav'; '.ogg'='audio/ogg'; '.mp4'='video/mp4'
 }
 
 $listener = New-Object System.Net.HttpListener
@@ -18,6 +18,7 @@ Write-Output "Serving $root at http://127.0.0.1:$Port/"
 try {
   while ($listener.IsListening) {
     $ctx = $listener.GetContext()
+    $sentAsync = $false
     try {
       $rel = [System.Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath) -replace '/', '\'
       if ($rel -eq '\') { $rel = '\index.html' }
@@ -30,7 +31,9 @@ try {
         $ctx.Response.Headers.Add('Cache-Control', 'no-cache')
         $ctx.Response.ContentLength64 = $bytes.Length
         if ($ctx.Request.HttpMethod -ne 'HEAD') {
-          $ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length)
+          # 影片與 BGM 會各自緩衝。回應在背景送出，避免一個媒體連線卡住下一個請求。
+          $ctx.Response.Close($bytes, $false)
+          $sentAsync = $true
         }
       } else {
         $ctx.Response.StatusCode = 404
@@ -38,7 +41,7 @@ try {
     } catch {
       try { $ctx.Response.StatusCode = 500 } catch {}
     } finally {
-      try { $ctx.Response.OutputStream.Close() } catch {}
+      if (-not $sentAsync) { try { $ctx.Response.OutputStream.Close() } catch {} }
     }
   }
 } finally {
