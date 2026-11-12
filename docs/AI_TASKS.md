@@ -1,3 +1,11 @@
+## CHEST-REWARD-MODAL-20261112 — 全畫面寶箱獎勵
+
+- Codex 單一開發者，已完成。以使用者截圖為版面參考，在開啟／全開後顯示置中的無框全畫面彈窗。依遺物、符文、寶石、金幣等資源、裝備排列，裝備依品質由高到低逐件顯示。格位及圖示共用背包尺寸。首屏從左到右逐列揭示，捲動時可直接瀏覽其餘獎勵。沿用遊戲素材與「確定」字串。開箱數、加倍與裝備去向保留於無障礙摘要。
+- 修改 `js/ui-chest.js`、`css/chest.css`、`css/style.css`、`js/chest.js`、Worker 協議與載入快取、`index.html`、兩支回歸、`docs/CHEST_SYSTEM.md`、`docs/WORKER_PROTOCOL.md`、`LV_upgrade_system.md` 及本段。唯讀檢查 `js/data.js` 的裝備圖檔對應、`js/item.js` 的裝備生成與寶石圖示、`js/ui-scale.js`、原寶箱圖與字串。素材庫無本項變更。
+- 與 `ai/claude` 的 `cf099bd3` 做三方試合，`js/chest.js` 可乾淨合併並保留任務計數。使用者已核准更新 `index.html` 與 `js/worker/sim.worker.js` 重疊的 `chest.js` 快取版本。後續整合時保留 `20261112-chest-rewards-v1` 與雙方其餘載入版本。遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收。
+- `node --test` 執行 `chest`、`worker-protocol`、`vfx-editor-cache-versions`、`string-table`、`relics`、`sim-command-coverage`、`save-origin-isolation`、`ui-sound` 八個測試檔，共 86/86。`npm.cmd run build` 通過 716 檔，字串寫死 0，差異檢查通過。
+- 隔離靜音 Edge 正式頁及原生 Worker 實測單開、全開 450 箱、各類圖示與排序、逐件裝備到最後一格、左鍵與中鍵拖曳、滾輪、確認關閉與快取一致。1920 × 900 首屏完成時間 1.92 秒，格位 58 px、圖示 28 px。390 × 844 模擬視窗驗證縮放與觸控滑動。主控台錯誤 0，遊戲場景偶發音訊頻率限幅警告，桌面及窄視窗截圖留在本聊天。
+
 ## OFFLINE-LOOT-ALIGN-20261112 — 離線材料對齊與分解收益合計
 
 - Codex 單一開發者，已完成。材料從新列開始，與裝備、寶石共用三欄。熔爐分解列顯示分解件數及金幣，分解的裝備碎片、附魔精華、太古精華列入下方材料，同種數量先合計再格式化。既有「領取」字串用於關閉摘要的按鈕。

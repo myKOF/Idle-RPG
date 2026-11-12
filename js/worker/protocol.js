@@ -114,7 +114,8 @@
 // v77（2026-11-09 遺物）：新增 relic.upgrade({relicId:int})（98→99）；遺物存檔 player.relics／relicReturnUntil 隨 header.player 投影，不新增面板。
 // v78：手動刷新扣邀請券，商店投影不再依賴刷新計數或時鐘。
 // v79（2026-11-12 熔爐寶箱）：新增 chest.open({chestId,count})／chest.upgrade({chestId})（99→101）；newforge 面板新增 chests＝{ 編號: { lv, xp, n, on } }。
-var WORKER_PROTOCOL_VERSION = 79;
+// v80：chest.open 的 equip 獎勵增加 icons＝{ images/ 下的相對圖檔路徑: 件數 }，供開箱逐件顯示。
+var WORKER_PROTOCOL_VERSION = 80;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

@@ -26,6 +26,8 @@
   --bad: #b22222;
   --warn: #d49a37;
   --info: #4682b4;
+  --inventory-slot-size: 58px;
+  --inventory-icon-size: 28px;
   /* ==========================================================================
      ?�全局變數?�基礎樣式】Global Variables & Base Styling
      說�?：�?義全站�?主色彩主題�??��?系深?�調）、�??�設定、�??��??�色?��?距�??��?
@@ -2811,8 +2813,8 @@ textarea#save-io {
 
 #inventory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 58px);
-  grid-auto-rows: 58px;
+  grid-template-columns: repeat(auto-fill, var(--inventory-slot-size));
+  grid-auto-rows: var(--inventory-slot-size);
   gap: 6px;
   align-content: start;
   height: var(--inventory-visible-height, 378px);
@@ -5605,8 +5607,8 @@ textarea:disabled,
 }
 
 .item-icon {
-  width: 28px;
-  height: 28px;
+  width: var(--inventory-icon-size);
+  height: var(--inventory-icon-size);
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
   object-fit: contain;
 }

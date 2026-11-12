@@ -3,12 +3,12 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 /* ============ 熔爐寶箱區（主執行緒） ============
    熔爐頁上方的置頂寶箱列（index.html #nf-chests）。只讀 newforge 面板的 chests（{ 編號: { lv, xp, n, on } }）
    與 header 面板的金幣；定義、升級費用、掉落機率用兩端共載的 js/chest.js 純函式算，與 Worker 扣款同一支。
-   開啟／升級送 chest.open／chest.upgrade，開啟結果以浮層列出。
+   開啟／升級送 chest.open／chest.upgrade，獎勵以全畫面彈窗顯示。
    版面：寶箱結構（解鎖、等級、存滿）改變才整段重建；經驗條、數量、按鈕狀態每次快照定點更新，
    避免拆解每 2 秒改一次經驗就把滑鼠底下的提示整個換掉。
    寶箱圖依品質載入透明 WebP；未解鎖時本體置灰並疊上鎖鏈與掛鎖。 */
 
-var CHEST_UI = { bound: false, sig: '', resultTimer: 0 };
+var CHEST_UI = { bound: false, sig: '', results: [] };
 
 var CHEST_ART_FILES = {
   common: 'bronze',
@@ -145,10 +145,8 @@ function renderNewForgeChests(nfSnapshot, headerSnapshot) {
   if (!row || CHEST_UI.sig !== sig) {
     CHEST_UI.sig = sig;
     var help = '<button type="button" class="pg-help nfc-help" data-tt-title="' + chestUiEsc(STR(2483)) + '" data-tt-desc="' + chestUiEsc(STR(2484, fmtFull(CHEST_MAX_COUNT), CHEST_MAX_LEVEL)) + '">?</button>';
-    var keepResult = box.querySelector('.nfc-result');
     box.innerHTML = '<div class="nfc-head"><span class="nfc-head-title">' + chestUiEsc(STR(2483)) + '</span>' + help + '</div>' +
       '<div class="nfc-row">' + CHESTS.map(function (def) { return chestCardHTML(def, chestUiState(store, def)); }).join('') + '</div>';
-    if (keepResult) box.appendChild(keepResult);
     row = box.querySelector('.nfc-row');
   }
   CHESTS.forEach(function (def) {
@@ -157,49 +155,156 @@ function renderNewForgeChests(nfSnapshot, headerSnapshot) {
   });
 }
 
-/* ---- 開啟結果浮層 ---- */
+/* ---- 開箱獎勵 ---- */
+var CHEST_RESULT_PRIORITY = { relic: 0, rune: 1, gem: 2, equip: 4 };
+
+function chestResultImage(src) {
+  return '<img src="' + chestUiEsc(src) + '" alt="" draggable="false" decoding="async">';
+}
+
 function chestRewardIconHTML(rw) {
-  var img = function (src) { return '<img src="' + src + '" class="res-icon" alt="">'; };
   switch (rw.k) {
-    case 'gold': return img('images/icon_gold.png');
-    case 'scrap': return img('images/icon_scrap.png');
-    case 'essence': return img('images/icon_essence.png');
-    case 'ancientEssence': return img('images/icon_ancient_essence.png');
-    case 'dust': return img('images/icon_divine_stone.png');
+    case 'gold': return chestResultImage('images/icon_gold.png');
+    case 'scrap': return chestResultImage('images/icon_scrap.png');
+    case 'essence': return chestResultImage('images/icon_essence.png');
+    case 'ancientEssence': return chestResultImage('images/icon_ancient_essence.png');
+    case 'dust': return chestResultImage('images/icon_divine_stone.png');
     case 'soulOrigin': return '🧿';
     case 'invitation': return '🎟';
     case 'skillXp': return '📘';
     case 'xp': return '⭐';
-    case 'gem': return typeof gemIconHTML === 'function' ? gemIconHTML(rw.type, rw.lv, 'nfc-res-gem') : '💎';
-    case 'rune': return typeof runeStoneSrc === 'function' ? img(runeStoneSrc(rw.id)) : '🔹';
-    case 'relic': return typeof relicIconPath === 'function' ? img(relicIconPath(rw.id)) : '🏺';
-    case 'equip': return '<span class="nfc-res-eq" style="color:' + (RARITIES[rw.r] ? RARITIES[rw.r].color : '#ccc') + '">⚔</span>';
+    case 'gem': return gemIconHTML(rw.type, rw.lv);
+    case 'rune': return chestResultImage(runeStoneSrc(rw.id));
+    case 'relic': return chestResultImage(relicIconPath(rw.id));
   }
   return '';
 }
+
+function chestResultSlots(rewards) {
+  var sorted = rewards.slice().sort(function (a, b) {
+    var diff = (CHEST_RESULT_PRIORITY[a.k] ?? 3) - (CHEST_RESULT_PRIORITY[b.k] ?? 3);
+    return diff || (a.k === 'equip' ? b.r - a.r : 0);
+  });
+  var slots = [], end = 0;
+  function add(rw, icon, count, quantity) {
+    var rarity = rw.k === 'equip' ? RARITIES[rw.r] : rw.k === 'gem' ? RARITIES[rw.lv - 1] : null;
+    var color = rarity ? ' style="--nfc-rarity:' + rarity.color + '"' : '';
+    var label = chestUiEsc(STR(2495, chestRewardName(rw), fmtFull(quantity)));
+    end += count;
+    slots.push({ end: end, html: '<li class="nfc-res-slot"' + color + ' aria-label="' + label + '"' +
+      '><span class="nfc-res-ico" aria-hidden="true">' + icon + '</span>' +
+      (quantity > 1 ? '<b aria-hidden="true">×' + fmt(quantity) + '</b>' : '') + '</li>' });
+  }
+  sorted.forEach(function (rw) {
+    if (rw.k === 'equip') {
+      Object.entries(rw.icons).forEach(function (entry) {
+        add(rw, entry[0] ? chestResultImage('images/' + entry[0]) : '⚔', entry[1], 1);
+      });
+    } else add(rw, chestRewardIconHTML(rw), 1, rw.n);
+  });
+  return { slots: slots, total: end };
+}
+
+/* 只建立捲動位置附近的格子，全開也能逐件查看。 */
+function chestBindResultGrid(viewport, rewards) {
+  var grid = viewport.querySelector('.nfc-res-list');
+  var track = grid.parentNode;
+  var slots = rewards.slots, total = rewards.total;
+  var columns = 1, stride = 1, first = -1, last = -1;
+  viewport.style.setProperty('--nfc-count', Math.max(1, total));
+
+  function render() {
+    var startRow = Math.max(0, Math.floor(viewport.scrollTop / stride) - 1);
+    var start = startRow * columns;
+    var end = Math.min(total, Math.ceil((viewport.scrollTop + viewport.clientHeight) / stride + 1) * columns);
+    if (start === first && end === last) return;
+    first = start;
+    last = end;
+    grid.classList.remove('is-revealing');
+    var html = '';
+    for (var i = 0; i < slots.length && start < end; i++) {
+      var slot = slots[i];
+      var count = Math.min(end, slot.end) - start;
+      if (count <= 0) continue;
+      html += slot.html.repeat(count);
+      start += count;
+    }
+    grid.style.top = (startRow * stride) + 'px';
+    grid.innerHTML = html;
+  }
+
+  function resize() {
+    var style = getComputedStyle(grid);
+    var gap = parseFloat(style.rowGap);
+    var nextStride = parseFloat(style.gridAutoRows) + gap;
+    var nextColumns = style.gridTemplateColumns.split(' ').length;
+    if (stride !== nextStride || columns !== nextColumns) first = -1;
+    stride = nextStride;
+    columns = nextColumns;
+    track.style.height = Math.max(0, Math.ceil(total / columns) * stride - gap) + 'px';
+    viewport.classList.toggle('is-scrollable', viewport.scrollHeight > viewport.clientHeight);
+    render();
+  }
+
+  var drag = null;
+  viewport.addEventListener('pointerdown', function (e) {
+    if (e.pointerType !== 'mouse' || (e.button !== 0 && e.button !== 1) || viewport.scrollHeight <= viewport.clientHeight) return;
+    e.preventDefault();
+    drag = { id: e.pointerId, y: e.clientY, top: viewport.scrollTop };
+    viewport.setPointerCapture(e.pointerId);
+    viewport.classList.add('is-dragging');
+  });
+  viewport.addEventListener('pointermove', function (e) {
+    if (drag && e.pointerId === drag.id) viewport.scrollTop = drag.top + drag.y - e.clientY;
+  });
+  viewport.addEventListener('lostpointercapture', function () {
+    drag = null;
+    viewport.classList.remove('is-dragging');
+  });
+  viewport.addEventListener('scroll', function () {
+    grid.classList.remove('is-revealing');
+    render();
+  }, { passive: true });
+  resize();
+  var visible = Math.min(total, Math.ceil(viewport.clientHeight / stride) * columns);
+  var step = Math.min(55, 1800 / Math.max(1, visible - 1));
+  for (var i = 0; i < visible; i++) grid.children[i].style.setProperty('--nfc-reveal-delay', (i * step) + 'ms');
+  grid.classList.add('is-revealing');
+  var observer = new ResizeObserver(resize);
+  observer.observe(viewport);
+  return observer;
+}
+
 function chestShowResult(res) {
-  var box = $id('nf-chests');
   var def = res && CHEST_BY_ID[res.chestId];
-  if (!box || !def) return;
-  var old = box.querySelector('.nfc-result');
-  if (old) old.parentNode.removeChild(old);
-  var rows = (res.rewards || []).map(function (rw) {
-    var style = rw.k === 'equip' && RARITIES[rw.r] ? ' style="color:' + RARITIES[rw.r].color + '"' : '';
-    return '<li><span class="nfc-res-ico">' + chestRewardIconHTML(rw) + '</span><span class="nfc-res-name"' + style + '>' + chestUiEsc(chestRewardName(rw)) + '</span><b>×' + fmtFull(rw.n) + '</b></li>';
-  }).join('');
-  var notes = '';
-  if (res.doubled) notes += '<div class="nfc-res-note">' + chestUiEsc(STR(2516, fmtFull(res.doubled))) + '</div>';
+  if (!def) return;
+  if ($id('nfc-result')) { CHEST_UI.results.push(res); return; }
+  var summary = [STR(2518, def.name, fmtFull(res.opened))];
+  if (res.doubled) summary.push(STR(2516, fmtFull(res.doubled)));
   var eq = res.equip || {};
-  if (eq.forge || eq.inv || eq.salvaged) notes += '<div class="nfc-res-note">' + chestUiEsc(STR(2517, fmtFull(eq.forge || 0), fmtFull(eq.inv || 0), fmtFull(eq.salvaged || 0))) + '</div>';
-  var el = document.createElement('div');
-  el.className = 'nfc-result q-' + def.quality;
-  el.setAttribute('role', 'status');
-  el.innerHTML = '<div class="nfc-res-head"><b>' + chestUiEsc(STR(2518, def.name, fmtFull(res.opened))) + '</b>' +
-    '<button type="button" class="modal-x nfc-res-close" data-chest-result-close="1" aria-label="' + chestUiEsc(STR(155)) + '">✕</button></div>' +
-    '<ul class="nfc-res-list">' + rows + '</ul>' + notes;
-  box.appendChild(el);
-  clearTimeout(CHEST_UI.resultTimer);
-  CHEST_UI.resultTimer = setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 8000);
+  if (eq.forge || eq.inv || eq.salvaged) summary.push(STR(2517, fmtFull(eq.forge || 0), fmtFull(eq.inv || 0), fmtFull(eq.salvaged || 0)));
+  var rewards = chestResultSlots(res.rewards);
+  var el = document.createElement('dialog');
+  el.id = 'nfc-result';
+  el.className = 'nfc-result';
+  el.setAttribute('aria-label', summary.join(' '));
+  el.innerHTML = '<div class="nfc-res-content"><div class="nfc-res-art">' +
+    chestResultImage('images/chests/' + (CHEST_ART_FILES[def.quality] || CHEST_ART_FILES.common) + '.webp') + '</div>' +
+    '<div class="nfc-res-scroll" tabindex="0"' + (rewards.total ? '' : ' hidden') + '><div class="nfc-res-track">' +
+    '<ul class="nfc-res-list" role="list"></ul></div></div>' +
+    '<button type="button" class="nfc-res-confirm" autofocus>' + chestUiEsc(STR(149)) + '</button></div>';
+  hideTooltip();
+  ($id('ui-stage') || document.body).appendChild(el);
+  el.showModal();
+  var observer = rewards.total ? chestBindResultGrid(el.querySelector('.nfc-res-scroll'), rewards) : null;
+  el.addEventListener('cancel', function (e) { e.preventDefault(); });
+  el.addEventListener('keydown', function (e) { if (e.key === 'Escape') e.preventDefault(); });
+  el.querySelector('.nfc-res-confirm').addEventListener('click', function () {
+    if (observer) observer.disconnect();
+    el.close();
+    el.remove();
+    if (CHEST_UI.results.length) chestShowResult(CHEST_UI.results.shift());
+  });
 }
 
 /* ---- 事件委派（容器本身不重建，只綁一次） ---- */
@@ -209,8 +314,6 @@ function chestUiBind(box) {
   box.addEventListener('click', function (e) {
     var t = e.target && e.target.closest ? e.target : null;
     if (!t) return;
-    var close = t.closest('[data-chest-result-close]');
-    if (close) { var r = close.closest('.nfc-result'); if (r) r.parentNode.removeChild(r); return; }
     var open = t.closest('[data-chest-open]');
     if (open) {
       var id = parseInt(open.getAttribute('data-chest-open'), 10);

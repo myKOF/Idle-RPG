@@ -9,7 +9,8 @@
 - 任何拆解都算：熔爐入爐、背包手動拆解、背包滿載自動拆解、GM 拆解、離線熔爐補算；離線期間熔爐佇列已滿而折算碎片的裝備也視同已拆解。全部經過 `factory.js doSalvage` → `chestGainSalvageXp(品質)`（離線折算在 `save.js`）。
 - 經驗依寶箱**目前等級那一列**的「拆解經驗R0～R11」累加；每滿「寶箱鍛造經驗」得 1 個。每種最多 9999 個，存滿後經驗停在滿格，開掉一個後下一次拆解立刻補上。
 - 升級：從目前等級升一級＝ `a ＋ b^目前等級` 金幣，最高 Lv.20（表格列數較少時以列數為準）。
-- 開啟：每開 1 個抽「開啟掉落數」次，每次依權重選一格掉落。「開啟」開 1 個、「全開」一次開完持有數；結果在寶箱列右上浮層列出，熔爐紀錄也會寫一行。
+- 開啟：每開 1 個抽「開啟掉落數」次，每次依權重選一格掉落。「開啟」開 1 個、「全開」一次開完持有數，熔爐紀錄會寫一行。
+- 獎勵在置中的無框全畫面彈窗顯示，依遺物、符文、寶石、金幣等資源、裝備排列。裝備由高品質到低品質逐件顯示實際圖示，尺寸與背包相同，格位無提示。首屏圖示由左到右逐列出現，約兩秒內完成。可拖曳、滾輪或觸控滑動瀏覽，捲軸隱藏，按「確定」關閉。
 - 裝備和野外掉落一樣送進熔爐佇列（依各熔爐品質勾選拆解或保留入包）；佇列滿改放背包，背包也滿就直接拆解（產出照給），不會遺失。
 - 離線結算結束時，戰鬥日誌列出「離線期間寶箱累積」，離線摘要資料帶 `sum.chests`。
 
@@ -54,11 +55,11 @@
 |---|---|
 | `js/chest_data.js` | `CHESTS`（配置表產生，兩端共載） |
 | `js/chest.js` | 兩端共載。純函式：`chestEntry`、`chestUpgradeCost`、`chestDropOdds`、`chestRewardLabel`；Worker：`chestGainSalvageXp`、`chestOpen`、`chestUpgrade`、`chestPanelView`、`sanitizeChests` |
-| `js/ui-chest.js`、`css/chest.css` | 置頂寶箱列（主執行緒）：透明 WebP 寶箱圖、經驗條、開啟／全開／升級、掉落機率提示、開啟結果浮層 |
+| `js/ui-chest.js`、`css/chest.css` | 置頂寶箱列（主執行緒）：透明 WebP 寶箱圖、經驗條、開啟／全開／升級、掉落機率提示、全畫面獎勵彈窗 |
 | `images/chests/` | 五款寶箱圖。母圖與提示詞收錄於 Effects-Materials 的 `codex-authored/forge-chests-20261112`，以 `node tools/assets/export-chest-art.cjs --apply` 匯出。 |
 
 - 存檔：`G.player.chests = { 編號: { lv, xp, n, on } }`，新局為空物件，缺項依表格預設補上；`migrateSave` 呼叫 `sanitizeChests`。表上暫時拿掉的編號原樣保留。
-- 協議 v79：`chest.open({chestId, count})`、`chest.upgrade({chestId})`；`newforge` 面板新增 `chests`（唯讀投影，建面板不改存檔）。
+- 協議 v80：`chest.open({chestId, count})` 的裝備獎勵附圖檔路徑與件數。`chest.upgrade({chestId})` 與 `newforge.chests` 面板投影維持原契約。
 - GM：`chest 編號|all [數量]`、`chest lv 編號|all 等級`、`chest reset`（見 GM_command.md）。
 - 測試：`tests/chest.test.cjs`。
 

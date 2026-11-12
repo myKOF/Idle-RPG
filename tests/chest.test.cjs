@@ -211,14 +211,42 @@ test('開啟：裝備進熔爐佇列；佇列滿改放背包，背包也滿直�
   const queued = c.G.newForge.queue[c.G.newForge.queue.length - 1];
   assert.equal(queued.rarity, 6);
   assert.equal(queued.affixes.filter((a) => a.ancient).length, 2, '指定太古條數');
+  assert.deepStrictEqual({ ...res.rewards[0].icons }, { [c.equipIconFile(queued)]: 1 });
   c.newForgeTryIntake = () => false;   // 佇列已滿
   res = c.chestOpen(def.id, 1);
   assert.equal(res.equip.inv, 1);
+  assert.deepStrictEqual({ ...res.rewards[0].icons }, { [c.equipIconFile(c.G.inventory.at(-1))]: 1 });
   c.inventoryCapacityWithTalents = () => c.G.inventory.length;   // 背包也滿
+  const makeEquipment = c.makeEquipment;
+  let salvaged;
+  c.makeEquipment = (...args) => (salvaged = makeEquipment(...args));
   const scrap = c.G.player.scrap;
   res = c.chestOpen(def.id, 1);
   assert.equal(res.equip.salvaged, 1);
   assert.ok(c.G.player.scrap > scrap, '直接拆解照給產出');
+  assert.deepStrictEqual({ ...res.rewards[0].icons }, { [c.equipIconFile(salvaged)]: 1 });
+});
+
+test('開啟：同品質的不同太古擲骰合併，仍逐件回報實際裝備圖示', () => {
+  const c = loadGameContext();
+  const original = c.makeEquipment;
+  const slots = ['helmet', 'helmet', 'boots'];
+  const icons = {};
+  c.makeEquipment = (stage, opts) => {
+    const item = original(stage, { ...opts, slot: slots.shift() });
+    const icon = c.equipIconFile(item);
+    assert.ok(icon && fs.existsSync(path.join(root, 'images', icon)));
+    icons[icon] = (icons[icon] || 0) + 1;
+    return item;
+  };
+  const list = c.chestGrantBag({
+    'equip:6:0': { k: 'equip', p: 6, ancient: 0, n: 2 },
+    'equip:6:1': { k: 'equip', p: 6, ancient: 1, n: 1 }
+  }, { forge: 0, inv: 0, salvaged: 0 });
+  assert.equal(list.length, 1);
+  assert.equal(list[0].r, 6);
+  assert.equal(list[0].n, 3);
+  assert.deepStrictEqual({ ...list[0].icons }, icons);
 });
 
 test('遺物：雙開戒讓獎勵加倍、幸運符放大遺物格權重', () => {

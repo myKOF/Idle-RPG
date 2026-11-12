@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-  importScripts('protocol.js?v=20261111-storybook-merchant-merge-v1', '../game-clock.js?v=1.0.1', 'shim.js?v=20261109-treant-audio-sync-a54d6904');
+  importScripts('protocol.js?v=20261112-chest-rewards-v1', '../game-clock.js?v=1.0.1', 'shim.js?v=20261109-treant-audio-sync-a54d6904');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,7 +20,7 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261111-merchant-levels', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261110-relic-offline-20-merge', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-chest-art', '../chest.js?v=20261112-chest-v2', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261111-merchant-layout', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261111-merchant-levels', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261110-relic-offline-20-merge', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-chest-art', '../chest.js?v=20261112-chest-rewards-v1', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261111-merchant-layout', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
   '../item.js?v=20261111-merchant-levels', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261109-relics',
   '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261110-ai-balance-offline-merge', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
   '../player.js?v=20261112-chest-v1', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
