@@ -2346,11 +2346,23 @@ function upgradeSuccessChance(it) {
 /* 洗煉費用（整件或單詞條同價）：金幣 = 係數 × 底^稀有度 × (1 + 裝備等級 × 每級)；
    精華 = 基礎精華費用 × 裝備等級 ÷ 除數，無條件捨去。基礎費用沿用
    REROLL_ESSENCE_COST 的逐稀有度表，表上沒有的稀有度退回 1 + 稀有度。
+   品質倍率：稀有度編號 R6 起每高一階多 2 倍（R6＝2 倍…R11＝12 倍），先乘品質倍率再套次數加成。
    次數加成：每件裝備記 it.rerollCount（整件洗煉與單詞條洗煉共用一個計數），
    金幣與精華都再乘 min(maxMult, 1 + perCount% × 已洗煉次數)，乘完無條件捨去；
    遺物「節約瓶」折扣在次數加成之後套用。 */
 var REROLL_COST_GOLD = { coef: 40, base: 1.7, perLevel: 0.15 };
 var REROLL_COUNT_COST = { perCount: 1, maxMult: 100 };
+/* 品質倍率：稀有度編號 R ≥ from 時，金幣與精華都再乘 perTier × (R − from + 1)；
+   from=6、perTier=2 → R6＝2 倍、R7＝4 倍 … R11＝12 倍，R0～R5 不加價。 */
+var REROLL_RARITY_COST = { from: 6, perTier: 2 };
+/* 特定品質加價：稀有度編號 = rarity 的裝備再乘 mult（R8 神鑄神話的基礎費用沿用神話，補償性加價 40%）。 */
+var REROLL_RARITY_EXTRA = { rarity: 8, mult: 1.4 };
+function rerollRarityMult(rarity) {
+  var r = Math.floor(Number(rarity) || 0);
+  var m = r >= REROLL_RARITY_COST.from ? REROLL_RARITY_COST.perTier * (r - REROLL_RARITY_COST.from + 1) : 1;
+  if (r === REROLL_RARITY_EXTRA.rarity) m *= REROLL_RARITY_EXTRA.mult;
+  return m;
+}
 function rerollCountScale(base, count) {
   var pct = Math.min(REROLL_COUNT_COST.maxMult * 100, 100 + REROLL_COUNT_COST.perCount * Math.max(0, Math.floor(Number(count) || 0)));
   return Math.floor(base * pct / 100 + 1e-9);
@@ -2359,11 +2371,12 @@ function rerollCost(it) {
   var costTier = it.rarity === 8 ? 6 : legacyRarityIndex(it.rarity);
   var baseEssence = REROLL_ESSENCE_COST[it.rarity === 8 ? 6 : it.rarity];
   if (baseEssence === undefined) baseEssence = 1 + costTier;
-  var essence = rerollCountScale(Math.floor(baseEssence * it.level / REROLL_ESSENCE_LEVEL_DIVISOR), it.rerollCount);
+  var rarityMult = rerollRarityMult(it.rarity);
+  var essence = rerollCountScale(Math.floor(baseEssence * it.level / REROLL_ESSENCE_LEVEL_DIVISOR) * rarityMult, it.rerollCount);
   // 遺物「節約瓶」：精華 -N%（無條件捨去，與原本取整方向一致）
   if (typeof relicDiscount === 'function') essence = Math.floor(relicDiscount('rerollEssenceDiscount', essence));
   return {
-    gold: rerollCountScale(Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, costTier) * (1 + it.level * REROLL_COST_GOLD.perLevel)), it.rerollCount),
+    gold: rerollCountScale(Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, costTier) * (1 + it.level * REROLL_COST_GOLD.perLevel)) * rarityMult, it.rerollCount),
     essence: essence
   };
 }

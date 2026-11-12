@@ -17,9 +17,11 @@ function loadGameContext() {
 
 test('洗煉精華消耗符合神話、創世與神鑄創世規則', () => {
   const context = loadGameContext();
-  assert.equal(context.rerollCost({ rarity: 6, level: 50 }).essence, 9);
-  assert.equal(context.rerollCost({ rarity: 7, level: 50 }).essence, 14);
-  assert.equal(context.rerollCost({ rarity: 9, level: 50 }).essence, 20);
+  // 基礎量 × 品質倍率（R6＝2、R7＝4、R9＝8；倍率另在 reroll-count-cost.test.cjs 驗）
+  const m = (r) => context.rerollRarityMult(r);
+  assert.equal(context.rerollCost({ rarity: 6, level: 50 }).essence, 9 * m(6));
+  assert.equal(context.rerollCost({ rarity: 7, level: 50 }).essence, 14 * m(7));
+  assert.equal(context.rerollCost({ rarity: 9, level: 50 }).essence, 20 * m(9));
 });
 
 test('其他品質洗煉精華消耗維持原本公式', () => {
@@ -33,7 +35,8 @@ test('洗煉精華消耗依裝備等級除數縮放並無條件捨去', () => {
   assert.equal(context.REROLL_ESSENCE_LEVEL_DIVISOR, 50);
   assert.equal(context.rerollCost({ rarity: 0, level: 49 }).essence, 0);
   assert.equal(context.rerollCost({ rarity: 0, level: 50 }).essence, 1);
-  assert.equal(context.rerollCost({ rarity: 6, level: 75 }).essence, 13);
-  assert.equal(context.rerollCost({ rarity: 7, level: 100 }).essence, 28);
-  assert.equal(context.rerollCost({ rarity: 10, level: 50 }).essence, 27);
+  const m = (r) => context.rerollRarityMult(r);
+  assert.equal(context.rerollCost({ rarity: 6, level: 75 }).essence, 13 * m(6));
+  assert.equal(context.rerollCost({ rarity: 7, level: 100 }).essence, 28 * m(7));
+  assert.equal(context.rerollCost({ rarity: 10, level: 50 }).essence, 27 * m(10));
 });

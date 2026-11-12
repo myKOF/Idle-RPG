@@ -1098,6 +1098,10 @@ objFieldML('formula', 'REROLL_COST_GOLD = {', 'base', '7-洗煉', '金幣費用'
 objFieldML('formula', 'REROLL_COST_GOLD = {', 'perLevel', '7-洗煉', '金幣費用', 2, '洗煉金-每級');
 objFieldML('formula', 'REROLL_COUNT_COST = {', 'perCount', '7-洗煉', '洗煉次數加成', 0, '洗煉次數-每次加成%');
 objFieldML('formula', 'REROLL_COUNT_COST = {', 'maxMult', '7-洗煉', '洗煉次數加成', 1, '洗煉次數-倍率上限');
+objFieldML('formula', 'REROLL_RARITY_COST = {', 'from', '7-洗煉', '洗煉品質倍率', 0, '洗煉品質-起算品質');
+objFieldML('formula', 'REROLL_RARITY_COST = {', 'perTier', '7-洗煉', '洗煉品質倍率', 1, '洗煉品質-每階倍數');
+objFieldML('formula', 'REROLL_RARITY_EXTRA = {', 'rarity', '7-洗煉', '洗煉特定品質加價', 0, '洗煉加價-品質');
+objFieldML('formula', 'REROLL_RARITY_EXTRA = {', 'mult', '7-洗煉', '洗煉特定品質加價', 1, '洗煉加價-倍數');
 scalar('formula', 'AFFIX_REROLL_LOWER_WEIGHT', '7-洗煉', '數值洗煉分段權重', 0);
 scalar('formula', 'AFFIX_REROLL_UPPER_BASE_WEIGHT', '7-洗煉', '數值洗煉分段權重', 1);
 scalar('formula', 'AFFIX_REROLL_BIAS_EXPONENT', '7-洗煉', '數值洗煉分段權重', 2);
