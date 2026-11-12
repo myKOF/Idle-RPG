@@ -4,6 +4,14 @@
 
 遊戲專案的 `images/intro-parchment/shot-01-03.mp4` 收錄前三鏡，前兩鏡獨立版為 `images/intro-parchment/shot-01-02.mp4`。設定頁重播前三鏡時，配樂共用荒漠第一首 Desert Ascendant，使用獨立演出音效 `shot-01-03-sfx.mp3`。成片保留核准畫面及原混音供封存與預覽。
 
+## 55 秒計畫的加長第一鏡
+
+使用者於 2026-11-13 核准〈天界失守〉魔軍增援版。`web/shot-01-extended.mp4` 保存獨立的 16 秒第一鏡，遊戲副本位於 `images/intro-parchment/shot-01-extended.mp4`。大天使長聽見鐘聲抬頭，兩段拉遠揭露軍勢，11.72 秒塔樓遇襲，聖光熄滅，灰燼掠過前景。城前遠地有 2,673 個遠方剪影及 377 個過渡兵影，三處天空加密 1,213 個遠方翼影及 99 個振翼前鋒。尾畫作為加長第二鏡的疊化接點。
+
+- `extended-shot-one/` 保存鏡頭、突襲、遠近軍勢、字幕、音效與可重製預覽。畫面沿用同一資料夾下 `source/assets/` 的原創分件及 `source/shot-air.js`，本版新增動態合成。Noto Serif TC 沿用素材庫 `third-party/google-fonts/start-menu-20261106` 的授權來源。
+- `extended-shot-one/assets/shot-one-effects.wav` 是獨立的 48 kHz 立體聲音效，供後續接鏡。`shot-one-preview.wav` 為含配樂的核准審片混音。配樂讀取素材庫 `third-party/user-supplied/desert-ascendant/desert-ascendant.mp3`。
+- 在 `extended-shot-one/` 執行 `node build-audio.cjs` 可重建音效與混音。執行 `node render-shot-one.cjs` 可用 Windows Edge 與 FFmpeg 重製 1920 × 1080、30 fps 的影片，`--stills` 只輸出抽查畫格。可用 `PARCHMENT_FFMPEG` 指定 FFmpeg，`PARCHMENT_REVIEW_DIR` 指定輸出資料夾，預設為系統暫存目錄下的 `idle-rpg-extended-shot-one`。
+
 ## 可編輯來源
 
 Effects-Materials 內的 `codex-authored/intro-parchment-shots-20261111` 保存核准成片、可編輯程式、透明分件、雲海和深淵背景、音軌、聲景產生器及提示詞。角色、流光翼、神殿、遠雲、地面敵軍、飛行敵軍、火焰、煙與粒子分開合成。大天使長的頭罩與右手由獨立透明圖接回角色。第二鏡大天使長沿用第一鏡流光翼分件。第三鏡的地圖、荒漠地表、星點、紫霧、光束、圓形神光及沙塵分開合成。

@@ -26,8 +26,13 @@ const sources = [
   'assets/siege.png', 'assets/temple-details.png', 'assets/temple-roofs.png',
   'assets/temple-spire.png', 'assets/temples.png', 'assets/valley-clean.png',
   'assets/valley.png', 'assets/wing.png', 'assets/score-shot-one.wav', 'assets/score.wav'
-].map(file => 'source/' + file);
+].map(file => 'source/' + file).concat([
+  'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-one-assault.js',
+  'shot-one-reinforcements.js', 'build-audio.cjs', 'render-shot-one.cjs',
+  'assets/noto-serif-tc-bold.woff2', 'assets/shot-one-effects.wav', 'assets/shot-one-preview.wav'
+].map(file => 'extended-shot-one/' + file));
 const exportsByName = {
+  'shot-01-extended.mp4': 'web/shot-01-extended.mp4',
   'shot-01-02.mp4': 'web/shot-01-02.mp4',
   'shot-01-03.mp4': 'web/shot-01-03.mp4',
   'shot-01-03-sfx.mp3': 'web/shot-01-03-sfx.mp3',
@@ -47,7 +52,7 @@ const manifest = {
 
 if (mode === '--archive') {
   fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
-  console.log('羊皮紙序章前三鏡的分層來源及成片已建立 SHA-256 清單');
+  console.log('羊皮紙序章的分層來源及成片已建立 SHA-256 清單');
 } else {
   const recorded = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   if (JSON.stringify(recorded) !== JSON.stringify(manifest)) {
@@ -59,5 +64,5 @@ if (mode === '--archive') {
     if (mode === '--apply') fs.copyFileSync(path.join(archive, source), destination);
     if (hash(destination) !== archiveHash(source)) throw new Error('遊戲匯出 SHA-256 不符：' + target);
   }
-  console.log('羊皮紙序章前三鏡的分層來源與成片 SHA-256 一致');
+  console.log('羊皮紙序章的分層來源與成片 SHA-256 一致');
 }

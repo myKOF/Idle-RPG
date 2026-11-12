@@ -39,9 +39,24 @@
     "source/assets/valley.png": "ceb1dec362d323d7c9d1ca057f98ebf3d0df021cf392302a38d0ebfc1d4feef8",
     "source/assets/wing.png": "b85e348215148a1172617b81cbc3cd998096a65e8c130aab2861f0f6ba13c1c1",
     "source/assets/score-shot-one.wav": "5aca9024dbffba04261e679e53adde1cace912cee5c3060a663cbef01e86454f",
-    "source/assets/score.wav": "59f858efeab29345a952d19e68422148d0abdc1d7175d8612afc2897d11f28cc"
+    "source/assets/score.wav": "59f858efeab29345a952d19e68422148d0abdc1d7175d8612afc2897d11f28cc",
+    "extended-shot-one/index.html": "cdc5f1a5f214418353eefba36f07a9a5b1a8228a3bdec647ec6d10450916477d",
+    "extended-shot-one/preview.js": "504d7e0033a1f829cebc97029660386a6ea66805070aaa69e94f4ad76658ed1f",
+    "extended-shot-one/shot-timing.js": "5810d27c4806cbfef6880d1ede81b5bcb7cf157607ffed20f2ac3b752a66a3f4",
+    "extended-shot-one/shot.js": "a4c65339f27005a0ff460936103728090d7e31926856a51159ae9bc89616df06",
+    "extended-shot-one/shot-one-assault.js": "005fe3e241ac29d26a3aed2822a8cc0a0900961dfca358e9014b4d3c35e8ab24",
+    "extended-shot-one/shot-one-reinforcements.js": "467d79f7f39c9308267f911643f9930ac8eac900a8e6406c41b1928662d20160",
+    "extended-shot-one/build-audio.cjs": "26f2af6024d8ba4a7aed2f8411ac5401f1a10ced177dec382221b9c8acb81425",
+    "extended-shot-one/render-shot-one.cjs": "b8bca25ca8b05bb5cbe6fdde833c7eeb70fdda33c50a7fbc7a18974c6267a83b",
+    "extended-shot-one/assets/noto-serif-tc-bold.woff2": "326b6f3efb1c86627a650b0c8efd6e68608ed81b6d58585b03ef2c0d004a168e",
+    "extended-shot-one/assets/shot-one-effects.wav": "a15f948ffede3041e1ea84200b6fa7e631524970441ecacdd37480aa83e1dc75",
+    "extended-shot-one/assets/shot-one-preview.wav": "15a21c9252338bd3a40f6179736fbd693f71a01ac28e6aab6b0296723b0b4a50"
   },
   "exports": {
+    "shot-01-extended.mp4": {
+      "source": "web/shot-01-extended.mp4",
+      "sha256": "0bbba147d8c122de61c2704f2a2151a54bb5072a08ded14f9ab28035d9838326"
+    },
     "shot-01-02.mp4": {
       "source": "web/shot-01-02.mp4",
       "sha256": "1cf66eb258d70b01823c216b4c7ee4199af95b90918761f08058d36db81c4535"
@@ -56,7 +71,7 @@
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "0c2aafe4a9a11b46d0bba607049db25062fbb8685500628fae9804429a1ffbed"
+      "sha256": "07b5624993b2f4111bfabef453b81ab4d6f031143fb90dae97f1ab67c971cf2a"
     }
   }
 }
