@@ -8327,12 +8327,9 @@ function talentTreeLevelTotal(turn, snapshot) {
 }
 
 /* ---- 離線收益確認彈窗（applyOfflineProgress → save.js 呼叫；收益已入帳，此處為確認展示） ---- */
-function offlineLootBadgeHTML(label, color) {
-  return '<span class="offline-sum-badge"' + (color ? ' style="color:' + color + '"' : '') + '>' + label + '</span>';
-}
-
-function offlineLootItemHTML(label, count, color) {
-  return '<span class="offline-sum-item">' + STR(2495, offlineLootBadgeHTML(label, color), fmt(count)) + '</span>';
+function offlineLootItemHTML(label, count, color, tip) {
+  var badge = '<span class="offline-sum-badge"' + (color ? ' style="color:' + color + '"' : '') + '>' + label + '</span>';
+  return '<span class="offline-sum-item"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' + STR(2495, badge, fmt(count)) + '</span>';
 }
 
 function showOfflineSummary(sum) {
@@ -8354,35 +8351,29 @@ function showOfflineSummary(sum) {
   if (sum.towerRewards) h += '<div class="offline-sum-row">' + esc(STR(2466, fmt(sum.towerRewards.hours), fmt(sum.towerRewards.pct), sum.towerRewards.floor)) + '</div>';
   if (sum.returnBuff) h += '<div class="offline-sum-row">' + esc(STR(2467, sum.returnBuff.minutes, sum.returnBuff.pct)) + '</div>';
   h += '<div class="offline-sum-row">' + STR(2054, fmt(sum.stage), esc(sum.zoneName || ''), offKind, fmtFull(sum.kills)) + '</div>';
-  var equips = [], gems = [], materials = [];
+  var drops = [], materials = [];
   for (var r = 0; r < RARITIES.length; r++) {
     if (sum.equips && sum.equips[r]) {
-      equips.push(offlineLootItemHTML(esc(STR(45, RARITIES[r].name)), sum.equips[r], RARITIES[r].color));
+      drops.push(offlineLootItemHTML(esc(STR(45, RARITIES[r].name)), sum.equips[r], RARITIES[r].color));
     }
   }
   if (sum.gems) {
     for (var glv = 1; glv <= GEM_FORGE_MAX_LEVEL; glv++) {
       if (sum.gems[glv]) {
         var gemLabel = '<span class="offline-sum-gem-icon" aria-hidden="true"></span>' + esc(GEM_NAMES[glv] + STR(122));
-        gems.push(offlineLootItemHTML(gemLabel, sum.gems[glv], RARITIES[glv - 1].color));
+        drops.push(offlineLootItemHTML(gemLabel, sum.gems[glv], RARITIES[glv - 1].color));
       }
     }
   }
-  if (sum.books && ENCHANT_ENABLED) materials.push(STR(2058, fmt(sum.books)));
-  if (sum.essence) materials.push('<img src="images/icon_ancient_essence.png" class="res-icon" alt="">' + STR(2059, fmt(sum.essence)));
-  if (sum.dust) materials.push(divineStoneTextHTML(STR(2060, fmt(sum.dust))));
-  if (sum.parts) materials.push(STR(2061, fmt(sum.parts)));
-  if (sum.scrap) materials.push(STR(2062, fmt(sum.scrap)));
-  var loot = [equips, gems].filter(function (items) { return items.length; }).map(function (items) {
-    return '<div class="offline-sum-grid">' + items.join('') + '</div>';
-  });
-  if (materials.length) {
-    loot.push('<div class="offline-sum-materials">' + materials.map(function (label) {
-      return offlineLootBadgeHTML(label);
-    }).join('') + '</div>');
-  }
+  if (sum.books && ENCHANT_ENABLED) materials.push(offlineLootItemHTML('📖' + esc(STR(102)), sum.books));
+  if (sum.essence) materials.push(offlineLootItemHTML('<img src="images/icon_ancient_essence.png" class="res-icon" alt="">' + esc(STR(13)), sum.essence));
+  if (sum.dust) materials.push(offlineLootItemHTML(divineStoneIconHTML() + esc(STR(100)), sum.dust));
+  if (sum.parts) materials.push(offlineLootItemHTML('🔧' + esc(STR(385)), sum.parts));
+  if (sum.scrap) materials.push(offlineLootItemHTML('<img src="images/icon_scrap.png" class="res-icon" alt="">' + esc(STR(98)), sum.scrap, null, STR(2062, fmt(sum.scrap))));
+  var loot = drops.length ? '<div class="offline-sum-grid">' + drops.join('') + '</div>' : '';
+  if (materials.length) loot += '<div class="offline-sum-materials">' + materials.join('') + '</div>';
   h += '<div class="offline-sum-title">' + STR(2063) + '</div>';
-  h += '<div class="offline-sum-loot">' + (loot.length ? loot.join('') : STR(2064)) + '</div>';
+  h += '<div class="offline-sum-loot">' + (loot || STR(2064)) + '</div>';
   body.innerHTML = h;
   overlay.style.display = 'flex';
 }
