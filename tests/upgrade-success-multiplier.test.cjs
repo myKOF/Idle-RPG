@@ -59,3 +59,20 @@ test('強化成功率屬性與基礎成功率相乘，並夾在 100% 內', () =>
   assert.equal(withStat(900)(100), 100); // 下限 10% 需 +900% 才必過
   assert.equal(withStat(0)(3), 100); // 免費段不受影響
 });
+
+test('強化碎片費用：總量掛勾裝備品質（R0 約 1 兆、每高一階多 1 倍，R11 約 12 兆）', () => {
+  const c = loadContext(LOGIC_FILES);
+  const total = (rarity, level) => {
+    let sum = 0;
+    for (let lv = 0; lv < 100; lv++) sum += c.upgradeCost({ upgrade: lv, level, rarity }).scrap;
+    return sum;
+  };
+  const r0 = total(0, 600), r11 = total(11, 600);
+  assert.ok(r0 > 0.9e12 && r0 < 1.1e12, 'R0 約 1 兆，實際 ' + r0);
+  assert.ok(Math.abs(r11 / r0 - 12) < 0.01, 'R11 是 R0 的 12 倍，實際 ' + (r11 / r0));
+  for (let r = 1; r <= 11; r++) {
+    assert.ok(Math.abs(total(r, 600) / r0 - (r + 1)) < 0.01, 'R' + r + ' 應是 R0 的 ' + (r + 1) + ' 倍');
+  }
+  // 只影響碎片，金幣不分品質
+  assert.equal(c.upgradeCost({ upgrade: 5, level: 600, rarity: 0 }).gold, c.upgradeCost({ upgrade: 5, level: 600, rarity: 11 }).gold);
+});

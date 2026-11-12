@@ -2320,18 +2320,20 @@ function upgradeSuccessBase(nextLevel) {
   return Math.max(UPGRADE_SUCCESS.floor,
     UPGRADE_SUCCESS.full - (nextLevel - UPGRADE_SUCCESS.guaranteedUpTo) * UPGRADE_SUCCESS.decayPerLevel);
 }
-/* 強化費用：係數 × 底^強化等級 × (1 + 裝備等級 × 每級)，金幣與碎片各一組。
+/* 強化費用：係數 × 底^強化等級 × (1 + 裝備等級 × 每級)，金幣與碎片各一組；
+   碎片另乘 (1 + 稀有度編號 × perRarity)（R0＝1 倍、每高一階多 perRarity 倍，perRarity=1 時 R11＝12 倍）。
    ⚠️ 這裡原本的註釋寫死了係數，而且與程式碼已經不一致（註釋 1.45／0.08，實際 1.3／0.2）——
       正是 AI_RULES 9.1 要防的情況：註釋看起來像權威來源，讀的人不會回頭核對。 */
 var UPGRADE_COST_GOLD = { coef: 25, base: 1.3, perLevel: 0.2 };
-var UPGRADE_COST_SCRAP = { coef: 8, base: 1.35, perLevel: 0.04 };
+var UPGRADE_COST_SCRAP = { coef: 8, base: 1.232, perLevel: 0.04, perRarity: 1 };
 function upgradeCost(it) {
   var lv = it.upgrade || 0;
   return {
     gold: Math.round(UPGRADE_COST_GOLD.coef * Math.pow(UPGRADE_COST_GOLD.base, lv) * (1 + it.level * UPGRADE_COST_GOLD.perLevel)),
     // 遺物「碎片再生爐」：碎片 -N%（兩端共載，強化按鈕顯示的費用與實際扣款同一支）
     scrap: Math.round((typeof relicDiscount === 'function' ? relicDiscount('upgradeScrapDiscount', 1) : 1) *
-      UPGRADE_COST_SCRAP.coef * Math.pow(UPGRADE_COST_SCRAP.base, lv) * (1 + it.level * UPGRADE_COST_SCRAP.perLevel))
+      UPGRADE_COST_SCRAP.coef * Math.pow(UPGRADE_COST_SCRAP.base, lv) * (1 + it.level * UPGRADE_COST_SCRAP.perLevel) *
+      (1 + (it.rarity || 0) * UPGRADE_COST_SCRAP.perRarity))
   };
 }
 // 實際強化成功率 = 基礎 × (1 + 「強化成功率」屬性%)（夾在 100% 內）；失敗損失半數材料

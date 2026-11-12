@@ -1092,6 +1092,7 @@ objFieldML('formula', 'UPGRADE_COST_GOLD = {', 'perLevel', '7-強化', '金幣�
 objFieldML('formula', 'UPGRADE_COST_SCRAP = {', 'coef', '7-強化', '碎片費用', 0, '強化碎-係數');
 objFieldML('formula', 'UPGRADE_COST_SCRAP = {', 'base', '7-強化', '碎片費用', 1, '強化碎-底');
 objFieldML('formula', 'UPGRADE_COST_SCRAP = {', 'perLevel', '7-強化', '碎片費用', 2, '強化碎-每級');
+objFieldML('formula', 'UPGRADE_COST_SCRAP = {', 'perRarity', '7-強化', '碎片費用', 3, '強化碎-每階品質');
 objFieldML('formula', 'REROLL_COST_GOLD = {', 'coef', '7-洗煉', '金幣費用', 0, '洗煉金-係數');
 objFieldML('formula', 'REROLL_COST_GOLD = {', 'base', '7-洗煉', '金幣費用', 1, '洗煉金-底');
 objFieldML('formula', 'REROLL_COST_GOLD = {', 'perLevel', '7-洗煉', '金幣費用', 2, '洗煉金-每級');
