@@ -260,7 +260,7 @@ relic 28 1 （給 1 件第 28 號「急行令」）
 
 ```text
 chest 編號|all [數量] （給寶箱；未解鎖的一併解鎖，每種最多 9999 個）
-chest lv 編號|all 等級 （直接設定寶箱等級 1～20）
+chest lv 編號|all 等級 （直接設定寶箱等級，以各寶箱在 Chest 表中的最高級為上限）
 chest reset （清空所有寶箱進度：等級、經驗、數量、解鎖）
 ```
 
@@ -268,7 +268,7 @@ chest reset （清空所有寶箱進度：等級、經驗、數量、解鎖）
 
 ```text
 chest all 100 （五種寶箱各給 100 個）
-chest lv 5 20 （暗金寶箱設為 Lv.20，測最高級掉落）
+chest lv 5 100 （神話寶箱設為 Lv.100，若表格配置較少則設為該寶箱最高級）
 ```
 
 寶箱編號、所需經驗、拆解經驗與掉落見 `config/Excel/Chest.xlsx`（說明見 `docs/CHEST_SYSTEM.md`）。

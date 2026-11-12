@@ -2713,7 +2713,7 @@ SCHEMAS.Relics = {
 };
 
 /* ---- Chest ← CHESTS（js/chest_data.js）熔爐寶箱表（2026-11-12） ----
-   一列＝一種寶箱的一個等級（與 Relics 同樣的排法）。同一種寶箱的各等級列共用「編號」，等級從 1 連續編到最高級（最多 CHEST_TABLE_MAX_LEVEL）。
+   一列＝一種寶箱的一個等級（與 Relics 同樣的排法）。同一種寶箱的各等級列共用「編號」，從 1 連續編到該寶箱的最高配置等級。
    名稱／品質／初始解鎖／升級金幣 a、b 是整種寶箱共用的欄：第 1 級必填，之後留白＝沿用，填了就必須與第 1 級相同。
    所需經驗、R0～R11 拆解經驗、開啟掉落數可逐級設定，留白＝沿用上一級；16 個掉落格全部留白＝沿用上一級的整組掉落。
    升級金幣：從目前等級升一級＝ a ＋ b^目前等級（js/chest.js chestUpgradeCost）。
@@ -2722,7 +2722,6 @@ SCHEMAS.Relics = {
      金幣／裝備碎片／附魔精華／太古精華／神性之石／魔魂本源／邀請券／技能經驗／經驗：不帶參數
      寶石:階級（1～10，種類隨機）　符文:階級（1～符文總數）　裝備:品質[:太古條數]（品質填 0～11 或名稱；太古省略＝自然擲骰）
      遺物[:編號]（省略編號＝隨機一件） */
-const CHEST_TABLE_MAX_LEVEL = 20;
 const CHEST_DROP_COLS = 16;
 const CHEST_QUALITIES = { '普通': 'common', '稀有': 'rare', '史詩': 'epic', '傳說': 'legendary', '神話': 'mythic' };
 const CHEST_RARITY_NAMES = ['普通', '精良', '稀有', '獨特', '史詩', '傳說', '神話', '創世', '神鑄神話', '神鑄創世', '混沌', '神鑄混沌'];
@@ -2843,7 +2842,6 @@ SCHEMAS.Chest = {
       let chest = byId.get(id);
       const prev = chest ? chest.levels[chest.levels.length - 1] : null;
       if (lv !== (chest ? chest.levels.length : 0) + 1) fail(where + '（編號 ' + id + '）：等級必須從 1 連續排列，這列應為第 ' + ((chest ? chest.levels.length : 0) + 1) + ' 級');
-      if (lv > CHEST_TABLE_MAX_LEVEL) fail(where + '（編號 ' + id + '）：寶箱最高 ' + CHEST_TABLE_MAX_LEVEL + ' 級');
       // 整種寶箱共用的欄：第 1 級必填，之後留白沿用、填了必須相同
       const shared = (col, parse, field) => {
         const raw = get(r, col).trim();

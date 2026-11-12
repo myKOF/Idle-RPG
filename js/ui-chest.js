@@ -144,7 +144,8 @@ function renderNewForgeChests(nfSnapshot, headerSnapshot) {
   }).join(',');
   if (!row || CHEST_UI.sig !== sig) {
     CHEST_UI.sig = sig;
-    var help = '<button type="button" class="pg-help nfc-help" data-tt-title="' + chestUiEsc(STR(2483)) + '" data-tt-desc="' + chestUiEsc(STR(2484, fmtFull(CHEST_MAX_COUNT), CHEST_MAX_LEVEL)) + '">?</button>';
+    var maxLevel = CHESTS.reduce(function (highest, def) { return Math.max(highest, chestMaxLevel(def)); }, 0);
+    var help = '<button type="button" class="pg-help nfc-help" data-tt-title="' + chestUiEsc(STR(2483)) + '" data-tt-desc="' + chestUiEsc(STR(2484, fmtFull(CHEST_MAX_COUNT), maxLevel)) + '">?</button>';
     box.innerHTML = '<div class="nfc-head"><span class="nfc-head-title">' + chestUiEsc(STR(2483)) + '</span>' + help + '</div>' +
       '<div class="nfc-row">' + CHESTS.map(function (def) { return chestCardHTML(def, chestUiState(store, def)); }).join('') + '</div>';
     row = box.querySelector('.nfc-row');

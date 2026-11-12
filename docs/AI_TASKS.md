@@ -1,3 +1,9 @@
+## CHEST-TABLE-LEVEL-CAP-20261112 — 由 Chest 表決定寶箱等級上限
+
+- Codex 單一開發者，已完成。Chest 表保留從 1 連續編號的驗證，移除固定上限。升級、存檔、介面與 GM 指令依各寶箱的最後配置等級運作。更新主頁與 Worker 快取、寶箱及 GM 文件、LV 總表。素材庫無本項變更。
+- `node --test` 執行 chest、worker-protocol、vfx-editor-cache-versions、string-table、sim-forge-parts、sim-command-coverage、save-origin-isolation，共 89/89。測試資料驗證 Lv.100 與 Lv.20 共存、Lv.99 升級扣款、滿級、存檔、介面及 GM。`node tools/config_tables.cjs --apply Chest` 試跑語意變更 0。`npm.cmd run build` 通過 717 檔，差異檢查通過。
+- 唯讀檢查 Chest.xlsx、CSV 與產出的寶箱資料。工作簿沒有阻擋第 21 級的欄位驗證，欄位說明頁仍有舊的 20 級文字。由使用者填寫數值後執行「套用參數.bat」。逐檔衝突預檢通過，可供合併。
+
 ## CHEST-REWARD-DETAILS-20261112 — 寶箱獎勵圖示與彈窗樣式
 
 - Codex 單一開發者，已完成。沿用共用黑色遮罩和標準確認按鈕。裝備顯示實際等級及太古星數，8 星以上以星號和數量顯示。遺物使用遺物頁的圓形圖示並填滿格位。排序改為遺物、符文、金幣與材料、寶石、裝備。修正大量獎勵捲到底部後縮小視窗時格位可能短暫清空的問題。

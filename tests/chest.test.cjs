@@ -50,15 +50,15 @@ test('Chest 表：CSV 與 chest_data.js 語意一致', () => {
   assert.deepStrictEqual(fromJs, fromCsv, '表改了卻沒跑「套用參數.bat」，或 chest_data.js 被手改');
 });
 
-test('Chest 表：五種品質、初始只解鎖普通、每種最多 20 級', () => {
+test('Chest 表：五種品質、初始只解鎖普通、各自使用最後一級作為上限', () => {
   const c = loadGameContext();
   assert.deepStrictEqual(Array.from(c.CHESTS, (d) => d.quality), ['common', 'rare', 'epic', 'legendary', 'mythic']);
   assert.deepStrictEqual(Array.from(c.CHESTS, (d) => d.init), [true, false, false, false, false]);
   c.CHESTS.forEach((d) => {
-    assert.ok(d.levels.length >= 1 && d.levels.length <= c.CHEST_MAX_LEVEL);
+    assert.ok(d.levels.length >= 1);
+    assert.equal(c.chestMaxLevel(d), d.levels.length);
     d.levels.forEach((lv) => { assert.equal(lv.xp.length, c.RARITIES.length); assert.ok(lv.drops.length >= 1); });
   });
-  assert.equal(c.CHEST_MAX_LEVEL, 20);
   assert.equal(c.CHEST_MAX_COUNT, 9999);
 });
 
@@ -161,6 +161,50 @@ test('升級：a ＋ b^目前等級、扣金幣；金幣不足與滿級不扣', 
   assert.equal(c.chestUpgradeCost(def, c.chestMaxLevel(def)), null);
   // 未解鎖不能升級
   assert.equal(c.chestUpgrade(c.CHESTS[1].id), c.STR(2486, c.CHESTS[1].name));
+});
+
+test('各寶箱依配置決定上限：Lv.100 可升級、儲存、顯示及由 GM 設定', () => {
+  const c = loadGameContext();
+  const level = { need: 10, xp: xp12(1), rolls: 1, drops: [{ k: 'gold', q: [5, 5], w: 1 }] };
+  const defs = [
+    { id: 1, name: 'A', quality: 'common', init: true, a: 2, b: 1, levels: Array(100).fill(level) },
+    { id: 2, name: 'B', quality: 'rare', init: true, a: 2, b: 1, levels: Array(20).fill(level) },
+  ];
+  const schema = SCHEMAS.Chest;
+  const rows = schema.extract('var CHESTS = ' + JSON.stringify(defs) + ';');
+  vm.runInContext(schema.rebuild(rows, schema.header).CHESTS, c);
+  for (const file of ['js/chest.js', 'js/ui-chest.js', 'js/gm_exec.js']) {
+    vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), c, { filename: file });
+  }
+  const [long, short] = c.CHESTS;
+  c.G.player.chests = { 1: { lv: 99, on: true }, 2: { lv: 20, on: true } };
+  assert.match(c.chestCardHTML(long, c.chestState(1)), /data-chest-upgrade="1"/);
+  assert.doesNotMatch(c.chestCardHTML(short, c.chestState(2)), /data-chest-upgrade=/);
+
+  c.G.player.gold = 10;
+  assert.equal(c.chestUpgrade(1), null);
+  assert.equal(c.G.player.gold, 7);
+  assert.equal(c.chestPanelView()[1].lv, 100);
+  assert.equal(c.chestUpgrade(1), c.STR(2489, long.name, 100));
+  assert.equal(c.G.player.gold, 7);
+  assert.match(c.chestCardHTML(long, c.chestState(1)), /Lv\.100/);
+  assert.doesNotMatch(c.chestCardHTML(long, c.chestState(1)), /data-chest-upgrade=/);
+  const panel = { innerHTML: '', addEventListener() {}, querySelector: () => ({ querySelector: () => null }) };
+  c.$id = () => panel;
+  c.renderNewForgeChests({ chests: c.chestPanelView() });
+  assert.match(panel.innerHTML, /最高 Lv\.100/);
+
+  const saved = JSON.parse(JSON.stringify({ player: { chests: c.G.player.chests } }));
+  c.sanitizeChests(saved);
+  assert.equal(saved.player.chests[1].lv, 100);
+  assert.equal(saved.player.chests[2].lv, 20);
+
+  c.location = { hostname: 'localhost' };
+  const result = c.executeGMCommand('chest lv all 99');
+  assert.equal(result.ok, true);
+  assert.match(result.message, /A.*Lv\.99.*B.*Lv\.20/);
+  assert.equal(c.chestState(1).lv, 99);
+  assert.equal(c.chestState(2).lv, 20);
 });
 
 test('開啟：扣數量、依抽取次數發放；沒有寶箱或未解鎖回錯誤', () => {
@@ -280,7 +324,8 @@ test('遺物：雙開戒讓獎勵加倍、幸運符放大遺物格權重', () =>
 test('存檔淨化：壞值修正、未知編號保留、新局有空的 chests', () => {
   const c = loadGameContext();
   assert.deepStrictEqual(JSON.parse(JSON.stringify(c.newGameState().player.chests)), {});
-  const data = { player: { chests: { 1: { lv: 99, xp: -5, n: 1e9, on: 'x' }, 2: 'bad', 777: { lv: 3 } } } };
+  const aboveMax = c.chestMaxLevel(c.CHESTS[0]) + 1;
+  const data = { player: { chests: { 1: { lv: aboveMax, xp: -5, n: 1e9, on: 'x' }, 2: 'bad', 777: { lv: 3 } } } };
   c.sanitizeChests(data);
   const ch = data.player.chests;
   assert.deepStrictEqual(JSON.parse(JSON.stringify(ch[1])), { lv: c.chestMaxLevel(c.CHESTS[0]), xp: 0, n: c.CHEST_MAX_COUNT, on: true });

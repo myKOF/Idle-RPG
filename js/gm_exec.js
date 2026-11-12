@@ -1741,11 +1741,16 @@
       };
       if (chestKey === 'lv') {
         var lvTargets = chestTargets(String(args[1] || '').toLowerCase());
-        var lvWant = gmNumber(args[2], 1, CHEST_MAX_LEVEL);
-        if (!lvTargets || lvWant === null) return { ok: false, message: chestUsage };
-        lvTargets.forEach(function (def) { var st = chestState(def.id); st.on = true; st.lv = Math.min(lvWant, chestMaxLevel(def)); });
+        var lvWant = gmNumber(args[2], 1, Number.MAX_SAFE_INTEGER);
+        if (!lvTargets || !Number.isInteger(lvWant)) return { ok: false, message: chestUsage };
+        var updatedLevels = lvTargets.map(function (def) {
+          var st = chestState(def.id);
+          st.on = true;
+          st.lv = Math.min(lvWant, chestMaxLevel(def));
+          return def.name + ' 設為 Lv.' + st.lv;
+        });
         gmDirty();
-        return { ok: true, message: lvTargets.map(function (def) { return def.name; }).join('、') + ' 設為 Lv.' + lvWant };
+        return { ok: true, message: updatedLevels.join('、') };
       }
       var chestList = chestTargets(chestKey);
       count = gmNumber(args[1] === undefined ? '1' : args[1], 1, CHEST_MAX_COUNT);
