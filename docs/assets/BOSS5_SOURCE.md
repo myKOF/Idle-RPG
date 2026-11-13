@@ -20,3 +20,21 @@
 - 時間按實際動作長度換算：動作被壓縮到攻擊間隔內時，關鍵格時間同比例縮放（`npc3d.js` 記錄實際播放的攻擊鍵 `attackKey`，`hero3d.js` 新增 `ctrl.anchorPoint(name)` 取模型上 Eye_L／Eye_R／Fx_Mouth／Fx_Back 的畫面座標，`vfx-runtime.js` 新增 `playFree`）。
 - 驗證：`tests/boss-oni-fx.test.cjs` 7 項（Preset 檔存在、眼睛在身體前／紅霧在身體後、三骷髏的 0／±30°／60 m 與命中、火焰 15 m 上限與時窗、撞擊與落空、碎裂、接線）；實機用 `node tools/boss5/capture-ingame.cjs` 在無頭 Chrome 跑真正的第5層塔戰並逐幀截圖，看到小骷髏扇形飛行與紅霧；眼睛紅光與噴火在混亂的實戰畫面裡不易辨認，另以放大的除錯標記確認位置與圖層正確。
 - 尚未驗證：Preset 在 VFX Editor 的實際手感、各特效的尺寸與強度（只看過程式截圖與預覽）；沒有跑完整局到 BOSS 死亡碎裂的實機畫面。
+
+## 三個貼圖版本與普攻輪替（2026-11-13）
+
+- 版本：朱紅（原版）＝ `tower_boss_5`（5／55／105 層）、藍 `BOSS5_2` ＝ `tower_boss_15`（15／65／115 層，模型 `boss5_lv2.glb`、頭像 `boss5_oni_lv2.png`）、紫 `BOSS5_3` ＝ `tower_boss_25`（25／75／125 層，`boss5_lv3.glb`、`boss5_oni_lv3.png`）。三版動作、骨架、掛點完全相同；NPC.xlsx 第496、506列只改頭像、模型、動作與近戰三格（攻擊速度 0.4、距離 5 米、非魔法型，與第486列一致），名稱「劇毒之母」、屬性、技能、倍率沿用原列。戰鬥特效對三版都生效（`js/boss-oni-fx.js` 的 `NPC_IDS`）。
+- **噴火普攻看不到的原因**：塔BOSS每次出手（普攻、普攻重擊、每個技能施放）都會播一個攻擊動作，`Npc3D.play` 把三個動作輪流（撞擊→吐骷髏→噴火）給所有出手，而特效只掛在「有普攻事件」的那一次。實測技能施放約占動作的八成，所以輪到噴火動作的多半是技能施放、沒有特效，普攻剛好輪到噴火的機率很低。現在動作在播放前決定：有普攻事件的出手在撞擊／吐骷髏／噴火之間隨機挑、不連續兩下同一招（與玩家主角普攻同一個規則，使用者 2026-11-13 指定），技能施放一律用撞擊動作（不影響普攻的隨機）。普攻 0.4 次/秒，噴火平均約每 7.5 秒一次但間隔不固定。
+- 注意：技能施放（e_poisonspit 等）因此會看到「臉部衝撞」動作但沒有衝撞爆點；要不要讓施放用別的動作或加專屬特效，等使用者決定。
+
+## 藍／紫版的小骷髏與火焰顏色（2026-11-13，使用者指定顏色要不同、由我決定）
+
+| 版本 | NPC | 小骷髏 | 火焰 |
+| --- | --- | --- | --- |
+| 紅（原版） | tower_boss_5 | 綠 | 橘（白熱→黃→橘紅→燼） |
+| 藍 | tower_boss_15 | 青藍 | 藍白（白→淺藍→藍→深藍） |
+| 紫 | tower_boss_25 | 紫 | 紫（白→淡紫→紫→深紫） |
+
+吐氣與小骷髏命中爆點跟著小骷髏換色。接線：`VFX_COMBAT_DEFAULTS.bossOni.variants[npcId]` 覆蓋 spit／skull／skullHit／flame，`js/boss-oni-fx.js` 依 BOSS 的 npcId 取用；眼睛光與霧氣之後也依版本換色（藍／紫，使用者 2026-11-13 追加），撞擊與碎裂三版仍共用。已登記於 `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md`。
+
+- 追加：眼睛與霧氣的藍／紫版 Preset 為 `boss-oni-eye-blue／purple`、`boss-oni-mist-blue／purple`（`author/boss-oni.cjs` 的 EYE_COLORS），同樣經 `bossOni.variants` 取用。

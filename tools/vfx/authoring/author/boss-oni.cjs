@@ -14,34 +14,46 @@
 const kit = require('../preset-kit.cjs');
 const { A, RAMP, sprite, particle } = kit;
 const SKULL = 'claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-green.png';
+const SKULL_BLUE = 'claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-blue.png';
+const SKULL_PURPLE = 'claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-purple.png';
 
+/* ---------- 眼睛紅光與紅霧：三個貼圖版本各一套顏色（紅／藍／紫） ---------- */
+const EYE_COLORS = {
+  '': { halo: '#ff1c0a', core: '#ffe2b8', spark: '#ff7a30', smoke: '#c0141e', wisp: '#ff2a1a' },
+  '-blue': { halo: '#1c8cff', core: '#d6f0ff', spark: '#5ab4ff', smoke: '#1450c0', wisp: '#2a8aff' },
+  '-purple': { halo: '#a01cff', core: '#f0d6ff', spark: '#c46aff', smoke: '#6a14c0', wisp: '#a02aff' }
+};
+function eyeAndMist(sfx, E) {
 /* ---------- 眼睛 ---------- */
 kit.write({
-  id: 'boss-oni-eye', duration: 0.9, loop: true,
+  id: 'boss-oni-eye' + sfx + '', duration: 0.9, loop: true,
   sizing: { authored: { radius: 18 }, shape: 'circle' },
   layers: [
-    sprite({ id: 'halo', asset: A.glowSoft, z: 0, size: 66, alpha: 0.9, tint: '#ff1c0a', blend: 'add', duration: 0.9,
+    sprite({ id: 'halo', asset: A.glowSoft, z: 0, size: 66, alpha: 0.9, tint: E.halo, blend: 'add', duration: 0.9,
       alphaOverLife: [[0, 0.7], [0.2, 1], [0.38, 0.5], [0.6, 1], [0.8, 0.6], [1, 0.7]] }),
-    sprite({ id: 'core', asset: A.dot, z: 1, size: 20, alpha: 1, tint: '#ffe2b8', blend: 'add', duration: 0.9,
+    sprite({ id: 'core', asset: A.dot, z: 1, size: 20, alpha: 1, tint: E.core, blend: 'add', duration: 0.9,
       alphaOverLife: [[0, 0.8], [0.2, 1], [0.38, 0.6], [0.6, 1], [0.8, 0.7], [1, 0.8]],
       scaleOverLife: [[0, 1], [0.3, 1.2], [0.55, 0.85], [0.8, 1.15], [1, 1]] }),
     particle({ id: 'sparks', asset: A.dot, z: 2, rate: 12, lifetime: [0.4, 0.8], spawnRadius: 5, speed: [8, 30], direction: -90, spread: 90,
-      startPx: [4, 8], tint: '#ff7a30', blend: 'add', alpha: 0.9, alphaOverLife: [[0, 0], [0.2, 1], [1, 0]] })
+      startPx: [4, 8], tint: E.spark, blend: 'add', alpha: 0.9, alphaOverLife: [[0, 0], [0.2, 1], [1, 0]] })
   ]
 });
 
 /* ---------- 紅霧拖尾 ---------- */
 kit.write({
-  id: 'boss-oni-mist', duration: 1.2, loop: true,
+  id: 'boss-oni-mist' + sfx + '', duration: 1.2, loop: true,
   sizing: { authored: { radius: 40 }, shape: 'circle' },
   layers: [
     particle({ id: 'smoke', asset: A.smokeSoft, z: 0, rate: 34, lifetime: [1.0, 1.7], spawnRadius: 14, speed: [2, 14], direction: -90, spread: 360,
-      startPx: [40, 72], tint: '#c0141e', blend: 'normal', alpha: 0.75,
+      startPx: [40, 72], tint: E.smoke, blend: 'normal', alpha: 0.75,
       alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.7]], drag: 0.6 }),
     particle({ id: 'wisp', asset: A.glowSoft, z: 1, rate: 10, lifetime: [0.7, 1.2], spawnRadius: 16, speed: [4, 16], direction: -90, spread: 360,
-      startPx: [22, 40], tint: '#ff2a1a', blend: 'add', alpha: 0.5, alphaOverLife: [[0, 0], [0.25, 1], [1, 0]] })
+      startPx: [22, 40], tint: E.wisp, blend: 'add', alpha: 0.5, alphaOverLife: [[0, 0], [0.25, 1], [1, 0]] })
   ]
 });
+
+}
+Object.keys(EYE_COLORS).forEach(sfx => eyeAndMist(sfx, EYE_COLORS[sfx]));
 
 /* ---------- 攻擊1：撞擊 ---------- */
 kit.write({
@@ -63,68 +75,81 @@ kit.write({
   ]
 });
 
+/* ---------- 攻擊2 吐骷髏、攻擊3 噴火：三個貼圖版本各一套顏色（紅版＝綠骷髏＋橘火，藍版＝青藍，紫版＝紫） ---------- */
+const PALETTES = {
+  '': { skull: SKULL, puff: '#40ff60', mist: '#2fd05a', spark: '#a8ffb0', glow: '#30ff50', trail: '#38ff5a', haze: '#1c9a3c', ring: '#80ff90',
+    muzzle: '#ff9a40', ramp: RAMP.fireCore, core: '#ffe9b0', smoke: '#3a1810', ember: '#ffb04a' },
+  '-blue': { skull: SKULL_BLUE, puff: '#40b8ff', mist: '#2a78d0', spark: '#b0e4ff', glow: '#30a8ff', trail: '#38b0ff', haze: '#1c5a9a', ring: '#80d0ff',
+    muzzle: '#6ab8ff', ramp: [[0, '#ffffff'], [0.18, '#c4ecff'], [0.45, '#3d9bff'], [0.75, '#1a3fc0'], [1, '#080d3a']], core: '#d6f0ff', smoke: '#102040', ember: '#7ac8ff' },
+  '-purple': { skull: SKULL_PURPLE, puff: '#c050ff', mist: '#8a2fd0', spark: '#e0b0ff', glow: '#b030ff', trail: '#c038ff', haze: '#601c9a', ring: '#d080ff',
+    muzzle: '#d070ff', ramp: [[0, '#ffffff'], [0.18, '#f2ccff'], [0.45, '#b04aff'], [0.75, '#5a1ab0'], [1, '#1a0838']], core: '#f4d6ff', smoke: '#220a3a', ember: '#e08aff' }
+};
+function skullAndFlame(sfx, P) {
 /* ---------- 攻擊2：吐骷髏 ---------- */
 kit.write({
-  id: 'boss-oni-spit', duration: 0.5,
+  id: 'boss-oni-spit' + sfx, duration: 0.5,
   sizing: { authored: { radius: 30 }, shape: 'circle' },
   layers: [
-    sprite({ id: 'puff', asset: A.glowSoft, z: 0, size: 60, alpha: 0.8, tint: '#40ff60', blend: 'add', duration: 0.4,
+    sprite({ id: 'puff', asset: A.glowSoft, z: 0, size: 60, alpha: 0.8, tint: P.puff, blend: 'add', duration: 0.4,
       alphaOverLife: [[0, 0], [0.15, 1], [1, 0]], scaleOverLife: [[0, 0.4], [1, 1.4]] }),
     particle({ id: 'mist', asset: A.smokeSoft, z: 1, burst: 8, lifetime: [0.4, 0.7], spawnRadius: 5, speed: [20, 70], direction: 0, spread: 70,
-      startPx: [22, 36], tint: '#2fd05a', blend: 'normal', alpha: 0.5, alphaOverLife: [[0, 0.8], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.5]] }),
+      startPx: [22, 36], tint: P.mist, blend: 'normal', alpha: 0.5, alphaOverLife: [[0, 0.8], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.5]] }),
     particle({ id: 'sparks', asset: A.dot, z: 2, burst: 10, lifetime: [0.3, 0.5], spawnRadius: 3, speed: [60, 160], direction: 0, spread: 60,
-      startPx: [4, 8], tint: '#a8ffb0', blend: 'add', alpha: 1, alphaOverLife: [[0, 1], [1, 0]] })
+      startPx: [4, 8], tint: P.spark, blend: 'add', alpha: 1, alphaOverLife: [[0, 1], [1, 0]] })
   ]
 });
 
 kit.write({
-  id: 'boss-oni-skull', duration: 0.6, loop: true,
+  id: 'boss-oni-skull' + sfx + '', duration: 0.6, loop: true,
   sizing: { authored: { radius: 26 }, shape: 'circle' },
   layers: [
-    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 78, alpha: 0.7, tint: '#30ff50', blend: 'add', duration: 0.6,
+    sprite({ id: 'glow', asset: A.glowSoft, z: 0, size: 78, alpha: 0.7, tint: P.glow, blend: 'add', duration: 0.6,
       alphaOverLife: [[0, 0.6], [0.5, 1], [1, 0.6]] }),
-    sprite({ id: 'skull', asset: SKULL, z: 2, size: 46, alpha: 1, blend: 'normal', duration: 0.6,
+    sprite({ id: 'skull', asset: P.skull, z: 2, size: 46, alpha: 1, blend: 'normal', duration: 0.6,
       rotationOverLife: [[0, -0.1], [0.5, 0.1], [1, -0.1]] }),
     particle({ id: 'trail', asset: A.glowSoft, z: 1, rate: 46, lifetime: [0.3, 0.5], spawnRadius: 6, speed: [0, 14], direction: 180, spread: 120,
-      startPx: [18, 30], tint: '#38ff5a', blend: 'add', alpha: 0.6, alphaOverLife: [[0, 0.8], [1, 0]], scaleOverLife: [[0, 1], [1, 0.3]] }),
+      startPx: [18, 30], tint: P.trail, blend: 'add', alpha: 0.6, alphaOverLife: [[0, 0.8], [1, 0]], scaleOverLife: [[0, 1], [1, 0.3]] }),
     particle({ id: 'haze', asset: A.smokeSoft, z: 1, rate: 22, lifetime: [0.5, 0.8], spawnRadius: 8, speed: [0, 10], direction: 180, spread: 100,
-      startPx: [24, 38], tint: '#1c9a3c', blend: 'normal', alpha: 0.35, alphaOverLife: [[0, 0.8], [1, 0]], scaleOverLife: [[0, 0.7], [1, 1.4]] })
+      startPx: [24, 38], tint: P.haze, blend: 'normal', alpha: 0.35, alphaOverLife: [[0, 0.8], [1, 0]], scaleOverLife: [[0, 0.7], [1, 1.4]] })
   ]
 });
 
 kit.write({
-  id: 'boss-oni-skull-hit', duration: 0.55,
+  id: 'boss-oni-skull-hit' + sfx, duration: 0.55,
   sizing: { authored: { radius: 50 }, shape: 'circle' },
   layers: [
-    sprite({ id: 'halo', asset: A.glowSoft, z: 0, size: 100, alpha: 0.7, tint: '#30ff50', blend: 'screen', duration: 0.4,
+    sprite({ id: 'halo', asset: A.glowSoft, z: 0, size: 100, alpha: 0.7, tint: P.glow, blend: 'screen', duration: 0.4,
       alphaOverLife: [[0, 0], [0.12, 1], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.2]] }),
-    sprite({ id: 'ring', asset: A.impactRingOut, z: 1, size: 36, alpha: 0.9, tint: '#80ff90', blend: 'add', duration: 0.4,
+    sprite({ id: 'ring', asset: A.impactRingOut, z: 1, size: 36, alpha: 0.9, tint: P.ring, blend: 'add', duration: 0.4,
       alphaOverLife: [[0, 0], [0.1, 1], [1, 0]], scaleOverLife: [[0, 0.5], [1, 2.4]] }),
-    sprite({ id: 'ghost', asset: SKULL, z: 3, size: 54, alpha: 0.9, blend: 'normal', duration: 0.35,
+    sprite({ id: 'ghost', asset: P.skull, z: 3, size: 54, alpha: 0.9, blend: 'normal', duration: 0.35,
       alphaOverLife: [[0, 1], [1, 0]], scaleOverLife: [[0, 1], [1, 1.6]] }),
     particle({ id: 'sparks', asset: A.star08, z: 2, burst: 12, lifetime: [0.3, 0.6], spawnRadius: 4, speed: [70, 200], direction: -90, spread: 360,
-      startPx: [6, 11], tint: '#a8ffb0', blend: 'add', alpha: 1, gravity: { x: 0, y: 200 }, alphaOverLife: [[0, 1], [0.6, 1], [1, 0]] })
+      startPx: [6, 11], tint: P.spark, blend: 'add', alpha: 1, gravity: { x: 0, y: 200 }, alphaOverLife: [[0, 1], [0.6, 1], [1, 0]] })
   ]
 });
 
 /* ---------- 攻擊3：火焰（沿 +X 名目 200px：速度 420px/s × 壽命約 0.5s） ---------- */
 kit.write({
-  id: 'boss-oni-flame', duration: 0.8, loop: true,
+  id: 'boss-oni-flame' + sfx, duration: 0.8, loop: true,
   sizing: { authored: { width: 200, height: 70 }, shape: 'rectangle' },
   layers: [
-    sprite({ id: 'muzzle', asset: A.muzzle02, z: 4, size: 46, alpha: 0.95, tint: '#ff9a40', blend: 'add', duration: 0.8,
+    sprite({ id: 'muzzle', asset: A.muzzle02, z: 4, size: 46, alpha: 0.95, tint: P.muzzle, blend: 'add', duration: 0.8,
       alphaOverLife: [[0, 0.8], [0.25, 1], [0.5, 0.75], [0.75, 1], [1, 0.8]], scaleOverLife: [[0, 0.9], [0.5, 1.15], [1, 0.9]] }),
     particle({ id: 'fire', asset: A.flame04, z: 2, rate: 64, lifetime: [0.4, 0.55], spawnRadius: 4, speed: [380, 440], direction: 0, spread: 5,
-      startPx: [22, 38], tint: '#ffffff', blend: 'add', alpha: 0.85, tintOverLife: RAMP.fireCore,
+      startPx: [22, 38], tint: '#ffffff', blend: 'add', alpha: 0.85, tintOverLife: P.ramp,
       alphaOverLife: [[0, 0.7], [0.4, 1], [1, 0]], scaleOverLife: [[0, 0.5], [0.5, 1], [1, 1.6]], rotationSpeed: [-2, 2] }),
     particle({ id: 'core', asset: A.flame01, z: 3, rate: 40, lifetime: [0.25, 0.38], spawnRadius: 2, speed: [400, 460], direction: 0, spread: 2,
-      startPx: [12, 20], tint: '#ffe9b0', blend: 'add', alpha: 0.9, alphaOverLife: [[0, 1], [0.6, 0.8], [1, 0]] }),
+      startPx: [12, 20], tint: P.core, blend: 'add', alpha: 0.9, alphaOverLife: [[0, 1], [0.6, 0.8], [1, 0]] }),
     particle({ id: 'smoke', asset: A.smokeDark, z: 1, rate: 18, lifetime: [0.5, 0.8], spawnRadius: 6, speed: [160, 250], direction: 0, spread: 14,
-      startPx: [30, 46], tint: '#3a1810', blend: 'normal', alpha: 0.4, alphaOverLife: [[0, 0], [0.3, 0.8], [1, 0]], scaleOverLife: [[0, 0.7], [1, 1.7]] }),
+      startPx: [30, 46], tint: P.smoke, blend: 'normal', alpha: 0.4, alphaOverLife: [[0, 0], [0.3, 0.8], [1, 0]], scaleOverLife: [[0, 0.7], [1, 1.7]] }),
     particle({ id: 'embers', asset: A.star08, z: 3, rate: 16, lifetime: [0.4, 0.8], spawnRadius: 8, speed: [180, 380], direction: 0, spread: 20,
-      startPx: [5, 9], tint: '#ffb04a', blend: 'add', alpha: 1, gravity: { x: 0, y: 90 }, alphaOverLife: [[0, 1], [0.7, 0.8], [1, 0]] })
+      startPx: [5, 9], tint: P.ember, blend: 'add', alpha: 1, gravity: { x: 0, y: 90 }, alphaOverLife: [[0, 1], [0.7, 0.8], [1, 0]] })
   ]
 });
+
+}
+Object.keys(PALETTES).forEach(sfx => skullAndFlame(sfx, PALETTES[sfx]));
 
 /* ---------- 死亡：碎裂 ---------- */
 kit.write({
@@ -147,5 +172,5 @@ kit.write({
   ]
 });
 
-['boss-oni-eye', 'boss-oni-mist', 'boss-oni-ram-hit', 'boss-oni-spit', 'boss-oni-skull', 'boss-oni-skull-hit', 'boss-oni-flame', 'boss-oni-shatter']
+['boss-oni-ram-hit', 'boss-oni-shatter'].concat(['', '-blue', '-purple'].reduce((l, x) => l.concat(['boss-oni-eye' + x, 'boss-oni-mist' + x,'boss-oni-spit' + x, 'boss-oni-skull' + x, 'boss-oni-skull-hit' + x, 'boss-oni-flame' + x]), []))
   .forEach(id => console.log(JSON.stringify(kit.probe(id))));

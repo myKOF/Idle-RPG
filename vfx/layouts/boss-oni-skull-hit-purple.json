@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "boss-oni-skull-hit-purple",
+  "groups": [
+    {
+      "id": "boss-oni-skull-hit-purple",
+      "name": "boss-oni-skull-hit-purple",
+      "layerIds": [
+        "halo",
+        "ring",
+        "ghost",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:boss-oni-skull-hit-purple"
+  ]
+}

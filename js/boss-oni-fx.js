@@ -11,10 +11,12 @@
    座標一律是畫面座標（與 VFX Runtime 的 ctx.posOf／footOf 相同）；1 米＝10 座標單位（BF_SYSTEM_UNITS_PER_METER）。 */
 (function (global) {
   'use strict';
-  var NPC_ID = 'tower_boss_5';
+  /* 鬼面的三個貼圖版本：5／15／25 層（及每 50 層重複）
+     tower_boss_5 朱紅、tower_boss_15 藍、tower_boss_25 紫 */
+  var NPC_IDS = { tower_boss_5: 1, tower_boss_15: 1, tower_boss_25: 1 };
   var PX_PER_MODEL_M = 58;          // Preset 的製作基準：縮放 1.8 的 BOSS，每個模型公尺約 58 畫面像素
   var UNITS_PER_M = 10;
-  var ACT_WAIT_MS = 900;            // 敵人出手事件（立即）與動作播放（延後約 240ms＋站定）之間最多等多久
+  var ACT_WAIT_MS = 1800;           // 敵人出手事件（立即）與動作播放（延後約 240ms＋站定）之間最多等多久
   var SHATTER_SEC = 2.0;            // Die 動作第 2 秒碎裂
   var SKULL_SPEED = 340;            // 畫面像素／秒
   var SKULL_RANGE_M = 60;           // 兩顆偏角小骷髏的飛行距離
@@ -27,11 +29,17 @@
     attack3: { start: 0.7333, end: 1.6 }
   };
 
-  function isOni(ent) { return !!(ent && ent.npc3d && ent.data && ent.data.npcId === NPC_ID && ent.body && ent.body.npc3d); }
+  function isOni(ent) { return !!(ent && ent.npc3d && ent.data && NPC_IDS[ent.data.npcId] === 1 && ent.body && ent.body.npc3d); }
   function alive(ent) { return !!(ent && ent.state !== 'dying' && ent.state !== 'gone' && ent.root && !ent.root.destroyed); }
 
   function create(o) {
-    var vfx = o.vfx, ids = o.presets || {};
+    var vfx = o.vfx, baseIds = o.presets || {};
+    /* 三個貼圖版本各有一套眼睛／紅霧／吐骷髏／噴火的顏色（baseIds.variants[npcId] 覆蓋 eye／mist／spit／skull／skullHit／flame）；撞擊、碎裂共用 */
+    function idsOf(ent) {
+      var v = baseIds.variants && ent && ent.data && baseIds.variants[ent.data.npcId];
+      return v ? Object.assign({}, baseIds, v) : baseIds;
+    }
+    var ids = baseIds;
     var ents = typeof o.entities === 'function' ? o.entities : function () { return o.entities; }, screenPosOf = o.screenPosOf, hitReact = o.hitReact || function () {}, footOf = o.footOf || screenPosOf;
     var loops = Object.create(null), timers = [], skulls = [], flames = [], pending = null, clock = 0;
 
@@ -71,7 +79,7 @@
         var eyeL = anchor(ent, 'Eye_L'), eyeR = anchor(ent, 'Eye_R'), back = anchor(ent, 'Fx_Back');
         if (!eyeL || !eyeR || !back) return;
         var l = loops[id] || (loops[id] = { eyeL: null, eyeR: null, mist: null });
-        var fy = depthOf(ent);
+        var fy = depthOf(ent), ids = idsOf(ent);
         function place(key, id2, pos, depth) {
           var q = { position: pos, scale: rel, depthY: depth };
           if (!l[key]) l[key] = play(id2, q);
@@ -105,13 +113,14 @@
       if (!m || !tp) return;
       var rel = relScale(ent);
       var fy = depthOf(ent) + FRONT;
+      var ids = idsOf(ent);
       play(ids.spit, { position: m, rotation: Math.atan2(tp.y - m.y, tp.x - m.x), scale: rel, depthY: fy });
       var base = Math.atan2(tp.y - m.y, tp.x - m.x), dist = Math.hypot(tp.x - m.x, tp.y - m.y);
       [0, SKULL_SPREAD, -SKULL_SPREAD].forEach(function (off, i) {
         var ang = base + off;
         var range = i === 0 ? dist : SKULL_RANGE_M * UNITS_PER_M;
         var ref = play(ids.skull, { position: { x: m.x, y: m.y }, rotation: ang, scale: rel, depthY: fy });
-        if (ref) skulls.push({ ref: ref, depthY: fy, x: m.x, y: m.y, ang: ang, left: range, center: i === 0, targetId: targetId, hit: hit, rel: rel });
+        if (ref) skulls.push({ ref: ref, hitId: ids.skullHit, depthY: fy, x: m.x, y: m.y, ang: ang, left: range, center: i === 0, targetId: targetId, hit: hit, rel: rel });
       });
     }
     function startFlame(ent, targetId, hit, durSec) {
@@ -119,7 +128,7 @@
       var tp = targetPos(targetId, null);
       if (!m || !tp) return;
       var f = { depthY: depthOf(ent) + FRONT, entId: ent.id, targetId: targetId, until: clock + durSec * 1000, ref: null, reacted: false, hit: hit, rel: relScale(ent) };
-      f.ref = play(ids.flame, flameParams(f, m, tp));
+      f.ref = play(idsOf(ent).flame, flameParams(f, m, tp));
       if (f.ref) flames.push(f);
       if (hit) later(150, function () { hitReact(targetId); });
     }
@@ -129,6 +138,24 @@
       return { position: m, rotation: Math.atan2(dy, dx), scaleX: len / 200, scaleY: f.rel, depthY: f.depthY };
     }
     /* 這一次實際播放的是哪個攻擊動作（js/npc3d.js 記在 state.attackKey）＋它被壓縮成幾秒 */
+    /* 動作要在播放前決定：普攻（模擬層有送出手事件的那一次）在撞擊／吐骷髏／噴火三招之間隨機挑，
+       但不連續兩下同一招——與玩家主角普攻同一個規則（js/battle-renderer.js playerAttackAnim）；
+       技能施放（沒有出手事件、沒有對應特效）一律用撞擊動作，不影響普攻的隨機。
+       Npc3D.play 照 state.forceKey 播（用完即清），見 js/npc3d.js。 */
+    var lastBasic = {}, lastKeys = [];
+    var random = typeof o.random === 'function' ? o.random : Math.random;
+    var KEYS = ['attack1', 'attack2', 'attack3'];
+    function beforeAct(ent) {
+      if (!isOni(ent)) return;
+      var key = 'attack1';
+      if (pending && pending.sourceId === ent.id) {
+        var pool = KEYS.filter(function (k) { return k !== lastBasic[ent.id]; });
+        key = pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
+        lastBasic[ent.id] = key;
+      }
+      ent.body.npc3d.forceKey = key;
+      lastKeys.push(key); if (lastKeys.length > 12) lastKeys.shift();
+    }
     function onActPlayed(ent, seconds) {
       if (!isOni(ent) || !pending || pending.sourceId !== ent.id) return;
       var st = ent.body.npc3d, key = st.attackKey, cfg = key && st.clips[key];
@@ -170,7 +197,7 @@
         if (step >= k.left) {
           if (k.center) {
             var end = targetPos(k.targetId, { x: k.x, y: k.y });
-            play(ids.skullHit, { position: end, scale: 1, depthY: footY(k.targetId) + FRONT });
+            play(k.hitId, { position: end, scale: 1, depthY: footY(k.targetId) + FRONT });
             if (k.hit) hitReact(k.targetId);
           }
           k.ref.finish(); skulls.splice(s, 1); continue;
@@ -202,8 +229,8 @@
       });
       return out;
     }
-    return { attack: attack, anchors: anchors, onActPlayed: onActPlayed, onDeath: onDeath, update: update, clear: clear, isOni: isOni,
-      _state: function () { return { loops: Object.keys(loops).length, skulls: skulls.length, flames: flames.length, timers: timers.map(function (t) { return Math.round(t.at - clock); }), pending: !!pending, clock: Math.round(clock) }; } };
+    return { attack: attack, anchors: anchors, beforeAct: beforeAct, onActPlayed: onActPlayed, onDeath: onDeath, update: update, clear: clear, isOni: isOni,
+      _state: function () { return { loops: Object.keys(loops).length, skulls: skulls.length, flames: flames.length, timers: timers.map(function (t) { return Math.round(t.at - clock); }), pending: !!pending, clock: Math.round(clock), keys: lastKeys.join(',') }; } };
   }
-  global.BossOniFx = { create: create, NPC_ID: NPC_ID, KEY: KEY, isOni: isOni };
+  global.BossOniFx = { create: create, NPC_IDS: NPC_IDS, KEY: KEY, isOni: isOni };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -2,7 +2,7 @@
    Simulation, hit resolution and attack rates remain owned by the worker. */
 (function (global) {
   'use strict';
-  var VERSION = '20261113-boss-oni-fx';
+  var VERSION = '20261113-boss-oni-fx5';
   function definition(data) {
     var def = data && data.model3d;
     return def && def.file && def.clips && def.clips.walk ? def : null;
@@ -33,6 +33,8 @@
   function play(body, semantic, attacksPerSecond, actionSeconds) {
     var state = body.npc3d;
     var key = semantic === 'attack' || semantic === 'cast' ? 'attack' + (state.attackIndex++ % 3 + 1) : semantic;
+    if (state.forceKey && (semantic === 'attack' || semantic === 'cast')) { key = state.forceKey; }   // 鬼面BOSS的普攻輪替（js/boss-oni-fx.js beforeAct）
+    state.forceKey = null;
     var cfg = state.clips[key];
     if (!cfg) return null;
     if (semantic === 'attack' || semantic === 'cast') state.attackKey = key;   // 戰鬥特效（js/boss-oni-fx.js）依實際播放的攻擊動作接特效

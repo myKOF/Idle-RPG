@@ -4,14 +4,28 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 200,
+  "assetCount": 202,
   "assets": [
+    {
+      "assetId": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-blue.png",
+      "relativePath": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-blue.png",
+      "package": "claude-authored",
+      "contentHash": "sha256:79266501e0bf4e416554ce645fcd387e02c1f5da2f9b445bce19f7966505d34f",
+      "fileSize": 79189
+    },
     {
       "assetId": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-green.png",
       "relativePath": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-green.png",
       "package": "claude-authored",
       "contentHash": "sha256:7039b85ed101c3590be6fa5d94433ee57b9b8a817d3cd37fe31d263c208fc07a",
       "fileSize": 78895
+    },
+    {
+      "assetId": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-purple.png",
+      "relativePath": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-purple.png",
+      "package": "claude-authored",
+      "contentHash": "sha256:498a71f08e88e28118bb77c4a52d0523d3f3e124bc7a10b5f4a252b6fed9a77f",
+      "fileSize": 79524
     },
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",

@@ -7522,6 +7522,7 @@ var BattleRenderer = (function () {
           if (movedLen > .01 * dt) e.pendingTowerAction.seconds -= dt;
           else if (e.pendingTowerAction.seconds > 0) {
             e.towerActionSeconds = e.pendingTowerAction.seconds;
+            if (S.oni && e.npc3d) S.oni.beforeAct(e);
             playAnim(e, e.npc3d ? e.pendingTowerAction.anim : 'attack', 'idle');
             if (S.oni && e.npc3d) S.oni.onActPlayed(e, e.towerActionSeconds);
             e.towerActionSeconds = 0; e.pendingTowerAction = null;

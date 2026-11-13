@@ -9,8 +9,10 @@ const cfg = require('../tools/config_tables.cjs');
 
 const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
 const IDS = (() => {
-  const m = /bossOni:\s*(\{[^}]*\})/.exec(data);
-  return cfg.evalLiteral(m[1]);
+  const at = data.indexOf('bossOni:'), open = data.indexOf('{', at);
+  let depth = 0, end = open;
+  for (; end < data.length; end++) { if (data[end] === '{') depth++; else if (data[end] === '}' && --depth === 0) break; }
+  return cfg.evalLiteral(data.slice(open, end + 1));
 })();
 const ctx = { window: undefined, globalThis: null };
 ctx.globalThis = ctx;
@@ -19,6 +21,7 @@ const { BossOniFx } = ctx;
 
 function fixture(opts) {
   opts = opts || {};
+  const random = opts.random;
   const played = [], reacted = [];
   const mk = (id, params) => {
     const r = { id, params: Object.assign({}, params), initial: Object.assign({}, params), moves: 0, finished: false, stopped: false,
@@ -37,15 +40,17 @@ function fixture(opts) {
   const ents = { 'tb-float': oni };
   const other = { id: 'x', npc3d: true, state: 'idle', root: { x: 0, y: 0 }, data: { npcId: 'tower_boss_1' }, body: { scale: { x: 1 }, npc3d: {} } };
   ents.x = other;
-  const fx = BossOniFx.create({ vfx: { playFree: mk }, presets: IDS, entities: () => ents, hitReact: (id) => reacted.push(id),
+  const fx = BossOniFx.create({ vfx: { playFree: mk }, presets: IDS, entities: () => ents, hitReact: (id) => reacted.push(id), random,
     screenPosOf: (id) => (id === 'pv-float' ? { x: 300, y: 250 } : { x: 700, y: 160 }), footOf: (id) => (id === 'pv-float' ? { x: 300, y: 300 } : { x: 700, y: 300 }) });
   const run = (sec, dt) => { for (let t = 0; t < sec; t += dt || 1 / 60) fx.update(dt || 1 / 60); };
   return { fx, oni, ents, played, reacted, run };
 }
 
 test('every boss-oni preset id in VFX_COMBAT_DEFAULTS exists as a preset file', () => {
-  assert.equal(Object.keys(IDS).length, 8);
-  for (const id of Object.values(IDS)) assert.ok(fs.existsSync(path.join(root, 'vfx/presets', id + '.json')), id);
+  const all = [];
+  (function walk(v) { if (typeof v === 'string') all.push(v); else if (v && typeof v === 'object') Object.values(v).forEach(walk); })(IDS);
+  assert.equal(all.length, 8 + 12, 'eight base ids plus six recoloured ids for each of the two variants');
+  for (const id of all) assert.ok(fs.existsSync(path.join(root, 'vfx/presets', id + '.json')), id);
 });
 
 test('eyes glow in front of the body and the mist trails behind it; only the oni is touched', () => {
@@ -104,6 +109,35 @@ test('attack 1 impact lands on the target at the ram frame; a missed attack play
   const hit = f.played.find((p) => p.id === IDS.ramHit);
   assert.ok(hit && hit.params.position.x === 300);
   assert.deepEqual(f.reacted, []);
+});
+
+test('basic attacks are random among ram / skulls / flame without repeating the same one twice; skill casts use the ram animation only', () => {
+  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const f = fixture({ random: rnd }); const st = f.oni.body.npc3d, basic = [], casts = [];
+  for (let i = 0; i < 300; i++) {
+    f.fx.attack({ sourceId: 'tb-float', targets: ['pv-float'], hit: true });
+    f.fx.beforeAct(f.oni); basic.push(st.forceKey); st.attackKey = st.forceKey; f.fx.onActPlayed(f.oni, 1);
+    f.fx.beforeAct(f.oni); casts.push(st.forceKey);       // a skill cast in between: no pending event
+  }
+  assert.ok(basic.every((k, i) => i === 0 || k !== basic[i - 1]), 'never the same move twice in a row');
+  for (const k of ['attack1', 'attack2', 'attack3']) assert.ok(basic.filter((x) => x === k).length > 70, k + ' is picked about a third of the time');
+  assert.ok(casts.every((k) => k === 'attack1'));
+  for (const id of ['tower_boss_15', 'tower_boss_25']) assert.ok(BossOniFx.NPC_IDS[id], id);
+});
+
+test('the blue and purple versions spit and burn in their own colours (eyes and mist too); the red one keeps the original ones', () => {
+  for (const [npc, sfx] of [['tower_boss_5', ''], ['tower_boss_15', '-blue'], ['tower_boss_25', '-purple']]) {
+    const f = fixture(); f.oni.data.npcId = npc; f.oni.body.npc3d.attackKey = 'attack2';
+    f.fx.attack({ sourceId: 'tb-float', targets: ['pv-float'], hit: true }); f.fx.onActPlayed(f.oni, 1.333); f.run(3);
+    assert.ok(f.played.some((p) => p.id === 'boss-oni-skull' + sfx), npc + ' skull');
+    assert.ok(f.played.some((p) => p.id === 'boss-oni-spit' + sfx) && f.played.some((p) => p.id === 'boss-oni-skull-hit' + sfx), npc + ' spit / hit');
+    const g = fixture(); g.oni.data.npcId = npc; g.oni.body.npc3d.attackKey = 'attack3';
+    g.fx.attack({ sourceId: 'tb-float', targets: ['pv-float'], hit: true }); g.fx.onActPlayed(g.oni, 2.2); g.run(1);
+    assert.ok(g.played.some((p) => p.id === 'boss-oni-flame' + sfx), npc + ' flame');
+    const e = fixture(); e.oni.data.npcId = npc; e.run(0.1);
+    assert.equal(e.played.filter((p) => p.id === 'boss-oni-eye' + sfx).length, 2, npc + ' eyes');
+    assert.equal(e.played.filter((p) => p.id === 'boss-oni-mist' + sfx).length, 1, npc + ' mist');
+  }
 });
 
 test('death shatters at 2.0 s and stops the loops', () => {

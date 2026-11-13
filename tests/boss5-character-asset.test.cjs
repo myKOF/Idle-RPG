@@ -1,8 +1,9 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 
-test('fifth tower boss (oni mask) has 18 rigid joints, five finite clips and keeps walk / attacks 2-3 horizontally in place (attack 1 only a short melee lunge)',()=>{
- const bytes=fs.readFileSync(require.resolve('../images/models/npc3d/boss5.glb'));
+for(const file of ['boss5','boss5_lv2','boss5_lv3'])
+test('fifth tower boss (oni mask) '+file+' has 18 rigid joints, five finite clips and keeps walk / attacks 2-3 horizontally in place (attack 1 only a short melee lunge)',()=>{
+ const bytes=fs.readFileSync(require.resolve('../images/models/npc3d/'+file+'.glb'));
  const size=bytes.readUInt32LE(12),d=JSON.parse(bytes.subarray(20,20+size)),bin=bytes.subarray(28+size);
  assert.equal(d.meshes.length,1);assert.equal(d.skins.length,1);
  const joints=d.skins[0].joints.map(i=>d.nodes[i].name);

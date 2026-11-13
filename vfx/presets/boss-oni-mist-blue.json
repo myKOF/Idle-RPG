@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "id": "boss-oni-mist-blue",
+  "duration": 1.2,
+  "loop": true,
+  "layers": [
+    {
+      "id": "smoke",
+      "type": "particle",
+      "assetId": "new_materials/smoke/smoke3_11.png",
+      "zIndex": 0,
+      "alpha": 0.75,
+      "tint": "#1450c0",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 34
+      },
+      "lifetime": [
+        1,
+        1.7
+      ],
+      "spawn": {
+        "radius": 14,
+        "shape": "circle"
+      },
+      "speed": [
+        2,
+        14
+      ],
+      "direction": -90,
+      "spread": 360,
+      "drag": 0.6,
+      "startScale": [
+        0.0781,
+        0.1406
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.2,
+          0.9
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          1.7
+        ]
+      ]
+    },
+    {
+      "id": "wisp",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 1,
+      "alpha": 0.5,
+      "tint": "#2a8aff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 10
+      },
+      "lifetime": [
+        0.7,
+        1.2
+      ],
+      "spawn": {
+        "radius": 16,
+        "shape": "circle"
+      },
+      "speed": [
+        4,
+        16
+      ],
+      "direction": -90,
+      "spread": 360,
+      "startScale": [
+        0.043,
+        0.0781
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 40
+    },
+    "shape": "circle"
+  }
+}

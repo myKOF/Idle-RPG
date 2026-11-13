@@ -3,6 +3,7 @@
    node tools/boss5/build_all.cjs <BOSS5.glb 原始模型> <輸出資料夾> [--previews]
    產出：boss5.glb（綁骨 + 5 動作 Walk/Attack1/Attack2/Attack3/Die，含 6 m 衝撞位移）、boss5_game.glb（遊戲用：走路與攻擊2/3 水平位移固定、攻擊1 只保留 0.9 m 近戰前撲、碎片散布限制在 NPC 畫布內、材質壓暗以配合遊戲的 ACES 曝光）、vfx/oni-skull-green.png（小骷髏飛行特效貼圖）、boss5_oni.png（頭像）、boss5_skull.glb（綠色小骷髏子彈）、
         boss5_dome_albedo.png（補上的後腦貼圖）；--previews 另外渲染五個預覽 GIF。
+   貼圖變體（同一個模型換貼圖，例如 BOSS5_2／BOSS5_3）：先建好原版，再用 BOSS5_HORN_REF=<原版輸出>/_work/front_albedo.png 建變體，才能正確去掉角的位置。
    需要 Blender 4.5+（環境變數 BLENDER_EXE 可指定）與 Chrome（預覽用，CHROME_EXE 可指定）。 */
 const path = require('path'), fs = require('fs'), cp = require('child_process');
 const args = process.argv.slice(2).filter(a => !a.startsWith('--'));
@@ -16,7 +17,8 @@ const run = (cmd, a) => { console.log('>', path.basename(cmd), a.join(' ').slice
 const blender = (script, ...a) => run(BLENDER, ['-b', '-P', path.join(here, script), '--', ...a]);
 const f = (p) => p.split(path.sep).join('/');
 blender('render_front.py', f(path.resolve(src)), f(path.join(tmp, 'front_albedo.png')));
-blender('build_dome.py', f(path.resolve(src)), f(path.join(tmp, 'front_albedo.png')), f(path.join(tmp, 's1')), '0.55');
+const hornRef = process.env.BOSS5_HORN_REF ? [f(path.resolve(process.env.BOSS5_HORN_REF))] : [];   // 貼圖變體（藍／紫）：原版紅色面具的 front_albedo.png
+blender('build_dome.py', f(path.resolve(src)), f(path.join(tmp, 'front_albedo.png')), f(path.join(tmp, 's1')), '0.55', ...hornRef);
 fs.copyFileSync(path.join(tmp, 's1', 'boss5_dome_albedo.png'), path.join(out, 'boss5_dome_albedo.png'));
 blender('build_rig.py', f(path.join(tmp, 's1', 'stage1.blend')), f(path.join(out, 'boss5.glb')));
 blender('build_rig.py', f(path.join(tmp, 's1', 'stage1.blend')), f(path.join(tmp, 'boss5_game_raw.glb')), '--game');

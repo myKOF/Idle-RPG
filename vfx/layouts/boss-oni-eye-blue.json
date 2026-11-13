@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "boss-oni-eye-blue",
+  "groups": [
+    {
+      "id": "boss-oni-eye-blue",
+      "name": "boss-oni-eye-blue",
+      "layerIds": [
+        "halo",
+        "core",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:boss-oni-eye-blue"
+  ]
+}

@@ -277,13 +277,40 @@ var SfxSynth = (function () {
     tinkles(ac, out, t + 0.25, 0.8, 14, 0.12, 2000, 6000);
     boom(ac, out, t + 0.25, 180, 90, 0.5, 0.3);
   }
-  function bloodrage(ac, out, t, R) { var k = R(0.92, 1.08);
-    whoosh(ac, out, t, 0.12, { f0: 200, f1: 900, f2: 400, q: 1, peak: 0.5, white: false, peakAt: 0.9 });   // 蓄力拳風
-    var ti = t + 0.11;
-    boom(ac, out, ti, 95 * k, 32, 0.55, 1.0);
-    burstNoise(ac, out, ti, 'lowpass', 2500, 0.7, 0.001, 0.9, 0.12, 4);                                     // 重拳炸裂
-    whoosh(ac, out, ti, 0.5, { f0: 900, f1: 300, f2: 120, q: 1.5, peak: 0.5, white: false, peakAt: 0.05 });  // 暗紅震波
-    rumble(ac, out, ti + 0.02, 0.7, 200, 0.6);
+  /* 嗜血狂怒：「炸雷」（2026-11-13 使用者經過多輪試聽選定：要更爆、更長的落雷）
+     猛烈爆炸（撕裂聲＋飽和爆裂＋次低音）→ 雷鳴一波波滾動約 2.5 秒 → 大空間殘響 */
+  var thunderIr = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function thunderVerb(ac, len) {
+    var b = thunderIr && thunderIr.get(ac);
+    if (b) return b;
+    var n = Math.floor(len * ac.sampleRate), l = 0;
+    b = ac.createBuffer(2, n, ac.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = b.getChannelData(ch);
+      for (var i = 0; i < n; i++) { var tt = i / ac.sampleRate; l = l * 0.7 + (Math.random() * 2 - 1) * 0.3; d[i] = (tt < 0.03 ? 0 : l) * Math.exp(-3.5 * tt / len); }
+    }
+    if (thunderIr) thunderIr.set(ac, b);
+    return b;
+  }
+  function bloodrage(ac, out, t, R) {
+    var k = R(0.95, 1.05), rollLen = 2.5, rolls = 5;
+    var bus = ac.createGain(); bus.connect(out);
+    var cv = ac.createConvolver(); cv.buffer = thunderVerb(ac, 2.5);
+    chain(bus, cv, gain(ac, 0.35), out);                                                              // 天地間回盪
+    var cg = ac.createGain(), tt = t; cg.gain.setValueAtTime(0, t);
+    while (tt < t + 0.12) { cg.gain.setValueAtTime(Math.random() < 0.85 ? 0.5 + Math.random() * 0.5 : 0.05, tt); tt += 0.002 + Math.random() * 0.006; }
+    chain(noise(ac, t, 0.17), filt(ac, 'highpass', 700), shaper(ac, 6), cg, env(ac, t, 0.0005, 1, 0.12), bus);   // 撕裂般的霹靂
+    var lp = filt(ac, 'lowpass', 4000, 0.7); sweep(lp.frequency, t, [[0, 5000], [0.5, 250]]);
+    chain(noise(ac, t, 0.7), lp, shaper(ac, 5), env(ac, t + 0.003, 0.004, 1.3, 0.6), bus);          // 爆裂主體
+    boom(ac, bus, t + 0.004, 62 * k, 26 * k, 1.1, 1.3);                                             // 次低音衝擊
+    for (var i = 0; i < rolls; i++) {                                                               // 雷鳴一波波滾動
+      var st = t + 0.12 + Math.pow(i / rolls, 1.1) * rollLen * 0.75 + Math.random() * 0.15;
+      var amp = 0.9 * (1 - 0.6 * i / rolls) * (0.6 + Math.random() * 0.4), att = 0.08 + Math.random() * 0.25, dec = 0.5 + Math.random() * 0.9;
+      var rl = filt(ac, 'lowpass', 300, 0.8); flutter(rl.frequency, st, att + dec, 90, 420, 0.05, 0.15);
+      var fl = ac.createGain(); flutter(fl.gain, st, att + dec, 0.4, 1, 0.04, 0.12);
+      chain(bnoise(ac, st, att + dec + 0.1), rl, fl, env(ac, st, att, amp, dec), pan(ac, Math.random() * 1.4 - 0.7), bus);
+    }
+    chain(bnoise(ac, t, rollLen + 0.2), filt(ac, 'lowpass', 180, 0.7), env(ac, t + 0.05, 0.2, 0.63, rollLen), bus);   // 底層轟鳴
   }
 
   /* ═════════ 火 ═════════ */
@@ -334,11 +361,15 @@ var SfxSynth = (function () {
     flame(ac, out, t + 0.05, { dur: 0.7, attack: 0.05, peak: 0.5, decay: 0.4, cutLo: 500, cutHi: 1600, rate: [0.03, 0.07], flick: [0.4, 1] });
     crackles(ac, out, t + 0.05, 0.5, 8, 0.5);
   }
-  function fireTornado(ac, out, t, R, dur) {   // 第 2 輪「柴火劈啪」改成循環
+  function fireTornado(ac, out, t, R, dur) {   // 2026-11-13 使用者選定「地獄火漩」：地底轟鳴＋一圈圈往上捲的風聲＋零星火星
     var k = R(0.95, 1.05); dur = dur || 3;
-    flame(ac, out, t, { dur: dur, attack: 0.25, peak: 0.7, decay: 0.4, cutLo: 350 * k, cutHi: 1100 * k, rate: [0.04, 0.1], flick: [0.4, 1] });
-    crackles(ac, out, t + 0.05, dur - 0.4, Math.round(dur * 27), 0.85, { bias: 1, dMax: 0.02 });
-    crackles(ac, out, t + 0.1, dur - 0.4, Math.round(dur * 5), 0.9, { fLo: 500, fHi: 1400, q: 3, dMin: 0.025, dMax: 0.05, bias: 1 });
+    flame(ac, out, t, { dur: dur, attack: 0.25, peak: 0.9, decay: 0.4, cutLo: 70 * k, cutHi: 200 * k, rate: [0.08, 0.2], flick: [0.5, 1] });   // 地底轟鳴
+    for (var tt = t + 0.15; tt < t + dur - 0.6; tt += 0.7) {                                                                                  // 風一圈圈往上捲
+      var bp = filt(ac, 'bandpass', 400, 5); sweep(bp.frequency, tt, [[0, 300 * k], [0.65, 1600 * k]]);
+      chain(noise(ac, tt, 0.7), bp, env(ac, tt, 0.3, 0.35, 0.38), pan(ac, Math.random() * 1.2 - 0.6), out);
+    }
+    flame(ac, out, t, { dur: dur, attack: 0.25, peak: 0.35, decay: 0.4, cutLo: 500 * k, cutHi: 1300 * k, rate: [0.04, 0.1], flick: [0.4, 1] });  // 火焰
+    crackles(ac, out, t + 0.05, dur - 0.4, Math.round(dur * 5), 0.6, { fLo: 1500, fHi: 5000, bias: 1, dMax: 0.02 });                           // 零星火星
   }
   function lavaPool(ac, out, t, R, dur) { dur = dur || 3;
     var lp = filt(ac, 'lowpass', 200, 1); flutter(lp.frequency, t, dur, 120, 300, 0.1, 0.25);
@@ -351,12 +382,11 @@ var SfxSynth = (function () {
     var fl = ac.createGain(); flutter(fl.gain, t, dur, 0.1, 1, 0.03, 0.08);
     chain(noise(ac, t, dur + 0.05), filt(ac, 'highpass', 4000), fl, loopEnv(ac, t, dur, 0.06), out);  // 嘶嘶
   }
-  function firehunt(ac, out, t, R) { var k = R(0.9, 1.12);
-    boom(ac, out, t, 170 * k, 65, 0.14, 0.45);
-    var bp = filt(ac, 'bandpass', 1800, 0.9); sweep(bp.frequency, t, [[0, 2000 * k], [0.25, 450]]);
-    chain(noise(ac, t, 0.35), bp, shaper(ac, 2.5), env(ac, t, 0.002, 0.7, 0.28), out);
-    flame(ac, out, t + 0.02, { dur: 0.45, attack: 0.03, peak: 0.4, decay: 0.3, cutLo: 500, cutHi: 1500, rate: [0.02, 0.05], flick: [0.4, 1] });
-    crackles(ac, out, t + 0.02, 0.3, 5, 0.6);
+  function firehunt(ac, out, t, R) {   // 2026-11-13 使用者選定「火星迸裂」：清脆的「啪」＋火星往四周噴開（試過更悶的 5 個，仍選原版）
+    var k = R(0.92, 1.08);
+    burstNoise(ac, out, t, 'highpass', 2000, 0.7, 0.0004, 0.8, 0.03, 3);
+    boom(ac, out, t, 200 * k, 90, 0.07, 0.4);
+    crackles(ac, out, t + 0.003, 0.18, 16, 0.8, { fLo: 2000, fHi: 7000, q: 2.5, dMin: 0.005, dMax: 0.02, bias: 1.4, spread: 0.7 });
   }
   function solarRingFly(ac, out, t, R, dur) { var k = R(0.92, 1.08); dur = dur || 0.6;
     var bp = filt(ac, 'bandpass', 600, 1.2); sweep(bp.frequency, t, [[0, 500 * k], [dur * 0.5, 1600 * k], [dur, 700 * k]]);
@@ -367,13 +397,25 @@ var SfxSynth = (function () {
   }
 
   /* ═════════ 土 ═════════ */
-  function rockarmor(ac, out, t, R) { var k = R(0.92, 1.08);
-    rumble(ac, out, t, 0.6, 160, 0.7, 0.08);
-    crackles(ac, out, t, 0.4, 26, 0.9, { fLo: 250, fHi: 1300, q: 2.5, dMin: 0.02, dMax: 0.06, bias: 0.9, spread: 0.8 });   // 岩石聚攏摩擦
-    var ti = t + 0.42;
-    boom(ac, out, ti, 140 * k, 60, 0.18, 0.6);
-    ring(ac, out, ti, 480 * k, [[1, 0.7], [1.9, 0.5, 1.4], [3.1, 0.3, 2]], 0.1, 0.5);   // 岩甲合上「喀」
-    burstNoise(ac, out, ti, 'bandpass', 900, 1.5, 0.001, 0.6, 0.06);
+  /* 起音→持續→淡出（沒有收尾的敲擊） */
+  function shapeEnv(ac, t, att, holdT, rel, peak) {
+    var g = ac.createGain(), p = g.gain;
+    p.setValueAtTime(0.0001, t); p.exponentialRampToValueAtTime(peak, t + att);
+    p.setValueAtTime(peak, t + att + holdT); p.exponentialRampToValueAtTime(0.0001, t + att + holdT + rel);
+    return g;
+  }
+  function rockarmor(ac, out, t, R) {   // 2026-11-13 使用者選定「岩石聚攏」：石塊一路磨擦聚過來再靜下來，不要結尾的敲擊聲
+    var k = R(0.94, 1.06);
+    chain(bnoise(ac, t, 0.9), filt(ac, 'lowpass', 150 * k), shapeEnv(ac, t, 0.15, 0.3, 0.4, 0.7), out);   // 低沉的地鳴
+    var bp = filt(ac, 'bandpass', 420 * k, 1.5), g = ac.createGain(), tt = t;                             // 岩石磨擦
+    g.gain.setValueAtTime(0, t);
+    while (tt < t + 0.85) { g.gain.setValueAtTime(0.2 + Math.random() * 0.8, tt); tt += 0.008 + Math.random() * 0.017; }
+    chain(noise(ac, t, 0.9), bp, g, shapeEnv(ac, t, 0.15, 0.3, 0.4, 0.45), out);
+    for (var i = 0; i < 30; i++) {                                                                       // 碎石：中段最密，前後漸弱
+      var u = Math.random(), ts = t + u * 0.8, w = Math.sin(Math.PI * Math.min(1, u * 1.3));
+      chain(noise(ac, ts, 0.08), filt(ac, 'bandpass', (250 + Math.random() * 1050) * k, 2.5),
+        env(ac, ts, 0.002, Math.max(0.01, 0.8 * w * (0.4 + Math.random() * 0.6)), 0.02 + Math.random() * 0.03), pan(ac, (Math.random() * 2 - 1) * 0.8), out);
+    }
   }
   function rockSpike(ac, out, t, R) { var k = R(0.92, 1.08);
     rumble(ac, out, t, 0.25, 200, 0.5, 0.15);                                       // 地底預兆
@@ -399,22 +441,22 @@ var SfxSynth = (function () {
     boom(ac, out, ti, 130 * k, 60, 0.2, 0.6);
     ring(ac, out, ti, 520 * k, [[1, 0.6], [1.7, 0.5, 1.4], [2.9, 0.3, 2]], 0.12, 0.5);   // 凝固「喀」
   }
-  function mire(ac, out, t, R) { var k = R(0.9, 1.1);
-    squelch(ac, out, t, k, 1.0, 900, 250, 0.15);                                   // 泥漿濺開
-    burstNoise(ac, out, t, 'lowpass', 700, 1, 0.005, 0.6, 0.2);
-    boom(ac, out, t, 90 * k, 45, 0.2, 0.4);
-    rumble(ac, out, t, 1.2, 180, 0.3, 0.1);
-    for (var i = 0; i < 9; i++) {
-      var tt = t + 0.15 + Math.random() * 1.0;
-      bubble(ac, out, tt, (110 + Math.random() * 180) * k, 0.07 + Math.random() * 0.06, 0.45 * (1 - (tt - t) / 1.4), Math.random() * 0.8 - 0.4);   // 咕嚕
-      squelch(ac, out, tt, k, 0.12, 700, 300, 0.05);
+  function mire(ac, out, t, R) {   // 2026-11-13 使用者選定「泥漿咕嚕」：以冒泡為主，低沉黏稠，約 0.6 秒（沼澤每拍都響，比舊版短一半）
+    var k = R(0.92, 1.08);
+    rumble(ac, out, t, 0.5, 220, 0.35, 0.05);                                       // 泥底低沉
+    for (var i = 0; i < 7; i++) {                                                   // 咕嚕咕嚕
+      var tt = t + i * 0.07 + Math.random() * 0.03;
+      bubble(ac, out, tt, (120 + Math.random() * 120) * k, 0.06 + Math.random() * 0.03, 0.5 * (1 - i / 9), Math.random() * 0.6 - 0.3);
+      var bp = filt(ac, 'bandpass', 600, 4); sweep(bp.frequency, tt + 0.02, [[0, 600 * k], [0.04, 250 * k]]);
+      chain(noise(ac, tt + 0.02, 0.09), bp, env(ac, tt + 0.02, 0.004, 0.12, 0.04), out);
     }
   }
-  function earthguard(ac, out, t, R) { var k = R(0.98, 1.02);
-    boom(ac, out, t, 110, 70, 0.6, 0.35);
-    chord(ac, out, t, [220 * k, 277 * k, 330 * k, 440 * k], 0.12, 1.3, 0.1);       // 溫暖和弦
-    whoosh(ac, out, t, 0.8, { f0: 300, f1: 2500, f2: 4000, q: 0.9, peak: 0.18, peakAt: 0.6 });
-    tinkles(ac, out, t + 0.3, 0.9, 12, 0.08, 1500, 4500);
+  function earthguard(ac, out, t, R) {   // 2026-11-14 使用者選定「溫暖祝福」：柔和和弦慢慢浮起再散去，最柔和、無敲擊
+    var k = R(0.99, 1.01);
+    chord(ac, out, t, [262 * k, 330 * k, 392 * k, 523 * k], 0.25, 0.75, 0.08);      // C 大三和弦慢慢浮起
+    chain(noise(ac, t, 1.1), filt(ac, 'bandpass', 2500, 0.6), env(ac, t, 0.3, 0.04, 0.7), out);   // 一層很淡的空氣聲
+    var o = osc(ac, 'sine', t, 0.85); sweep(o.frequency, t, [[0, 130], [0.48, 90]]);
+    chain(o, env(ac, t, 0.2, 0.15, 0.6), out);                                      // 溫暖的低音墊底
   }
   function lightPillar(ac, out, t, R) { var k = R(0.97, 1.03);
     whoosh(ac, out, t, 0.25, { f0: 6000, f1: 2500, f2: 600, q: 0.9, peak: 0.5, peakAt: 0.3 });   // 光柱降下
@@ -633,7 +675,7 @@ var SfxSynth = (function () {
     'dualdance':          d(dualdance, 2.0, { minGapMs: 450 }),      // 一則事件就是四連斬，連續事件不疊播
     'counter':            d(counter, 1.9, KEEP),     // 2026-11-08 使用者要求比原本大聲 50%
     'holy-burst':         d(holyBurst, 1),
-    'bloodrage':          d(bloodrage, 0.75, { minGapMs: 300 }),     // 狂怒期間每次普攻都爆一次，高攻速不連環重拳
+    'bloodrage':          d(bloodrage, 0.62, { minGapMs: 3000, maxVoices: 1, maxSec: 4.6 }),   // 雷聲約 2.5 秒＋殘響：每 3 秒最多劈一次，不疊
     // 火
     'fireball':           d(fireball, 0.7),
     'meteor-fly':         d(meteorFly, 1, FLIGHT),
@@ -642,17 +684,17 @@ var SfxSynth = (function () {
     'starfall-impact':    d(starfallImpact, 0.9),
     'dragon-devour':      d(dragonDevour, 0.75),
     'fire-shockwave':     d(fireShockwave, 1),
-    'firepillar':         d(fireTornado, 0.85, LOOP),        // 不叫 fire-tornado：那是 VFX Preset 的名字，表上會混淆
+    'firepillar':         d(fireTornado, 0.67, LOOP),        // 不叫 fire-tornado：那是 VFX Preset 的名字，表上會混淆
     'lava-pool':          d(lavaPool, 0.4, LOOP),
-    'firehunt':           d(firehunt, 1.4),
+    'firehunt':           d(firehunt, 4),     // 2026-11-13「火星迸裂」，與舊版同響度
     'solar-ring-fly':     d(solarRingFly, 1.6, FLIGHT),
     // 土
-    'rockarmor':          d(rockarmor, 1),
+    'rockarmor':          d(rockarmor, 0.65),     // 2026-11-13「岩石聚攏」，與舊版同響度
     'rock-spike':         d(rockSpike, 1),
     'gravity-burst':      d(gravityBurst, 0.75),
     'petrify':            d(petrify, 1.1),
-    'mire':               d(mire, 1.5, { retrigger: true, minGapMs: 600 }),   // 沼澤是場域，每拍作用都響（敵人身上的毒才是 debuff）
-    'earthguard':         d(earthguard, 1.1),
+    'mire':               d(mire, 1.25, { retrigger: true, minGapMs: 600 }),   // 沼澤是場域，每拍作用都響（敵人身上的毒才是 debuff）
+    'earthguard':         d(earthguard, 1.26),     // 2026-11-14「溫暖祝福」，與舊版同響度
     'light-pillar':       d(lightPillar, 1),
     // 雷
     'chain-lightning':    d(chainLightning, 0.55),
