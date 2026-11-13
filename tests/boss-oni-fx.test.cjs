@@ -19,6 +19,7 @@ const { BossOniFx } = ctx;
 
 function fixture(opts) {
   opts = opts || {};
+  const random = opts.random;
   const played = [], reacted = [];
   const mk = (id, params) => {
     const r = { id, params: Object.assign({}, params), initial: Object.assign({}, params), moves: 0, finished: false, stopped: false,
@@ -37,7 +38,7 @@ function fixture(opts) {
   const ents = { 'tb-float': oni };
   const other = { id: 'x', npc3d: true, state: 'idle', root: { x: 0, y: 0 }, data: { npcId: 'tower_boss_1' }, body: { scale: { x: 1 }, npc3d: {} } };
   ents.x = other;
-  const fx = BossOniFx.create({ vfx: { playFree: mk }, presets: IDS, entities: () => ents, hitReact: (id) => reacted.push(id),
+  const fx = BossOniFx.create({ vfx: { playFree: mk }, presets: IDS, entities: () => ents, hitReact: (id) => reacted.push(id), random,
     screenPosOf: (id) => (id === 'pv-float' ? { x: 300, y: 250 } : { x: 700, y: 160 }), footOf: (id) => (id === 'pv-float' ? { x: 300, y: 300 } : { x: 700, y: 300 }) });
   const run = (sec, dt) => { for (let t = 0; t < sec; t += dt || 1 / 60) fx.update(dt || 1 / 60); };
   return { fx, oni, ents, played, reacted, run };
@@ -106,15 +107,17 @@ test('attack 1 impact lands on the target at the ram frame; a missed attack play
   assert.deepEqual(f.reacted, []);
 });
 
-test('basic attacks rotate ram / skulls / flame so the flame comes every third basic attack; skill casts use the ram animation only', () => {
-  const f = fixture(); const st = f.oni.body.npc3d, keys = [];
-  for (let i = 0; i < 6; i++) {
+test('basic attacks are random among ram / skulls / flame without repeating the same one twice; skill casts use the ram animation only', () => {
+  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const f = fixture({ random: rnd }); const st = f.oni.body.npc3d, basic = [], casts = [];
+  for (let i = 0; i < 300; i++) {
     f.fx.attack({ sourceId: 'tb-float', targets: ['pv-float'], hit: true });
-    f.fx.beforeAct(f.oni); keys.push(st.forceKey); st.attackKey = st.forceKey; f.fx.onActPlayed(f.oni, 1);
-    f.fx.beforeAct(f.oni); keys.push('cast:' + st.forceKey);       // a skill cast in between: no pending event
+    f.fx.beforeAct(f.oni); basic.push(st.forceKey); st.attackKey = st.forceKey; f.fx.onActPlayed(f.oni, 1);
+    f.fx.beforeAct(f.oni); casts.push(st.forceKey);       // a skill cast in between: no pending event
   }
-  assert.deepEqual(keys.filter((k) => !/^cast/.test(k)), ['attack1', 'attack2', 'attack3', 'attack1', 'attack2', 'attack3']);
-  assert.ok(keys.filter((k) => /^cast/.test(k)).every((k) => k === 'cast:attack1'));
+  assert.ok(basic.every((k, i) => i === 0 || k !== basic[i - 1]), 'never the same move twice in a row');
+  for (const k of ['attack1', 'attack2', 'attack3']) assert.ok(basic.filter((x) => x === k).length > 70, k + ' is picked about a third of the time');
+  assert.ok(casts.every((k) => k === 'attack1'));
   for (const id of ['tower_boss_15', 'tower_boss_25']) assert.ok(BossOniFx.NPC_IDS[id], id);
 });
 

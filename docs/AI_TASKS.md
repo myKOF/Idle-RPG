@@ -16117,3 +16117,7 @@ Worker 存活且頁面正常完成載入。
 - 貼圖版：同一網格換貼圖，用 `tools/boss5/build_all.cjs` 整套重建（`build_dome.py` 新增 `BOSS5_HORN_REF` 參數以原版取角位置、底色改取臉部最常見色，才能處理非紅色貼圖）；`images/models/npc3d/boss5_lv2.glb／boss5_lv3.glb`、`images/sprites/boss/boss5_oni_lv2.png／lv3.png`；NPC.xlsx 第496（tower_boss_15）、506（tower_boss_25）列改頭像／模型／動作，並與第486列一致改近戰（攻擊速度 0.4、距離 5 米、非魔法型）——這兩列的數值變更是依「同一隻BOSS套用同樣近戰」自行判斷，未另問，請確認。
 - 噴火普攻：原因是三個攻擊動作由 `Npc3D.play` 輪流給所有出手，特效只掛在有普攻事件的出手，實測約八成出手是技能施放，噴火輪替幾乎對不上普攻。改為 `js/boss-oni-fx.js beforeAct` 在播放前決定動作（`js/npc3d.js` 新增 `state.forceKey`）：普攻固定 撞擊→吐骷髏→噴火 輪替，技能施放用撞擊動作；事件等待上限 0.9→1.8 秒。實機一輪觀察到順序 attack2→（多次技能撞擊）→attack3；無頭瀏覽器遊戲速度很慢（約實時 1/10），沒有拍到完整的噴火畫面。
 - 驗證：新增輪替與三版共用單元測試、三份模型資產測試、更新 npc3d-config／tower-boss3d；相關測試與 HEAD 逐名比對無新增失敗；`npm run build` 723 檔、字串寫死 0、素材匯出最新；三版皆用遊戲自己的 Npc3D 路徑渲染確認。快取版號 `20261113-boss-oni-fx2`。素材庫提交 c2bbdc5b。
+
+## TOWER-BOSS5-ONI-RANDOM-20261113 — 鬼面普攻改隨機
+
+- Owner：Claude，Done。使用者要求鬼面普攻「改成隨機，跟玩家主角一樣」：`js/boss-oni-fx.js beforeAct` 改為在三招之間隨機挑、不連續兩下同一招（同 `playerAttackAnim`），技能施放仍用撞擊動作；`tests/boss-oni-fx.test.cjs` 用固定種子驗證 300 次不連續重複、三招各約三分之一。快取版號 `20261113-boss-oni-fx3`。未改模擬層，未另做實機長時間觀察。

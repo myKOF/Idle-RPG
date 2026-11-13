@@ -131,18 +131,20 @@
       return { position: m, rotation: Math.atan2(dy, dx), scaleX: len / 200, scaleY: f.rel, depthY: f.depthY };
     }
     /* 這一次實際播放的是哪個攻擊動作（js/npc3d.js 記在 state.attackKey）＋它被壓縮成幾秒 */
-    /* 動作要在播放前決定：普攻（模擬層有送出手事件的那一次）依 撞擊→吐骷髏→噴火 輪流，
-       這樣噴火普攻固定每三下一次；技能施放（沒有出手事件）一律用撞擊動作，不會佔掉普攻的輪替。
+    /* 動作要在播放前決定：普攻（模擬層有送出手事件的那一次）在撞擊／吐骷髏／噴火三招之間隨機挑，
+       但不連續兩下同一招——與玩家主角普攻同一個規則（js/battle-renderer.js playerAttackAnim）；
+       技能施放（沒有出手事件、沒有對應特效）一律用撞擊動作，不影響普攻的隨機。
        Npc3D.play 照 state.forceKey 播（用完即清），見 js/npc3d.js。 */
-    var basicCycle = {}, lastKeys = [];
+    var lastBasic = {}, lastKeys = [];
+    var random = typeof o.random === 'function' ? o.random : Math.random;
     var KEYS = ['attack1', 'attack2', 'attack3'];
     function beforeAct(ent) {
       if (!isOni(ent)) return;
       var key = 'attack1';
       if (pending && pending.sourceId === ent.id) {
-        var n = basicCycle[ent.id] | 0;
-        key = KEYS[n % 3];
-        basicCycle[ent.id] = n + 1;
+        var pool = KEYS.filter(function (k) { return k !== lastBasic[ent.id]; });
+        key = pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
+        lastBasic[ent.id] = key;
       }
       ent.body.npc3d.forceKey = key;
       lastKeys.push(key); if (lastKeys.length > 12) lastKeys.shift();
