@@ -15,6 +15,7 @@ const recipe = 'js/start-menu-background.js';
 const sources = [
   'originals/battlefield.png', 'originals/cloth-atlas.png', 'PROMPTS.json',
   'originals/battlefield-atmosphere.png', 'originals/title-lockup-forged.png', 'ATMOSPHERE_PROMPTS.json',
+  'originals/title-lockup-subtitle-edit.png', 'originals/title-lockup-subtitle.png',
   'originals/battlefield-open-arch.png', 'originals/open-arch-dark-edit.png',
   'originals/open-arch-light-edit.png', 'OPEN_ARCH_PROMPTS.json',
   'source/start-menu-background.js'

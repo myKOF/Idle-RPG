@@ -7,6 +7,8 @@
     "originals/battlefield-atmosphere.png": "376932678074f0220f94d7cd420ae608ce356bf153b1390f07ff781e7b93cec3",
     "originals/title-lockup-forged.png": "02eefa57113f25846ca13639408c60dc7cbbe1ac5fa20e741e421cf8a301b915",
     "ATMOSPHERE_PROMPTS.json": "2e799c5084fab31156e177a0460a9764f59f46c41e8410ee50cc606eba830377",
+    "originals/title-lockup-subtitle-edit.png": "09a065e9c0f9d6cf7b809518e5e900197b0267b5b4bdcb743ba27a70fa354a22",
+    "originals/title-lockup-subtitle.png": "aa93b3019d66306cb177ac77419d3bafd05c986b913cc15d0efaac971f4b84a5",
     "originals/battlefield-open-arch.png": "978629deb76d1b1eee685f46d1bf4ec23340356357ed0dfcf3c6ad7b66915523",
     "originals/open-arch-dark-edit.png": "4467af49c99faa5179fb3a3c7f03d9c954fad9887af092fd060b97a88331cb1d",
     "originals/open-arch-light-edit.png": "177225087f00928a51d548233d151d6e0f82dfff9a580c585567508bbd2c57c2",
@@ -17,10 +19,10 @@
     "web/battlefield.webp": "6badf424c816406a4bf441c42f3a0fb91ef6fe250a31e2171c22ea900ee4e32b",
     "web/battlefield-atmosphere.webp": "a178d1cd7b908257511c6193950d47a5d4573a2f13eede50e3b249cd554581f2",
     "web/cloth-atlas.webp": "83b3a07b9e67e06011bc917bb8ef05bd9596e9eaa36ebe04d25ec64febad1af4",
-    "web/title-lockup-forged.webp": "f3fbd489e1024281278f520ff6653accfb2365d0bd3115d8322c164012fd830b",
+    "web/title-lockup-forged.webp": "1293e77542755be6a84efb49f6e4bd420eee38f252454b79f6fc1a1108113030",
     "originals/gate-light-original.png": "7908227f0c265a1ff23d240ca76bc694600ff086606e0ad16ea8e8b067aac3c0",
     "web/gate-light-clear.png": "50e502fcd0da5b5b192fcbb181e4b9c8b3c0b3b4ff274b6288e2096882d89565",
     "SOURCE.md": "105e0b539219979aae300e3563f45b31bc49641a6bbb2251fb961af6517c879b",
-    "TITLE_SOURCE.md": "4104ec9df5ee99e671c7d7ece8f3dae201b7c80b67eb354e2d2a6565252671bd"
+    "TITLE_SOURCE.md": "e0d7dd37f7ba6189d0d286f2849a7937b6e3b617394e91f8c2eee85ddf9c96d6"
   }
 }
