@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "presetId": "boss-oni-flame-purple",
+  "groups": [
+    {
+      "id": "boss-oni-flame-purple",
+      "name": "boss-oni-flame-purple",
+      "layerIds": [
+        "muzzle",
+        "fire",
+        "core",
+        "smoke",
+        "embers"
+      ]
+    }
+  ],
+  "order": [
+    "group:boss-oni-flame-purple"
+  ]
+}

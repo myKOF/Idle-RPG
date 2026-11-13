@@ -33,7 +33,13 @@
   function alive(ent) { return !!(ent && ent.state !== 'dying' && ent.state !== 'gone' && ent.root && !ent.root.destroyed); }
 
   function create(o) {
-    var vfx = o.vfx, ids = o.presets || {};
+    var vfx = o.vfx, baseIds = o.presets || {};
+    /* 三個貼圖版本各有一套吐骷髏／噴火的顏色（baseIds.variants[npcId] 覆蓋 spit／skull／skullHit／flame）；眼睛、紅霧、撞擊、碎裂共用 */
+    function idsOf(ent) {
+      var v = baseIds.variants && ent && ent.data && baseIds.variants[ent.data.npcId];
+      return v ? Object.assign({}, baseIds, v) : baseIds;
+    }
+    var ids = baseIds;
     var ents = typeof o.entities === 'function' ? o.entities : function () { return o.entities; }, screenPosOf = o.screenPosOf, hitReact = o.hitReact || function () {}, footOf = o.footOf || screenPosOf;
     var loops = Object.create(null), timers = [], skulls = [], flames = [], pending = null, clock = 0;
 
@@ -107,13 +113,14 @@
       if (!m || !tp) return;
       var rel = relScale(ent);
       var fy = depthOf(ent) + FRONT;
+      var ids = idsOf(ent);
       play(ids.spit, { position: m, rotation: Math.atan2(tp.y - m.y, tp.x - m.x), scale: rel, depthY: fy });
       var base = Math.atan2(tp.y - m.y, tp.x - m.x), dist = Math.hypot(tp.x - m.x, tp.y - m.y);
       [0, SKULL_SPREAD, -SKULL_SPREAD].forEach(function (off, i) {
         var ang = base + off;
         var range = i === 0 ? dist : SKULL_RANGE_M * UNITS_PER_M;
         var ref = play(ids.skull, { position: { x: m.x, y: m.y }, rotation: ang, scale: rel, depthY: fy });
-        if (ref) skulls.push({ ref: ref, depthY: fy, x: m.x, y: m.y, ang: ang, left: range, center: i === 0, targetId: targetId, hit: hit, rel: rel });
+        if (ref) skulls.push({ ref: ref, hitId: ids.skullHit, depthY: fy, x: m.x, y: m.y, ang: ang, left: range, center: i === 0, targetId: targetId, hit: hit, rel: rel });
       });
     }
     function startFlame(ent, targetId, hit, durSec) {
@@ -121,7 +128,7 @@
       var tp = targetPos(targetId, null);
       if (!m || !tp) return;
       var f = { depthY: depthOf(ent) + FRONT, entId: ent.id, targetId: targetId, until: clock + durSec * 1000, ref: null, reacted: false, hit: hit, rel: relScale(ent) };
-      f.ref = play(ids.flame, flameParams(f, m, tp));
+      f.ref = play(idsOf(ent).flame, flameParams(f, m, tp));
       if (f.ref) flames.push(f);
       if (hit) later(150, function () { hitReact(targetId); });
     }
@@ -190,7 +197,7 @@
         if (step >= k.left) {
           if (k.center) {
             var end = targetPos(k.targetId, { x: k.x, y: k.y });
-            play(ids.skullHit, { position: end, scale: 1, depthY: footY(k.targetId) + FRONT });
+            play(k.hitId, { position: end, scale: 1, depthY: footY(k.targetId) + FRONT });
             if (k.hit) hitReact(k.targetId);
           }
           k.ref.finish(); skulls.splice(s, 1); continue;

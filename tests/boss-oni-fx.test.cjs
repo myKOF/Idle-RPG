@@ -9,8 +9,10 @@ const cfg = require('../tools/config_tables.cjs');
 
 const data = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
 const IDS = (() => {
-  const m = /bossOni:\s*(\{[^}]*\})/.exec(data);
-  return cfg.evalLiteral(m[1]);
+  const at = data.indexOf('bossOni:'), open = data.indexOf('{', at);
+  let depth = 0, end = open;
+  for (; end < data.length; end++) { if (data[end] === '{') depth++; else if (data[end] === '}' && --depth === 0) break; }
+  return cfg.evalLiteral(data.slice(open, end + 1));
 })();
 const ctx = { window: undefined, globalThis: null };
 ctx.globalThis = ctx;
@@ -45,8 +47,10 @@ function fixture(opts) {
 }
 
 test('every boss-oni preset id in VFX_COMBAT_DEFAULTS exists as a preset file', () => {
-  assert.equal(Object.keys(IDS).length, 8);
-  for (const id of Object.values(IDS)) assert.ok(fs.existsSync(path.join(root, 'vfx/presets', id + '.json')), id);
+  const all = [];
+  (function walk(v) { if (typeof v === 'string') all.push(v); else if (v && typeof v === 'object') Object.values(v).forEach(walk); })(IDS);
+  assert.equal(all.length, 8 + 8, 'eight shared/base ids plus four recoloured ids for each of the two variants');
+  for (const id of all) assert.ok(fs.existsSync(path.join(root, 'vfx/presets', id + '.json')), id);
 });
 
 test('eyes glow in front of the body and the mist trails behind it; only the oni is touched', () => {
@@ -119,6 +123,19 @@ test('basic attacks are random among ram / skulls / flame without repeating the 
   for (const k of ['attack1', 'attack2', 'attack3']) assert.ok(basic.filter((x) => x === k).length > 70, k + ' is picked about a third of the time');
   assert.ok(casts.every((k) => k === 'attack1'));
   for (const id of ['tower_boss_15', 'tower_boss_25']) assert.ok(BossOniFx.NPC_IDS[id], id);
+});
+
+test('the blue and purple versions spit and burn in their own colours; the red one keeps the original ones', () => {
+  for (const [npc, sfx] of [['tower_boss_5', ''], ['tower_boss_15', '-blue'], ['tower_boss_25', '-purple']]) {
+    const f = fixture(); f.oni.data.npcId = npc; f.oni.body.npc3d.attackKey = 'attack2';
+    f.fx.attack({ sourceId: 'tb-float', targets: ['pv-float'], hit: true }); f.fx.onActPlayed(f.oni, 1.333); f.run(3);
+    assert.ok(f.played.some((p) => p.id === 'boss-oni-skull' + sfx), npc + ' skull');
+    assert.ok(f.played.some((p) => p.id === 'boss-oni-spit' + sfx) && f.played.some((p) => p.id === 'boss-oni-skull-hit' + sfx), npc + ' spit / hit');
+    const g = fixture(); g.oni.data.npcId = npc; g.oni.body.npc3d.attackKey = 'attack3';
+    g.fx.attack({ sourceId: 'tb-float', targets: ['pv-float'], hit: true }); g.fx.onActPlayed(g.oni, 2.2); g.run(1);
+    assert.ok(g.played.some((p) => p.id === 'boss-oni-flame' + sfx), npc + ' flame');
+    assert.ok(g.played.filter((p) => /boss-oni-(eye|mist)/.test(p.id)).every((p) => !/-(blue|purple)/.test(p.id)), 'eyes and mist are shared');
+  }
 });
 
 test('death shatters at 2.0 s and stops the loops', () => {

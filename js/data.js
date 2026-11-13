@@ -1345,7 +1345,12 @@ var VFX_COMBAT_DEFAULTS = {
   /* 第5隻封魔塔BOSS「鬼面」（js/boss-oni-fx.js）：常駐眼睛紅光／紅霧、三個攻擊動作的特效、死亡碎裂。 */
   bossOni: {
     eye: 'boss-oni-eye', mist: 'boss-oni-mist', ramHit: 'boss-oni-ram-hit', spit: 'boss-oni-spit',
-    skull: 'boss-oni-skull', skullHit: 'boss-oni-skull-hit', flame: 'boss-oni-flame', shatter: 'boss-oni-shatter'
+    skull: 'boss-oni-skull', skullHit: 'boss-oni-skull-hit', flame: 'boss-oni-flame', shatter: 'boss-oni-shatter',
+    /* 藍（第15層）／紫（第25層）貼圖版：吐骷髏與噴火換色，其餘共用上面的 */
+    variants: {
+      tower_boss_15: { spit: 'boss-oni-spit-blue', skull: 'boss-oni-skull-blue', skullHit: 'boss-oni-skull-hit-blue', flame: 'boss-oni-flame-blue' },
+      tower_boss_25: { spit: 'boss-oni-spit-purple', skull: 'boss-oni-skull-purple', skullHit: 'boss-oni-skull-hit-purple', flame: 'boss-oni-flame-purple' }
+    }
   },
   /* 小隕石：由 Runtime 依 variant 取用，不佔表上的欄位。 */
   meteorSmall: { projectile: 'proj-meteor-small', hit: 'hit-fire-explosion' }

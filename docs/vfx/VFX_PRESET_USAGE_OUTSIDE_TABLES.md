@@ -82,6 +82,14 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 | `boss-oni-skull-hit` | 鬼面小骷髏命中 | 鬼面BOSS射向目標的那顆小骷髏抵達目標時的爆點。 |
 | `boss-oni-flame` | 鬼面火焰 | 鬼面BOSS攻擊動作 Attack3 的火焰；`js/boss-oni-fx.js` 從 Fx_Mouth 沿目標方向播放，以 scaleX＝距離/200 拉長，最長 15 米。 |
 | `boss-oni-shatter` | 鬼面碎裂 | 鬼面BOSS死亡動作第 2 秒碎裂時在身體中心的爆散（紅霧、火星、碎屑）。 |
+| `boss-oni-spit-blue` | 鬼面藍版吐氣 | 第15層藍色鬼面（tower_boss_15）攻擊動作 Attack2 的嘴前吐氣；`js/boss-oni-fx.js` 取 `VFX_COMBAT_DEFAULTS.bossOni.variants`。 |
+| `boss-oni-skull-blue` | 鬼面藍版小骷髏 | 第15層藍色鬼面攻擊2 的三顆小骷髏飛行物（青藍色）。 |
+| `boss-oni-skull-hit-blue` | 鬼面藍版小骷髏命中 | 第15層藍色鬼面射向目標的小骷髏抵達時的爆點。 |
+| `boss-oni-flame-blue` | 鬼面藍版火焰 | 第15層藍色鬼面攻擊3 的藍白色火焰，其餘規則同紅版。 |
+| `boss-oni-spit-purple` | 鬼面紫版吐氣 | 第25層紫色鬼面（tower_boss_25）攻擊動作 Attack2 的嘴前吐氣。 |
+| `boss-oni-skull-purple` | 鬼面紫版小骷髏 | 第25層紫色鬼面攻擊2 的三顆小骷髏飛行物（紫色）。 |
+| `boss-oni-skull-hit-purple` | 鬼面紫版小骷髏命中 | 第25層紫色鬼面射向目標的小骷髏抵達時的爆點。 |
+| `boss-oni-flame-purple` | 鬼面紫版火焰 | 第25層紫色鬼面攻擊3 的紫色火焰，其餘規則同紅版。 |
 | `en-poison-cross` | 毒素加持 | 配置表指定；`js/vfx-runtime.js` 將 flow 圖層拆成同份 Preset 的四臂，各含三段無縫材質，依權威事件逐步顯露／投影與回收 |
 | `ground-firewall` | 火牆 | `js/vfx-runtime.js` 寫死的火牆三柱播放處理（火龍捲第 7 階在 2026-09-12 由無限火牆改成無限火龍後，技能表已經沒有任何一列填它） |
 | `bolt-chain-travel-bluewhite` | 連鎖閃電彈射 | Skills2 第 1 階攻擊特效指定；`js/vfx-runtime.js` 另有此 Preset 的圖集寬度及移動端點追蹤處理 |

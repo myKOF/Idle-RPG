@@ -16121,3 +16121,8 @@ Worker 存活且頁面正常完成載入。
 ## TOWER-BOSS5-ONI-RANDOM-20261113 — 鬼面普攻改隨機
 
 - Owner：Claude，Done。使用者要求鬼面普攻「改成隨機，跟玩家主角一樣」：`js/boss-oni-fx.js beforeAct` 改為在三招之間隨機挑、不連續兩下同一招（同 `playerAttackAnim`），技能施放仍用撞擊動作；`tests/boss-oni-fx.test.cjs` 用固定種子驗證 300 次不連續重複、三招各約三分之一。快取版號 `20261113-boss-oni-fx3`。未改模擬層，未另做實機長時間觀察。
+
+## TOWER-BOSS5-ONI-COLORS-20261113 — 藍／紫版小骷髏與火焰換色
+
+- Owner：Claude，Done。使用者補充：藍、紫兩個貼圖版噴的火焰與小骷髏顏色要和原版不同，顏色由我決定。新增八份 Preset（`boss-oni-spit／skull／skull-hit／flame` 的 `-blue`、`-purple` 版，含 layout）、兩張小骷髏貼圖（色相轉換，素材庫 `vfx/oni-skull-blue／purple.png`）、`VFX_COMBAT_DEFAULTS.bossOni.variants`、用途清單八列；`boss-oni-fx.js` 依 npcId 取色。紅版 Preset 未動。快取版號 `20261113-boss-oni-fx4`。
+- 驗證：`tests/boss-oni-fx.test.cjs` 9 項（含三版各自取用對應 id、眼睛紅霧共用）；相關測試與 HEAD 逐名比對無新增失敗；建置通過、素材匯出最新；以 preset 渲染工具確認顏色。未做 15／25 層的實機截圖，色彩觀感需使用者目視。素材庫提交 597eb830。

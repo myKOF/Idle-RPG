@@ -1,0 +1,299 @@
+{
+  "schemaVersion": 1,
+  "id": "boss-oni-flame-purple",
+  "duration": 0.8,
+  "loop": true,
+  "layers": [
+    {
+      "id": "muzzle",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/muzzle_02.png",
+      "zIndex": 4,
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0898
+      },
+      "alpha": 0.95,
+      "tint": "#d070ff",
+      "blendMode": "add",
+      "duration": 0.8,
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          0.25,
+          1
+        ],
+        [
+          0.5,
+          0.75
+        ],
+        [
+          0.75,
+          1
+        ],
+        [
+          1,
+          0.8
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.9
+        ],
+        [
+          0.5,
+          1.15
+        ],
+        [
+          1,
+          0.9
+        ]
+      ]
+    },
+    {
+      "id": "fire",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_04.png",
+      "zIndex": 2,
+      "alpha": 0.85,
+      "tint": "#ffffff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 64
+      },
+      "lifetime": [
+        0.4,
+        0.55
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        380,
+        440
+      ],
+      "direction": 0,
+      "spread": 5,
+      "startScale": [
+        0.043,
+        0.0742
+      ],
+      "rotationSpeed": [
+        -2,
+        2
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          0.4,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "tintOverLife": [
+        [
+          0,
+          "#ffffff"
+        ],
+        [
+          0.18,
+          "#f2ccff"
+        ],
+        [
+          0.45,
+          "#b04aff"
+        ],
+        [
+          0.75,
+          "#5a1ab0"
+        ],
+        [
+          1,
+          "#1a0838"
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          1.6
+        ]
+      ]
+    },
+    {
+      "id": "core",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/flame_01.png",
+      "zIndex": 3,
+      "alpha": 0.9,
+      "tint": "#f4d6ff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 40
+      },
+      "lifetime": [
+        0.25,
+        0.38
+      ],
+      "spawn": {
+        "radius": 2,
+        "shape": "circle"
+      },
+      "speed": [
+        400,
+        460
+      ],
+      "direction": 0,
+      "spread": 2,
+      "startScale": [
+        0.0234,
+        0.0391
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "smoke",
+      "type": "particle",
+      "assetId": "new_materials/smoke/smoke2_1.png",
+      "zIndex": 1,
+      "alpha": 0.4,
+      "tint": "#220a3a",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 18
+      },
+      "lifetime": [
+        0.5,
+        0.8
+      ],
+      "spawn": {
+        "radius": 6,
+        "shape": "circle"
+      },
+      "speed": [
+        160,
+        250
+      ],
+      "direction": 0,
+      "spread": 14,
+      "startScale": [
+        0.0586,
+        0.0898
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.3,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.7
+        ]
+      ]
+    },
+    {
+      "id": "embers",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "zIndex": 3,
+      "alpha": 1,
+      "tint": "#e08aff",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 16
+      },
+      "lifetime": [
+        0.4,
+        0.8
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        180,
+        380
+      ],
+      "direction": 0,
+      "spread": 20,
+      "gravity": {
+        "x": 0,
+        "y": 90
+      },
+      "startScale": [
+        0.0098,
+        0.0176
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.7,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "height": 70,
+      "width": 200
+    },
+    "shape": "rectangle"
+  }
+}

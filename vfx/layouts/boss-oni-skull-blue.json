@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "presetId": "boss-oni-skull-blue",
+  "groups": [
+    {
+      "id": "boss-oni-skull-blue",
+      "name": "boss-oni-skull-blue",
+      "layerIds": [
+        "glow",
+        "skull",
+        "trail",
+        "haze"
+      ]
+    }
+  ],
+  "order": [
+    "group:boss-oni-skull-blue"
+  ]
+}

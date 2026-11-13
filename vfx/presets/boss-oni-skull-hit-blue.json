@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "id": "boss-oni-skull-hit-blue",
+  "duration": 0.55,
+  "loop": false,
+  "layers": [
+    {
+      "id": "halo",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1953,
+        "y": 0.1953
+      },
+      "alpha": 0.7,
+      "tint": "#30a8ff",
+      "blendMode": "screen",
+      "duration": 0.4,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.12,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          1.2
+        ]
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "sprite",
+      "assetId": "new_materials/impact-ring/impact_14.png",
+      "zIndex": 1,
+      "scale": {
+        "x": 0.0703,
+        "y": 0.0703
+      },
+      "alpha": 0.9,
+      "tint": "#80d0ff",
+      "blendMode": "add",
+      "duration": 0.4,
+      "alphaOverLife": [
+        [
+          0,
+          0
+        ],
+        [
+          0.1,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.5
+        ],
+        [
+          1,
+          2.4
+        ]
+      ]
+    },
+    {
+      "id": "ghost",
+      "type": "sprite",
+      "assetId": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-blue.png",
+      "zIndex": 3,
+      "scale": {
+        "x": 0.1055,
+        "y": 0.1055
+      },
+      "alpha": 0.9,
+      "blendMode": "normal",
+      "duration": 0.35,
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1.6
+        ]
+      ]
+    },
+    {
+      "id": "sparks",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/star_08.png",
+      "zIndex": 2,
+      "alpha": 1,
+      "tint": "#b0e4ff",
+      "blendMode": "add",
+      "emission": {
+        "count": 12,
+        "mode": "burst"
+      },
+      "lifetime": [
+        0.3,
+        0.6
+      ],
+      "spawn": {
+        "radius": 4,
+        "shape": "circle"
+      },
+      "speed": [
+        70,
+        200
+      ],
+      "direction": -90,
+      "spread": 360,
+      "gravity": {
+        "x": 0,
+        "y": 200
+      },
+      "startScale": [
+        0.0117,
+        0.0215
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          0.6,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 50
+    },
+    "shape": "circle"
+  }
+}
