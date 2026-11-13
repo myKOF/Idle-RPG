@@ -4,19 +4,37 @@
 
 遊戲專案的 `images/intro-parchment/shot-01-03.mp4` 收錄前三鏡，前兩鏡獨立版為 `images/intro-parchment/shot-01-02.mp4`。設定頁重播前三鏡時，配樂共用荒漠第一首 Desert Ascendant，使用獨立演出音效 `shot-01-03-sfx.mp3`。成片保留核准畫面及原混音供封存與預覽。
 
-## 55 秒計畫的加長第一鏡
+## 55 秒計畫的加長前兩鏡
 
-使用者於 2026-11-13 核准〈天界失守〉魔軍增援版。`web/shot-01-extended.mp4` 保存獨立的 16 秒第一鏡，遊戲副本位於 `images/intro-parchment/shot-01-extended.mp4`。大天使長聽見鐘聲抬頭，兩段拉遠揭露軍勢，11.72 秒塔樓遇襲，聖光熄滅，灰燼掠過前景。城前遠地有 2,673 個遠方剪影及 377 個過渡兵影，三處天空加密 1,213 個遠方翼影及 99 個振翼前鋒。尾畫作為加長第二鏡的疊化接點。
+使用者於 2026-11-13 核准〈天界失守〉魔軍增援版。`web/shot-01-extended.mp4` 保存獨立的 16 秒第一鏡，遊戲副本位於 `images/intro-parchment/shot-01-extended.mp4`。大天使長聽見鐘聲抬頭，兩段拉遠揭露軍勢，11.72 秒塔樓遇襲，聖光熄滅，灰燼掠過前景。城前遠地有 2,673 個遠方剪影及 377 個過渡兵影，三處天空加密 1,213 個遠方翼影及 99 個振翼前鋒。本次核准版將兩側所有流光翼接到鏡頭可見的背甲，分別從脊柱兩側的肩胛位置向外展開。
 
 - `extended-shot-one/` 保存鏡頭、突襲、遠近軍勢、字幕、音效與可重製預覽。畫面沿用同一資料夾下 `source/assets/` 的原創分件及 `source/shot-air.js`，本版新增動態合成。Noto Serif TC 沿用素材庫 `third-party/google-fonts/start-menu-20261106` 的授權來源。
 - `extended-shot-one/assets/shot-one-effects.wav` 是獨立的 48 kHz 立體聲音效，供後續接鏡。`shot-one-preview.wav` 為含配樂的核准審片混音。配樂讀取素材庫 `third-party/user-supplied/desert-ascendant/desert-ascendant.mp3`。
 - 在 `extended-shot-one/` 執行 `node build-audio.cjs` 可重建音效與混音。執行 `node render-shot-one.cjs` 可用 Windows Edge 與 FFmpeg 重製 1920 × 1080、30 fps 的影片，`--stills` 只輸出抽查畫格。可用 `PARCHMENT_FFMPEG` 指定 FFmpeg，`PARCHMENT_REVIEW_DIR` 指定輸出資料夾，預設為系統暫存目錄下的 `idle-rpg-extended-shot-one`。
 
+使用者同日核准第二鏡〈大天使長與群翼墜落〉與前兩鏡 34 秒連播。
+
+- `web/shots-01-02-34s.mp4` 保存核准連播，遊戲專案副本為 `images/intro-parchment/shots-01-02-34s.mp4`。第 16 秒從新版第一鏡末格開始疊化，約第 16.95 秒完全進入墜落畫面。配樂 Desert Ascendant 連續播放。
+- `web/shot-02-archangel-fall-18s.mp4` 保存第二鏡獨立成片。近景採用使用者明確授權直接使用的天使角色圖，沿原輪廓擷取，並以 ImageGen 局部修整兜帽下緣與金邊。角色原圖、修圖稿、焦羽與提示詞保存在 `extended-shot-two/`。墜落逐漸退入雲霧，焦羽在貼近鏡頭前翻面，最後的光點緩慢擴散並淡入黑幕。
+- `extended-shot-two/assets/04-heavy-fire-roar.wav` 為使用者選定的第 4 款火焰音效「低沉轟然」。`shot-two-effects.wav` 保存獨立演出音效，`shots-one-two-preview.wav` 保存連播混音，`shot-two-preview.wav` 保存第二鏡獨立混音。
+- 加長版前兩鏡已封存。遊戲的設置重播入口仍播放上方已接第三鏡的 30.3 秒成片。
+
+從本資料夾執行以下指令可重製。兩鏡共用 `PARCHMENT_REVIEW_DIR`，預設為系統暫存目錄下的 `idle-rpg-extended-shot-one`。可用 `PARCHMENT_FFMPEG` 指定 FFmpeg 路徑。
+
+```powershell
+node extended-shot-one/render-shot-one.cjs
+node extended-shot-two/package-preview.cjs --tail
+node extended-shot-two/render-shot-two.cjs
+node extended-shot-two/package-preview.cjs
+```
+
+需要重建第二鏡的獨立演出音效與兩條混音時，執行 `node extended-shot-two/build-audio.cjs`。
+
 ## 可編輯來源
 
 Effects-Materials 內的 `codex-authored/intro-parchment-shots-20261111` 保存核准成片、可編輯程式、透明分件、雲海和深淵背景、音軌、聲景產生器及提示詞。角色、流光翼、神殿、遠雲、地面敵軍、飛行敵軍、火焰、煙與粒子分開合成。大天使長的頭罩與右手由獨立透明圖接回角色。第二鏡大天使長沿用第一鏡流光翼分件。第三鏡的地圖、荒漠地表、星點、紫霧、光束、圓形神光及沙塵分開合成。
 
-所有入片繪圖均由 ImageGen 原創生成或修訂。使用者提供的天使立繪、姿勢與神殿截圖、指定影片、遊戲內薩爾維恩地圖及使用者圈選的荒漠位置，用於造型、地理與分鏡參考。音軌由本地程序合成。RPG Mote Studio 主要適合像素圖，本案採用適合高解析蝕刻圖與透明分件的 ImageGen。
+原 30.3 秒版本的入片繪圖均由 ImageGen 原創生成或修訂。使用者提供的天使立繪、姿勢與神殿截圖、指定影片、遊戲內薩爾維恩地圖及使用者圈選的荒漠位置，用於造型、地理與分鏡參考。音軌由本地程序合成。RPG Mote Studio 主要適合像素圖，本案採用適合高解析蝕刻圖與透明分件的 ImageGen。
 
 ## 檢視及同步
 
