@@ -2440,6 +2440,20 @@ var VFXRuntime = (function () {
       rtZone.stopAll();
     }
 
+    /* 單獨播放一份 Preset，由呼叫端自己逐幀移動、結束時收掉（BOSS 常駐特效、噴火、飛行物：js/boss-oni-fx.js）。
+       座標是畫面座標，同 ctx.posOf；一般特效層與實體同在一個深度排序容器，
+       params.depthY（畫面座標的腳底 Y）決定它在角色前（大於）或後（小於）——不給就依特效原點的 Y，原點在身體上方時會被角色蓋住。
+       回 null＝播不出來（沒有 Preset 或超出 budget）；move 回 false＝已被 Core 收掉。 */
+    function playFree(presetId, params) {
+      var ref = play(rtFx, presetId, params || {}, 1);
+      if (!ref) return null;
+      return {
+        move: function (p) { return moveRef(ref, p, 1); },
+        finish: function (opts) { finishRef(ref, opts); },
+        stop: function () { stopRef(ref); }
+      };
+    }
+
     function destroy() {
       clear();
       rtFx.destroy();
@@ -2453,6 +2467,7 @@ var VFXRuntime = (function () {
     return {
       registerPresets: registerPresets,
       has: has,
+      playFree: playFree,
       tryPlay: tryPlay,
       syncStatuses: syncStatuses,
       update: update,
@@ -2538,7 +2553,7 @@ var VFXRuntime = (function () {
      的 ?v= 管到的程式。改了資料卻沒換這個版號，測試者的瀏覽器會繼續吃快取裡的
      舊 preset——回報的現象會與 repo 裡的內容完全對不起來，而且查不出原因。
      ⚠️ 動到 vfx/presets 或 shipped-assets.json 時，這一行要一起改。 */
-  var DATA_VERSION = '20261022-poison-thunder-crater-missile-integration';
+  var DATA_VERSION = '20261113-boss-oni-fx';
 
   function loadPresets(ids, base) {
     var prefix = (base || 'vfx/presets') + '/';

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presetId": "boss-oni-spit",
+  "groups": [
+    {
+      "id": "boss-oni-spit",
+      "name": "boss-oni-spit",
+      "layerIds": [
+        "puff",
+        "mist",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:boss-oni-spit"
+  ]
+}

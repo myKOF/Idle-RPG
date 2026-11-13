@@ -3031,6 +3031,7 @@ var BattleRenderer = (function () {
     syncNpcRankGlow(ent);
     ent.dieAt = nowMs();
     ent.realDeath = !!realDeath;
+    if (S.oni) S.oni.onDeath(ent);
     S.lastPos[ent.id] = { x: ent.root.x, y: ent.root.y - entityCenterHeight(ent), footY: ent.root.y, at: nowMs() };
     if (ent.isBoss) removeBossBar(ent.id);
     var dieSheet = ent.npcSprite ? S.sheets[ent.sheetName] : null;
@@ -3172,6 +3173,7 @@ var BattleRenderer = (function () {
     S.fx.length = 0;
     sweepOrphanFxNodes();
     /* Preset 端是另一套生命週期（Core 自己管節點），要分別清。 */
+    if (S.oni) S.oni.clear();
     if (S.vfxrt) S.vfxrt.clear();
   }
 
@@ -6600,6 +6602,8 @@ var BattleRenderer = (function () {
        回 false＝沒有對應的 preset，照舊走下面的程式畫法。 */
     // 角色出手與特效後端分開；Preset接手或載入中都要播，重試同一事件不能重播動作。
     if (isEnemyAttack) animateEnemyAttack(spec);
+    /* 鬼面BOSS：特效依實際播放的攻擊動作接到關鍵格，不再播一般的敵方出手特效（命中與傷害仍由模擬層決定） */
+    if (isEnemyAttack && S.oni && S.oni.attack(spec)) return;
     if (S.vfxLoading && deferVfxUntilReady(spec)) return;
     var presetHandled = S.vfxrt && S.vfxrt.tryPlay(spec);
     if (presetHandled && spec.cat !== 'basic') return;
@@ -7519,6 +7523,7 @@ var BattleRenderer = (function () {
           else if (e.pendingTowerAction.seconds > 0) {
             e.towerActionSeconds = e.pendingTowerAction.seconds;
             playAnim(e, e.npc3d ? e.pendingTowerAction.anim : 'attack', 'idle');
+            if (S.oni && e.npc3d) S.oni.onActPlayed(e, e.towerActionSeconds);
             e.towerActionSeconds = 0; e.pendingTowerAction = null;
           }
           if (e.pendingTowerAction && e.pendingTowerAction.seconds <= 0) e.pendingTowerAction = null;
@@ -7677,6 +7682,7 @@ var BattleRenderer = (function () {
 
     /* Preset 化 VFX：飛行物前進、場域到期、光環跟隨都在這裡推進。
        暫停時 dt 已經是 0，因此不必另外判斷 S.paused。 */
+    if (S.oni) S.oni.update(dt);
     if (S.vfxrt) S.vfxrt.update(dt);
   }
 
@@ -8569,6 +8575,10 @@ var BattleRenderer = (function () {
     }).then(function (rt) {
       S.vfxrt = rt || null;
       S.vfxLoading = false;
+      /* 第5隻封魔塔BOSS 的戰鬥特效（js/boss-oni-fx.js）：Preset 載入後才接上 */
+      S.oni = rt && typeof BossOniFx !== 'undefined' && typeof VFX_COMBAT_DEFAULTS !== 'undefined' && rt.playFree
+        ? BossOniFx.create({ vfx: rt, presets: VFX_COMBAT_DEFAULTS.bossOni, entities: function () { return S.entities; }, screenPosOf: screenPosOf, footOf: screenFootOf,
+            hitReact: function (id) { hitReact(id, null, false); } }) : null;
       flushPendingVfx();
       if (!rt) { scheduleVfxBootRetry(STR(450)); return; }   // VFXRuntime.boot 把所有失敗都吞成 null
       S.vfxBootTry = 0;
@@ -8835,6 +8845,8 @@ var BattleRenderer = (function () {
         lateMs: Math.round(S.later.lastMaxLateMs), maxLateMs: Math.round(S.later.maxLateMs) },
       /* Preset 端是另一套集合，同樣要看得到「只增不減」。 */
       preset: S.vfxrt ? S.vfxrt.stats() : null,
+      oni: S.oni ? S.oni._state() : null,
+      oniAnchors: S.oni ? S.oni.anchors() : null,
       paused: S.paused, zone: S.zoneKey,
       persp: S.persp ? S.persp.layout.topScale : 1,     // 輕微透視的上緣縮放（1 ＝ 沒開）
       /* 地形裝飾：區塊數、地面裝飾／擺件／粒子數（擺件掛在 entity 層，nodes.entity 會含這些） */
@@ -8893,6 +8905,8 @@ var BattleRenderer = (function () {
     /* 測試／除錯用：取 Pixi Application（headless 驗證時手動推 ticker、抽畫面）
        與內部狀態快照。正式流程不得依賴。 */
     _app: function () { return S.app; },
+    _oni: function () { return S.oni; },
+    _vfxrt: function () { return S.vfxrt; },
     /* 地形裝飾（量測／除錯用）：setVisible(false) 可在同一場戰鬥裡做開關對照 */
     _decor: function () { return S.decor; },
     _arena: function () { return { arena: S.arena, scene: S.scene, layers: S.layers ? { plane: S.layers.arenaPlane, base: S.layers.arenaBase, glow: S.layers.arenaGlow, ambient: S.layers.arenaAmbient } : null }; },

@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 
-test('fifth tower boss (oni mask) has 18 rigid joints, five finite clips and keeps strikes horizontally in place',()=>{
+test('fifth tower boss (oni mask) has 18 rigid joints, five finite clips and keeps walk / attacks 2-3 horizontally in place (attack 1 only a short melee lunge)',()=>{
  const bytes=fs.readFileSync(require.resolve('../images/models/npc3d/boss5.glb'));
  const size=bytes.readUInt32LE(12),d=JSON.parse(bytes.subarray(20,20+size)),bin=bytes.subarray(28+size);
  assert.equal(d.meshes.length,1);assert.equal(d.skins.length,1);
@@ -27,7 +27,11 @@ test('fifth tower boss (oni mask) has 18 rigid joints, five finite clips and kee
    const vals=[];for(let i=0;i<acc.count;i++){const o=(v.byteOffset||0)+(acc.byteOffset||0)+i*12;vals.push([bin.readFloatLE(o),bin.readFloatLE(o+4),bin.readFloatLE(o+8)]);}
    // pose translation is expressed in the bone frame; the in-place lock leaves only the bone Y axis (= world up) moving
    const spread=[0,1,2].map(k=>Math.max(...vals.map(x=>x[k]))-Math.min(...vals.map(x=>x[k])));
-   assert.ok(spread.filter(x=>x>1e-4).length<=1,a.name+' horizontal drift '+spread);
+   if(a.name==='Attack1'){
+    // melee boss: the strike keeps one short forward lunge (about 0.9 m); nothing else may drift
+    const drift=spread.filter(x=>x>1e-4);
+    assert.ok(drift.length<=3&&Math.max(...spread)>0.5&&Math.max(...spread)<1.2,'attack 1 lunge '+spread);
+   } else assert.ok(spread.filter(x=>x>1e-4).length<=1,a.name+' horizontal drift '+spread);
   }
  }
 });

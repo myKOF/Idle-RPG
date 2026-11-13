@@ -1,7 +1,7 @@
 'use strict';
 /* 重建 BOSS5（鬼面）模型、動作與預覽。
    node tools/boss5/build_all.cjs <BOSS5.glb 原始模型> <輸出資料夾> [--previews]
-   產出：boss5.glb（綁骨 + 5 動作 Walk/Attack1/Attack2/Attack3/Die，含 6 m 衝撞位移）、boss5_game.glb（遊戲用：水平位移固定、碎片散布限制在 NPC 畫布內）、boss5_oni.png（頭像）、boss5_skull.glb（綠色小骷髏子彈）、
+   產出：boss5.glb（綁骨 + 5 動作 Walk/Attack1/Attack2/Attack3/Die，含 6 m 衝撞位移）、boss5_game.glb（遊戲用：走路與攻擊2/3 水平位移固定、攻擊1 只保留 0.9 m 近戰前撲、碎片散布限制在 NPC 畫布內、材質壓暗以配合遊戲的 ACES 曝光）、vfx/oni-skull-green.png（小骷髏飛行特效貼圖）、boss5_oni.png（頭像）、boss5_skull.glb（綠色小骷髏子彈）、
         boss5_dome_albedo.png（補上的後腦貼圖）；--previews 另外渲染五個預覽 GIF。
    需要 Blender 4.5+（環境變數 BLENDER_EXE 可指定）與 Chrome（預覽用，CHROME_EXE 可指定）。 */
 const path = require('path'), fs = require('fs'), cp = require('child_process');
@@ -19,9 +19,12 @@ blender('render_front.py', f(path.resolve(src)), f(path.join(tmp, 'front_albedo.
 blender('build_dome.py', f(path.resolve(src)), f(path.join(tmp, 'front_albedo.png')), f(path.join(tmp, 's1')), '0.55');
 fs.copyFileSync(path.join(tmp, 's1', 'boss5_dome_albedo.png'), path.join(out, 'boss5_dome_albedo.png'));
 blender('build_rig.py', f(path.join(tmp, 's1', 'stage1.blend')), f(path.join(out, 'boss5.glb')));
-blender('build_rig.py', f(path.join(tmp, 's1', 'stage1.blend')), f(path.join(out, 'boss5_game.glb')), '--game');
+blender('build_rig.py', f(path.join(tmp, 's1', 'stage1.blend')), f(path.join(tmp, 'boss5_game_raw.glb')), '--game');
+cp.spawnSync(process.execPath, [path.join(here, 'patch-game-glb.cjs'), path.join(tmp, 'boss5_game_raw.glb'), path.join(out, 'boss5_game.glb'), '0.5'], { stdio: 'inherit' });
 blender('render_portrait.py', f(path.join(out, 'boss5_game.glb')), f(path.join(out, 'boss5_oni.png')));
 blender('build_skull.py', f(path.join(tmp, 's1', 'stage1.blend')), f(path.join(out, 'boss5_skull.glb')));
+fs.mkdirSync(path.join(out, 'vfx'), { recursive: true });
+blender('render_skull_sprite.py', f(path.join(out, 'boss5_skull.glb')), f(path.join(out, 'vfx', 'oni-skull-green.png')));
 if (process.argv.includes('--previews')) {
   for (const [clip, gif] of [['Walk', 'boss5_walk.gif'], ['Attack1', 'boss5_attack1.gif'], ['Attack2', 'boss5_attack2.gif'], ['Attack3', 'boss5_attack3.gif'], ['Die', 'boss5_die.gif']]) {
     const r = cp.spawnSync(process.execPath, [path.join(here, 'capture.cjs'), clip, path.join(out, gif)], { stdio: 'inherit', env: { ...process.env, BOSS5_ASSETS: out, DITHER: '0' } });

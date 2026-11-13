@@ -74,6 +74,14 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 | `hit-dark` | 敵方命中·暗 | 暗屬性敵人打中我方的爆點 |
 | `hit-earth` | 敵方命中·地 | 地屬性敵人打中我方的爆點 |
 | `hit-wind` | 敵方命中·風 | 風屬性敵人打中我方的爆點 |
+| `boss-oni-eye` | 鬼面眼睛紅光 | 第5隻封魔塔BOSS（NPC tower_boss_5）的常駐特效；`js/boss-oni-fx.js` 以 `VFX_COMBAT_DEFAULTS.bossOni` 取用，對準模型 Eye_L／Eye_R 掛點，每眼一份，循環。 |
+| `boss-oni-mist` | 鬼面紅霧拖尾 | 鬼面BOSS的常駐紅霧；`js/boss-oni-fx.js` 對準模型 Fx_Back 掛點循環播放，粒子為世界座標，BOSS 移動時自然拖尾。 |
+| `boss-oni-ram-hit` | 鬼面撞擊 | 鬼面BOSS攻擊動作 Attack1（臉部衝撞）的撞擊爆點；`js/boss-oni-fx.js` 在動作 0.633 秒的撞擊格播在目標身上。 |
+| `boss-oni-spit` | 鬼面吐氣 | 鬼面BOSS攻擊動作 Attack2 吐出小骷髏時，嘴前（Fx_Mouth）的綠氣。 |
+| `boss-oni-skull` | 鬼面小骷髏 | 鬼面BOSS攻擊動作 Attack2 的三顆小骷髏飛行物（一顆射向目標、兩顆左右偏 30 度各飛 60 米）；`js/boss-oni-fx.js` 逐幀移動。 |
+| `boss-oni-skull-hit` | 鬼面小骷髏命中 | 鬼面BOSS射向目標的那顆小骷髏抵達目標時的爆點。 |
+| `boss-oni-flame` | 鬼面火焰 | 鬼面BOSS攻擊動作 Attack3 的火焰；`js/boss-oni-fx.js` 從 Fx_Mouth 沿目標方向播放，以 scaleX＝距離/200 拉長，最長 15 米。 |
+| `boss-oni-shatter` | 鬼面碎裂 | 鬼面BOSS死亡動作第 2 秒碎裂時在身體中心的爆散（紅霧、火星、碎屑）。 |
 | `en-poison-cross` | 毒素加持 | 配置表指定；`js/vfx-runtime.js` 將 flow 圖層拆成同份 Preset 的四臂，各含三段無縫材質，依權威事件逐步顯露／投影與回收 |
 | `ground-firewall` | 火牆 | `js/vfx-runtime.js` 寫死的火牆三柱播放處理（火龍捲第 7 階在 2026-09-12 由無限火牆改成無限火龍後，技能表已經沒有任何一列填它） |
 | `bolt-chain-travel-bluewhite` | 連鎖閃電彈射 | Skills2 第 1 階攻擊特效指定；`js/vfx-runtime.js` 另有此 Preset 的圖集寬度及移動端點追蹤處理 |

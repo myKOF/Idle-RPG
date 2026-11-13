@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "id": "boss-oni-skull",
+  "duration": 0.6,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "type": "sprite",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 0,
+      "scale": {
+        "x": 0.1523,
+        "y": 0.1523
+      },
+      "alpha": 0.7,
+      "tint": "#30ff50",
+      "blendMode": "add",
+      "duration": 0.6,
+      "alphaOverLife": [
+        [
+          0,
+          0.6
+        ],
+        [
+          0.5,
+          1
+        ],
+        [
+          1,
+          0.6
+        ]
+      ]
+    },
+    {
+      "id": "skull",
+      "type": "sprite",
+      "assetId": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-green.png",
+      "zIndex": 2,
+      "scale": {
+        "x": 0.0898,
+        "y": 0.0898
+      },
+      "alpha": 1,
+      "blendMode": "normal",
+      "duration": 0.6,
+      "rotationOverLife": [
+        [
+          0,
+          -0.1
+        ],
+        [
+          0.5,
+          0.1
+        ],
+        [
+          1,
+          -0.1
+        ]
+      ]
+    },
+    {
+      "id": "trail",
+      "type": "particle",
+      "assetId": "particle-pack/png-black-background/light_03.png",
+      "zIndex": 1,
+      "alpha": 0.6,
+      "tint": "#38ff5a",
+      "blendMode": "add",
+      "emission": {
+        "mode": "rate",
+        "rate": 46
+      },
+      "lifetime": [
+        0.3,
+        0.5
+      ],
+      "spawn": {
+        "radius": 6,
+        "shape": "circle"
+      },
+      "speed": [
+        0,
+        14
+      ],
+      "direction": 180,
+      "spread": 120,
+      "startScale": [
+        0.0352,
+        0.0586
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.3
+        ]
+      ]
+    },
+    {
+      "id": "haze",
+      "type": "particle",
+      "assetId": "new_materials/smoke/smoke3_11.png",
+      "zIndex": 1,
+      "alpha": 0.35,
+      "tint": "#1c9a3c",
+      "blendMode": "normal",
+      "emission": {
+        "mode": "rate",
+        "rate": 22
+      },
+      "lifetime": [
+        0.5,
+        0.8
+      ],
+      "spawn": {
+        "radius": 8,
+        "shape": "circle"
+      },
+      "speed": [
+        0,
+        10
+      ],
+      "direction": 180,
+      "spread": 100,
+      "startScale": [
+        0.0469,
+        0.0742
+      ],
+      "alphaOverLife": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "scaleOverLife": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          1.4
+        ]
+      ]
+    }
+  ],
+  "sizing": {
+    "authored": {
+      "radius": 26
+    },
+    "shape": "circle"
+  }
+}

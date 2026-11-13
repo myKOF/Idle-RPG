@@ -10,8 +10,8 @@ FLAGS = [a for a in argv if a.startswith('--')]
 argv = [a for a in argv if not a.startswith('--')]
 SRC, OUT = argv[0], argv[1]
 ONLY = set(argv[2].split(',')) if len(argv) > 2 else None
-# --game: in-game variant. Like the BOSS3 clips, the strikes/walk keep their vertical motion but the horizontal root
-# displacement is fixed (the game moves the body itself), and the death burst stays inside the 6.2 m NPC canvas.
+# --game: in-game variant. Like the BOSS3 clips, walk/attack 2/attack 3 keep only vertical motion (the game moves the body itself);
+# attack 1 keeps a short 0.9 m lunge because the boss now fights at melee range, and the death burst stays inside the 6.2 m NPC canvas.
 GAME = '--game' in FLAGS
 lock_xy = False
 HOVER = 1.5
@@ -338,6 +338,8 @@ clips['Walk'] = (30, walk)
 def atk1(f):
     t = f / 30.0
     y = track(f, [(0, 0), (12, -0.8, 'smooth'), (14, -0.9, 'lin'), (19, 6.0, 'in'), (24, 6.0, 'lin'), (54, 0, 'smooth')])
+    if GAME:
+        y *= 0.15      # the tower boss now strikes at melee range: a 0.9 m lunge (the game moves the body itself)
     z = track(f, [(0, 0), (12, 0.25, 'smooth'), (19, -0.25, 'in'), (24, -0.2, 'lin'), (54, 0, 'smooth')])
     pitch = track(f, [(0, 20), (12, -22, 'smooth'), (14, -24, 'lin'), (19, 30, 'in'), (24, 28, 'lin'), (54, 20, 'smooth')])
     sq = track(f, [(0, 1), (19, 1, 'lin'), (20, 0.84, 'out'), (23, 1.0, 'smooth')])
@@ -345,7 +347,7 @@ def atk1(f):
     sh = 0
     if 19 <= f <= 26:
         sh = 0.09 * (1 - (f - 19) / 7.0) * (1 if f % 2 else -1)
-    D = {'Body': body_D(y=y, z=z, x=sh, pitch=pitch, roll=sh * 40, s=s)}
+    D = {'Body': body_D(y=y, z=z, x=0 if GAME else sh, pitch=pitch, roll=sh * 40, s=s)}
     eb_ = 1.5 if 8 <= f <= 24 else 1.0
     D.update(eyes_D(eye_scale(t, boost=eb_)))
     return D
@@ -535,7 +537,7 @@ for name in order:
     if ONLY and name not in ONLY:
         continue
     n, fn = clips[name]
-    lock_xy = GAME and name != 'Die'
+    lock_xy = GAME and name not in ('Die', 'Attack1')
     if name == 'Die':
         fn = build_die()
     acts[name] = make_action(name, n, fn)

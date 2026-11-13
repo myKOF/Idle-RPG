@@ -640,6 +640,17 @@
       var a = actions[clip || ctrl.clip];
       return a ? a.getClip().duration : 0;
     };
+    /* 模型上某個具名節點（骨骼或掛點，例如 BOSS 的 Fx_Mouth）在目前姿勢下的位置，單位是畫布像素，原點是畫布錨點（腳底）。
+       戰鬥特效（js/boss-oni-fx.js）用它對準眼睛、嘴巴；乘上本體縮放就是畫面像素。找不到節點回 null。 */
+    var anchorV = new THREE.Vector3();
+    ctrl.anchorPoint = function (name) {
+      var node = gltf.scene.getObjectByName(name);
+      if (!node) return null;
+      pivot.updateMatrixWorld(true);
+      cam.updateMatrixWorld(true);
+      node.getWorldPosition(anchorV).project(cam);
+      return { x: anchorV.x * size / 2, y: -anchorV.y * size / 2 - (ctrl.anchorY - 0.5) * size };
+    };
     /* 目前這個動作原速要播多久（有 start／end 的只算那一段）與劍揮到的時刻（距離開始播的秒數） */
     ctrl.spanSec = function () {
       if (!currentCfg) return 0;

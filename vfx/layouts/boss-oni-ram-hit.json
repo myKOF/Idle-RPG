@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "boss-oni-ram-hit",
+  "groups": [
+    {
+      "id": "boss-oni-ram-hit",
+      "name": "boss-oni-ram-hit",
+      "layerIds": [
+        "halo",
+        "ring",
+        "face",
+        "flash",
+        "scratchA",
+        "sparks"
+      ]
+    }
+  ],
+  "order": [
+    "group:boss-oni-ram-hit"
+  ]
+}
