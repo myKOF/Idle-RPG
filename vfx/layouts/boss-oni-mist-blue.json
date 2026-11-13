@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "presetId": "boss-oni-mist-blue",
+  "groups": [
+    {
+      "id": "boss-oni-mist-blue",
+      "name": "boss-oni-mist-blue",
+      "layerIds": [
+        "smoke",
+        "wisp"
+      ]
+    }
+  ],
+  "order": [
+    "group:boss-oni-mist-blue"
+  ]
+}

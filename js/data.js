@@ -1346,10 +1346,10 @@ var VFX_COMBAT_DEFAULTS = {
   bossOni: {
     eye: 'boss-oni-eye', mist: 'boss-oni-mist', ramHit: 'boss-oni-ram-hit', spit: 'boss-oni-spit',
     skull: 'boss-oni-skull', skullHit: 'boss-oni-skull-hit', flame: 'boss-oni-flame', shatter: 'boss-oni-shatter',
-    /* 藍（第15層）／紫（第25層）貼圖版：吐骷髏與噴火換色，其餘共用上面的 */
+    /* 藍（第15層）／紫（第25層）貼圖版：眼睛、紅霧、吐骷髏與噴火換色，其餘（撞擊、碎裂）共用上面的 */
     variants: {
-      tower_boss_15: { spit: 'boss-oni-spit-blue', skull: 'boss-oni-skull-blue', skullHit: 'boss-oni-skull-hit-blue', flame: 'boss-oni-flame-blue' },
-      tower_boss_25: { spit: 'boss-oni-spit-purple', skull: 'boss-oni-skull-purple', skullHit: 'boss-oni-skull-hit-purple', flame: 'boss-oni-flame-purple' }
+      tower_boss_15: { eye: 'boss-oni-eye-blue', mist: 'boss-oni-mist-blue', spit: 'boss-oni-spit-blue', skull: 'boss-oni-skull-blue', skullHit: 'boss-oni-skull-hit-blue', flame: 'boss-oni-flame-blue' },
+      tower_boss_25: { eye: 'boss-oni-eye-purple', mist: 'boss-oni-mist-purple', spit: 'boss-oni-spit-purple', skull: 'boss-oni-skull-purple', skullHit: 'boss-oni-skull-hit-purple', flame: 'boss-oni-flame-purple' }
     }
   },
   /* 小隕石：由 Runtime 依 variant 取用，不佔表上的欄位。 */

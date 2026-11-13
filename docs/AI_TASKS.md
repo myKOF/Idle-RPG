@@ -16126,3 +16126,7 @@ Worker 存活且頁面正常完成載入。
 
 - Owner：Claude，Done。使用者補充：藍、紫兩個貼圖版噴的火焰與小骷髏顏色要和原版不同，顏色由我決定。新增八份 Preset（`boss-oni-spit／skull／skull-hit／flame` 的 `-blue`、`-purple` 版，含 layout）、兩張小骷髏貼圖（色相轉換，素材庫 `vfx/oni-skull-blue／purple.png`）、`VFX_COMBAT_DEFAULTS.bossOni.variants`、用途清單八列；`boss-oni-fx.js` 依 npcId 取色。紅版 Preset 未動。快取版號 `20261113-boss-oni-fx4`。
 - 驗證：`tests/boss-oni-fx.test.cjs` 9 項（含三版各自取用對應 id、眼睛紅霧共用）；相關測試與 HEAD 逐名比對無新增失敗；建置通過、素材匯出最新；以 preset 渲染工具確認顏色。未做 15／25 層的實機截圖，色彩觀感需使用者目視。素材庫提交 597eb830。
+
+## TOWER-BOSS5-ONI-EYE-MIST-COLORS-20261113 — 藍／紫版眼睛與霧氣換色
+
+- Owner：Claude，Done。使用者追加：眼睛和紅霧也換成對應顏色。新增四份 Preset（`boss-oni-eye／mist` 的 `-blue`、`-purple`，含 layout）、`bossOni.variants` 補 eye／mist、用途清單四列、測試補三版眼睛與霧氣；紅版 Preset 未動。快取版號 `20261113-boss-oni-fx5`。實機在第15層看到藍色霧氣；撞擊與碎裂爆散仍是紅色（未要求）。

@@ -17,33 +17,43 @@ const SKULL = 'claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-green.png';
 const SKULL_BLUE = 'claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-blue.png';
 const SKULL_PURPLE = 'claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-purple.png';
 
+/* ---------- 眼睛紅光與紅霧：三個貼圖版本各一套顏色（紅／藍／紫） ---------- */
+const EYE_COLORS = {
+  '': { halo: '#ff1c0a', core: '#ffe2b8', spark: '#ff7a30', smoke: '#c0141e', wisp: '#ff2a1a' },
+  '-blue': { halo: '#1c8cff', core: '#d6f0ff', spark: '#5ab4ff', smoke: '#1450c0', wisp: '#2a8aff' },
+  '-purple': { halo: '#a01cff', core: '#f0d6ff', spark: '#c46aff', smoke: '#6a14c0', wisp: '#a02aff' }
+};
+function eyeAndMist(sfx, E) {
 /* ---------- 眼睛 ---------- */
 kit.write({
-  id: 'boss-oni-eye', duration: 0.9, loop: true,
+  id: 'boss-oni-eye' + sfx + '', duration: 0.9, loop: true,
   sizing: { authored: { radius: 18 }, shape: 'circle' },
   layers: [
-    sprite({ id: 'halo', asset: A.glowSoft, z: 0, size: 66, alpha: 0.9, tint: '#ff1c0a', blend: 'add', duration: 0.9,
+    sprite({ id: 'halo', asset: A.glowSoft, z: 0, size: 66, alpha: 0.9, tint: E.halo, blend: 'add', duration: 0.9,
       alphaOverLife: [[0, 0.7], [0.2, 1], [0.38, 0.5], [0.6, 1], [0.8, 0.6], [1, 0.7]] }),
-    sprite({ id: 'core', asset: A.dot, z: 1, size: 20, alpha: 1, tint: '#ffe2b8', blend: 'add', duration: 0.9,
+    sprite({ id: 'core', asset: A.dot, z: 1, size: 20, alpha: 1, tint: E.core, blend: 'add', duration: 0.9,
       alphaOverLife: [[0, 0.8], [0.2, 1], [0.38, 0.6], [0.6, 1], [0.8, 0.7], [1, 0.8]],
       scaleOverLife: [[0, 1], [0.3, 1.2], [0.55, 0.85], [0.8, 1.15], [1, 1]] }),
     particle({ id: 'sparks', asset: A.dot, z: 2, rate: 12, lifetime: [0.4, 0.8], spawnRadius: 5, speed: [8, 30], direction: -90, spread: 90,
-      startPx: [4, 8], tint: '#ff7a30', blend: 'add', alpha: 0.9, alphaOverLife: [[0, 0], [0.2, 1], [1, 0]] })
+      startPx: [4, 8], tint: E.spark, blend: 'add', alpha: 0.9, alphaOverLife: [[0, 0], [0.2, 1], [1, 0]] })
   ]
 });
 
 /* ---------- 紅霧拖尾 ---------- */
 kit.write({
-  id: 'boss-oni-mist', duration: 1.2, loop: true,
+  id: 'boss-oni-mist' + sfx + '', duration: 1.2, loop: true,
   sizing: { authored: { radius: 40 }, shape: 'circle' },
   layers: [
     particle({ id: 'smoke', asset: A.smokeSoft, z: 0, rate: 34, lifetime: [1.0, 1.7], spawnRadius: 14, speed: [2, 14], direction: -90, spread: 360,
-      startPx: [40, 72], tint: '#c0141e', blend: 'normal', alpha: 0.75,
+      startPx: [40, 72], tint: E.smoke, blend: 'normal', alpha: 0.75,
       alphaOverLife: [[0, 0], [0.2, 0.9], [1, 0]], scaleOverLife: [[0, 0.6], [1, 1.7]], drag: 0.6 }),
     particle({ id: 'wisp', asset: A.glowSoft, z: 1, rate: 10, lifetime: [0.7, 1.2], spawnRadius: 16, speed: [4, 16], direction: -90, spread: 360,
-      startPx: [22, 40], tint: '#ff2a1a', blend: 'add', alpha: 0.5, alphaOverLife: [[0, 0], [0.25, 1], [1, 0]] })
+      startPx: [22, 40], tint: E.wisp, blend: 'add', alpha: 0.5, alphaOverLife: [[0, 0], [0.25, 1], [1, 0]] })
   ]
 });
+
+}
+Object.keys(EYE_COLORS).forEach(sfx => eyeAndMist(sfx, EYE_COLORS[sfx]));
 
 /* ---------- 攻擊1：撞擊 ---------- */
 kit.write({
@@ -162,5 +172,5 @@ kit.write({
   ]
 });
 
-['boss-oni-eye', 'boss-oni-mist', 'boss-oni-ram-hit', 'boss-oni-shatter'].concat(['', '-blue', '-purple'].reduce((l, x) => l.concat(['boss-oni-spit' + x, 'boss-oni-skull' + x, 'boss-oni-skull-hit' + x, 'boss-oni-flame' + x]), []))
+['boss-oni-ram-hit', 'boss-oni-shatter'].concat(['', '-blue', '-purple'].reduce((l, x) => l.concat(['boss-oni-eye' + x, 'boss-oni-mist' + x,'boss-oni-spit' + x, 'boss-oni-skull' + x, 'boss-oni-skull-hit' + x, 'boss-oni-flame' + x]), []))
   .forEach(id => console.log(JSON.stringify(kit.probe(id))));

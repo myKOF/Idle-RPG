@@ -35,4 +35,6 @@
 | 藍 | tower_boss_15 | 青藍 | 藍白（白→淺藍→藍→深藍） |
 | 紫 | tower_boss_25 | 紫 | 紫（白→淡紫→紫→深紫） |
 
-吐氣與小骷髏命中爆點跟著小骷髏換色。接線：`VFX_COMBAT_DEFAULTS.bossOni.variants[npcId]` 覆蓋 spit／skull／skullHit／flame，`js/boss-oni-fx.js` 依 BOSS 的 npcId 取用；眼睛紅光與紅霧三版仍是紅色（使用者沒要求改）。已登記於 `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md`。
+吐氣與小骷髏命中爆點跟著小骷髏換色。接線：`VFX_COMBAT_DEFAULTS.bossOni.variants[npcId]` 覆蓋 spit／skull／skullHit／flame，`js/boss-oni-fx.js` 依 BOSS 的 npcId 取用；眼睛光與霧氣之後也依版本換色（藍／紫，使用者 2026-11-13 追加），撞擊與碎裂三版仍共用。已登記於 `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md`。
+
+- 追加：眼睛與霧氣的藍／紫版 Preset 為 `boss-oni-eye-blue／purple`、`boss-oni-mist-blue／purple`（`author/boss-oni.cjs` 的 EYE_COLORS），同樣經 `bossOni.variants` 取用。

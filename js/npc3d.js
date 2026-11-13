@@ -2,7 +2,7 @@
    Simulation, hit resolution and attack rates remain owned by the worker. */
 (function (global) {
   'use strict';
-  var VERSION = '20261113-boss-oni-fx4';
+  var VERSION = '20261113-boss-oni-fx5';
   function definition(data) {
     var def = data && data.model3d;
     return def && def.file && def.clips && def.clips.walk ? def : null;

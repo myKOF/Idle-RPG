@@ -34,7 +34,7 @@
 
   function create(o) {
     var vfx = o.vfx, baseIds = o.presets || {};
-    /* 三個貼圖版本各有一套吐骷髏／噴火的顏色（baseIds.variants[npcId] 覆蓋 spit／skull／skullHit／flame）；眼睛、紅霧、撞擊、碎裂共用 */
+    /* 三個貼圖版本各有一套眼睛／紅霧／吐骷髏／噴火的顏色（baseIds.variants[npcId] 覆蓋 eye／mist／spit／skull／skullHit／flame）；撞擊、碎裂共用 */
     function idsOf(ent) {
       var v = baseIds.variants && ent && ent.data && baseIds.variants[ent.data.npcId];
       return v ? Object.assign({}, baseIds, v) : baseIds;
@@ -79,7 +79,7 @@
         var eyeL = anchor(ent, 'Eye_L'), eyeR = anchor(ent, 'Eye_R'), back = anchor(ent, 'Fx_Back');
         if (!eyeL || !eyeR || !back) return;
         var l = loops[id] || (loops[id] = { eyeL: null, eyeR: null, mist: null });
-        var fy = depthOf(ent);
+        var fy = depthOf(ent), ids = idsOf(ent);
         function place(key, id2, pos, depth) {
           var q = { position: pos, scale: rel, depthY: depth };
           if (!l[key]) l[key] = play(id2, q);

@@ -90,6 +90,10 @@ grep 找得到「哪裡寫死了這個 id」，寫不出「是誰在用」：下
 | `boss-oni-skull-purple` | 鬼面紫版小骷髏 | 第25層紫色鬼面攻擊2 的三顆小骷髏飛行物（紫色）。 |
 | `boss-oni-skull-hit-purple` | 鬼面紫版小骷髏命中 | 第25層紫色鬼面射向目標的小骷髏抵達時的爆點。 |
 | `boss-oni-flame-purple` | 鬼面紫版火焰 | 第25層紫色鬼面攻擊3 的紫色火焰，其餘規則同紅版。 |
+| `boss-oni-eye-blue` | 鬼面藍版眼睛 | 第15層藍色鬼面（tower_boss_15）的常駐眼睛光，藍色；規則同紅版。 |
+| `boss-oni-mist-blue` | 鬼面藍版霧氣 | 第15層藍色鬼面的常駐拖尾霧氣，藍色。 |
+| `boss-oni-eye-purple` | 鬼面紫版眼睛 | 第25層紫色鬼面（tower_boss_25）的常駐眼睛光，紫色。 |
+| `boss-oni-mist-purple` | 鬼面紫版霧氣 | 第25層紫色鬼面的常駐拖尾霧氣，紫色。 |
 | `en-poison-cross` | 毒素加持 | 配置表指定；`js/vfx-runtime.js` 將 flow 圖層拆成同份 Preset 的四臂，各含三段無縫材質，依權威事件逐步顯露／投影與回收 |
 | `ground-firewall` | 火牆 | `js/vfx-runtime.js` 寫死的火牆三柱播放處理（火龍捲第 7 階在 2026-09-12 由無限火牆改成無限火龍後，技能表已經沒有任何一列填它） |
 | `bolt-chain-travel-bluewhite` | 連鎖閃電彈射 | Skills2 第 1 階攻擊特效指定；`js/vfx-runtime.js` 另有此 Preset 的圖集寬度及移動端點追蹤處理 |
