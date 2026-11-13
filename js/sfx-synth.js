@@ -361,11 +361,15 @@ var SfxSynth = (function () {
     flame(ac, out, t + 0.05, { dur: 0.7, attack: 0.05, peak: 0.5, decay: 0.4, cutLo: 500, cutHi: 1600, rate: [0.03, 0.07], flick: [0.4, 1] });
     crackles(ac, out, t + 0.05, 0.5, 8, 0.5);
   }
-  function fireTornado(ac, out, t, R, dur) {   // 第 2 輪「柴火劈啪」改成循環
+  function fireTornado(ac, out, t, R, dur) {   // 2026-11-13 使用者選定「地獄火漩」：地底轟鳴＋一圈圈往上捲的風聲＋零星火星
     var k = R(0.95, 1.05); dur = dur || 3;
-    flame(ac, out, t, { dur: dur, attack: 0.25, peak: 0.7, decay: 0.4, cutLo: 350 * k, cutHi: 1100 * k, rate: [0.04, 0.1], flick: [0.4, 1] });
-    crackles(ac, out, t + 0.05, dur - 0.4, Math.round(dur * 27), 0.85, { bias: 1, dMax: 0.02 });
-    crackles(ac, out, t + 0.1, dur - 0.4, Math.round(dur * 5), 0.9, { fLo: 500, fHi: 1400, q: 3, dMin: 0.025, dMax: 0.05, bias: 1 });
+    flame(ac, out, t, { dur: dur, attack: 0.25, peak: 0.9, decay: 0.4, cutLo: 70 * k, cutHi: 200 * k, rate: [0.08, 0.2], flick: [0.5, 1] });   // 地底轟鳴
+    for (var tt = t + 0.15; tt < t + dur - 0.6; tt += 0.7) {                                                                                  // 風一圈圈往上捲
+      var bp = filt(ac, 'bandpass', 400, 5); sweep(bp.frequency, tt, [[0, 300 * k], [0.65, 1600 * k]]);
+      chain(noise(ac, tt, 0.7), bp, env(ac, tt, 0.3, 0.35, 0.38), pan(ac, Math.random() * 1.2 - 0.6), out);
+    }
+    flame(ac, out, t, { dur: dur, attack: 0.25, peak: 0.35, decay: 0.4, cutLo: 500 * k, cutHi: 1300 * k, rate: [0.04, 0.1], flick: [0.4, 1] });  // 火焰
+    crackles(ac, out, t + 0.05, dur - 0.4, Math.round(dur * 5), 0.6, { fLo: 1500, fHi: 5000, bias: 1, dMax: 0.02 });                           // 零星火星
   }
   function lavaPool(ac, out, t, R, dur) { dur = dur || 3;
     var lp = filt(ac, 'lowpass', 200, 1); flutter(lp.frequency, t, dur, 120, 300, 0.1, 0.25);
@@ -669,7 +673,7 @@ var SfxSynth = (function () {
     'starfall-impact':    d(starfallImpact, 0.9),
     'dragon-devour':      d(dragonDevour, 0.75),
     'fire-shockwave':     d(fireShockwave, 1),
-    'firepillar':         d(fireTornado, 0.85, LOOP),        // 不叫 fire-tornado：那是 VFX Preset 的名字，表上會混淆
+    'firepillar':         d(fireTornado, 0.67, LOOP),        // 不叫 fire-tornado：那是 VFX Preset 的名字，表上會混淆
     'lava-pool':          d(lavaPool, 0.4, LOOP),
     'firehunt':           d(firehunt, 1.4),
     'solar-ring-fly':     d(solarRingFly, 1.6, FLIGHT),
