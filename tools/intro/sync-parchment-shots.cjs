@@ -30,9 +30,17 @@ const sources = [
   'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-one-assault.js',
   'shot-one-reinforcements.js', 'build-audio.cjs', 'render-shot-one.cjs',
   'assets/noto-serif-tc-bold.woff2', 'assets/shot-one-effects.wav', 'assets/shot-one-preview.wav'
-].map(file => 'extended-shot-one/' + file));
+].map(file => 'extended-shot-one/' + file), [
+  'PROMPTS.json', 'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-two.js',
+  'commander-reference.js', 'build-audio.cjs', 'render-shot-two.cjs', 'package-preview.cjs',
+  'assets/04-heavy-fire-roar.wav', 'assets/archangel-user-reference.png',
+  'assets/archangel-hood-chin-tucked.png', 'assets/archangel-hood-edge-left.png',
+  'assets/charred-feather.png', 'assets/shot-one-tail.png', 'assets/shot-two-effects.wav',
+  'assets/shot-two-preview.wav', 'assets/shots-one-two-preview.wav'
+].map(file => 'extended-shot-two/' + file), 'web/shot-02-archangel-fall-18s.mp4');
 const exportsByName = {
   'shot-01-extended.mp4': 'web/shot-01-extended.mp4',
+  'shots-01-02-34s.mp4': 'web/shots-01-02-34s.mp4',
   'shot-01-02.mp4': 'web/shot-01-02.mp4',
   'shot-01-03.mp4': 'web/shot-01-03.mp4',
   'shot-01-03-sfx.mp3': 'web/shot-01-03-sfx.mp3',

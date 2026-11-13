@@ -1,6 +1,6 @@
 # 開始選單標誌
 
-遊戲目前使用 `title-lockup-forged.webp`（1440 × 736，透明 WebP）。內建 ImageGen 以原低光稿編修，保留「神力之巔」的尖銳字形及紅寶石直劍，換上磨損鍛鐵與氧化古銅。副標「無限征途」採厚實、拉開字距的暗金方字。原稿為 1754 × 896 RGBA PNG，以 Pillow 等比縮放並使用 WebP 品質 90、method 6 匯出。原稿、WebP 和完整提示詞 `ATMOSPHERE_PROMPTS.json` 存於 Effects-Materials 的 `codex-authored/start-menu-wasteland-20261106`，由 `node tools/intro/sync-start-menu.cjs --check` 核對。
+遊戲目前使用 `title-lockup-forged.webp`（1440 × 736，透明 WebP）。2026-11-13 以內建 ImageGen 編修原鍛鐵標誌的副標字樣。依原四個字位的可見邊界合成「放置暗黑」，匹配暗金方字的厚度、立體斜面、字距和基線。以既有 WebP 的解碼像素為底，四個副標字位以外的可見 RGBA 逐像素相同，輸出使用無損 WebP。初版鍛鐵原稿、編修稿及合成母圖保存於 Effects-Materials 的 `codex-authored/start-menu-wasteland-20261106/originals`，由 `node tools/intro/sync-start-menu.cjs --check` 核對。
 
 寶石中心為原稿約 (877, 164)，首頁的 CSS 暗紅呼吸光與圖面中心等比定位。替代文字沿用 String 表的遊戲全名。
 
@@ -31,4 +31,10 @@ A tightly framed, centered landscape logo with full sword tip and four character
 Use case: precise-object-edit. Edit Image 1, the existing finished Chinese dark-fantasy title lockup. Make just one local lighting adjustment. Reduce the visible pale steel-blue outer halo around the logo to approximately 55% of its present intensity (a 45% reduction), primarily by fading the semi-transparent pale blue light surrounding and between the letters and around the hilt. Make it quieter and more translucent so the underlying game environment will show through. Leave a subtle blue rim so it still separates from a warm brown background.
 
 Treat the existing artwork as the locked edit target. Preserve exactly the positions, silhouettes, spacing and relative scale of all glyphs and ornaments, the original dark steel faces, bright silver metallic bevel reflections, deep brown and black shading, warm bronze subtitle and divider, ruby-red crossguard, and the perfectly straight double-edged blade with a single straight fuller. Keep the exact Chinese text 神力之巔 and 無限征途, four characters each, without any addition or substitution. Keep the same wide canvas framing and fully intact point of the sword. Do not shrink or relocate the lockup within this file. Screen layout and 85% scale are applied separately in the game. Actual transparent RGBA, with no background, backing shape, matte, new effects, or scenery. The existing opaque metal and gemstones must remain crisp and fully visible.
+```
+
+## 副標替換提示詞
+
+```text
+Edit the provided transparent 1754×896 game title logo. Replace ONLY the four bronze characters of the SMALL bottom row: the text 無限征途 becomes exactly 放置暗黑 (traditional Chinese: 放, 置, 暗, 黑), with 放置 on the left of the sword and 暗黑 on the right. Match the original four glyph slots, baseline, roughly 165 by 145 pixel glyph bounding boxes, wide tracking, heavy square traditional serif-like carved display lettering, hammered antique gold face, precise gold bevel, and thin dark extrusion. Preserve the SAME large upper text 神力之巔, sword, rubies, gold separator rule, dimensions, positions and transparent alpha. The edited characters should fit exactly within the original subtitle region below the separator; no extra lettering or decorative elements. This is a literal subtitle replacement, no design changes.
 ```

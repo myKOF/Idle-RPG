@@ -15,6 +15,13 @@
 - 更新序章同步工具、來源說明、清單及 LV 記錄。同步工具 `--archive`、`--apply`、`--check` 通過。從封存來源重製的 480 影格成片與兩條 WAV 各自通過 SHA-256 比對。
 - 序章與相關回歸 79/79 通過，建置產出 719 個檔案，字串表檢查 0 筆硬編碼。
 
+## INTRO-SHOTS-01-02-EXTENDED-20261113 — 封存加長前兩鏡核准版
+
+- Owner：Codex，Done。第一鏡 16 秒，流光翼從可見背甲的兩側肩胛接出。第二鏡 18 秒，以新版第一鏡末格疊化，沿用已授權角色圖的兜帽修整、低沉轟然火焰、退入雲層及焦羽翻面。34 秒連播使用連續的 Desert Ascendant。
+- Effects-Materials `aaea6ef3` 保存兩鏡成片、角色與焦羽分件、獨立音效、混音、提示詞及重製程式。遊戲同步成片、來源文件與 SHA-256 清單。設定頁重播仍使用已接第三鏡的 30.3 秒版。
+- `node --test` 執行五份序章測試檔共 43/43，`npm.cmd run build` 通過 720 檔，String 稽核 0。Edge 與 FFmpeg 從封存來源重製三部 MP4，與核准檔的 SHA-256 完全一致。第二鏡三條 WAV 重建一致，34 秒成片完整解碼 1,020 影格。
+- 唯讀檢查遊戲重播入口、既有三鏡成片與素材匯出。Claude 的 LV 與任務表變更位於其他區段，LV 三方試合乾淨，任務表的既有衝突內容在本次修改前後相同。遊戲提交為本段所在提交。
+
 ## INTRO-DESERT-HANDOFF-20261112 — 序章配樂接續到荒漠
 
 - Owner：Codex，Done。自然播完或略過後直接回到荒漠時，場景接手同一個首曲播放器，保留位置與持續播放。首曲播完沿原十秒間隔接第二首。其他場景從自己的首曲開始，塔戰沿用塔戰配樂，開始選單恢復原配樂。
@@ -16087,3 +16094,19 @@ Worker 存活且頁面正常完成載入。
 - 新增八份 VFX Preset `boss-oni-eye／mist／ram-hit／spit／skull／skull-hit／flame／shatter`（含 layout、新素材 `oni-skull-green.png`、既有素材 muzzle_02 的匯出）、`js/boss-oni-fx.js`、`VFX_COMBAT_DEFAULTS.bossOni` 與 `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 八列；`js/hero3d.js` 新增 `ctrl.anchorPoint`、`js/npc3d.js` 記 `attackKey`、`js/vfx-runtime.js` 新增 `playFree`、`js/battle-renderer.js` 接線。快取版號統一 `20261113-boss-oni-fx`（index.html、bridge／Worker、npc3d、編輯器頁 vfx-runtime、Preset DATA_VERSION）。只動畫面，命中與傷害仍由模擬層決定（AI_RULES 8.3）。
 - 驗證：新增 `tests/boss-oni-fx.test.cjs` 7 項，更新 boss5 資產／npc3d-config／tower-boss3d 測試；相關 1374 項通過 1348，失敗 26 項與 HEAD 逐名比對，除我自己更新前的 boss5 資產測試外無新增（既有失敗含 canonical／layout／BPS-16／TBMA-5 等）。`npm run build` 723 檔、字串寫死 0、素材匯出已最新。實機：無頭 Chrome 載真正遊戲跑第5層塔戰（`tools/boss5/capture-ingame.cjs`）看到小骷髏扇形飛行與紅霧，噴火起點與眼睛位置以放大除錯標記確認。
 - 風險／未驗證：特效尺寸與強度只看過截圖，需使用者目視調整；沒有跑完整局到BOSS死亡碎裂；`vfx/asset-index.json` 以 `tools/boss5/add-vfx-assets.cjs` 只登記本項素材（整庫掃描被素材庫既有的 RPG Maker 重複 assetId 擋下，exit 2，與本項無關）。素材庫提交 7b212435、33cb5386。
+
+## START-MENU-SUBTITLE-20261113 — 副標題更名為放置暗黑
+
+- Owner：Codex，Done。將開始選單標誌的四個副標題字改為「放置暗黑」，依原暗金字樣及四個字位合成。原始圖與成品逐像素比對，四個字位之外的可見像素完全相同。成品以無損 WebP 保存，檔案由 256,332 增至 677,430 位元組。
+- 同步雙庫來源與校驗、String 表四筆繁中名稱及衍生檔、快取版本和 LV。唯讀檢查共通規範、既有選單樣式、字串載入與素材來源。逐檔衝突預檢及 String.xlsx 獨占存取檢查通過。原生 Excel 正常重開兩次，CSV 逐格比對只有這四格改動。
+- 隔離靜音 Edge 正式選單確認標誌、頁籤、頁首及標誌替代文字，主控台錯誤及警告為 0。`node --test` 跑選單、背景、序章、VFX 快取與字串共 48/48。`npm.cmd run build` 通過 720 檔，字串寫死 0，雙庫 SHA 與 `git diff --check` 通過。素材庫提交 `322aed89`，可供重載驗收及後續整合。
+
+## SYNC-MERGE-20261113-214523 — 本次 develop 任務紀錄衝突整合
+
+- Owner：Codex，Done；僅處理使用者授權的 pending merge，HEAD `effb0210826f5266d4f2eeac4ec60ee3dff8b2f1`、MERGE_HEAD `049f9115947e6bcc96ed5d8a0ca95d7424af406d`，base `ce091419430998786be03449e559c3010e106013`。
+- 檢查三方任務表差異後，保留 ours 三筆鬼面模型／接入／特效紀錄及 theirs 副標題更名紀錄；保留已自動合入的加長前兩鏡紀錄、全部 incoming 檔案與 controller 的 EOF 修正。只修改本任務表，不動 Excel、索引、其他工作區或素材庫，不建立提交。
+- 衝突預檢已執行，辨識已授權的 ai/codex 兩筆來源；其他工作區因 Git ownership 無法盤點，未擴張 safe.directory 信任。唯讀檢查規範、兩端差異、快取引用、配置管線及素材同步工具。
+- 驗證：`node --test tests/chest.test.cjs tests/task-chest-relic.test.cjs tests/intro-audio.test.cjs tests/intro-game-audio.test.cjs tests/intro-motion.test.cjs tests/intro-player.test.cjs tests/intro-scene.test.cjs tests/start-menu.test.cjs tests/start-menu-background.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs tests/vfx-editor-cache-versions.test.cjs`：92/92 通過；`npm.cmd run build`：723 檔通過。
+- `node tools/config_tables.cjs --apply`：34 字面值、語意變更 0；以既有 readXlsxRows／csvParse 唯讀逐格核對 Chest／String 的 XLSX 與 CSV 一致。既有生成結果完整，不需重寫。`node tools/string-table/build_string_csv.cjs --check`：寫死文字 0。
+- `node tools/intro/sync-start-menu.cjs --check` 與 `node tools/intro/sync-parchment-shots.cjs --check`：素材庫來源／遊戲成品 SHA 一致，無新增素材需交付。`git diff HEAD --check`：完整合併結果通過，工作檔無衝突標記，HEAD／MERGE_HEAD 保持。
+- 日誌保留於 ignored `logs/sync-20261113-214523-tests.tap` 與同前綴 build／menu／intro／strings／tables `.log`。本次無新增已知風險；未執行完整測試套件或瀏覽器遊玩。交由 controller stage 並建立 merge commit；索引未合併項目待 controller 處理，沒有推送。
