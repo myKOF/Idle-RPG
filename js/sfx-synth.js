@@ -382,12 +382,11 @@ var SfxSynth = (function () {
     var fl = ac.createGain(); flutter(fl.gain, t, dur, 0.1, 1, 0.03, 0.08);
     chain(noise(ac, t, dur + 0.05), filt(ac, 'highpass', 4000), fl, loopEnv(ac, t, dur, 0.06), out);  // 嘶嘶
   }
-  function firehunt(ac, out, t, R) { var k = R(0.9, 1.12);
-    boom(ac, out, t, 170 * k, 65, 0.14, 0.45);
-    var bp = filt(ac, 'bandpass', 1800, 0.9); sweep(bp.frequency, t, [[0, 2000 * k], [0.25, 450]]);
-    chain(noise(ac, t, 0.35), bp, shaper(ac, 2.5), env(ac, t, 0.002, 0.7, 0.28), out);
-    flame(ac, out, t + 0.02, { dur: 0.45, attack: 0.03, peak: 0.4, decay: 0.3, cutLo: 500, cutHi: 1500, rate: [0.02, 0.05], flick: [0.4, 1] });
-    crackles(ac, out, t + 0.02, 0.3, 5, 0.6);
+  function firehunt(ac, out, t, R) {   // 2026-11-13 使用者選定「火星迸裂」：清脆的「啪」＋火星往四周噴開（試過更悶的 5 個，仍選原版）
+    var k = R(0.92, 1.08);
+    burstNoise(ac, out, t, 'highpass', 2000, 0.7, 0.0004, 0.8, 0.03, 3);
+    boom(ac, out, t, 200 * k, 90, 0.07, 0.4);
+    crackles(ac, out, t + 0.003, 0.18, 16, 0.8, { fLo: 2000, fHi: 7000, q: 2.5, dMin: 0.005, dMax: 0.02, bias: 1.4, spread: 0.7 });
   }
   function solarRingFly(ac, out, t, R, dur) { var k = R(0.92, 1.08); dur = dur || 0.6;
     var bp = filt(ac, 'bandpass', 600, 1.2); sweep(bp.frequency, t, [[0, 500 * k], [dur * 0.5, 1600 * k], [dur, 700 * k]]);
@@ -675,7 +674,7 @@ var SfxSynth = (function () {
     'fire-shockwave':     d(fireShockwave, 1),
     'firepillar':         d(fireTornado, 0.67, LOOP),        // 不叫 fire-tornado：那是 VFX Preset 的名字，表上會混淆
     'lava-pool':          d(lavaPool, 0.4, LOOP),
-    'firehunt':           d(firehunt, 1.4),
+    'firehunt':           d(firehunt, 4),     // 2026-11-13「火星迸裂」，與舊版同響度
     'solar-ring-fly':     d(solarRingFly, 1.6, FLIGHT),
     // 土
     'rockarmor':          d(rockarmor, 1),
