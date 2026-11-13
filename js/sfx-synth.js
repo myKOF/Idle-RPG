@@ -441,15 +441,14 @@ var SfxSynth = (function () {
     boom(ac, out, ti, 130 * k, 60, 0.2, 0.6);
     ring(ac, out, ti, 520 * k, [[1, 0.6], [1.7, 0.5, 1.4], [2.9, 0.3, 2]], 0.12, 0.5);   // 凝固「喀」
   }
-  function mire(ac, out, t, R) { var k = R(0.9, 1.1);
-    squelch(ac, out, t, k, 1.0, 900, 250, 0.15);                                   // 泥漿濺開
-    burstNoise(ac, out, t, 'lowpass', 700, 1, 0.005, 0.6, 0.2);
-    boom(ac, out, t, 90 * k, 45, 0.2, 0.4);
-    rumble(ac, out, t, 1.2, 180, 0.3, 0.1);
-    for (var i = 0; i < 9; i++) {
-      var tt = t + 0.15 + Math.random() * 1.0;
-      bubble(ac, out, tt, (110 + Math.random() * 180) * k, 0.07 + Math.random() * 0.06, 0.45 * (1 - (tt - t) / 1.4), Math.random() * 0.8 - 0.4);   // 咕嚕
-      squelch(ac, out, tt, k, 0.12, 700, 300, 0.05);
+  function mire(ac, out, t, R) {   // 2026-11-13 使用者選定「泥漿咕嚕」：以冒泡為主，低沉黏稠，約 0.6 秒（沼澤每拍都響，比舊版短一半）
+    var k = R(0.92, 1.08);
+    rumble(ac, out, t, 0.5, 220, 0.35, 0.05);                                       // 泥底低沉
+    for (var i = 0; i < 7; i++) {                                                   // 咕嚕咕嚕
+      var tt = t + i * 0.07 + Math.random() * 0.03;
+      bubble(ac, out, tt, (120 + Math.random() * 120) * k, 0.06 + Math.random() * 0.03, 0.5 * (1 - i / 9), Math.random() * 0.6 - 0.3);
+      var bp = filt(ac, 'bandpass', 600, 4); sweep(bp.frequency, tt + 0.02, [[0, 600 * k], [0.04, 250 * k]]);
+      chain(noise(ac, tt + 0.02, 0.09), bp, env(ac, tt + 0.02, 0.004, 0.12, 0.04), out);
     }
   }
   function earthguard(ac, out, t, R) { var k = R(0.98, 1.02);
@@ -693,7 +692,7 @@ var SfxSynth = (function () {
     'rock-spike':         d(rockSpike, 1),
     'gravity-burst':      d(gravityBurst, 0.75),
     'petrify':            d(petrify, 1.1),
-    'mire':               d(mire, 1.5, { retrigger: true, minGapMs: 600 }),   // 沼澤是場域，每拍作用都響（敵人身上的毒才是 debuff）
+    'mire':               d(mire, 1.25, { retrigger: true, minGapMs: 600 }),   // 沼澤是場域，每拍作用都響（敵人身上的毒才是 debuff）
     'earthguard':         d(earthguard, 1.1),
     'light-pillar':       d(lightPillar, 1),
     // 雷
