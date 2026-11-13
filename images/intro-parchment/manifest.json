@@ -70,7 +70,26 @@
     "extended-shot-two/assets/shot-two-effects.wav": "d49c6374eec48ea9754a147ac64a15147a80e08e479ecf5ed6b673620e098cbe",
     "extended-shot-two/assets/shot-two-preview.wav": "96bb7ffb18417fd1b9117cf75149c67bcaa80b3b20b2c8086f91ea91bbf69b27",
     "extended-shot-two/assets/shots-one-two-preview.wav": "e79acb966c010293e2efc26898f0642d0d3276f89aa92dd57931e4c57b7c5388",
-    "web/shot-02-archangel-fall-18s.mp4": "0d49096b3383f7c405d32b1069dc782163d71f31f7844df3b09918511e288d84"
+    "extended-shot-three/PROMPT.md": "fc8bb72a8b8561b780c302623a59c4e5c9a2029e5e4c151c5a8d881082a48139",
+    "extended-shot-three/index.html": "46dd2ac0c577ab7afcbbf29c14404a9d457f3c60eed92360eddca7e98900763d",
+    "extended-shot-three/preview.js": "504d7e0033a1f829cebc97029660386a6ea66805070aaa69e94f4ad76658ed1f",
+    "extended-shot-three/shot-timing.js": "ccc8bbfd69818747fe71eee8b4d41006c8c6e1648c7330686119630e54659ab4",
+    "extended-shot-three/shot.js": "1a0cd8b1cef4f7e2018c580cb19b6e39044e5eff4a2a4b3c3cbc365985746421",
+    "extended-shot-three/shot-three.js": "d1a2f09fd57794606d4cad66bae1271a0e84ccbf590b0b0bc632aab44bd87376",
+    "extended-shot-three/shot-ground.js": "12cbbe97057911c32713bc9dc870651e4a22cc1cce0c282a557ff6d76cfb792b",
+    "extended-shot-three/shot-feather.js": "3aad980f6938c10ea0d8b87926119e463a14a011b85452338a47956d3a425039",
+    "extended-shot-three/build-audio.cjs": "e0ce51798119189cb58977004a62f57e6b63ec4cb45f24bf77607bf3086cf5c8",
+    "extended-shot-three/render-shot-three.cjs": "f91556558eab8132b21ed7ffa38b45b6d468e3e179eb0c1cc26d344bff772e7e",
+    "extended-shot-three/package-preview.cjs": "4eeca5525759522fe1d718272bbd4fded027590e90a886e6f3ac4b2d4e149472",
+    "extended-shot-three/assets/archangel-fallen-ivory.png": "f6a8be37af68dc07de66992305053dc26f1d9938f13b4b320b283bc1baf5071d",
+    "extended-shot-three/assets/archangel-left-thumb-reference-edit.png": "02b714f302207d2b17f0998e53afdae8dc3a71c088a7f65935f83546a81b30d3",
+    "extended-shot-three/assets/desert-high-oblique.png": "fd85455bb1dccd78394d588e102aaf209b820e452ad26b980402bd27df9b6391",
+    "extended-shot-three/assets/hand-source.png": "cb73ef7389074a534e0dde87790530ecf69ec8ebef201dd5ada194e98f629a97",
+    "extended-shot-three/assets/shot-three-effects.wav": "95dd32db450f4b34b17adf027a9b6025fd0a3c85e24009687407640841eb136d",
+    "extended-shot-three/assets/shot-three-preview.wav": "b85f16045f30ac1f737db5152d72d12b2d11d5c6ba005af15af8b651c035c198",
+    "extended-shot-three/assets/opening-66s-preview.wav": "3d122f91090f808728792724e4249245ec24daf3a6dd79f1c5029392ac187cb9",
+    "web/shot-02-archangel-fall-18s.mp4": "0d49096b3383f7c405d32b1069dc782163d71f31f7844df3b09918511e288d84",
+    "web/shot-03-extended-32s.mp4": "cb3631b2a5b074913316f0cf88b866a361d51afe356f984207a3b5051a028bb1"
   },
   "exports": {
     "shot-01-extended.mp4": {
@@ -80,6 +99,10 @@
     "shots-01-02-34s.mp4": {
       "source": "web/shots-01-02-34s.mp4",
       "sha256": "e009118eee010b4b296e7a44c91a74e63721110a947e1412cb328f25a1712a43"
+    },
+    "shots-01-03-66s.mp4": {
+      "source": "web/shots-01-03-66s.mp4",
+      "sha256": "cf943a5c9b403aef10233f557ad99e692cc9c376a731331419f18af0352477bd"
     },
     "shot-01-02.mp4": {
       "source": "web/shot-01-02.mp4",
@@ -95,7 +118,7 @@
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "b6e65a63c97a5904714a051b745bbbe0f4d8c4e3f5c02886b6b00145111e7fb0"
+      "sha256": "ab5cd520b6b9f322a0849d57785bbdcf57827bb83ba68a68ca21810a502ff1b8"
     }
   }
 }

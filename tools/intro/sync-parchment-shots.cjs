@@ -37,10 +37,19 @@ const sources = [
   'assets/archangel-hood-chin-tucked.png', 'assets/archangel-hood-edge-left.png',
   'assets/charred-feather.png', 'assets/shot-one-tail.png', 'assets/shot-two-effects.wav',
   'assets/shot-two-preview.wav', 'assets/shots-one-two-preview.wav'
-].map(file => 'extended-shot-two/' + file), 'web/shot-02-archangel-fall-18s.mp4');
+].map(file => 'extended-shot-two/' + file), [
+  'PROMPT.md', 'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-three.js',
+  'shot-ground.js', 'shot-feather.js', 'build-audio.cjs', 'render-shot-three.cjs',
+  'package-preview.cjs', 'assets/archangel-fallen-ivory.png',
+  'assets/archangel-left-thumb-reference-edit.png', 'assets/desert-high-oblique.png',
+  'assets/hand-source.png', 'assets/shot-three-effects.wav', 'assets/shot-three-preview.wav',
+  'assets/opening-66s-preview.wav'
+].map(file => 'extended-shot-three/' + file), 'web/shot-02-archangel-fall-18s.mp4',
+'web/shot-03-extended-32s.mp4');
 const exportsByName = {
   'shot-01-extended.mp4': 'web/shot-01-extended.mp4',
   'shots-01-02-34s.mp4': 'web/shots-01-02-34s.mp4',
+  'shots-01-03-66s.mp4': 'web/shots-01-03-66s.mp4',
   'shot-01-02.mp4': 'web/shot-01-02.mp4',
   'shot-01-03.mp4': 'web/shot-01-03.mp4',
   'shot-01-03-sfx.mp3': 'web/shot-01-03-sfx.mp3',

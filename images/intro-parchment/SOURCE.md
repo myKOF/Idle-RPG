@@ -30,6 +30,21 @@ node extended-shot-two/package-preview.cjs
 
 需要重建第二鏡的獨立演出音效與兩條混音時，執行 `node extended-shot-two/build-audio.cjs`。
 
+## 加長第三鏡與 66 秒連播
+
+使用者於 2026-11-14 核准第三鏡 v10。第三鏡 32 秒，自第二鏡黑幕接入。薩爾維恩地圖的紫霧被神光分開，鏡頭循光落入荒漠。光點熄滅後推鏡，煙塵逐漸散去，露出倒臥的大天使長。約 60° 斜俯遠景沿用同一角色分件，焦羽從接近滿幅開始飄落，切到胸前近照後觸甲亮起。羽毛入鏡到觸甲約 6.25 秒。角色保留象牙白與淡金，盔甲覆有沙塵且有損毀。左手只取 ImageGen 修整的拇指區域，沿用使用者指定原圖的其餘四指及掌指關節。近照用於拇指解剖參考。
+
+- `web/shot-03-extended-32s.mp4` 為獨立第三鏡，`web/shots-01-03-66s.mp4` 為核准連播。遊戲專案封存連播為 `images/intro-parchment/shots-01-03-66s.mp4`。設定頁重播使用既有 30.3 秒成片。
+- `extended-shot-three/` 保存鏡頭、砂塵、羽毛、手部修整、提示詞及預覽頁。分層使用同一資料夾中的 ImageGen 角色及斜俯荒漠底圖，地圖、地表、煙霧、焦羽、字型沿用先前封存素材。
+- `extended-shot-three/assets/` 保存 48 kHz 立體聲獨立音效與核准混音。Desert Ascendant 在連播時連續跨過第 34 秒。
+
+在本資料夾執行以下指令可重製。輸出預設為系統暫存目錄下的 `idle-rpg-extended-shot-three`，可用 `PARCHMENT_REVIEW_DIR` 和 `PARCHMENT_FFMPEG` 覆寫。可先設 `PARCHMENT_AUDIO_DIR` 指向暫存資料夾，再執行 `node extended-shot-three/build-audio.cjs` 將混音重製到同一資料夾，供後續封裝讀取。
+
+```powershell
+node extended-shot-three/render-shot-three.cjs
+node extended-shot-three/package-preview.cjs
+```
+
 ## 可編輯來源
 
 Effects-Materials 內的 `codex-authored/intro-parchment-shots-20261111` 保存核准成片、可編輯程式、透明分件、雲海和深淵背景、音軌、聲景產生器及提示詞。角色、流光翼、神殿、遠雲、地面敵軍、飛行敵軍、火焰、煙與粒子分開合成。大天使長的頭罩與右手由獨立透明圖接回角色。第二鏡大天使長沿用第一鏡流光翼分件。第三鏡的地圖、荒漠地表、星點、紫霧、光束、圓形神光及沙塵分開合成。
