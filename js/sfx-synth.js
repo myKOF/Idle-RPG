@@ -451,11 +451,12 @@ var SfxSynth = (function () {
       chain(noise(ac, tt + 0.02, 0.09), bp, env(ac, tt + 0.02, 0.004, 0.12, 0.04), out);
     }
   }
-  function earthguard(ac, out, t, R) { var k = R(0.98, 1.02);
-    boom(ac, out, t, 110, 70, 0.6, 0.35);
-    chord(ac, out, t, [220 * k, 277 * k, 330 * k, 440 * k], 0.12, 1.3, 0.1);       // 溫暖和弦
-    whoosh(ac, out, t, 0.8, { f0: 300, f1: 2500, f2: 4000, q: 0.9, peak: 0.18, peakAt: 0.6 });
-    tinkles(ac, out, t + 0.3, 0.9, 12, 0.08, 1500, 4500);
+  function earthguard(ac, out, t, R) {   // 2026-11-14 使用者選定「溫暖祝福」：柔和和弦慢慢浮起再散去，最柔和、無敲擊
+    var k = R(0.99, 1.01);
+    chord(ac, out, t, [262 * k, 330 * k, 392 * k, 523 * k], 0.25, 0.75, 0.08);      // C 大三和弦慢慢浮起
+    chain(noise(ac, t, 1.1), filt(ac, 'bandpass', 2500, 0.6), env(ac, t, 0.3, 0.04, 0.7), out);   // 一層很淡的空氣聲
+    var o = osc(ac, 'sine', t, 0.85); sweep(o.frequency, t, [[0, 130], [0.48, 90]]);
+    chain(o, env(ac, t, 0.2, 0.15, 0.6), out);                                      // 溫暖的低音墊底
   }
   function lightPillar(ac, out, t, R) { var k = R(0.97, 1.03);
     whoosh(ac, out, t, 0.25, { f0: 6000, f1: 2500, f2: 600, q: 0.9, peak: 0.5, peakAt: 0.3 });   // 光柱降下
@@ -693,7 +694,7 @@ var SfxSynth = (function () {
     'gravity-burst':      d(gravityBurst, 0.75),
     'petrify':            d(petrify, 1.1),
     'mire':               d(mire, 1.25, { retrigger: true, minGapMs: 600 }),   // 沼澤是場域，每拍作用都響（敵人身上的毒才是 debuff）
-    'earthguard':         d(earthguard, 1.1),
+    'earthguard':         d(earthguard, 1.26),     // 2026-11-14「溫暖祝福」，與舊版同響度
     'light-pillar':       d(lightPillar, 1),
     // 雷
     'chain-lightning':    d(chainLightning, 0.55),
