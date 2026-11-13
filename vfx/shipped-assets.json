@@ -4,8 +4,15 @@
   "note": "由 tools/vfx/export-assets.cjs 產生。relativePath 同時是匯出目錄內的路徑與素材庫內的來源路徑（鏡像匯出），因此它本身就是來源證明。",
   "libraryId": "effects-materials",
   "baseUrl": "images/vfx/assets",
-  "assetCount": 198,
+  "assetCount": 200,
   "assets": [
+    {
+      "assetId": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-green.png",
+      "relativePath": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-green.png",
+      "package": "claude-authored",
+      "contentHash": "sha256:7039b85ed101c3590be6fa5d94433ee57b9b8a817d3cd37fe31d263c208fc07a",
+      "fileSize": 78895
+    },
     {
       "assetId": "claude-authored/dragon-devour/vortex-ring.png",
       "relativePath": "claude-authored/dragon-devour/vortex-ring.png",
@@ -1027,6 +1034,13 @@
       "package": "particle-pack",
       "contentHash": "sha256:d6d41342a586c223c057d0f4000725e639787d31d8ec9ec72c58948b58177c75",
       "fileSize": 43622
+    },
+    {
+      "assetId": "particle-pack/png-black-background/muzzle_02.png",
+      "relativePath": "particle-pack/PNG (Black background)/muzzle_02.png",
+      "package": "particle-pack",
+      "contentHash": "sha256:1ecabf57a7f1a2ddfe51c778b3cbdea1da6806b4f8e630816b06ee82a73e8993",
+      "fileSize": 59278
     },
     {
       "assetId": "particle-pack/png-black-background/rotated/muzzle_02_rotated.png",

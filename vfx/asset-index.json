@@ -6,7 +6,7 @@
     "name": "asset-scanner",
     "version": "1.0.0"
   },
-  "assetCount": 2471,
+  "assetCount": 2474,
   "assets": [
     {
       "assetId": "antigravity-authored/ice/ice-arrow-spike.png",
@@ -111699,6 +111699,52 @@
           "height": 512
         },
         "hasAlpha": true
+      }
+    },
+    {
+      "assetId": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-green.png",
+      "package": "claude-authored",
+      "relativePath": "claude-authored/boss5-oni-mask-20261113/vfx/oni-skull-green.png",
+      "format": "png",
+      "fileSize": 78895,
+      "contentHash": "sha256:7039b85ed101c3590be6fa5d94433ee57b9b8a817d3cd37fe31d263c208fc07a",
+      "facts": {
+        "dimensions": {
+          "width": 256,
+          "height": 256
+        },
+        "colorModel": "rgba",
+        "bitDepth": 8,
+        "hasAlphaChannel": true,
+        "pixelsAnalyzed": true,
+        "alpha": {
+          "mean": 0.3913,
+          "visibleRatio": 0.4087,
+          "borderMean": 0
+        },
+        "luminance": {
+          "mean": 0.7338,
+          "max": 1,
+          "borderMean": 0.0003,
+          "borderNearBlackRatio": 1,
+          "borderNearWhiteRatio": 0
+        },
+        "saturation": {
+          "mean": 0.5218,
+          "max": 0.8235
+        },
+        "contentBounds": {
+          "x": 45,
+          "y": 16,
+          "width": 171,
+          "height": 226
+        },
+        "trimmed": false,
+        "edgeContinuity": {
+          "u": 0.9997,
+          "v": 0.9996
+        },
+        "backgroundVariant": "transparent"
       }
     }
   ]

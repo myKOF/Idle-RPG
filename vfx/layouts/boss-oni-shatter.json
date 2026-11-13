@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "presetId": "boss-oni-shatter",
+  "groups": [
+    {
+      "id": "boss-oni-shatter",
+      "name": "boss-oni-shatter",
+      "layerIds": [
+        "flash",
+        "ring",
+        "glow",
+        "smoke",
+        "embers",
+        "debris"
+      ]
+    }
+  ],
+  "order": [
+    "group:boss-oni-shatter"
+  ]
+}

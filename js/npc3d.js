@@ -2,7 +2,7 @@
    Simulation, hit resolution and attack rates remain owned by the worker. */
 (function (global) {
   'use strict';
-  var VERSION = '20261109-treant-actions';
+  var VERSION = '20261113-boss-oni-fx';
   function definition(data) {
     var def = data && data.model3d;
     return def && def.file && def.clips && def.clips.walk ? def : null;
@@ -35,6 +35,7 @@
     var key = semantic === 'attack' || semantic === 'cast' ? 'attack' + (state.attackIndex++ % 3 + 1) : semantic;
     var cfg = state.clips[key];
     if (!cfg) return null;
+    if (semantic === 'attack' || semantic === 'cast') state.attackKey = key;   // 戰鬥特效（js/boss-oni-fx.js）依實際播放的攻擊動作接特效
     body.hero3dPlay(cfg, .5, 0);
     state.semantic = semantic;
     if (semantic === 'walk') applyWalkSpeed(body);
