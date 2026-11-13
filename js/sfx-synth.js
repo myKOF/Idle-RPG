@@ -277,13 +277,40 @@ var SfxSynth = (function () {
     tinkles(ac, out, t + 0.25, 0.8, 14, 0.12, 2000, 6000);
     boom(ac, out, t + 0.25, 180, 90, 0.5, 0.3);
   }
-  function bloodrage(ac, out, t, R) { var k = R(0.92, 1.08);
-    whoosh(ac, out, t, 0.12, { f0: 200, f1: 900, f2: 400, q: 1, peak: 0.5, white: false, peakAt: 0.9 });   // 蓄力拳風
-    var ti = t + 0.11;
-    boom(ac, out, ti, 95 * k, 32, 0.55, 1.0);
-    burstNoise(ac, out, ti, 'lowpass', 2500, 0.7, 0.001, 0.9, 0.12, 4);                                     // 重拳炸裂
-    whoosh(ac, out, ti, 0.5, { f0: 900, f1: 300, f2: 120, q: 1.5, peak: 0.5, white: false, peakAt: 0.05 });  // 暗紅震波
-    rumble(ac, out, ti + 0.02, 0.7, 200, 0.6);
+  /* 嗜血狂怒：「炸雷」（2026-11-13 使用者經過多輪試聽選定：要更爆、更長的落雷）
+     猛烈爆炸（撕裂聲＋飽和爆裂＋次低音）→ 雷鳴一波波滾動約 2.5 秒 → 大空間殘響 */
+  var thunderIr = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function thunderVerb(ac, len) {
+    var b = thunderIr && thunderIr.get(ac);
+    if (b) return b;
+    var n = Math.floor(len * ac.sampleRate), l = 0;
+    b = ac.createBuffer(2, n, ac.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = b.getChannelData(ch);
+      for (var i = 0; i < n; i++) { var tt = i / ac.sampleRate; l = l * 0.7 + (Math.random() * 2 - 1) * 0.3; d[i] = (tt < 0.03 ? 0 : l) * Math.exp(-3.5 * tt / len); }
+    }
+    if (thunderIr) thunderIr.set(ac, b);
+    return b;
+  }
+  function bloodrage(ac, out, t, R) {
+    var k = R(0.95, 1.05), rollLen = 2.5, rolls = 5;
+    var bus = ac.createGain(); bus.connect(out);
+    var cv = ac.createConvolver(); cv.buffer = thunderVerb(ac, 2.5);
+    chain(bus, cv, gain(ac, 0.35), out);                                                              // 天地間回盪
+    var cg = ac.createGain(), tt = t; cg.gain.setValueAtTime(0, t);
+    while (tt < t + 0.12) { cg.gain.setValueAtTime(Math.random() < 0.85 ? 0.5 + Math.random() * 0.5 : 0.05, tt); tt += 0.002 + Math.random() * 0.006; }
+    chain(noise(ac, t, 0.17), filt(ac, 'highpass', 700), shaper(ac, 6), cg, env(ac, t, 0.0005, 1, 0.12), bus);   // 撕裂般的霹靂
+    var lp = filt(ac, 'lowpass', 4000, 0.7); sweep(lp.frequency, t, [[0, 5000], [0.5, 250]]);
+    chain(noise(ac, t, 0.7), lp, shaper(ac, 5), env(ac, t + 0.003, 0.004, 1.3, 0.6), bus);          // 爆裂主體
+    boom(ac, bus, t + 0.004, 62 * k, 26 * k, 1.1, 1.3);                                             // 次低音衝擊
+    for (var i = 0; i < rolls; i++) {                                                               // 雷鳴一波波滾動
+      var st = t + 0.12 + Math.pow(i / rolls, 1.1) * rollLen * 0.75 + Math.random() * 0.15;
+      var amp = 0.9 * (1 - 0.6 * i / rolls) * (0.6 + Math.random() * 0.4), att = 0.08 + Math.random() * 0.25, dec = 0.5 + Math.random() * 0.9;
+      var rl = filt(ac, 'lowpass', 300, 0.8); flutter(rl.frequency, st, att + dec, 90, 420, 0.05, 0.15);
+      var fl = ac.createGain(); flutter(fl.gain, st, att + dec, 0.4, 1, 0.04, 0.12);
+      chain(bnoise(ac, st, att + dec + 0.1), rl, fl, env(ac, st, att, amp, dec), pan(ac, Math.random() * 1.4 - 0.7), bus);
+    }
+    chain(bnoise(ac, t, rollLen + 0.2), filt(ac, 'lowpass', 180, 0.7), env(ac, t + 0.05, 0.2, 0.63, rollLen), bus);   // 底層轟鳴
   }
 
   /* ═════════ 火 ═════════ */
@@ -633,7 +660,7 @@ var SfxSynth = (function () {
     'dualdance':          d(dualdance, 2.0, { minGapMs: 450 }),      // 一則事件就是四連斬，連續事件不疊播
     'counter':            d(counter, 1.9, KEEP),     // 2026-11-08 使用者要求比原本大聲 50%
     'holy-burst':         d(holyBurst, 1),
-    'bloodrage':          d(bloodrage, 0.75, { minGapMs: 300 }),     // 狂怒期間每次普攻都爆一次，高攻速不連環重拳
+    'bloodrage':          d(bloodrage, 0.62, { minGapMs: 3000, maxVoices: 1, maxSec: 4.6 }),   // 雷聲約 2.5 秒＋殘響：每 3 秒最多劈一次，不疊
     // 火
     'fireball':           d(fireball, 0.7),
     'meteor-fly':         d(meteorFly, 1, FLIGHT),
