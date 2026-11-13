@@ -16110,3 +16110,8 @@ Worker 存活且頁面正常完成載入。
 - `node tools/config_tables.cjs --apply`：34 字面值、語意變更 0；以既有 readXlsxRows／csvParse 唯讀逐格核對 Chest／String 的 XLSX 與 CSV 一致。既有生成結果完整，不需重寫。`node tools/string-table/build_string_csv.cjs --check`：寫死文字 0。
 - `node tools/intro/sync-start-menu.cjs --check` 與 `node tools/intro/sync-parchment-shots.cjs --check`：素材庫來源／遊戲成品 SHA 一致，無新增素材需交付。`git diff HEAD --check`：完整合併結果通過，工作檔無衝突標記，HEAD／MERGE_HEAD 保持。
 - 日誌保留於 ignored `logs/sync-20261113-214523-tests.tap` 與同前綴 build／menu／intro／strings／tables `.log`。本次無新增已知風險；未執行完整測試套件或瀏覽器遊玩。交由 controller stage 並建立 merge commit；索引未合併項目待 controller 處理，沒有推送。
+## INTRO-SHOT3-EXTENDED-20261113 — 加長羊皮紙序章第三鏡
+
+- Owner：Codex，In Progress。依使用者核准的 55 秒方案及至少 20 秒的要求，第三鏡為 21 秒。自加長第二鏡的黑幕接入，展開薩爾維恩地圖、紫霧逐區吞沒星光、荒漠神光分開霧潮、俯衝穿沙、焦羽落地及淡黑。
+- 製作範圍為獨立第三鏡及 55 秒連播審片，沿用已封存的地圖、地表、焦羽與 Desert Ascendant。驗收 21／55 秒、第一二鏡畫格保留、第三鏡時間軸及連續配樂。逐檔預檢未發現重疊。
+
