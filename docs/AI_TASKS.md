@@ -9,6 +9,14 @@
 - `npm.cmd run build` ?? 720 ??`node tools/intro/sync-parchment-shots.cjs --check` ??????? SHA-256?`node tools/string-table/build_string_csv.cjs --check` ??? 0?`git diff HEAD --check` ????????????HEAD?MERGE_HEAD ?????? Excel ????????????? incoming ????????????
 - ?????????? index.html?sfx.js?sfx-synth.js ?????????????build ??????????????????????? ignored `logs/sync-20261113-014228-{tests,baseline}.tap` ? `{build,assets,strings}.log`???????????????????????? controller ????????? add?commit?
 
+## SETTINGS-HELP-RELICS-CHESTS-20261113 — 補充遺物與熔爐寶箱說明
+
+- Owner：Codex，Done。設置「說明」在寶石與符文之間新增遺物段落，介紹取得、首件解鎖、升級與效果提示。熔爐段落新增寶箱的鍛造經驗、解鎖、升級、機率與開啟方式。
+- 範圍：String 工作簿及衍生資料、主頁說明與必要快取、VFX 編輯器共用字串快取、LV 總表及本段。依現有玩法撰寫，遺物與寶箱配置、流程及數值沿用。
+- 新增 String 2521～2527，Excel 原生更新、正常重開兩次，原 2,507 筆值、型別、格式及工作表檢視一致。同步主頁與 VFX 編輯器字串快取 `0ed4109b`。逐檔預檢及本次差異三方試合通過，Claude 修改位於其他區段。
+- `node --test tests/settings-tabs.test.cjs tests/game-menu.test.cjs tests/intro-player.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/relic-ui.test.cjs tests/chest.test.cjs` 78/78，`npm.cmd run build` 通過 723 檔，字串寫死 0，`git diff --check` 通過。隔離靜音 Edge 以桌面 1440×900 和窄版 390×844 從開始選單點開設置，確認兩段文字、圖示、位置及無橫向溢出，未出現瀏覽器例外。
+- 唯讀檢查遺物介面、寶箱規則及字串生成工具。可供重載驗收及整合。
+
 ## INTRO-SHOT1-EXTENDED-20261113 — 封存加長第一鏡核准版
 
 - Owner：Codex，Done。封存使用者核准的 16 秒魔軍增援版，供 55 秒計畫的第二鏡接續。獨立成片位於 `images/intro-parchment/shot-01-extended.mp4`，可編輯來源與音效位於 Effects-Materials `1073b1e3`。
