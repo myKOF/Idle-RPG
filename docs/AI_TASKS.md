@@ -33,14 +33,14 @@
 
 ## CHEST-TABLE-LEVEL-CAP-20261112 — 由 Chest 表決定寶箱等級上限
 
-- Codex 單一開發者，已完成。Chest 表保留從 1 連續編號的驗證，移除固定上限。升級、存檔、介面與 GM 指令依各寶箱的最後配置等級運作。更新主頁與 Worker 快取、寶箱及 GM 文件、LV 總表。素材庫無本項變更。
+- Codex 單一開發者，已完成。Chest 表保留從 1 連續編號的驗證，移除固定上限。升級、存檔、介面與 GM 指令依各寶箱的最後配置等級運作。更新主頁與 Worker 快取、寶箱及 GM 文件、LV 總表。
 - `node --test` 執行 chest、worker-protocol、vfx-editor-cache-versions、string-table、sim-forge-parts、sim-command-coverage、save-origin-isolation，共 89/89。測試資料驗證 Lv.100 與 Lv.20 共存、Lv.99 升級扣款、滿級、存檔、介面及 GM。`node tools/config_tables.cjs --apply Chest` 試跑語意變更 0。`npm.cmd run build` 通過 717 檔，差異檢查通過。
 - 唯讀檢查 Chest.xlsx、CSV 與產出的寶箱資料。工作簿沒有阻擋第 21 級的欄位驗證，欄位說明頁仍有舊的 20 級文字。由使用者填寫數值後執行「套用參數.bat」。逐檔衝突預檢通過，可供合併。
 
 ## CHEST-REWARD-DETAILS-20261112 — 寶箱獎勵圖示與彈窗樣式
 
 - Codex 單一開發者，已完成。沿用共用黑色遮罩和標準確認按鈕。裝備顯示實際等級及太古星數，8 星以上以星號和數量顯示。遺物使用遺物頁的圓形圖示並填滿格位。排序改為遺物、符文、金幣與材料、寶石、裝備。修正大量獎勵捲到底部後縮小視窗時格位可能短暫清空的問題。
-- 修改 `js/chest.js`、`js/ui-chest.js`、`css/chest.css`、`css/dialogs.css`、主頁及 Worker 快取與協議 v81、兩支回歸、`docs/CHEST_SYSTEM.md`、`docs/WORKER_PROTOCOL.md`、`LV_upgrade_system.md` 及本段。唯讀檢查離線收益、正常確認彈窗、背包太古星與遺物頁的標記及圖檔。素材庫無本項變更。
+- 修改 `js/chest.js`、`js/ui-chest.js`、`css/chest.css`、`css/dialogs.css`、主頁及 Worker 快取與協議 v81、兩支回歸、`docs/CHEST_SYSTEM.md`、`docs/WORKER_PROTOCOL.md`、`LV_upgrade_system.md` 及本段。唯讀檢查離線收益、正常確認彈窗、背包太古星與遺物頁的標記及圖檔。
 - 寶箱發放段與 Claude `cf099bd3` 的任務計數三方試合乾淨。沿用使用者核准的兩處快取更新，`20261112-chest-rewards-v2` 接續 v1。後續整合保留新版快取與 Claude 開箱任務計數。遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收。
 - `node --test` 執行 `chest`、`worker-protocol`、`vfx-editor-cache-versions`、`string-table`、`relics`、`sim-command-coverage`、`save-origin-isolation`、`ui-sound`、`offline-rewards` 九個測試檔，共 94/94。`npm.cmd run build` 通過 716 檔，字串寫死 0，差異檢查通過。
 - 隔離靜音 Edge 正式頁驗證單開、全開 450 箱，首屏 1.92 秒，148 件裝備中 110 件有太古星。核對遮罩與按鈕計算樣式和離線收益一致、遺物圓框與格位同寬 58 px、排序及最後一格，另以測試資料驗證等級 200／250 與七／八星。1920 × 900、390 × 844 模擬視窗、縮放、確認關閉與快取一致通過。主控台錯誤 0，遊戲場景偶發音訊頻率限幅警告。畫面留本聊天。
@@ -49,7 +49,7 @@
 ## CHEST-REWARD-MODAL-20261112 — 全畫面寶箱獎勵
 
 - Codex 單一開發者，已完成。以使用者截圖為版面參考，在開啟／全開後顯示置中的無框全畫面彈窗。依遺物、符文、寶石、金幣等資源、裝備排列，裝備依品質由高到低逐件顯示。格位及圖示共用背包尺寸。首屏從左到右逐列揭示，捲動時可直接瀏覽其餘獎勵。沿用遊戲素材與「確定」字串。開箱數、加倍與裝備去向保留於無障礙摘要。
-- 修改 `js/ui-chest.js`、`css/chest.css`、`css/style.css`、`js/chest.js`、Worker 協議與載入快取、`index.html`、兩支回歸、`docs/CHEST_SYSTEM.md`、`docs/WORKER_PROTOCOL.md`、`LV_upgrade_system.md` 及本段。唯讀檢查 `js/data.js` 的裝備圖檔對應、`js/item.js` 的裝備生成與寶石圖示、`js/ui-scale.js`、原寶箱圖與字串。素材庫無本項變更。
+- 修改 `js/ui-chest.js`、`css/chest.css`、`css/style.css`、`js/chest.js`、Worker 協議與載入快取、`index.html`、兩支回歸、`docs/CHEST_SYSTEM.md`、`docs/WORKER_PROTOCOL.md`、`LV_upgrade_system.md` 及本段。唯讀檢查 `js/data.js` 的裝備圖檔對應、`js/item.js` 的裝備生成與寶石圖示、`js/ui-scale.js`、原寶箱圖與字串。
 - 與 `ai/claude` 的 `cf099bd3` 做三方試合，`js/chest.js` 可乾淨合併並保留任務計數。使用者已核准更新 `index.html` 與 `js/worker/sim.worker.js` 重疊的 `chest.js` 快取版本。後續整合時保留 `20261112-chest-rewards-v1` 與雙方其餘載入版本。遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收。
 - `node --test` 執行 `chest`、`worker-protocol`、`vfx-editor-cache-versions`、`string-table`、`relics`、`sim-command-coverage`、`save-origin-isolation`、`ui-sound` 八個測試檔，共 86/86。`npm.cmd run build` 通過 716 檔，字串寫死 0，差異檢查通過。
 - 隔離靜音 Edge 正式頁及原生 Worker 實測單開、全開 450 箱、各類圖示與排序、逐件裝備到最後一格、左鍵與中鍵拖曳、滾輪、確認關閉與快取一致。1920 × 900 首屏完成時間 1.92 秒，格位 58 px、圖示 28 px。390 × 844 模擬視窗驗證縮放與觸控滑動。主控台錯誤 0，遊戲場景偶發音訊頻率限幅警告，桌面及窄視窗截圖留在本聊天。
@@ -91,7 +91,7 @@
 ## START-MENU-BUTTON-FRAME-20261112 — 開始選單按鈕外框與寶石閃光
 
 - Codex 單一開發者，已完成。依使用者截圖以斜切古銅框、內刻線、鉚釘及細紋重做按鈕。字級由 18px 縮至 16px，按鈕寬為前版的 8/9。依追加要求，劍柄紅寶石以兩段亮峰和交叉亮芒強化明暗對比，每 3 秒循環。逐檔衝突預檢通過。
-- 修改 `css/start-menu.css`、`index.html` 樣式快取、`LV_upgrade_system.md`、`docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 及本段。唯讀檢查既有選單／設定入口、相關測試與素材匯出。效果由 CSS 生成，無獨立美術素材，素材庫無本項變更。
+- 修改 `css/start-menu.css`、`index.html` 樣式快取、`LV_upgrade_system.md`、`docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 及本段。唯讀檢查既有選單／設定入口、相關測試與素材匯出。效果由 CSS 生成，無獨立美術素材，
 - `npm.cmd run build` 通過 712 檔。以 `node --test` 執行開始選單、背景、遊戲選單、快取、VFX 登記共 46/46。String 稽核寫死 0，開始選單素材 SHA 稽核與 `git diff --check` 通過。
 - 隔離靜音 Edge 驗證 1440×810、390×844、568×320、760×520。核對字級、寬度比例、焦點、按壓、停用、模式及設定操作與觸控 44px，主控台無錯誤或警告。紅寶石兩層動畫均為 3000ms，減少動態時為靜態；實際畫格中央亮度約 105→189。桌面、手機預覽及 3 秒循環 GIF 留在聊天。手機採模擬視窗驗證。
 - 遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收與合併。
@@ -15924,7 +15924,7 @@ Worker 存活且頁面正常完成載入。
 ## MYSTERY-MERCHANT-STOCK-FRAME-20261111 — 商品區縮小與雕花鑲寶外框
 
 - Owner：Codex，Done，單一主開發者。從 `e42f0f9a` 延伸，依使用者截圖紅框縮小商品區並換裝飾外框。Fetch與逐檔預檢乾淨。
-- 完成4檔：`css/style.css` 設商品區為立繪區寬度94%、上距26px，以九宮格裁切沿用既有古銅雕花鑲寶框，內層保留橫向捲動；73px列高、20px圖示、24px格底購買鈕，維持40格。`index.html` 接外框及更新CSS快取，`LV_upgrade_system.md` 與本段同步。沿用 `images/ui/achievements/done-frame.png`，素材庫無本項變更。
+- 完成4檔：`css/style.css` 設商品區為立繪區寬度94%、上距26px，以九宮格裁切沿用既有古銅雕花鑲寶框，內層保留橫向捲動；73px列高、20px圖示、24px格底購買鈕，維持40格。`index.html` 接外框及更新CSS快取，`LV_upgrade_system.md` 與本段同步。沿用 `images/ui/achievements/done-frame.png`，
 - 驗證：隔離全靜音Edge正式首頁與原生Worker，1920×912商品外框約953×328px，寬94%、上距26px。1920×912、1366×768、900×900均維持4列各10格、買鈕同高且與商品說明有間距、金幣比例正常。進店／刷新／購買／無券流程通過，無Console error或pageerror。實際畫面預覽留本聊天 `visualizations/merchant-stock-frame/preview.png`。
 - `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build` 710檔通過，字串檢查寫死0，`git diff --check` 通過。唯讀檢查AI_RULES／Workflow、使用者截圖、原商人布局、既有鑲寶框／九宮格用法及上述回歸。驗證範圍為Edge與上述案例，可供使用者重載驗收與整合，遊戲SHA見交付。
 
@@ -15939,14 +15939,14 @@ Worker 存活且頁面正常完成載入。
 ## MYSTERY-MERCHANT-GLOW-20261111 — 持券閃爍亮暗差三倍
 
 - Owner：Codex，Done，單一主開發者。從 `40d2e227` 延伸。依使用者要求提高持券提示明暗差，逐檔預檢乾淨。
-- 完成4檔：`css/style.css` 將亮度端點從1／1.45改為0.65／2，差值0.45→1.35，並加強明暗兩端的金色光暈變化。沿用1.2秒往返的單程時間及減少動態偏好；`index.html` 同步CSS快取，`LV_upgrade_system.md` 與本段同步。素材庫無本項變更。
+- 完成4檔：`css/style.css` 將亮度端點從1／1.45改為0.65／2，差值0.45→1.35，並加強明暗兩端的金色光暈變化。沿用1.2秒往返的單程時間及減少動態偏好；`index.html` 同步CSS快取，`LV_upgrade_system.md` 與本段同步。
 - 驗證：隔離全靜音Edge正式頁與原生Worker，取動畫兩端計算值0.65／2並目視最暗／最亮截圖；領券即時亮起、用完歸灰、減少動態偏好維持靜態頭像提示。商店進入、刷新、購買及無券拒絕通過，Console error與pageerror均0。兩端截圖留本聊天 `visualizations/merchant-glow/dim.png` 和 `bright.png`。
 - `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build` 與字串／diff檢查通過。唯讀檢查共通規範、原入口CSS、塔頁持券狀態及相關回歸。既有配置修改留在工作區，可供使用者重載驗收與整合，遊戲SHA見交付。
 
 ## MYSTERY-MERCHANT-SQUARES-20261111 — 商品格等寬等高與木框角飾留白
 
 - Owner：Codex，Done，單一主開發者。從 `a68e9a0a` 延伸，依使用者兩張截圖讓木框與上方店景等寬，四角留出雕花空間。`index.html` 與 Claude `434208e7` 同檔不同段，樣式快取行三方試合乾淨，整檔既有String與序章／bridge兩個載入版本衝突在本次修改前後相同。
-- 完成4檔：`css/style.css` 以捲動容器實際寬度算同一格邊長，欄寬和列高共用65–74px的尺寸，保留10欄4列、8px格間及底部購買鈕。木框寬100%，左右內縮至少7.5%、上下保留留白，窄版可捲至最右欄。`index.html` 更新樣式快取，`LV_upgrade_system.md` 與本段同步。既有木板素材沿用，素材庫無本項變更。
+- 完成4檔：`css/style.css` 以捲動容器實際寬度算同一格邊長，欄寬和列高共用65–74px的尺寸，保留10欄4列、8px格間及底部購買鈕。木框寬100%，左右內縮至少7.5%、上下保留留白，窄版可捲至最右欄。`index.html` 更新樣式快取，`LV_upgrade_system.md` 與本段同步。既有木板素材沿用，
 - 驗證：隔離全靜音Edge正式頁，1919×1079、1920×912、2560×1440、1280×720、900×900、640×960六種視窗。舊版可重現角飾與格位靠疊，該次實測格位仍量到正方形。新版40格寬高最大差小於0.001px，木框兩側與店景切齊，角飾區留白、兩個窄視窗可橫捲、購買鈕與商品內容無重疊；進店／刷新／買賣／無券流程通過，Console error與pageerror均0。截圖與數據留本聊天 `visualizations/merchant-squares`。
 - `node --test tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs` 18/18，`npm.cmd run build`、字串／diff檢查通過。唯讀檢查共通規範、使用者截圖、`js/ui-scale.js`、原木板與商品格渲染、Claude序章相關index差異。既有配置修改留在工作區，可供重載驗收及後續整合，遊戲SHA見交付。
 
@@ -15998,7 +15998,7 @@ Worker 存活且頁面正常完成載入。
 
 ## START-MENU-RUST-FRAME-20261112 — 開始選單鐵鏽外框與尺寸
 
-- Codex 單一開發者，已完成。依使用者截圖以紅褐色鏽斑疊加既有鑄鐵貼圖，圍住深灰岩板。桌面按鈕 180 × 40px，間距 6px，觸控高度 44px，短橫屏收窄並可捲動。沿用原素材，素材庫無本項變更。
+- Codex 單一開發者，已完成。依使用者截圖以紅褐色鏽斑疊加既有鑄鐵貼圖，圍住深灰岩板。桌面按鈕 180 × 40px，間距 6px，觸控高度 44px，短橫屏收窄並可捲動。沿用原素材，
 - 修改 `css/start-menu.css`、`index.html` 樣式快取、`LV_upgrade_system.md` 及本段。唯讀檢查鑄鐵原圖、石板 CSS、首頁選單、存檔開機入口及相關測試。Claude 的寶箱入口和任務位於其他區段，本次首頁快取及末段紀錄三方試合乾淨。
 - `npm.cmd run build` 通過 712 檔。以 `node --test` 執行開始選單、背景、遊戲選單、快取共 19/19。String 稽核寫死 0，素材來源與 diff 檢查通過。
 - 隔離靜音 Edge 驗證 1920×869、1280×720、390×844、568×320。以隔離測試存檔顯示七顆按鈕，量測桌面 180 × 40px、間距 6px，確認直角、兩層貼圖、停用、鍵盤焦點、模式、設定及短橫屏捲動。主控台無錯誤或警告。手機採模擬視窗，截圖留在聊天。遊戲提交為本段所在提交，可在 `ai/codex` 重載驗收及合併。
@@ -16054,7 +16054,7 @@ Worker 存活且頁面正常完成載入。
 ## INTRO-PARCHMENT-REPLAY-20261112 — 設置重播羊皮紙序章
 
 - Owner：Codex，Done。以已合併的 `3bbf4a0b` 與素材庫 `def16314` 為前置，將設置「說明」的重播按鈕接上 30.3 秒核准成片。沿用播放器的略過、分頁暫停與返回焦點。配樂及音效已混在影片裡，整軌遵循音樂音量與全體靜音。
-- 修改 `js/intro-data.js`、`js/intro-player.js`、`index.html` 序章快取、`tests/intro-player.test.cjs`、LV 與本段。唯讀檢查既有設置、GM、音訊與素材清單。`index.html` 與 Claude 強化公式快取在不同區段，三方試合乾淨。遊戲與素材庫成片 SHA-256 和清單一致，素材庫無本項變更。
+- 修改 `js/intro-data.js`、`js/intro-player.js`、`index.html` 序章快取、`tests/intro-player.test.cjs`、LV 與本段。唯讀檢查既有設置、GM、音訊與素材清單。`index.html` 與 Claude 強化公式快取在不同區段，三方試合乾淨。遊戲與素材庫成片 SHA-256 和清單一致，
 - `node --test` 執行序章、GM、開始選單、設置、快取及 VFX 相關十檔共 100/100。`npm.cmd run build` 通過 717 檔，String 稽核寫死 0，`git diff --check` 通過。
 - 隔離靜音 Edge 從開始選單點進「設置 → 說明」，確認點擊才請求成片，播放 1080p 前三鏡並自然結束。再次點擊從頭播放，按 Esc 或「略過」都返回說明頁及重播焦點。驗證靜音與音樂音量讀取，主控台錯誤及警告為 0。分頁暫停和媒體錯誤由回歸覆蓋。可供重載驗收及合併，遊戲提交為本段所在提交。
 
@@ -16065,3 +16065,10 @@ Worker 存活且頁面正常完成載入。
 - 比對同風力下的實際網格，主旗 16% 寬度位置的上下幅度從約 1.16 增至 11.09 個底圖像素。34% 寬度位置的弱風與強風幅度約為 4.85 與 31.30。六面旗在最大風力的 384,000 個取樣三角形均維持正向。
 - 全靜音 Edge 實際開始選單讀取旗面變形、50 團煙及 60 顆灰燼逐幀更新。畫面確認煙與原火線銜接，設定開關暫停／恢復與減少動態仍播放，Console error／warning 0。動態特寫留在聊天。
 - `node --test` 跑開始選單、背景、遊戲選單、VFX 登記及快取共 46/46。Build 718 檔、字串寫死 0、雙庫 SHA、diff 均通過。素材庫程式快照提交 `8087fed8`，遊戲提交見交付。可供重載驗收與整合，實機驗證使用 Edge 桌面。
+
+## BOSS5-ONI-MASK-20261113 — 鬼面模型補後腦、綁骨、五動作與預覽
+
+- Owner：Claude，Done（資產階段，尚未接進遊戲）。使用者提供 `BOSS5.glb`（薄殼面具，後面開口、未綁骨）。補了顱頂圓頂與後腦貼圖（取自正臉額頭花紋的正射投影），眼窩內加紅色自發光眼球，綁 18 根骨骼，做 `Walk`／`Attack1`／`Attack2`／`Attack3`／`Die` 五個動作與綠色小骷髏子彈模型。
+- 新增 `tools/boss5/`（Blender 腳本、預覽 viewer、capture、GIF 編碼器、`build_all.cjs`）與 `docs/assets/BOSS5_SOURCE.md`。成品、來源與 SHA-256 保存於素材庫 `claude-authored/boss5-oni-mask-20261113/`（素材庫提交 6e7a4820）。注意：動作裡的「米」是模型座標，不等於遊戲米（1 米＝10 單位，另依縮放比上畫面），接入時需換算。沒有改遊戲程式、Excel、快取或測試。
+- 驗證：`build_all.cjs` 從使用者原檔完整重建（27 秒）並載入無頭 Chrome（three 0.160）逐動作渲染，五個 GIF 已交給使用者過目；GLB 讀回 5 個動畫、18 個關節、兩個掛點，秒數與表列一致。未在遊戲內實機驗證；眼睛／紅霧／火焰／小骷髏／碎裂特效目前只有預覽版實作，未做成 VFX Preset。
+- 風險／後續：位移寫在 Body 骨骼（非 Root motion）；碎片為單層薄殼；後腦圓頂與面具的接縫在特寫下仍可看到一圈面具邊緣。待使用者驗收預覽後再決定接入 NPC 與特效 Preset。
