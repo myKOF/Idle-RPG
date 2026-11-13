@@ -1,3 +1,11 @@
+## SYNC-MERGE-20261114-001937 — develop 加長第三鏡整合
+
+- Owner：Codex，Done。僅處理使用者明確授權的 pending merge：HEAD `f6ecc922f66b0f3938e0b6079f7cf97c596c37d0`、MERGE_HEAD `f1c24e6435f54ac3231b4a5d6e09abe5b3c19d58`，base `97d2fcbbe669979a587a9f8918e6717a8907bc31`。唯一原始衝突為本任務表；三方比對確認工作檔已保留 ours 的鬼面與前次整合紀錄，以及 theirs 的第三鏡核准紀錄，沒有衝突標記，不取代任一側完整內容。
+- 範圍：必要衝突與本段紀錄、incoming 素材匯出與建置驗證。保留 LV 鬼面記錄及第三鏡 66 秒封存說明，設定頁沿用既有 30.3 秒重播；無 Excel、配置資料或 runtime 快取變更，無新增素材庫交付。唯讀檢查規範、三方差異、來源說明、manifest 及匯出工具。衝突預檢只列出本次已獲授權的 incoming `ai/codex`，依本次授權完成處理。
+- `node --test tests/intro-audio.test.cjs tests/intro-game-audio.test.cjs tests/intro-motion.test.cjs tests/intro-player.test.cjs tests/intro-scene.test.cjs tests/start-menu.test.cjs tests/start-menu-background.test.cjs`：52/52 通過。`node tools/intro/sync-parchment-shots.cjs --check`：素材庫來源與遊戲成品 SHA-256 一致。
+- 診斷保留於 ignored `logs/sync-20261114-001937-tests.tap` 與同前綴 build／assets／precheck `.log`。不 stage、不 commit、不修改 Git metadata 或其他工作區；交由 controller 建立合併提交。未執行瀏覽器遊玩或完整測試套件。
+- `npm.cmd run build`：723 檔通過。`git diff HEAD --check`：完整合併結果通過；變更文字檔無衝突標記，HEAD／MERGE_HEAD 保持。可交 controller 暫存並完成本次合併，索引的 unmerged 狀態由 controller 處理。
+
 ## SYNC-MERGE-20261113-014228 ? ?????????
 
 - Owner?Codex?Done?????????? controller ??????????????? develop ?? pending merge?`48719af235b082d6c068f47f4dd217760a5d7c6e` ? `77a54348ad2b130fb31cc11f5ab4e7ab6ba12133`?base `1ecae5033122195c5fec3ebd6fdd3435c6289dff`?
@@ -16009,6 +16017,12 @@ Worker 存活且頁面正常完成載入。
 - Effects-Materials 提交 `def163146ac8256cd2cfd4dd31749b6128667bcc`。素材庫收錄地圖、地表、程序特效、音軌、提示詞及可編輯來源。遊戲專案加入 `images/intro-parchment/shot-01-03.mp4`，更新來源說明、雜湊清單、匯出工具與 LV_upgrade_system。前兩鏡獨立影片與遊戲現行序章入口保留。
 - 驗證：`sync-parchment-shots.cjs --archive/--apply/--check`、41 個暫存素材 SHA-256、PCM 重建及前兩鏡 PCM 一致、Edge 本機播放與拖曳、ffprobe 1080p30 共 909 幀與 AAC 完整解碼、白幕接點及黑幕尾幀、序章與 VFX 回歸 57 項、717 檔建置與 Git 差異檢查均通過。
 - 可合併。後續分鏡可從本版黑幕銜接。遊戲提交為本段所在的 `[Codex] feat: 封存羊皮紙序章第三鏡`。
+
+## INTRO-SHOT3-APPROVED-20261114 — 封存加長第三鏡核准版
+
+- Owner：Codex。以使用者核准的 v10 為交付，第三鏡 32 秒，與核准前兩鏡接成 66 秒。自黑幕進入薩爾維恩地圖，鏡頭穿砂下推、砂塵散去後顯露大天使長。約 60° 斜俯遠景切至胸前近景，羽毛入鏡至觸甲 6.25 秒。拇指沿掌墊接入，四指到掌指關節逐像素保留原圖。
+- 保存素材庫分層、手部修整、提示詞、獨立演出音效及核准混音，經原有同步工具匯出 66 秒成片。設定頁重播使用現行 30.3 秒版本。
+- 素材庫提交 `917820ce`。從封存來源重製 26 張畫格及三條 WAV，均與核准版 SHA-256 相同。FFmpeg 封裝後兩部成片 SHA-256 一致，兩部皆完整解碼，連播前 1,020 幀與核准前兩鏡相同。序章與選單測試 58/58，建置檢查 723 檔，素材匯出校驗與 Git 差異檢查通過。LV 與 Claude 鬼面紀錄分段，三方試合通過。任務表既有的重複標題仍會觸發合併驅動程式回退，試合確認本次未新增衝突區塊。
 
 ## MERGE-INTRO-STORYBOOK-MERCHANT-20261111 — 序章與神祕商人整合
 
