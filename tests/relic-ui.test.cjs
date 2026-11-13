@@ -23,17 +23,19 @@ function mount() {
 test('藏品只顯示圖標／名稱／等級，效果在tips，升級操作預設收起',()=>{
   const {c}=mount(), r=c.RELICS[0];
   let html=c.relicCardHTML(r,{});
-  assert.match(html,/relic-01.webp/);assert.match(html,/長夜沙漏/);assert.match(html,/Lv.0\/20/);
+  assert.match(html,/relic-01.webp/);assert.match(html,/長夜沙漏/);assert.match(html,/Lv.0\/100/);
   assert.match(html,/data-tt-title="長夜沙漏"/);assert.match(html,/data-tt-desc=/);
   assert.match(html,/id="rl-actions-1" hidden/);assert.ok(!html.includes(r.levels[0].desc));
   assert.match(c.relicTooltipHTML(r,{}),/離線收益時間上限 \+1 小時/);
   c._relicUiSelected=1;
   html=c.relicCardHTML(r,{1:{lv:1,n:0}});
   assert.match(html,/data-relic-up="1" disabled/);assert.match(html,/0\/1 需求/);
-  html=c.relicCardHTML(r,{1:{lv:19,n:10}});
-  assert.match(html,/10\/10 需求/);assert.doesNotMatch(html,/data-relic-up="1" disabled/);
-  assert.match(c.relicTooltipHTML(r,{1:{lv:19,n:10}}),/下一級：離線收益時間上限 \+20 小時/);
-  html=c.relicCardHTML(r,{1:{lv:20,n:7}});
+  html=c.relicCardHTML(r,{1:{lv:20,n:11}});
+  assert.match(html,/Lv.20\/100/);assert.match(html,/11\/11 需求/);
+  assert.doesNotMatch(html,/data-relic-up="1" disabled/);
+  assert.match(c.relicTooltipHTML(r,{1:{lv:99,n:50}}),/下一級：離線收益時間上限 \+100 小時/);
+  html=c.relicCardHTML(r,{1:{lv:100,n:7}});
+  assert.match(html,/Lv.100\/100/);
   assert.match(html,/已滿級/);assert.match(html,/庫存 7 件/);assert.doesNotMatch(html,/data-relic-up/);
 });
 test('等待Worker成功前無演出／音效，重複點擊只送一次，成功才播一次',async()=>{

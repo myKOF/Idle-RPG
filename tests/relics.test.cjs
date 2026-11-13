@@ -1,16 +1,16 @@
 /* 遺物（2026-11-09，js/relic.js、js/relic_data.js、config/Excel/Relics.xlsx）
-   1. 配置表：CSV 與 relic_data.js 語意一致；效果鍵清單兩邊一致、每個鍵都有遺物、都接了線
+   1. 配置表：Excel、CSV 與 relic_data.js 一致；效果鍵清單兩邊一致、每個鍵都有遺物、都接了線
    2. 取得／升級：第一件解鎖 Lv.1、件數累積、升級扣「下一級的升級數量」、錯誤不扣東西
    3. 兩端共算的數值：背包擴充上限／費用、強化碎片、洗煉精華、合成暫存區、封魔塔限時、商人售價
    4. 離線：長夜沙漏延長上限、夜班熔爐／夢境捕手倍率、星圖殘頁次數、晨鐘加成與到期
-   數值一律從 RELICS 讀，不寫死表上的數字——設計者調表時測試不該跟著紅。 */
+   各系統的測試預期值從 RELICS 讀取。擴充測試另核對 Lv.21～100 的配置規律。 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
-const { SCHEMAS, csvParse, RELIC_EFFECT_KEYS: TABLE_KEYS, evalLiteral, extractLiteral } = require('../tools/config_tables.cjs');
+const { SCHEMAS, csvParse, readXlsxRows, RELIC_EFFECT_KEYS: TABLE_KEYS, evalLiteral, extractLiteral } = require('../tools/config_tables.cjs');
 
 function loadGameContext() {
   const context = { console, UI: { dirty: {} }, GT: 0 };
@@ -33,8 +33,10 @@ const valueAt = (c, key, lv) => relicOf(c, key).levels[lv - 1].value;
 /* 直接把某效果的遺物設成指定等級（測數值換算時不必走升級流程） */
 function setLevel(c, key, lv) { c.G.player.relics[relicOf(c, key).id] = { lv, n: 0 }; }
 
-test('Relics 表：CSV 與 relic_data.js 語意一致', () => {
+test('Relics 表：Excel、CSV 與 relic_data.js 一致', () => {
   const rows = csvParse(fs.readFileSync(path.join(root, 'config/CSV/Relics.csv'), 'utf8')).filter((r) => r.some((x) => String(x).trim() !== ''));
+  const fromExcel = readXlsxRows(path.join(root, 'config/Excel/Relics.xlsx'));
+  assert.deepStrictEqual(rows, fromExcel, 'Relics.xlsx 和 Relics.csv 必須同步');
   const built = SCHEMAS.Relics.rebuild(rows.slice(1), rows[0]).RELICS;
   const fromCsv = evalLiteral(extractLiteral(built, 'RELICS').literal);
   const fromJs = evalLiteral(extractLiteral(fs.readFileSync(path.join(root, 'js/relic_data.js'), 'utf8'), 'RELICS').literal);
@@ -96,16 +98,19 @@ test('說明文字：{v} 代入該級數值強度', () => {
   }));
 });
 
-test('全部遺物20級：既有10級與庫存保留，11～20級逐級扣表格需求，失敗不扣件', () => {
+test('全部遺物可從既有 Lv.20 升至 Lv.100，逐級扣表格需求，失敗不扣件', () => {
   const c = loadGameContext();
   assert.equal(c.RELICS.length, 32);
   for (const relic of c.RELICS) {
-    assert.equal(relic.levels.length, 20, relic.name);
+    assert.equal(relic.levels.length, 100, relic.name);
     assert.equal(relic.levels[0].cost, 1);
-    c.G.player.relics[relic.id] = { lv: 10, n: 2 };
-    for (let lv = 11; lv <= 20; lv++) {
-      const cost = relic.levels[lv - 1].cost;
-      assert.ok(Number.isInteger(cost) && cost >= 1);
+    const step = relic.levels[19].value - relic.levels[18].value;
+    c.G.player.relics[relic.id] = { lv: 20, n: 2 };
+    for (let lv = 21; lv <= 100; lv++) {
+      const { cost, value } = relic.levels[lv - 1];
+      assert.equal(cost, Math.ceil(lv / 2), `${relic.name} Lv.${lv} 升級數量`);
+      assert.equal(value, relic.levels[19].value + (lv - 20) * step, `${relic.name} Lv.${lv} 效果`);
+      assert.equal(c.relicNextCost(relic.id), cost);
       const entry = c.relicEntry(relic.id);
       if (entry.n < cost) {
         assert.equal(c.relicUpgrade(relic.id), c.STR(2453, cost, entry.n));
@@ -115,11 +120,11 @@ test('全部遺物20級：既有10級與庫存保留，11～20級逐級扣表格
       assert.equal(c.relicUpgrade(relic.id), null);
       assert.equal(c.relicLevel(relic.id), lv);
       assert.equal(c.relicEntry(relic.id).n, 0);
-      assert.equal(c.relicValue(relic.effect), relic.levels[lv - 1].value);
+      assert.equal(c.relicValue(relic.effect), value);
     }
     c.relicGrant(relic.id, 7);
     assert.equal(c.relicUpgrade(relic.id), c.STR(2452));
-    assert.deepEqual({...c.relicEntry(relic.id)}, {lv:20,n:7});
+    assert.deepEqual({...c.relicEntry(relic.id)}, {lv:100,n:7});
   }
   assert.ok(c.RELIC_BY_EFFECT.offlineTowerReward.levels.every(row => row.value > 0));
 });

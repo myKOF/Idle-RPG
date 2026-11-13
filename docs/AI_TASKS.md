@@ -23,6 +23,14 @@
 - 逐檔預檢發現 Claude 的 `8d603005` 同時更新首頁與兩份文件。鬼面快取及文件段落與本項分開，本次差異三方試合乾淨。兩分支原有的任務表末尾衝突已在本項修改前重現。
 - 唯讀檢查共通規範、`js/util.js`、字串資料與封魔塔提示測試。驗證涵蓋提示 HTML，瀏覽器實機待重載驗收。本項可供整合。
 
+## RELICS-LEVEL-100-20261113 — 32 件遺物擴充至 100 級
+
+- Owner：Codex，Done。補齊 32 件遺物的 Lv.21～100，共新增 2,560 筆。費用沿用 Lv.11～20 的階梯，每兩級增加 1 件。各件效果沿用原本的每級增量。直接判定的機率與折扣可達 100%，倍率及獎勵比例依原公式計算。
+- 範圍：Relics 工作簿及欄位說明、CSV／遊戲衍生資料、必要的主頁與 Worker 快取、遺物回歸、LV 總表及本段。玩法公式、存檔格式、掉落來源及其他配置維持原樣。
+- Excel 獨占檢查通過，經原生 Excel 插列與寫入，正常重開兩次。前 20 級 640 筆的內容、儲存格格式及型別一致，欄位說明只更新相關文字。Excel 重存微調了預設列高及欄寬，兩頁預覽通過。用 `node tools/xlsx_to_csv.cjs` 定向匯出 Relics，再以 `node tools/config_tables.cjs --apply Relics --write` 生成，試跑語意變更為 0。
+- `node --test tests/relics.test.cjs tests/relic-ui.test.cjs tests/task-chest-relic.test.cjs tests/chest.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/mystery-merchant.test.cjs tests/tower-rewards-ui.test.cjs tests/ui-sound.test.cjs` 88/88 通過。`npm.cmd run build` 通過 723 檔，字串稽核為 0，差異檢查通過。隔離靜音 Edge 以測試存檔載入正式頁與 Worker，驗證 Lv.20→21、Lv.99→100、扣件、總上限 3,200 及滿級顯示。主控台無錯誤，出現一則既有圖片預載警告。
+- 唯讀檢查共通規範、配置生成工具、遺物升級、效果及 Worker 協議。使用者核准分段更新與 Claude 重疊的快取，對 `fa15dd20` 三方試合已確認可同時保留鬼面資料版號及遺物新版，正式整合時統一主頁與 Worker 快取。可供重載驗收與整合。
+
 ## INTRO-SHOTS-01-02-EXTENDED-20261113 — 封存加長前兩鏡核准版
 
 - Owner：Codex，Done。第一鏡 16 秒，流光翼從可見背甲的兩側肩胛接出。第二鏡 18 秒，以新版第一鏡末格疊化，沿用已授權角色圖的兜帽修整、低沉轟然火焰、退入雲層及焦羽翻面。34 秒連播使用連續的 Desert Ascendant。
