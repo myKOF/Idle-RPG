@@ -5,6 +5,9 @@ from mathutils import Vector
 argv=sys.argv[sys.argv.index('--')+1:]
 SRC, FRONT, OUTDIR = argv[0], argv[1], argv[2]
 DEPTH=float(argv[3]) if len(argv)>3 else 0.5
+# optional 5th argument: front render of the ORIGINAL red mask. The horns sit at the same place in every texture variant,
+# but they are only easy to tell apart from the skin by colour on the red one, so the horn mask comes from it.
+HORN_REF=argv[4] if len(argv)>4 else None
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=SRC)
 mask=[o for o in bpy.data.objects if o.type=='MESH'][0]
@@ -42,13 +45,25 @@ rgb=px[...,:3].copy()
 yy,xx=np.mgrid[0:H,0:W]
 X=(xx+0.5)/W*2-1; Z=(yy+0.5)/H*2-1
 # horn pixels (dark red/black) above the brows -> remove
-horn=(rgb[...,0]<0.62)&(Z>0.09)&valid
+if HORN_REF:
+    ref=bpy.data.images.load(HORN_REF); ref.colorspace_settings.name='Non-Color'
+    rp=np.empty(W*H*4,dtype=np.float32); ref.pixels.foreach_get(rp); rp=rp.reshape(H,W,4)
+    horn=(rp[...,0]<0.62)&(Z>0.09)&(rp[...,3]>0.5)
+else:
+    horn=(rgb[...,0]<0.62)&(Z>0.09)&valid
 horn=dilate(horn,10)
 good=erode(valid,5)&~horn
 rgb=fill(rgb,good)
 # base red = median of strongly red face pixels
 red=(rgb[...,0]>0.85)&(rgb[...,1]<0.2)&(Z>-0.2)&(Z<0.5)&good
-base=np.median(rgb[red],axis=0); print("BASE RED",base)
+if red.sum()>5000:
+    base=np.median(rgb[red],axis=0)
+else:
+    # not a red mask: the most common colour of the lower face is the skin
+    reg=(Z>-0.2)&(Z<0.5)&good
+    q=np.minimum((rgb[reg]*16).astype(np.int32),15); key=q[:,0]*256+q[:,1]*16+q[:,2]
+    top=np.bincount(key).argmax(); base=rgb[reg][key==top].mean(axis=0)
+print('BASE',base)
 def sstep(a,b,x):
     t=np.clip((x-a)/(b-a),0,1); return t*t*(3-2*t)
 w=sstep(0.09,0.20,Z)[...,None]

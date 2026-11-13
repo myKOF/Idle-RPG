@@ -16110,3 +16110,10 @@ Worker 存活且頁面正常完成載入。
 - `node tools/config_tables.cjs --apply`：34 字面值、語意變更 0；以既有 readXlsxRows／csvParse 唯讀逐格核對 Chest／String 的 XLSX 與 CSV 一致。既有生成結果完整，不需重寫。`node tools/string-table/build_string_csv.cjs --check`：寫死文字 0。
 - `node tools/intro/sync-start-menu.cjs --check` 與 `node tools/intro/sync-parchment-shots.cjs --check`：素材庫來源／遊戲成品 SHA 一致，無新增素材需交付。`git diff HEAD --check`：完整合併結果通過，工作檔無衝突標記，HEAD／MERGE_HEAD 保持。
 - 日誌保留於 ignored `logs/sync-20261113-214523-tests.tap` 與同前綴 build／menu／intro／strings／tables `.log`。本次無新增已知風險；未執行完整測試套件或瀏覽器遊玩。交由 controller stage 並建立 merge commit；索引未合併項目待 controller 處理，沒有推送。
+
+## TOWER-BOSS5-ONI-VARIANTS-20261113 — 鬼面藍／紫貼圖版與噴火普攻修正
+
+- Owner：Claude，Done。使用者提供 BOSS5_2（藍）、BOSS5_3（紫）兩個貼圖版並要求直接套用動作；同時回報遊戲裡看不到噴火普攻。
+- 貼圖版：同一網格換貼圖，用 `tools/boss5/build_all.cjs` 整套重建（`build_dome.py` 新增 `BOSS5_HORN_REF` 參數以原版取角位置、底色改取臉部最常見色，才能處理非紅色貼圖）；`images/models/npc3d/boss5_lv2.glb／boss5_lv3.glb`、`images/sprites/boss/boss5_oni_lv2.png／lv3.png`；NPC.xlsx 第496（tower_boss_15）、506（tower_boss_25）列改頭像／模型／動作，並與第486列一致改近戰（攻擊速度 0.4、距離 5 米、非魔法型）——這兩列的數值變更是依「同一隻BOSS套用同樣近戰」自行判斷，未另問，請確認。
+- 噴火普攻：原因是三個攻擊動作由 `Npc3D.play` 輪流給所有出手，特效只掛在有普攻事件的出手，實測約八成出手是技能施放，噴火輪替幾乎對不上普攻。改為 `js/boss-oni-fx.js beforeAct` 在播放前決定動作（`js/npc3d.js` 新增 `state.forceKey`）：普攻固定 撞擊→吐骷髏→噴火 輪替，技能施放用撞擊動作；事件等待上限 0.9→1.8 秒。實機一輪觀察到順序 attack2→（多次技能撞擊）→attack3；無頭瀏覽器遊戲速度很慢（約實時 1/10），沒有拍到完整的噴火畫面。
+- 驗證：新增輪替與三版共用單元測試、三份模型資產測試、更新 npc3d-config／tower-boss3d；相關測試與 HEAD 逐名比對無新增失敗；`npm run build` 723 檔、字串寫死 0、素材匯出最新；三版皆用遊戲自己的 Npc3D 路徑渲染確認。快取版號 `20261113-boss-oni-fx2`。素材庫提交 c2bbdc5b。

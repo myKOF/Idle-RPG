@@ -106,6 +106,18 @@ test('attack 1 impact lands on the target at the ram frame; a missed attack play
   assert.deepEqual(f.reacted, []);
 });
 
+test('basic attacks rotate ram / skulls / flame so the flame comes every third basic attack; skill casts use the ram animation only', () => {
+  const f = fixture(); const st = f.oni.body.npc3d, keys = [];
+  for (let i = 0; i < 6; i++) {
+    f.fx.attack({ sourceId: 'tb-float', targets: ['pv-float'], hit: true });
+    f.fx.beforeAct(f.oni); keys.push(st.forceKey); st.attackKey = st.forceKey; f.fx.onActPlayed(f.oni, 1);
+    f.fx.beforeAct(f.oni); keys.push('cast:' + st.forceKey);       // a skill cast in between: no pending event
+  }
+  assert.deepEqual(keys.filter((k) => !/^cast/.test(k)), ['attack1', 'attack2', 'attack3', 'attack1', 'attack2', 'attack3']);
+  assert.ok(keys.filter((k) => /^cast/.test(k)).every((k) => k === 'cast:attack1'));
+  for (const id of ['tower_boss_15', 'tower_boss_25']) assert.ok(BossOniFx.NPC_IDS[id], id);
+});
+
 test('death shatters at 2.0 s and stops the loops', () => {
   const f = fixture(); f.run(0.1);
   f.oni.state = 'dying';                                  // the renderer sets this right before calling onDeath
