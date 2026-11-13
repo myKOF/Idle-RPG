@@ -1,5 +1,12 @@
 # PATCH.md
 
+## 寶箱系統出貨統計與 1 天累積試算報告（Antigravity 2026-11-13）
+
+- **新增寶箱系統出貨統計報告（[`docs/CHEST_DROP_STATISTICS_REPORT.md`](file:///d:/MyGame/Idle-RPG/antigravity/docs/CHEST_DROP_STATISTICS_REPORT.md)）**：
+  - **1 天累積試算（600 級永恒神殿普通敵人、1 隻/秒、+500% 掉寶率）**：涵蓋 86,400 隻怪共 1,373,760 件裝備掉落明細，以及青銅（2,695 個）、精良（1,779 個）、史詩（1,749 個）、傳說（2,177 個）、神話（336 個）五種寶箱之理論期望與 3 次模擬實測結果。
+  - **指定基準等級開啟產出與等效 1 階換算**：依指定等級（青銅 Lv.70 / 精良 Lv.60 / 史詩 Lv.55 / 傳說 Lv.50 / 神話 Lv.45）彙整 5 種寶箱道具明細與 `chestOpen` 1 天全開實測，並依遊戲真實合成配方（寶石 3/4/6 合 1、符文 3 合 1）將寶石與符文全數換算為等效 1 階數量進行橫向比較。
+
+
 ## 數值平衡全面更新與減傷公式測算 V5 報告（Antigravity 2026-11-10）
 
 - **新增數值平衡全面更新與減傷公式測算總表（[`docs/DAMAGE_REDUCTION_CALCULATION_REPORT_V5.md`](file:///d:/MyGame/Idle-RPG/antigravity/docs/DAMAGE_REDUCTION_CALCULATION_REPORT_V5.md)）**：
