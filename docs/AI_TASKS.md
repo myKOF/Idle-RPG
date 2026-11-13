@@ -16072,3 +16072,11 @@ Worker 存活且頁面正常完成載入。
 - 新增 `tools/boss5/`（Blender 腳本、預覽 viewer、capture、GIF 編碼器、`build_all.cjs`）與 `docs/assets/BOSS5_SOURCE.md`。成品、來源與 SHA-256 保存於素材庫 `claude-authored/boss5-oni-mask-20261113/`（素材庫提交 6e7a4820）。注意：動作裡的「米」是模型座標，不等於遊戲米（1 米＝10 單位，另依縮放比上畫面），接入時需換算。沒有改遊戲程式、Excel、快取或測試。
 - 驗證：`build_all.cjs` 從使用者原檔完整重建（27 秒）並載入無頭 Chrome（three 0.160）逐動作渲染，五個 GIF 已交給使用者過目；GLB 讀回 5 個動畫、18 個關節、兩個掛點，秒數與表列一致。未在遊戲內實機驗證；眼睛／紅霧／火焰／小骷髏／碎裂特效目前只有預覽版實作，未做成 VFX Preset。
 - 風險／後續：位移寫在 Body 骨骼（非 Root motion）；碎片為單層薄殼；後腦圓頂與面具的接縫在特寫下仍可看到一圈面具邊緣。待使用者驗收預覽後再決定接入 NPC 與特效 Preset。
+
+## TOWER-BOSS5-ONI-INTEGRATION-20261113 — 鬼面接入第5隻封魔塔BOSS
+
+- Owner：Claude，Done（模型與動作階段；戰鬥特效未做）。使用者指定把 BOSS5 鬼面模型接為第5隻封魔塔BOSS（第4隻另在製作）。沿用 BOSS3 做法：`NPC.xlsx` 第486列（tower_boss_5）只改 G:J 頭像、AB 模型、AC:AH 動作，其餘欄位不動；經 `tools/excel-update-sheets.ps1`（Excel 原生 API，正常重開驗證通過）寫入，再 `config_tables --sync`／`--apply --write`、`apply_params --write`。CSV 只有該列變動，`js/data.js` 只有 BOSS_LIST 第5筆新增 model3d 與頭像。
+- 新增 `images/models/npc3d/boss5.glb`（遊戲用，水平根位移固定、碎片散布限制在 NPC 畫布內；`build_rig.py --game`）與 `images/sprites/boss/boss5_oni.png`（1080 透明頭像）；素材庫保存 `boss5_game.glb`／`boss5_oni.png` 與 SHA-256（素材庫提交 9dbf80fb）。同步 `index.html`（data／bridge）、`js/bridge.js` Worker 版本、`js/worker/sim.worker.js` 的 data 快取為 `20261113-boss5-oni`。
+- 測試：新增 `tests/boss5-character-asset.test.cjs`（18 關節、5 動作秒數、掛點、水平不漂移、數值有限），更新 `npc3d-config`、`tower-boss3d`（5／55／105 層用新模型、35 層維持原樣）；npc3d／tower／boss／worker-protocol／cache-versions／string-table 共 149 項，146 通過。3 項失敗為既有（BPS-16 期待不存在的「冰霜女皇」、驗證2 的 50 關死亡退階、TBMA-5 攻速）；以 HEAD 檢出重跑 TBMA-5、驗證2 同樣失敗，BPS-16 的資料在 HEAD 即無該名稱。`npm run build` 721 檔、字串寫死 0。
+- 實機：本機遊戲載入後以遊戲自己的 `Npc3D.create` 建立第5隻BOSS，五個動作都解析成功並逐動作渲染（走路、撞擊、吐骷髏、噴火、死亡 1.9 s／3.5 s），碎片都在畫布內；封魔塔列表第5層顯示新頭像。`tower_jump 5` 成功。未能走完整場塔戰畫面（自動化點不到挑戰按鈕），戰鬥中的 Npc3D 路徑與 BOSS3 相同。
+- 注意：該列「攻擊速度」是 3 次／秒、攻擊距離 32，Npc3D 會把整段攻擊動作壓進攻擊間隔（約 0.28 秒），動作會被加速；這是原列的佔位數值，本項不改，需要使用者定稿。名稱「劇毒之母」與屬性 poison、技能 e_poisonspit／e_vampiric 也沿用原列，未改。眼睛／紅霧／火焰／小骷髏／碎裂特效尚未做成 VFX Preset。

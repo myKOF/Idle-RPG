@@ -6,8 +6,14 @@ import numpy as np
 from mathutils import Vector, Matrix, Quaternion, Euler
 from mathutils.bvhtree import BVHTree
 argv = sys.argv[sys.argv.index('--') + 1:]
+FLAGS = [a for a in argv if a.startswith('--')]
+argv = [a for a in argv if not a.startswith('--')]
 SRC, OUT = argv[0], argv[1]
 ONLY = set(argv[2].split(',')) if len(argv) > 2 else None
+# --game: in-game variant. Like the BOSS3 clips, the strikes/walk keep their vertical motion but the horizontal root
+# displacement is fixed (the game moves the body itself), and the death burst stays inside the 6.2 m NPC canvas.
+GAME = '--game' in FLAGS
+lock_xy = False
 HOVER = 1.5
 NSHARD = 14
 FPS = 30
@@ -224,6 +230,8 @@ def rotm(rx=0, ry=0, rz=0):
 def body_D(y=0, z=0, x=0, pitch=0, roll=0, yaw=0, s=(1, 1, 1)):
     """y>0 = forward (-Y world). pitch>0 = lean forward. All about the mask centre."""
     S = Matrix.Diagonal((s[0], s[1], s[2], 1))
+    if lock_xy:
+        x = y = 0
     return Matrix.Translation((x, -y, z)) @ Matrix.Translation(PB) @ rotm(pitch, roll, yaw) @ S @ Matrix.Translation(-PB)
 
 
@@ -416,7 +424,8 @@ def build_die():
             u = Vector((0, -1, 0))
         u.normalize()
         sp = 2.0 + 3.2 * nr.random()
-        v = Vector((u.x * sp + nr.normal(0, 0.4), u.y * sp + nr.normal(0, 0.4), 2.2 + 3.0 * nr.random() + u.z * 2.0))
+        hs = 0.33 if GAME else 1.0
+        v = Vector(((u.x * sp + nr.normal(0, 0.4)) * hs, (u.y * sp + nr.normal(0, 0.4)) * hs, 2.2 + 3.0 * nr.random() + u.z * 2.0))
         w = Vector(nr.normal(0, 1, 3))
         w.normalize()
         w *= 5 + 8 * nr.random()
@@ -479,7 +488,20 @@ def build_die():
         for f in range(0, DIE_FRAMES + 1 - SHATTER):
             if f not in frames:
                 frames[f] = last
+        if GAME:
+            # keep every shard inside the NPC canvas: |x| <= 3.0 (depth), |y| <= 2.4 (screen width)
+            st = cw
+            fpos = frames[max(frames)][0]
+            for ax, lim in ((0, 3.0), (1, 2.4)):
+                d = fpos[ax] - st[ax]
+                if abs(d) > 1e-6 and abs(fpos[ax]) > lim:
+                    k = max(0.0, (lim * (1 if d > 0 else -1) - st[ax]) / d)
+                    for f_ in frames:
+                        p_, q_ = frames[f_]
+                        p_[ax] = st[ax] + (p_[ax] - st[ax]) * k
         traj[i] = frames
+        fp = frames[max(frames)][0]
+        print('SHARD', i + 1, 'rest at x=%.2f y=%.2f' % (fp.x, fp.y))
 
     def die(f):
         D = {'Body': body_pose(f)}
@@ -513,6 +535,7 @@ for name in order:
     if ONLY and name not in ONLY:
         continue
     n, fn = clips[name]
+    lock_xy = GAME and name != 'Die'
     if name == 'Die':
         fn = build_die()
     acts[name] = make_action(name, n, fn)
