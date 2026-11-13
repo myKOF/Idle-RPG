@@ -397,13 +397,25 @@ var SfxSynth = (function () {
   }
 
   /* ═════════ 土 ═════════ */
-  function rockarmor(ac, out, t, R) { var k = R(0.92, 1.08);
-    rumble(ac, out, t, 0.6, 160, 0.7, 0.08);
-    crackles(ac, out, t, 0.4, 26, 0.9, { fLo: 250, fHi: 1300, q: 2.5, dMin: 0.02, dMax: 0.06, bias: 0.9, spread: 0.8 });   // 岩石聚攏摩擦
-    var ti = t + 0.42;
-    boom(ac, out, ti, 140 * k, 60, 0.18, 0.6);
-    ring(ac, out, ti, 480 * k, [[1, 0.7], [1.9, 0.5, 1.4], [3.1, 0.3, 2]], 0.1, 0.5);   // 岩甲合上「喀」
-    burstNoise(ac, out, ti, 'bandpass', 900, 1.5, 0.001, 0.6, 0.06);
+  /* 起音→持續→淡出（沒有收尾的敲擊） */
+  function shapeEnv(ac, t, att, holdT, rel, peak) {
+    var g = ac.createGain(), p = g.gain;
+    p.setValueAtTime(0.0001, t); p.exponentialRampToValueAtTime(peak, t + att);
+    p.setValueAtTime(peak, t + att + holdT); p.exponentialRampToValueAtTime(0.0001, t + att + holdT + rel);
+    return g;
+  }
+  function rockarmor(ac, out, t, R) {   // 2026-11-13 使用者選定「岩石聚攏」：石塊一路磨擦聚過來再靜下來，不要結尾的敲擊聲
+    var k = R(0.94, 1.06);
+    chain(bnoise(ac, t, 0.9), filt(ac, 'lowpass', 150 * k), shapeEnv(ac, t, 0.15, 0.3, 0.4, 0.7), out);   // 低沉的地鳴
+    var bp = filt(ac, 'bandpass', 420 * k, 1.5), g = ac.createGain(), tt = t;                             // 岩石磨擦
+    g.gain.setValueAtTime(0, t);
+    while (tt < t + 0.85) { g.gain.setValueAtTime(0.2 + Math.random() * 0.8, tt); tt += 0.008 + Math.random() * 0.017; }
+    chain(noise(ac, t, 0.9), bp, g, shapeEnv(ac, t, 0.15, 0.3, 0.4, 0.45), out);
+    for (var i = 0; i < 30; i++) {                                                                       // 碎石：中段最密，前後漸弱
+      var u = Math.random(), ts = t + u * 0.8, w = Math.sin(Math.PI * Math.min(1, u * 1.3));
+      chain(noise(ac, ts, 0.08), filt(ac, 'bandpass', (250 + Math.random() * 1050) * k, 2.5),
+        env(ac, ts, 0.002, Math.max(0.01, 0.8 * w * (0.4 + Math.random() * 0.6)), 0.02 + Math.random() * 0.03), pan(ac, (Math.random() * 2 - 1) * 0.8), out);
+    }
   }
   function rockSpike(ac, out, t, R) { var k = R(0.92, 1.08);
     rumble(ac, out, t, 0.25, 200, 0.5, 0.15);                                       // 地底預兆
@@ -677,7 +689,7 @@ var SfxSynth = (function () {
     'firehunt':           d(firehunt, 4),     // 2026-11-13「火星迸裂」，與舊版同響度
     'solar-ring-fly':     d(solarRingFly, 1.6, FLIGHT),
     // 土
-    'rockarmor':          d(rockarmor, 1),
+    'rockarmor':          d(rockarmor, 0.65),     // 2026-11-13「岩石聚攏」，與舊版同響度
     'rock-spike':         d(rockSpike, 1),
     'gravity-burst':      d(gravityBurst, 0.75),
     'petrify':            d(petrify, 1.1),
