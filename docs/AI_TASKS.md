@@ -16080,3 +16080,10 @@ Worker 存活且頁面正常完成載入。
 - 測試：新增 `tests/boss5-character-asset.test.cjs`（18 關節、5 動作秒數、掛點、水平不漂移、數值有限），更新 `npc3d-config`、`tower-boss3d`（5／55／105 層用新模型、35 層維持原樣）；npc3d／tower／boss／worker-protocol／cache-versions／string-table 共 149 項，146 通過。3 項失敗為既有（BPS-16 期待不存在的「冰霜女皇」、驗證2 的 50 關死亡退階、TBMA-5 攻速）；以 HEAD 檢出重跑 TBMA-5、驗證2 同樣失敗，BPS-16 的資料在 HEAD 即無該名稱。`npm run build` 721 檔、字串寫死 0。
 - 實機：本機遊戲載入後以遊戲自己的 `Npc3D.create` 建立第5隻BOSS，五個動作都解析成功並逐動作渲染（走路、撞擊、吐骷髏、噴火、死亡 1.9 s／3.5 s），碎片都在畫布內；封魔塔列表第5層顯示新頭像。`tower_jump 5` 成功。未能走完整場塔戰畫面（自動化點不到挑戰按鈕），戰鬥中的 Npc3D 路徑與 BOSS3 相同。
 - 注意：該列「攻擊速度」是 3 次／秒、攻擊距離 32，Npc3D 會把整段攻擊動作壓進攻擊間隔（約 0.28 秒），動作會被加速；這是原列的佔位數值，本項不改，需要使用者定稿。名稱「劇毒之母」與屬性 poison、技能 e_poisonspit／e_vampiric 也沿用原列，未改。眼睛／紅霧／火焰／小骷髏／碎裂特效尚未做成 VFX Preset。
+
+## TOWER-BOSS5-ONI-FX-20261113 — 鬼面BOSS戰鬥特效與近戰化
+
+- Owner：Claude，Done。使用者要求先做戰鬥特效；依使用者回答「BOSS改成近戰就能近身用撞擊」，`NPC.xlsx` 第486列攻擊速度 3→0.4、攻擊距離 32→5、魔法型 1→0（Excel 原生 API 寫入並重開驗證，CSV／data 已同步）；遊戲版 GLB 攻擊1 只保留 0.9 m 前撲，面具材質壓暗 0.5（`tools/boss5/patch-game-glb.cjs`）。
+- 新增八份 VFX Preset `boss-oni-eye／mist／ram-hit／spit／skull／skull-hit／flame／shatter`（含 layout、新素材 `oni-skull-green.png`、既有素材 muzzle_02 的匯出）、`js/boss-oni-fx.js`、`VFX_COMBAT_DEFAULTS.bossOni` 與 `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 八列；`js/hero3d.js` 新增 `ctrl.anchorPoint`、`js/npc3d.js` 記 `attackKey`、`js/vfx-runtime.js` 新增 `playFree`、`js/battle-renderer.js` 接線。快取版號統一 `20261113-boss-oni-fx`（index.html、bridge／Worker、npc3d、編輯器頁 vfx-runtime、Preset DATA_VERSION）。只動畫面，命中與傷害仍由模擬層決定（AI_RULES 8.3）。
+- 驗證：新增 `tests/boss-oni-fx.test.cjs` 7 項，更新 boss5 資產／npc3d-config／tower-boss3d 測試；相關 1374 項通過 1348，失敗 26 項與 HEAD 逐名比對，除我自己更新前的 boss5 資產測試外無新增（既有失敗含 canonical／layout／BPS-16／TBMA-5 等）。`npm run build` 723 檔、字串寫死 0、素材匯出已最新。實機：無頭 Chrome 載真正遊戲跑第5層塔戰（`tools/boss5/capture-ingame.cjs`）看到小骷髏扇形飛行與紅霧，噴火起點與眼睛位置以放大除錯標記確認。
+- 風險／未驗證：特效尺寸與強度只看過截圖，需使用者目視調整；沒有跑完整局到BOSS死亡碎裂；`vfx/asset-index.json` 以 `tools/boss5/add-vfx-assets.cjs` 只登記本項素材（整庫掃描被素材庫既有的 RPG Maker 重複 assetId 擋下，exit 2，與本項無關）。素材庫提交 7b212435、33cb5386。
