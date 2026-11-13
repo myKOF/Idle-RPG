@@ -9904,7 +9904,8 @@ function showEnemyTooltip(anchorEl) {
     }
   }
 
-  var dropTip = '<div class="skt-name" style="margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;"><span>【' + title + '】</span>' + (elemBadgeHtml ? '<div style="display:flex; align-items:center;">' + elemBadgeHtml + '</div>' : '') + '</div><div class="skt-desc" style="text-align:left;">' + STR(646, (m.magic ? STR(647) : STR(648)), fmt(m.maxHp), fmt(m.atk), fmt(m.def), fmt(m.mdef || m.def * 0.75), fmt1(m.aspd), (m.hit || 100), (m.dodge || 0));
+  var dodgeText = Number(m.dodge || 0).toFixed(2);
+  var dropTip = '<div class="skt-name" style="margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;"><span>【' + title + '】</span>' + (elemBadgeHtml ? '<div style="display:flex; align-items:center;">' + elemBadgeHtml + '</div>' : '') + '</div><div class="skt-desc" style="text-align:left;">' + STR(646, (m.magic ? STR(647) : STR(648)), fmt(m.maxHp), fmt(m.atk), fmt(m.def), fmt(m.mdef || m.def * 0.75), fmt1(m.aspd), (m.hit || 100), dodgeText);
 
   // 敵人屬性只列七項（生命值、攻擊力、物理防禦、魔法防禦、攻速、命中率、閃避率）；距離、移速、控制抵抗、元素審判說明不顯示。
   dropTip += '</div>';

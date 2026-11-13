@@ -15,6 +15,14 @@
 - 更新序章同步工具、來源說明、清單及 LV 記錄。同步工具 `--archive`、`--apply`、`--check` 通過。從封存來源重製的 480 影格成片與兩條 WAV 各自通過 SHA-256 比對。
 - 序章與相關回歸 79/79 通過，建置產出 719 個檔案，字串表檢查 0 筆硬編碼。
 
+## ENEMY-DODGE-DISPLAY-20261113 — 敵人情報閃避率顯示兩位小數
+
+- Owner：Codex，Done。沿用既有敵人情報與字串表，將閃避率四捨五入後固定顯示兩位小數。
+- 範圍：`js/ui.js` 的敵人提示、`index.html` 的 UI 快取、既有提示測試、LV 總表及本段。戰鬥計算、存檔、配置及其他介面不在本次修改範圍。
+- 驗證：`node --test tests/zone-attr-tooltip.test.cjs tests/boss-tooltip.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs` 通過 22 項，含 `54.40%` 回歸。塔樓提示有 1 項 `showTowerTooltip` 缺失，使用原始 HEAD 重跑同樣失敗。`npm.cmd run build` 通過 723 檔，字串稽核與差異檢查通過。
+- 逐檔預檢發現 Claude 的 `8d603005` 同時更新首頁與兩份文件。鬼面快取及文件段落與本項分開，本次差異三方試合乾淨。兩分支原有的任務表末尾衝突已在本項修改前重現。
+- 唯讀檢查共通規範、`js/util.js`、字串資料與封魔塔提示測試。驗證涵蓋提示 HTML，瀏覽器實機待重載驗收。本項可供整合。
+
 ## INTRO-SHOTS-01-02-EXTENDED-20261113 — 封存加長前兩鏡核准版
 
 - Owner：Codex，Done。第一鏡 16 秒，流光翼從可見背甲的兩側肩胛接出。第二鏡 18 秒，以新版第一鏡末格疊化，沿用已授權角色圖的兜帽修整、低沉轟然火焰、退入雲層及焦羽翻面。34 秒連播使用連續的 Desert Ascendant。
