@@ -64,7 +64,7 @@ test('敵人情報 Tips 置頂區顯示屬性標籤，下方不再重複顯示 �
   ctx.UI_WORKER_STATE.panels.header = { stage: { zone: 'swamp', current: 1 } };
   ctx.UI_WORKER_STATE.panels.battle = {
     field: {
-      monster: { name: '劇毒蛙', attr: 'poison', atk: 100, aspd: 1, def: 50, mdef: 50, maxHp: 1000, hit: 100, dodge: 0 }
+      monster: { name: '劇毒蛙', attr: 'poison', atk: 100, aspd: 1, def: 50, mdef: 50, maxHp: 1000, hit: 100, dodge: 54.400000000000006 }
     }
   };
 
@@ -78,6 +78,7 @@ test('敵人情報 Tips 置頂區顯示屬性標籤，下方不再重複顯示 �
   assert.doesNotMatch(showContent, /🟢 毒屬性<\/span>[\s\S]*🟢 毒屬性 \(/);
   assert.doesNotMatch(showContent, /🟣 暗屬性<\/span>/);
   assert.doesNotMatch(showContent, /🌌 屬性：/);
+  assert.match(showContent, /閃避率：54\.40%/);
 });
 
 test('renderZoneBar 只顯示目前場景，進度更新仍通知世界地圖且不重寫相同場景名稱', () => {

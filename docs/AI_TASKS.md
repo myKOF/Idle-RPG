@@ -9,11 +9,35 @@
 - `npm.cmd run build` ?? 720 ??`node tools/intro/sync-parchment-shots.cjs --check` ??????? SHA-256?`node tools/string-table/build_string_csv.cjs --check` ??? 0?`git diff HEAD --check` ????????????HEAD?MERGE_HEAD ?????? Excel ????????????? incoming ????????????
 - ?????????? index.html?sfx.js?sfx-synth.js ?????????????build ??????????????????????? ignored `logs/sync-20261113-014228-{tests,baseline}.tap` ? `{build,assets,strings}.log`???????????????????????? controller ????????? add?commit?
 
+## SETTINGS-HELP-RELICS-CHESTS-20261113 — 補充遺物與熔爐寶箱說明
+
+- Owner：Codex，Done。設置「說明」在寶石與符文之間新增遺物段落，介紹取得、首件解鎖、升級與效果提示。熔爐段落新增寶箱的鍛造經驗、解鎖、升級、機率與開啟方式。
+- 範圍：String 工作簿及衍生資料、主頁說明與必要快取、VFX 編輯器共用字串快取、LV 總表及本段。依現有玩法撰寫，遺物與寶箱配置、流程及數值沿用。
+- 新增 String 2521～2527，Excel 原生更新、正常重開兩次，原 2,507 筆值、型別、格式及工作表檢視一致。同步主頁與 VFX 編輯器字串快取 `0ed4109b`。逐檔預檢及本次差異三方試合通過，Claude 修改位於其他區段。
+- `node --test tests/settings-tabs.test.cjs tests/game-menu.test.cjs tests/intro-player.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/relic-ui.test.cjs tests/chest.test.cjs` 78/78，`npm.cmd run build` 通過 723 檔，字串寫死 0，`git diff --check` 通過。隔離靜音 Edge 以桌面 1440×900 和窄版 390×844 從開始選單點開設置，確認兩段文字、圖示、位置及無橫向溢出，未出現瀏覽器例外。
+- 唯讀檢查遺物介面、寶箱規則及字串生成工具。可供重載驗收及整合。
+
 ## INTRO-SHOT1-EXTENDED-20261113 — 封存加長第一鏡核准版
 
 - Owner：Codex，Done。封存使用者核准的 16 秒魔軍增援版，供 55 秒計畫的第二鏡接續。獨立成片位於 `images/intro-parchment/shot-01-extended.mp4`，可編輯來源與音效位於 Effects-Materials `1073b1e3`。
 - 更新序章同步工具、來源說明、清單及 LV 記錄。同步工具 `--archive`、`--apply`、`--check` 通過。從封存來源重製的 480 影格成片與兩條 WAV 各自通過 SHA-256 比對。
 - 序章與相關回歸 79/79 通過，建置產出 719 個檔案，字串表檢查 0 筆硬編碼。
+
+## ENEMY-DODGE-DISPLAY-20261113 — 敵人情報閃避率顯示兩位小數
+
+- Owner：Codex，Done。沿用既有敵人情報與字串表，將閃避率四捨五入後固定顯示兩位小數。
+- 範圍：`js/ui.js` 的敵人提示、`index.html` 的 UI 快取、既有提示測試、LV 總表及本段。戰鬥計算、存檔、配置及其他介面不在本次修改範圍。
+- 驗證：`node --test tests/zone-attr-tooltip.test.cjs tests/boss-tooltip.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs` 通過 22 項，含 `54.40%` 回歸。塔樓提示有 1 項 `showTowerTooltip` 缺失，使用原始 HEAD 重跑同樣失敗。`npm.cmd run build` 通過 723 檔，字串稽核與差異檢查通過。
+- 逐檔預檢發現 Claude 的 `8d603005` 同時更新首頁與兩份文件。鬼面快取及文件段落與本項分開，本次差異三方試合乾淨。兩分支原有的任務表末尾衝突已在本項修改前重現。
+- 唯讀檢查共通規範、`js/util.js`、字串資料與封魔塔提示測試。驗證涵蓋提示 HTML，瀏覽器實機待重載驗收。本項可供整合。
+
+## RELICS-LEVEL-100-20261113 — 32 件遺物擴充至 100 級
+
+- Owner：Codex，Done。補齊 32 件遺物的 Lv.21～100，共新增 2,560 筆。費用沿用 Lv.11～20 的階梯，每兩級增加 1 件。各件效果沿用原本的每級增量。直接判定的機率與折扣可達 100%，倍率及獎勵比例依原公式計算。
+- 範圍：Relics 工作簿及欄位說明、CSV／遊戲衍生資料、必要的主頁與 Worker 快取、遺物回歸、LV 總表及本段。玩法公式、存檔格式、掉落來源及其他配置維持原樣。
+- Excel 獨占檢查通過，經原生 Excel 插列與寫入，正常重開兩次。前 20 級 640 筆的內容、儲存格格式及型別一致，欄位說明只更新相關文字。Excel 重存微調了預設列高及欄寬，兩頁預覽通過。用 `node tools/xlsx_to_csv.cjs` 定向匯出 Relics，再以 `node tools/config_tables.cjs --apply Relics --write` 生成，試跑語意變更為 0。
+- `node --test tests/relics.test.cjs tests/relic-ui.test.cjs tests/task-chest-relic.test.cjs tests/chest.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/mystery-merchant.test.cjs tests/tower-rewards-ui.test.cjs tests/ui-sound.test.cjs` 88/88 通過。`npm.cmd run build` 通過 723 檔，字串稽核為 0，差異檢查通過。隔離靜音 Edge 以測試存檔載入正式頁與 Worker，驗證 Lv.20→21、Lv.99→100、扣件、總上限 3,200 及滿級顯示。主控台無錯誤，出現一則既有圖片預載警告。
+- 唯讀檢查共通規範、配置生成工具、遺物升級、效果及 Worker 協議。使用者核准分段更新與 Claude 重疊的快取，對 `fa15dd20` 三方試合已確認可同時保留鬼面資料版號及遺物新版，正式整合時統一主頁與 Worker 快取。可供重載驗收與整合。
 
 ## INTRO-SHOTS-01-02-EXTENDED-20261113 — 封存加長前兩鏡核准版
 
@@ -16130,3 +16154,20 @@ Worker 存活且頁面正常完成載入。
 ## TOWER-BOSS5-ONI-EYE-MIST-COLORS-20261113 — 藍／紫版眼睛與霧氣換色
 
 - Owner：Claude，Done。使用者追加：眼睛和紅霧也換成對應顏色。新增四份 Preset（`boss-oni-eye／mist` 的 `-blue`、`-purple`，含 layout）、`bossOni.variants` 補 eye／mist、用途清單四列、測試補三版眼睛與霧氣；紅版 Preset 未動。快取版號 `20261113-boss-oni-fx5`。實機在第15層看到藍色霧氣；撞擊與碎裂爆散仍是紅色（未要求）。
+
+## INTRO-SHOT3-EXTENDED-20261113 — 加長羊皮紙序章第三鏡
+
+- Owner：Codex，審片完成。依使用者核准的 55 秒方案及至少 20 秒的要求，第三鏡為 21 秒。自加長第二鏡的黑幕接入，展開薩爾維恩地圖、紫霧逐區吞沒星光、荒漠神光分開霧潮、俯衝穿沙、焦羽落地及淡黑。旁白草案以兩句字幕呈現。
+- 獨立第三鏡 `shot-03-extended-21s.mp4` 與三鏡連播 `opening-shots-01-03-55s.mp4`、可編輯分層及獨立音效留本聊天。沿用已封存的地圖、地表、焦羽與 Desert Ascendant，重新混音讓配樂連續跨過第 34 秒。遊戲設定重播仍為既有 30.3 秒版本，第三鏡加長版留待審片。
+- Edge 分層畫格抽查涵蓋紫霧、光界、穿沙、焦羽及尾幀。ffprobe 確認兩部審片為 1080p30，630／1650 幀，影像與音軌完整解碼。連播前 1020 幀 SHA-256 與核准前兩鏡一致，第三鏡首尾幀為全黑。五份序章回歸 43/43、723 檔建置、原素材匯出雜湊及差異檢查均通過。逐檔預檢未發現重疊。
+
+
+## SYNC-MERGE-20261114-000943 — develop 鬼面與遺物整合
+
+- Owner：Codex，Done。僅處理使用者授權的 pending merge `6a40ec716ca16692f503aea44b9790aa974c0211` / `97d2fcbbe669979a587a9f8918e6717a8907bc31`，base `28cb6eed127bef23ee3d449676895aa752bd993c`。比對三方後保留雙方任務紀錄、鬼面三色特效、遺物 100 級、設置說明、敵人閃避小數及其餘已自動合入內容。
+- 範圍：四份衝突檔、VFX runtime／editor 必要快取、配置衍生資料與驗證。主頁 data／relic／bridge、Worker、VFX Preset 與編輯器統一新版本 `20261114-oni-relic-sync-v1`。本次無 XLSX 衝突；Chest／Relics／String 工作簿保持原位元組，以既有 `tools/xlsx_to_csv.cjs` 重新匯出 CSV，再執行 `node tools/config_tables.cjs --apply Chest --write`、`--apply Relics --write` 與 `node tools/string-table/apply_strings.cjs`，全部 JS 內容與來源一致，無語意變更。
+- 衝突預檢已嘗試，因 antigravity 工作區 ownership 中止，未擴張信任；本次已知衝突已有使用者明確授權。唯讀檢查規範、三方差異、配置生成工具、測試與快取接線；沒有修改素材庫或其他工作區。
+- `node --test tests/relics.test.cjs tests/relic-ui.test.cjs tests/task-chest-relic.test.cjs tests/chest.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/mystery-merchant.test.cjs tests/tower-rewards-ui.test.cjs tests/ui-sound.test.cjs tests/zone-attr-tooltip.test.cjs tests/settings-tabs.test.cjs tests/game-menu.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs tests/boss-oni-fx.test.cjs tests/boss5-character-asset.test.cjs`：134 項，133 通過。唯一失敗為既有 `showTowerTooltip` 缺失；透過 Node Module._compile 執行原始 HEAD 的 zone-attr-tooltip 測試，攔截 JS 讀取並改讀同一原始 HEAD，重現相同失敗（2 通過／1 失敗），未降低斷言。
+- `node --test tests/intro-audio.test.cjs tests/intro-game-audio.test.cjs tests/intro-motion.test.cjs tests/intro-player.test.cjs tests/intro-scene.test.cjs tests/skill-sfx.test.cjs`：51/51 通過。`npm.cmd run build`：723 檔通過。`node tools/string-table/build_string_csv.cjs --check`：寫死 0。
+- 診斷保留於 ignored `logs/sync-20261114-000943-{tests,baseline,extra}.tap` 與同前綴 `{precheck,build,strings}.log`。未執行完整測試套件或瀏覽器遊玩；已知 tooltip 失敗維持原狀。無新增素材需要交付。HEAD／MERGE_HEAD 保持，不操作 Git metadata、不 stage、不 commit；交由 controller 暫存及建立合併提交。
+- 最終驗證：`git diff HEAD --check` 完整合併結果通過；全部變更檔案無衝突標記；主頁／editor／Worker／Preset 快取一致；三份工作簿 hash 與原始 staged incoming blob 完全一致；無新增未追蹤交付檔案。可交 controller 完成本次合併，既有 tooltip 問題不在本次範圍。
