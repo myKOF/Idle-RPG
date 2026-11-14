@@ -511,12 +511,12 @@ var SfxSynth = (function () {
   }
 
   /* ═════════ 冰 ═════════ */
-  function icearrow(ac, out, t, R) { var k = R(0.92, 1.1);
-    burstNoise(ac, out, t, 'highpass', 3500, 0.7, 0.0005, 0.8, 0.03, 2);                     // 冰碎「喀」
-    ring(ac, out, t, 2600 * k, [[1, 0.5], [1.73, 0.4, 1.3], [2.91, 0.3, 1.8]], 0.25, 0.18);
-    tinkles(ac, out, t + 0.005, 0.25, 10, 0.18, 3000, 8000);
-    chain(noise(ac, t, 0.35), filt(ac, 'bandpass', 6000, 1), env(ac, t, 0.01, 0.15, 0.3), out);   // 寒氣
-    ring(ac, out, t, 200 * k, [[1, 0.6]], 0.06, 0.4);
+  function icearrow(ac, out, t, R) {   // 2026-11-14 使用者選定「寒霜凝結」：沒有硬的撞擊，寒氣「嘶——」擴散結霜
+    var k = R(0.95, 1.05);
+    var bp = filt(ac, 'bandpass', 5000, 1); sweep(bp.frequency, t, [[0, 7000 * k], [0.4, 3000 * k]]);
+    chain(noise(ac, t, 0.45), bp, env(ac, t, 0.04, 0.5, 0.38), out);                                                        // 寒氣擴散
+    crackles(ac, out, t, 0.4, 22, 0.45, { fLo: 3500, fHi: 8500, q: 3, dMin: 0.003, dMax: 0.011, bias: 1, rise: true });   // 結霜細響漸密
+    tinkles(ac, out, t + 0.1, 0.3, 6, 0.06, 4000, 8000);
   }
   function iceCrystalBurst(ac, out, t, R) { var k = R(0.92, 1.08);
     boom(ac, out, t, 140 * k, 60, 0.25, 0.5);
@@ -705,7 +705,7 @@ var SfxSynth = (function () {
     'thunderfall-fly':    d(thunderfallFly, 0.7, FLIGHT),
     'thunderfall-impact': d(thunderfallImpact, 0.75),
     // 冰
-    'icearrow':           d(icearrow, 2.0),
+    'icearrow':           d(icearrow, 1.76),     // 2026-11-14「寒霜凝結」，與舊版同響度
     'ice-crystal-burst':  d(iceCrystalBurst, 1.6),
     'waterball':          d(waterball, 1.6),
     'water-tornado':      d(waterTornado, 0.7, LOOP),
