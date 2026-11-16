@@ -16185,3 +16185,9 @@ Worker 存活且頁面正常完成載入。
 - `node --test tests/intro-audio.test.cjs tests/intro-game-audio.test.cjs tests/intro-motion.test.cjs tests/intro-player.test.cjs tests/intro-scene.test.cjs tests/skill-sfx.test.cjs`：51/51 通過。`npm.cmd run build`：723 檔通過。`node tools/string-table/build_string_csv.cjs --check`：寫死 0。
 - 診斷保留於 ignored `logs/sync-20261114-000943-{tests,baseline,extra}.tap` 與同前綴 `{precheck,build,strings}.log`。未執行完整測試套件或瀏覽器遊玩；已知 tooltip 失敗維持原狀。無新增素材需要交付。HEAD／MERGE_HEAD 保持，不操作 Git metadata、不 stage、不 commit；交由 controller 暫存及建立合併提交。
 - 最終驗證：`git diff HEAD --check` 完整合併結果通過；全部變更檔案無衝突標記；主頁／editor／Worker／Preset 快取一致；三份工作簿 hash 與原始 staged incoming blob 完全一致；無新增未追蹤交付檔案。可交 controller 完成本次合併，既有 tooltip 問題不在本次範圍。
+
+## TOWER-BOSS-MODEL-NAMING-20261116 — 封魔塔BOSS 3D 模型與動作命名統一
+
+- Owner：Claude，Done。使用者指出 NPC 表的 3D 模型與動作名稱不統一（treant／boss3_character、Unsteady_Walk／Running…），要求一律 BOSS1、BOSS2 式檔名與 Walk／Die／Attack1～3。
+- 做法：`tools/meshy-pipeline/src/normalize-tower-boss-models.cjs` 把 9 個模型改名（樹人→boss2*、第3隻→boss3*、原 boss2／boss3 骷髏王二三階→boss1_lv2／lv3，鬼面 boss5* 本來就對），其中樹人×3、第3隻×3 另改 GLB 內動畫名稱（只改 JSON 區塊）；素材庫 9 個資產包的 exports 與 manifest 同步，9 支 `export-tower-*.cjs --check` 全部通過。NPC.xlsx 經 Excel 原生 API 一次改 16 列（44 格）的模型與 AC:AH 動作欄，重開驗證通過，CSV／data 同步。快取版號 `20261116-boss-models-v1`。
+- 測試：更新 treant／boss3／npc3d-config／tower-boss3d 測試，新增「所有塔BOSS綁定都是 bossN.glb＋標準動作名，且 GLB 內動作齊全、資料夾內沒有舊式檔名」；實機用遊戲自己的 Npc3D 載入全部 11 個不同模型都通過，並跑了第2層（樹人）與第3層（第3隻）真實塔戰確認渲染與動作。立繪檔名、.blend 與舊說明文件未改（見對照文件）。素材庫提交 2c326f15。

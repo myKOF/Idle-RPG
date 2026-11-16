@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 
 for (const stage of [2, 3]) test('third boss stage '+stage+' retains every joint and all five first-stage clip timings',()=>{
  function load(file){const b=fs.readFileSync(require.resolve('../images/models/npc3d/'+file+'.glb')),n=b.readUInt32LE(12);return{d:JSON.parse(b.subarray(20,20+n)),bin:b.subarray(28+n)}}
- const first=load('boss3_character').d,{d,bin}=load('boss3_character_lv'+stage);
+ const first=load('boss3').d,{d,bin}=load('boss3_lv'+stage);
  assert.equal(d.meshes.length,1);assert.equal(d.skins.length,1);assert.equal(d.skins[0].joints.length,47);
  const names=j=>j.skins[0].joints.map(i=>j.nodes[i].name).sort();assert.deepEqual(names(d),names(first));
  assert.deepEqual(d.animations.map(a=>a.name).sort(),first.animations.map(a=>a.name).sort());
@@ -21,11 +21,11 @@ for (const stage of [2, 3]) test('third boss stage '+stage+' retains every joint
 });
 
 test('third boss has its own original skin and five finite clips; strikes stay horizontally in-place',()=>{
- const bytes=fs.readFileSync(require.resolve('../images/models/npc3d/boss3_character.glb'));
+ const bytes=fs.readFileSync(require.resolve('../images/models/npc3d/boss3.glb'));
  const size=bytes.readUInt32LE(12),d=JSON.parse(bytes.subarray(20,20+size)),bin=bytes.subarray(28+size);
  assert.equal(d.meshes.length,1);assert.equal(d.skins.length,1);assert.equal(d.skins[0].joints.length,47);
- const expected={Running:.6333333,Basic_Jump:5.8666668,Right_Hand_Sword_Slash:1.5,Shield_Push_Left:2.3666668,Shot_and_Fall_Forward:2.1666668};
- assert.deepEqual(d.animations.map(a=>a.name),Object.keys(expected));
+ const expected={Walk:.6333333,Attack1:5.8666668,Attack2:1.5,Attack3:2.3666668,Die:2.1666668};   // 檔名 boss3、動作名統一
+ assert.deepEqual(d.animations.map(a=>a.name).sort(),Object.keys(expected).sort());
  for(const a of d.animations){
   assert.equal(a.channels.length,120);
   assert.ok(Math.abs(Math.max(...a.samplers.map(s=>d.accessors[s.input].max[0]))-expected[a.name])<1e-5);
@@ -34,7 +34,7 @@ test('third boss has its own original skin and five finite clips; strikes stay h
    assert.equal(accessor.componentType,5126);assert.ok(n);
    for(let i=0;i<accessor.count;i++)for(let k=0;k<n;k++)assert.ok(Number.isFinite(bin.readFloatLE((v.byteOffset||0)+(accessor.byteOffset||0)+i*(v.byteStride||n*4)+k*4)));
   }
-  if(!['Running','Shot_and_Fall_Forward'].includes(a.name)){
+  if(!['Walk','Die'].includes(a.name)){
    const c=a.channels.find(c=>c.target.path==='translation'&&d.nodes[c.target.node].name==='mixamorig:Hips');
    const hip=d.accessors[a.samplers[c.sampler].output];
    assert.equal(hip.min[0],hip.max[0]);assert.equal(hip.min[2],hip.max[2]);assert.ok(hip.max[1]>hip.min[1]);
