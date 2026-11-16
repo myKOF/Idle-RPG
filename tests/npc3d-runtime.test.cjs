@@ -9,7 +9,7 @@ const source = fs.readFileSync(path.join(root, 'js/npc3d.js'), 'utf8');
 const def = { file: 'images/models/npc3d/boss1.glb', clips: {
   idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die'
 } };
-function fixture(clips = ['Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']) {
+function fixture(clips = ['Walk', 'Attack1', 'Attack2', 'Attack3', 'Die'], scriptUrl) {
   const calls = [], destroyed = { ctrl: 0, texture: 0, outline: 0 };
   const ctrl = { clips, pxPerMeter: 100, duration: key => key === 'Attack1' ? 6 : 3,
     dispose: () => destroyed.ctrl++ };
@@ -18,6 +18,7 @@ function fixture(clips = ['Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']) {
     hero3dPlay: cfg => { body.animationSpeed = .5; calls.push(cfg); } };
   let options;
   const context = { Hero3D: {create: async opts => { options = opts; return ctrl; }, makeBody: () => body} };
+  if (scriptUrl) context.document = { currentScript: { src: scriptUrl } };
   vm.runInNewContext(source, context);
   return { api: context.Npc3D, body, ctrl, calls, destroyed, get options() { return options; } };
 }
@@ -31,6 +32,11 @@ test('only explicitly configured NPCs request a model and share the approved mat
   assert.equal(f.options.cape, false, 'baked NPC cloth must not use the hero cloth solver');
   assert.equal(f.options.pbr, true);
   assert.equal(f.options.registerInstance, false, 'NPC cannot replace the player debug controller');
+});
+test('the script cache version refreshes the model request and preserves its other query parameters', async () => {
+  const f = fixture(undefined, 'http://localhost/js/npc3d.js?v=next-models&other=1');
+  await f.api.create({ ...def, file: def.file + '?mode=test' });
+  assert.equal(f.options.model, def.file + '?mode=test&v=next-models');
 });
 test('idle holds Walk first pose, movement resumes Walk, all three attacks cycle, death holds', async () => {
   const f = fixture(); await f.api.create(def);
