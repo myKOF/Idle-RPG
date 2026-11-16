@@ -601,10 +601,13 @@ var SfxSynth = (function () {
     crackles(ac, out, ti + 0.004, 0.05, 18, 0.8 * fiber, { fLo: 1800, fHi: 5500, q: 2, dMin: 0.003, dMax: 0.008, bias: 1.2, spread: 0.3 });   // 纖維
     squelch(ac, out, ti + 0.008, k, wet, 2600, 1000, 0.06);                                                            // 汁液
   }
-  function windblade(ac, out, t, R) { var k = R(0.92, 1.1), len = 0.2, ti = t + len * 0.8;   // 砍芭蕉樹
-    bladeSwish(ac, out, t, len, k);
-    chopImpact(ac, out, ti, k);
-    whoosh(ac, out, ti, 0.35, { f0: 1800, f1: 900, f2: 400, q: 0.8, peak: 0.2, peakAt: 0.15 });   // 刀風餘勁
+  function windblade(ac, out, t, R) {   // 2026-11-16 使用者選定「重風劈砍」：低沉厚重的一刀，砍中時悶悶的
+    var k = R(0.93, 1.07), len = 0.2, ti = t + len * 0.8;
+    whoosh(ac, out, t, len, { f0: 300 * k, f1: 1100 * k, f2: 500 * k, q: 1.3, peak: 0.6, p0: -0.5, p1: 0.4, peakAt: 0.78 });   // 低沉刀風
+    whoosh(ac, out, t, len, { f0: 1200 * k, f1: 3500 * k, f2: 2000 * k, q: 2.5, peak: 0.35, p0: -0.5, p1: 0.4, peakAt: 0.8 });
+    boom(ac, out, ti, 140 * k, 60, 0.12, 0.7);                                                                                // 悶悶砍中
+    chain(noise(ac, ti, 0.12), filt(ac, 'lowpass', 1200), env(ac, ti, 0.002, 0.6, 0.08), out);
+    whoosh(ac, out, ti, 0.35, { f0: 900, f1: 500, f2: 250, q: 0.8, peak: 0.25, peakAt: 0.12, white: false });               // 餘風
   }
   function windbladeFlesh(ac, out, t, R) { var k = R(0.92, 1.1), len = 0.2, ti = t + len * 0.8;   // 砍肉
     bladeSwish(ac, out, t, len, k);
@@ -715,7 +718,7 @@ var SfxSynth = (function () {
     'blizzard':           d(blizzard, 1.1, LOOP),
     'ice-spike':          d(iceSpike, 2.0),
     // 風
-    'windblade':          d(windblade, 1.4),
+    'windblade':          d(windblade, 0.62),     // 2026-11-16「重風劈砍」，與舊版同響度
     'windblade-flesh':    d(windbladeFlesh, 1.4),
     'wind-burst':         d(windBurst, 1.5),
     'vacuumslash':        d(vacuumslash, 1),
