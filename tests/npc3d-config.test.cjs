@@ -35,8 +35,8 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
       assert.ok(fs.existsSync(path.join(root, 'images', result[i].img)));
       assert.equal(result[i].model3d.file, 'images/models/npc3d/boss5' + suf + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
-    } else if (i === 5 || i === 15) {
-      const suffix = i === 5 ? '' : '_lv2';
+    } else if (i === 5 || i === 15 || i === 25) {
+      const suffix = { 5: '', 15: '_lv2', 25: '_lv3' }[i];
       assert.equal(result[i].name, '深淵領主');
       assert.equal(result[i].attr, 'dark');
       assert.equal(result[i].elem, null);
