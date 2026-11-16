@@ -45,6 +45,16 @@ node extended-shot-three/render-shot-three.cjs
 node extended-shot-three/package-preview.cjs
 ```
 
+## 第三鏡 33.5 秒與 67.5 秒連播（2026-11-16 核准）
+
+第三鏡依核准稿加厚荒漠煙塵，左手與腕甲融入場景沙面。焦羽自約 60° 斜俯遠景飄落，切入胸甲特寫的第一格即從羽軸中央發出白色星芒。觸甲後白光接成金白放射光束與粒子，始終從同一羽軸錨點擴散。鏡頭隨光緩慢推進，約三秒後光及上半身並淡出。
+
+- `web/shot-03-extended-33.5s.mp4` 保存獨立第三鏡，`web/shots-01-03-67.5s.mp4` 為核准連播。遊戲匯出為 `images/intro-parchment/shots-01-03-67.5s.mp4`。
+- `extended-shot-three/` 保存本版可編輯來源。左手修整沿用核准的沙掩分件，前景手腕由既有荒漠地表取樣合成。焦羽特效由專案 VFX 編輯器製作，preset、單一根群組 layout、原素材索引對照與 VFX Core 版本快照一併封存。光束參考使用者附圖的亮白核心和金色放射線，以專案既有 flare／star／trace 貼圖實作。
+- `assets/shot-three-effects.wav` 為 33.5 秒獨立演出音效，`assets/shot-three-preview.wav` 與 `assets/opening-67.5s-preview.wav` 為核准混音，連播配樂接續跨過第 34 秒。第 34 秒前的影像封包與加長前兩鏡核准版一致。
+
+重製方式沿用上方兩條 render／package 指令，使用本版 `extended-shot-three`。預覽頁須由 HTTP 提供，讓瀏覽器可載入 VFX preset JSON；離線渲染程式會自行啟動本機預覽伺服器。
+
 ## 可編輯來源
 
 Effects-Materials 內的 `codex-authored/intro-parchment-shots-20261111` 保存核准成片、可編輯程式、透明分件、雲海和深淵背景、音軌、聲景產生器及提示詞。角色、流光翼、神殿、遠雲、地面敵軍、飛行敵軍、火焰、煙與粒子分開合成。大天使長的頭罩與右手由獨立透明圖接回角色。第二鏡大天使長沿用第一鏡流光翼分件。第三鏡的地圖、荒漠地表、星點、紫霧、光束、圓形神光及沙塵分開合成。
