@@ -7,9 +7,12 @@
     var def = data && data.model3d;
     return def && def.file && def.clips && def.clips.walk ? def : null;
   }
+  // The page's script version also refreshes GLB requests after an asset update.
+  var scriptUrl = global.document && global.document.currentScript && global.document.currentScript.src;
+  var scriptVersion = /[?&]v=([^&#]+)/.exec(scriptUrl || '');
   async function create(def) {
     var ctrl = await global.Hero3D.create({
-      model: def.file + (def.file.indexOf('?') < 0 ? '?' : '&') + 'v=' + VERSION,
+      model: def.file + (def.file.indexOf('?') < 0 ? '?' : '&') + 'v=' + (scriptVersion ? scriptVersion[1] : VERSION),
       size: 512, span: 6.2, cape: false, pbr: true, outline: false, registerInstance: false,
       locomotionClip: def.clips.walk
     });

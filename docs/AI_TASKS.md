@@ -1,3 +1,10 @@
+## BOSS6-ATTACK3-EDGE-20261116 — 轉平第三段攻擊的刀面
+
+- Owner：Codex，Done。使用者截圖對應 `Attack3` 約 1.14 秒。三款模型套用同一套刀面修正，約 0.99～1.28 秒平順調整右前臂、手腕和劍骨，截圖時刻刀面與地面平行，刀刃掃過前方目標。三款各交付一份第三段攻擊 GIF。
+- 更新 `boss6.glb`、`boss6_lv2.glb`、`boss6_lv3.glb`，並以主頁的 NPC 腳本版本更新模型請求。逐位元核對三款只更新攻擊 3 的四條曲線。修正區間取樣 39 幀，握柄誤差最大 1.78 mm，刀刃與盾牌或盔甲的交集為 0。
+- 隔離 Chrome 從第26層實測戰鬥，確認攻擊 3 播放。以遊戲載入器逐一核對三款新版本請求及截圖影格。`node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs` 通過 30 項，`npm.cmd run build` 通過 723 檔，Git 差異檢查通過。
+- 唯讀檢查 NPC 樓層配置、第一款接入與武器來源、GLB 匯出工具及其他分支。與 Claude 分支三方試合只重現先前 `js/npc3d.js` 的備援快取版號衝突，這次從主頁取版本的修改位於另一區段。素材庫提交 `73bd4d77` 更新三款 Blender 來源、合成模型、遊戲檔及 SHA-256，已驗證重製位元一致。遊戲提交為本段所在提交，可供指定整合者採用。
+
 ## BOSS6-LV3-INTEGRATION-20261116 — 接入深淵領主第三款貼圖
 
 - Owner：Codex，Done。套用使用者提供的深紅版底色、法線及金屬粗糙度貼圖，沿用第一款修好的頭部朝向、右手劍、左前臂盾、披風與五段動作。封魔塔第26／76／126層讀取第三款模型與頭像。物理近戰普攻為 0.4 次／秒、5 米，保留暗屬性及原有專屬技能。五段 GIF 依動作獨立交付。
