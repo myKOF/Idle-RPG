@@ -46,6 +46,11 @@ test('first tower boss becomes Skeleton King without changing stats; floor 11 us
     assert.equal(b.aspd,bosses[(f-1)%50].atkSpeed,'stats and skills are untouched by the new look');
   }
   assert.equal(context.makeBoss(35).model3d,null,'the other poison rows keep their previous appearance');
+  for (const floor of [6, 56, 106]) {
+    const knight = context.makeBoss(floor);
+    assert.equal(knight.npcId, 'tower_boss_6');
+    assert.equal(knight.model3d.file, 'images/models/npc3d/boss6.glb');
+  }
   assert.equal(context.makeBoss(53).model3d.file,third.model3d.file);
   assert.equal(context.makeBoss(103).model3d.file,third.model3d.file);
   assert.equal(context.makeBoss(12).npcId,'tower_boss_12');
