@@ -18,7 +18,6 @@
 | 2 | 樹人 | `boss2.glb` | `treant.glb` | Unsteady_Walk→Walk、Weapon_Combo_2→Attack1、Attack→Attack2、Basic_Jump→Attack3、Shot_and_Fall_Forward→Die |
 | 2 | 樹人Ⅱ／Ⅲ | `boss2_lv2.glb`／`boss2_lv3.glb` | `treant_lv2／lv3.glb` | 同上 |
 | 3 | 雷霆巨獸（骷髏王Ⅲ） | `boss3.glb`／`boss3_lv2.glb`／`boss3_lv3.glb` | `boss3_character*.glb` | Running→Walk、Basic_Jump→Attack1、Right_Hand_Sword_Slash→Attack2、Shield_Push_Left→Attack3、Shot_and_Fall_Forward→Die |
-| 6 | 黑暗騎士（深淵領主列） | `boss6.glb` | 新增 | 來源動作 Run_03／Left_Slash／Basic_Jump／Charged_Slash／Dead 已依規則命名為 Walk／Attack1／Attack2／Attack3／Die |
 | 5 | 鬼面 | `boss5.glb`／`boss5_lv2.glb`／`boss5_lv3.glb` | 同 | 本來就是 |
 
 注意：`boss2.glb`、`boss3.glb` 這兩個檔名**原本是第1隻骷髏王的第二、三階**，現在分別是樹人與第3隻BOSS，舊版瀏覽器快取以 `?v=` 版號（`js/npc3d.js` 的 `VERSION`）區分，已換新。第4隻BOSS（製作中）將是 `boss4.glb`。
