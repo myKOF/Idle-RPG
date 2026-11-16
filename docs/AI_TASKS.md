@@ -1,7 +1,21 @@
+## SYNC-MERGE-20261117-011256 ? develop integration validated
+
+- Owner: Codex. Done; designated integrator for HEAD 9bb1279ecd26e3a78987a6bee3308ef622c8867d and MERGE_HEAD 0ac76f10a8390d508a25d0175971432bf237cec9 only. Scope: seven original conflicts, necessary cache/generated data, tests and this record; no staging, commits, metadata or other worktree writes. Controller completes merge.
+- Preserved both task histories, tower model naming and incoming fourth-shot archives. Runtime conflicts are version-only; retained script-derived GLB version refresh and assigned new page/NPC/bridge/Worker/data cache 20261117-pending-011256-merged-v1.
+- Read-only base/ours/theirs workbook inspection: 86 ours changed cells and 42 incoming changed cells, no competing values. Recovery data plan: logs/sync-excel-plans/20261117-011256-05ee77111655483fbe0442f332172f5b/NPC.json; workbook bytes untouched. Native Excel apply/reopen receipts and authoritative CSV/JS regeneration are required in second pass before final acceptance.
+- Conflict precheck found authorized incoming changes; other-worktree ownership checks unavailable, no trust exceptions added. Read rules, agent workflow, task records, three-way runtime/data revisions and native updater/export tools. No new asset-library deliverables.
+
+- First-pass validation: node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/intro-audio.test.cjs tests/intro-game-audio.test.cjs tests/intro-motion.test.cjs tests/intro-player.test.cjs tests/intro-scene.test.cjs tests/start-menu.test.cjs tests/start-menu-background.test.cjs: 83/83 passed. npm.cmd run build: 723 files passed. node tools/intro/sync-parchment-shots.cjs --check: source/output SHA-256 match. git diff HEAD --check: passed.
+- Read-only plan versus merged NPC CSV: 0 differing cells. Workbook SHA-256 remains C5A68623C01885725AF19AAB426F3F00EA4114B10CAD7D9BB6279019A2A0EB22. HEAD and MERGE_HEAD unchanged. Ignored diagnostic logs retained at logs/sync-20261117-011256-tests.tap and matching build/assets .log files. No browser/full-suite validation; no CSV/JS regeneration until native receipts. Status needs_excel; controller applies recovery plan, then requests second validation pass.
+
+- Final pass: native Excel 16.0 normal reopen / corrupt_load 0 receipt accepted. Verified NPC.xlsx SHA-256 A332D7A370D89E03CFF165D803D9109ED8FD5E6445C77E6393D76F3F6E75AA80 before/after; no workbook bytes edited. Exported actual workbook with PARAMS_XLSX=config/Excel/NPC.xlsx, PARAMS_CSV_OUT=config/CSV/NPC.csv, PARAMS_SHEET=NPC and node tools/xlsx_to_csv.cjs: 531 rows / 34 columns. node tools/config_tables.cjs --apply NPC --write: 11 literals, 0 semantic changes; generated CSV/JS already match HEAD. Read-only CSV comparison: approved plan differs in 0 cells; all 86 ours and 42 incoming changed cells retained.
+- Final regression command: node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/intro-audio.test.cjs tests/intro-game-audio.test.cjs tests/intro-motion.test.cjs tests/intro-player.test.cjs tests/intro-scene.test.cjs tests/start-menu.test.cjs tests/start-menu-background.test.cjs: 83/83 passed. npm.cmd run build: 723 files passed. node tools/intro/sync-parchment-shots.cjs --check: source/output SHA-256 match. git diff HEAD --check: passed for complete merged result. No regressions or baseline exceptions.
+- Final diagnostics retained in ignored logs/sync-20261117-011256-final-tests.tap and matching final-build.log / final-assets.log. No conflict markers remain. No browser or full-suite validation. HEAD/MERGE_HEAD unchanged; no stage/commit/metadata writes or new asset-library deliverables. Status resolved; ready for controller staging and merge commit (unmerged index entries expected). First-pass needs_excel above is historical and superseded by this native receipt validation.
+
 ## SYNC-MERGE-20261117-010503 ? develop integration validated
 
 - Owner: Codex. Done; designated integrator for this pending merge only. HEAD bdea00549c956f7c0b7911d3a76b8b8fc7866e29; MERGE_HEAD 69fac0c9569e62c1b473a0b0193836b027ed940d; base 1ffa71deb40c3f9b12122924ebb7398d415a10e9. No staging, commit, Git metadata writes or other worktree edits; controller completes the merge.
-- Resolved LV/task records by preserving both sides. Retained NPC script-derived model cache refresh and assigned combined version 20261117-boss-models-merged-v1. Data imports, Worker startup version and page bridge import use the same new version. Preserved incoming model normalization and sound changes, plus ours BOSS6 integration and attack animation fixes.
+- Resolved LV/task records by preserving both sides. Retained NPC script-derived model cache refresh and assigned combined version 20261117-pending-011256-merged-v1. Data imports, Worker startup version and page bridge import use the same new version. Preserved incoming model normalization and sound changes, plus ours BOSS6 integration and attack animation fixes.
 - Native Excel receipt: NPC.xlsx SHA-256 C5A68623C01885725AF19AAB426F3F00EA4114B10CAD7D9BB6279019A2A0EB22, Excel 16.0 normal reopen, corrupt_load 0, NPC 531 rows / 34 columns / 7 shapes. Workbook bytes untouched in this validation pass. Read-only comparison with approved plan: 0 differing cells. Base/ours/theirs CSV comparison: all 42 ours and 44 theirs changed cells retained, 0 lost changes.
 - Regenerated actual workbook via node tools/xlsx_to_csv.cjs with PARAMS_XLSX=config/Excel/NPC.xlsx, PARAMS_CSV_OUT=config/CSV/NPC.csv, PARAMS_SHEET=NPC. node tools/config_tables.cjs --apply NPC --write: 11 literals, 0 semantic differences; merged JS already matches authoritative workbook.
 - node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/boss3-character-asset.test.cjs tests/treant-asset.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/skill-sfx.test.cjs: 45/45 passed. npm.cmd run build: 723 files passed. git diff HEAD --check: complete merged result passed. No failing assertions or baseline exceptions.
@@ -94,6 +108,12 @@
 - Effects-Materials `aaea6ef3` 保存兩鏡成片、角色與焦羽分件、獨立音效、混音、提示詞及重製程式。遊戲同步成片、來源文件與 SHA-256 清單。設定頁重播仍使用已接第三鏡的 30.3 秒版。
 - `node --test` 執行五份序章測試檔共 43/43，`npm.cmd run build` 通過 720 檔，String 稽核 0。Edge 與 FFmpeg 從封存來源重製三部 MP4，與核准檔的 SHA-256 完全一致。第二鏡三條 WAV 重建一致，34 秒成片完整解碼 1,020 影格。
 - 唯讀檢查遊戲重播入口、既有三鏡成片與素材匯出。Claude 的 LV 與任務表變更位於其他區段，LV 三方試合乾淨，任務表的既有衝突內容在本次修改前後相同。遊戲提交為本段所在提交。
+
+## INTRO-SHOT4-APPROVED-20261117 — 封存第四鏡與 100.7 秒連播
+
+- Owner：Codex，Done。第四鏡 32.2 秒，第 68.5 秒銜接羽毛金光，第 70.7 秒進入 10 秒撐地近景，末段 1.5 秒轉入半跪，再接持劍和石拱門。保留落砂、布料、分層環景及右往左陣風，使用同一首 Desert Ascendant。
+- 素材庫提交 `55b01d02`。收錄第四鏡分層、遮罩、渲染與混音來源，以及共用既有圖層的第三鏡 35.5 秒剪接來源。核准連播以分段位元組封存，可還原原 MP4；遊戲端經既有工具匯出第四鏡單鏡。
+- 驗證：從封存來源重製第四鏡 32 張與第三鏡 36 張抽查畫格，SHA-256 均與核准預覽一致。獨立第四鏡解碼 966 格，連播還原後 SHA-256 完全一致並解碼 3,021 格。序章、選單與編輯器相關測試 77/77、建置 723 檔、素材匯出與 Git 差異檢查通過。LV 與任務表的改動位置已在 develop、ai/claude 三方試合通過。
 
 ## INTRO-DESERT-HANDOFF-20261112 — 序章配樂接續到荒漠
 
@@ -16064,6 +16084,12 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex。以使用者核准的 v10 為交付，第三鏡 32 秒，與核准前兩鏡接成 66 秒。自黑幕進入薩爾維恩地圖，鏡頭穿砂下推、砂塵散去後顯露大天使長。約 60° 斜俯遠景切至胸前近景，羽毛入鏡至觸甲 6.25 秒。拇指沿掌墊接入，四指到掌指關節逐像素保留原圖。
 - 保存素材庫分層、手部修整、提示詞、獨立演出音效及核准混音，經原有同步工具匯出 66 秒成片。設定頁重播使用現行 30.3 秒版本。
 - 素材庫提交 `917820ce`。從封存來源重製 26 張畫格及三條 WAV，均與核准版 SHA-256 相同。FFmpeg 封裝後兩部成片 SHA-256 一致，兩部皆完整解碼，連播前 1,020 幀與核准前兩鏡相同。序章與選單測試 58/58，建置檢查 723 檔，素材匯出校驗與 Git 差異檢查通過。LV 與 Claude 鬼面紀錄分段，三方試合通過。任務表既有的重複標題仍會觸發合併驅動程式回退，試合確認本次未新增衝突區塊。
+
+## INTRO-SHOT3-FEATHER-20261116 — 封存第三鏡羽毛金光核准版
+
+- Owner：Codex，Done。第三鏡 33.5 秒，前三鏡連播 67.5 秒。封存核准的荒漠煙塵、左手薄沙掩埋及胸甲近照。白色星芒自特寫第一格跟隨羽軸中央，觸甲後同錨點改為向上半身擴散的金白芒光及粒子。
+- 素材庫提交 `c185c464`。收錄分層、VFX 編輯器 preset 與 layout、貼圖、原混音及兩份成片。遊戲端依既有匯出路徑封存 67.5 秒連播，設定頁的播放入口與音訊邏輯沿用既有版本。
+- 驗證：從封存來源重製 32 張畫格及三條 WAV，SHA-256 皆與核准稿相同。兩份成片完整解碼，連播前 1,020 個影像封包及音軌與上一版一致，遊戲匯出 SHA-256 相符。序章、選單與編輯器相關測試 61/61，建置 723 檔及差異檢查通過。 LV 與任務表的修訂位置與 Claude 封魔塔紀錄分開，三方試合通過。
 
 ## MERGE-INTRO-STORYBOOK-MERCHANT-20261111 — 序章與神祕商人整合
 

@@ -40,16 +40,36 @@ const sources = [
 ].map(file => 'extended-shot-two/' + file), [
   'PROMPT.md', 'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-three.js',
   'shot-ground.js', 'shot-feather.js', 'build-audio.cjs', 'render-shot-three.cjs',
-  'package-preview.cjs', 'assets/archangel-fallen-ivory.png',
+  'package-preview.cjs', 'feather-vfx.js', 'vfx-core.js', 'assets/archangel-fallen-ivory.png',
   'assets/archangel-left-thumb-reference-edit.png', 'assets/desert-high-oblique.png',
-  'assets/hand-source.png', 'assets/shot-three-effects.wav', 'assets/shot-three-preview.wav',
-  'assets/opening-66s-preview.wav'
-].map(file => 'extended-shot-three/' + file), 'web/shot-02-archangel-fall-18s.mp4',
-'web/shot-03-extended-32s.mp4');
+  'assets/hand-source.png', 'assets/hand-buried-approved.png', 'assets/wrist-sand-relief.png',
+  'assets/mortal-map.png', 'assets/desert-surface.png', 'assets/desert-wide-extended.png',
+  'assets/collapse-smoke.png', 'assets/charred-feather.png', 'assets/noto-serif-tc-bold.woff2',
+  'assets/feather-vfx/intro-feather-radiance.json', 'assets/feather-vfx/intro-feather-radiance.layout.json',
+  'assets/feather-vfx/textures.json', 'assets/feather-vfx/flare_16.png',
+  'assets/feather-vfx/star_04.png', 'assets/feather-vfx/trace_02.png',
+  'assets/shot-three-effects.wav', 'assets/shot-three-preview.wav',
+  'assets/opening-66s-preview.wav', 'assets/opening-67.5s-preview.wav'
+].map(file => 'extended-shot-three/' + file), [
+  'index.html', 'shot-timing.js', 'shot.js', 'shot-three.js', 'shot-ground.js',
+  'shot-feather.js', 'build-audio.cjs', 'render-shot-three.cjs',
+  'assets/shot-three-effects.wav', 'assets/shot-three-preview.wav', 'assets/opening-69.5s-preview.wav'
+].map(file => 'extended-shot-three-35.5s/' + file), [
+  'SOURCE.md', 'index.html', 'shot-timing.js', 'shot.js', 'shot-cinematics.js',
+  'brace-effects.js', 'cloth-motion.js', 'kneel-orbit.js', 'rise-gust.js', 'rise-matte.js', 'rise-scene.js',
+  'build-audio.cjs', 'render-shot-four.cjs', 'restore-master.cjs',
+  'assets/brace.png', 'assets/cloth-ribbon.png', 'assets/flare.png', 'assets/kneel.png',
+  'assets/kneel-desert.png', 'assets/rise.png', 'assets/rise-desert.png', 'assets/vista.png',
+  'assets/shot-four-effects.wav', 'assets/shot-four-mix.wav'
+].map(file => 'extended-shot-four/' + file), 'web/shot-02-archangel-fall-18s.mp4',
+'web/shot-03-extended-32s.mp4', 'web/shot-03-extended-33.5s.mp4', 'web/shots-01-04-100.7s.json',
+'web/shots-01-04-100.7s.mp4.part01', 'web/shots-01-04-100.7s.mp4.part02');
 const exportsByName = {
   'shot-01-extended.mp4': 'web/shot-01-extended.mp4',
   'shots-01-02-34s.mp4': 'web/shots-01-02-34s.mp4',
   'shots-01-03-66s.mp4': 'web/shots-01-03-66s.mp4',
+  'shots-01-03-67.5s.mp4': 'web/shots-01-03-67.5s.mp4',
+  'shot-04-32.2s.mp4': 'web/shot-04-32.2s.mp4',
   'shot-01-02.mp4': 'web/shot-01-02.mp4',
   'shot-01-03.mp4': 'web/shot-01-03.mp4',
   'shot-01-03-sfx.mp3': 'web/shot-01-03-sfx.mp3',
