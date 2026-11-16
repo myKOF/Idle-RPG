@@ -51,6 +51,12 @@ test('first tower boss becomes Skeleton King without changing stats; floor 11 us
     assert.equal(knight.npcId, 'tower_boss_6');
     assert.equal(knight.model3d.file, 'images/models/npc3d/boss6.glb');
   }
+  for (const floor of [16, 66, 116]) {
+    const knight = context.makeBoss(floor);
+    assert.equal(knight.npcId, 'tower_boss_16');
+    assert.equal(knight.model3d.file, 'images/models/npc3d/boss6_lv2.glb');
+    assert.deepEqual(knight.model3d.clips, context.makeBoss(6).model3d.clips);
+  }
   assert.equal(context.makeBoss(53).model3d.file,third.model3d.file);
   assert.equal(context.makeBoss(103).model3d.file,third.model3d.file);
   assert.equal(context.makeBoss(12).npcId,'tower_boss_12');
