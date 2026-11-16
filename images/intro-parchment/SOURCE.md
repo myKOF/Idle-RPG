@@ -1,4 +1,4 @@
-# 羊皮紙序章前三鏡
+# 羊皮紙序章
 
 本資產為使用者確認的分鏡成片。全長 30.30 秒，1920 × 1080，30 fps，H.264 與 AAC 立體聲。第一鏡從天使近景拉遠至天堂戰場，帶出地面與空中的惡魔大軍。第二鏡從 9.00 秒疊化時即開始運動，9.90 秒完全顯露。大天使長帶火仰面墜落，灰煙遮住大半下身，焦紙片沿氣流翻飛。18.90 秒收完群墜尾跡，19.40 秒深淵光點亮起並擴散。20.80 秒由白幕接入第三鏡。第三鏡長 9.50 秒，星點與神光在羊皮紙地圖浮現，暗紫霧從邊緣侵入。25.63 秒光束落在荒漠，紫霧停在圓形神光外緣。鏡頭於 25.98 秒俯衝，27.24 秒穿過沙塵接入地表，最後淡出。
 
@@ -54,6 +54,20 @@ node extended-shot-three/package-preview.cjs
 - `assets/shot-three-effects.wav` 為 33.5 秒獨立演出音效，`assets/shot-three-preview.wav` 與 `assets/opening-67.5s-preview.wav` 為核准混音，連播配樂接續跨過第 34 秒。第 34 秒前的影像封包與加長前兩鏡核准版一致。
 
 重製方式沿用上方兩條 render／package 指令，使用本版 `extended-shot-three`。預覽頁須由 HTTP 提供，讓瀏覽器可載入 VFX preset JSON；離線渲染程式會自行啟動本機預覽伺服器。
+
+## 第四鏡 32.2 秒與前四鏡 100.7 秒（2026-11-17 核准）
+
+前四鏡在第 68.5 秒從胸口羽毛的金光接入第四鏡。金光逐格向外擴散，第 70.7 秒切至右手撐地。撐地近景 10 秒，最後 1.5 秒交疊淡入半跪，接續持劍與石拱門。持劍段維持原畫站姿，分層合成近地、人物、遠景與飛砂，劍刃落砂約兩秒，陣風自右向左。Desert Ascendant 沿用既有素材庫授權來源，連播配樂維持一條時間軸。
+
+- `extended-shot-four/` 保存原創 ImageGen 分件、可編輯遮罩、布料、風沙、混音與渲染程式。使用者附圖用來標示修整區域和動作參考，人物去背取用同一張原創畫作。獨立演出音效與含配樂混音位於 `extended-shot-four/assets/`。
+- `extended-shot-three-35.5s/` 保存前四鏡所用的第三鏡剪接版本。羽毛落胸前多飄兩秒，落定後金光延續原版節奏。渲染使用 `extended-shot-three/` 內既有背景、角色分件與羽毛 VFX preset。
+- `web/shot-04-32.2s.mp4` 是獨立第四鏡，遊戲匯出為 `images/intro-parchment/shot-04-32.2s.mp4`。前四鏡的核准 MP4 原始位元組保存在 `web/shots-01-04-100.7s.mp4.part01` 及 `part02`，同名 JSON 記錄長度、影格數和 SHA-256。以下指令可還原成一份可直接播放的 MP4。
+
+```powershell
+node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
+```
+
+重新渲染可執行 `node extended-shot-four/render-shot-four.cjs`。指定 `PARCHMENT_ARCHIVE` 為此序章素材目錄後，可用 `node extended-shot-four/build-audio.cjs` 重製第四鏡混音。預覽、渲染及混音支援既有 `PARCHMENT_FFMPEG`、`PARCHMENT_REVIEW_DIR` 設定。
 
 ## 可編輯來源
 

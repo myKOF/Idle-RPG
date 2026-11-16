@@ -105,9 +105,47 @@
     "extended-shot-three/assets/shot-three-preview.wav": "611a0335ff746edd10d6cc051f0c9c858414addd8ddb6371c064006e28747fdf",
     "extended-shot-three/assets/opening-66s-preview.wav": "3d122f91090f808728792724e4249245ec24daf3a6dd79f1c5029392ac187cb9",
     "extended-shot-three/assets/opening-67.5s-preview.wav": "ace3d5bc702d378d21edca07c5669771a13da5249396502b8fd8d5e7c786578e",
+    "extended-shot-three-35.5s/index.html": "d88d008acac1461679fd89d5e82bb269d09c2fc79d53092afca6586fa494b8cf",
+    "extended-shot-three-35.5s/shot-timing.js": "a5a0458ebe238dc9cb2f76620663f68953ec2b9562fdbd1087afc32d8d7db2b7",
+    "extended-shot-three-35.5s/shot.js": "73b4621ba899b63be463f685a0e5c79b3e157614ad7c4a5ff529cd7e917d8948",
+    "extended-shot-three-35.5s/shot-three.js": "27f16184616ead480df3859f1e6cf0895e70c9a3565526df67e6df6e3905acbf",
+    "extended-shot-three-35.5s/shot-ground.js": "a063a2c6ecb767c56a815d198c0e9ff3c467bc6adb7652eeb2ad06284060d3ea",
+    "extended-shot-three-35.5s/shot-feather.js": "91ff7219ece98afa6bcdc0080bbca998322d4e4cbbcc46d6929c05a5ead5935c",
+    "extended-shot-three-35.5s/build-audio.cjs": "e0ce51798119189cb58977004a62f57e6b63ec4cb45f24bf77607bf3086cf5c8",
+    "extended-shot-three-35.5s/render-shot-three.cjs": "a9148236ae54bad094608ef1043bf444b706397d970c035ace087627663a4fa5",
+    "extended-shot-three-35.5s/assets/shot-three-effects.wav": "4e2702b90e66d45b387ee4175e365e96266fea82af0d089611f1ebb771b2e7de",
+    "extended-shot-three-35.5s/assets/shot-three-preview.wav": "968d698d81efce501349af8098b4139c3db99465499a638a413ef4facf5d358a",
+    "extended-shot-three-35.5s/assets/opening-69.5s-preview.wav": "60cce2fa9b4a3f707893c58f413ab97ec4961b76c8893bdcc0cce6bfacf730a5",
+    "extended-shot-four/SOURCE.md": "20cec06c87b95b6a5265ff4d986791a02c8c68b70426d39c520b1cdbd51cdd30",
+    "extended-shot-four/index.html": "35188f1f184eaeb6f9d5f875c5439beacf82d5b1dca9c4fa6f8d98edb6c2c99b",
+    "extended-shot-four/shot-timing.js": "bee4dd293091ee7055447113a9c7935a58e422cac9e03637c42f992b5d3e19a2",
+    "extended-shot-four/shot.js": "eb1d94b0faf71775e23a3e6cb96e65dd916e28532269feb437540a70bcd96d3a",
+    "extended-shot-four/shot-cinematics.js": "7719532197d8c59cc5c610ff2c31dcb5996911aa243937d448018f4aeb45b8af",
+    "extended-shot-four/brace-effects.js": "234681e7873b2f78028f4b0427d584f7c6f53f43c27c0f3ee283dd6ded560b2d",
+    "extended-shot-four/cloth-motion.js": "af9aef8cbd1ddf7be10ff90486446a8fa2f06b943ff0a463ef36bdb6925bb350",
+    "extended-shot-four/kneel-orbit.js": "767dbed31c2cf67d3fdbaa42a80e07226689b46b26af5c2c0bf25c96a2064811",
+    "extended-shot-four/rise-gust.js": "6731d485cf533f7dc2d676cfffaed0e8277dac85706299e9779be385eaada6e9",
+    "extended-shot-four/rise-matte.js": "e353c3fb371943089b2b000c9569dab2c808284754ea1a010f20b596e17e2f09",
+    "extended-shot-four/rise-scene.js": "a25d538cd09441c656e99eac080d50743e06c0efba943f0b2ee4705e880be301",
+    "extended-shot-four/build-audio.cjs": "29098ec2324482aeeabbb4fb243505aca824c03823609293f053a3f88a387156",
+    "extended-shot-four/render-shot-four.cjs": "618acd694035b5253128dd79147869ed09c02cbff6fe80d42b3ce78b151480b7",
+    "extended-shot-four/restore-master.cjs": "55de235767ed338132197bcebf4c7d2c6e952d575f35a7c1321322cdd7733841",
+    "extended-shot-four/assets/brace.png": "56d93875d3fa12f75859babb807347d943e4154084aff267f018ce9240324b6e",
+    "extended-shot-four/assets/cloth-ribbon.png": "2693ae3fee1cab38cd0bd9ebeea7fda6175d42619b5227e53522789df1c3be97",
+    "extended-shot-four/assets/flare.png": "6df3fee00e1aa0be062899517e538217d3cd1c3b1797a7fe75d2da9cdb813a49",
+    "extended-shot-four/assets/kneel.png": "4835dc0793edf672e53f18b423adc76d4a14266a59966234c2e6cbfe7b5deaad",
+    "extended-shot-four/assets/kneel-desert.png": "b7c8a419e49087d092dc30d0ec5a9f694a1b147725d6609cba46f1afce267acc",
+    "extended-shot-four/assets/rise.png": "cef26c3a5ad51dc2eba07177c1afba190bae5aca2f043f34474b530d74a33544",
+    "extended-shot-four/assets/rise-desert.png": "7ff5063205fdf69d58d46938c5c5fc00a68c8b1afc7f8f849c55fd0527e266ff",
+    "extended-shot-four/assets/vista.png": "6e5ad25a82d07ea6fb3870f7ed6d589790238fb8b4ae8ab5cf88675b8f7fc04a",
+    "extended-shot-four/assets/shot-four-effects.wav": "0fe70a3a9a29ab6f0e3b31a7ac462013c587aeb2dfc1367f9e8d4de4f0c82ff3",
+    "extended-shot-four/assets/shot-four-mix.wav": "a7c5365a0688912574d0de1196dab999fcd11dc6c9fa727d590904793143a317",
     "web/shot-02-archangel-fall-18s.mp4": "0d49096b3383f7c405d32b1069dc782163d71f31f7844df3b09918511e288d84",
     "web/shot-03-extended-32s.mp4": "cb3631b2a5b074913316f0cf88b866a361d51afe356f984207a3b5051a028bb1",
-    "web/shot-03-extended-33.5s.mp4": "cdc42057988e800b5bdf62d8906df6c4d5b77574880e016f8e1305df86bd5f8c"
+    "web/shot-03-extended-33.5s.mp4": "cdc42057988e800b5bdf62d8906df6c4d5b77574880e016f8e1305df86bd5f8c",
+    "web/shots-01-04-100.7s.json": "0404be6a6496a0244e5a28806ff649d63a108fc276e13c2809474452af673644",
+    "web/shots-01-04-100.7s.mp4.part01": "9be075aa54e17dae075d19cb8972a7732d13115c744c7f8c99bdc7c74a220b86",
+    "web/shots-01-04-100.7s.mp4.part02": "0f2436bf77a87fb10589a101351c927c0a54a13f26d81124984037d3f9904f59"
   },
   "exports": {
     "shot-01-extended.mp4": {
@@ -126,6 +164,10 @@
       "source": "web/shots-01-03-67.5s.mp4",
       "sha256": "bd10d8210f7d5e355eea2f515f03e7f2ba9efa628c0952612b5c4d75d70898ee"
     },
+    "shot-04-32.2s.mp4": {
+      "source": "web/shot-04-32.2s.mp4",
+      "sha256": "68f9e6e77b13d1342b72bf0d43a591de5d8cf60a994409838d9ea51a0d04e940"
+    },
     "shot-01-02.mp4": {
       "source": "web/shot-01-02.mp4",
       "sha256": "1cf66eb258d70b01823c216b4c7ee4199af95b90918761f08058d36db81c4535"
@@ -140,7 +182,7 @@
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "f555344d270fae209e478965e4b53272a4c02acf19865dab1e32877441bee8da"
+      "sha256": "c89070abc5561790982b67cfae0b2233f35974cc129781b81fd8de41a808eb02"
     }
   }
 }
