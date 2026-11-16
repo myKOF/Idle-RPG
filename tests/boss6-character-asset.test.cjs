@@ -19,6 +19,11 @@ test('sixth tower boss (dark knight): one skinned mesh, sword and shield are rig
  let sword=0,shield=0;
  for(let i=0;i<jA.count;i++){const j0=readJ(i),w0=readW(i);if(j0===jointIdx.Sword_R&&w0>.999)sword++;if(j0===jointIdx.Shield_L&&w0>.999)shield++;}
  assert.ok(sword>500&&shield>800,'rigid sword '+sword+' / shield '+shield+' vertices');
+ // the sword is rigid on the hand in every clip but the death clip, where it leaves the hand and lands on the ground
+ const swordIdx=d.nodes.findIndex(n=>n.name==='Sword_R');
+ const swordSpread=a=>{const c=a.channels.find(c=>c.target.node===swordIdx&&c.target.path==='translation'),o=d.accessors[a.samplers[c.sampler].output],v=d.bufferViews[o.bufferView];
+  const at=(i,k)=>bin.readFloatLE((v.byteOffset||0)+(o.byteOffset||0)+i*(v.byteStride||12)+k*4);let m=0;for(let i=1;i<o.count;i++)for(let k=0;k<3;k++)m=Math.max(m,Math.abs(at(i,k)-at(0,k)));return m;};
+ for(const a of d.animations){if(a.name==='Die')assert.ok(swordSpread(a)>0.5,'the sword is dropped and travels in the death clip');else assert.ok(swordSpread(a)<1e-4,a.name+': the sword stays rigid on the hand');}
  const expected={Walk:.8,Attack1:3.1666667,Attack2:5.8666668,Attack3:2.2,Die:2.9666667};
  assert.deepEqual(d.animations.map(a=>a.name).sort(),Object.keys(expected).sort());
  const hips=d.nodes.findIndex(n=>n.name==='mixamorig:Hips');

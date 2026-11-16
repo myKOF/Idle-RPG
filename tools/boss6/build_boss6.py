@@ -14,6 +14,7 @@ SRC, OUT = argv[0], argv[1]
 KEEP_ROOT = '--keep-root-motion' in argv
 DEBUG = argv[argv.index('--debug') + 1] if '--debug' in argv else None
 CLIPS = [('Walk', 'Walk'), ('Attack1', 'Attack1'), ('Attack2', 'Attack2'), ('Attack3', 'Attack3'), ('Die', 'Die')]
+DROP_FRAME = 56               # death clip: the sword leaves the hand here
 HEAD_YAW_DEG = -30.0          # measured by mirror-symmetry search of the helmet: it was turned 30 deg to the character's left
 SWORD_RADIUS = 0.17
 FIST_SPHERE = 0.105
@@ -429,6 +430,24 @@ if not any(mod.type == 'ARMATURE' for mod in body.modifiers):
 body.parent = arm
 print('JOINED verts', len(body.data.vertices), 'groups', len(body.vertex_groups))
 bpy.ops.wm.save_as_mainfile(filepath=os.path.splitext(OUT)[0] + '_stage2.blend')
+
+# ------------------------------------------------------------------ 6b. attacks re-aimed through the enemy, sword dropped in the death clip
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import importlib
+import retarget
+importlib.reload(retarget)
+arm.data.pose_position = 'POSE'
+for a_ in actions.values():
+    a_.use_fake_user = True
+if arm.animation_data is None:
+    arm.animation_data_create()
+n0 = (Rlean.to_3x3() @ nrm_v).normalized()
+report = retarget.build(arm, actions, {'B0': target.copy(), 'n0': n0, 'F': F.copy()})
+print('RETARGET report', report)
+drop = retarget.drop_sword(arm, actions['Die'], DROP_FRAME)
+print('DROP', drop)
+arm.animation_data.action = None
+bpy.ops.wm.save_as_mainfile(filepath=os.path.splitext(OUT)[0] + '_stage3.blend')
 
 # ------------------------------------------------------------------ 7. export
 arm.data.pose_position = 'POSE'

@@ -31,6 +31,13 @@ const shadowTex = (() => { const c = document.createElement('canvas'); c.width =
 const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.8), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
 shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.005; scene.add(shadow);
 const boss = new THREE.Group(); scene.add(boss);
+// reference enemy 1.15 m in front of the boss (the model faces +Z): a translucent cylinder so the slash path can be judged
+if (CLIP.startsWith('Attack')) {
+  const en = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.8, 32), new THREE.MeshBasicMaterial({ color: 0xff3030, transparent: true, opacity: 0.22, depthWrite: false }));
+  en.position.set(0.16, 0.9, 1.15); scene.add(en);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.40, 0.44, 48), new THREE.MeshBasicMaterial({ color: 0xff6060, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(0.16, 0.02, 1.15); scene.add(ring);
+}
 let mixer, action, nodes = {};
 const hud = document.getElementById('hud');
 const DUR = { Walk: 2.4, Attack1: 3.4, Attack2: 6.2, Attack3: 2.5, Die: 3.4 };
@@ -54,7 +61,8 @@ window.frame = (i) => {
   boss.updateMatrixWorld(true);
   shadow.position.set(0, 0.005, walkZ);
   const b = boss.position;
-  if (CLIP === 'Attack2') { camera.fov = 38; camera.position.set(-4.2, 2.2, 4.4); camera.lookAt(0, 1.3, 0.3); }
+  if (CLIP.startsWith('Attack')) { camera.fov = 38; camera.position.set(-4.6, 3.0, 3.4); camera.lookAt(0.2, 1.0, 0.7); }
+  else if (CLIP === 'Die') { camera.fov = 36; camera.position.set(-4.4, 2.5, 5.4); camera.lookAt(0.0, 0.45, 1.1); }
   else { camera.fov = 34; camera.position.set(b.x - 3.6, 1.9, b.z + 3.4); camera.lookAt(b.x, 1.05, b.z + 0.2); }
   camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
   hud.textContent = CLIP + '   ' + t.toFixed(2) + ' s';
