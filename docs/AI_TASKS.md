@@ -1,3 +1,11 @@
+## BOSS6-APPROVED-INTEGRATION-20261116 — 接入深淵領主模型與配置
+
+- Owner：Codex，Done。使用者指定採本次驗收版，並補充將站姿、移動及三段攻擊的披風改成下垂。右手劍與左前臂盾沿用驗收姿勢，死亡動畫與落劍沿用原始驗收軌跡。三段攻擊同步抵銷骨盆與獨立劍骨的水平根位移，保留跳躍高度及握劍位置。
+- 以原生 Excel 更新 `NPC.xlsx` 第487列 14 格並正常重開兩次。同步 `NPC.csv`、`js/data.js`、主頁與 Worker 快取，封魔塔第6／56／106層使用新頭像、`boss6.glb` 與五段動作。普攻為物理近戰、0.4 次／秒、5 米。專屬技能為 `e_darkzone` 和 `e_darkorbs`。
+- `node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs` 通過 29 項。`npm.cmd run build` 通過 723 檔，`node tools/config_tables.cjs --apply NPC` 語意差異 0，字串稽核 0，`git diff --check` 通過。
+- 隔離 Chrome 從新遊戲挑戰第6層，確認新版頭像、3D 模型、站姿、移動與三段攻擊。測試致死後確認遊戲進入結算並播放 `Die`。核對披風更新只新增對應骨骼旋轉，武器、其餘姿勢與死亡關鍵格一致。素材庫與遊戲匯出的 SHA-256 一致，重製得到相同檔案。
+- 唯讀檢查 `js/tower.js`、`js/hero3d.js`、`js/battle-renderer.js` 及配置匯出流程。依使用者裁決以本版取代 Claude 分支競爭的 BOSS6 檔案及同列配置。素材庫提交 `f7753ec7`，遊戲提交為本段所在提交，可供指定整合者採用。來源見 `docs/assets/BOSS6_SOURCE.md`。
+
 ## SYNC-MERGE-20261114-001937 — develop 加長第三鏡整合
 
 - Owner：Codex，Done。僅處理使用者明確授權的 pending merge：HEAD `f6ecc922f66b0f3938e0b6079f7cf97c596c37d0`、MERGE_HEAD `f1c24e6435f54ac3231b4a5d6e09abe5b3c19d58`，base `97d2fcbbe669979a587a9f8918e6717a8907bc31`。唯一原始衝突為本任務表；三方比對確認工作檔已保留 ours 的鬼面與前次整合紀錄，以及 theirs 的第三鏡核准紀錄，沒有衝突標記，不取代任一側完整內容。
