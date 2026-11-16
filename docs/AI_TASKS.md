@@ -1,3 +1,11 @@
+## BOSS6-LV2-INTEGRATION-20261116 — 接入深淵領主第二款貼圖
+
+- Owner：Codex，Done。使用者核准 BOSS6_2 五段 GIF，封魔塔第16／66／116層導入青紫版模型及頭像。沿用第一款的骨架、武器、披風及五個動作，普攻採物理近戰、0.4 次／秒、5 米，保留暗屬性及原有專屬技能。來源見 `docs/assets/BOSS6_LV2_SOURCE.md`。
+- 原生 Excel 更新 `NPC.xlsx` 第497列 14 格，正常重開兩次並保留 7 個繪圖物件。定向匯出 `NPC.csv`，生成 `js/data.js`，同步主頁及 Worker 新版配置快取。差異核對確認 Excel、CSV、JS 只更新 `tower_boss_16`，跨分支預檢確認其他工作區未編修本列。
+- 隔離 Chrome 進入第16層，驗證新頭像、3D 模型、站姿、走路及三段攻擊，施加測試致死後正常播放 `Die`。兩款遊戲 GLB 的網格、骨架與動畫資料逐位元相同。素材庫與遊戲檔雜湊一致，重匯出可重製遊戲模型。
+- `node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs` 通過 29 項。`npm.cmd run build` 通過 723 檔，`node tools/config_tables.cjs --apply NPC` 語意差異為 0，字串及 Git 差異檢查通過。
+- 唯讀檢查 `js/tower.js`、`js/npc3d.js`、匯出工具、第一款資產及其他分支的同列配置。素材庫提交 `8249ad32`，遊戲提交為本段所在提交，可供指定整合者採用。
+
 ## BOSS6-APPROVED-INTEGRATION-20261116 — 接入深淵領主模型與配置
 
 - Owner：Codex，Done。使用者指定採本次驗收版，並補充將站姿、移動及三段攻擊的披風改成下垂。右手劍與左前臂盾沿用驗收姿勢，死亡動畫與落劍沿用原始驗收軌跡。三段攻擊同步抵銷骨盆與獨立劍骨的水平根位移，保留跳躍高度及握劍位置。
