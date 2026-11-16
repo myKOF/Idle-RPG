@@ -511,12 +511,12 @@ var SfxSynth = (function () {
   }
 
   /* ═════════ 冰 ═════════ */
-  function icearrow(ac, out, t, R) { var k = R(0.92, 1.1);
-    burstNoise(ac, out, t, 'highpass', 3500, 0.7, 0.0005, 0.8, 0.03, 2);                     // 冰碎「喀」
-    ring(ac, out, t, 2600 * k, [[1, 0.5], [1.73, 0.4, 1.3], [2.91, 0.3, 1.8]], 0.25, 0.18);
-    tinkles(ac, out, t + 0.005, 0.25, 10, 0.18, 3000, 8000);
-    chain(noise(ac, t, 0.35), filt(ac, 'bandpass', 6000, 1), env(ac, t, 0.01, 0.15, 0.3), out);   // 寒氣
-    ring(ac, out, t, 200 * k, [[1, 0.6]], 0.06, 0.4);
+  function icearrow(ac, out, t, R) {   // 2026-11-14 使用者選定「寒霜凝結」：沒有硬的撞擊，寒氣「嘶——」擴散結霜
+    var k = R(0.95, 1.05);
+    var bp = filt(ac, 'bandpass', 5000, 1); sweep(bp.frequency, t, [[0, 7000 * k], [0.4, 3000 * k]]);
+    chain(noise(ac, t, 0.45), bp, env(ac, t, 0.04, 0.5, 0.38), out);                                                        // 寒氣擴散
+    crackles(ac, out, t, 0.4, 22, 0.45, { fLo: 3500, fHi: 8500, q: 3, dMin: 0.003, dMax: 0.011, bias: 1, rise: true });   // 結霜細響漸密
+    tinkles(ac, out, t + 0.1, 0.3, 6, 0.06, 4000, 8000);
   }
   function iceCrystalBurst(ac, out, t, R) { var k = R(0.92, 1.08);
     boom(ac, out, t, 140 * k, 60, 0.25, 0.5);
@@ -601,10 +601,13 @@ var SfxSynth = (function () {
     crackles(ac, out, ti + 0.004, 0.05, 18, 0.8 * fiber, { fLo: 1800, fHi: 5500, q: 2, dMin: 0.003, dMax: 0.008, bias: 1.2, spread: 0.3 });   // 纖維
     squelch(ac, out, ti + 0.008, k, wet, 2600, 1000, 0.06);                                                            // 汁液
   }
-  function windblade(ac, out, t, R) { var k = R(0.92, 1.1), len = 0.2, ti = t + len * 0.8;   // 砍芭蕉樹
-    bladeSwish(ac, out, t, len, k);
-    chopImpact(ac, out, ti, k);
-    whoosh(ac, out, ti, 0.35, { f0: 1800, f1: 900, f2: 400, q: 0.8, peak: 0.2, peakAt: 0.15 });   // 刀風餘勁
+  function windblade(ac, out, t, R) {   // 2026-11-16 使用者選定「重風劈砍」：低沉厚重的一刀，砍中時悶悶的
+    var k = R(0.93, 1.07), len = 0.2, ti = t + len * 0.8;
+    whoosh(ac, out, t, len, { f0: 300 * k, f1: 1100 * k, f2: 500 * k, q: 1.3, peak: 0.6, p0: -0.5, p1: 0.4, peakAt: 0.78 });   // 低沉刀風
+    whoosh(ac, out, t, len, { f0: 1200 * k, f1: 3500 * k, f2: 2000 * k, q: 2.5, peak: 0.35, p0: -0.5, p1: 0.4, peakAt: 0.8 });
+    boom(ac, out, ti, 140 * k, 60, 0.12, 0.7);                                                                                // 悶悶砍中
+    chain(noise(ac, ti, 0.12), filt(ac, 'lowpass', 1200), env(ac, ti, 0.002, 0.6, 0.08), out);
+    whoosh(ac, out, ti, 0.35, { f0: 900, f1: 500, f2: 250, q: 0.8, peak: 0.25, peakAt: 0.12, white: false });               // 餘風
   }
   function windbladeFlesh(ac, out, t, R) { var k = R(0.92, 1.1), len = 0.2, ti = t + len * 0.8;   // 砍肉
     bladeSwish(ac, out, t, len, k);
@@ -616,14 +619,10 @@ var SfxSynth = (function () {
     whoosh(ac, out, t, 0.6, { f0: 2500 * k, f1: 1500 * k, f2: 350 * k, q: 0.7, peak: 0.9, peakAt: 0.06 });
     whoosh(ac, out, t, 0.5, { f0: 600, f1: 400, f2: 200, q: 1, peak: 0.5, white: false, peakAt: 0.1 });
   }
-  function vacuumslash(ac, out, t, R) { var k = R(0.92, 1.1);
-    var lp = filt(ac, 'lowpass', 300, 1.5); sweep(lp.frequency, t, [[0, 200], [0.12, 900]]);
-    chain(noise(ac, t, 0.15), lp, rampGain(ac, t, [[0, 0.0001], [0.12, 0.5], [0.13, 0.0001, 1]]), out);   // 空氣被抽走
-    var ti = t + 0.12;
-    whoosh(ac, out, ti, 0.25, { f0: 1500 * k, f1: 7500 * k, f2: 3000 * k, q: 6, peak: 0.9, p0: -0.6, p1: 0.6, peakAt: 0.2 });   // 銳利真空刃
-    ring(ac, out, ti + 0.03, 3300 * k, [[1, 0.4], [1.5, 0.2, 1.3]], 0.3, 0.12);
-    boom(ac, out, ti, 110 * k, 45, 0.2, 0.6);
-    burstNoise(ac, out, ti, 'highpass', 3000, 0.7, 0.0005, 0.7, 0.03, 2);
+  function vacuumslash(ac, out, t, R) { var k = R(0.93, 1.07);   // 雙刃真空：左右兩道真空刃交錯掠過
+    whoosh(ac, out, t, 0.15, { f0: 2000 * k, f1: 7000 * k, f2: 3000 * k, q: 4, peak: 0.7, p0: -0.8, p1: 0.3, peakAt: 0.5 });
+    whoosh(ac, out, t + 0.07, 0.15, { f0: 2300 * k, f1: 7500 * k, f2: 3200 * k, q: 4, peak: 0.7, p0: 0.8, p1: -0.3, peakAt: 0.5 });
+    boom(ac, out, t + 0.07, 120 * k, 50, 0.15, 0.4);
   }
   function vacuumShockwave(ac, out, t, R) { var k = R(0.95, 1.05);
     var lp = filt(ac, 'lowpass', 200, 1.5); sweep(lp.frequency, t, [[0, 150], [0.35, 2500]]);
@@ -705,7 +704,7 @@ var SfxSynth = (function () {
     'thunderfall-fly':    d(thunderfallFly, 0.7, FLIGHT),
     'thunderfall-impact': d(thunderfallImpact, 0.75),
     // 冰
-    'icearrow':           d(icearrow, 2.0),
+    'icearrow':           d(icearrow, 1.76),     // 2026-11-14「寒霜凝結」，與舊版同響度
     'ice-crystal-burst':  d(iceCrystalBurst, 1.6),
     'waterball':          d(waterball, 1.6),
     'water-tornado':      d(waterTornado, 0.7, LOOP),
@@ -715,10 +714,10 @@ var SfxSynth = (function () {
     'blizzard':           d(blizzard, 1.1, LOOP),
     'ice-spike':          d(iceSpike, 2.0),
     // 風
-    'windblade':          d(windblade, 1.4),
+    'windblade':          d(windblade, 0.62),     // 2026-11-16「重風劈砍」，與舊版同響度
     'windblade-flesh':    d(windbladeFlesh, 1.4),
     'wind-burst':         d(windBurst, 1.5),
-    'vacuumslash':        d(vacuumslash, 1),
+    'vacuumslash':        d(vacuumslash, 1.15),
     'vacuum-shockwave':   d(vacuumShockwave, 0.8),
     'void-disc':          d(voidDisc, 0.95, LOOP),
     'storm-barrier':      d(stormBarrier, 0.65, { kind: 'loop', castSec: 4 }),

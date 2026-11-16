@@ -2,7 +2,7 @@
    Simulation, hit resolution and attack rates remain owned by the worker. */
 (function (global) {
   'use strict';
-  var VERSION = '20261116-boss6-approved';
+  var VERSION = '20261117-boss-models-merged-v1';
   function definition(data) {
     var def = data && data.model3d;
     return def && def.file && def.clips && def.clips.walk ? def : null;

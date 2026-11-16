@@ -1,3 +1,13 @@
+## SYNC-MERGE-20261117-010503 ? develop integration validated
+
+- Owner: Codex. Done; designated integrator for this pending merge only. HEAD bdea00549c956f7c0b7911d3a76b8b8fc7866e29; MERGE_HEAD 69fac0c9569e62c1b473a0b0193836b027ed940d; base 1ffa71deb40c3f9b12122924ebb7398d415a10e9. No staging, commit, Git metadata writes or other worktree edits; controller completes the merge.
+- Resolved LV/task records by preserving both sides. Retained NPC script-derived model cache refresh and assigned combined version 20261117-boss-models-merged-v1. Data imports, Worker startup version and page bridge import use the same new version. Preserved incoming model normalization and sound changes, plus ours BOSS6 integration and attack animation fixes.
+- Native Excel receipt: NPC.xlsx SHA-256 C5A68623C01885725AF19AAB426F3F00EA4114B10CAD7D9BB6279019A2A0EB22, Excel 16.0 normal reopen, corrupt_load 0, NPC 531 rows / 34 columns / 7 shapes. Workbook bytes untouched in this validation pass. Read-only comparison with approved plan: 0 differing cells. Base/ours/theirs CSV comparison: all 42 ours and 44 theirs changed cells retained, 0 lost changes.
+- Regenerated actual workbook via node tools/xlsx_to_csv.cjs with PARAMS_XLSX=config/Excel/NPC.xlsx, PARAMS_CSV_OUT=config/CSV/NPC.csv, PARAMS_SHEET=NPC. node tools/config_tables.cjs --apply NPC --write: 11 literals, 0 semantic differences; merged JS already matches authoritative workbook.
+- node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/boss3-character-asset.test.cjs tests/treant-asset.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/skill-sfx.test.cjs: 45/45 passed. npm.cmd run build: 723 files passed. git diff HEAD --check: complete merged result passed. No failing assertions or baseline exceptions.
+- Read-only checks: project rules and agent instructions, three revisions of NPC CSV/runtime changes, approved recovery plan, native workbook, model naming source record and generation tools. Conflict precheck identified this already-authorized pending merge. Existing asset-library commit 2c326f15 supplies normalized models; no new asset-library deliverables. No browser gameplay or full-suite run in this pass.
+- Ignored diagnostic logs retained: logs/sync-20261117-010503-final-tests.tap, logs/sync-20261117-010503-final-build.log and logs/sync-20261117-010503-final-precheck.log; earlier runtime/build logs and recovery plans retained. No unresolved work within scope; ready for controller staging and merge commit. Index unmerged entries are expected until controller stages resolutions.
+
 ## BOSS6-ATTACK3-EDGE-20261116 — 轉平第三段攻擊的刀面
 
 - Owner：Codex，Done。使用者截圖對應 `Attack3` 約 1.14 秒。三款模型套用同一套刀面修正，約 0.99～1.28 秒平順調整右前臂、手腕和劍骨，截圖時刻刀面與地面平行，刀刃掃過前方目標。三款各交付一份第三段攻擊 GIF。
@@ -16216,3 +16226,9 @@ Worker 存活且頁面正常完成載入。
 - `node --test tests/intro-audio.test.cjs tests/intro-game-audio.test.cjs tests/intro-motion.test.cjs tests/intro-player.test.cjs tests/intro-scene.test.cjs tests/skill-sfx.test.cjs`：51/51 通過。`npm.cmd run build`：723 檔通過。`node tools/string-table/build_string_csv.cjs --check`：寫死 0。
 - 診斷保留於 ignored `logs/sync-20261114-000943-{tests,baseline,extra}.tap` 與同前綴 `{precheck,build,strings}.log`。未執行完整測試套件或瀏覽器遊玩；已知 tooltip 失敗維持原狀。無新增素材需要交付。HEAD／MERGE_HEAD 保持，不操作 Git metadata、不 stage、不 commit；交由 controller 暫存及建立合併提交。
 - 最終驗證：`git diff HEAD --check` 完整合併結果通過；全部變更檔案無衝突標記；主頁／editor／Worker／Preset 快取一致；三份工作簿 hash 與原始 staged incoming blob 完全一致；無新增未追蹤交付檔案。可交 controller 完成本次合併，既有 tooltip 問題不在本次範圍。
+
+## TOWER-BOSS-MODEL-NAMING-20261116 — 封魔塔BOSS 3D 模型與動作命名統一
+
+- Owner：Claude，Done。使用者指出 NPC 表的 3D 模型與動作名稱不統一（treant／boss3_character、Unsteady_Walk／Running…），要求一律 BOSS1、BOSS2 式檔名與 Walk／Die／Attack1～3。
+- 做法：`tools/meshy-pipeline/src/normalize-tower-boss-models.cjs` 把 9 個模型改名（樹人→boss2*、第3隻→boss3*、原 boss2／boss3 骷髏王二三階→boss1_lv2／lv3，鬼面 boss5* 本來就對），其中樹人×3、第3隻×3 另改 GLB 內動畫名稱（只改 JSON 區塊）；素材庫 9 個資產包的 exports 與 manifest 同步，9 支 `export-tower-*.cjs --check` 全部通過。NPC.xlsx 經 Excel 原生 API 一次改 16 列（44 格）的模型與 AC:AH 動作欄，重開驗證通過，CSV／data 同步。快取版號 `20261116-boss-models-v1`。
+- 測試：更新 treant／boss3／npc3d-config／tower-boss3d 測試，新增「所有塔BOSS綁定都是 bossN.glb＋標準動作名，且 GLB 內動作齊全、資料夾內沒有舊式檔名」；實機用遊戲自己的 Npc3D 載入全部 11 個不同模型都通過，並跑了第2層（樹人）與第3層（第3隻）真實塔戰確認渲染與動作。立繪檔名、.blend 與舊說明文件未改（見對照文件）。素材庫提交 2c326f15。
