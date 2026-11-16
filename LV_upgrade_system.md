@@ -1,3 +1,5 @@
+> 2026-11-16（第6隻BOSS黑暗騎士）：第6／56／106層使用 boss6.glb（Walk／Attack1／Attack2／Attack3／Die），NPC.xlsx第487列改頭像／模型／動作，並同為近戰（攻擊速度0.4、距離5米、非魔法型）；名稱、屬性、技能、倍率不變。模型已修正頭朝向，劍與盾改為獨立剛體骨（Sword_R、Shield_L）。
+
 > 2026-11-16（封魔塔BOSS模型命名統一）：NPC.xlsx 的 3D模型一律 bossN／bossN_lv2／bossN_lv3.glb（骷髏王 boss1／樹人 boss2／第3隻 boss3／鬼面 boss5），動作一律 Walk／Walk／Attack1／Attack2／Attack3／Die；GLB 內動畫名稱同步改名。對照見 docs/assets/TOWER_BOSS_MODEL_NAMING.md。
 
 > 2026-11-13（鬼面三貼圖與普攻輪替）：第15／65／115層（藍，tower_boss_15）與第25／75／125層（紫，tower_boss_25）套用同一套鬼面動作與特效，NPC.xlsx第496、506列改頭像／模型／動作並同為近戰（攻擊速度0.4、距離5米、非魔法型）。鬼面普攻在撞擊／吐骷髏／噴火之間隨機（不連續兩下同一招，同玩家主角），技能施放用撞擊動作。

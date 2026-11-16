@@ -16191,3 +16191,9 @@ Worker 存活且頁面正常完成載入。
 - Owner：Claude，Done。使用者指出 NPC 表的 3D 模型與動作名稱不統一（treant／boss3_character、Unsteady_Walk／Running…），要求一律 BOSS1、BOSS2 式檔名與 Walk／Die／Attack1～3。
 - 做法：`tools/meshy-pipeline/src/normalize-tower-boss-models.cjs` 把 9 個模型改名（樹人→boss2*、第3隻→boss3*、原 boss2／boss3 骷髏王二三階→boss1_lv2／lv3，鬼面 boss5* 本來就對），其中樹人×3、第3隻×3 另改 GLB 內動畫名稱（只改 JSON 區塊）；素材庫 9 個資產包的 exports 與 manifest 同步，9 支 `export-tower-*.cjs --check` 全部通過。NPC.xlsx 經 Excel 原生 API 一次改 16 列（44 格）的模型與 AC:AH 動作欄，重開驗證通過，CSV／data 同步。快取版號 `20261116-boss-models-v1`。
 - 測試：更新 treant／boss3／npc3d-config／tower-boss3d 測試，新增「所有塔BOSS綁定都是 bossN.glb＋標準動作名，且 GLB 內動作齊全、資料夾內沒有舊式檔名」；實機用遊戲自己的 Npc3D 載入全部 11 個不同模型都通過，並跑了第2層（樹人）與第3層（第3隻）真實塔戰確認渲染與動作。立繪檔名、.blend 與舊說明文件未改（見對照文件）。素材庫提交 2c326f15。
+
+## TOWER-BOSS6-DARK-KNIGHT-20261116 — 第6隻封魔塔BOSS 黑暗騎士
+
+- Owner：Claude，Done（模型與動作階段，無戰鬥特效）。使用者提供 BOSS6 五個動作並要求修正頭朝向、拆劍與盾重新裝骨。`tools/boss6/build_boss6.py` 以頭盔鏡像對稱量出頭轉了 30° 並轉正；單一焊死網格依幾何與權重選出 750 面劍、1,189 面盾拆成獨立零件，補握把、劍翻轉成劍尖朝上，新骨 Sword_R（右手）、Shield_L（左前臂）剛體綁定，合併五動作、攻擊動作水平根位移固定。NPC.xlsx 第487列經 Excel 原生 API 更新（頭像、模型、動作；攻擊速度／距離／魔法型同鬼面改近戰），CSV／data 同步。
+- 驗證：新增 `tests/boss6-character-asset.test.cjs`（52 關節、Sword_R／Shield_L 掛點與 100% 剛體權重、五動作秒數、攻擊水平不漂移），更新 npc3d-config、tower-boss3d；相關測試與 HEAD 逐名比對無新增失敗；建置 724 檔通過；實機跑第6層真實塔戰載入正常；五動作預覽 GIF 已交使用者。快取版號 `20261116-boss6-v1`。素材庫提交 e6267dec。
+- 風險／待確認：盾接在左前臂（使用者寫右前臂，疑筆誤）；握把是補的圓柱；披風與劍盾無碰撞；未做戰鬥特效。

@@ -28,6 +28,12 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
       assert.equal(result[i].img, 'sprites/boss/boss3_character' + suffix + '.png');
       assert.equal(result[i].model3d.file, 'images/models/npc3d/boss3' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
+    } else if (i === 5) {
+      assert.equal(result[i].name, current[i].name);
+      assert.equal(result[i].img, 'sprites/boss/boss6_abyss.png');
+      assert.ok(fs.existsSync(path.join(root, 'images', result[i].img)));
+      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss6.glb');
+      assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
     } else if (i === 4 || i === 14 || i === 24) {
       const suf = i === 4 ? '' : '_lv' + (i === 14 ? 2 : 3);
       assert.equal(result[i].name, current[i].name);
