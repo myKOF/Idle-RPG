@@ -1,3 +1,34 @@
+## BOSS6-ATTACK3-EDGE-20261116 — 轉平第三段攻擊的刀面
+
+- Owner：Codex，Done。使用者截圖對應 `Attack3` 約 1.14 秒。三款模型套用同一套刀面修正，約 0.99～1.28 秒平順調整右前臂、手腕和劍骨，截圖時刻刀面與地面平行，刀刃掃過前方目標。三款各交付一份第三段攻擊 GIF。
+- 更新 `boss6.glb`、`boss6_lv2.glb`、`boss6_lv3.glb`，並以主頁的 NPC 腳本版本更新模型請求。逐位元核對三款只更新攻擊 3 的四條曲線。修正區間取樣 39 幀，握柄誤差最大 1.78 mm，刀刃與盾牌或盔甲的交集為 0。
+- 隔離 Chrome 從第26層實測戰鬥，確認攻擊 3 播放。以遊戲載入器逐一核對三款新版本請求及截圖影格。`node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs` 通過 30 項，`npm.cmd run build` 通過 723 檔，Git 差異檢查通過。
+- 唯讀檢查 NPC 樓層配置、第一款接入與武器來源、GLB 匯出工具及其他分支。與 Claude 分支三方試合只重現先前 `js/npc3d.js` 的備援快取版號衝突，這次從主頁取版本的修改位於另一區段。素材庫提交 `73bd4d77` 更新三款 Blender 來源、合成模型、遊戲檔及 SHA-256，已驗證重製位元一致。遊戲提交為本段所在提交，可供指定整合者採用。
+
+## BOSS6-LV3-INTEGRATION-20261116 — 接入深淵領主第三款貼圖
+
+- Owner：Codex，Done。套用使用者提供的深紅版底色、法線及金屬粗糙度貼圖，沿用第一款修好的頭部朝向、右手劍、左前臂盾、披風與五段動作。封魔塔第26／76／126層讀取第三款模型與頭像。物理近戰普攻為 0.4 次／秒、5 米，保留暗屬性及原有專屬技能。五段 GIF 依動作獨立交付。
+- 原生 Excel 更新 `NPC.xlsx` 第507列 14 格，正常重開兩次，保留 7 個繪圖物件。定向匯出 `NPC.csv`，更新 `js/data.js` 與主頁、Worker 配置快取。Excel、CSV、JS 比對只有 `tower_boss_26` 內容變更。唯讀檢查其他分支的同列配置、`js/tower.js`、`js/npc3d.js`、資產匯出工具及前兩款的來源。
+- 隔離 Chrome 進入第26層，確認模型、站姿、移動、三段攻擊，施加測試致死後播放 `Die`。三款遊戲 GLB 的網格、骨架與動畫資料逐位元一致。素材庫與遊戲檔雜湊相同，可重製遊戲模型。五份 GIF 各影格可解碼。
+- `node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs` 通過 29 項。`npm.cmd run build` 通過 723 檔，`node tools/config_tables.cjs --apply NPC` 語意差異 0，字串及 Git 差異檢查通過。
+- 素材庫提交 `74b48bd4`，遊戲提交為本段所在提交，可供指定整合者採用。素材詳見 `docs/assets/BOSS6_LV3_SOURCE.md`。
+
+## BOSS6-LV2-INTEGRATION-20261116 — 接入深淵領主第二款貼圖
+
+- Owner：Codex，Done。使用者核准 BOSS6_2 五段 GIF，封魔塔第16／66／116層導入青紫版模型及頭像。沿用第一款的骨架、武器、披風及五個動作，普攻採物理近戰、0.4 次／秒、5 米，保留暗屬性及原有專屬技能。來源見 `docs/assets/BOSS6_LV2_SOURCE.md`。
+- 原生 Excel 更新 `NPC.xlsx` 第497列 14 格，正常重開兩次並保留 7 個繪圖物件。定向匯出 `NPC.csv`，生成 `js/data.js`，同步主頁及 Worker 新版配置快取。差異核對確認 Excel、CSV、JS 只更新 `tower_boss_16`，跨分支預檢確認其他工作區未編修本列。
+- 隔離 Chrome 進入第16層，驗證新頭像、3D 模型、站姿、走路及三段攻擊，施加測試致死後正常播放 `Die`。兩款遊戲 GLB 的網格、骨架與動畫資料逐位元相同。素材庫與遊戲檔雜湊一致，重匯出可重製遊戲模型。
+- `node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs` 通過 29 項。`npm.cmd run build` 通過 723 檔，`node tools/config_tables.cjs --apply NPC` 語意差異為 0，字串及 Git 差異檢查通過。
+- 唯讀檢查 `js/tower.js`、`js/npc3d.js`、匯出工具、第一款資產及其他分支的同列配置。素材庫提交 `8249ad32`，遊戲提交為本段所在提交，可供指定整合者採用。
+
+## BOSS6-APPROVED-INTEGRATION-20261116 — 接入深淵領主模型與配置
+
+- Owner：Codex，Done。使用者指定採本次驗收版，並補充將站姿、移動及三段攻擊的披風改成下垂。右手劍與左前臂盾沿用驗收姿勢，死亡動畫與落劍沿用原始驗收軌跡。三段攻擊同步抵銷骨盆與獨立劍骨的水平根位移，保留跳躍高度及握劍位置。
+- 以原生 Excel 更新 `NPC.xlsx` 第487列 14 格並正常重開兩次。同步 `NPC.csv`、`js/data.js`、主頁與 Worker 快取，封魔塔第6／56／106層使用新頭像、`boss6.glb` 與五段動作。普攻為物理近戰、0.4 次／秒、5 米。專屬技能為 `e_darkzone` 和 `e_darkorbs`。
+- `node --test tests/npc3d-config.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-boss3d.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs` 通過 29 項。`npm.cmd run build` 通過 723 檔，`node tools/config_tables.cjs --apply NPC` 語意差異 0，字串稽核 0，`git diff --check` 通過。
+- 隔離 Chrome 從新遊戲挑戰第6層，確認新版頭像、3D 模型、站姿、移動與三段攻擊。測試致死後確認遊戲進入結算並播放 `Die`。核對披風更新只新增對應骨骼旋轉，武器、其餘姿勢與死亡關鍵格一致。素材庫與遊戲匯出的 SHA-256 一致，重製得到相同檔案。
+- 唯讀檢查 `js/tower.js`、`js/hero3d.js`、`js/battle-renderer.js` 及配置匯出流程。依使用者裁決以本版取代 Claude 分支競爭的 BOSS6 檔案及同列配置。素材庫提交 `f7753ec7`，遊戲提交為本段所在提交，可供指定整合者採用。來源見 `docs/assets/BOSS6_SOURCE.md`。
+
 ## SYNC-MERGE-20261114-001937 — develop 加長第三鏡整合
 
 - Owner：Codex，Done。僅處理使用者明確授權的 pending merge：HEAD `f6ecc922f66b0f3938e0b6079f7cf97c596c37d0`、MERGE_HEAD `f1c24e6435f54ac3231b4a5d6e09abe5b3c19d58`，base `97d2fcbbe669979a587a9f8918e6717a8907bc31`。唯一原始衝突為本任務表；三方比對確認工作檔已保留 ours 的鬼面與前次整合紀錄，以及 theirs 的第三鏡核准紀錄，沒有衝突標記，不取代任一側完整內容。

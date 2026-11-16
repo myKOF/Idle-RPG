@@ -2,14 +2,17 @@
    Simulation, hit resolution and attack rates remain owned by the worker. */
 (function (global) {
   'use strict';
-  var VERSION = '20261113-boss-oni-fx5';
+  var VERSION = '20261116-boss6-approved';
   function definition(data) {
     var def = data && data.model3d;
     return def && def.file && def.clips && def.clips.walk ? def : null;
   }
+  // The page's script version also refreshes GLB requests after an asset update.
+  var scriptUrl = global.document && global.document.currentScript && global.document.currentScript.src;
+  var scriptVersion = /[?&]v=([^&#]+)/.exec(scriptUrl || '');
   async function create(def) {
     var ctrl = await global.Hero3D.create({
-      model: def.file + (def.file.indexOf('?') < 0 ? '?' : '&') + 'v=' + VERSION,
+      model: def.file + (def.file.indexOf('?') < 0 ? '?' : '&') + 'v=' + (scriptVersion ? scriptVersion[1] : VERSION),
       size: 512, span: 6.2, cape: false, pbr: true, outline: false, registerInstance: false,
       locomotionClip: def.clips.walk
     });
