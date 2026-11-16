@@ -619,14 +619,10 @@ var SfxSynth = (function () {
     whoosh(ac, out, t, 0.6, { f0: 2500 * k, f1: 1500 * k, f2: 350 * k, q: 0.7, peak: 0.9, peakAt: 0.06 });
     whoosh(ac, out, t, 0.5, { f0: 600, f1: 400, f2: 200, q: 1, peak: 0.5, white: false, peakAt: 0.1 });
   }
-  function vacuumslash(ac, out, t, R) { var k = R(0.92, 1.1);
-    var lp = filt(ac, 'lowpass', 300, 1.5); sweep(lp.frequency, t, [[0, 200], [0.12, 900]]);
-    chain(noise(ac, t, 0.15), lp, rampGain(ac, t, [[0, 0.0001], [0.12, 0.5], [0.13, 0.0001, 1]]), out);   // 空氣被抽走
-    var ti = t + 0.12;
-    whoosh(ac, out, ti, 0.25, { f0: 1500 * k, f1: 7500 * k, f2: 3000 * k, q: 6, peak: 0.9, p0: -0.6, p1: 0.6, peakAt: 0.2 });   // 銳利真空刃
-    ring(ac, out, ti + 0.03, 3300 * k, [[1, 0.4], [1.5, 0.2, 1.3]], 0.3, 0.12);
-    boom(ac, out, ti, 110 * k, 45, 0.2, 0.6);
-    burstNoise(ac, out, ti, 'highpass', 3000, 0.7, 0.0005, 0.7, 0.03, 2);
+  function vacuumslash(ac, out, t, R) { var k = R(0.93, 1.07);   // 雙刃真空：左右兩道真空刃交錯掠過
+    whoosh(ac, out, t, 0.15, { f0: 2000 * k, f1: 7000 * k, f2: 3000 * k, q: 4, peak: 0.7, p0: -0.8, p1: 0.3, peakAt: 0.5 });
+    whoosh(ac, out, t + 0.07, 0.15, { f0: 2300 * k, f1: 7500 * k, f2: 3200 * k, q: 4, peak: 0.7, p0: 0.8, p1: -0.3, peakAt: 0.5 });
+    boom(ac, out, t + 0.07, 120 * k, 50, 0.15, 0.4);
   }
   function vacuumShockwave(ac, out, t, R) { var k = R(0.95, 1.05);
     var lp = filt(ac, 'lowpass', 200, 1.5); sweep(lp.frequency, t, [[0, 150], [0.35, 2500]]);
@@ -721,7 +717,7 @@ var SfxSynth = (function () {
     'windblade':          d(windblade, 0.62),     // 2026-11-16「重風劈砍」，與舊版同響度
     'windblade-flesh':    d(windbladeFlesh, 1.4),
     'wind-burst':         d(windBurst, 1.5),
-    'vacuumslash':        d(vacuumslash, 1),
+    'vacuumslash':        d(vacuumslash, 1.15),
     'vacuum-shockwave':   d(vacuumShockwave, 0.8),
     'void-disc':          d(voidDisc, 0.95, LOOP),
     'storm-barrier':      d(stormBarrier, 0.65, { kind: 'loop', castSec: 4 }),
