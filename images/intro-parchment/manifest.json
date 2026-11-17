@@ -141,16 +141,16 @@
     "extended-shot-four/assets/vista.png": "6e5ad25a82d07ea6fb3870f7ed6d589790238fb8b4ae8ab5cf88675b8f7fc04a",
     "extended-shot-four/assets/shot-four-effects.wav": "0fe70a3a9a29ab6f0e3b31a7ac462013c587aeb2dfc1367f9e8d4de4f0c82ff3",
     "extended-shot-four/assets/shot-four-mix.wav": "a7c5365a0688912574d0de1196dab999fcd11dc6c9fa727d590904793143a317",
-    "extended-shot-five/SOURCE.md": "83357f8c075dc035a5d5e598e580e1488afaa7cc7c61a3d8c910f82cd6e34101",
+    "extended-shot-five/SOURCE.md": "685c51030bfc8c4abec192294b4608fd1dee4a32de063c34f0fc5358aff808db",
     "extended-shot-five/PROMPT.md": "2ea578c96cc4b32ff323c0d254bb6127382b38b9a3a97c96a4a2b578ef958374",
     "extended-shot-five/index.html": "a9a915c11ba6f60322ee6a4bb55e0e1ee27e52205c2b8eb1ae166cf7241a7758",
     "extended-shot-five/finale-timing.js": "ce937c11beb8cece493eb96bb9bc3f48903c17c3d0f1e58cbd90a87d8b5d538d",
     "extended-shot-five/finale.js": "76472ff8381b973008de39819c8dbf7c5411a70c851139d60ff10f8ec7785864",
     "extended-shot-five/finale-mattes.js": "2edf17049b0f86b4243acef54f3b8038c53406f03a84a76fbee2c3a7419b3cd6",
-    "extended-shot-five/finale-fx.js": "47520c093c94f4460aa2f8337f2c7f6f545500170985a9e0012a9f249993c455",
+    "extended-shot-five/finale-fx.js": "ee0278bcae0071ba1b1ef4597cd349dccb4722de08be53c75cf0608a9eacb905",
     "extended-shot-five/finale-backdrop.js": "b93e9e98395446ccee0de0d062d17ea9e68c5478915f12c60fdab1bbfabb2c17",
     "extended-shot-five/build-score.cjs": "58a6fd63df0cdf44f255a41ccf8dd8b315856c1fd6803489ea2fa91bb864f602",
-    "extended-shot-five/render-finale.cjs": "270956b08b01d5241de0b404570d9d1e1297aaceac86e400eacd8cd7597c23f5",
+    "extended-shot-five/render-finale.cjs": "f4ff54bc9e09c9438f2c83bf72420f4130a7d901bb01fe26511359bf2f135a1f",
     "extended-shot-five/align-mp4-presentation.cjs": "f9ee98e1b0d78a16518e65a13b5cf73c95abe063d3f2aeb1f17c804ec4215ea5",
     "extended-shot-five/assets/vista-clean.png": "6ae8b533dac4df5b6c6292a2661d9355eed019098de49e81cffda3328a1ae304",
     "extended-shot-five/assets/finale-effects.wav": "ce85df3491b7b6bdb10e0e9057bec98210b1e2deda3ef34c80641cedf0580b0b",
@@ -185,7 +185,7 @@
     },
     "shot-05-desert-finale-orbit.mp4": {
       "source": "web/shot-05-desert-finale-orbit.mp4",
-      "sha256": "984a38b3eb886389f96475165ee12a10ea7385c22f1e5a918a086f6ecf8b44da"
+      "sha256": "8256308d03c50cabc1c02b8a7ff34389d7cf988f0d25f2eccdcf7d8c6575d572"
     },
     "shot-01-02.mp4": {
       "source": "web/shot-01-02.mp4",
@@ -209,7 +209,7 @@
     },
     "shots-01-05-replay.mp4": {
       "source": "web/shots-01-05-replay.mp4",
-      "sha256": "4a76a9202a41a49c1b648f00ac9cc36de20f0c6220dc9c7f3037cd7210707c96"
+      "sha256": "1abc686fd3b78de64d54b7ebace8e91856abf00ef5280449d104f822d3aa2071"
     },
     "shots-01-05-replay-sfx.mp3": {
       "source": "web/shots-01-05-replay-sfx.mp3",
@@ -217,7 +217,7 @@
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "1731e4256f21e53902d94492cdfafb6627c9e9caa203b215046c65e866beb73c"
+      "sha256": "0f0d0b0c2d942c97ab4913978f608663013bfbbc77b2dd3bd8206642abdb4f18"
     }
   }
 }

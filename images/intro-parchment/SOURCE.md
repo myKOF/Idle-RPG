@@ -83,7 +83,7 @@ node extended-shot-four/export-replay.cjs --five-shots replay-five-export
 
 ## 第五鏡荒漠終章（2026-11-17）
 
-目前成片長 13 秒。入鏡後第 3 秒，白光從劍柄、護手與整片劍身向外放射，光束及光暈逐漸擴大。第一格直接呈現風沙、地面與飛行魔軍，天空和拱門分速左移，近地與人物右移，中景地表固定。片尾場景淡暗，劍光持續至最後一格。三類飛行惡魔各有 16 格拍翼週期。成片保存為 `web/shot-05-desert-finale-orbit.mp4`，遊戲匯出為 `images/intro-parchment/shot-05-desert-finale-orbit.mp4`。
+目前成片長 13 秒。入鏡後第 3 秒，白光從劍柄、護手與整片劍身向外放射，光束緩慢順時針旋轉，並和光暈一同逐漸擴大。第一格直接呈現風沙、地面與飛行魔軍，天空和拱門分速左移，近地與人物右移，中景地表固定。片尾場景淡暗，劍光持續至最後一格。三類飛行惡魔各有 16 格拍翼週期。成片保存為 `web/shot-05-desert-finale-orbit.mp4`，遊戲匯出為 `images/intro-parchment/shot-05-desert-finale-orbit.mp4`。
 
 `extended-shot-five/` 保存分層程式、ImageGen 補景、提示詞、獨立音效與審片混音。重製和預覽方式見該目錄的 `SOURCE.md`。目前獨立成片用於審片，遊戲重播使用前五鏡連播。
 
