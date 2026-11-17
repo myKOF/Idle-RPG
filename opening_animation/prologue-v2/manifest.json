@@ -6,49 +6,49 @@
       "name": "angel-fall-background",
       "transparent": false,
       "source": "images/angel-fall-background.webp",
-      "target": "images/intro-v2/angel-fall-background.webp",
+      "target": "opening_animation/prologue-v2/angel-fall-background.webp",
       "original": "originals/angel-fall-background.png"
     },
     {
       "name": "angel-fall-angel",
       "transparent": true,
       "source": "images/angel-fall-angel.webp",
-      "target": "images/intro-v2/angel-fall-angel.webp",
+      "target": "opening_animation/prologue-v2/angel-fall-angel.webp",
       "original": "originals/angel-fall-angel.png"
     },
     {
       "name": "awakening-background",
       "transparent": false,
       "source": "images/awakening-background.webp",
-      "target": "images/intro-v2/awakening-background.webp",
+      "target": "opening_animation/prologue-v2/awakening-background.webp",
       "original": "originals/awakening-background.png"
     },
     {
       "name": "awakening-angel",
       "transparent": true,
       "source": "images/awakening-angel.webp",
-      "target": "images/intro-v2/awakening-angel.webp",
+      "target": "opening_animation/prologue-v2/awakening-angel.webp",
       "original": "originals/awakening-angel.png"
     },
     {
       "name": "rise-and-quest-background",
       "transparent": false,
       "source": "images/rise-and-quest-background.webp",
-      "target": "images/intro-v2/rise-and-quest-background.webp",
+      "target": "opening_animation/prologue-v2/rise-and-quest-background.webp",
       "original": "originals/rise-and-quest-background.png"
     },
     {
       "name": "rise-and-quest-angel",
       "transparent": true,
       "source": "images/rise-and-quest-angel.webp",
-      "target": "images/intro-v2/rise-and-quest-angel.webp",
+      "target": "opening_animation/prologue-v2/rise-and-quest-angel.webp",
       "original": "originals/rise-and-quest-angel.png"
     },
     {
       "name": "rising-angel",
       "transparent": true,
       "source": "images/rising-angel.webp",
-      "target": "images/intro-v2/rising-angel.webp",
+      "target": "opening_animation/prologue-v2/rising-angel.webp",
       "original": "originals/rising-angel.png"
     }
   ],
@@ -99,61 +99,61 @@
     },
     {
       "file": "assets.json",
-      "sha256": "eb61daf8189f564561031cf33cd3a709d899ebdf6899075361c6897e753ec2d8"
+      "sha256": "c866ef95bc0ef1ecaba175a46c3ea35a57a4a0b3cf3cedcd1a5055e581967c49"
     },
     {
       "file": "source/intro-motion.js",
-      "sha256": "65bde572b98ff654a6fb999923b4398993c7fb689b8a8a21404f48aedf494c81"
+      "sha256": "08577e9f6082eed036763bdceb278469989e7e0c07002904eda3cb03559f5334"
     },
     {
       "file": "source/intro-data.js",
-      "sha256": "39e63287ff24cfd627c35ef03f17da9449f869850a2face7c61b97e1a9f2c37e"
+      "sha256": "82de4c583a5bb11935a763cb3df572ffa2ba90006e19da453b46112e5c5c1bd2"
     }
   ],
   "exports": [
     {
       "source": "images/angel-fall-background.webp",
-      "target": "images/intro-v2/angel-fall-background.webp",
+      "target": "opening_animation/prologue-v2/angel-fall-background.webp",
       "sha256": "ba8f583cc51d17ff885a062bcdc41b2cfef07c17e765f606a73ab0faee0d76a5"
     },
     {
       "source": "images/angel-fall-angel.webp",
-      "target": "images/intro-v2/angel-fall-angel.webp",
+      "target": "opening_animation/prologue-v2/angel-fall-angel.webp",
       "sha256": "ee8fe5d977ace949032026dc83d48204a57d5e8a567203dc1c09434118804241"
     },
     {
       "source": "images/awakening-background.webp",
-      "target": "images/intro-v2/awakening-background.webp",
+      "target": "opening_animation/prologue-v2/awakening-background.webp",
       "sha256": "a11fa4bb0483f228ebe2149351b0843bde3f3e61e27167ff010cb5e045362861"
     },
     {
       "source": "images/awakening-angel.webp",
-      "target": "images/intro-v2/awakening-angel.webp",
+      "target": "opening_animation/prologue-v2/awakening-angel.webp",
       "sha256": "ca941ea74a5810914cfd2d0823e1f207116443c08c0ddf8c8ee0017900044f03"
     },
     {
       "source": "images/rise-and-quest-background.webp",
-      "target": "images/intro-v2/rise-and-quest-background.webp",
+      "target": "opening_animation/prologue-v2/rise-and-quest-background.webp",
       "sha256": "4215d30d59a6386a276fe4480530f0f9dfc8c6bb527043fe1bc4430db9f71fac"
     },
     {
       "source": "images/rise-and-quest-angel.webp",
-      "target": "images/intro-v2/rise-and-quest-angel.webp",
+      "target": "opening_animation/prologue-v2/rise-and-quest-angel.webp",
       "sha256": "98e20a5944c768d8dacb834b00d10aaf8f9b3180f4d4b2d7725dfeb44facd30a"
     },
     {
       "source": "images/rising-angel.webp",
-      "target": "images/intro-v2/rising-angel.webp",
+      "target": "opening_animation/prologue-v2/rising-angel.webp",
       "sha256": "c5378d62a56abf3d203e87776a70e650f6e1550a2a548d1400b17f6471a1c493"
     },
     {
       "source": "SOURCE.md",
-      "target": "images/intro-v2/SOURCE.md",
+      "target": "opening_animation/prologue-v2/SOURCE.md",
       "sha256": "c985b600220fc66dccdcfc73e6f10ac6a64c51ede8161e576ac01c04ffb6df8a"
     },
     {
       "source": "PROMPTS.json",
-      "target": "images/intro-v2/PROMPTS.json",
+      "target": "opening_animation/prologue-v2/PROMPTS.json",
       "sha256": "f07d4b2fa88f1c5d24584c38c8e91d852272f7085de6d2943fc94e25db8ea5ea"
     }
   ]

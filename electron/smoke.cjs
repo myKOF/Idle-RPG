@@ -43,7 +43,7 @@ var CHECK_SCRIPT = [
   "  r.locks = !!(navigator.locks && navigator.locks.request);",
   "  try { var f = await fetch('vfx/shipped-assets.json', { cache: 'no-store' }); r.fetchStatus = f.status; } catch (e) { r.fetchStatus = 'throw: ' + e.message; }",
   // 影片串流要靠 206；序章影片在新遊戲才播，冒煙測試會跳過，所以直接驗協議
-  "  try { var v = await fetch('images/intro-parchment/shot-01-03.mp4?v=1', { headers: { Range: 'bytes=0-99' } }); r.videoRange = v.status + ' ' + v.headers.get('content-range') + ' ' + (await v.arrayBuffer()).byteLength; } catch (e) { r.videoRange = 'throw: ' + e.message; }",
+  "  try { var v = await fetch('opening_animation/shots-01-05-replay.mp4?v=6', { headers: { Range: 'bytes=0-99' } }); r.videoRange = v.status + ' ' + v.headers.get('content-range') + ' ' + (await v.arrayBuffer()).byteLength; } catch (e) { r.videoRange = 'throw: ' + e.message; }",
   '  return r;',
   '})()'
 ].join('\n');

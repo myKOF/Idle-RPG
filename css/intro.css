@@ -12,7 +12,6 @@
   background: #000;
   color: #fff;
   font-family: var(--font-main);
-  cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -370,9 +369,12 @@
   position: absolute;
   right: max(16px, calc(2.5 * var(--ui-vw, 1vw)));
   bottom: max(16px, calc(3 * var(--ui-vh, 1vh)));
-  padding: 6px 16px;
-  border: 1px solid rgba(244, 223, 166, 0.45);
-  border-radius: 4px;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 2px solid rgba(244, 223, 166, 0.45);
+  border-radius: 50%;
+  touch-action: none;
   background: rgba(0, 0, 0, 0.45);
   color: #f4dfa6;
   font: inherit;
@@ -380,6 +382,24 @@
   letter-spacing: 0.1em;
   cursor: pointer;
   opacity: 0;
+}
+
+.intro-skip svg {
+  position: absolute;
+  inset: -2px;
+  width: 64px;
+  height: 64px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.intro-skip circle {
+  fill: none;
+  stroke: #f4dfa6;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
 }
 
 .intro-skip:hover,

@@ -106,6 +106,24 @@ test('從序章返回荒漠時沿用原播放器和當下進度，首曲播完�
   assert.equal(intro.starts, 2);
 });
 
+test('新遊戲序章的荒漠配樂在場景就緒後接續，每次只保留同一個播放器', () => {
+  const m = mount(false, false);
+  m.c.UISound.setIntroActive(true);
+  const intro = new m.c.window.Audio();
+  intro.src = track;
+  intro.currentTime = 27;
+  intro.play();
+  m.c.UISound.setIntroActive(false, { track, audio: intro }, true);
+  m.scene('desert');
+  assert.equal(intro.paused, false);
+  m.c.UISound.setSceneReady(true);
+  assert.equal(m.music.length, 1);
+  assert.equal(intro.currentTime, 27);
+  assert.equal(intro.starts, 1);
+  m.finish(intro);
+  assert.equal(intro.src, track2);
+});
+
 test('從序章返回其他場景或荒漠中的塔戰時，停止序章並從場景首曲起播', () => {
   for (const [zone, tower, expected] of [['test', false, 'audio/test.mp3'], ['desert', true, towerTrack]]) {
     const m = mount();

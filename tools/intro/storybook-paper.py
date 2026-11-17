@@ -2,7 +2,7 @@
 """
 storybook-paper.py — 繪本式序章的舊書頁紙張（原創程序生成，無外部素材）
 
-輸出到 images/intro-storybook/：
+輸出到 opening_animation/storybook/：
   paper.webp       1920×1080 起的泛黃羊皮紙底（多層低頻斑駁＋纖維＋水漬圈），留邊給鏡頭移動
   paper-edge.webp  同尺寸的焦邊／暗角疊層（透明 webp），獨立一層方便和紙張分開控制
 
@@ -14,7 +14,7 @@ import random
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..'))
-OUT = os.path.join(ROOT, 'images', 'intro-storybook')
+OUT = os.path.join(ROOT, 'opening_animation', 'storybook')
 W, H = 2040, 1160          # 比 1920×1080 舞台四周多 60／40 px，鏡頭推移時不露邊
 BASE = (222, 199, 152)     # 泛黃紙色
 random.seed(20261111)

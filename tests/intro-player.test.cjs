@@ -21,6 +21,7 @@ function makeEnv(opts) {
       setAttribute(k, v) { e.attrs[k] = v; },
       addEventListener(t, fn) { (e.listeners[t] = e.listeners[t] || []).push(fn); },
       focus() {},
+      setPointerCapture(id) { e.capturedPointer = id; },
       animate(frames, timing) {
         const a = {
           el: e, frames, timing, currentTime: 0, state: 'running', onfinish: null,
@@ -47,6 +48,7 @@ function makeEnv(opts) {
   const document = {
     body, hidden: !!opts.hidden,
     createElement: el,
+    createElementNS: (ns, tag) => el(tag),
     getElementById: (id) => (id === 'btn-replay-intro' ? replayBtn : null),
     addEventListener(t, fn) { (docListeners[t] = docListeners[t] || []).push(fn); },
     removeEventListener(t, fn) { docListeners[t] = (docListeners[t] || []).filter((x) => x !== fn); }
@@ -200,6 +202,8 @@ test('略過：淡出後結束；淡出期間總時鐘結束不會提早收掉�
   let stopped = false, prevented = false;
   keyFn({ key: 'Escape', preventDefault() { prevented = true; }, stopPropagation() { stopped = true; } });
   assert.ok(stopped && prevented, 'Esc 不讓底下的遊戲同時開選單');
+  assert.equal(env.P.state().skipping, false);
+  env.P.skip();
   assert.equal(env.P.state().skipping, true);
   env.clock().onfinish();
   assert.deepStrictEqual(done, [], '淡出中不因時鐘結束而跳過淡出');
@@ -211,6 +215,45 @@ test('略過：淡出後結束；淡出期間總時鐘結束不會提早收掉�
   env.P.play(SAMPLE, {});
   env.winListeners.keydown[0]({ key: 'a', preventDefault() { other = true; }, stopPropagation() { other = true; } });
   assert.equal(other, false, '其他按鍵照常傳下去');
+});
+
+test('圓形略過必須連續按住左鍵 2 秒，放開、失焦或切分頁會清除進度', () => {
+  const env = makeEnv();
+  const done = [];
+  env.P.play(env.ctx.INTRO_REPLAY_TIMELINE, { onDone: reason => done.push(reason) });
+  const root = env.playerRoot();
+  const button = root.children.find(child => child.className === 'intro-skip');
+  const ring = button.children[1].children[0];
+  const press = (buttonCode = 0) => button.listeners.pointerdown[0]({ button: buttonCode, pointerId: 5 });
+  const progress = () => env.anims.filter(anim => anim.el === ring).at(-1);
+  assert.equal(root.listeners.click, undefined);
+  press(2);
+  assert.equal(progress(), undefined);
+  button.listeners.click[0]({ preventDefault() {}, stopPropagation() {} });
+  assert.deepEqual(done, []);
+  press();
+  assert.equal(button.capturedPointer, 5);
+  assert.equal(progress().timing.duration, 2000);
+  const first = progress();
+  button.listeners.pointerup[0]({ pointerId: 5 });
+  assert.equal(first.state, 'cancelled');
+  first.onfinish();
+  assert.deepEqual(done, []);
+  press();
+  env.winListeners.blur[0]();
+  assert.equal(progress().state, 'cancelled');
+  press();
+  env.ctx.document.hidden = true;
+  env.docListeners.visibilitychange[0]();
+  assert.equal(progress().state, 'cancelled');
+  env.ctx.document.hidden = false;
+  env.docListeners.visibilitychange[0]();
+  press();
+  assert.notEqual(progress(), first);
+  progress().onfinish();
+  assert.deepEqual(done, ['skip']);
+  assert.equal(env.P.isPlaying(), false);
+  assert.equal(env.winListeners.blur.length, 0);
 });
 
 test('中止：立即收掉，不淡出', () => {
@@ -396,11 +439,11 @@ test('重播按鈕播放前五鏡，播完回到按鈕且可再從頭播放', ()
   assert.ok(stopped, '點擊不冒泡');
   const video = env.playerRoot().children[0].children[0];
   assert.equal(video.tag, 'video');
-  assert.equal(video.src.split('?')[0], 'images/intro-parchment/shots-01-05-replay.mp4');
+  assert.equal(video.src.split('?')[0], 'opening_animation/shots-01-05-replay.mp4');
   assert.ok(fs.existsSync(path.join(root, video.src.split('?')[0])));
   assert.ok(video.playsInline);
   assert.equal(video.paused, false);
-  assert.equal(env.P.state().duration, 109700);
+  assert.equal(env.P.state().duration, 116700);
   assert.equal(env.clock(), undefined, '影片以媒體時間為準');
   assert.ok(!env.playerRoot().children.some((c) => c.className === 'intro-hold-dots'), '重播不停格');
   assert.equal(env.P.replay(), false, '播放中再點無效');
@@ -435,21 +478,21 @@ test('成片以荒漠第一首配樂及獨立音效跟隨影片，離場才恢�
   const video = env.playerRoot().children[0].children[0];
   assert.equal(video.muted, true);
   assert.equal(audioConfig.music, env.ctx.ZONES.desert.bgm);
-  assert.equal(audioConfig.sfx, 'images/intro-parchment/shots-01-05-replay-sfx.mp3?v=1');
+  assert.equal(audioConfig.sfx, 'opening_animation/shots-01-05-replay-sfx.mp3?v=3');
   assert.ok(fs.existsSync(path.join(root, audioConfig.sfx.split('?')[0])));
   assert.deepEqual(calls, ['ui true', 'battle true', 'intro prepare']);
   video.listeners.playing[0]();
   video.listeners.waiting[0]();
   assert.deepEqual(calls.slice(-2), ['intro start', 'intro pause']);
-  video.currentTime = 104.25;
+  video.currentTime = 115.35;
   env.ctx.document.hidden = true;
   env.docListeners.visibilitychange[0]();
   assert.equal(video.paused, true);
   env.ctx.document.hidden = false;
   env.docListeners.visibilitychange[0]();
   assert.equal(video.paused, false);
-  assert.equal(env.P.state().time, 104250);
-  assert.equal(audioClock(), 104250);
+  assert.equal(env.P.state().time, 115350);
+  assert.equal(audioClock(), 115350);
   video.listeners.playing[0]();
   assert.equal(calls.at(-1), 'intro start');
   env.P.skip();

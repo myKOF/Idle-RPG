@@ -40,47 +40,47 @@
   "exports": [
     {
       "source": "images/heaven-collapse.webp",
-      "target": "images/intro/heaven-collapse.webp",
+      "target": "opening_animation/prologue/heaven-collapse.webp",
       "sha256": "7a5c16bebf25f10af580d1eb7f4e9c35a9fe9a85b8a51c6550006f6bd85d7621"
     },
     {
       "source": "images/angel-fall.webp",
-      "target": "images/intro/angel-fall.webp",
+      "target": "opening_animation/prologue/angel-fall.webp",
       "sha256": "a140d963a8a09bb0b53dc7c092d99071ffe8519a65b31d2304771be788b2f988"
     },
     {
       "source": "images/desolate-human-world.webp",
-      "target": "images/intro/desolate-human-world.webp",
+      "target": "opening_animation/prologue/desolate-human-world.webp",
       "sha256": "741f28c1ad21dd9a6c076af2618283d532dfe668cd4143c9cd98f64fe6775939"
     },
     {
       "source": "images/awakening.webp",
-      "target": "images/intro/awakening.webp",
+      "target": "opening_animation/prologue/awakening.webp",
       "sha256": "e46165e03eb2aab01c94e8d5a2eaa025888637a9749c1eec37589543a771d843"
     },
     {
       "source": "images/rise-and-quest.webp",
-      "target": "images/intro/rise-and-quest.webp",
+      "target": "opening_animation/prologue/rise-and-quest.webp",
       "sha256": "0c70b41dbfa4735f0974c89e78e3763abccf08e682536ba11ae9774d822a4031"
     },
     {
       "source": "audio/prologue-music.wav",
-      "target": "audio/intro/prologue-music.wav",
+      "target": "opening_animation/prologue-audio/prologue-music.wav",
       "sha256": "c79e20c3d1bd2a2b6f293fd2c8eb7711fcdf2a4120eed0b33e68f68f3bba488d"
     },
     {
       "source": "audio/prologue-sfx.wav",
-      "target": "audio/intro/prologue-sfx.wav",
+      "target": "opening_animation/prologue-audio/prologue-sfx.wav",
       "sha256": "9e624257994d78a848e125cce81880201b102c2b15c3fd499f27ff14169cbb73"
     },
     {
       "source": "SOURCE.md",
-      "target": "images/intro/SOURCE.md",
+      "target": "opening_animation/prologue/SOURCE.md",
       "sha256": "94311766cca366e70b0a50352c0c31187bbb2f6cac59a20eb6217c59f423a693"
     },
     {
       "source": "PROMPTS.json",
-      "target": "images/intro/PROMPTS.json",
+      "target": "opening_animation/prologue/PROMPTS.json",
       "sha256": "72f2576e80bc95333555d59c7e4aaeff455a4ef87a48cd4f25b4aa9209f09015"
     }
   ]

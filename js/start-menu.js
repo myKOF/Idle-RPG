@@ -110,12 +110,33 @@ var StartMenu = (function () {
       });
     });
   }
+  function startNewGame(runId) {
+    var completed = false;
+    function enter() {
+      if (completed) return;
+      completed = true;
+      if (begin(null, runId)) return;
+      if (typeof UISound !== 'undefined') UISound.setStartScreenActive(true);
+      show();
+    }
+    if (typeof IntroPlayer !== 'undefined' && typeof INTRO_REPLAY_TIMELINE !== 'undefined' &&
+        IntroPlayer.play(INTRO_REPLAY_TIMELINE, { id: 'new-game', waitForScene: true, onDone: enter })) {
+      if (!completed) {
+        showMenu(false);
+        if (typeof UISound !== 'undefined') UISound.setStartScreenActive(false);
+      }
+      return;
+    }
+    enter();
+  }
   function newGame() {
+    if (!active || busy) return;
     var start = function () {
+      if (!active || busy) return;
       setBusy(true);
       var hasPriorRun = bootSave || saveIndexV2().length;
       var maxRunId = Math.max(SaveStorage.maxRunId(), Number(bootSave && bootSave.runId) || 1);
-      begin(null, maxRunId + (hasPriorRun ? 1 : 0));
+      startNewGame(maxRunId + (hasPriorRun ? 1 : 0));
     };
     if (bootSave) showConfirmDialog(STR(2429), start, { title: STR(2422), okText: STR(2422), danger: true });
     else start();

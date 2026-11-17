@@ -52,11 +52,16 @@ var UISound = (function () {
     generation++;
     Object.keys(sources).forEach(stop);
   }
-  function setIntroActive(value, introMusic) {
+  function setIntroActive(value, introMusic, waitForScene) {
     if (introActive === value) return;
     introActive = value;
-    if (value) stopAll();
-    else if (introMusic) restoreSceneAfterIntro(introMusic);
+    if (value) {
+      discardPendingIntroMusic();
+      stopAll();
+    } else if (introMusic) {
+      if (waitForScene && !sceneReady && !startScreenActive) pendingIntroMusic = introMusic;
+      else restoreSceneAfterIntro(introMusic);
+    }
     syncMusic();
   }
   function sfxGain() { return typeof GameSettings === 'undefined' ? 1 : GameSettings.sfxGain(); }
@@ -94,7 +99,10 @@ var UISound = (function () {
   function setStartScreenActive(value) {
     if (startScreenActive === value) return;
     startScreenActive = value;
-    if (value) finishTowerChallenge(false);
+    if (value) {
+      discardPendingIntroMusic();
+      finishTowerChallenge(false);
+    }
     syncMusic();
   }
   function bindSceneMusic(audio) {
@@ -127,6 +135,13 @@ var UISound = (function () {
       sceneMusic = null;
     }
   }
+  var pendingIntroMusic = null;
+
+  function discardPendingIntroMusic() {
+    if (pendingIntroMusic && pendingIntroMusic.audio) pendingIntroMusic.audio.pause();
+    pendingIntroMusic = null;
+  }
+
   function restoreSceneAfterIntro(introMusic) {
     var audio = introMusic.audio;
     if (!startScreenActive) {
@@ -166,6 +181,11 @@ var UISound = (function () {
   function setSceneReady(value) {
     if (sceneReady === !!value) return;
     sceneReady = !!value;
+    if (sceneReady && pendingIntroMusic) {
+      var introMusic = pendingIntroMusic;
+      pendingIntroMusic = null;
+      restoreSceneAfterIntro(introMusic);
+    }
     syncSceneMusic();
   }
   function setScene(view) {
@@ -301,14 +321,17 @@ var UISound = (function () {
     document.addEventListener('keydown', unlock, true);
     document.addEventListener('pointerover', menuPointerOver, true);
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden) stopAll();
-      else syncMusic();
+      if (document.hidden) {
+        stopAll();
+        if (pendingIntroMusic && pendingIntroMusic.audio) pendingIntroMusic.audio.pause();
+      } else syncMusic();
     });
     window.addEventListener('pagehide', function () {
       pageActive = false;
       stopAll();
       if (menuMusic) menuMusic.pause();
       if (sceneMusic) sceneMusic.pause();
+      if (pendingIntroMusic && pendingIntroMusic.audio) pendingIntroMusic.audio.pause();
     });
     window.addEventListener('pageshow', function () { pageActive = true; syncMusic(); });
     if (typeof GameSettings !== 'undefined') {

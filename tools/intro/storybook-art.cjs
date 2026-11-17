@@ -16,13 +16,13 @@
    天使造型為原創：翼盔、日紋胸甲、白色罩袍、兩對羽毛光翼；刻意不沿用任何既有遊戲角色的特徵
    （例如兜帽空臉、飄帶光翼）。
 
-   用法：node tools/intro/storybook-art.cjs   （輸出到 images/intro-storybook/）
+   用法：node tools/intro/storybook-art.cjs   （輸出到 opening_animation/storybook/）
    固定亂數種子，重跑結果相同。
    ============================================================================= */
 const fs = require('fs');
 const path = require('path');
 
-const OUT = path.join(__dirname, '..', '..', 'images', 'intro-storybook');
+const OUT = path.join(__dirname, '..', '..', 'opening_animation', 'storybook');
 const INK = '#2a170a';
 const SEPIA = '#7a4d22';
 const GOLD = '#b8862c';

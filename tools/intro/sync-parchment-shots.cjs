@@ -13,7 +13,7 @@ if (!['--archive', '--apply', '--check'].includes(mode)) {
 const sourceRoot = 'codex-authored/intro-parchment-shots-20261111';
 const library = resolveLibraryRoot({ libraryId: 'effects-materials' }).root;
 const archive = path.join(library, sourceRoot);
-const game = path.join(REPO_ROOT, 'images/intro-parchment');
+const game = path.join(REPO_ROOT, 'opening_animation');
 const sources = [
   'PROMPTS.json',
   'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-two.js', 'shot-three.js',
@@ -62,8 +62,8 @@ const sources = [
   'assets/kneel-desert.png', 'assets/rise.png', 'assets/rise-desert.png', 'assets/vista.png',
   'assets/shot-four-effects.wav', 'assets/shot-four-mix.wav'
 ].map(file => 'extended-shot-four/' + file), [
-  'SOURCE.md', 'PROMPT.md', 'index.html', 'finale.js', 'finale-mattes.js', 'finale-fx.js',
-  'finale-backdrop.js', 'build-score.cjs', 'render-finale.cjs',
+  'SOURCE.md', 'PROMPT.md', 'index.html', 'finale-timing.js', 'finale.js', 'finale-mattes.js', 'finale-fx.js',
+  'finale-backdrop.js', 'build-score.cjs', 'render-finale.cjs', 'align-mp4-presentation.cjs',
   'assets/vista-clean.png', 'assets/finale-effects.wav', 'assets/finale-audio.wav'
 ].map(file => 'extended-shot-five/' + file), 'web/shot-02-archangel-fall-18s.mp4',
 'web/shot-03-extended-32s.mp4', 'web/shot-03-extended-33.5s.mp4', 'web/shots-01-04-100.7s.json',

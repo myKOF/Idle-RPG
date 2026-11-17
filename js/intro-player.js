@@ -8,7 +8,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    時間軸可指定 holdAt 等待呼叫端 release()；超過 HOLD_MAX_MS 自動放行。
    GM 指令預覽與設定重播不停格。
 
-   略過：點擊畫面、Esc、Space、Enter，或略過按鈕。
+   略過：在圓形按鈕按住左鍵兩秒。按鈕取得焦點時，Space／Enter 也可長按。
    圖層時間軸在減少動態偏好下只保留淡入淡出，不位移不縮放。
    分頁隱藏：所有動畫一起暫停，回來從原處繼續。影片以原生媒體時間為準。
    除錯：IntroPlayer.seek(毫秒) 停在指定時間點（預覽窗格隱藏時動畫不走，用這個取景）。
@@ -17,6 +17,7 @@ var IntroPlayer = (function () {
   'use strict';
 
   var SKIP_STR = 2410;          // String 表：略過按鈕
+  var SKIP_HOLD_MS = 2000;
   var SKIP_FADE_MS = 350;       // 略過時整層淡出的長度
   var FAILSAFE_EXTRA_MS = 5000; // 可見狀態下超過預定長度這麼久還沒結束，就強制收掉
   var HOLD_MAX_MS = 20000;      // 停格的上限
@@ -126,8 +127,8 @@ var IntroPlayer = (function () {
     return el;
   }
 
-  function setGameAudioSuppressed(value, introMusic) {
-    if (typeof UISound !== 'undefined') UISound.setIntroActive(value, introMusic);
+  function setGameAudioSuppressed(value, introMusic, waitForScene) {
+    if (typeof UISound !== 'undefined') UISound.setIntroActive(value, introMusic, waitForScene);
     if (typeof Sfx !== 'undefined') Sfx.setIntroActive(value);
   }
 
@@ -193,6 +194,7 @@ var IntroPlayer = (function () {
   }
 
   function pauseAll(c) {
+    resetSkipHold(c);
     c.paused = true;
     stopMotion(c);
     if (c.audio) c.audio.pause();
@@ -245,16 +247,80 @@ var IntroPlayer = (function () {
     }, remain);
   }
 
+  function resetSkipHold(c, input) {
+    var hold = c && c.skipHold;
+    if (!hold || !hold.progress || (input !== undefined && hold.input !== input)) return;
+    hold.progress.cancel();
+    hold.progress = null;
+    hold.input = null;
+  }
+
+  function startSkipHold(c, input) {
+    var hold = c.skipHold;
+    if (_cur !== c || c.paused || c.skipping || hold.progress) return;
+    hold.input = input;
+    var progress = hold.ring.animate([{ strokeDashoffset: '100' }, { strokeDashoffset: '0' }],
+      { duration: SKIP_HOLD_MS, fill: 'forwards' });
+    hold.progress = progress;
+    progress.onfinish = function () {
+      if (_cur === c && hold.progress === progress) finish(c, 'skip');
+    };
+  }
+
+  function buildSkipButton(c) {
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'intro-skip';
+    var label = document.createElement('span');
+    label.textContent = STR(SKIP_STR).replace(/\s*›\s*$/, '');
+    button.appendChild(label);
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 64 64');
+    svg.setAttribute('aria-hidden', 'true');
+    var ring = document.createElementNS(svgNS, 'circle');
+    ring.setAttribute('cx', '32');
+    ring.setAttribute('cy', '32');
+    ring.setAttribute('r', '29');
+    ring.setAttribute('pathLength', '100');
+    svg.appendChild(ring);
+    button.appendChild(svg);
+    c.skipHold = { button: button, ring: ring, progress: null, input: null };
+    button.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 || e.isPrimary === false) return;
+      button.setPointerCapture(e.pointerId);
+      startSkipHold(c, e.pointerId);
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (event) {
+      button.addEventListener(event, function (e) { resetSkipHold(c, e.pointerId); });
+    });
+    button.addEventListener('blur', function () { resetSkipHold(c); });
+    button.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
+    return button;
+  }
+
   function onKey(e) {
-    if (!_cur || !SKIP_KEYS[e.key]) return;
+    var c = _cur;
+    if (!c || !SKIP_KEYS[e.key]) return;
     e.preventDefault();
-    e.stopPropagation();   // 不讓底下的遊戲快捷鍵（Esc 開選單等）同時觸發
-    skip();
+    e.stopPropagation();
+    if (e.target === c.skipHold.button && !e.repeat && e.key !== 'Escape' && e.key !== 'Esc') {
+      startSkipHold(c, e.key);
+    }
+  }
+
+  function onKeyUp(e) {
+    resetSkipHold(_cur, e.key);
+  }
+
+  function onBlur() {
+    resetSkipHold(_cur);
   }
 
   function finish(c, reason) {
     if (_cur !== c) return;
     _cur = null;
+    resetSkipHold(c);
     stopMotion(c);
     c.motion.forEach(function (scene) { if (scene.dispose) scene.dispose(); });
     c.motion = [];
@@ -277,9 +343,11 @@ var IntroPlayer = (function () {
     if (c.hold) clearTimeout(c.hold.maxTimer);
     document.removeEventListener('visibilitychange', onVisibility);
     window.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('keyup', onKeyUp, true);
+    window.removeEventListener('blur', onBlur);
     c.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
     if (c.root.parentNode) c.root.parentNode.removeChild(c.root);
-    setGameAudioSuppressed(false, introMusic);
+    setGameAudioSuppressed(false, introMusic, c.waitForScene);
     try { if (c.onDone) c.onDone(reason); } catch (e) { console.error('[intro] onDone 失敗', e); }
     var waiters = _idleWaiters; _idleWaiters = [];
     waiters.forEach(function (fn) { try { fn(reason); } catch (e) { console.error('[intro] whenIdle 回呼失敗', e); } });
@@ -299,7 +367,8 @@ var IntroPlayer = (function () {
       id: opts.id || '', duration: timelineDuration(timeline), anims: [], paused: false, seeking: false,
       skipping: false, failsafe: 0, skipTimer: 0, onDone: opts.onDone || null,
       skippable: timeline.skippable !== false, reduced: reducedMotion(),
-      hold: null, audio: null, video: null, motion: [], motionFrame: 0, scenes: []
+      hold: null, skipHold: null, waitForScene: !!opts.waitForScene,
+      audio: null, video: null, motion: [], motionFrame: 0, scenes: []
     };
     var holdAt = num(timeline.holdAt, 0);
     if (opts.hold && holdAt > 0 && holdAt < c.duration) {
@@ -357,16 +426,13 @@ var IntroPlayer = (function () {
       }
 
       if (c.skippable) {
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'intro-skip';
-        btn.textContent = STR(SKIP_STR);
-        btn.addEventListener('click', function (e) { e.stopPropagation(); skip(); });
+        var btn = buildSkipButton(c);
         root.appendChild(btn);
         animate(c, btn, [{ opacity: 0 }, { opacity: 1 }],
           { delay: num(timeline.skipDelay, 500), duration: 300, fill: 'both' });
-        root.addEventListener('click', function () { skip(); });
         window.addEventListener('keydown', onKey, true);
+        window.addEventListener('keyup', onKeyUp, true);
+        window.addEventListener('blur', onBlur);
       }
 
       (document.getElementById('ui-shell') || document.body).appendChild(root);
@@ -407,6 +473,7 @@ var IntroPlayer = (function () {
     var c = _cur;
     if (!c || c.skipping || !c.skippable) return;
     c.skipping = true;
+    resetSkipHold(c);
     stopMotion(c);
     if (c.audio) c.audio.pause(true);
     if (c.video) c.video.pause();
