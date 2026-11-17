@@ -229,6 +229,42 @@ dist/win-unpacked/IdleRPG.exe --smoke=tmp/smoke-packaged   # 對打包版跑冒�
   版本號本身必須在 mergeDefaults 之前取得（否則上市前的存檔會被補成目前版本、遷移全部跳過）——有突變測試守住。
 - **存檔比遊戲新時完全不給玩**：退回較舊的本機快取或開新遊戲，都會讓自動存檔把較新的雲端存檔覆寫掉。
 
+### 4.6 任務 E 實作紀錄（2026-11-17，腳本完成；正式上傳待 AppID 與 SDK）
+
+| 檔案 | 內容 |
+|---|---|
+| `tools/steam/steampipe.cjs` | 上傳流程：建置檢查 → 桌面版測試 → 打包 → 打包版背景冒煙 → 內容檢查 → 產生 VDF → SteamCMD；任何一步失敗就停 |
+| `tools/steam/steampipe-vdf.cjs` | 設定解析與 VDF 產生（純函式）；`tests/steampipe.test.cjs` 7 項 |
+| `tools/steam/steampipe.json` | DepotID（0＝AppID+1）、上傳後自動上線的**非預設**分支、排除規則（可提交） |
+| `tools/steam/steampipe.local.example.json` | 本機設定範本：SDK 的 ContentBuilder 路徑、帳號名稱（實際檔案 `steampipe.local.json` 已 gitignore） |
+| `tools/steam/achievement_icons.cjs` | 後台成就圖示：`dist/steam-achievement-icons/ACH_###.jpg`＋`_locked.jpg`（64×64，115×2 張） |
+
+決策：
+- **VDF 由設定產生，不手寫範本**：AppID、DepotID、內容資料夾、建置描述（版本＋commit＋日期）單一來源，不會傳錯 Depot 或舊資料夾。
+- **AppID 只有一個來源**：`electron/steam-config.json`。上傳前檢查打包版裡的 AppID 與設定相同（改了沒重新打包就擋下）。
+- **腳本永遠不把建置設為 default 分支上線**：那一步到 Steamworks 網頁手動按，避免一個指令就把東西推給所有玩家。可設定自動上線到 `beta` 之類的非預設分支。
+- **不碰帳號密碼**：SteamCMD 在終端機當場詢問；Steam Guard 驗證過一次後快取在這台電腦。
+- `steam_appid.txt` 一律排除，且打包內容若出現就中止（我們本來就不產生它，見任務 D）。
+
+已驗證：用演練 AppID（`--dry-appid`）完整跑過一次——建置檢查、82 項測試、打包、打包版冒煙、內容檢查、VDF 產生全部通過；
+AppID 為 0、預覽或上傳時帶 `--dry-appid` 都會被擋下。**SteamCMD 登入與上傳本身尚未實測**（需要 AppID、SDK 與帳號）。
+
+#### 任務 E：第一次上傳（使用者操作手冊）
+
+1. **拿到 AppID**：Steamworks 完成登記、付 Steam Direct 費用、建立應用程式後，在「所有應用程式」看到的編號。
+   填進 `electron/steam-config.json` 的 `appId`，提交。DepotID 若不是 AppID+1，填 `tools/steam/steampipe.json` 的 `depotId`。
+2. **下載 SDK**：Steamworks 主控台右側「下載最新版 SDK」，解壓到專案外，例如 `C:\Steamworks\sdk`。
+3. **本機設定**：複製 `tools/steam/steampipe.local.example.json` 成 `steampipe.local.json`，填
+   `contentBuilderDir`（例如 `C:/Steamworks/sdk/tools/ContentBuilder`）與 `account`（有上傳權限的 Steam 帳號名稱）。
+4. **預覽**（不上傳）：`npm.cmd run steam:preview`。第一次會要你在終端機輸入密碼與 Steam Guard 驗證碼。
+   成功代表帳號、權限、VDF 都對。
+5. **正式上傳**：`npm.cmd run steam:upload`（可加 `-- --note=說明`）。
+6. **設為上線**：Steamworks → 你的應用程式 → SteamPipe → Builds，找到這次的建置描述，設為 default 分支上線。
+7. **後台其他設定**（一次性）：
+   - Steam Cloud：Auto-Cloud，Root `WinAppDataRoaming`、Subdirectory `idle-rpg/saves`、Pattern `*.json`（見 4.3）。
+   - 成就：`npm.cmd run steam:achievements` 產生清單（API 名稱／名稱／說明），`npm.cmd run steam:icons` 產生圖示，逐條建立。
+   - 啟動選項：執行檔 `IdleRPG.exe`、作業系統 Windows。
+
 ## 5. 明確不做
 
 - `electron-updater` 或任何自行下載更新的機制（Steam 規範禁止，與原規範一致）。
