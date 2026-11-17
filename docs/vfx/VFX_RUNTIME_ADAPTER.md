@@ -536,7 +536,7 @@ Pixi 後端寫入 1.1、Pixi 渲染約 2.1）。滾雪球的是 `burst-icearrow-
 | sgKnifeBounceChain 2308 | knife-bounce／knife-soulhunter | bounce `vfxTier:3`；soulhunter `vfxUlt:'soulhunterBlade'` |
 | sgKnifeSplit 2339 | knife-bounce | `vfxTier:3` |
 | sgKnifeSoulhunter 2387／2398 | knife-soulhunter | `vfxUlt:'soulhunterBlade'` |
-| sgSpawnOrbitField 'knife' 2354（輪舞刃 void-disc） | — | cfg `vfxGid:'vacuumslash', vfxTier:7` |
+| `sgKnifeWaltz`（輪舞刃） | 飛行子彈、命中特效 | 讀飛刀第 1 階本體。刀身沿用一般飛刀的尺寸，飛行動畫配合環繞壽命，位置由環繞場域提供 |
 | sgGaleThunderBolt 2533 | thunder-strike | `vfxUlt:'thunderGodSlash'` |
 | sgGaleThunderFlash 2658 | thunder-burst | `vfxUlt:'thunderFlash'` |
 | sgBloodbladeSlash 2707 | curse/bleed | `vfxTier:2` |

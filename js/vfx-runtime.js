@@ -1661,9 +1661,9 @@ var VFXRuntime = (function () {
         rGrowSec: Math.max(0.1, num(area.rGrowSec, num(area.orbGrowSec, 1)))
       };
     }
-    function orbitCentre(presetId, centreId) {
+    function orbitCentre(presetId, centreId, atFoot) {
       var p = footOf(centreId || 'pv-float');   // centreId＝環繞的中心（BOSS 的環繞體由模擬層帶 area.centreId；玩家的不帶＝玩家）
-      return { x: p.x, y: p.y - tuning(presetId,'orbitLift') };
+      return atFoot ? p : { x: p.x, y: p.y - tuning(presetId,'orbitLift') };
     }
     /* 合併鍵：同一道（半徑＋方向相同）只保留一組。【再生】延長持續時間時
        模擬層會補送同一道的事件，沒有這層合併就會愈疊愈多團。
@@ -1681,10 +1681,14 @@ var VFXRuntime = (function () {
           var presetId = member.companion ? entry.companionId : entry.orbId;
           var ref = old.find(function (r) { return r.memberId === member.id && r.presetId === presetId; });
           if (!ref) {
-            var pose = sampleOrbitMember(entry.geo.area, entry.t, index), centre = orbitCentre(entry.orbId, entry.centreId);
-            ref = play(entry.orbRuntime, presetId, Object.assign({
-              position: { x: centre.x + Math.cos(pose.angle) * pose.radius, y: centre.y + Math.sin(pose.angle) * pose.radius * orbitFlat }
-            }, sizeOf(presetId, { r: pose.bodyR }) || { scale: pose.bodyR / NOMINAL_ORB }), profile.areaScale);
+            var pose = sampleOrbitMember(entry.geo.area, entry.t, index);
+            var centre = orbitCentre(entry.orbId, entry.centreId, !!entry.projectileSize);
+            var params = {
+              position: { x: centre.x + Math.cos(pose.angle) * pose.radius, y: centre.y + Math.sin(pose.angle) * pose.radius * entry.flat }
+            };
+            if (entry.projectileSize) params.timeScale = presetDurations[presetId] / (entry.dur - entry.t);
+            ref = play(entry.orbRuntime, presetId, Object.assign(params,
+              entry.projectileSize || sizeOf(presetId, { r: pose.bodyR }) || { scale: pose.bodyR / NOMINAL_ORB }), entry.orbScale);
           }
           if (ref) { ref.memberId = member.id; ref.presetId = presetId; next.push(ref); }
         });
@@ -1716,7 +1720,8 @@ var VFXRuntime = (function () {
       if (geo.members && !geo.members.length) { stopOrbit(key); return true; }
       var companionId = spec.area.companionPreset || orbId;
       if (geo.members && geo.members.some(function (m) { return m.companion; }) && !has(companionId)) return false;
-      var dur = Math.min(ORBIT_MAX_SEC, Math.max(0.5, num(spec.dur, 4)));
+      var orbitingKnife = spec.variant === 'knife-waltz';
+      var dur = Math.min(ORBIT_MAX_SEC, Math.max(orbitingKnife ? 0.001 : 0.5, num(spec.dur, 4)));
       var live = orbits[key];
       if (live && live.orbId === orbId) {
         live.dur = geo.members ? live.t + dur : Math.min(ORBIT_MAX_SEC, Math.max(live.dur, live.t + dur));
@@ -1727,11 +1732,15 @@ var VFXRuntime = (function () {
       }
       if (live) stopOrbit(key);
       var ringId = (roles.ground && has(roles.ground)) ? roles.ground : '';
-      var centre = orbitCentre(orbId, spec.area.centreId);
+      var centre = orbitCentre(orbId, spec.area.centreId, orbitingKnife);
       var entry = {
         centreId: spec.area.centreId || '', orbId: orbId, companionId: companionId, ringId: ringId, geo: geo,
         // 只讓環繞電球以各自球心整體投影；地板環與公轉路徑沿用原本幾何。
         orbRuntime: spec.variant === 'thunder-orbit' ? rtBillboard : rtAir,
+        // 輪舞刃的刀身與一般飛刀共用尺寸，環繞位置仍取事件的判定幾何。
+        projectileSize: orbitingKnife ? defaultSize(orbId, 1) : null,
+        orbScale: orbitingKnife ? profile.scale : profile.areaScale,
+        flat: orbitingKnife ? groundScale : orbitFlat,
         t: geo.members ? Math.max(0, num(spec.area.orbitAge, 0)) : 0,
         dur: dur + (geo.members ? Math.max(0, num(spec.area.orbitAge, 0)) : 0), orbs: [],
         ring: ringId ? play(rtZone, ringId, Object.assign({ position: centre },
@@ -1789,7 +1798,7 @@ var VFXRuntime = (function () {
         o.t += step;
         if (o.t >= o.dur) { stopOrbit(key); return; }
         var g = o.geo;
-        var centre = orbitCentre(o.orbId, o.centreId);
+        var centre = orbitCentre(o.orbId, o.centreId, !!o.projectileSize);
         function ease(sec) { return Math.max(0, Math.min(1, o.t / sec)); }
         /* 體積成長（超神【烈陽星環】）：出生後 orbGrowSec 秒內線性長到 orbGrowTo 倍。 */
         var orbR = g.orbGrowTo > 1 ? g.orbR * (1 + (g.orbGrowTo - 1) * ease(g.orbGrowSec)) : g.orbR;
@@ -1812,13 +1821,13 @@ var VFXRuntime = (function () {
           var memberPose = g.members ? sampleOrbitMember(g.area, o.t, g.members.findIndex(function (m) { return m.id === o.orbs[i].memberId; })) : null;
           if (memberPose) { ang = memberPose.angle; rNow = memberPose.radius; orbR = memberPose.bodyR; }
           var presetId = o.orbs[i].presetId || o.orbId;
-          /* 朝向取「螢幕上的切線方向」而不是 ang＋90°：橢圓被壓扁 0.62 之後，
+          /* 朝向取「螢幕上的切線方向」而不是 ang＋90°：橢圓被壓扁之後，
              那兩者差得出來（Preset 一律朝 +X 繪製，拖尾會指錯邊）。 */
-          var heading = Math.atan2(Math.cos(ang) * orbitFlat * dir, -Math.sin(ang) * dir);
+          var heading = Math.atan2(Math.cos(ang) * o.flat * dir, -Math.sin(ang) * dir);
           var alive = moveRef(o.orbs[i], Object.assign({
-            position: { x: centre.x + Math.cos(ang) * rNow, y: centre.y + Math.sin(ang) * rNow * orbitFlat },
+            position: { x: centre.x + Math.cos(ang) * rNow, y: centre.y + Math.sin(ang) * rNow * o.flat },
             rotation: heading
-          }, sizeOf(presetId, { r: orbR }) || { scale: orbR / NOMINAL_ORB }), profile.areaScale);
+          }, o.projectileSize || sizeOf(presetId, { r: orbR }) || { scale: orbR / NOMINAL_ORB }), o.orbScale);
           if (!alive) o.orbs.splice(i, 1);
         }
         if (!o.orbs.length && !o.ring) stopOrbit(key);
