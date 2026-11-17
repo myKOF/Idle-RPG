@@ -71,12 +71,13 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 ## 遊戲重播（2026-11-17）
 
-設置說明頁播放最新版前四鏡。從核准母帶轉碼的 1080p／30 fps H.264 影片為 `web/shots-01-04-replay.mp4`，前三鏡到第四鏡的剪接時間不變。遊戲以荒漠首曲 Desert Ascendant 及 `web/shots-01-04-replay-sfx.mp3` 獨立播放，分別套用音樂和音效音量。音效從各鏡原始音效合成，第三鏡音效於第 68.50 秒接第四鏡。核准母帶保留審片混音。
+設置說明頁播放最新版前四鏡。從核准母帶轉碼的 1080p／30 fps H.264 影片為 `web/shots-01-04-replay.mp4`，前三鏡到第四鏡的剪接時間不變。遊戲以荒漠首曲 Desert Ascendant 及 `web/shots-01-04-replay-sfx.mp3` 獨立播放，分別套用音樂和音效音量。音效從各鏡原始音效合成，第三鏡音效於第 68.50 秒接第四鏡。遊戲重播在 3 秒前收掉第一鏡鐘鳴的尾音，最初敲擊和風聲沿用原演出。核准母帶保留審片混音。
 
 還原核准 MP4 後，可在素材庫的序章目錄執行下列指令重製遊戲匯出。輸出目錄使用新資料夾，避免覆寫既有匯出。
 
 ```powershell
 node extended-shot-four/export-replay.cjs shots-01-04-100.7s.mp4 replay-export
+node extended-shot-four/export-replay.cjs --audio-only replay-audio-export
 ```
 
 ## 可編輯來源

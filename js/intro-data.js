@@ -33,7 +33,7 @@ var INTRO_REPLAY_TIMELINE = {
   audio: {
     music: typeof ZONES !== 'undefined' && ZONES.desert && ZONES.desert.bgm,
     sceneMusic: true,
-    sfx: 'images/intro-parchment/shots-01-04-replay-sfx.mp3?v=1'
+    sfx: 'images/intro-parchment/shots-01-04-replay-sfx.mp3?v=2'
   }
 };
 
