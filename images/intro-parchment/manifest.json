@@ -130,7 +130,7 @@
     "extended-shot-four/build-audio.cjs": "29098ec2324482aeeabbb4fb243505aca824c03823609293f053a3f88a387156",
     "extended-shot-four/render-shot-four.cjs": "618acd694035b5253128dd79147869ed09c02cbff6fe80d42b3ce78b151480b7",
     "extended-shot-four/restore-master.cjs": "55de235767ed338132197bcebf4c7d2c6e952d575f35a7c1321322cdd7733841",
-    "extended-shot-four/export-replay.cjs": "792d61b828f222fc2843a2e1ac5e3f53c76d3916e01f4adc89d314b2caf50190",
+    "extended-shot-four/export-replay.cjs": "5754a761c8babd222407c1a76646cc511638ae242a5addfc216a6f566d09dede",
     "extended-shot-four/assets/brace.png": "56d93875d3fa12f75859babb807347d943e4154084aff267f018ce9240324b6e",
     "extended-shot-four/assets/cloth-ribbon.png": "2693ae3fee1cab38cd0bd9ebeea7fda6175d42619b5227e53522789df1c3be97",
     "extended-shot-four/assets/flare.png": "6df3fee00e1aa0be062899517e538217d3cd1c3b1797a7fe75d2da9cdb813a49",
@@ -141,18 +141,20 @@
     "extended-shot-four/assets/vista.png": "6e5ad25a82d07ea6fb3870f7ed6d589790238fb8b4ae8ab5cf88675b8f7fc04a",
     "extended-shot-four/assets/shot-four-effects.wav": "0fe70a3a9a29ab6f0e3b31a7ac462013c587aeb2dfc1367f9e8d4de4f0c82ff3",
     "extended-shot-four/assets/shot-four-mix.wav": "a7c5365a0688912574d0de1196dab999fcd11dc6c9fa727d590904793143a317",
-    "extended-shot-five/SOURCE.md": "937fc4394bf9dcb3af20f4f5235c52fa1f233754b301e92e14e68d65918fd761",
+    "extended-shot-five/SOURCE.md": "6a80f6fb46cc246fbdc9231beb23c312d9a667cde50e4d3bce5a4d414299c75e",
     "extended-shot-five/PROMPT.md": "2ea578c96cc4b32ff323c0d254bb6127382b38b9a3a97c96a4a2b578ef958374",
-    "extended-shot-five/index.html": "ac4b2d3403e10de755a8fc3a0276bbe1b21ac99dfb4a44b7d846f3f740088b58",
-    "extended-shot-five/finale.js": "981c1d47b4eb60797f89f258b50ea804fc15934dbdce3a78406c9e5a9f44bcfb",
-    "extended-shot-five/finale-mattes.js": "0b2b0a61bae5f49e68fb65d2bf4be225c58f8d11f1202ced35391668a13d3057",
-    "extended-shot-five/finale-fx.js": "d1586f23b0c4a50c2ba88be790e15cd47fdaa518cc99413020e3f9ecacf569b8",
+    "extended-shot-five/index.html": "a9a915c11ba6f60322ee6a4bb55e0e1ee27e52205c2b8eb1ae166cf7241a7758",
+    "extended-shot-five/finale-timing.js": "809a72a6d966f930e1b67f8e4a4518ff31bb7bd860ab73f1519514c631e22b97",
+    "extended-shot-five/finale.js": "86eddb1993312a15557b24279a37092a5d0dfef85f39696d7c31813a81ed212e",
+    "extended-shot-five/finale-mattes.js": "5bcf35ae74d26def02b8bb783ae42c11537eaaac862aac0f2886eb903754a4a4",
+    "extended-shot-five/finale-fx.js": "8af1da8a0fbf8913ac074035b76e3fc3a6f871ec4691eaa14a7d7294f6089ac9",
     "extended-shot-five/finale-backdrop.js": "b93e9e98395446ccee0de0d062d17ea9e68c5478915f12c60fdab1bbfabb2c17",
-    "extended-shot-five/build-score.cjs": "335f8d8fbfd1305ebcfce13747c860a14be9a260f8dcd4167bae2242ffd5af80",
-    "extended-shot-five/render-finale.cjs": "5dfcdcd1635a7e32e77c3a194ae018d851cea132861591d1fb2d8ab0d24a2af2",
+    "extended-shot-five/build-score.cjs": "58a6fd63df0cdf44f255a41ccf8dd8b315856c1fd6803489ea2fa91bb864f602",
+    "extended-shot-five/render-finale.cjs": "b0f7e5de43f2d57d185a8bbd18113665b7609332d784383ebc4cda4fb3bf4144",
+    "extended-shot-five/align-mp4-presentation.cjs": "f9ee98e1b0d78a16518e65a13b5cf73c95abe063d3f2aeb1f17c804ec4215ea5",
     "extended-shot-five/assets/vista-clean.png": "6ae8b533dac4df5b6c6292a2661d9355eed019098de49e81cffda3328a1ae304",
-    "extended-shot-five/assets/finale-effects.wav": "77a60de36c48337ff651f143c4ab19eac9e69f1b7684c270aa669c3f26ddb69a",
-    "extended-shot-five/assets/finale-audio.wav": "cd998f3d764307b7605bed2a19a0b81010b0b412b1b52bbb7133ac66774250c5",
+    "extended-shot-five/assets/finale-effects.wav": "ce85df3491b7b6bdb10e0e9057bec98210b1e2deda3ef34c80641cedf0580b0b",
+    "extended-shot-five/assets/finale-audio.wav": "6e89ecced7bcc0c5e8c6d10c2aa925e716c3d2dc3a7a83fa5dae45a208ecb296",
     "web/shot-02-archangel-fall-18s.mp4": "0d49096b3383f7c405d32b1069dc782163d71f31f7844df3b09918511e288d84",
     "web/shot-03-extended-32s.mp4": "cb3631b2a5b074913316f0cf88b866a361d51afe356f984207a3b5051a028bb1",
     "web/shot-03-extended-33.5s.mp4": "cdc42057988e800b5bdf62d8906df6c4d5b77574880e016f8e1305df86bd5f8c",
@@ -183,7 +185,7 @@
     },
     "shot-05-desert-finale-orbit.mp4": {
       "source": "web/shot-05-desert-finale-orbit.mp4",
-      "sha256": "12a03dbe748d3f9a339c3195a554316672847b95f41e8f3c4af29b63c37b7037"
+      "sha256": "e83958272f0fe8b3c7b728c17160a3e4e8ae9792194007a5c77132369544bc2d"
     },
     "shot-01-02.mp4": {
       "source": "web/shot-01-02.mp4",
@@ -207,15 +209,15 @@
     },
     "shots-01-05-replay.mp4": {
       "source": "web/shots-01-05-replay.mp4",
-      "sha256": "9e8c35085523fbe81b511433604d1724341c81415dd7dbbd3796682566413852"
+      "sha256": "925e03d382dde927cb9ce98d1de46410713008d3e4aa3de779422f0648a5be9e"
     },
     "shots-01-05-replay-sfx.mp3": {
       "source": "web/shots-01-05-replay-sfx.mp3",
-      "sha256": "25af0409f69aa69962c5e46980b31e280b30bf1997d3579d9dbb48347e851fd9"
+      "sha256": "c0e787fb098e5fec10b27848f79b0b052a32c3863c4e9ab05788f41a54d89d8b"
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "ab691067df23fcfeb09d4b1ca26aebe4a31ebed27a45e21256974ef7ba9cba46"
+      "sha256": "8ebc3aa937e903e03896295dc5ca9652310f46b709acfd20c4f33cb4a7e6d837"
     }
   }
 }
