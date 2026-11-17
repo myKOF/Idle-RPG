@@ -199,8 +199,14 @@ dist/win-unpacked/IdleRPG.exe --smoke=tmp/smoke-packaged   # 對打包版跑冒�
 - 沒設定 AppID：不載入 steamworks.js，遊戲照常。
 - `--steam-appid=480`、Steam 沒開：原生模組與 `steam_api64.dll` 正常載入（開發與打包版皆是），回報「Steam 未連線」，遊戲照常、冒煙測試通過。
 
-**待做（需要 Steam 用戶端登入）**：
-- 以 480 實測連線成功、Overlay（Shift+Tab）畫面正常、不出現任務 A 的空白畫面——要用 `--smoke-onscreen` 做螢幕實拍。
+**Steam 實機（2026-11-17，Steam 用戶端已登入，`--steam-appid=480`）**：
+- 連線成功（日誌「已連線，AppID 480」）。
+- Steam 的 `gameoverlayrenderer64.dll` 已注入遊戲行程。
+- 開著 Overlay 的兩個 GPU 參數（`in-process-gpu`＋`disable-direct-composition`），螢幕實拍是正常的開始選單，**沒有任務 A 的空白畫面**。
+
+**待做**：
+- 按 Shift+Tab 是否真的叫出 Overlay：實測時使用者正在用電腦，截圖被切到別的視窗，沒有拍到。只需要在 480 下手動按一次確認。
+- 注意：用 `steam.exe -silent` 背景啟動 Steam 後，遊戲連線時 Steam 主視窗仍會跳到最前面；自動化測試送按鍵前必須確認遊戲在前景（否則會落到 Steam 用戶端）。
 - 成就解鎖要等正式 AppID 的後台建好成就（480 的 Spacewar 沒有 `ACH_###`，送出會記為失敗，這是預期的）。
 - 後台成就圖示：Steam 要 64×64 JPG（已達成／未達成灰階各一），由 `images/achievements/` 轉檔，任務 E 處理。
 
