@@ -16270,3 +16270,10 @@ Worker 存活且頁面正常完成載入。
 - 修改測試服、`tests/test-server-manager.test.cjs`、功能文件及本紀錄。唯讀檢查主頁、`js/intro-player.js`、`js/intro-data.js`、`js/game-menu.js` 和既有序章成片。重播內容及音訊沿用 30.3 秒核准版。素材庫無變更。
 - 驗證：`node --test tests/test-server-manager.test.cjs tests/start-test-server.test.cjs tests/intro-player.test.cjs tests/intro-game-audio.test.cjs tests/intro-audio.test.cjs` 41 項通過，`npm.cmd run build` 723 檔、Git diff 檢查通過。隔離 Edge 從開始選單和實際遊戲點進說明頁，驗證起播、略過、再播、跳至片尾結束與焦點復原。已重啟原 8123 Codex 測試服，確認 206 及遊戲內同一路徑可播。
 - 可合併。驗證範圍為 Node 測試服及 Windows Edge。遊戲提交為本段所在的 `[Codex] fix: 修復測試服開頭動畫重播`。
+
+## INTRO-REPLAY-FOUR-20261117 — 接入最新版前四鏡連播
+
+- Codex，完成。設置說明頁播放 100.70 秒核准前四鏡，第 68.50 秒進入第四鏡。由核准母帶轉碼成遊戲用 1080p30 H.264，畫格及剪接時點相同。四鏡原始獨立音效依核准剪接串接，玩家的音樂、音效、靜音和場景配樂接續沿用既有機制。
+- 素材庫提交 `6fc403d0a3f0f8999d2d87edd4d7b2cc6120dd7a`，保存兩個遊戲匯出檔及重製程式。遊戲修改重播資料、快取、匯出腳本、影片與音效、清單、文件及既有測試。唯讀檢查播放器、音訊控制、原始母帶和前四鏡獨立音效。
+- 驗證：素材 SHA-256 與 HTTP Range 206、FFprobe 100.70 秒／3021 幀／48 kHz 立體聲、影片和音效完整解碼、五段抽樣畫面 SSIM 0.9787–0.9918。序章、GM 和測試服回歸 52 項、`npm.cmd run build` 723 檔通過。隔離 Edge 在原 8123 測試服實際點擊開始選單及遊戲內的重播，驗證音樂和音效起播、略過、再次播放及焦點復原，遊戲內完整播放跨入第四鏡並自然結束。
+- 可合併。只提交本任務差異。與介面縮放任務共用的 index、LV 說明與任務紀錄各自修改不同區段，主頁相鄰的不同載入行已用固定分隔錨點驗證三方試合，提交只包含 intro-data 快取行。遊戲提交見本段所在的 `[Codex] feat: 設定重播接入最新前四鏡`。
