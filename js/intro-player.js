@@ -369,7 +369,7 @@ var IntroPlayer = (function () {
         window.addEventListener('keydown', onKey, true);
       }
 
-      document.body.appendChild(root);
+      (document.getElementById('ui-shell') || document.body).appendChild(root);
       if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) {} }
       if (!c.video) {
         // 圖層共用動畫時鐘；影片由原生 ended 事件結束。

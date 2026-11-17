@@ -6,7 +6,46 @@ const vm = require('node:vm');
 const { EventEmitter } = require('node:events');
 
 const root = path.resolve(__dirname, '..');
-const { isRelevantEndpoint } = require(path.join(root, 'tools', 'test_server_manager.cjs'));
+const { createStaticServer, isRelevantEndpoint } = require(path.join(root, 'tools', 'test_server_manager.cjs'));
+
+test('測試服可分段串流序章影片並支援重新定位', async () => {
+  const file = path.join(root, 'images', 'intro-parchment', 'shot-01-03.mp4');
+  const size = fs.statSync(file).size;
+  const server = createStaticServer(root);
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const url = `http://127.0.0.1:${server.address().port}/images/intro-parchment/shot-01-03.mp4?v=1`;
+    const head = await fetch(url, { method: 'HEAD' });
+    assert.equal(head.status, 200);
+    assert.equal(head.headers.get('content-type'), 'video/mp4');
+    assert.equal(head.headers.get('accept-ranges'), 'bytes');
+    assert.equal(Number(head.headers.get('content-length')), size);
+
+    const fd = fs.openSync(file, 'r');
+    try {
+      for (const [header, start, end] of [
+        ['bytes=0-15', 0, 15],
+        ['bytes=8192-8319', 8192, 8319],
+        ['bytes=-32', size - 32, size - 1],
+        [`bytes=${size - 8}-`, size - 8, size - 1]
+      ]) {
+        const response = await fetch(url, { headers: { Range: header } });
+        assert.equal(response.status, 206);
+        assert.equal(response.headers.get('content-range'), `bytes ${start}-${end}/${size}`);
+        const expected = Buffer.alloc(end - start + 1);
+        fs.readSync(fd, expected, 0, expected.length, start);
+        assert.deepEqual(Buffer.from(await response.arrayBuffer()), expected);
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+    const outside = await fetch(url, { headers: { Range: `bytes=${size}-` } });
+    assert.equal(outside.status, 416);
+    assert.equal(outside.headers.get('content-range'), `bytes */${size}`);
+  } finally {
+    await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  }
+});
 
 test('測試服控制台提供啟動、列表、開啟與關閉介面', () => {
   const manager = fs.readFileSync(path.join(root, 'tools/test_server_manager.cjs'), 'utf8');

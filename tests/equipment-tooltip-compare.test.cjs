@@ -30,6 +30,7 @@ function tooltip(sourceName, item, target, checked = true, equippedRarity = 5, c
   vm.createContext(c);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/data.js'), 'utf8').match(/^function divineForgeBaseRarity[^\n]+/m)[0], c);
   vm.runInContext(source.slice(source.indexOf('function itemRarityEffectClass('), source.indexOf('function renderEquip(')), c);
+  vm.runInContext(source.slice(source.indexOf('function positionSkTooltip('), source.indexOf('function showSkillTooltipHTML(')), c);
   vm.runInContext(source.slice(source.indexOf('function showItemTooltip('), source.indexOf('function showTowerTooltip(')), c);
   c.showItemTooltip(item, { getAttribute: name => name === 'data-src' ? sourceName : name === 'data-slot' ? target : null, getBoundingClientRect: () => ({ left: 10, right: 60, top: 40 }) });
   return { tip, cards };

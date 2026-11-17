@@ -56,6 +56,85 @@ test('主技能施放只排飛行物，不立即殺死所有彈射目標',()=>{
  assert.ok(h.c.SKILL2_RT.projectiles.length);assert.ok(h.events.every(e=>e.hit===false));
  h.tick(5);assert.ok(h.hits.length>0);
 });
+test('兩把一般飛刀鎖同一敵人，首刀擊殺後另一刀仍飛到原目標', () => {
+ const h = setup(), target = h.enemy(40, 100, 'A');
+ h.cfg.pool = [target];
+ h.c.FIELD.player = h.p;
+ h.c.castSkill2(h.p, h.cfg.pool, 'knife', 'mv-float');
+ const flights = h.events.filter(e => e.area?.knifeFlight);
+ assert.equal(flights.length, 2);
+ assert.ok(flights.every(e => e.targets[0] === 'A' && e.area.x === 40));
+ h.tick(flights[0].travelMs[0] / 1000);
+ assert.equal(target.hp, 0);
+ assert.equal(h.hits.length, 1);
+ assert.equal(h.events.filter(e => e.area?.knifeImpact).length, 1);
+ assert.equal(h.c.SKILL2_RT.projectiles.length, 0);
+});
+test('輪舞刃共用一般飛刀刀身與尾跡，畫面和接觸判定沿同一條環繞路徑', () => {
+ const h = setup(), centre = { x: 20, y: 40 }, groundScale = 0.62;
+ const metres = h.c.bfMeterPx(1), target = h.enemy(centre.x, 1000, 'A');
+ target.pos.y = centre.y + 10 * metres;
+ h.c.bfPlayerPos = () => centre;
+ h.c.sgQueueKnifeFlight(h.cfg, null, target, 100, 0, false, 'knife');
+ const flight = h.events[0];
+ h.c.sgKnifeWaltz(h.p, h.cfg.st, h.cfg, { m: 10, sec: 5 });
+ const orbit = h.events[1], field = h.c.SKILL2_RT.orbits[0];
+ assert.equal(orbit.variant, 'knife-waltz');
+ assert.equal(orbit.vfx.projectile, flight.vfx.projectile);
+ assert.equal(orbit.vfx.ground, undefined);
+ assert.equal(orbit.area.r, 10 * metres);
+ assert.equal(orbit.area.orbR, metres);
+ assert.equal(orbit.area.spinRate, Math.PI * 2);
+ assert.equal(orbit.dur, 5);
+
+ const Core = require('../js/vfx-core.js'), Runtime = require('../js/vfx-runtime.js');
+ const screen = (p) => ({ x: p.x, y: p.y * groundScale });
+ const sprites = [], played = [];
+ const core = {
+  ...Core,
+  createRuntime(options) {
+   const runtime = Core.createRuntime(options), play = runtime.play;
+   runtime.play = (id, params) => {
+    played.push({ id, scaleX: params.scaleX, scaleY: params.scaleY });
+    return play(id, params);
+   };
+   return runtime;
+  }
+ };
+ const backend = {
+  createNode: spec => ({ blade: spec.assetUrl.endsWith('/dingbats-389.png') }),
+  updateNode: (node, transform) => { if (node.blade) sprites.push({ ...transform }); },
+  destroyNode() {}
+ };
+ const rt = Runtime.create({
+  core, resolver: { has: () => true, resolve: x => x }, fxBackend: backend, zoneBackend: backend,
+  groundScale, profile: { scale: 0.8, areaScale: 0.5 },
+  ctx: { playerPos: () => screen(centre), posOf: () => screen(target.pos), footOf: id => screen(id === 'pv-float' ? centre : target.pos) }
+ });
+ rt.registerPresets([require('../vfx/presets/proj-knife.json')]);
+ assert.equal(rt.tryPlay(flight), true);
+ rt.clear();
+ assert.equal(rt.tryPlay(orbit), true);
+ assert.equal(played.length, 2);
+ assert.deepEqual(played[1], played[0]);
+ h.c.GT = 0.25;
+ h.c.sgTickOrbits(0.25, { getEnemies: () => [target] });
+ rt.update(0.25);
+ const contact = h.c.sgOrbitPos(field.orbs[0], centre), drawn = sprites.at(-1);
+ assert.ok(Math.abs(drawn.x - contact.x) < 1e-6);
+ assert.ok(Math.abs(drawn.y - contact.y * groundScale) < 1e-6);
+ assert.equal(target.hp, 900);
+ assert.equal(h.events.find(e => e.fxKind === 'impact').vfx.hit, flight.vfx.hit);
+ for (let frame = 0; frame < 30; frame++) rt.update(0.125);
+ assert.equal(rt.stats().orbits, 1);
+ assert.ok(rt.stats().fx.activeEffects > 0);
+ assert.ok(rt.stats().fx.activeParticles > 0);
+ h.c.GT = 5;
+ h.c.sgTickOrbits(1, { getEnemies: () => [target] });
+ rt.update(1);
+ assert.equal(h.c.SKILL2_RT.orbits.length, 0);
+ assert.equal(rt.stats().orbits, 0);
+});
 test('無座標高塔仍等待到達，換場清除待命中飛刀',()=>{
  const h=setup(),a=h.enemy(100);delete a.pos;h.cfg.pool=[a];
  h.c.sgQueueKnifeFlight(h.cfg,null,a,100,0,false,'knife');assert.equal(a.hp,1000);

@@ -276,7 +276,7 @@ var PlayRecorder = (function () {
     _badge.appendChild(txt);
     _badge.appendChild(btn);
     _badge._txt = txt;
-    document.body.appendChild(_badge);
+    (document.getElementById('ui-shell') || document.body).appendChild(_badge);
   }
 
   function paint() {
@@ -307,7 +307,7 @@ var PlayRecorder = (function () {
         'font:12px/1.5 monospace;background:#4a1020;color:#ffd7e0;border:1px solid #c04;' +
         'border-radius:6px;padding:6px 8px;max-width:300px';
       d.textContent = '錄製未啟用：' + reason;
-      document.body.appendChild(d);
+      (document.getElementById('ui-shell') || document.body).appendChild(d);
     };
     if (document.body) show();
     else document.addEventListener('DOMContentLoaded', show);

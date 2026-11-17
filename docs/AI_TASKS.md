@@ -1,3 +1,20 @@
+## SYNC-CODEX-ANTIGRAVITY-20261117 — 整合 Codex 與 Antigravity 分支
+
+- Codex 整合。使用者指定本輪整合 Codex 與 Antigravity 的本地及遠端成果，暫不納入 Claude。原 `develop` 為 `ec0ac037`，待完成的合併來源為 `be8847ad`，共六筆 Codex 提交。Antigravity `3072e5e5` 及 `codex/brass-and-slate`、`codex/lava-terrain`、遠端 `codex/npc-black-outlines-20261102` 的來源提交均已在主線歷史。`codex/background-catchup` 依既有設定隔離於 `08013b4db0e3f03f336810a128cd801547f89f6d`。
+- 唯一衝突為本檔。以 index 三方原始 blob 執行 `git merge-file -p` 回傳 0，結果與現場內容逐位元組相同，保留兩方完整任務紀錄。其他檔案沿用已暫存合併結果，包含固定比例畫布、商人版面、序章前四鏡重播與鐘鳴修正、輪舞刃及測試服修正。序章素材來源提交為 `6fc403d`、`6d478bf`。
+- 驗證包含 `node --test` 執行 13 份相關測試共 106/106、`npm.cmd run build` 通過 723 檔、`node tools/intro/sync-parchment-shots.cjs --check` 確認素材與遊戲輸出 SHA-256、`git diff --cached --check`。紀錄位於 `logs/manual-merge-20261117/`。本輪以既有測試驗證合併結果。
+- 本段所在合併提交整合 Codex 六筆新提交。同步僅指定 `develop`、`ai/codex`、`ai/antigravity` 與已核對的序章素材提交。Claude 本地 `a5b588e5` 及遠端各分支、既有試作保留。
+
+## FIXED-UI-CANVAS-20261117 — 遊戲介面固定比例
+
+- Codex，完成。沿用 1920 × 900 的介面基準，主畫面、開始選單、遊戲內戰鬥全螢幕、彈窗與序章共用固定版面，視窗餘區由 CSS 填純黑。一般介面只縮放一次，原生開箱對話框在瀏覽器頂層套用相同尺寸與倍率。提示框、詞條浮層、統計拖曳、開箱拖曳與任務飄圖採用畫布座標。同步樣式與程式快取、系統文件及測試。素材庫無變更。
+- Edge 靜音隔離實測 1919 × 911、1569 × 509、960 × 720、3440 × 1440 與 390 × 844。比對裝備與戰鬥面板尺寸及黑邊像素，驗證地圖、懸停提示、統計、開箱捲動、遊戲內戰鬥全螢幕、網頁原生全螢幕進出與序章重播。`npm.cmd run build` 通過 723 檔，`node --test` 重點測試 172/172，含詞條浮層的補驗 45/45。另在原提交重現擴大測試中 18 項確認框／威能既有失敗。完整套件已中止。可合併。
+
+## MERCHANT-PANEL-LAYOUT-20261117 — 神祕商人商品區貼齊店景
+
+- Codex，已完成。`css/style.css` 在神祕商人開啟時隱藏工作區的直向捲軸並保留捲動，移除商品木框與店景之間的間距。`index.html` 更新樣式快取，`LV_upgrade_system.md` 同步介面紀錄。唯讀核對 `css/ashen-forge.css`、`js/ui.js`、商店底圖、商品格與封魔塔入口。
+- `node --test` 執行 mystery-merchant、gem-compose-all、vfx-editor-cache-versions，共 25/25。`npm.cmd run build` 通過 723 檔。Edge 靜音隔離測試以內測 GM 發券並進店，驗證 1920×900、1600×720、1280×760 的店景和商品框邊緣貼齊、40 格正方形及隱藏捲軸。溢出時滾輪可用，返回封魔塔恢復捲軸樣式，頁面例外 0。差異檢查通過，可供合併。
+
 ## SYNC-MERGE-20261117-011256 ? develop integration validated
 
 - Owner: Codex. Done; designated integrator for HEAD 9bb1279ecd26e3a78987a6bee3308ef622c8867d and MERGE_HEAD 0ac76f10a8390d508a25d0175971432bf237cec9 only. Scope: seven original conflicts, necessary cache/generated data, tests and this record; no staging, commits, metadata or other worktree writes. Controller completes merge.
@@ -6209,6 +6226,13 @@ ock-wall\`（附 SOURCE.md，**素材庫不在本 repo，需要你在素材庫�
 - 驗證：node --test tests/knife-flight.test.cjs tests/skill2-knife-range.test.cjs tests/cleave-rework.test.cjs tests/worker-protocol.test.cjs tests/skills2-flight-speed.test.cjs tests/vfx-preset-usage.test.cjs：51/51。skill2-ult-evolution 的飛刀／暴雨梨花／死亡收割者／無限追魂刃／Soulhunter 定向測試 8/8。新增測試直接驅動模擬、Worker shim 與正式 Runtime，驗證死亡續飛、無目標停止、到達才傷害、路徑傷害、中點幾何與長時間刀身存活。
 - 擴大回歸：skill2-vfx 與 vfx-runtime 共 125 項，110 通過、15 失敗；將 HEAD 原始程式與原測試注入後同樣 15 項失敗，涵蓋火球／火龍捲／迴旋斬／冰系舊斷言及既有 Runtime 問題，無新增失敗。飛刀舊即時排程字串斷言改由實際逐段模擬測試覆蓋，沒有放寬其他技能斷言。Build 354 檔與 git diff --check 通過。
 - Commit：本紀錄所在提交；未合併／未推送。未做遊戲內目視驗證；無未完成實作，可供審查合併，建議重新整理遊戲確認實際彈射觀感。基線驗證暫存留在忽略目錄 tmp/knife-validation，不納入提交。
+
+## KNIFE-WALTZ-VFX-20261117 — 輪舞刃沿用一般飛刀特效
+
+- Owner：Codex，完成。輪舞刃由技能表讀取一般飛刀的刀身、尾跡及物理命中特效。刀身沿用一般飛刀的尺寸，動畫時長及位置依實際環繞場域；各次施放保有獨立的環繞特效。
+- 已重現兩刀鎖同一隻怪時，先結算的一刀擊殺，另一刀到最後位置時無傷害。存活目標擲出閃避會顯示 MISS。兩者到達後皆依剩餘次數及範圍決定下一跳。普通飛刀僅在抵達時判定鎖定的目標，暴雨梨花另有路徑傷害。
+- 修改技能與 VFX Runtime、主頁／Worker／編輯器快取、飛刀回歸、LV 及 VFX 文件。唯讀核對技能表、戰場實體、命中公式、Worker shim、Canvas 及原飛刀 Preset。素材庫無變更。與 Claude 桌面版設定及 develop 銅邊介面同檔異段，逐檔以提交與工作區三方試合皆通過。
+- 相關回歸 91/91，包括整次飛刀施放重現、真實閃避、環繞位置／尾跡及到期。擴大回歸 291 項，250 通過、41 項失敗與原 HEAD 同名。Build 723 檔、文字寫死 0、Git 差異檢查通過。隔離靜音 Edge 實際穿戴匕首、套用輪舞刃並開戰，確認 Worker 事件與 Canvas 播放新版飛刀，推進畫面時鐘驗證回收。主頁主控台 0 錯誤、0 警告。可供整合。
 
 ## Codex｜藍色與三色刀波沿用暖色圓環外形（CLEAVE-WARM-SHAPE-20260916）
 
@@ -16267,3 +16291,23 @@ Worker 存活且頁面正常完成載入。
 - Owner：Claude，Done。使用者指出 NPC 表的 3D 模型與動作名稱不統一（treant／boss3_character、Unsteady_Walk／Running…），要求一律 BOSS1、BOSS2 式檔名與 Walk／Die／Attack1～3。
 - 做法：`tools/meshy-pipeline/src/normalize-tower-boss-models.cjs` 把 9 個模型改名（樹人→boss2*、第3隻→boss3*、原 boss2／boss3 骷髏王二三階→boss1_lv2／lv3，鬼面 boss5* 本來就對），其中樹人×3、第3隻×3 另改 GLB 內動畫名稱（只改 JSON 區塊）；素材庫 9 個資產包的 exports 與 manifest 同步，9 支 `export-tower-*.cjs --check` 全部通過。NPC.xlsx 經 Excel 原生 API 一次改 16 列（44 格）的模型與 AC:AH 動作欄，重開驗證通過，CSV／data 同步。快取版號 `20261116-boss-models-v1`。
 - 測試：更新 treant／boss3／npc3d-config／tower-boss3d 測試，新增「所有塔BOSS綁定都是 bossN.glb＋標準動作名，且 GLB 內動作齊全、資料夾內沒有舊式檔名」；實機用遊戲自己的 Npc3D 載入全部 11 個不同模型都通過，並跑了第2層（樹人）與第3層（第3隻）真實塔戰確認渲染與動作。立繪檔名、.blend 與舊說明文件未改（見對照文件）。素材庫提交 2c326f15。
+
+## INTRO-REPLAY-HTTP-20261117 — 修復設置說明頁的序章重播
+
+- Codex，完成。重現點擊後影片停在 0 秒等載入，跳轉至片尾也會重新要求整檔。Node 測試服原先回傳 `200 application/octet-stream` 並忽略 Range。修正 `tools/test_server_manager.cjs` 為 `video/mp4`、非同步串流及單一位元組範圍，支援 HTTP 206／416 與 HEAD。
+- 修改測試服、`tests/test-server-manager.test.cjs`、功能文件及本紀錄。唯讀檢查主頁、`js/intro-player.js`、`js/intro-data.js`、`js/game-menu.js` 和既有序章成片。重播內容及音訊沿用 30.3 秒核准版。素材庫無變更。
+- 驗證：`node --test tests/test-server-manager.test.cjs tests/start-test-server.test.cjs tests/intro-player.test.cjs tests/intro-game-audio.test.cjs tests/intro-audio.test.cjs` 41 項通過，`npm.cmd run build` 723 檔、Git diff 檢查通過。隔離 Edge 從開始選單和實際遊戲點進說明頁，驗證起播、略過、再播、跳至片尾結束與焦點復原。已重啟原 8123 Codex 測試服，確認 206 及遊戲內同一路徑可播。
+- 可合併。驗證範圍為 Node 測試服及 Windows Edge。遊戲提交為本段所在的 `[Codex] fix: 修復測試服開頭動畫重播`。
+
+## INTRO-REPLAY-FOUR-20261117 — 接入最新版前四鏡連播
+
+- Codex，完成。設置說明頁播放 100.70 秒核准前四鏡，第 68.50 秒進入第四鏡。由核准母帶轉碼成遊戲用 1080p30 H.264，畫格及剪接時點相同。四鏡原始獨立音效依核准剪接串接，玩家的音樂、音效、靜音和場景配樂接續沿用既有機制。
+- 素材庫提交 `6fc403d0a3f0f8999d2d87edd4d7b2cc6120dd7a`，保存兩個遊戲匯出檔及重製程式。遊戲修改重播資料、快取、匯出腳本、影片與音效、清單、文件及既有測試。唯讀檢查播放器、音訊控制、原始母帶和前四鏡獨立音效。
+- 驗證：素材 SHA-256 與 HTTP Range 206、FFprobe 100.70 秒／3021 幀／48 kHz 立體聲、影片和音效完整解碼、五段抽樣畫面 SSIM 0.9787–0.9918。序章、GM 和測試服回歸 52 項、`npm.cmd run build` 723 檔通過。隔離 Edge 在原 8123 測試服實際點擊開始選單及遊戲內的重播，驗證音樂和音效起播、略過、再次播放及焦點復原，遊戲內完整播放跨入第四鏡並自然結束。
+- 可合併。只提交本任務差異。與介面縮放任務共用的 index、LV 說明與任務紀錄各自修改不同區段，主頁相鄰的不同載入行已用固定分隔錨點驗證三方試合，提交只包含 intro-data 快取行。遊戲提交見本段所在的 `[Codex] feat: 設定重播接入最新前四鏡`。
+
+## INTRO-REPLAY-BELL-TAIL-20261117 — 清除重播開頭多餘鐘鳴
+
+- Codex，完成。使用者指定第一鏡開頭 3～5 秒。重播音效的鐘聲含中央及左右聲道尾音，以 2.34～2.96 秒的平滑包絡收掉鐘鳴，保留敲擊提示、環境風聲和後續事件。遊戲 BGM、影片、核准母帶及第一鏡原始 WAV 沿用既有版本。
+- 素材庫提交 `6d478bf299a8825b76c47c3106fa33266b22dc86`。更新第一鏡音效重製選項、前四鏡純音效匯出、MP3、來源與 SHA-256 清單。遊戲同步重播音效和清單、音軌與腳本快取、既有測試及功能說明。唯讀檢查播放器與音訊控制。
+- 驗證：3～5 秒主鐘頻率 91／182 Hz 分別降低 17.5／25.2 dB，原始 PCM 起敲前後至 2.34 秒及 7.91 秒之後一致，編碼後第 16 秒起解碼 PCM 完全一致。FFprobe 確認 48 kHz／100.70 秒，完整音效解碼、素材清單、序章與測試服回歸 52 項及 723 檔建置通過。Edge 在 8123 測試服由遊戲內重播，確認新版音效與原 BGM 同時起播，實際播放到 4.42 秒，亦驗證略過、重播與收尾。可合併。遊戲提交見本段所在的 `[Codex] fix: 移除序章開頭多餘鐘鳴`。

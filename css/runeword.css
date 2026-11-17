@@ -270,8 +270,8 @@
 
 /* 真言提示重用圖鑑卡片，外層不再加第二重提示框。 */
 #sk-tooltip:has(.rx-word-tip) {
-  width: min(500px, calc(100vw - 16px));
-  max-width: calc(100vw - 16px);
+  width: min(500px, calc(var(--ui-canvas-width, 100vw) - 16px));
+  max-width: calc(var(--ui-canvas-width, 100vw) - 16px);
   padding: 0;
   border: 0;
   background: transparent;
@@ -302,7 +302,7 @@
 .equip-material-icon.rune-icon { color: var(--c); border-color: var(--c); font-size: 18px; display: flex; align-items: center; justify-content: center; }
 .equip-material-icon.rune-icon .rs-icon { width: 32px; height: 32px; }
 
-@media (max-width: 900px) {
+@container game-ui (max-width: 900px) {
   #tab-runes .rx-lib { grid-template-columns: 1fr; }
   #tab-runes .rx-focus { position: static; }
   #tab-runes .rx-list { grid-template-columns: 1fr; }

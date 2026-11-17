@@ -85,7 +85,7 @@ var TabLock = (function () {
     card.appendChild(desc);
     card.appendChild(btn);
     overlay.appendChild(card);
-    document.body.appendChild(overlay);
+    (document.getElementById('ui-shell') || document.body).appendChild(overlay);
     _overlay = overlay;
     return overlay;
   }

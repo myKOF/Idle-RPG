@@ -13,7 +13,7 @@
 /* 窄畫面保留完整標題，超出視窗時可在提示內水平捲動。 */
 #sk-tooltip:has(> .equip-detail-card),
 #sk-tooltip:has(> .equip-compare-container) {
-  max-width: calc(100vw - 16px) !important;
+  max-width: calc(var(--ui-canvas-width, 100vw) - 16px) !important;
   overflow-x: auto;
 }
 

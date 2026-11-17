@@ -218,7 +218,7 @@ button.gres-gem:hover { border-color: #7a6440; }
 .gres-hole.is-reject .gres-hit { fill: #e0685c1a; stroke: #e0685c; stroke-width: 3; }
 .gres-hole:focus, .gres-hole:focus-visible { outline: none; }
 .gres-hole:focus-visible .gres-hit { stroke: #fff1c4; stroke-width: 4; }
-@media (max-width: 1500px) {
+@container game-ui (max-width: 1500px) {
   .gres-layout { display: flex; flex: 0 0 auto; flex-direction: column; }
   .gres-board { flex: 0 0 auto; aspect-ratio: 514 / 450; }
   .gres-side-wrap { margin-left: 36px; }

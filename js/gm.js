@@ -302,7 +302,7 @@
       });
     }
     panel.appendChild(shortcuts);
-    document.body.appendChild(panel);
+    (document.getElementById('ui-shell') || document.body).appendChild(panel);
 
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) {

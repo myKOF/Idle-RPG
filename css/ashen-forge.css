@@ -2271,7 +2271,7 @@ html *::-webkit-scrollbar-corner {
   display: flex;
   flex-direction: column;
   width: min(624px, 100%);   /* 原 960px 的 65% */
-  max-height: 90vh;
+  max-height: calc(90 * var(--ui-vh, 1vh));
   padding: 24px;
 }
 .system-settings-heading { flex: 0 0 auto; }
@@ -2338,9 +2338,9 @@ html *::-webkit-scrollbar-corner {
 .settings-audio-group.is-disabled :is(.settings-opt, .settings-slider, input) { cursor: not-allowed; }
 .system-settings-body { overflow: auto; min-height: 0; }
 .system-settings-content > .panel { margin-bottom: 14px; }
-@media (max-width: 600px) {
+@container game-ui (max-width: 600px) {
   .system-overlay { padding: 10px; }
-  .system-settings-card { padding: 16px; max-height: 94vh; }
+  .system-settings-card { padding: 16px; max-height: calc(94 * var(--ui-vh, 1vh)); }
 }
 
 #workspace-area #tabs .tab-btn:is(:hover, :focus-visible, .active) .af-nav-icon img {

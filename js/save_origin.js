@@ -100,7 +100,7 @@ var SaveOrigin = (function () {
     card.appendChild(hint);
     card.appendChild(row);
     overlay.appendChild(card);
-    document.body.appendChild(overlay);
+    (document.getElementById('ui-shell') || document.body).appendChild(overlay);
     _overlay = overlay;
     yes.focus();
 

@@ -29,9 +29,9 @@
 #tab-forge button:disabled { cursor:default; }
 #tab-forge #forge-stone-center { left:50%; top:50%; width:11.2%; color:var(--afl-text)!important; background:#141a2ae6!important; border-color:var(--afl-gold-line); flex-direction:column; gap:0; line-height:1; opacity:1; }
 #tab-forge .forge-stone span { font-size:10px; font-weight:bold; }
-#tab-forge .forge-stone .forge-material-icon { font-size:clamp(15px,2vw,24px); }
+#tab-forge .forge-stone .forge-material-icon { font-size:clamp(15px,calc(2 * var(--ui-vw, 1vw)),24px); }
 #tab-forge .forge-stone.lit,#tab-forge .forge-stone[aria-expanded="true"] { border-color:var(--afl-gold-text); box-shadow:0 0 12px #f0cf8655; }
-#forge-stone-popover { position:absolute; top:57%; left:50%; transform:translateX(-50%); width:260px; max-width:85vw; z-index:8; background:var(--afl-card); color:var(--afl-text-soft); border:1px solid var(--afl-line-hi); border-radius:8px; box-shadow:0 8px 24px #000a; padding:9px; text-align:center; font-size:13px; line-height:1.65; }
+#forge-stone-popover { position:absolute; top:57%; left:50%; transform:translateX(-50%); width:260px; max-width:calc(85 * var(--ui-vw, 1vw)); z-index:8; background:var(--afl-card); color:var(--afl-text-soft); border:1px solid var(--afl-line-hi); border-radius:8px; box-shadow:0 8px 24px #000a; padding:9px; text-align:center; font-size:13px; line-height:1.65; }
 #forge-stone-popover[hidden] { display:none; }
 .forge-stone-controls { display:flex; align-items:center; justify-content:center; gap:16px; margin:5px 0; }
 #tab-forge .forge-stone-controls .btn { min-width:32px; min-height:28px; font-size:20px; padding:0; touch-action:none; user-select:none; -webkit-user-select:none; }
@@ -104,7 +104,7 @@
 @keyframes forge-charge { 0% { filter:brightness(.7) saturate(1) drop-shadow(0 0 12px #5187f880); } 50% { filter:brightness(2.1) saturate(.8) drop-shadow(0 0 40px #dff4ff); } 72% { filter:brightness(2.4) saturate(.7) drop-shadow(0 0 48px #fff); } 100% { filter:brightness(.7) saturate(1) drop-shadow(0 0 12px #5187f880); } }
 @keyframes forge-burst { 0%,58% { opacity:0; transform:scale(.3); } 66% { opacity:1; transform:scale(.9); } 100% { opacity:0; transform:scale(2.3); } }
 @keyframes forge-ring { 0%,60% { opacity:0; transform:scale(.4); } 68% { opacity:.95; } 100% { opacity:0; transform:scale(2.1); } }
-@media(max-width:600px) {
+@container game-ui (max-width:600px) {
   #forge-quality-tabs { left:8px; right:8px; bottom:74px; }
   #tab-forge #forge-quality-tabs .btn { flex:1; min-width:0; padding:4px 6px; font-size:12px; }
   #tab-forge .forge-panel { padding:8px 8px 0; }

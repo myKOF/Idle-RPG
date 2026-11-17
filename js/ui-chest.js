@@ -269,7 +269,10 @@ function chestBindResultGrid(viewport, rewards) {
     viewport.classList.add('is-dragging');
   });
   viewport.addEventListener('pointermove', function (e) {
-    if (drag && e.pointerId === drag.id) viewport.scrollTop = drag.top + drag.y - e.clientY;
+    if (drag && e.pointerId === drag.id) {
+      var scale = window.UiCanvas ? window.UiCanvas.scale : 1;
+      viewport.scrollTop = drag.top + (drag.y - e.clientY) / scale;
+    }
   });
   viewport.addEventListener('lostpointercapture', function () {
     drag = null;

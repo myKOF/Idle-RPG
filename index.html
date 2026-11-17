@@ -9,27 +9,29 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=20261112-chest-rewards-v1">
+  <link rel="stylesheet" href="css/style.css?v=20261117-fixed-canvas-v1">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=20261109-character-portrait">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=20261117-fixed-canvas-v1">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
   <link rel="stylesheet" href="css/brass-and-slate.css?v=20261117-brass-slate-v2">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
-  <link rel="stylesheet" href="css/runeword.css?v=1.0.9">
-  <link rel="stylesheet" href="css/relic.css?v=20261110-relic-layout-v2">
-  <link rel="stylesheet" href="css/chest.css?v=20261112-chest-rewards-v2">
-  <link rel="stylesheet" href="css/gems.css?v=1.0.25">
-  <link rel="stylesheet" href="css/dialogs.css?v=1.0.6">
-  <link rel="stylesheet" href="css/achievements.css?v=1.0.15">
-  <link rel="stylesheet" href="css/world-map.css?v=20261110-fullscreen-row-v1">
-  <link rel="stylesheet" href="css/divine-forge.css?v=1.0.15">
+  <link rel="stylesheet" href="css/runeword.css?v=20261117-fixed-canvas-v1">
+  <link rel="stylesheet" href="css/relic.css?v=20261117-fixed-canvas-v1">
+  <link rel="stylesheet" href="css/chest.css?v=20261117-fixed-canvas-v1">
+  <link rel="stylesheet" href="css/gems.css?v=20261117-fixed-canvas-v1">
+  <link rel="stylesheet" href="css/dialogs.css?v=20261117-fixed-canvas-v1">
+  <link rel="stylesheet" href="css/achievements.css?v=20261117-fixed-canvas-v1">
+  <link rel="stylesheet" href="css/world-map.css?v=20261117-fixed-canvas-v1">
+  <link rel="stylesheet" href="css/divine-forge.css?v=20261117-fixed-canvas-v1">
   <link rel="stylesheet" href="css/equipment-chaos.css?v=1.0.6">
-  <link rel="stylesheet" href="css/equipment-tooltip.css?v=20261105-simple-ancient-stars-v1">
-  <link rel="stylesheet" href="css/intro.css?v=20261111-storybook-v1">
-  <link rel="stylesheet" href="css/start-menu.css?v=20261112-rust-frame">
+  <link rel="stylesheet" href="css/equipment-tooltip.css?v=20261117-fixed-canvas-v1">
+  <link rel="stylesheet" href="css/intro.css?v=20261117-fixed-canvas-v1">
+  <link rel="stylesheet" href="css/start-menu.css?v=20261117-fixed-canvas-v1">
 </head>
 
 <body class="start-menu-pending">
+<div id="ui-stage"><div id="ui-shell">
+  <script src="js/ui-scale.js?v=1.0.2"></script>
   <div id="loading-screen" class="loading-screen" role="status" aria-live="polite" aria-hidden="false">
     <div id="loading-screen-label" class="loading-screen-label">Loading.</div>
   </div>
@@ -1093,7 +1095,7 @@
 
   <!-- 戰鬥結算日誌彈窗（支援拖曳移動與獨立懸浮） -->
   <div id="summary-modal" class="modal-overlay" style="display:none; background: transparent; backdrop-filter: none;">
-    <div class="modal-box" id="summary-modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(880px, 94vw);">
+    <div class="modal-box" id="summary-modal-box" style="display:flex; flex-direction:column; max-height:calc(85 * var(--ui-vh, 1vh)); width:min(880px, calc(94 * var(--ui-vw, 1vw)));">
       <button id="summary-modal-close" class="modal-x" data-str-attr="aria-label:155">✕</button>
       <button id="btn-summary-detail-log" class="btn sm" type="button" data-str-attr="data-tt-title:597;data-tt-desc:607" data-str="597"></button>
       <div class="summary-modal-header" id="summary-modal-header">
@@ -1105,7 +1107,7 @@
           style="position:absolute; right:10px; padding:2px 8px;" data-str="610"></button>
       </div>
       <div id="stats-scroll"
-        style="overflow-y:auto; display:flex; flex-direction:column; gap:8px; flex:1; max-height:60vh;">
+        style="overflow-y:auto; display:flex; flex-direction:column; gap:8px; flex:1; max-height:calc(60 * var(--ui-vh, 1vh));">
         <div class="summary-card" id="stats-basic-card"></div>
         <div class="summary-card" id="stats-source-card"></div>
         <div id="battle-summary-list" style="display:flex; flex-direction:column; gap:8px;"></div>
@@ -1116,7 +1118,7 @@
 
   <!-- 任務總覽彈窗：清單由 ui.js renderQuestModal() 依 task 面板投影與 TASKS 表填入 -->
   <div id="quest-modal" class="modal-overlay" style="display:none">
-    <div class="modal-box" style="display:flex; flex-direction:column; max-height:85vh; width:min(720px, 92vw);">
+    <div class="modal-box" style="display:flex; flex-direction:column; max-height:calc(85 * var(--ui-vh, 1vh)); width:min(720px, calc(92 * var(--ui-vw, 1vw)));">
       <button id="quest-modal-close" class="modal-x" data-str-attr="aria-label:155">✕</button>
       <div class="sec-title" style="text-align:center; margin-bottom:8px;" data-str="1912"></div>
       <div class="quest-list-head">
@@ -1124,7 +1126,7 @@
         <span class="quest-col-prog" data-str="1914"></span>
         <span class="quest-col-reward" data-str="1915"></span>
       </div>
-      <div id="quest-modal-list" style="overflow-y:auto; flex:1; max-height:62vh;"></div>
+      <div id="quest-modal-list" style="overflow-y:auto; flex:1; max-height:calc(62 * var(--ui-vh, 1vh));"></div>
     </div>
   </div>
 
@@ -1183,6 +1185,7 @@
 
   <!-- 裝備可能詞條獨立浮層：避免被裝備詳情捲軸裁切 -->
   <div id="affix-pool-overlay" aria-live="polite"></div>
+</div></div>
 
   <!-- P5：模擬層只在 Worker 內執行（見 js/worker/sim.worker.js 的 importScripts）。
        主執行緒這裡只留渲染還用得到的部分：
@@ -1197,7 +1200,6 @@
   <script src="js/strings_data.js?v=0ed4109b"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=1.0.1"></script>
-  <script src="js/ui-scale.js?v=1.0.1"></script>
   <script src="js/data.js?v=20261117-pending-011256-merged-v1"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=20261106-ai-integration"></script>
@@ -1227,7 +1229,7 @@
   <script src="js/vfx-celebration.js?v=1.0.0"></script>
   <script src="js/vfx-core.js?v=20261105-celebration-v1"></script>
   <script src="js/vfx-pixi-backend.js?v=20261105-celebration-v1"></script>
-  <script src="js/vfx-runtime.js?v=20261114-oni-relic-sync-v1"></script>
+  <script src="js/vfx-runtime.js?v=20261117-knife-waltz-v1"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.3"></script>
   <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。
@@ -1248,7 +1250,7 @@
   <script src="js/runeword.js?v=20261109-relics"></script>
   <script src="js/skills.js?v=20261106-skill-sfx"></script>
   <!-- 新版主動技能系統（2026-08-13 技能改造第一批）：定義表＋引擎＋純函式說明 -->
-  <script src="js/skills2.js?v=20261112-knife-bounce"></script>
+  <script src="js/skills2.js?v=20261117-knife-waltz-v1"></script>
   <script src="js/elite_data.js?v=1.0.7"></script>
   <script src="js/talents.js?v=20261106-t4-talents"></script>
   <script src="js/player.js?v=20261112-task-chest-relic"></script>
@@ -1258,38 +1260,38 @@
   <script src="js/save.js?v=20261112-task-chest-relic"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261112-intro-music-handoff-v1"></script>
-  <script src="js/ui.js?v=20261113-enemy-dodge"></script>
+  <script src="js/ui.js?v=20261117-fixed-canvas-v1"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
-  <script src="js/ui-relic.js?v=20261110-relic-offline-20-merge"></script>
-  <script src="js/ui-chest.js?v=20261112-chest-indep-v1"></script>
+  <script src="js/ui-relic.js?v=20261117-fixed-canvas-v1"></script>
+  <script src="js/ui-chest.js?v=20261117-fixed-canvas-v1"></script>
   <script src="js/ui-achievements.js?v=20261106-start-menu-v2"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.22"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.3"></script>
   <script src="js/ui-newforge-visuals.js?v=1.0.8"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
-  <script src="js/gm.js?v=20261110-enter-close"></script>
+  <script src="js/gm.js?v=20261117-fixed-canvas-v1"></script>
   <!-- 戰鬥效能診斷（FPS 計數器下方的多行疊層、perfReport()）。只在內部版本才做事，
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- ?? Worker ???????? main.js ????????? -->
   <script src="js/worker/protocol.js?v=20261112-sync-chest-v3"></script>
   <script src="js/storage.js?v=1.0.2"></script>
-  <script src="js/save_origin.js"></script>
+  <script src="js/save_origin.js?v=20261117-fixed-canvas-v1"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
-  <script src="js/tablock.js"></script>
-  <script src="js/intro-data.js?v=20261112-parchment-audio-v1"></script>
+  <script src="js/tablock.js?v=20261117-fixed-canvas-v1"></script>
+  <script src="js/intro-data.js?v=20261117-parchment-replay-bell-tail"></script>
   <script src="js/intro-motion.js?v=1.0.0"></script>
-  <script src="js/intro-scene.js?v=1.0.2"></script>
+  <script src="js/intro-scene.js?v=20261117-fixed-canvas-v1"></script>
   <script src="js/intro-audio.js?v=20261112-intro-music-handoff-v1"></script>
-  <script src="js/intro-player.js?v=20261112-intro-music-handoff-v1"></script>
-  <script src="js/bridge.js?v=20261117-pending-011256-merged-v1"></script>
+  <script src="js/intro-player.js?v=20261117-fixed-canvas-v1"></script>
+  <script src="js/bridge.js?v=20261117-knife-waltz-v1"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
-  <script src="js/recorder.js"></script>
+  <script src="js/recorder.js?v=20261117-fixed-canvas-v1"></script>
   <!-- 卡頓探針。與錄製器同樣是「只在本機／內網加了旗標才做事」的空殼，
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->

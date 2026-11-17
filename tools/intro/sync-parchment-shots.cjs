@@ -57,7 +57,7 @@ const sources = [
 ].map(file => 'extended-shot-three-35.5s/' + file), [
   'SOURCE.md', 'index.html', 'shot-timing.js', 'shot.js', 'shot-cinematics.js',
   'brace-effects.js', 'cloth-motion.js', 'kneel-orbit.js', 'rise-gust.js', 'rise-matte.js', 'rise-scene.js',
-  'build-audio.cjs', 'render-shot-four.cjs', 'restore-master.cjs',
+  'build-audio.cjs', 'render-shot-four.cjs', 'restore-master.cjs', 'export-replay.cjs',
   'assets/brace.png', 'assets/cloth-ribbon.png', 'assets/flare.png', 'assets/kneel.png',
   'assets/kneel-desert.png', 'assets/rise.png', 'assets/rise-desert.png', 'assets/vista.png',
   'assets/shot-four-effects.wav', 'assets/shot-four-mix.wav'
@@ -73,6 +73,8 @@ const exportsByName = {
   'shot-01-02.mp4': 'web/shot-01-02.mp4',
   'shot-01-03.mp4': 'web/shot-01-03.mp4',
   'shot-01-03-sfx.mp3': 'web/shot-01-03-sfx.mp3',
+  'shots-01-04-replay.mp4': 'web/shots-01-04-replay.mp4',
+  'shots-01-04-replay-sfx.mp3': 'web/shots-01-04-replay-sfx.mp3',
   'SOURCE.md': 'SOURCE.md'
 };
 const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');

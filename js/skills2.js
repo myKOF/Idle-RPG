@@ -3507,11 +3507,9 @@ function sgKnifeWaltz(pEnt, st, cfg, waltz) {
     floatSel: cfg.floatSel, lifeSec: Math.max(0.5, Number(waltz.sec) || 0),
     dmgVal: cfg.dmgVal, bodyR: bfMeterPx(1), count: 1,
     rings: [{ r: r, spin: Math.PI * 2 * SG_KNIFE_WALTZ_RPS }],
-    fieldKey: 'knife-waltz', statusId: 'sgKnifeWaltz',
-    /* 沿用虛空斬的圓盤（同樣是「繞著自己轉的一圈刀刃」），屬性改物理＝配色轉為中性；
-       另立新變體會在兩個渲染器都沒有對應分支時整個沒有畫面。 */
-    auraVariant: 'void-disc', hitVariant: 'knife-strike', hitElem: 'phys',
-    vfxGid: 'vacuumslash', vfxTier: 7
+    statusId: 'sgKnifeWaltz',
+    auraVariant: 'knife-waltz', hitVariant: 'knife-strike', hitElem: 'phys',
+    vfxTier: 1, vfxBase: true
   });
 }
 
@@ -6366,12 +6364,12 @@ function sgOrbitEmitVfx(f) {
   var center = (typeof bfPlayerPos === 'function') ? bfPlayerPos() : null;
   var dur = Math.max(0.5, f.until - GT);
   var perRing = Math.max(1, Math.round(f.orbs.length / Math.max(1, f.rings.length)));
-  var detailed = f.gid === 'firehunt';
+  var detailed = f.gid === 'firehunt' || f.auraVariant === 'knife-waltz';
   var age = Math.max(0, GT - f.bornAt);
   if (detailed) f.orbs.forEach(function (orb) { if (!orb.vfxId) orb.vfxId = ++f.orbSeq; });
   /* 伴生的外觀讀觸發子彈：選了超神讀那一列（例：烈陽星環紅色、火神降臨青色），否則讀第三階伴生火狩那一列。
      觸發欄不繼承，所以每個超神列都要自己填；留白＝顯示層沿用母體外觀。 */
-  var companionRoles = detailed
+  var companionRoles = f.gid === 'firehunt'
     ? sgVfxRoles(f.gid, f.companionVfxUlt ? { vfxUlt: f.companionVfxUlt } : { vfxTier: 3 }) : null;
   for (var i = 0; i < f.rings.length; i++) {
     var members = detailed ? f.orbs.filter(function (orb) { return (orb.ringIdx || 0) === i; }).map(function (orb) {

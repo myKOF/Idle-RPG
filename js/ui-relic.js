@@ -95,7 +95,7 @@ function relicCelebrate(relic, before) {
   if (!overlay) {
     overlay = document.createElement('div'); overlay.id = 'relic-celebration'; overlay.className = 'rl-celebration'; overlay.hidden = true;
     overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-modal', 'true'); overlay.setAttribute('aria-labelledby', 'rl-celebration-title');
-    document.body.appendChild(overlay);
+    (document.getElementById('ui-shell') || document.body).appendChild(overlay);
     overlay.addEventListener('click', function (e) { if (e.target === overlay || e.target.closest('[data-relic-dismiss]')) relicCloseCelebration(); });
     overlay.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); relicCloseCelebration(); } if (e.key === 'Tab') { e.preventDefault(); overlay.querySelector('button').focus(); } });
   }

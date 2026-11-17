@@ -49,7 +49,7 @@ body.world-map-open { overflow: hidden; }
 .world-map-overlay[hidden], .world-map-overlay [hidden] { display: none !important; }
 .world-map-overlay { position: fixed; inset: 0; z-index: 15000; display: flex; align-items: center; justify-content: center; padding: 8px; background: rgba(0,0,0,.88); }
 /* 依母圖比例完整顯示，僅預留8px邊界，不讓標題列占去可用高度。 */
-.world-map-dialog { position: relative; width: min(calc(100vw - 16px), calc((100dvh - 16px) * 1672 / 941)); max-height: calc(100dvh - 16px); color: #d8ccb6; box-shadow: 0 18px 70px #000; }
+.world-map-dialog { position: relative; width: min(calc(var(--ui-canvas-width, 100vw) - 16px), calc((var(--ui-canvas-height, 100dvh) - 16px) * 1672 / 941)); max-height: calc(var(--ui-canvas-height, 100dvh) - 16px); color: #d8ccb6; box-shadow: 0 18px 70px #000; }
 .world-map-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .world-map-tools { position: absolute; top: 3%; right: 2%; z-index: 8; display: flex; gap: 8px; align-items: center; }
 .world-map-tools button { white-space: nowrap; background: rgba(18,23,23,.9); }
@@ -75,7 +75,7 @@ body.world-map-open { overflow: hidden; }
 .world-map-hotspot .world-map-level { position: absolute; top: calc(50% + .85cqw); left: 50%; transform: translateX(-50%); }
 .is-locked .world-map-hover-name { color: #9a9a9a; }
 .world-map-hotspot.is-locked { cursor: default; }
-.world-map-marker { position: absolute; pointer-events: none; transform: translate(-50%, -100%); width: clamp(16px, 2.56vw, 33.6px); height: clamp(16px, 2.56vw, 33.6px); filter: drop-shadow(0 2px 3px #000); }
+.world-map-marker { position: absolute; pointer-events: none; transform: translate(-50%, -100%); width: clamp(16px, calc(2.56 * var(--ui-vw, 1vw)), 33.6px); height: clamp(16px, calc(2.56 * var(--ui-vw, 1vw)), 33.6px); filter: drop-shadow(0 2px 3px #000); }
 .world-map-marker-motion { display: block; width: 100%; height: 100%; animation: world-map-bob 2.4s ease-in-out infinite; }
 .world-map-marker img { display: block; width: 100%; height: 100%; object-fit: contain; transform: rotate(180deg); filter: drop-shadow(0 0 1px rgba(210,255,180,.8)) drop-shadow(0 0 3px rgba(140,220,120,.4)); }
 .world-map-marker::after { content: ''; position: absolute; left: 4%; bottom: -12%; width: 92%; height: 25%; box-sizing: border-box; border: 1px solid rgba(185,239,145,.8); border-radius: 50%; background: radial-gradient(ellipse, rgba(175,222,135,.36), rgba(114,172,99,.16) 50%, transparent 75%); box-shadow: 0 0 7px rgba(159,215,127,.48); opacity: .7; animation: world-map-halo 2.4s ease-in-out infinite; }
@@ -139,7 +139,7 @@ body.world-map-open { overflow: hidden; }
 .world-map-overlay button:disabled { opacity: .5; cursor: default; }
 /* 地圖的translate是座標定位，不能被共用disabled主題的transform:none!important清掉。 */
 .world-map-overlay :is(.world-map-hotspot, .world-map-god-portal, .world-map-human-portal):disabled { transform: translate(-50%, -50%) !important; opacity: 1; filter: none; }
-.world-map-overlay[data-world-realm="god"] .world-map-dialog { width: min(calc(100vw - 16px), calc((100dvh - 16px) * 1678 / 937)); }
+.world-map-overlay[data-world-realm="god"] .world-map-dialog { width: min(calc(var(--ui-canvas-width, 100vw) - 16px), calc((var(--ui-canvas-height, 100dvh) - 16px) * 1678 / 937)); }
 .world-map-god { position: relative; width: 100%; aspect-ratio: 1678 / 937; container-type: inline-size; }
 #world-map-god-image { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; }
 .world-map-god-zones { position: absolute; inset: 0; pointer-events: none; }
@@ -187,7 +187,7 @@ body.world-map-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .world-map-transition.is-running .world-map-transit-bloom, .world-map-transition.is-running .world-map-transit-ring { animation: none; opacity: 0; } }
 /* 使用者明確要求所在地提示持續浮動／呼吸；系統減少動態時仍保留此小幅提示。 */
 @media (prefers-reduced-motion: reduce) { .world-map-hover-name { transition: none; } }
-@media (max-width: 720px) {
+@container game-ui (max-width: 720px) {
   .world-map-overlay { padding: 8px; }
   .world-map-tools { gap: 4px; }
   #world-map-close { width: 28px; height: 28px; font-size: 20px; }

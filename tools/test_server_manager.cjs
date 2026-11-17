@@ -6,6 +6,7 @@ const net = require('net');
 const os = require('os');
 const path = require('path');
 const { execFile, spawn } = require('child_process');
+const { pipeline } = require('stream');
 
 const ROOT = path.resolve(__dirname, '..');
 const UI_FILE = path.join(__dirname, 'test_server_manager.html');
@@ -381,11 +382,20 @@ const MIME = {
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
   '.gif': 'image/gif', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
   '.woff': 'font/woff', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
-  '.wav': 'audio/wav', '.ogg': 'audio/ogg'
+  '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.mp4': 'video/mp4'
 };
 
+function byteRange(header, size) {
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(header || '');
+  if (!match || (!match[1] && !match[2])) return null;
+  const [, first, last] = match;
+  const start = first ? Number(first) : Math.max(0, size - Number(last));
+  const end = first && last ? Math.min(Number(last), size - 1) : size - 1;
+  return { start, end };
+}
+
 function createStaticServer(root = ROOT) {
-  return http.createServer((request, response) => {
+  return http.createServer(async (request, response) => {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       response.writeHead(405); response.end(); return;
     }
@@ -397,10 +407,33 @@ function createStaticServer(root = ROOT) {
       if (target !== root && !target.startsWith(rootPrefix)) {
         response.writeHead(403); response.end(); return;
       }
-      const bytes = fs.readFileSync(target);
+      const file = await fs.promises.stat(target);
+      if (!file.isFile()) {
+        response.writeHead(404); response.end(); return;
+      }
       const contentType = MIME[path.extname(target).toLowerCase()] || 'application/octet-stream';
-      response.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-cache', 'Content-Length': bytes.length });
-      if (request.method !== 'HEAD') response.end(bytes); else response.end();
+      const headers = {
+        'Content-Type': contentType, 'Cache-Control': 'no-cache',
+        'Accept-Ranges': 'bytes', 'Content-Length': file.size
+      };
+      const range = request.method === 'GET' && !request.headers['if-range']
+        ? byteRange(request.headers.range, file.size) : null;
+      if (range && range.start > range.end) {
+        response.writeHead(416, { 'Content-Range': 'bytes */' + file.size, 'Accept-Ranges': 'bytes' });
+        response.end();
+        return;
+      }
+      if (range) {
+        headers['Content-Range'] = `bytes ${range.start}-${range.end}/${file.size}`;
+        headers['Content-Length'] = range.end - range.start + 1;
+      }
+      response.writeHead(range ? 206 : 200, headers);
+      if (request.method === 'HEAD') {
+        response.end();
+      } else {
+        // 影片略過或重新定位時，連線關閉即釋放讀檔串流。
+        pipeline(fs.createReadStream(target, range || undefined), response, () => {});
+      }
     } catch (_) {
       response.writeHead(404); response.end();
     }
@@ -560,4 +593,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { createManager, parseArgs, startServer, stopServer, stopExternalServer, readRecords, readAllRecords, discoverLocalServers, isRelevantEndpoint, getSourceRoots, resolveSourceRoot };
+module.exports = { createManager, createStaticServer, parseArgs, startServer, stopServer, stopExternalServer, readRecords, readAllRecords, discoverLocalServers, isRelevantEndpoint, getSourceRoots, resolveSourceRoot };
