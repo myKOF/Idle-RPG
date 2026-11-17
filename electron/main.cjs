@@ -16,6 +16,8 @@
      --windowed       開機不進全螢幕
      --in-process-gpu 開啟 in-process-gpu（Steam Overlay 需要；單獨開會讓畫面空白，見下方說明）
      --profile=<資料夾> 改用另一份 userData（可與正在玩的視窗並存，除錯用）
+     --steam-appid=<編號> 以指定 AppID 接 Steam（開發測試用 480）；正式值寫在 electron/steam-config.json
+     --no-steam-overlay 接 Steam 但不開 Overlay（畫面異常時的退路）
      --smoke=<資料夾> 冒煙測試：隔離的 userData、開機後截圖並輸出檢查結果，然後關閉。
                       預設在背景跑（視窗不顯示），不打擾正在用電腦的人
      --smoke-onscreen 冒煙測試改為顯示視窗，加做螢幕實拍（空白畫面偵測）與全螢幕往返；
@@ -61,7 +63,9 @@ var OPTS = {
   inProcessGpu: !!argValue('in-process-gpu'),
   smoke: typeof argValue('smoke') === 'string' ? path.resolve(argValue('smoke')) : null,
   smokeOnScreen: !!argValue('smoke-onscreen'),
-  profile: typeof argValue('profile') === 'string' ? path.resolve(argValue('profile')) : null
+  profile: typeof argValue('profile') === 'string' ? path.resolve(argValue('profile')) : null,
+  steamAppId: typeof argValue('steam-appid') === 'string' ? Number(argValue('steam-appid')) : 0,
+  steamOverlay: !argValue('no-steam-overlay')
 };
 
 /* ---- userData 位置凍結 ----
@@ -106,7 +110,22 @@ protocol.registerSchemesAsPrivileged([{
   privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true, codeCache: true }
 }]);
 
-if (!OPTS.smoke && !app.requestSingleInstanceLock()) {
+/* Steam（任務 D）：必須在 app ready 之前初始化——Overlay 要加的 GPU 參數只在 ready 前有效。
+   任何失敗都只是「Steam 功能關閉」，遊戲照常啟動。 */
+var Steam = require('./steam.cjs').create({
+  cliAppId: OPTS.steamAppId,
+  configAppId: require('./steam.cjs').readConfig(__dirname).appId,
+  isPackaged: app.isPackaged,
+  dev: OPTS.dev,
+  smoke: !!OPTS.smoke,
+  overlay: OPTS.steamOverlay,
+  log: log
+});
+
+if (Steam.shouldQuitForRestart()) {
+  // 玩家直接點了資料夾裡的 exe：Steam 會用正確的方式重新啟動遊戲，這一份直接結束
+  app.quit();
+} else if (!OPTS.smoke && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', function () {
@@ -337,7 +356,9 @@ function createWindow() {
   return win;
 }
 
-/* ---- 存檔 IPC（任務 C）----
+global.__desktopSteam = function () { return Steam.status(); };
+
+/* ---- 存檔 IPC（任務 C）；Steam IPC（任務 D）也掛在同一個 guard 底下 ----
    存檔資料夾固定為 userData/saves；Steam Auto-Cloud 同步這裡的 *.json。
    只回應主視窗的頁面，而且只在頁面停在 app://game（或 --url 指定的本機內測服）時；
    檔名白名單與原子寫入在 electron/save-files.cjs。 */
@@ -372,6 +393,8 @@ function setupSaveIpc() {
     });
   }));
   ipcMain.handle('saves:remove', guard(function (name) { return SaveFiles.remove(SAVES_DIR, name); }));
+  ipcMain.handle('steam:status', guard(function () { return Steam.status(); }));
+  ipcMain.handle('steam:activate-achievements', guard(function (names) { return Steam.activateAchievements(names); }));
   ipcMain.handle('saves:open-folder', guard(function () {
     fs.mkdirSync(SAVES_DIR, { recursive: true });
     return shell.openPath(SAVES_DIR).then(function (err) { if (err) throw new Error(err); return true; });

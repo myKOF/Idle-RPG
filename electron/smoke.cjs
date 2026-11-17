@@ -172,6 +172,8 @@ function run(win, ctx) {
     report.finishedAt = new Date().toISOString();
     var stats = global.__desktopRequestStats;
     if (stats) report.notFound = stats.notFound.slice();
+    // 任務 D：Steam 狀態（沒接 Steam 不算失敗，只記錄原因）
+    try { report.steam = global.__desktopSteam ? global.__desktopSteam() : null; } catch (e) { report.steam = { error: String(e) }; }
     // 任務 C：存檔要落在 userData/saves（Steam Auto-Cloud 同步的資料夾）
     try {
       report.saveFiles = fs.readdirSync(global.__desktopSavesDir).sort();

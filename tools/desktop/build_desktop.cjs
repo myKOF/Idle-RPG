@@ -62,6 +62,22 @@ function collect() {
 
 function rmrf(dir) { fs.rmSync(dir, { recursive: true, force: true }); }
 
+/* steamworks.js（任務 D）：只放 Windows x64 需要的檔案到 electron/vendor/steamworks.js/。
+   不走 electron-builder 的 node_modules 收集：它會去追 steamworks.js 宣告的 @types/node 相依，
+   而且會把 linux／mac 的原生檔一起帶上。electron/steam.cjs 找不到 node_modules 時改讀這裡。 */
+var STEAMWORKS_FILES = ['index.js', 'package.json', 'LICENSE', 'dist/win64/steamworksjs.win32-x64-msvc.node', 'dist/win64/steam_api64.dll'];
+function stageSteamworks() {
+  var src = path.join(REPO, 'node_modules', 'steamworks.js');
+  var dst = path.join(STAGE, 'electron', 'vendor', 'steamworks.js');
+  STEAMWORKS_FILES.forEach(function (rel) {
+    var from = path.join(src, rel);
+    if (!fs.existsSync(from)) throw new Error('找不到 ' + from + '（先 npm install）');
+    var to = path.join(dst, rel);
+    fs.mkdirSync(path.dirname(to), { recursive: true });
+    fs.copyFileSync(from, to);
+  });
+}
+
 function stage(list) {
   rmrf(STAGE);
   fs.mkdirSync(STAGE, { recursive: true });
@@ -72,6 +88,7 @@ function stage(list) {
     fs.mkdirSync(path.dirname(dst), { recursive: true });
     try { fs.linkSync(src, dst); linked++; } catch (e) { fs.copyFileSync(src, dst); copied++; }
   });
+  stageSteamworks();
   // 玩家資料夾裡的 package.json：只留 Electron 需要的欄位
   fs.writeFileSync(path.join(STAGE, 'package.json'), JSON.stringify({
     name: ROOT_PKG.name,

@@ -26,6 +26,13 @@ electron.contextBridge.exposeInMainWorld('ApexHost', {
   openSaveFolder: function () { return ipc.invoke('saves:open-folder'); },
   /* 存檔檔案：js/desktop-save-dir.js 把它包成 File System Access 的目錄把手。
      檔名限單層 *.json（主行程再驗一次）；寫入是原子的（暫存檔＋rename）。 */
+  /* Steam（任務 D）：沒接 Steam 時一樣存在，status().enabled 為 false、解鎖成就回傳空結果 */
+  steam: {
+    status: function () { return ipc.invoke('steam:status'); },
+    activateAchievements: function (names) {
+      return ipc.invoke('steam:activate-achievements', Array.isArray(names) ? names.map(String) : []);
+    }
+  },
   saves: {
     list: function () { return ipc.invoke('saves:list'); },
     read: function (name) { return ipc.invoke('saves:read', String(name)); },
