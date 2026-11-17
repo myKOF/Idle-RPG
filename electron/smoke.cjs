@@ -164,6 +164,12 @@ function run(win, ctx) {
     if (report.fullscreenOn && !(report.fullscreenOn.page && report.fullscreenOn.window)) fails.push('全螢幕無法進入');
     if (report.fullscreenOn && !report.fullscreenOn.coversDisplay) fails.push('全螢幕內容未覆蓋整個螢幕');
     if (report.fullscreenOff && (report.fullscreenOff.page || report.fullscreenOff.window)) fails.push('全螢幕無法離開');
+    if (report.maximizeOn && !(report.maximizeOn.page && report.maximizeOn.window && report.maximizeOn.coversDisplay)) {
+      fails.push('Windows 最大化未進入原生全螢幕');
+    }
+    if (report.maximizeOff && (report.maximizeOff.page || report.maximizeOff.window || !report.maximizeOff.restored)) {
+      fails.push('離開全螢幕後未還原原視窗');
+    }
     if (report.pageErrors.length) fails.push('頁面錯誤 ' + report.pageErrors.length + ' 筆');
     // 打包版少檔最直接的訊號：app:// 回了 404（開發模式下也應該是 0）
     if (report.notFound && report.notFound.length) fails.push('找不到檔案 ' + report.notFound.length + ' 個');
@@ -230,31 +236,41 @@ function run(win, ctx) {
       }).catch(function () {}).then(finish);
     });
 
-    function onScreenChecks(screen) {
+    async function onScreenChecks(screen) {
       report.screen = screen;
       step('on-screen', screen);
-      // F11 同時切換網頁與原生視窗，內容區域應覆蓋整個螢幕。
       pressF11();
-      return sleep(1500).then(function () {
-        var display = require('electron').screen.getDisplayMatching(win.getBounds()).bounds;
-        var content = win.getContentBounds();
-        report.fullscreenOn = {
-          page: null,
-          window: win.isFullScreen(),
-          coversDisplay: Object.keys(display).every(function (key) { return content[key] === display[key]; })
-        };
-        return evalJs('!!document.fullscreenElement');
-      }).then(function (pageFs) {
-        report.fullscreenOn.page = pageFs;
+      report.fullscreenOn = await readFullscreen();
+      pressF11();
+      report.fullscreenOff = await readFullscreen();
+      step('fullscreen', { on: report.fullscreenOn, off: report.fullscreenOff });
+
+      if (process.platform === 'win32') {
+        var normalBounds = win.getBounds();
+        win.focus();
+        win.maximize();
+        report.maximizeOn = await readFullscreen();
         pressF11();
-        return sleep(1500);
-      }).then(function () {
-        return evalJs('!!document.fullscreenElement');
-      }).then(function (pageFs) {
-        report.fullscreenOff = { page: pageFs, window: win.isFullScreen() };
-        step('fullscreen', { on: report.fullscreenOn, off: report.fullscreenOff });
-        return ctx.flushSave(win);
-      });
+        report.maximizeOff = await readFullscreen();
+        report.maximizeOff.restored = !win.isMaximized() && sameBounds(win.getBounds(), normalBounds);
+        step('maximize-fullscreen', { on: report.maximizeOn, off: report.maximizeOff });
+      }
+      return ctx.flushSave(win);
+    }
+
+    function sameBounds(actual, expected) {
+      return Object.keys(expected).every(function (key) { return actual[key] === expected[key]; });
+    }
+
+    async function readFullscreen() {
+      await sleep(1500);
+      var page = await evalJs('!!document.fullscreenElement');
+      var display = require('electron').screen.getDisplayMatching(win.getBounds()).bounds;
+      return {
+        page: page,
+        window: win.isFullScreen(),
+        coversDisplay: sameBounds(win.getContentBounds(), display)
+      };
     }
 
     function pressF11() {

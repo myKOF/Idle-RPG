@@ -91,6 +91,8 @@ npm run desktop -- --dev --url=http://127.0.0.1:8124/   # 載本機內測服（G
 npm run desktop:smoke    # 冒煙測試，結果在 tmp/desktop-smoke/
 ```
 
+Windows 標題列的「最大化」會進入原生全螢幕，退出時恢復原視窗的尺寸與位置。
+
 實測結果（冒煙測試連跑兩次，第二次走「繼續」）：Worker 開機、Pixi 戰場、VFX Preset 302 份、IndexedDB、`navigator.locks`、fetch、影片 Range 206 均正常；
 `isInternalServer()`／`isGMHost()` 皆為 false；全螢幕進出正常；關窗存檔回 ok，重開後「繼續」出現；頁面錯誤 0。
 

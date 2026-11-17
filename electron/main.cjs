@@ -228,7 +228,7 @@ function setupPermissions(ses) {
   });
 }
 
-/* ---- 全螢幕：開機與快捷鍵沿用遊戲的 HTML 全螢幕 ----
+/* ---- 全螢幕：開機、快捷鍵與 Windows 最大化沿用遊戲的 HTML 全螢幕 ----
    requestFullscreen 需要使用者手勢，executeJavaScript 的 userGesture 參數就是為此存在。
    這樣遊戲內的全螢幕按鈕、Esc 離開、按鈕提示文字都與網頁版一致。 */
 var FULLSCREEN_ON = 'document.fullscreenElement ? true : document.documentElement.requestFullscreen().then(function(){return true;},function(){return false;})';
@@ -299,8 +299,17 @@ function createWindow() {
     win.show();
   });
 
+  if (process.platform === 'win32') {
+    win.on('maximize', function () {
+      if (win.isMaximized() && !win.isFullScreen()) runInPage(win, FULLSCREEN_ON, true);
+    });
+  }
+
   win.on('enter-html-full-screen', function () {
-    if (!win.isFullScreen()) win.setFullScreen(true);
+    if (win.isFullScreen()) return;
+    // 先回到原視窗，讓離開全螢幕時還原原本的尺寸與位置。
+    if (process.platform === 'win32' && win.isMaximized()) win.unmaximize();
+    win.setFullScreen(true);
   });
   win.on('leave-html-full-screen', function () {
     // 重新整理會清除頁面的全螢幕狀態。保留原生全螢幕，待新頁就緒再同步。
