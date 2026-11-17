@@ -10,50 +10,60 @@ const scaler = fs.readFileSync('js/ui-scale.js', 'utf8');
 function mountScaler(width, height) {
   const properties = {};
   const listeners = {};
-  const shell = { style: {} };
   const stage = { style: { setProperty(key, value) { properties[key] = value; } } };
   const document = {
-    readyState: 'complete',
     documentElement: { clientWidth: width, clientHeight: height },
-    getElementById(id) { return { 'ui-stage': stage, 'ui-shell': shell }[id] || null; },
+    getElementById(id) { return id === 'ui-stage' ? stage : null; },
     addEventListener(type, callback) { listeners[type] = callback; }
   };
   const window = { innerWidth: width, innerHeight: height, addEventListener(type, callback) { listeners[type] = callback; } };
   vm.runInNewContext(scaler, { document, window });
-  return { document, properties, listeners, shell };
+  return { document, properties, listeners, canvas: window.UiCanvas };
 }
 
-function assertFillsViewport(ui, width, height) {
+function closeTo(actual, expected) {
+  assert.ok(Math.abs(actual - expected) < 0.001, `${actual} should be ${expected}`);
+}
+
+function assertFitsViewport(ui, width, height) {
+  const { canvas, properties } = ui;
   const scale = Number(ui.properties['--ui-scale']);
-  assert.ok(scale > 0 && Number.isFinite(scale));
-  assert.ok(Math.abs(parseFloat(ui.shell.style.width) * scale - width) < 0.001, 'canvas fills viewport width');
-  assert.ok(Math.abs(parseFloat(ui.shell.style.height) * scale - height) < 0.001, 'canvas fills viewport height');
-  assert.equal(parseFloat(ui.properties['--ui-canvas-height']), parseFloat(ui.shell.style.height));
-  assert.match(ui.shell.style.transform, /translate\(-50%, -50%\) scale\(/);
+  assert.equal(scale, Math.min(width / 1920, height / 900));
+  assert.equal(canvas.scale, scale);
+  assert.equal(properties['--ui-canvas-width'], '1920px');
+  assert.equal(properties['--ui-canvas-height'], '900px');
+  const topLeft = canvas.point(0, 0);
+  const bottomRight = canvas.point(width, height);
+  assert.ok(topLeft.x <= 0.001 && topLeft.y <= 0.001);
+  closeTo(topLeft.x, 1920 - bottomRight.x);
+  closeTo(topLeft.y, 900 - bottomRight.y);
+  closeTo(Math.max(topLeft.x, topLeft.y), 0);
 }
 
-test('UI retains one reference-width layout and gives extra height to the game panels', () => {
+test('the fixed layout is scaled over a black stage and clipped to its frame', () => {
+  assert.match(css, /#ui-stage\s*\{[^}]*background:\s*#000/);
+  assert.match(css, /#ui-shell\s*\{[^}]*translate\(-50%, -50%\) scale\(var\(--ui-scale, 1\)\)[^}]*overflow:\s*clip/);
   assert.match(css, /#ui-shell #game-layout\s*\{[\s\S]*flex-direction:\s*row\s*!important/);
   assert.match(skin, /height:\s*calc\(var\(--ui-canvas-height, 900px\) - 50px\)\s*!important/);
-  assert.match(skin, /max-width:\s*none\s*!important/);
 });
 
-for (const [width, height] of [[1920, 1080], [1920, 900], [1536, 864], [1280, 720], [960, 720], [3440, 1440], [390, 844]]) {
-  test(`canvas fills ${width}x${height} without letterboxing or nonuniform scaling`, () => {
-    const ui = mountScaler(width, height);
-    assertFillsViewport(ui, width, height);
-    assert.equal(Number(ui.properties['--ui-scale']), Math.min(width / 1920, height / 900));
+for (const [width, height] of [[1919, 911], [1569, 509], [1920, 900], [1280, 720], [3440, 1440], [390, 844]]) {
+  test(`canvas fits and centers within ${width}x${height}`, () => {
+    assertFitsViewport(mountScaler(width, height), width, height);
   });
 }
 
-test('fullscreen and resize both refresh the canvas extent', () => {
+test('fullscreen and resize refresh the scale and anchor coordinates', () => {
   const ui = mountScaler(1280, 720);
-  ui.document.documentElement.clientWidth = 1920;
-  ui.document.documentElement.clientHeight = 1080;
+  ui.document.documentElement.clientWidth = 1200;
+  ui.document.documentElement.clientHeight = 450;
   ui.listeners.fullscreenchange();
-  assertFillsViewport(ui, 1920, 1080);
+  assertFitsViewport(ui, 1200, 450);
+  const rect = ui.canvas.rect({ getBoundingClientRect: () => ({ left: 130, top: 20, right: 160, bottom: 60, width: 30, height: 40 }) });
+  assert.deepEqual({ ...rect }, { left: 20, top: 40, right: 80, bottom: 120, width: 60, height: 80 });
   ui.document.documentElement.clientWidth = 960;
-  ui.document.documentElement.clientHeight = 720;
+  ui.document.documentElement.clientHeight = 650;
   ui.listeners.resize();
-  assertFillsViewport(ui, 960, 720);
+  assertFitsViewport(ui, 960, 650);
+  assert.deepEqual({ ...ui.canvas.point(130, 140) }, { x: 260, y: 80 });
 });

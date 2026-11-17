@@ -21,7 +21,8 @@ function load(opts) {
       tag, className: '', style: {}, children: [], attrs: {}, textContent: '', src: '',
       appendChild(c) { c.parentNode = e; e.children.push(c); return c; },
       setAttribute(k, v) { e.attrs[k] = v; },
-      getBoundingClientRect() { return opts.rect || { width: 1280, height: 720 }; },
+      clientWidth: opts.rect ? opts.rect.width : 1280,
+      clientHeight: opts.rect ? opts.rect.height : 720,
       decode() { return Promise.resolve(); }
     };
     return e;
@@ -169,7 +170,9 @@ test('尺寸：以圖層實際大小 cover 縮放，尺寸改變時重算；disp
   assert.equal(fit.style.transform, 'translate(-50%, -50%) scale(1)', '大小為 0 時退回設計尺寸，不縮成 0');
   assert.equal(env.observers.length, 1);
   assert.equal(env.observers[0].observed[0], host);
-  host.getBoundingClientRect = () => ({ width: 3840, height: 1080 });
+  host.clientWidth = 3840;
+  host.clientHeight = 1080;
+  host.getBoundingClientRect = () => ({ width: 1920, height: 540 });
   env.observers[0].fn();
   assert.equal(fit.style.transform, 'translate(-50%, -50%) scale(2)', '超寬螢幕取寬度比例');
   scene.dispose();

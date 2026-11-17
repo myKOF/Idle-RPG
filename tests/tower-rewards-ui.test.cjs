@@ -118,6 +118,7 @@ test('塔層獎勵和BOSS提示使用相同邀請券機率，零機率時隱藏'
   c.uiHeaderPanelSnapshot = () => ({});
   c.uiTowerPanelSnapshot = () => snapshot;
   c.towerViewActive = () => true;
+  vm.runInContext(ui.slice(ui.indexOf('function positionSkTooltip('), ui.indexOf('function showSkillTooltipHTML(')), c);
   const start = ui.indexOf('function showEnemyTooltip(');
   vm.runInContext(ui.slice(start, ui.indexOf('\n}', start) + 2), c);
   for (const id of ['btn-boss-tip', 'btn-tower-result-boss-tip', 'btn-enemy-tip']) {

@@ -114,9 +114,8 @@ var IntroScene = (function () {
     /* cover 縮放：以圖層本身（滿版）的實際大小為準。用 ResizeObserver 而不是只在起播時算一次：
        頁面在背景或尺寸為 0 時起播，之後變成可見也要重算，否則整個場景會縮成 0。 */
     function refit() {
-      var rect = host.getBoundingClientRect ? host.getBoundingClientRect() : null;
-      var vw = (rect && rect.width) || (typeof window !== 'undefined' && window.innerWidth) || DESIGN_W;
-      var vh = (rect && rect.height) || (typeof window !== 'undefined' && window.innerHeight) || DESIGN_H;
+      var vw = host.clientWidth || (typeof window !== 'undefined' && window.innerWidth) || DESIGN_W;
+      var vh = host.clientHeight || (typeof window !== 'undefined' && window.innerHeight) || DESIGN_H;
       var k = Math.max(vw / DESIGN_W, vh / DESIGN_H);
       fit.style.transform = 'translate(-50%, -50%) scale(' + k + ')';
     }

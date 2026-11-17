@@ -262,7 +262,7 @@ function showWorkerDeadNotice(event) {
   card.appendChild(reload);
   card.appendChild(safeReload);
   overlay.appendChild(card);
-  document.body.appendChild(overlay);
+  ($id('ui-shell') || document.body).appendChild(overlay);
   reload.focus();
 }
 
@@ -295,7 +295,7 @@ function showWorkerRestartNotice(text, recovered) {
     notice.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);' +
       'z-index:100001;padding:10px 18px;border-radius:999px;background:rgba(17,24,39,.94);' +
       'color:#f9fafb;box-shadow:0 6px 24px rgba(0,0,0,.3);pointer-events:none;transition:opacity .35s ease;';
-    document.body.appendChild(notice);
+    ($id('ui-shell') || document.body).appendChild(notice);
   }
   notice.style.opacity = '1';
   notice.textContent = text;
@@ -357,7 +357,7 @@ function updateWorkerSafeModeMarker() {
     marker.textContent = STR(2033);
     marker.style.cssText = 'position:fixed;top:8px;right:8px;z-index:99999;padding:4px 9px;' +
       'border-radius:5px;background:#92400e;color:#fffbeb;font-size:12px;pointer-events:none;';
-    document.body.appendChild(marker);
+    ($id('ui-shell') || document.body).appendChild(marker);
   }
 }
 
@@ -6324,7 +6324,7 @@ function updateSelectionUI() {
 }
 
 function showFloatingText(btn, text, color) {
-  var rect = btn.getBoundingClientRect();
+  var rect = window.UiCanvas.rect(btn);
   var el = document.createElement('div');
   el.textContent = text;
   el.className = 'game-floating-text';
@@ -6338,7 +6338,7 @@ function showFloatingText(btn, text, color) {
   el.style.pointerEvents = 'none';
   el.style.zIndex = '9999';
   el.style.transition = 'all 0.8s ease-out';
-  document.body.appendChild(el);
+  $id('ui-shell').appendChild(el);
 
   el.offsetHeight; // force reflow
 
@@ -9436,13 +9436,19 @@ function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
 
 
 /* 提示框定位（技能／新版技能群組共用）：優先顯示在圖示右側，貼邊時翻到左側/上方。 */
-function positionSkTooltip(tip, anchorEl) {
-  var r = anchorEl.getBoundingClientRect();
+function positionSkTooltip(tip, anchorEl, placement) {
+  var canvas = window.UiCanvas;
+  var r = canvas ? canvas.rect(anchorEl) : anchorEl.getBoundingClientRect();
+  canvas = canvas || { width: window.innerWidth, height: window.innerHeight };
   var tw = tip.offsetWidth, th = tip.offsetHeight;
   var x = r.right + 10, y = r.top;
-  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
-  if (x < 8) x = 8;
-  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+  if (placement === 'stage-left' || (placement !== 'stage-right' && x + tw > canvas.width - 8)) x = r.left - tw - 10;
+  if (placement === 'stage-left' || placement === 'stage-right') {
+    y = r.bottom + 8;
+    if (y + th > canvas.height - 8) y = r.top - th - 8;
+  }
+  x = Math.max(8, Math.min(x, canvas.width - tw - 8));
+  if (y + th > canvas.height - 8) y = canvas.height - th - 8;
   if (y < 8) y = 8;
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
@@ -9611,15 +9617,7 @@ function showTalentTooltip(ref, anchorEl) {
   tip.innerHTML = h;
   tip.style.display = 'block';
   UI.tooltipAnchor = anchorEl;
-  var r = anchorEl.getBoundingClientRect();
-  var tw = tip.offsetWidth, th = tip.offsetHeight;
-  var x = r.right + 10, y = r.top;
-  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
-  if (x < 8) x = 8;
-  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
-  if (y < 8) y = 8;
-  tip.style.left = x + 'px';
-  tip.style.top = y + 'px';
+  positionSkTooltip(tip, anchorEl);
 }
 function getAnchorRemainText(anchorEl) {
   if (!anchorEl || !anchorEl.getAttribute) return '';
@@ -9652,27 +9650,7 @@ function showStatTooltip(title, desc, anchorEl) {
   UI.tooltipAnchor = anchorEl;
   tip.innerHTML = h;
   tip.style.display = 'block';
-  var r = anchorEl.getBoundingClientRect();
-  var tw = tip.offsetWidth, th = tip.offsetHeight;
-  var placement = anchorEl.getAttribute('data-tip-placement');
-  var x = r.right + 10, y = r.top;
-  if (placement === 'stage-left') {
-    x = r.left - tw - 10;
-    y = r.bottom + 8;
-    if (y + th > window.innerHeight - 8) y = r.top - th - 8;
-  } else if (placement === 'stage-right') {
-    x = r.right + 10;
-    y = r.bottom + 8;
-    if (y + th > window.innerHeight - 8) y = r.top - th - 8;
-  } else if (x + tw > window.innerWidth - 8) {
-    x = r.left - tw - 10;
-  }
-  if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
-  if (x < 8) x = 8;
-  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
-  if (y < 8) y = 8;
-  tip.style.left = x + 'px';
-  tip.style.top = y + 'px';
+  positionSkTooltip(tip, anchorEl, anchorEl.getAttribute('data-tip-placement'));
   if (remainText) {
     startBattleSkillBarAnimation();
   }
@@ -9684,15 +9662,7 @@ function showBuffTooltip(anchorEl) {
   tip.innerHTML = '<div class="skt-name">' + STR(826) + '</div>' +
     '<div class="skt-desc" style="text-align:left;">' + buffTooltipDesc() + '</div>';
   tip.style.display = 'block';
-  var r = anchorEl.getBoundingClientRect();
-  var tw = tip.offsetWidth, th = tip.offsetHeight;
-  var x = r.right + 10, y = r.top;
-  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
-  if (x < 8) x = 8;
-  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
-  if (y < 8) y = 8;
-  tip.style.left = x + 'px';
-  tip.style.top = y + 'px';
+  positionSkTooltip(tip, anchorEl);
 }
 function showEnemyBuffTooltip(anchorEl) {
   var tip = $id('sk-tooltip');
@@ -9701,15 +9671,7 @@ function showEnemyBuffTooltip(anchorEl) {
   tip.innerHTML = '<div class="skt-name">' + STR(641) + '</div>' +
     '<div class="skt-desc" style="text-align:left;">' + enemyBuffTooltipDesc(anchorEl) + '</div>';
   tip.style.display = 'block';
-  var r = anchorEl.getBoundingClientRect();
-  var tw = tip.offsetWidth, th = tip.offsetHeight;
-  var x = r.right + 10, y = r.top;
-  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
-  if (x < 8) x = 8;
-  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
-  if (y < 8) y = 8;
-  tip.style.left = x + 'px';
-  tip.style.top = y + 'px';
+  positionSkTooltip(tip, anchorEl);
 }
 /* 資源提示要跟著數字更新，但**只更新內容、不重新定位**。
 
@@ -9816,15 +9778,7 @@ function showItemTooltip(it, anchorEl, opts) {
 
   tip.innerHTML = h;
   tip.style.display = 'block';
-  var r = anchorEl.getBoundingClientRect();
-  var tw = tip.offsetWidth, th = tip.offsetHeight;
-  var x = r.right + 10, y = r.top;
-  if (x + tw > window.innerWidth - 8) x = r.left - tw - 10;
-  if (x < 8) x = 8;
-  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
-  if (y < 8) y = 8;
-  tip.style.left = x + 'px';
-  tip.style.top = y + 'px';
+  positionSkTooltip(tip, anchorEl);
 }
 /* 敵人提示的「攻擊距離／移動速度」兩行（NPC 表欄位；座標單位 ÷ 10＝米）。
    沒有這兩項的敵人（高塔 BOSS、表格留白）不顯示，避免出現一個不是實際生效的數字。 */
@@ -9955,15 +9909,7 @@ function showEnemyTooltip(anchorEl) {
 
   tip.innerHTML = dropTip;
   tip.style.display = 'block';
-  var rRect = anchorEl.getBoundingClientRect();
-  var tw = tip.offsetWidth, th = tip.offsetHeight;
-  var x = rRect.right + 10, y = rRect.top;
-  if (x + tw > window.innerWidth - 8) x = rRect.left - tw - 10;
-  if (x < 8) x = 8;
-  if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
-  if (y < 8) y = 8;
-  tip.style.left = x + 'px';
-  tip.style.top = y + 'px';
+  positionSkTooltip(tip, anchorEl);
 }
 
 function hideTooltip() {
@@ -9987,16 +9933,17 @@ function hideAffixPool() {
 function positionAffixPool(anchorEl) {
   var overlay = $id('affix-pool-overlay');
   if (!overlay || !anchorEl) return;
-  var r = anchorEl.getBoundingClientRect();
+  var canvas = window.UiCanvas;
+  var r = canvas.rect(anchorEl);
   var tw = overlay.offsetWidth;
   var x = r.right - tw;
   if (x < 8) x = r.left;
-  if (x + tw > window.innerWidth - 8) x = window.innerWidth - tw - 8;
+  if (x + tw > canvas.width - 8) x = canvas.width - tw - 8;
   if (x < 8) x = 8;
 
   var y = r.bottom + 8;
   var bottomMargin = 8;
-  var spaceBelow = window.innerHeight - y - bottomMargin;
+  var spaceBelow = canvas.height - y - bottomMargin;
   var spaceAbove = r.top - 8 - 8;
 
   var maxH;
@@ -13516,16 +13463,17 @@ var summaryBoxStartY = 0;
 
 function ensureSummaryBoxPosition(box) {
   if (!box) return;
+  var canvas = window.UiCanvas;
   var boxW = box.offsetWidth || 880;
   var boxH = box.offsetHeight || 500;
   if (summaryBoxPos.x === null || summaryBoxPos.y === null) {
-    var initX = Math.max(12, Math.min(window.innerWidth - boxW - 12, Math.round((window.innerWidth - boxW) / 2)));
-    var initY = Math.max(12, Math.min(window.innerHeight - boxH - 12, Math.round((window.innerHeight - boxH) / 2)));
+    var initX = Math.max(12, Math.min(canvas.width - boxW - 12, Math.round((canvas.width - boxW) / 2)));
+    var initY = Math.max(12, Math.min(canvas.height - boxH - 12, Math.round((canvas.height - boxH) / 2)));
     summaryBoxPos.x = initX;
     summaryBoxPos.y = initY;
   } else {
-    summaryBoxPos.x = Math.max(0, Math.min(Math.max(0, window.innerWidth - boxW), summaryBoxPos.x));
-    summaryBoxPos.y = Math.max(0, Math.min(Math.max(0, window.innerHeight - boxH), summaryBoxPos.y));
+    summaryBoxPos.x = Math.max(0, Math.min(Math.max(0, canvas.width - boxW), summaryBoxPos.x));
+    summaryBoxPos.y = Math.max(0, Math.min(Math.max(0, canvas.height - boxH), summaryBoxPos.y));
   }
   box.style.position = 'fixed';
   box.style.margin = '0';
@@ -13544,9 +13492,10 @@ function initSummaryModalDrag() {
     if (target.closest('button, input, select, textarea, a, #stats-scroll, .modal-x, .btn')) return;
 
     isSummaryDragging = true;
-    summaryDragStartX = e.clientX;
-    summaryDragStartY = e.clientY;
-    var rect = box.getBoundingClientRect();
+    var point = window.UiCanvas.point(e.clientX, e.clientY);
+    summaryDragStartX = point.x;
+    summaryDragStartY = point.y;
+    var rect = window.UiCanvas.rect(box);
     summaryBoxStartX = rect.left;
     summaryBoxStartY = rect.top;
 
@@ -13567,17 +13516,19 @@ function initSummaryModalDrag() {
 
   box.addEventListener('pointermove', function (e) {
     if (!isSummaryDragging) return;
-    var dx = e.clientX - summaryDragStartX;
-    var dy = e.clientY - summaryDragStartY;
+    var canvas = window.UiCanvas;
+    var point = canvas.point(e.clientX, e.clientY);
+    var dx = point.x - summaryDragStartX;
+    var dy = point.y - summaryDragStartY;
     var newX = summaryBoxStartX + dx;
     var newY = summaryBoxStartY + dy;
 
     var boxW = box.offsetWidth || 880;
     var boxH = box.offsetHeight || 500;
     var minX = 0;
-    var maxX = Math.max(0, window.innerWidth - boxW);
+    var maxX = Math.max(0, canvas.width - boxW);
     var minY = 0;
-    var maxY = Math.max(0, window.innerHeight - boxH);
+    var maxY = Math.max(0, canvas.height - boxH);
 
     var clampedX = Math.max(minX, Math.min(maxX, newX));
     var clampedY = Math.max(minY, Math.min(maxY, newY));
@@ -13716,7 +13667,9 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
   }
 
   // 2. 確定起點 (Start Box)
-  var srcRect = sourceEl.getBoundingClientRect();
+  var canvas = window.UiCanvas;
+  var shell = $id('ui-shell');
+  var srcRect = canvas.rect(sourceEl);
   var startX = srcRect.left + srcRect.width / 2;
   var startY = srcRect.top + srcRect.height / 2;
 
@@ -13759,10 +13712,10 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
       break;
   }
 
-  var endX = window.innerWidth / 2;
+  var endX = canvas.width / 2;
   var endY = 30;
   if (destEl && typeof destEl.getBoundingClientRect === 'function') {
-    var destRect = destEl.getBoundingClientRect();
+    var destRect = canvas.rect(destEl);
     if (destRect.width > 0 && destRect.height > 0) {
       endX = destRect.left + destRect.width / 2;
       endY = destRect.top + destRect.height / 2;
@@ -13775,7 +13728,7 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
   flyEl.innerHTML = iconHtml;
   flyEl.style.left = startX + 'px';
   flyEl.style.top = startY + 'px';
-  document.body.appendChild(flyEl);
+  shell.appendChild(flyEl);
 
   // 曲線控制點 (Control Point for Quadratic Bezier)
   var cpX = (startX + endX) / 2 + (Math.random() - 0.5) * 120;
@@ -13809,7 +13762,7 @@ function spawnQuestRewardFlyFx(rewardType, sourceEl) {
       p.style.height = pSize + 'px';
       p.style.left = (curX + (Math.random() - 0.5) * 8) + 'px';
       p.style.top = (curY + (Math.random() - 0.5) * 8) + 'px';
-      document.body.appendChild(p);
+      shell.appendChild(p);
       UI_GAME_TIMING.setTimeout(function () {
         if (p && p.parentNode) p.parentNode.removeChild(p);
       }, 450);
