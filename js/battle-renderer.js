@@ -1874,6 +1874,20 @@ var BattleRenderer = (function () {
      整張圖的高度不等於人的高度；受擊點要對準人，所以掃一次像素，結果依貼圖快取。
      讀不到像素（跨來源、尚未載入）回 null，呼叫端退回公式。 */
   var contentRowsCache = {};
+  function readContentRows(ctx, w, h) {
+    var d = ctx.getImageData(0, 0, w, h).data;
+    var top = -1, bot = -1, left = w, right = -1;
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        if (d[(y * w + x) * 4 + 3] <= 40) continue;
+        if (top < 0) top = y;
+        bot = y;
+        if (x < left) left = x;
+        if (x > right) right = x;
+      }
+    }
+    return top < 0 ? null : { top: top, bot: bot + 1, left: left, right: right + 1 };
+  }
   function textureContentRows(tex) {
     if (!tex || !tex.source || !tex.frame) return null;
     var fr = tex.frame;
@@ -1886,21 +1900,9 @@ var BattleRenderer = (function () {
         var c = document.createElement('canvas');
         c.width = fr.width; c.height = fr.height;
         var cx = c.getContext('2d', { willReadFrequently: true });
-        cx.drawImage(res, fr.x, fr.y, fr.width, fr.height, 0, 0, fr.width, fr.height);
-        var d = cx.getImageData(0, 0, c.width, c.height).data;
-        var top = -1, bot = -1, left = c.width, right = -1;
-        for (var y = 0; y < c.height; y++) {
-          var hit = false;
-          for (var x = 0; x < c.width; x++) {
-            if (d[(y * c.width + x) * 4 + 3] > 40) {
-              hit = true;
-              if (x < left) left = x;
-              if (x > right) right = x;
-            }
-          }
-          if (hit) { if (top < 0) top = y; bot = y; }
-        }
-        if (top >= 0) rows = { top: top, bot: bot + 1, left: left, right: right + 1 };
+        var r = tex.source.resolution || 1;
+        cx.drawImage(res, fr.x * r, fr.y * r, fr.width * r, fr.height * r, 0, 0, c.width, c.height);
+        rows = readContentRows(cx, c.width, c.height);
       }
     } catch (e) { rows = null; }
     contentRowsCache[key] = rows;
@@ -1919,19 +1921,67 @@ var BattleRenderer = (function () {
     var c = (anchorPx - (rows.top + rows.bot) / 2) * k;
     return (isFinite(h) && h > 0 && isFinite(c) && c > 0) ? { height: h, center: c } : null;
   }
-  /* 本體目前這一幀的可見範圍（畫面像素）：w／h＝寬高、cx／cy＝中心相對腳底的右／上偏移。
-     狀態光環（護盾罩）用它貼合圖像，而不是依體型倍率猜；量不到回 null。 */
+  /* 3D 持續重繪同一張貼圖。只在護罩需要時量測，每個模型的同一畫格共用一次結果。 */
+  var npc3dContentContext = null;
+  var npc3dContentCache = new WeakMap();
+  function npc3dContentRows(body) {
+    var cached = npc3dContentCache.get(body);
+    if (cached && cached.frame === body.hero3dFrame) return cached.rows;
+    var size = 128, rows = null;
+    try {
+      if (!npc3dContentContext) {
+        var canvas = document.createElement('canvas');
+        canvas.width = canvas.height = size;
+        npc3dContentContext = canvas.getContext('2d', { willReadFrequently: true });
+      }
+      npc3dContentContext.clearRect(0, 0, size, size);
+      npc3dContentContext.drawImage(body.hero3d.canvas, 0, 0, size, size);
+      rows = readContentRows(npc3dContentContext, size, size);
+      if (rows) {
+        var fr = body.texture.frame;
+        rows = { left: rows.left * fr.width / size, right: rows.right * fr.width / size,
+          top: rows.top * fr.height / size, bot: rows.bot * fr.height / size };
+      }
+    } catch (e) { rows = null; }
+    npc3dContentCache.set(body, { frame: body.hero3dFrame, rows: rows });
+    return rows;
+  }
+  /* 當幀可見範圍，換成以腳點投影的直立特效座標。cx／cy 是中心相對腳點的右／上偏移。 */
   function entityBodyBox(id) {
     var ent = S.entities[id], body = ent && ent.body;
-    if (!body || body.destroyed || !body.texture || !body.anchor || !body.scale) return null;
-    var rows = textureContentRows(body.texture);
-    if (!rows || !(rows.right > rows.left)) return null;
-    var fr = body.texture.frame, kx = body.scale.x, ky = Math.abs(body.scale.y);
-    var w = (rows.right - rows.left) * Math.abs(kx), h = (rows.bot - rows.top) * ky;
-    var cx = ((rows.left + rows.right) / 2 - body.anchor.x * fr.width) * kx;
-    var cy = (body.anchor.y * fr.height - (rows.top + rows.bot) / 2) * ky;
-    var wrap = ent.bodyWrap, sx = wrap ? Math.abs(wrap.scale.x) : 1, sy = wrap ? Math.abs(wrap.scale.y) : 1;
-    return (isFinite(w + h + cx + cy) && w > 0 && h > 0) ? { w: w * sx, h: h * sy, cx: cx * sx, cy: cy * sy } : null;
+    if (!body || body.destroyed) return null;
+    var left, top, right, bottom;
+    if (body instanceof PIXI.Text) {
+      var bounds = body.getLocalBounds();
+      left = bounds.minX; right = bounds.maxX; top = bounds.minY; bottom = bounds.maxY;
+    } else {
+      var tex = body.texture;
+      var rows = ent.npc3d ? npc3dContentRows(body) : textureContentRows(tex);
+      if (!rows) return null;
+      var orig = tex.orig || tex.frame, trim = tex.trim;
+      var anchorX = body.anchor.x * orig.width - (trim ? trim.x : 0);
+      var anchorY = body.anchor.y * orig.height - (trim ? trim.y : 0);
+      left = rows.left - anchorX; right = rows.right - anchorX;
+      top = rows.top - anchorY; bottom = rows.bot - anchorY;
+    }
+    if (!(right > left && bottom > top)) return null;
+    body.updateLocalTransform();
+    ent.bodyWrap.updateLocalTransform();
+    ent.view.updateLocalTransform();
+    var matrix = body.localTransform.clone().prepend(ent.bodyWrap.localTransform).prepend(ent.view.localTransform);
+    var root = ent.root, foot = airScreenPose(root.x, root.y);
+    var box = new PIXI.Bounds();
+    for (var x of [left, right]) {
+      for (var y of [top, bottom]) {
+        var p = airScreenPose(root.x + matrix.a * x + matrix.c * y + matrix.tx,
+          root.y + matrix.b * x + matrix.d * y + matrix.ty);
+        box.addFrame(p.x, p.y, p.x, p.y);
+      }
+    }
+    var w = (box.maxX - box.minX) / foot.scale, h = (box.maxY - box.minY) / foot.scale;
+    var cx = ((box.minX + box.maxX) / 2 - foot.x) / foot.scale;
+    var cy = (foot.y - (box.minY + box.maxY) / 2) / foot.scale;
+    return isFinite(w + h + cx + cy) && w > 0 && h > 0 ? { w: w, h: h, cx: cx, cy: cy } : null;
   }
   /* 身體中心離腳底的高度；沒掃到可見範圍就用高度的 0.55 倍（舊公式） */
   function entityCenterHeight(ent) {
