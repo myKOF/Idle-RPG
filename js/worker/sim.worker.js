@@ -25,7 +25,7 @@ importScripts(
   '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261112-knife-bounce', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
   '../player.js?v=20261112-task-chest-relic', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261108-tower-boss-floors', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261112-ticket-drop-v1',
-  '../factory.js?v=20261112-chest-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261112-task-chest-relic',
+  '../factory.js?v=20261112-chest-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261117-desktop-saves',
   '../tasks.js?v=20261112-task-chest-relic', '../achievements.js?v=20261103-equipment-rarity-v3'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。

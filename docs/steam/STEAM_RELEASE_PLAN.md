@@ -139,6 +139,45 @@ dist/win-unpacked/IdleRPG.exe --smoke=tmp/smoke-packaged   # 對打包版跑冒�
 - 開機前讀 34 MB 的延後載入（任務 A 觀察到）沒有在這次動：它是遊戲載入流程的改動，不是打包問題，建議另開任務。
 - `audio/ui-preview/`（15.8 MB）多數是音效試聽候選，但檔名可能被拼接使用，這次保留；確認哪些在用後可再瘦身。
 
+### 4.3 任務 C 實作紀錄（2026-11-17，已完成）
+
+**做法：給既有的資料夾存檔一個「桌面版目錄把手」，而不是另寫一套存檔。**
+`js/save.js` 的資料夾存檔（自動存檔檔、手動存檔、清單、刪除、開機挑最新）全部建立在 File System Access 的目錄把手 `_saveDir` 上，
+取得把手的唯一入口是 `idbGetDir()`。桌面版在那裡交出 `js/desktop-save-dir.js` 的替身把手，底層走 IPC 寫進 `userData/saves/`，
+整套流程、存檔格式（gzip JSON）、檔名、開機挑最新的規則都與網頁版相同。
+
+| 檔案 | 內容 |
+|---|---|
+| `electron/save-files.cjs` | 主行程端：檔名白名單（單層 `*.json`）、原子寫入（暫存檔＋fsync＋rename，Windows 檔案被占用時退避重試）、覆寫前留 `.bak`、同檔寫入依抵達順序排隊、開機清掉中斷的暫存檔 |
+| `electron/main.cjs` | `saves:list/read/write/remove/open-folder` IPC；只回應主視窗、且頁面停在遊戲 origin 時 |
+| `electron/preload.cjs` | `ApexHost.saves`、`ApexHost.openSaveFolder`（設定頁「開啟存檔資料夾」按鈕因此自動出現） |
+| `js/desktop-save-dir.js` | File System Access 目錄／檔案把手的替身（網頁版為 `null`） |
+| `js/save.js` | `idbGetDir()` 桌面版回傳替身；桌面版不叫出資料夾選擇器（資料夾固定） |
+| `js/storage.js` | 桌面版每次 auto／autoNow（關窗）／shutdown／restart 寫完 IndexedDB 後接著寫自動存檔檔；手動存檔直接寫成檔案 |
+| `tests/desktop-saves.test.cjs` | 檔名白名單、原子寫入與 `.bak`、寫入排隊、替身把手、端到端（真的 save.js／storage.js 寫檔並在下次開機讀回） |
+
+**為什麼每次自動存檔都要寫檔**：Electron 的 IndexedDB 本來就在 userData 的硬碟上、origin 也固定，本機不會遺失；
+但 IndexedDB 是資料庫檔，**Steam Cloud 只能同步一般檔案**。網頁版的資料夾每 10 分鐘才同步一次，
+桌面版若照舊，玩家關遊戲時雲端拿到的可能是 10 分鐘前的進度。寫檔失敗不算存檔失敗（IndexedDB 已寫入，15 秒後會重試）。
+
+**Steam Auto-Cloud 設定（任務 E 上傳前到 Steamworks 後台填）**：
+- Root：`WinAppDataRoaming`
+- Subdirectory：`idle-rpg/saves`
+- Pattern：`*.json`（`.bak` 與暫存檔刻意不是 `.json`，不會被同步）
+- 自動存檔檔名：`IC_autosave_app-game.json`；手動存檔：`IC_manual_*.json`
+
+驗證：
+- `tests/desktop-saves.test.cjs` 13 項通過；拿掉「自動存檔同步寫檔」的突變會讓其中 2 項變紅。
+- 載入 save.js／storage.js 的 66 支既有測試：改動前後失敗名單完全相同（各 110 項，皆為既有失敗）。
+- 背景冒煙測試：自動存檔檔寫進 `userData/saves`，第二次開機走「繼續」；**刪掉 IndexedDB 與 Local Storage、只留 `saves/` 的 JSON（模擬 Steam Cloud 拉到新電腦）仍能接回進度**。
+
+踩坑：打包工具只打包 git 追蹤的檔案，新增的 `save-files.cjs` 未提交就打包，打包版一啟動就崩潰並跳出錯誤對話框。
+已加兩道防線：打包前發現執行期目錄有未追蹤的檔案就中止並列出；冒煙模式下主行程例外改為印出並以結束碼 1 退出，不跳對話框。
+
+未處理：
+- 手動存檔超過 10 份時，清單索引會丟掉最舊的，但資料夾裡的檔案不會刪（網頁版既有行為）。雲端配額吃緊時再處理。
+- 網頁版玩家的存檔無法自動搬進桌面版（origin 不同）；如需要，另做「匯入存檔」流程。
+
 ## 5. 明確不做
 
 - `electron-updater` 或任何自行下載更新的機制（Steam 規範禁止，與原規範一致）。

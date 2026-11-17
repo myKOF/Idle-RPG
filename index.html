@@ -1254,7 +1254,9 @@
   <script src="js/system-unlocks.js?v=20261103-unlock-hints"></script>
   <script src="js/combat.js?v=20261108-tower-boss-floors"></script>
   <script src="js/tower.js?v=20261112-ticket-drop-v1"></script>
-  <script src="js/save.js?v=20261112-task-chest-relic"></script>
+  <!-- 桌面版存檔資料夾的把手（只有 Electron 的 ApexHost 存在時才生效，網頁版為 null）；save.js 的 idbGetDir 會用到 -->
+  <script src="js/desktop-save-dir.js?v=1.0.0"></script>
+  <script src="js/save.js?v=20261117-desktop-saves"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261112-intro-music-handoff-v1"></script>
   <script src="js/ui.js?v=20261113-enemy-dodge"></script>
@@ -1275,7 +1277,7 @@
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- ?? Worker ???????? main.js ????????? -->
   <script src="js/worker/protocol.js?v=20261112-sync-chest-v3"></script>
-  <script src="js/storage.js?v=1.0.2"></script>
+  <script src="js/storage.js?v=1.0.3"></script>
   <script src="js/save_origin.js"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
   <script src="js/tablock.js"></script>

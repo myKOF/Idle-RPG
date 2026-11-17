@@ -973,13 +973,20 @@ function idbKV(cb) {
     req.onerror = function () { cb(null); };
   } catch (e) { cb(null); }
 }
+/* 桌面版（Electron）的存檔資料夾固定在 userData/saves，由 js/desktop-save-dir.js 提供把手；
+   不必授權、不能自選，也不記進 IndexedDB（替身物件無法被結構化複製）。 */
+function desktopSaveDirV2() {
+  return (typeof DesktopSaveDir !== 'undefined' && DesktopSaveDir) ? DesktopSaveDir : null;
+}
 function idbSetDir(handle) {
+  if (desktopSaveDirV2()) return;
   idbKV(function (db) {
     if (!db) return;
     try { db.transaction('kv', 'readwrite').objectStore('kv').put(handle, 'saveDir'); } catch (e) {}
   });
 }
 function idbGetDir(cb) {
+  if (desktopSaveDirV2()) { cb(desktopSaveDirV2()); return; }
   idbKV(function (db) {
     if (!db) return cb(null);
     try {
@@ -1846,6 +1853,7 @@ function listSaveFolderFilesV2() {
 
 function openSaveFolderV2(cb, forceOpen) {
   cb = cb || function () {};
+  if (desktopSaveDirV2()) forceOpen = false;   // 桌面版資料夾固定：永遠用既有把手，不叫出選擇器
   if (!window.showDirectoryPicker) { cb(STR(1997)); return; }
   idbGetDir(function (stored) {
     var source;

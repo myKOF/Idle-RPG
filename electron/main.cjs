@@ -21,6 +21,16 @@
      --smoke-onscreen 冒煙測試改為顯示視窗，加做螢幕實拍（空白畫面偵測）與全螢幕往返；
                       會短暫置頂並切換全螢幕，跑之前先跟使用者說 */
 
+/* 冒煙測試在背景跑，主行程出錯時不能彈出 Electron 的錯誤對話框（會蓋在使用者正在用的畫面上）：
+   改成印到 stderr、以結束碼 1 退出。必須放在所有 require 之前——2026-11-17 打包版漏了
+   save-files.cjs，require 失敗的對話框連跳兩次。正式模式維持 Electron 預設（對話框讓玩家看得到）。 */
+if (process.argv.some(function (a) { return a.indexOf('--smoke') === 0; })) {
+  process.on('uncaughtException', function (e) {
+    try { process.stderr.write('[smoke] 主行程例外：' + (e && e.stack || e) + '\n'); } catch (x) {}
+    process.exit(1);
+  });
+}
+
 var path = require('path');
 var fs = require('fs');
 var stream = require('stream');
@@ -33,6 +43,7 @@ var shell = electron.shell;
 var Menu = electron.Menu;
 var ipcMain = electron.ipcMain;
 var AppProtocol = require('./app-protocol.cjs');
+var SaveFiles = require('./save-files.cjs');
 
 /* ---- 啟動參數 ---- */
 function argValue(name) {
@@ -326,6 +337,47 @@ function createWindow() {
   return win;
 }
 
+/* ---- 存檔 IPC（任務 C）----
+   存檔資料夾固定為 userData/saves；Steam Auto-Cloud 同步這裡的 *.json。
+   只回應主視窗的頁面，而且只在頁面停在 app://game（或 --url 指定的本機內測服）時；
+   檔名白名單與原子寫入在 electron/save-files.cjs。 */
+var SAVES_DIR = path.join(app.getPath('userData'), 'saves');
+global.__desktopSavesDir = SAVES_DIR;
+
+function trustedSender(event) {
+  var wc = event.sender;
+  if (!mainWindow || mainWindow.isDestroyed() || wc !== mainWindow.webContents) return false;
+  var frameUrl = (event.senderFrame && event.senderFrame.url) || wc.getURL();
+  return sameOrigin(frameUrl, startUrl());
+}
+
+function setupSaveIpc() {
+  try {
+    var removed = SaveFiles.cleanupTemp(SAVES_DIR);
+    if (removed) log('[saves] 清掉中斷留下的暫存檔', removed, '個');
+  } catch (e) { log('[saves] 無法建立存檔資料夾：', e && e.message); }
+
+  function guard(fn) {
+    return function (event) {
+      if (!trustedSender(event)) throw new Error('拒絕：不是遊戲頁面');
+      return fn.apply(null, Array.prototype.slice.call(arguments, 1));
+    };
+  }
+  ipcMain.handle('saves:list', guard(function () { return SaveFiles.list(SAVES_DIR); }));
+  ipcMain.handle('saves:read', guard(function (name) { return SaveFiles.read(SAVES_DIR, name); }));
+  ipcMain.handle('saves:write', guard(function (name, data) {
+    return SaveFiles.write(SAVES_DIR, name, data).catch(function (e) {
+      log('[saves] 寫入失敗', name, e && e.message);
+      throw e;
+    });
+  }));
+  ipcMain.handle('saves:remove', guard(function (name) { return SaveFiles.remove(SAVES_DIR, name); }));
+  ipcMain.handle('saves:open-folder', guard(function () {
+    fs.mkdirSync(SAVES_DIR, { recursive: true });
+    return shell.openPath(SAVES_DIR).then(function (err) { if (err) throw new Error(err); return true; });
+  }));
+}
+
 function onReady() {
   Menu.setApplicationMenu(null);
   protocol.handle(AppProtocol.SCHEME, serveFile);
@@ -335,6 +387,7 @@ function onReady() {
     var win = BrowserWindow.fromWebContents(event.sender);
     if (win) win.close();   // 走 close 事件，一樣會先存檔
   });
+  setupSaveIpc();
 
   var win = createWindow();
   if (OPTS.smoke) {

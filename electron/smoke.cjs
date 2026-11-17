@@ -34,6 +34,9 @@ var CHECK_SCRIPT = [
   '  r.viewport = [innerWidth, innerHeight, devicePixelRatio];',
   '  r.title = document.title;',
   '  r.visibility = document.visibilityState;',
+  // 設定頁「開啟存檔資料夾」：ApexHost.openSaveFolder 存在時 ui.js 會顯示（不實際按，會開檔案總管）
+  "  r.openSaveFolderButton = (function(){ var b = document.getElementById('btn-open-save-folder'); return b ? !b.hidden : 'missing'; })();",
+  "  r.saveDirIsDesktop = typeof _saveDir !== 'undefined' && !!_saveDir && _saveDir.isDesktop === true;",
   '  r.bodyClass = document.body.className;',
   "  r.loadingVisible = (function(){ var el = document.getElementById('loading-screen'); return !!el && !el.classList.contains('is-hidden'); })();",
   '  r.idb = await new Promise(function(res){ try { var q = indexedDB.open("__desktop_smoke__", 1); q.onsuccess = function(){ q.result.close(); res(true); }; q.onerror = function(){ res(false); }; } catch (e) { res("throw: " + e.message); } });',
@@ -153,7 +156,11 @@ function run(win, ctx) {
     if (report.screen && report.screen.skipped) { /* 背景模式不做螢幕實拍 */ }
     else if (!report.screen || !report.screen.found) fails.push('螢幕截圖失敗');
     else if (report.screen.blank) fails.push('螢幕上是空白畫面');
+    if (String(c.origin) === 'app://game' && c.saveDirIsDesktop !== true) fails.push('存檔資料夾沒有接上 userData/saves');
     if (report.flush !== 'ok') fails.push('關窗存檔：' + report.flush);
+    else if (String(c.origin) === 'app://game' && (report.saveFiles || []).indexOf('IC_autosave_app-game.json') < 0) {
+      fails.push('存檔資料夾裡沒有自動存檔檔');
+    }
     if (report.fullscreenOn && !(report.fullscreenOn.page && report.fullscreenOn.window)) fails.push('全螢幕無法進入');
     if (report.fullscreenOff && report.fullscreenOff.window) fails.push('全螢幕無法離開');
     if (report.pageErrors.length) fails.push('頁面錯誤 ' + report.pageErrors.length + ' 筆');
@@ -165,6 +172,10 @@ function run(win, ctx) {
     report.finishedAt = new Date().toISOString();
     var stats = global.__desktopRequestStats;
     if (stats) report.notFound = stats.notFound.slice();
+    // 任務 C：存檔要落在 userData/saves（Steam Auto-Cloud 同步的資料夾）
+    try {
+      report.saveFiles = fs.readdirSync(global.__desktopSavesDir).sort();
+    } catch (e) { report.saveFiles = []; }
     report.failures = verdict();
     report.ok = report.failures.length === 0;
     fs.writeFileSync(path.join(outDir, 'smoke-report.json'), JSON.stringify(report, null, 2));

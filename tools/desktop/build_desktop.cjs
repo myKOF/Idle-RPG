@@ -146,9 +146,21 @@ function builderConfig() {
   };
 }
 
+/* 出貨只看 git 追蹤的檔案，所以「新增了但還沒 add」的執行期檔案會被靜靜漏掉——
+   2026-11-17 打包版就是這樣少了 electron/save-files.cjs，一啟動就崩潰。打包前先擋下來。 */
+function untrackedRuntimeFiles() {
+  var out = childProcess.execFileSync('git', ['ls-files', '-z', '--others', '--exclude-standard'], { cwd: REPO, maxBuffer: 1 << 26 });
+  return out.toString('utf8').split('\0').filter(Boolean).filter(function (p) { return Rules.classify(p).ship; });
+}
+
 function main() {
   var stageOnly = process.argv.indexOf('--stage-only') >= 0;
   var t0 = Date.now();
+  var untracked = untrackedRuntimeFiles();
+  if (untracked.length) {
+    console.error('❌ 下列執行期檔案還沒加入 git，打包會漏掉它們（先 git add／commit 再打包）：\n  ' + untracked.join('\n  '));
+    process.exit(1);
+  }
   var list = collect();
   if (list.missing.length) {
     console.error('❌ git 追蹤中但工作副本裡不存在的出貨檔（刪了沒提交？）：\n  ' + list.missing.join('\n  '));
