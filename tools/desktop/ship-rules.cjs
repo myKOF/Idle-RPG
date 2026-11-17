@@ -51,13 +51,16 @@ var EXCLUDE_EXTS = {
 
 /* 逐檔排除：確認過執行期不讀的大檔 */
 var EXCLUDE_FILES = [
-  // 序章只播 js/intro-data.js 指定的 shot-01-03.mp4；其餘是剪輯過程的版本（合計約 350 MB）
+  // 序章以 js/intro-data.js 的播放路徑出貨，這裡列出只供編輯保存的成片。
   { path: 'images/intro-parchment/shot-01-02.mp4', reason: '序章剪輯舊版' },
   { path: 'images/intro-parchment/shot-01-extended.mp4', reason: '序章剪輯舊版' },
   { path: 'images/intro-parchment/shot-04-32.2s.mp4', reason: '序章剪輯舊版' },
   { path: 'images/intro-parchment/shots-01-02-34s.mp4', reason: '序章剪輯舊版' },
   { path: 'images/intro-parchment/shots-01-03-66s.mp4', reason: '序章剪輯舊版' },
   { path: 'images/intro-parchment/shots-01-03-67.5s.mp4', reason: '序章剪輯舊版' },
+  { path: 'images/intro-parchment/shots-01-04-replay.mp4', reason: '前四鏡重播封存版' },
+  { path: 'images/intro-parchment/shots-01-04-replay-sfx.mp3', reason: '前四鏡音效封存版' },
+  { path: 'images/intro-parchment/shot-05-desert-finale-orbit.mp4', reason: '第五鏡獨立審片版' },
   { path: 'images/intro-parchment/manifest.json', reason: '剪輯紀錄，執行期不讀' }
 ];
 

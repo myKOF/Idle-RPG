@@ -80,6 +80,8 @@ const exportsByName = {
   'shot-01-03-sfx.mp3': 'web/shot-01-03-sfx.mp3',
   'shots-01-04-replay.mp4': 'web/shots-01-04-replay.mp4',
   'shots-01-04-replay-sfx.mp3': 'web/shots-01-04-replay-sfx.mp3',
+  'shots-01-05-replay.mp4': 'web/shots-01-05-replay.mp4',
+  'shots-01-05-replay-sfx.mp3': 'web/shots-01-05-replay-sfx.mp3',
   'SOURCE.md': 'SOURCE.md'
 };
 const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
