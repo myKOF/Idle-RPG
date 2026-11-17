@@ -2,11 +2,11 @@
 
 本資產為使用者確認的分鏡成片。全長 30.30 秒，1920 × 1080，30 fps，H.264 與 AAC 立體聲。第一鏡從天使近景拉遠至天堂戰場，帶出地面與空中的惡魔大軍。第二鏡從 9.00 秒疊化時即開始運動，9.90 秒完全顯露。大天使長帶火仰面墜落，灰煙遮住大半下身，焦紙片沿氣流翻飛。18.90 秒收完群墜尾跡，19.40 秒深淵光點亮起並擴散。20.80 秒由白幕接入第三鏡。第三鏡長 9.50 秒，星點與神光在羊皮紙地圖浮現，暗紫霧從邊緣侵入。25.63 秒光束落在荒漠，紫霧停在圓形神光外緣。鏡頭於 25.98 秒俯衝，27.24 秒穿過沙塵接入地表，最後淡出。
 
-遊戲專案的 `images/intro-parchment/shot-01-03.mp4` 收錄前三鏡，前兩鏡獨立版為 `images/intro-parchment/shot-01-02.mp4`。舊版遊戲重播的獨立演出音效封存為 `shot-01-03-sfx.mp3`。成片保留核准畫面及原混音供封存與預覽。
+遊戲專案的 `opening_animation/shot-01-03.mp4` 收錄前三鏡，前兩鏡獨立版為 `opening_animation/shot-01-02.mp4`。舊版遊戲重播的獨立演出音效封存為 `shot-01-03-sfx.mp3`。成片保留核准畫面及原混音供封存與預覽。
 
 ## 55 秒計畫的加長前兩鏡
 
-使用者於 2026-11-13 核准〈天界失守〉魔軍增援版。`web/shot-01-extended.mp4` 保存獨立的 16 秒第一鏡，遊戲副本位於 `images/intro-parchment/shot-01-extended.mp4`。大天使長聽見鐘聲抬頭，兩段拉遠揭露軍勢，11.72 秒塔樓遇襲，聖光熄滅，灰燼掠過前景。城前遠地有 2,673 個遠方剪影及 377 個過渡兵影，三處天空加密 1,213 個遠方翼影及 99 個振翼前鋒。本次核准版將兩側所有流光翼接到鏡頭可見的背甲，分別從脊柱兩側的肩胛位置向外展開。
+使用者於 2026-11-13 核准〈天界失守〉魔軍增援版。`web/shot-01-extended.mp4` 保存獨立的 16 秒第一鏡，遊戲副本位於 `opening_animation/shot-01-extended.mp4`。大天使長聽見鐘聲抬頭，兩段拉遠揭露軍勢，11.72 秒塔樓遇襲，聖光熄滅，灰燼掠過前景。城前遠地有 2,673 個遠方剪影及 377 個過渡兵影，三處天空加密 1,213 個遠方翼影及 99 個振翼前鋒。本次核准版將兩側所有流光翼接到鏡頭可見的背甲，分別從脊柱兩側的肩胛位置向外展開。
 
 - `extended-shot-one/` 保存鏡頭、突襲、遠近軍勢、字幕、音效與可重製預覽。畫面沿用同一資料夾下 `source/assets/` 的原創分件及 `source/shot-air.js`，本版新增動態合成。Noto Serif TC 沿用素材庫 `third-party/google-fonts/start-menu-20261106` 的授權來源。
 - `extended-shot-one/assets/shot-one-effects.wav` 是獨立的 48 kHz 立體聲音效，供後續接鏡。`shot-one-preview.wav` 為含配樂的核准審片混音。配樂讀取素材庫 `third-party/user-supplied/desert-ascendant/desert-ascendant.mp3`。
@@ -14,7 +14,7 @@
 
 使用者同日核准第二鏡〈大天使長與群翼墜落〉與前兩鏡 34 秒連播。
 
-- `web/shots-01-02-34s.mp4` 保存核准連播，遊戲專案副本為 `images/intro-parchment/shots-01-02-34s.mp4`。第 16 秒從新版第一鏡末格開始疊化，約第 16.95 秒完全進入墜落畫面。配樂 Desert Ascendant 連續播放。
+- `web/shots-01-02-34s.mp4` 保存核准連播，遊戲專案副本為 `opening_animation/shots-01-02-34s.mp4`。第 16 秒從新版第一鏡末格開始疊化，約第 16.95 秒完全進入墜落畫面。配樂 Desert Ascendant 連續播放。
 - `web/shot-02-archangel-fall-18s.mp4` 保存第二鏡獨立成片。近景採用使用者明確授權直接使用的天使角色圖，沿原輪廓擷取，並以 ImageGen 局部修整兜帽下緣與金邊。角色原圖、修圖稿、焦羽與提示詞保存在 `extended-shot-two/`。墜落逐漸退入雲霧，焦羽在貼近鏡頭前翻面，最後的光點緩慢擴散並淡入黑幕。
 - `extended-shot-two/assets/04-heavy-fire-roar.wav` 為使用者選定的第 4 款火焰音效「低沉轟然」。`shot-two-effects.wav` 保存獨立演出音效，`shots-one-two-preview.wav` 保存連播混音，`shot-two-preview.wav` 保存第二鏡獨立混音。
 - 加長版前兩鏡已封存。
@@ -34,7 +34,7 @@ node extended-shot-two/package-preview.cjs
 
 使用者於 2026-11-14 核准第三鏡 v10。第三鏡 32 秒，自第二鏡黑幕接入。薩爾維恩地圖的紫霧被神光分開，鏡頭循光落入荒漠。光點熄滅後推鏡，煙塵逐漸散去，露出倒臥的大天使長。約 60° 斜俯遠景沿用同一角色分件，焦羽從接近滿幅開始飄落，切到胸前近照後觸甲亮起。羽毛入鏡到觸甲約 6.25 秒。角色保留象牙白與淡金，盔甲覆有沙塵且有損毀。左手只取 ImageGen 修整的拇指區域，沿用使用者指定原圖的其餘四指及掌指關節。近照用於拇指解剖參考。
 
-- `web/shot-03-extended-32s.mp4` 為獨立第三鏡，`web/shots-01-03-66s.mp4` 為核准連播。遊戲專案封存連播為 `images/intro-parchment/shots-01-03-66s.mp4`。
+- `web/shot-03-extended-32s.mp4` 為獨立第三鏡，`web/shots-01-03-66s.mp4` 為核准連播。遊戲專案封存連播為 `opening_animation/shots-01-03-66s.mp4`。
 - `extended-shot-three/` 保存鏡頭、砂塵、羽毛、手部修整、提示詞及預覽頁。分層使用同一資料夾中的 ImageGen 角色及斜俯荒漠底圖，地圖、地表、煙霧、焦羽、字型沿用先前封存素材。
 - `extended-shot-three/assets/` 保存 48 kHz 立體聲獨立音效與核准混音。Desert Ascendant 在連播時連續跨過第 34 秒。
 
@@ -49,7 +49,7 @@ node extended-shot-three/package-preview.cjs
 
 第三鏡依核准稿加厚荒漠煙塵，左手與腕甲融入場景沙面。焦羽自約 60° 斜俯遠景飄落，切入胸甲特寫的第一格即從羽軸中央發出白色星芒。觸甲後白光接成金白放射光束與粒子，始終從同一羽軸錨點擴散。鏡頭隨光緩慢推進，約三秒後光及上半身並淡出。
 
-- `web/shot-03-extended-33.5s.mp4` 保存獨立第三鏡，`web/shots-01-03-67.5s.mp4` 為核准連播。遊戲匯出為 `images/intro-parchment/shots-01-03-67.5s.mp4`。
+- `web/shot-03-extended-33.5s.mp4` 保存獨立第三鏡，`web/shots-01-03-67.5s.mp4` 為核准連播。遊戲匯出為 `opening_animation/shots-01-03-67.5s.mp4`。
 - `extended-shot-three/` 保存本版可編輯來源。左手修整沿用核准的沙掩分件，前景手腕由既有荒漠地表取樣合成。焦羽特效由專案 VFX 編輯器製作，preset、單一根群組 layout、原素材索引對照與 VFX Core 版本快照一併封存。光束參考使用者附圖的亮白核心和金色放射線，以專案既有 flare／star／trace 貼圖實作。
 - `assets/shot-three-effects.wav` 為 33.5 秒獨立演出音效，`assets/shot-three-preview.wav` 與 `assets/opening-67.5s-preview.wav` 為核准混音，連播配樂接續跨過第 34 秒。第 34 秒前的影像封包與加長前兩鏡核准版一致。
 
@@ -61,7 +61,7 @@ node extended-shot-three/package-preview.cjs
 
 - `extended-shot-four/` 保存原創 ImageGen 分件、可編輯遮罩、布料、風沙、混音與渲染程式。使用者附圖用來標示修整區域和動作參考，人物去背取用同一張原創畫作。獨立演出音效與含配樂混音位於 `extended-shot-four/assets/`。
 - `extended-shot-three-35.5s/` 保存前四鏡所用的第三鏡剪接版本。羽毛落胸前多飄兩秒，落定後金光延續原版節奏。渲染使用 `extended-shot-three/` 內既有背景、角色分件與羽毛 VFX preset。
-- `web/shot-04-32.2s.mp4` 是獨立第四鏡，遊戲匯出為 `images/intro-parchment/shot-04-32.2s.mp4`。前四鏡的核准 MP4 原始位元組保存在 `web/shots-01-04-100.7s.mp4.part01` 及 `part02`，同名 JSON 記錄長度、影格數和 SHA-256。以下指令可還原成一份可直接播放的 MP4。
+- `web/shot-04-32.2s.mp4` 是獨立第四鏡，遊戲匯出為 `opening_animation/shot-04-32.2s.mp4`。前四鏡的核准 MP4 原始位元組保存在 `web/shots-01-04-100.7s.mp4.part01` 及 `part02`，同名 JSON 記錄長度、影格數和 SHA-256。以下指令可還原成一份可直接播放的 MP4。
 
 ```powershell
 node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
@@ -83,9 +83,9 @@ node extended-shot-four/export-replay.cjs --five-shots replay-five-export
 
 ## 第五鏡荒漠終章（2026-11-17）
 
-目前成片長 16 秒。入鏡後第 3 秒，白光從劍柄、護手與整片劍身向外放射，光束緩慢順時針旋轉，並和光暈一同逐漸擴大。第一格直接呈現風沙、地面與飛行魔軍，天空和拱門分速左移，近地與人物右移，中景地表固定。白光在新增的尾段持續轉動，約第 14.9 秒和場景一起淡至黑幕。三類飛行惡魔各有 16 格拍翼週期。成片保存為 `web/shot-05-desert-finale-orbit.mp4`，遊戲匯出為 `images/intro-parchment/shot-05-desert-finale-orbit.mp4`。
+目前成片長 16 秒。入鏡後第 3 秒，白光從劍柄、護手與整片劍身向外放射，光束緩慢順時針旋轉，並和光暈一同逐漸擴大。第一格直接呈現風沙、地面與飛行魔軍，天空和拱門分速左移，近地與人物右移，中景地表固定。白光在新增的尾段持續轉動，約第 14.9 秒和場景一起淡至黑幕。三類飛行惡魔各有 16 格拍翼週期。成片保存為 `web/shot-05-desert-finale-orbit.mp4`，遊戲匯出為 `opening_animation/shot-05-desert-finale-orbit.mp4`。
 
-`extended-shot-five/` 保存分層程式、ImageGen 補景、提示詞、獨立音效與審片混音。重製和預覽方式見該目錄的 `SOURCE.md`。目前獨立成片用於審片，遊戲重播使用前五鏡連播。
+`extended-shot-five/` 保存分層程式、ImageGen 補景、提示詞、獨立音效與審片混音。重製和預覽方式見該目錄的 `SOURCE.md`。目前獨立成片用於審片，遊戲使用前五鏡連播。各工作區以自己的專案根目錄讀取及匯出素材。手動渲染時可把 PARCHMENT_REVIEW_DIR 設為該工作區 opening_animation/review 下的審片目錄。
 
 ## 可編輯來源
 

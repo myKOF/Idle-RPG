@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(require.resolve('../js/start-menu.js'), 'utf8');
 const flush = () => new Promise(setImmediate);
 
-function setup({ save = null, info = {}, records = [], files = [], background, deferBoot = false, host } = {}) {
+function setup({ save = null, info = {}, records = [], files = [], background, deferBoot = false, host, introPlayback } = {}) {
   const nodes = new Map();
   const launches = [];
   const audio = [];
@@ -25,7 +25,8 @@ function setup({ save = null, info = {}, records = [], files = [], background, d
   }
   const ctx = {
     document: { getElementById: node },
-    IntroPlayer: { startupBegin() { state.introStarted = true; } },
+    IntroPlayer: { play: introPlayback },
+    INTRO_REPLAY_TIMELINE: introPlayback && { video: 'opening_animation/shots-01-05-replay.mp4' },
     UISound: {
       preloadStartMenuAudio() { audio.push('preload'); },
       setStartScreenActive(value) { audio.push(value); },
@@ -100,6 +101,29 @@ test('新玩家從 Loading 進入選單，等待存檔檢查及背景就緒', as
   assert.deepEqual(e.launches, [{ snapshot: null, runId: 3 }]);
   assert.equal(e.menu.isActive(), false);
   assert.deepEqual(e.audio, ['preload', true, false]);
+});
+
+test('確認新遊戲後播放正式成片，結束或略過才建立一局', () => {
+  let onDone;
+  let playbackCount = 0;
+  const e = setup({ save: { runId: 5 }, introPlayback(timeline, options) {
+    playbackCount++;
+    assert.match(timeline.video, /^opening_animation\//);
+    assert.equal(options.waitForScene, true);
+    onDone = options.onDone;
+    return true;
+  } });
+  e.click('new');
+  assert.equal(playbackCount, 0);
+  e.confirm();
+  assert.equal(playbackCount, 1);
+  assert.equal(e.node('start-menu').style.display, 'none');
+  assert.deepEqual(e.launches, []);
+  e.click('new');
+  assert.equal(playbackCount, 1);
+  onDone('skip');
+  onDone('end');
+  assert.deepEqual(e.launches, [{ snapshot: null, runId: 6 }]);
 });
 
 test('背景載入失敗時仍顯示選單與繼續遊戲', async () => {

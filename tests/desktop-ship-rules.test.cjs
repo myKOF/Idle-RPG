@@ -41,7 +41,7 @@ test('index.html 的 src／href 本機檔案全部在出貨清單裡', () => {
 
 test('執行期程式碼寫死的資源路徑全部在出貨清單裡', () => {
   const missing = new Set();
-  const re = /['"`]((?:images|audio|assets|vfx|fonts|js|css)\/[^'"`?#\s]+\.[a-z0-9]{2,5})(?=[?#'"`])/gi;
+  const re = /['"`]((?:images|audio|assets|vfx|fonts|js|css|opening_animation)\/[^'"`?#\s]+\.[a-z0-9]{2,5})(?=[?#'"`])/gi;
   for (const src of runtimeSources()) {
     let m;
     while ((m = re.exec(src.text))) {
@@ -80,12 +80,16 @@ test('授權檔一律出貨，原始檔與開發目錄不出貨', () => {
   assert.strictEqual(Rules.classify('tests/desktop-ship-rules.test.cjs').ship, false);
   assert.strictEqual(Rules.classify('config/param-patches/.gitignore').ship, false);
   assert.strictEqual(Rules.classify('js/main.js').ship, true);
-  assert.strictEqual(Rules.classify('images/intro-parchment/shot-01-03.mp4').ship, true);
+  assert.strictEqual(Rules.classify('opening_animation/shot-01-03.mp4').ship, true);
 });
 
 test('序章實際播放的影片與音效有出貨', () => {
   const intro = fs.readFileSync(path.join(ROOT, 'js', 'intro-data.js'), 'utf8');
-  const refs = [...intro.matchAll(/'(images\/intro-parchment\/[^'?]+)/g)].map((m) => m[1]);
-  assert.ok(refs.length >= 2, '找不到序章素材引用，測試需要更新');
+  const refs = [...intro.matchAll(/'(opening_animation\/[^'?]+)/g)].map((m) => m[1]);
+  assert.ok(refs.includes('opening_animation/shots-01-05-replay.mp4'));
+  assert.ok(refs.includes('opening_animation/shots-01-05-replay-sfx.mp3'));
+  assert.ok(refs.includes('opening_animation/prologue-audio/prologue-sfx.wav'));
+  assert.ok(refs.includes('opening_animation/storybook/paper.webp'));
+  assert.strictEqual(Rules.classify('opening_animation/review/draft.mp4').ship, false);
   for (const r of refs) assert.ok(shipped.has(r), r + ' 沒有出貨');
 });

@@ -28,12 +28,12 @@
    顯示文字一律用 String 表編號（AI_RULES 8.10），不在這裡寫字。
    ============================================================================= */
 var INTRO_REPLAY_TIMELINE = {
-  video: 'images/intro-parchment/shots-01-05-replay.mp4?v=6',
+  video: 'opening_animation/shots-01-05-replay.mp4?v=6',
   duration: 116700,
   audio: {
     music: typeof ZONES !== 'undefined' && ZONES.desert && ZONES.desert.bgm,
     sceneMusic: true,
-    sfx: 'images/intro-parchment/shots-01-05-replay-sfx.mp3?v=3'
+    sfx: 'opening_animation/shots-01-05-replay-sfx.mp3?v=3'
   }
 };
 
@@ -90,7 +90,7 @@ var INTRO_TIMELINES = {
     skipDelay: 1200,
     cinematic: true,
     revealDuration: 1000,
-    audio: { music: 'audio/intro/prologue-music.wav?v=1', sfx: 'audio/intro/prologue-sfx.wav?v=1' },
+    audio: { music: 'opening_animation/prologue-audio/prologue-music.wav?v=1', sfx: 'opening_animation/prologue-audio/prologue-sfx.wav?v=1' },
     scenes: [
       { id: 'heaven_collapse', at: 0, dur: 6000, camera: 'pan_down_from_sky' },
       { id: 'angel_fall', at: 6000, dur: 7000, camera: 'fast_tracking_shot_following_meteor' },
@@ -99,7 +99,7 @@ var INTRO_TIMELINES = {
     ],
     layers: [
       // 0–6：鏡頭下移，神殿碎裂、裂隙吞噬聖光。
-      { kind: 'image', src: 'images/intro/heaven-collapse.webp?v=1', cls: 'intro-image-cinema',
+      { kind: 'image', src: 'opening_animation/prologue/heaven-collapse.webp?v=1', cls: 'intro-image-cinema',
         at: 0, dur: 6600, fadeIn: 900, fadeOut: 600,
         from: { y: -1.5, scale: 1 }, to: { y: 1.5, scale: 1 }, easing: 'linear' },
       { kind: 'shape', cls: 'intro-infernal-glow', at: 1400, dur: 4800, fadeIn: 1600, fadeOut: 500,
@@ -108,16 +108,16 @@ var INTRO_TIMELINES = {
         from: { y: -6, x: -2 }, to: { y: 9, x: 3 }, easing: 'linear' },
       { kind: 'motion', motion: 'heaven', at: 0, dur: 6600, fadeIn: 900, fadeOut: 600, from: { y: -1.5 }, to: { y: 1.5 }, easing: 'linear' },
       // 6–13：跟隨負傷六翼天使墜下；羽芒掠過，落地揚塵。
-      { kind: 'image', src: 'images/intro-v2/angel-fall-background.webp?v=1', cls: 'intro-image-cinema',
+      { kind: 'image', src: 'opening_animation/prologue-v2/angel-fall-background.webp?v=1', cls: 'intro-image-cinema',
         at: 6000, dur: 7500, fadeIn: 600, fadeOut: 500,
         from: { y: -2 }, to: { y: 2 }, easing: 'cubic-bezier(.32,.1,.72,1)' },
-      { kind: 'motion', motion: 'fall', src: 'images/intro-v2/angel-fall-angel.webp?v=1', at: 6000, dur: 7500, fadeIn: 600, fadeOut: 500, from: { y: -2 }, to: { y: 2 }, easing: 'cubic-bezier(.32,.1,.72,1)' },
+      { kind: 'motion', motion: 'fall', src: 'opening_animation/prologue-v2/angel-fall-angel.webp?v=1', at: 6000, dur: 7500, fadeIn: 600, fadeOut: 500, from: { y: -2 }, to: { y: 2 }, easing: 'cubic-bezier(.32,.1,.72,1)' },
       { kind: 'shape', cls: 'intro-feather-trails', at: 6500, dur: 5700, fadeIn: 900, fadeOut: 800,
         from: { x: -6, y: 12 }, to: { x: 6, y: -18 }, easing: 'ease-in' },
       { kind: 'shape', cls: 'intro-impact', at: 12200, dur: 1300, fadeIn: 180, fadeOut: 1000,
         from: { scale: 0.2, y: 15 }, to: { scale: 2.6, y: 0 }, easing: 'ease-out' },
       // 13–21：平視慢推荒漠，骨骸、廢拱門與幽火。
-      { kind: 'image', src: 'images/intro/desolate-human-world.webp?v=1', cls: 'intro-image-cinema',
+      { kind: 'image', src: 'opening_animation/prologue/desolate-human-world.webp?v=1', cls: 'intro-image-cinema',
         at: 13000, dur: 8500, fadeIn: 650, fadeOut: 500,
         from: { scale: 0.94 }, to: { scale: 1 }, easing: 'linear' },
       { kind: 'motion', motion: 'wasteland', at: 13000, dur: 8500, fadeIn: 650, fadeOut: 500, from: { scale: .94 }, to: { scale: 1 }, easing: 'linear' },
@@ -126,18 +126,18 @@ var INTRO_TIMELINES = {
       { kind: 'shape', cls: 'intro-ghost-lights', at: 14200, dur: 6900, fadeIn: 1400, fadeOut: 900,
         from: { y: 2, scale: 0.96 }, to: { y: -2, scale: 1.02 }, easing: 'linear' },
       // 21–26：掌心聖光特寫拉遠，顯出殘破銀白聖甲與巨大六翼。
-      { kind: 'image', src: 'images/intro-v2/awakening-background.webp?v=1', cls: 'intro-image-cinema intro-image-awakening',
+      { kind: 'image', src: 'opening_animation/prologue-v2/awakening-background.webp?v=1', cls: 'intro-image-cinema intro-image-awakening',
         at: 21000, dur: 5700, fadeIn: 650, fadeOut: 700,
         from: { y: -6, scale: 2.25 }, to: { y: 0, scale: 1 }, easing: 'ease-out' },
-      { kind: 'motion', motion: 'awakening', src: 'images/intro-v2/awakening-angel.webp?v=1', at: 21000, dur: 4100, fadeIn: 650, fadeOut: 700, from: { y: -6, scale: 2.25 }, to: { y: 0, scale: 1 }, easing: 'ease-out' },
+      { kind: 'motion', motion: 'awakening', src: 'opening_animation/prologue-v2/awakening-angel.webp?v=1', at: 21000, dur: 4100, fadeIn: 650, fadeOut: 700, from: { y: -6, scale: 2.25 }, to: { y: 0, scale: 1 }, easing: 'ease-out' },
       { kind: 'shape', cls: 'intro-sacred-light', at: 21300, dur: 5200, fadeIn: 1100, fadeOut: 1000,
         from: { scale: 0.18 }, to: { scale: 1.1 }, easing: 'ease-out' },
-      { kind: 'motion', motion: 'rising', src: 'images/intro-v2/rising-angel.webp?v=1', at: 24400, dur: 2300, fadeIn: 700, fadeOut: 700 },
+      { kind: 'motion', motion: 'rising', src: 'opening_animation/prologue-v2/rising-angel.webp?v=1', at: 24400, dur: 2300, fadeIn: 700, fadeOut: 700 },
       // 26–30：拾劍站起，面對幽靈；整層淡出露出已準備好的真正UI。
-      { kind: 'image', src: 'images/intro-v2/rise-and-quest-background.webp?v=1', cls: 'intro-image-cinema',
+      { kind: 'image', src: 'opening_animation/prologue-v2/rise-and-quest-background.webp?v=1', cls: 'intro-image-cinema',
         at: 26000, dur: 4000, fadeIn: 700, fadeOut: 0,
         from: { scale: 1 }, to: { scale: 0.96 }, easing: 'ease-out' },
-      { kind: 'motion', motion: 'standing', src: 'images/intro-v2/rise-and-quest-angel.webp?v=1', at: 26000, dur: 4000, fadeIn: 700, fadeOut: 0, from: { scale: 1 }, to: { scale: .96 }, easing: 'ease-out' },
+      { kind: 'motion', motion: 'standing', src: 'opening_animation/prologue-v2/rise-and-quest-angel.webp?v=1', at: 26000, dur: 4000, fadeIn: 700, fadeOut: 0, from: { scale: 1 }, to: { scale: .96 }, easing: 'ease-out' },
       { kind: 'shape', cls: 'intro-dawn-rays', at: 26400, dur: 3600, fadeIn: 1200, fadeOut: 0,
         from: { scale: 0.85 }, to: { scale: 1.1 }, easing: 'ease-out' },
       { kind: 'shape', cls: 'intro-cinema-vignette', at: 0, dur: 30000, fadeIn: 600, fadeOut: 0 }
@@ -168,7 +168,7 @@ var INTRO_TIMELINES = {
        天使：整體由上降下再緩緩浮動；兩對翅膀由收合展開後以肩胛為軸各自擺動（上下翼相位錯開）；
              披風以肩線為軸搖曳、劍微幅晃動、劍光沿劍刃滑過、光環浮動、背後光暈呼吸
        前景：金色微塵上飄、書頁焦邊與墨線邊框
-     素材：images/intro-storybook/（tools/intro/storybook-paper.py、storybook-art.cjs 原創程序生成）。
+     素材：opening_animation/storybook/（tools/intro/storybook-paper.py、storybook-art.cjs 原創程序生成）。
      座標：1920×1080 設計座標；天使群組內座標以 600×840 的本體圖為準（上翼肩胛約在 (262, 190)／(338, 190)，下翼約在 (275, 300)／(325, 300)，握劍的拳在 (185, 478)）。 */
   storybook: {
     duration: 10000,
@@ -178,11 +178,11 @@ var INTRO_TIMELINES = {
         camera: { origin: '50% 45%', easing: 'cubic-bezier(.25,.1,.25,1)',
           path: [{ t: 0, scale: 1.1, y: 30 }, { t: 1, scale: 1, y: 0 }] },
         parts: [
-          { id: 'paper', src: 'images/intro-storybook/paper.webp?v=1', cls: 'sb-paper', box: [-60, -40, 2040, 1160] },
-          { id: 'rays', src: 'images/intro-storybook/rays.svg?v=3', box: [260, -270, 1400, 1400], at: 300, fadeIn: 1800,
+          { id: 'paper', src: 'opening_animation/storybook/paper.webp?v=1', cls: 'sb-paper', box: [-60, -40, 2040, 1160] },
+          { id: 'rays', src: 'opening_animation/storybook/rays.svg?v=3', box: [260, -270, 1400, 1400], at: 300, fadeIn: 1800,
             path: [{ rotate: 0 }, { rotate: 7 }], easing: 'linear',
             loop: { frames: [{ scale: 0.97 }, { scale: 1.03 }], dur: 3200, alternate: true, alpha: [0.72, 1] } },
-          { id: 'clouds-far', src: 'images/intro-storybook/clouds-far.svg?v=3', box: [-240, 560, 2400, 360], at: 200, fadeIn: 1600,
+          { id: 'clouds-far', src: 'opening_animation/storybook/clouds-far.svg?v=3', box: [-240, 560, 2400, 360], at: 200, fadeIn: 1600,
             path: [{ x: 0 }, { x: -90 }], easing: 'linear' },
           { id: 'angel', kind: 'group', box: [660, 190, 600, 840], origin: '50% 30%', at: 900, fadeIn: 1500,
             path: [{ t: 0, y: -130, scale: 0.86 }, { t: 0.55, y: 0, scale: 0.9 }, { t: 1, y: 10, scale: 0.9 }], easing: 'ease-out',
@@ -190,36 +190,36 @@ var INTRO_TIMELINES = {
             children: [
               { id: 'aura', kind: 'shape', cls: 'sb-aura', box: [-100, -140, 800, 800],
                 loop: { frames: [{ scale: 0.94 }, { scale: 1.06 }], dur: 2600, alternate: true, alpha: [0.45, 0.7] } },
-              { id: 'wing-upper-l', src: 'images/intro-storybook/wing-upper.svg?v=3', box: [-578, -280, 900, 780], origin: '93.3% 60.3%',
+              { id: 'wing-upper-l', src: 'opening_animation/storybook/wing-upper.svg?v=3', box: [-578, -280, 900, 780], origin: '93.3% 60.3%',
                 path: [{ t: 0, rotate: 32 }, { t: 0.42, rotate: -5 }, { t: 0.6, rotate: 0 }], easing: 'ease-out',
                 loop: { frames: [{ rotate: 0 }, { rotate: -4 }], dur: 3000, alternate: true } },
-              { id: 'wing-upper-r', src: 'images/intro-storybook/wing-upper.svg?v=3', flip: true, box: [278, -280, 900, 780], origin: '6.7% 60.3%',
+              { id: 'wing-upper-r', src: 'opening_animation/storybook/wing-upper.svg?v=3', flip: true, box: [278, -280, 900, 780], origin: '6.7% 60.3%',
                 path: [{ t: 0, rotate: -32 }, { t: 0.42, rotate: 5 }, { t: 0.6, rotate: 0 }], easing: 'ease-out',
                 loop: { frames: [{ rotate: 0 }, { rotate: 4 }], dur: 3000, alternate: true } },
-              { id: 'wing-lower-l', src: 'images/intro-storybook/wing-lower.svg?v=3', box: [-375, 210, 700, 620], origin: '92.9% 14.5%',
+              { id: 'wing-lower-l', src: 'opening_animation/storybook/wing-lower.svg?v=3', box: [-375, 210, 700, 620], origin: '92.9% 14.5%',
                 path: [{ t: 0, rotate: -26 }, { t: 0.5, rotate: 3 }, { t: 0.66, rotate: 0 }], easing: 'ease-out',
                 loop: { frames: [{ rotate: 0 }, { rotate: 5 }], dur: 3400, alternate: true, phase: 0.5 } },
-              { id: 'wing-lower-r', src: 'images/intro-storybook/wing-lower.svg?v=3', flip: true, box: [275, 210, 700, 620], origin: '7.1% 14.5%',
+              { id: 'wing-lower-r', src: 'opening_animation/storybook/wing-lower.svg?v=3', flip: true, box: [275, 210, 700, 620], origin: '7.1% 14.5%',
                 path: [{ t: 0, rotate: 26 }, { t: 0.5, rotate: -3 }, { t: 0.66, rotate: 0 }], easing: 'ease-out',
                 loop: { frames: [{ rotate: 0 }, { rotate: -5 }], dur: 3400, alternate: true, phase: 0.5 } },
-              { id: 'cape', src: 'images/intro-storybook/cape.svg?v=3', box: [0, 0, 600, 840], origin: '50% 28%',
+              { id: 'cape', src: 'opening_animation/storybook/cape.svg?v=3', box: [0, 0, 600, 840], origin: '50% 28%',
                 loop: { frames: [{ rotate: -1.4 }, { rotate: 1.4 }], dur: 3600, alternate: true } },
-              { id: 'sword', src: 'images/intro-storybook/sword.svg?v=3', box: [-65, 438, 300, 460], origin: '83.3% 8.7%',
+              { id: 'sword', src: 'opening_animation/storybook/sword.svg?v=3', box: [-65, 438, 300, 460], origin: '83.3% 8.7%',
                 loop: { frames: [{ rotate: -1.2 }, { rotate: 1.2 }], dur: 4200, alternate: true, phase: 0.3 } },
-              { id: 'body', src: 'images/intro-storybook/body.svg?v=3', box: [0, 0, 600, 840] },
-              { id: 'halo', src: 'images/intro-storybook/halo.svg?v=3', box: [180, -20, 240, 80],
+              { id: 'body', src: 'opening_animation/storybook/body.svg?v=3', box: [0, 0, 600, 840] },
+              { id: 'halo', src: 'opening_animation/storybook/halo.svg?v=3', box: [180, -20, 240, 80],
                 loop: { frames: [{ y: 0 }, { y: -5 }], dur: 2200, alternate: true, phase: 0.3, alpha: [0.8, 1] } },
               { id: 'glint', kind: 'shape', cls: 'sb-glint', box: [121, 521, 60, 60], at: 3700, dur: 900, fadeIn: 150, fadeOut: 350,
                 path: [{ x: 0, y: 0, scale: 0.6 }, { x: -134, y: 291, scale: 1.2 }] }
             ] },
-          { id: 'clouds-mid', src: 'images/intro-storybook/clouds-mid.svg?v=3', box: [-240, 760, 2400, 400], at: 500, fadeIn: 1600,
+          { id: 'clouds-mid', src: 'opening_animation/storybook/clouds-mid.svg?v=3', box: [-240, 760, 2400, 400], at: 500, fadeIn: 1600,
             path: [{ x: 0 }, { x: 130 }], easing: 'linear' },
-          { id: 'clouds-near', src: 'images/intro-storybook/clouds-near.svg?v=3', box: [-340, 880, 2600, 460], at: 300, fadeIn: 1400,
+          { id: 'clouds-near', src: 'opening_animation/storybook/clouds-near.svg?v=3', box: [-340, 880, 2600, 460], at: 300, fadeIn: 1400,
             path: [{ x: 0 }, { x: -240 }], easing: 'linear' },
           { id: 'motes', kind: 'particles', cls: 'sb-mote', box: [360, 160, 1200, 820], at: 1400, fadeIn: 1200,
             count: 26, seed: 7, size: [4, 11], rise: [180, 380], drift: [20, 70], dur: [4500, 8000] },
-          { id: 'frame', src: 'images/intro-storybook/frame.svg?v=3', box: [0, 0, 1920, 1080] },
-          { id: 'paper-edge', src: 'images/intro-storybook/paper-edge.webp?v=1', box: [-60, -40, 2040, 1160] },
+          { id: 'frame', src: 'opening_animation/storybook/frame.svg?v=3', box: [0, 0, 1920, 1080] },
+          { id: 'paper-edge', src: 'opening_animation/storybook/paper-edge.webp?v=1', box: [-60, -40, 2040, 1160] },
           { id: 'caption', kind: 'text', str: 2482, cls: 'sb-ink-text', box: [260, 885, 1400, 150], at: 2600, dur: 6300, fadeIn: 900, fadeOut: 700,
             path: [{ y: 6 }, { y: 0 }], easing: 'ease-out' }
         ] }

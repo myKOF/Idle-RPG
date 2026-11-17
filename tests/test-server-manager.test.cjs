@@ -9,12 +9,12 @@ const root = path.resolve(__dirname, '..');
 const { createStaticServer, isRelevantEndpoint } = require(path.join(root, 'tools', 'test_server_manager.cjs'));
 
 test('測試服可分段串流序章影片並支援重新定位', async () => {
-  const file = path.join(root, 'images', 'intro-parchment', 'shot-01-03.mp4');
+  const file = path.join(root, 'opening_animation', 'shots-01-05-replay.mp4');
   const size = fs.statSync(file).size;
   const server = createStaticServer(root);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   try {
-    const url = `http://127.0.0.1:${server.address().port}/images/intro-parchment/shot-01-03.mp4?v=1`;
+    const url = `http://127.0.0.1:${server.address().port}/opening_animation/shots-01-05-replay.mp4?v=6`;
     const head = await fetch(url, { method: 'HEAD' });
     assert.equal(head.status, 200);
     assert.equal(head.headers.get('content-type'), 'video/mp4');

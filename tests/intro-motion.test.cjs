@@ -69,7 +69,7 @@ test('連續網格六翼各自變形，完整頂點無翻面或非有限值，�
 });
 
 test('第二版來源清單完整、七張正式素材存在，四句字幕逐字來自v2腳本', () => {
-  const e = env(), manifest = JSON.parse(fs.readFileSync(path.join(root, 'images/intro-v2/manifest.json')));
+  const e = env(), manifest = JSON.parse(fs.readFileSync(path.join(root, 'opening_animation/prologue-v2/manifest.json')));
   assert.equal(manifest.assets.length, 7);
   assert.equal(manifest.assets.filter(a => a.transparent).length, 4);
   for (const a of manifest.assets) assert.ok(fs.existsSync(path.join(root, a.target)));

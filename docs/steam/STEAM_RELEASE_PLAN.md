@@ -44,7 +44,7 @@
 - 所有 Steam 呼叫包 `try/catch`；`steamworks.init` 失敗＝離線模式，遊戲照常。
 
 ### 2.5 打包內容清單
-- 目前 `images/` 約 1.1 GB（`intro-parchment` 402 MB、`models` 302 MB），根目錄還有 `sim_*`、`scratch`、`tools`、`tests`、各種 `.py/.patch`。
+- 目前 `images/` 約 1.1 GB，包含後來移至 `opening_animation` 的序章影片，以及 `models` 302 MB，根目錄還有 `sim_*`、`scratch`、`tools`、`tests`、各種 `.py/.patch`。
 - 需要一份**白名單**（`index.html`、`js/`、`css/`、`fonts/`、`audio/`、`config/` 中執行期讀取的檔、`vfx/` 執行期部分、實際引用的 `images/`），而非黑名單。
 - 建議寫一支掃描工具列出執行期實際引用的資源，第一次就能看出可省多少；這直接影響玩家下載量與每次 SteamPipe 增量大小。
 

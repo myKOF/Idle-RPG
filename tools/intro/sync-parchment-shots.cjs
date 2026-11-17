@@ -13,7 +13,7 @@ if (!['--archive', '--apply', '--check'].includes(mode)) {
 const sourceRoot = 'codex-authored/intro-parchment-shots-20261111';
 const library = resolveLibraryRoot({ libraryId: 'effects-materials' }).root;
 const archive = path.join(library, sourceRoot);
-const game = path.join(REPO_ROOT, 'images/intro-parchment');
+const game = path.join(REPO_ROOT, 'opening_animation');
 const sources = [
   'PROMPTS.json',
   'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-two.js', 'shot-three.js',

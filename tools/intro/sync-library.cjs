@@ -5,7 +5,7 @@ const crypto = require('node:crypto');
 const { resolveLibraryRoot, REPO_ROOT } = require('../vfx/vfx-library-root.cjs');
 const mode = process.argv[2] || '--check';
 if (!['--apply', '--check'].includes(mode)) throw new Error('使用 --apply 或 --check');
-const root = path.join(resolveLibraryRoot({}).root, 'codex-authored/intro-dark-fantasy-20261105');
+const root = path.join(resolveLibraryRoot({ libraryId: 'effects-materials' }).root, 'codex-authored/intro-dark-fantasy-20261105');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
 const hash = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 function inside(base, relative) {
@@ -24,7 +24,7 @@ for (const entry of manifest.exports) {
   if (mode === '--apply') { fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(inside(root, entry.source), target); }
   if (hash(target) !== entry.sha256) throw new Error('遊戲匯出不符：' + entry.target);
 }
-const shipped = path.join(REPO_ROOT, 'images/intro/manifest.json');
+const shipped = path.join(REPO_ROOT, 'opening_animation/prologue/manifest.json');
 if (mode === '--apply') fs.copyFileSync(path.join(root, 'manifest.json'), shipped);
 if (hash(shipped) !== hash(path.join(root, 'manifest.json'))) throw new Error('素材清單不同');
 console.log('序章五張繪景／雙軌聲景／來源與提示詞：雙庫SHA256一致');

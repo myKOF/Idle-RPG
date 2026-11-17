@@ -131,7 +131,7 @@ test('未授權手勢／背景／音訊裝置或網路失敗安靜退化，不�
 test('正式兩軌各30秒、無削波／非靜音／首尾歸零，可逐樣本重產', () => {
   const rendered = require('../tools/intro/build-score.cjs').render();
   for (const [name, expected] of Object.entries(rendered)) {
-    const wav = fs.readFileSync(path.join(root, 'audio/intro', name));
+    const wav = fs.readFileSync(path.join(root, 'opening_animation/prologue-audio', name));
     assert.ok(wav.equals(expected));
     assert.equal(wav.toString('ascii', 0, 4), 'RIFF');
     assert.equal(wav.readUInt16LE(22), 1); assert.equal(wav.readUInt32LE(24), 24000);

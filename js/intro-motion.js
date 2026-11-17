@@ -1,6 +1,6 @@
 'use strict';
 /* 序章2D網格演出。關節取播放器總時鐘、共用其單一rAF；粒子登記WAAPI，無獨立計時循環。
-   PNG母圖與透明WebP來源見images/intro-v2/SOURCE.md；形狀裝飾為本模組原創程序圖形。 */
+   PNG母圖與透明WebP來源見opening_animation/prologue-v2/SOURCE.md；形狀裝飾為本模組原創程序圖形。 */
 var IntroMotion = (function () {
   function node(parent, cls, styles) {
     var el = document.createElement('div'); el.className = cls;
