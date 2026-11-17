@@ -1,0 +1,605 @@
+/* 遊戲外框、控制、提示與裝備格共用銅邊和石板色。場景與功能專用插畫由原模組提供。 */
+:root {
+  --bs-ink: #0e0c10;
+  --bs-recess: #171319;
+  --bs-slate: #221d23;
+  --bs-raised: #30272a;
+  --bs-seam: #4f4134;
+  --bs-brass: #91734c;
+  --bs-gold: #d6b879;
+  --bs-text: #e3dbca;
+  --bs-muted: #b1a48f;
+  --bs-green: #3c5348;
+  --bs-green-dark: #26372f;
+  --bs-corners:
+    linear-gradient(135deg, #231c20 0 16%, #aa8c60 18% 24%, #5e4c37 26% 38%, transparent 40%) left top,
+    linear-gradient(225deg, #231c20 0 16%, #aa8c60 18% 24%, #5e4c37 26% 38%, transparent 40%) right top,
+    linear-gradient(45deg, #20191c 0 16%, #866941 18% 24%, #50402e 26% 38%, transparent 40%) left bottom,
+    linear-gradient(315deg, #20191c 0 16%, #866941 18% 24%, #50402e 26% 38%, transparent 40%) right bottom;
+  --bs-surface: linear-gradient(155deg, #282229, #1d191f 65%, #211b20);
+  --bs-frame-shadow: inset 0 0 0 1px #b49d7333, inset 0 0 0 3px #100d13b3, 0 2px 8px #0006;
+  --bs-cut: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+}
+
+html body {
+  --text: var(--bs-text);
+  --dim: var(--bs-muted);
+  --accent: var(--bs-gold);
+  --border: var(--bs-seam);
+  --panel: var(--bs-slate);
+  --panel2: var(--bs-raised);
+  background: var(--bs-ink);
+  color: var(--text);
+  font-family: "Source Sans 3", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+  text-shadow: none;
+  color-scheme: dark;
+}
+
+body #ui-stage,
+body #ui-stage #ui-shell {
+  background: var(--bs-ink);
+}
+
+html body #topbar {
+  min-height: 38px;
+  border-bottom: 1px solid var(--bs-seam);
+  background: linear-gradient(#221e23, #151216);
+}
+
+body #topbar .brand { color: var(--bs-text); }
+body #topbar .brand-sub { color: var(--bs-muted); }
+body #res-bar .res {
+  border: 1px solid var(--bs-seam);
+  border-radius: 2px;
+  background: var(--bs-recess);
+}
+
+body :is(#workspace-area, #combat-area),
+body :is(#inv-section-box, #forge-gem-box),
+body :is(.modal-box, .confirm-box, .system-card, .detail-log-box, #battle-info-drawer, #salvage-settings-panel),
+body #sk-tooltip:not(:has(.equip-detail-card)),
+body #sk-tooltip .equip-detail-card:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)) {
+  border: 1px solid var(--bs-brass) !important;
+  border-image: none !important;
+  border-radius: 2px !important;
+  background: var(--bs-corners), var(--bs-surface) !important;
+  background-size: 16px 16px, 16px 16px, 16px 16px, 16px 16px, auto !important;
+  background-repeat: no-repeat !important;
+  box-shadow: var(--bs-frame-shadow) !important;
+}
+
+body :is(#workspace-area, #combat-area) > :is(.af-frame-corner, .af-frame-lines),
+body #workspace-area > .af-heading::before,
+body #workspace-area > .af-heading::after,
+body #battle-area > .af-heading::before,
+body #battle-area > .af-heading::after {
+  display: none !important;
+}
+
+body #workspace-area > .af-heading,
+body #battle-area > .af-heading {
+  position: static;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 6px 9px;
+  transform: none;
+  border: 0;
+  border-bottom: 1px solid var(--bs-seam);
+  background: linear-gradient(90deg, #30272a, #211b20);
+  box-shadow: none;
+  color: var(--bs-text);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: .07em;
+  text-align: left;
+  text-shadow: none;
+}
+
+body #workspace-area main { padding: 8px 10px 10px; }
+body #workspace-area #tabs {
+  background: #19171a;
+  border-color: var(--bs-seam);
+  box-shadow: none;
+}
+
+/* 綠琺瑯底、切角銅邊。警示與停用保有不同明度及色相。 */
+body :is(.btn, .fs-btn, .info-btn, .zone-btn, .btn-equip-sets, .modal-x, .realm-btn),
+body #workspace-area :is(.eqset-tab, .tab-btn),
+body #tab-equip #equip-action-bar .btn:is(.btn, .btn-primary),
+body #inv-section-box .inv-head .btn.sm,
+body #world-map-modal .btn,
+body :is(.settings-tab-btn, .system-close),
+body #achv-modal .achv-filters button,
+body #workspace-area :is(.gx-tab, .rx-tab, .rx-detail-toggle),
+body #zone-bar #btn-world-map,
+body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button {
+  border: 1px solid var(--bs-button-edge, #a58659) !important;
+  border-radius: 0 !important;
+  background:
+    linear-gradient(135deg, #dabc7d99 0 3px, transparent 4px) left top / 9px 9px no-repeat,
+    linear-gradient(315deg, #8f6542 0 3px, transparent 4px) right bottom / 9px 9px no-repeat,
+    linear-gradient(170deg, var(--bs-button-top, var(--bs-green)), var(--bs-button-bottom, var(--bs-green-dark))) !important;
+  clip-path: var(--bs-cut);
+  box-shadow: inset 0 0 0 1px #100d12b3, inset 0 2px #d6dec71a !important;
+  color: var(--bs-text) !important;
+  font-family: inherit;
+  letter-spacing: .015em;
+  text-shadow: 0 1px #090d0b;
+}
+
+body #workspace-area #tabs .tab-btn {
+  --bs-button-top: #2d3130;
+  --bs-button-bottom: #232626;
+  --bs-button-edge: #554b3d;
+}
+
+body :is(.btn, .fs-btn, .info-btn, .zone-btn, .btn-equip-sets, .modal-x, .realm-btn):is(:hover, :focus-visible):not(:disabled),
+body #workspace-area :is(.tab-btn, .eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle):is(:hover, :focus-visible):not(:disabled),
+body :is(.settings-tab-btn, .system-close, #achv-modal .achv-filters button):is(:hover, :focus-visible):not(:disabled),
+body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button:is(:hover, :focus-visible):not(:disabled) {
+  --bs-button-top: #546c5e;
+  --bs-button-bottom: #354b3f;
+  --bs-button-edge: #e1bf7d;
+}
+
+body :is(.btn, .zone-btn, .realm-btn):is(.active, [aria-pressed="true"]),
+body #workspace-area #tabs .tab-btn.active,
+body #workspace-area .eqset-tab.viewing,
+body :is(.settings-tab-btn.active, #achv-modal .achv-filters button.on),
+body #equip-action-bar .btn-primary:not(:disabled) {
+  --bs-button-top: #485d4a;
+  --bs-button-bottom: #263b31;
+  --bs-button-edge: var(--bs-gold);
+  color: #fff0c9 !important;
+}
+
+body :is(.btn, .modal-x):is(.warn, .danger, .modal-x),
+body #btn-salvage-settings.btn {
+  --bs-button-top: #63423b;
+  --bs-button-bottom: #3b2829;
+  --bs-button-edge: #af785c;
+}
+
+body :is(.btn, .zone-btn, .realm-btn):disabled,
+body #workspace-area #tabs .tab-btn:disabled,
+body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button:disabled {
+  --bs-button-top: #322c2e;
+  --bs-button-bottom: #221e23;
+  --bs-button-edge: #594b3c;
+  color: #9c9185 !important;
+  cursor: default;
+}
+
+body :is(.btn, .zone-btn, .realm-btn, .modal-x, .btn-equip-sets, .tab-btn, .settings-tab-btn, .system-close, .system-menu-actions button):focus-visible {
+  outline: 2px solid #f4d899;
+  outline-offset: -3px;
+}
+
+body :is(.input, .dropdown, select.log-filter, .settings-select),
+body #inv-section-box .inv-head :is(.input, select) {
+  border: 1px solid var(--bs-seam) !important;
+  border-radius: 2px !important;
+  background: var(--bs-recess) !important;
+  color: var(--bs-text) !important;
+}
+body :is(input, select, textarea):focus-visible {
+  outline: 1px solid var(--bs-gold);
+  outline-offset: 1px;
+}
+body input[type="checkbox"] { accent-color: #9c865a; }
+
+body #workspace-area :is(.sgb-list, .sgb-detail, .gx-card, .nfx-card, .rx-panel, .twx-card, .tlx-card, .relic-card, .tree-panel, .equip-material-panel),
+body :is(.system-card, .modal-box, .detail-log-box) :is(.panel, .summary-card, .save-row, .achv-card, .detail-log-content, .detail-log-stats) {
+  border-color: var(--bs-seam);
+  border-radius: 2px;
+  background-color: var(--bs-slate);
+}
+body :is(.modal-box, .confirm-box, .system-card, .detail-log-box) :is(h2, h3) {
+  color: var(--bs-gold);
+  text-shadow: none;
+}
+body :is(main, #tabs, #inventory-grid, #battle-log, .modal-box, .system-card, #sk-tooltip) {
+  scrollbar-color: #896b43 #1b171b;
+  scrollbar-width: thin;
+}
+
+body #game-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(275px, .85fr) minmax(0, 1.15fr);
+  grid-template-areas: "combat" "workspace";
+  gap: 9px !important;
+  padding: 7px 9px 9px !important;
+}
+
+body #game-layout #combat-area {
+  grid-area: combat;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 7px;
+  border-color: #6c573e !important;
+}
+
+body #combat-area #battle-area {
+  display: grid;
+  grid-template:
+    "battle-controls log-title" auto
+    "battle-screen log" minmax(0, 1fr)
+    / minmax(0, 2.05fr) minmax(290px, 1fr);
+  gap: 5px 10px;
+  box-shadow: none;
+}
+
+body #battle-area > .af-heading { display: none !important; }
+body #battle-area > .battle-navigation {
+  grid-area: battle-controls;
+  margin: 0;
+  gap: 4px;
+}
+body #battle-area :is(#zone-bar, #stage-bar) {
+  background: transparent !important;
+  border-color: var(--bs-seam);
+  box-shadow: none;
+  color: var(--bs-text);
+}
+body #battle-area > .battle-scene-wrapper {
+  grid-area: battle-screen;
+  border: 1px solid var(--bs-brass);
+  border-radius: 2px;
+  background: var(--bs-recess);
+  box-shadow: inset 0 0 0 2px #181217, 0 0 0 1px #110e12;
+}
+body #combat-area #battle-canvas-host {
+  --hud-scale: .66;
+  border: 0;
+  border-radius: 1px;
+}
+
+body #battle-area > .log-header .log-title { color: var(--bs-text); font-weight: 700; }
+body #battle-area > .log-header {
+  grid-area: log-title;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-content: start;
+  align-items: center;
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--bs-brass);
+  background: linear-gradient(90deg, #352d30, #221e24);
+}
+body #battle-area > #battle-log {
+  grid-area: log;
+  display: block !important;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  margin: -5px 0 0;
+  padding: 5px 8px;
+  overflow: auto;
+  border: 1px solid var(--bs-brass);
+  border-top: 0;
+  border-radius: 0;
+  background: #1b171e;
+  box-shadow: inset 0 0 0 2px #110e13;
+}
+body #battle-log .log-line {
+  padding: 5px 6px;
+  border-bottom: 1px solid #4f41344d;
+  font-size: 13px;
+  line-height: 1.35;
+}
+body #battle-log .log-line:nth-child(odd) { background-color: #282128; }
+
+body #ui-shell.battle-fullscreen #game-layout {
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "combat";
+}
+body #ui-shell.battle-fullscreen #battle-area { display: flex; }
+body #ui-shell.battle-fullscreen #battle-area > :is(.log-header, #battle-log) { display: none !important; }
+body #ui-shell.battle-fullscreen #battle-canvas-host { --hud-scale: 1; }
+
+body #game-layout #workspace-area {
+  grid-area: workspace;
+  display: grid;
+  grid-template: "tabs" auto "work" minmax(0, 1fr) / minmax(0, 1fr);
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+body #game-layout #workspace-area > .af-heading { display: none !important; }
+body #workspace-area #tabs {
+  grid-area: tabs;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 5px;
+  padding: 5px 8px;
+  overflow: auto hidden;
+  border-right: 0;
+  border-bottom: 1px solid var(--bs-brass);
+}
+body #workspace-area #tabs .tab-btn {
+  flex-direction: row;
+  gap: 5px;
+  width: auto;
+  min-height: 35px !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 2px 8px !important;
+  white-space: nowrap;
+}
+body #workspace-area #tabs .nav-tab-icon { display: inline-flex; }
+body #workspace-area #tabs .af-nav-icon { width: 26px; height: 26px; }
+body #workspace-area #tabs :is(.char-tab-icon, .rail-portrait-frame) { width: 28px; height: 28px; }
+body #workspace-area main { grid-area: work; }
+
+body #workspace-area #tab-equip.active {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 9px;
+  min-height: 100%;
+}
+body #tab-equip > .equip-top-layout {
+  padding: 8px;
+  border: 1px solid var(--bs-brass);
+  background: var(--bs-surface);
+  box-shadow: var(--bs-frame-shadow);
+}
+body #tab-equip .equip-layout {
+  --bs-gear-size: clamp(45px, 7vh, 66px);
+  display: grid !important;
+  grid-template-columns: max-content minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 8px !important;
+}
+body #ui-shell #tab-equip .equip-layout { --bs-gear-size: 65px; }
+body #tab-equip .equip-right-col {
+  height: calc(5 * var(--bs-gear-size) + 20px);
+  min-width: 0;
+}
+body #tab-equip .equip-detail-head {
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+body #tab-equip .equip-middle-row:has(#equip-material-panel:not(:empty)) {
+  grid-template-columns: minmax(0, 1fr) minmax(98px, 33%);
+}
+body #tab-equip #equip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, var(--bs-gear-size));
+  grid-auto-rows: var(--bs-gear-size);
+  gap: 5px;
+  aspect-ratio: auto;
+  background: none;
+  border: 0;
+}
+body #tab-equip #equip-grid .eq-slot {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  transform: none;
+  aspect-ratio: 1;
+}
+#equip-grid .slot-helmet { grid-area: 1 / 2; }
+#equip-grid .slot-shoulder { grid-area: 2 / 1; }
+#equip-grid .slot-chest { grid-area: 2 / 2; }
+#equip-grid .slot-amulet { grid-area: 2 / 3; }
+#equip-grid .slot-gloves { grid-area: 3 / 1; }
+#equip-grid .slot-belt { grid-area: 3 / 2; }
+#equip-grid .slot-wrist { grid-area: 3 / 3; }
+#equip-grid .slot-ring { grid-area: 4 / 1; }
+#equip-grid .slot-legs { grid-area: 4 / 2; }
+#equip-grid .slot-ring2 { grid-area: 4 / 3; }
+#equip-grid .slot-weapon { grid-area: 5 / 1; }
+#equip-grid .slot-boots { grid-area: 5 / 2; }
+#equip-grid .slot-weapon2 { grid-area: 5 / 3; }
+body #equip-grid #btn-equip-sets {
+  position: static;
+  grid-area: 1 / 3;
+  place-self: start end;
+}
+body #tab-equip > #inv-section-box {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0 !important;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+}
+body #inv-section-box .inv-head {
+  flex-wrap: wrap;
+  row-gap: 5px;
+  margin: 0 0 6px;
+  padding: 4px 5px 7px;
+  border: 0;
+  border-bottom: 1px solid var(--bs-seam);
+  background: linear-gradient(90deg, #30272b, #231e25);
+  box-shadow: none;
+}
+body #tab-equip #inv-section-box #inventory-grid {
+  min-height: 0;
+  flex-shrink: 1;
+}
+body #tab-equip #detail-pane:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)),
+body #tab-equip :is(#equip-action-bar, .equip-material-panel) {
+  border-color: var(--bs-seam) !important;
+  border-radius: 2px !important;
+  background: var(--bs-recess) !important;
+}
+body #tab-equip #equip-action-bar { padding: 7px 8px; }
+body #tab-equip #detail-pane:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)) .it-affix-row:nth-child(odd) {
+  background: #31272a;
+}
+body #inventory-grid {
+  --inventory-slot-size: 58px;
+  grid-template-columns: repeat(auto-fill, var(--inventory-slot-size)) !important;
+  justify-content: start;
+  gap: 6px;
+  padding: 4px 3px;
+  background: #151218;
+}
+body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot, #forge-gem-grid .item-cell) {
+  border-width: 1px !important;
+  border-radius: 2px !important;
+}
+body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot, #forge-gem-grid .item-cell):not(:is(.eff-mythic, .eff-genesis, .eff-chaos, .eff-godforged)) {
+  background: radial-gradient(ellipse at 50% 22%, #332b31, #18141a 72%) !important;
+  box-shadow: inset 0 0 0 2px #100d14bc !important;
+}
+body #game-layout #equip-grid .eq-slot.empty {
+  border: 1px solid #65533e !important;
+  background: var(--bs-recess) !important;
+}
+body #game-layout #equip-grid .eq-slot.empty .eq-icon { opacity: .42; }
+body #game-layout #inventory-grid .item-cell.dimmed:not(.item-cell-dimmed) {
+  opacity: .57 !important;
+  filter: saturate(.48) brightness(.83) !important;
+}
+body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot).selected {
+  outline: 2px solid var(--bs-gold) !important;
+  outline-offset: -2px;
+}
+body #game-layout #equip-grid .inventory-selection-match {
+  outline: 1px dashed #f3d196 !important;
+  outline-offset: -3px;
+}
+body #game-layout #inventory-grid .item-cell[data-slot]:not(:is(.eff-mythic, .eff-genesis, .eff-chaos, .eff-godforged))::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid;
+  border-color: inherit;
+  background: linear-gradient(135deg, #a3acb160, #100e13 75%);
+  transform: rotate(45deg);
+  z-index: 1;
+  pointer-events: none;
+}
+body #game-layout :is(#inventory-grid .item-cell > .item-icon, #forge-gem-grid .item-cell > .item-icon, #equip-grid .eq-slot > .eq-icon) {
+  width: 98%;
+  height: 98%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 1px #08060a);
+}
+body #game-layout #equip-grid .eq-slot.empty > .eq-icon { width: 70%; height: 70%; }
+body #game-layout #equip-grid .eq-slot.filled > .eq-icon[src*="icon_weapon_"] { transform: none; }
+body #game-layout #inventory-grid .item-cell[data-slot] > .item-icon:is([src*="icon_ring"], [src*="icon_amulet"]) { transform: scale(1.15); }
+body #game-layout #inventory-grid .item-cell[data-slot] .ic-lv {
+  inset: 2px auto auto 2px !important;
+  padding: 1px 2px;
+  border-radius: 1px;
+  background: #17131bcc;
+  color: #e8e0cd;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  z-index: 3;
+}
+
+/* 圖卡融入標題，並以品質色延伸到圖卡金屬邊；詞條與數字在下方對齊。 */
+body #sk-tooltip:not(:has(.equip-detail-card)) {
+  color: var(--bs-text);
+}
+body #sk-tooltip .skt-name { color: var(--bs-gold); }
+body #sk-tooltip .equip-detail-card {
+  min-width: min(310px, calc(var(--ui-canvas-width, 100vw) - 28px)) !important;
+  max-height: calc(100 * var(--ui-vh, 1vh) - 28px);
+  overflow-y: auto;
+  color: var(--bs-text);
+  text-shadow: none;
+}
+body #sk-tooltip .equip-detail-card:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)) { padding: 12px !important; }
+body #sk-tooltip .equip-detail-card .it-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 35px;
+  margin-bottom: 6px;
+  padding: 0 55px 0 0 !important;
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1.2;
+  text-shadow: 0 1px #100c14;
+}
+body #sk-tooltip .equip-detail-card .it-name-icon {
+  flex: 0 0 auto;
+  width: 106px;
+  height: 106px;
+  object-fit: contain;
+  margin-right: 6px;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, currentColor 55%, #716147);
+  border-radius: 4px;
+  background:
+    var(--bs-corners),
+    radial-gradient(ellipse at 50% 33%, color-mix(in srgb, currentColor 24%, #242a2a), #1a181e 82%);
+  background-size: 16px 16px, 16px 16px, 16px 16px, 16px 16px, auto;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 3px #17141c, inset 0 0 0 4px #c8ab6b29;
+  clip-path: var(--bs-cut);
+}
+body #sk-tooltip .equip-detail-card .it-sub {
+  margin: 0 0 7px;
+  padding: 3px 0 7px;
+  border-bottom: 1px solid #8c6f4a77;
+  color: var(--bs-muted);
+  font-size: 13px;
+}
+body #sk-tooltip .equip-detail-card .it-affixes { gap: 0; }
+body #sk-tooltip .equip-detail-card .it-affix {
+  padding: 5px 6px;
+  background: #17131a;
+  color: #d5cdbe;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+body #sk-tooltip .equip-detail-card .it-affix:nth-child(odd) { background: #34292a; }
+body #sk-tooltip .equip-detail-card .afx-val {
+  color: var(--bs-gold);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+body #sk-tooltip .equip-detail-card :is(.it-enchant, .it-passive, .it-imprint) {
+  margin-top: 5px;
+  color: #dfc99e;
+  font-size: 13px;
+  line-height: 1.35;
+}
+/* 提示框還在上一個錨點時先量出兩張牌的自然寬度。 */
+body #sk-tooltip .equip-compare-container {
+  width: max-content;
+  max-width: calc(var(--ui-canvas-width, 100vw) - 28px);
+  gap: 8px !important;
+}
+
+/* 舊版縮放會延長直式畫布，限制高度以保持戰鬥區比例。固定畫布本身高度更小。 */
+@media (orientation: portrait) {
+  body #ui-stage #ui-shell { max-height: 1200px; }
+  body #ui-stage #ui-shell #game-layout { height: min(1150px, calc(var(--ui-canvas-height, 900px) - 50px)) !important; }
+  body #ui-stage #ui-shell.battle-fullscreen #game-layout { height: 100% !important; }
+}
+
+/* 在以實際像素定位 tooltip 的舊版窄視窗中維持可讀尺寸。 */
+@media (max-width: 740px) {
+  body #sk-tooltip .equip-detail-card .it-name-icon {
+    width: clamp(52px, calc(36 * var(--ui-vw, 1vw) - 76px), 106px);
+    height: clamp(52px, calc(36 * var(--ui-vw, 1vw) - 76px), 106px);
+  }
+  body #sk-tooltip .equip-detail-card .it-name { font-size: 15px; }
+}
