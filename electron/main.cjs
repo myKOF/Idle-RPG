@@ -14,7 +14,8 @@
      --dev            允許 F12 開發者工具、F5 重新整理
      --url=<網址>     改載本機內測服（只接受 localhost／127.0.0.1），GM 與內測工具隨之開放
      --windowed       開機不進全螢幕
-     --no-in-process-gpu  關閉 in-process-gpu（Steam Overlay 需要它；效能比對用）
+     --in-process-gpu 開啟 in-process-gpu（Steam Overlay 需要；單獨開會讓畫面空白，見下方說明）
+     --profile=<資料夾> 改用另一份 userData（可與正在玩的視窗並存，除錯用）
      --smoke=<資料夾> 冒煙測試：隔離的 userData、開機後截圖並輸出檢查結果，然後關閉 */
 
 var path = require('path');
@@ -43,8 +44,9 @@ var OPTS = {
   dev: !!argValue('dev'),
   url: typeof argValue('url') === 'string' ? argValue('url') : null,
   windowed: !!argValue('windowed'),
-  inProcessGpu: !argValue('no-in-process-gpu'),
-  smoke: typeof argValue('smoke') === 'string' ? path.resolve(argValue('smoke')) : null
+  inProcessGpu: !!argValue('in-process-gpu'),
+  smoke: typeof argValue('smoke') === 'string' ? path.resolve(argValue('smoke')) : null,
+  profile: typeof argValue('profile') === 'string' ? path.resolve(argValue('profile')) : null
 };
 
 /* ---- userData 位置凍結 ----
@@ -53,6 +55,9 @@ var OPTS = {
 var USER_DATA_DIR_NAME = 'idle-rpg';
 if (OPTS.smoke) {
   app.setPath('userData', path.join(OPTS.smoke, 'userData'));
+} else if (OPTS.profile) {
+  // 另一份隔離的資料夾：單一實例鎖以 userData 為準，所以能和正在玩的那個視窗並存
+  app.setPath('userData', OPTS.profile);
 } else {
   app.setPath('userData', path.join(app.getPath('appData'), USER_DATA_DIR_NAME));
 }
@@ -71,8 +76,11 @@ function log() {
 }
 
 /* ---- 開機前必須完成的設定 ---- */
+/* in-process-gpu 預設關閉（2026-11-17 實測）：單獨開它時，視窗在螢幕上是一片淡青色空白，
+   頁面其實正常在跑（capturePage 截得到畫面）——合成結果送不上螢幕。
+   Steam Overlay（Shift+Tab）需要它，steamworks.js 的建議是搭配 disable-direct-composition
+   一起開；任務 D 接 Overlay 時兩個一起實測，通過才改成預設。 */
 if (OPTS.inProcessGpu) {
-  // Steam Overlay（Shift+Tab）要注入 GPU 所在的行程才畫得出來；Overlay 本身在任務 D 實測。
   app.commandLine.appendSwitch('in-process-gpu');
 }
 /* 刻意不加 disable-frame-rate-limit：主執行緒已知會被 rAF 塞滿而餓死計時器

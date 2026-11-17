@@ -94,6 +94,12 @@ npm run desktop:smoke    # 冒煙測試，結果在 tmp/desktop-smoke/
 實測結果（冒煙測試連跑兩次，第二次走「繼續」）：Worker 開機、Pixi 戰場、VFX Preset 302 份、IndexedDB、`navigator.locks`、fetch、影片 Range 206 均正常；
 `isInternalServer()`／`isGMHost()` 皆為 false；全螢幕進出正常；關窗存檔回 ok，重開後「繼續」出現；頁面錯誤 0。
 
+**修正（同日，使用者回報雙擊 bat 只看到空白視窗）**：`in-process-gpu` 單獨開時，頁面正常執行、
+`capturePage` 也截得到遊戲，但螢幕上是一片淡青色——合成結果送不上螢幕。已改為預設關閉、需要時加 `--in-process-gpu`；
+Steam Overlay 需要它，任務 D 會和 `disable-direct-composition` 一起實測。
+冒煙測試因此新增「螢幕實拍」檢查（截整個螢幕再裁視窗範圍，內側亮度標準差 < 6 即判空白），
+並輸出 `ok`／`failures` 與結束碼；開 `--in-process-gpu` 跑冒煙測試會得到「螢幕上是空白畫面」、結束碼 1。
+
 觀察到但未處理（列入後續任務）：
 - 開機前頁面就讀 131 個檔、34 MB；冷磁碟快取時載入要 20～30 秒，熱快取 2.4 秒 → 任務 B 一併評估延後載入。
 - 視窗被其他視窗完全遮住時 Chromium 會把頁面判成隱藏、停止畫格，Loading 會等到視窗露出才揭開（與瀏覽器分頁行為相同）。
@@ -110,7 +116,7 @@ npm run desktop:smoke    # 冒煙測試，結果在 tmp/desktop-smoke/
 
 | 風險 | 說明 | 對策 |
 |---|---|---|
-| Steam Overlay 與 Pixi WebGL | Electron Overlay 需 `in-process-gpu` 與持續重繪，曾有黑屏／閃爍回報 | 任務 D 以 480 實測；不行再試 `electronEnableSteamOverlay(true)` 的強制重繪參數 |
+| Steam Overlay 與 Pixi WebGL | Electron Overlay 需 `in-process-gpu`；本機實測單獨開它畫面全白（見 4.1） | 任務 D 以 480 實測 `in-process-gpu`＋`disable-direct-composition`，冒煙測試的螢幕實拍必須通過才改預設 |
 | 首次 origin 改變 | 桌面版 origin 為 `app://game`，`save_origin.js` 會把網頁版留下的資料夾存檔視為外來而詢問 | 上市是新局，屬預期行為；若要讓內測玩家帶檔，另做匯入 |
 | 下載量 | 1.1 GB 圖片若全帶，首裝與每次更新都重 | 任務 B 白名單 |
 | 計時器餓死／效能 | 已知 rAF 飽和問題（見記憶與 `docs`），Electron 的 `disable-frame-rate-limit` 可能讓主執行緒更滿 | **預設不開** `disable-frame-rate-limit`，維持 vsync |

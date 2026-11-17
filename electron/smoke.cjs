@@ -55,6 +55,53 @@ var SKIP_INTRO = "(function(){ if (window.IntroPlayer && IntroPlayer.isPlaying &
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
+/* 螢幕上實際看到的畫面（作業系統截的，不是 Chromium 內部的 capturePage）。
+   2026-11-17 開 in-process-gpu 時頁面正常在跑、capturePage 也截得到遊戲，螢幕上卻是一片淡青色——
+   只看 capturePage 的冒煙測試會當成通過。這裡用亮度標準差判斷畫面是不是單色。 */
+function captureOnScreen(win, outFile) {
+  var electron = require('electron');
+  // 截「整個螢幕」再裁視窗範圍：單一視窗的擷取（types: window）在 in-process-gpu 下照樣截得到遊戲，
+  // 抓不到「送不上螢幕」這種問題。截圖期間暫時置頂，避免被別的視窗蓋住。
+  win.show();
+  win.setAlwaysOnTop(true);
+  win.moveTop();
+  win.focus();
+  var bounds = win.getBounds();
+  var display = electron.screen.getDisplayMatching(bounds);
+  var scale = display.scaleFactor || 1;
+  return sleep(1000).then(function () {
+    return electron.desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: { width: Math.round(display.size.width * scale), height: Math.round(display.size.height * scale) }
+    });
+  }).then(function (sources) {
+    win.setAlwaysOnTop(false);
+    var src = sources.filter(function (s) { return String(s.display_id) === String(display.id); })[0] || sources[0];
+    if (!src || src.thumbnail.isEmpty()) return { found: false };
+    var crop = src.thumbnail.crop({
+      x: Math.max(0, Math.round((bounds.x - display.bounds.x) * scale)),
+      y: Math.max(0, Math.round((bounds.y - display.bounds.y) * scale)),
+      width: Math.round(bounds.width * scale),
+      height: Math.round(bounds.height * scale)
+    }).resize({ width: 800 });
+    fs.writeFileSync(outFile, crop.toPNG());
+    var size = crop.getSize();
+    var bmp = crop.toBitmap();   // BGRA
+    var n = 0, sum = 0, sum2 = 0;
+    // 只量內側：跳過上方 8% 的標題列與四周 5%（視窗陰影、邊緣會露出後面的視窗），每 7 個像素取一個
+    for (var y = Math.floor(size.height * 0.08); y < Math.floor(size.height * 0.95); y += 7) {
+      for (var x = Math.floor(size.width * 0.05); x < Math.floor(size.width * 0.95); x += 7) {
+        var i = (y * size.width + x) * 4;
+        var lum = 0.114 * bmp[i] + 0.587 * bmp[i + 1] + 0.299 * bmp[i + 2];
+        n++; sum += lum; sum2 += lum * lum;
+      }
+    }
+    var mean = sum / n;
+    var std = Math.sqrt(Math.max(0, sum2 / n - mean * mean));
+    return { found: true, meanLum: Math.round(mean), stdLum: Math.round(std * 10) / 10, blank: std < 6 };
+  }).catch(function (e) { return { found: false, error: String(e && e.message || e) }; });
+}
+
 function run(win, ctx) {
   var outDir = ctx.outDir;
   var log = ctx.log;
@@ -87,11 +134,33 @@ function run(win, ctx) {
     };
     return poll();
   }
+  /* 總結：任何一項不過就是失敗，結束碼 1（給打包流程與 AI 自測判讀） */
+  function verdict() {
+    var c = report.checks || {};
+    var fails = [];
+    if (report.fatal) fails.push('fatal');
+    if (!c.worker || c.worker.booted !== true) fails.push('worker 未開機');
+    if (c.loadingVisible !== false) fails.push('Loading 未揭開');
+    if (c.isGMHost !== false || c.isInternalServer !== false) {
+      // --url 載本機內測服時 GM 本來就該開，只有 app:// 時才算失敗
+      if (String(c.origin) === 'app://game') fails.push('GM／內測工具外露');
+    }
+    if (!report.screen || !report.screen.found) fails.push('螢幕截圖失敗');
+    else if (report.screen.blank) fails.push('螢幕上是空白畫面');
+    if (report.flush !== 'ok') fails.push('關窗存檔：' + report.flush);
+    if (report.fullscreenOn && !(report.fullscreenOn.page && report.fullscreenOn.window)) fails.push('全螢幕無法進入');
+    if (report.fullscreenOff && report.fullscreenOff.window) fails.push('全螢幕無法離開');
+    if (report.pageErrors.length) fails.push('頁面錯誤 ' + report.pageErrors.length + ' 筆');
+    return fails;
+  }
   function finish() {
     report.finishedAt = new Date().toISOString();
+    report.failures = verdict();
+    report.ok = report.failures.length === 0;
     fs.writeFileSync(path.join(outDir, 'smoke-report.json'), JSON.stringify(report, null, 2));
-    step('report-written');
+    step('report-written', { ok: report.ok, failures: report.failures });
     if (!win.isDestroyed()) win.destroy();
+    require('electron').app.exit(report.ok ? 0 : 1);
   }
 
   wc.once('did-finish-load', function () {
@@ -119,6 +188,10 @@ function run(win, ctx) {
     }).then(function (image) {
       fs.writeFileSync(path.join(outDir, 'smoke.png'), image.toPNG());
       step('screenshot');
+      return captureOnScreen(win, path.join(outDir, 'smoke-screen.png'));
+    }).then(function (screen) {
+      report.screen = screen;
+      step('on-screen', screen);
       // F11 走的同一條路：代按網頁全螢幕，視窗要跟著進入，再按一次要能離開
       return ctx.toggleFullscreen(win).then(function () { return sleep(1500); }).then(function () {
         report.fullscreenOn = { page: null, window: win.isFullScreen() };
