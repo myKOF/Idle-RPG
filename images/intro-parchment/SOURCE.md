@@ -80,6 +80,12 @@ node extended-shot-four/export-replay.cjs shots-01-04-100.7s.mp4 replay-export
 node extended-shot-four/export-replay.cjs --audio-only replay-audio-export
 ```
 
+## 第五鏡荒漠終章（2026-11-17）
+
+核准成片長 9 秒。第一格直接呈現風沙、地面與飛行魔軍，天空和拱門分速左移，近地與人物右移，中景地表固定，最後淡至黑幕。三類飛行惡魔各有 16 格拍翼週期。成片保存為 `web/shot-05-desert-finale-orbit.mp4`，遊戲匯出為 `images/intro-parchment/shot-05-desert-finale-orbit.mp4`。
+
+`extended-shot-five/` 保存分層程式、ImageGen 補景、提示詞、獨立音效與審片混音。重製和預覽方式見該目錄的 `SOURCE.md`。遊戲說明頁重播目前播放 100.7 秒前四鏡連播。
+
 ## 可編輯來源
 
 Effects-Materials 內的 `codex-authored/intro-parchment-shots-20261111` 保存核准成片、可編輯程式、透明分件、雲海和深淵背景、音軌、聲景產生器及提示詞。角色、流光翼、神殿、遠雲、地面敵軍、飛行敵軍、火焰、煙與粒子分開合成。大天使長的頭罩與右手由獨立透明圖接回角色。第二鏡大天使長沿用第一鏡流光翼分件。第三鏡的地圖、荒漠地表、星點、紫霧、光束、圓形神光及沙塵分開合成。

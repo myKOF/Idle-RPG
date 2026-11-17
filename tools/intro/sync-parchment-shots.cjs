@@ -61,7 +61,11 @@ const sources = [
   'assets/brace.png', 'assets/cloth-ribbon.png', 'assets/flare.png', 'assets/kneel.png',
   'assets/kneel-desert.png', 'assets/rise.png', 'assets/rise-desert.png', 'assets/vista.png',
   'assets/shot-four-effects.wav', 'assets/shot-four-mix.wav'
-].map(file => 'extended-shot-four/' + file), 'web/shot-02-archangel-fall-18s.mp4',
+].map(file => 'extended-shot-four/' + file), [
+  'SOURCE.md', 'PROMPT.md', 'index.html', 'finale.js', 'finale-mattes.js', 'finale-fx.js',
+  'finale-backdrop.js', 'build-score.cjs', 'render-finale.cjs',
+  'assets/vista-clean.png', 'assets/finale-effects.wav', 'assets/finale-audio.wav'
+].map(file => 'extended-shot-five/' + file), 'web/shot-02-archangel-fall-18s.mp4',
 'web/shot-03-extended-32s.mp4', 'web/shot-03-extended-33.5s.mp4', 'web/shots-01-04-100.7s.json',
 'web/shots-01-04-100.7s.mp4.part01', 'web/shots-01-04-100.7s.mp4.part02');
 const exportsByName = {
@@ -70,6 +74,7 @@ const exportsByName = {
   'shots-01-03-66s.mp4': 'web/shots-01-03-66s.mp4',
   'shots-01-03-67.5s.mp4': 'web/shots-01-03-67.5s.mp4',
   'shot-04-32.2s.mp4': 'web/shot-04-32.2s.mp4',
+  'shot-05-desert-finale-orbit.mp4': 'web/shot-05-desert-finale-orbit.mp4',
   'shot-01-02.mp4': 'web/shot-01-02.mp4',
   'shot-01-03.mp4': 'web/shot-01-03.mp4',
   'shot-01-03-sfx.mp3': 'web/shot-01-03-sfx.mp3',
