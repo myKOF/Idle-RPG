@@ -46,7 +46,7 @@
     "extended-shot-one/shot.js": "51f464112afc61721766b1e06451aabb48556d6bfb418c26f410b38f69dc6efa",
     "extended-shot-one/shot-one-assault.js": "005fe3e241ac29d26a3aed2822a8cc0a0900961dfca358e9014b4d3c35e8ab24",
     "extended-shot-one/shot-one-reinforcements.js": "467d79f7f39c9308267f911643f9930ac8eac900a8e6406c41b1928662d20160",
-    "extended-shot-one/build-audio.cjs": "be31970747824f1212058cf6b3bbf0d5949a878f4339b5a78d785dcb581fc0c8",
+    "extended-shot-one/build-audio.cjs": "c69cbf02dd312501fec9bb5959ff212f632fdb82343dd2ac20d4e193e3723660",
     "extended-shot-one/render-shot-one.cjs": "b8bca25ca8b05bb5cbe6fdde833c7eeb70fdda33c50a7fbc7a18974c6267a83b",
     "extended-shot-one/assets/noto-serif-tc-bold.woff2": "326b6f3efb1c86627a650b0c8efd6e68608ed81b6d58585b03ef2c0d004a168e",
     "extended-shot-one/assets/shot-one-effects.wav": "a15f948ffede3041e1ea84200b6fa7e631524970441ecacdd37480aa83e1dc75",
@@ -187,11 +187,11 @@
     },
     "shots-01-04-replay-sfx.mp3": {
       "source": "web/shots-01-04-replay-sfx.mp3",
-      "sha256": "5b91f85107d414b1f44cf71b124fd8df801ed7f126fabea6c5f50909f226aa5c"
+      "sha256": "6afe787bfeb2393cea25912ac2759a30b5da3ebc210945b96e1f80e54e707c4c"
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "a10340d1bd29a4615a4348b86ddffc19e1a92b5648af709d207955af915eaaff"
+      "sha256": "6d65dc5b95fa16b25e04bf0e8cb83e3a92b168d8707df99f39f2518b21ab2751"
     }
   }
 }
