@@ -1,3 +1,10 @@
+## VERSION-UPDATE-TOPBAR-20261118 — 頂欄版本更新按鈕
+
+- Codex，Done。發現新版本時顯示「發現新版本！點擊此處更新」。正式版按鈕緊接全螢幕入口，內測版沿用既有傷害／承傷資訊插入順序，按鈕接在四項資訊後。前置為既有頂欄、版本偵測及 String 表。
+- 更新 `index.html`、`css/style.css`、`js/main.js`、`config/Excel/String.xlsx`、`config/CSV/String.csv`、`js/strings_data.js`、`tools/vfx/editor/index.html` 的字串快取、`LV_upgrade_system.md` 與本段。唯讀核對 `js/ui.js` 的承傷欄、Electron 外殼、配置表工具與相關測試。與 `codex/intro-shot-five-white-sword` 共用主頁、系統說明及任務紀錄，各自修改不同區段，三方內容試合通過。
+- 隔離 Electron `app://game` 與本機內測 HTTP 全靜音入局。模擬版本探測回應更新，確認按鈕原先隱藏、文案與位置正確、內測四項資訊皆可命中，並以滑鼠點擊驗證實際重新載入。Excel 原生正常重開，逐列核對只改 E50，保留儲存格、欄位與檢視格式。
+- 63 項字串、全螢幕、啟動及桌面回歸通過。`npm.cmd run build` 通過 732 檔，字串同步、寫死文字檢查及 Git 差異檢查通過。交使用者整合，可合併。
+
 ## DESKTOP-FULLSCREEN-20261117 — 桌面版原生全螢幕與頂欄提示
 
 - Codex，完成。Electron 啟動直接建立原生全螢幕視窗，並以 HTML 全螢幕事件同步視窗與頂欄。F11、Alt+Enter、Esc、頂欄切換及重新整理均可用。頂欄進入提示從 String.xlsx 第 207 號改為「全螢幕」，同步 CSV、生成資料、主頁與 VFX 編輯器快取。
