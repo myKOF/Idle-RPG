@@ -1,4 +1,4 @@
-/* 遊戲外框、控制、提示與裝備格共用銅邊和石板色。場景與功能專用插畫由原模組提供。 */
+/* 主介面沿用既有版面，套用銅邊和石板色。背包圖示與浮動裝備 Tips 沿用新版樣式。 */
 :root {
   --bs-ink: #0e0c10;
   --bs-recess: #171319;
@@ -30,9 +30,7 @@ html body {
   --panel2: var(--bs-raised);
   background: var(--bs-ink);
   color: var(--text);
-  font-family: "Source Sans 3", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
   text-shadow: none;
-  color-scheme: dark;
 }
 
 body #ui-stage,
@@ -41,15 +39,14 @@ body #ui-stage #ui-shell {
 }
 
 html body #topbar {
-  min-height: 38px;
-  border-bottom: 1px solid var(--bs-seam);
+  border-bottom-color: var(--bs-seam);
   background: linear-gradient(#221e23, #151216);
 }
 
 body #topbar .brand { color: var(--bs-text); }
 body #topbar .brand-sub { color: var(--bs-muted); }
 body #res-bar .res {
-  border: 1px solid var(--bs-seam);
+  border-color: var(--bs-seam);
   border-radius: 2px;
   background: var(--bs-recess);
 }
@@ -59,7 +56,7 @@ body :is(#inv-section-box, #forge-gem-box),
 body :is(.modal-box, .confirm-box, .system-card, .detail-log-box, #battle-info-drawer, #salvage-settings-panel),
 body #sk-tooltip:not(:has(.equip-detail-card)),
 body #sk-tooltip .equip-detail-card:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)) {
-  border: 1px solid var(--bs-brass) !important;
+  border-color: var(--bs-brass) !important;
   border-image: none !important;
   border-radius: 2px !important;
   background: var(--bs-corners), var(--bs-surface) !important;
@@ -68,37 +65,22 @@ body #sk-tooltip .equip-detail-card:not(:is(.mythic-detail, .genesis-detail, .ch
   box-shadow: var(--bs-frame-shadow) !important;
 }
 
-body :is(#workspace-area, #combat-area) > :is(.af-frame-corner, .af-frame-lines),
-body #workspace-area > .af-heading::before,
-body #workspace-area > .af-heading::after,
-body #battle-area > .af-heading::before,
-body #battle-area > .af-heading::after {
-  display: none !important;
+body :is(#workspace-area, #combat-area) > :is(.af-frame-corner, .af-frame-lines) {
+  filter: sepia(.48) saturate(1.22);
 }
 
 body #workspace-area > .af-heading,
 body #battle-area > .af-heading {
-  position: static;
-  width: auto;
-  min-height: 0;
-  margin: 0;
-  padding: 6px 9px;
-  transform: none;
-  border: 0;
-  border-bottom: 1px solid var(--bs-seam);
-  background: linear-gradient(90deg, #30272a, #211b20);
-  box-shadow: none;
+  background: linear-gradient(#423437, #2b242a);
   color: var(--bs-text);
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: .07em;
-  text-align: left;
-  text-shadow: none;
+  text-shadow: 0 1px #171218;
 }
 
-body #workspace-area main { padding: 8px 10px 10px; }
+body :is(#workspace-area, #battle-area) > .af-heading::before,
+body :is(#workspace-area, #battle-area) > .af-heading::after {
+  color: var(--bs-gold);
+}
+
 body #workspace-area #tabs {
   background: #19171a;
   border-color: var(--bs-seam);
@@ -116,17 +98,14 @@ body #achv-modal .achv-filters button,
 body #workspace-area :is(.gx-tab, .rx-tab, .rx-detail-toggle),
 body #zone-bar #btn-world-map,
 body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button {
-  border: 1px solid var(--bs-button-edge, #a58659) !important;
+  border-color: var(--bs-button-edge, #a58659) !important;
   border-radius: 0 !important;
   background:
     linear-gradient(135deg, #dabc7d99 0 3px, transparent 4px) left top / 9px 9px no-repeat,
     linear-gradient(315deg, #8f6542 0 3px, transparent 4px) right bottom / 9px 9px no-repeat,
     linear-gradient(170deg, var(--bs-button-top, var(--bs-green)), var(--bs-button-bottom, var(--bs-green-dark))) !important;
-  clip-path: var(--bs-cut);
-  box-shadow: inset 0 0 0 1px #100d12b3, inset 0 2px #d6dec71a !important;
+  box-shadow: inset 0 0 0 1px var(--bs-button-edge, #a58659), inset 0 0 0 2px #100d12b3 !important;
   color: var(--bs-text) !important;
-  font-family: inherit;
-  letter-spacing: .015em;
   text-shadow: 0 1px #090d0b;
 }
 
@@ -180,7 +159,7 @@ body :is(.btn, .zone-btn, .realm-btn, .modal-x, .btn-equip-sets, .tab-btn, .sett
 
 body :is(.input, .dropdown, select.log-filter, .settings-select),
 body #inv-section-box .inv-head :is(.input, select) {
-  border: 1px solid var(--bs-seam) !important;
+  border-color: var(--bs-seam) !important;
   border-radius: 2px !important;
   background: var(--bs-recess) !important;
   color: var(--bs-text) !important;
@@ -201,234 +180,27 @@ body :is(.modal-box, .confirm-box, .system-card, .detail-log-box) :is(h2, h3) {
   color: var(--bs-gold);
   text-shadow: none;
 }
-body :is(main, #tabs, #inventory-grid, #battle-log, .modal-box, .system-card, #sk-tooltip) {
+body :is(main, #tabs, #inventory-grid, .modal-box, .system-card, #sk-tooltip) {
   scrollbar-color: #896b43 #1b171b;
-  scrollbar-width: thin;
 }
 
-body #game-layout {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(275px, .85fr) minmax(0, 1.15fr);
-  grid-template-areas: "combat" "workspace";
-  gap: 9px !important;
-  padding: 7px 9px 9px !important;
-}
-
-body #game-layout #combat-area {
-  grid-area: combat;
-  width: auto !important;
-  min-width: 0 !important;
-  max-width: none !important;
-  padding: 7px;
-  border-color: #6c573e !important;
-}
-
-body #combat-area #battle-area {
-  display: grid;
-  grid-template:
-    "battle-controls log-title" auto
-    "battle-screen log" minmax(0, 1fr)
-    / minmax(0, 2.05fr) minmax(290px, 1fr);
-  gap: 5px 10px;
-  box-shadow: none;
-}
-
-body #battle-area > .af-heading { display: none !important; }
-body #battle-area > .battle-navigation {
-  grid-area: battle-controls;
-  margin: 0;
-  gap: 4px;
-}
 body #battle-area :is(#zone-bar, #stage-bar) {
   background: transparent !important;
   border-color: var(--bs-seam);
   box-shadow: none;
   color: var(--bs-text);
 }
+
 body #battle-area > .battle-scene-wrapper {
-  grid-area: battle-screen;
-  border: 1px solid var(--bs-brass);
+  border-color: var(--bs-brass);
   border-radius: 2px;
-  background: var(--bs-recess);
   box-shadow: inset 0 0 0 2px #181217, 0 0 0 1px #110e12;
 }
-body #combat-area #battle-canvas-host {
-  --hud-scale: .66;
-  border: 0;
-  border-radius: 1px;
-}
 
-body #battle-area > .log-header .log-title { color: var(--bs-text); font-weight: 700; }
-body #battle-area > .log-header {
-  grid-area: log-title;
-  display: flex !important;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-content: start;
-  align-items: center;
-  margin: 0;
-  padding: 6px 8px;
-  border: 1px solid var(--bs-brass);
-  background: linear-gradient(90deg, #352d30, #221e24);
-}
-body #battle-area > #battle-log {
-  grid-area: log;
-  display: block !important;
-  height: auto;
-  min-height: 0;
-  max-height: none;
-  margin: -5px 0 0;
-  padding: 5px 8px;
-  overflow: auto;
-  border: 1px solid var(--bs-brass);
-  border-top: 0;
-  border-radius: 0;
-  background: #1b171e;
-  box-shadow: inset 0 0 0 2px #110e13;
-}
-body #battle-log .log-line {
-  padding: 5px 6px;
-  border-bottom: 1px solid #4f41344d;
-  font-size: 13px;
-  line-height: 1.35;
-}
-body #battle-log .log-line:nth-child(odd) { background-color: #282128; }
-
-body #ui-shell.battle-fullscreen #game-layout {
-  grid-template-rows: minmax(0, 1fr);
-  grid-template-areas: "combat";
-}
-body #ui-shell.battle-fullscreen #battle-area { display: flex; }
-body #ui-shell.battle-fullscreen #battle-area > :is(.log-header, #battle-log) { display: none !important; }
-body #ui-shell.battle-fullscreen #battle-canvas-host { --hud-scale: 1; }
-
-body #game-layout #workspace-area {
-  grid-area: workspace;
-  display: grid;
-  grid-template: "tabs" auto "work" minmax(0, 1fr) / minmax(0, 1fr);
-  min-height: 0;
-  padding: 0;
-  overflow: hidden;
-}
-body #game-layout #workspace-area > .af-heading { display: none !important; }
-body #workspace-area #tabs {
-  grid-area: tabs;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 5px;
-  padding: 5px 8px;
-  overflow: auto hidden;
-  border-right: 0;
-  border-bottom: 1px solid var(--bs-brass);
-}
-body #workspace-area #tabs .tab-btn {
-  flex-direction: row;
-  gap: 5px;
-  width: auto;
-  min-height: 35px !important;
-  height: auto !important;
-  margin: 0 !important;
-  padding: 2px 8px !important;
-  white-space: nowrap;
-}
-body #workspace-area #tabs .nav-tab-icon { display: inline-flex; }
-body #workspace-area #tabs .af-nav-icon { width: 26px; height: 26px; }
-body #workspace-area #tabs :is(.char-tab-icon, .rail-portrait-frame) { width: 28px; height: 28px; }
-body #workspace-area main { grid-area: work; }
-
-body #workspace-area #tab-equip.active {
-  display: grid;
-  grid-template-columns: minmax(0, 1.04fr) minmax(0, 1fr);
-  align-items: stretch;
-  gap: 9px;
-  min-height: 100%;
-}
-body #tab-equip > .equip-top-layout {
-  padding: 8px;
-  border: 1px solid var(--bs-brass);
-  background: var(--bs-surface);
-  box-shadow: var(--bs-frame-shadow);
-}
-body #tab-equip .equip-layout {
-  --bs-gear-size: clamp(45px, 7vh, 66px);
-  display: grid !important;
-  grid-template-columns: max-content minmax(0, 1fr) !important;
-  align-items: start !important;
-  gap: 8px !important;
-}
-body #ui-shell #tab-equip .equip-layout { --bs-gear-size: 65px; }
-body #tab-equip .equip-right-col {
-  height: calc(5 * var(--bs-gear-size) + 20px);
-  min-width: 0;
-}
-body #tab-equip .equip-detail-head {
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 3px;
-}
-body #tab-equip .equip-middle-row:has(#equip-material-panel:not(:empty)) {
-  grid-template-columns: minmax(0, 1fr) minmax(98px, 33%);
-}
-body #tab-equip #equip-grid {
-  display: grid;
-  grid-template-columns: repeat(3, var(--bs-gear-size));
-  grid-auto-rows: var(--bs-gear-size);
-  gap: 5px;
-  aspect-ratio: auto;
-  background: none;
-  border: 0;
-}
-body #tab-equip #equip-grid .eq-slot {
-  position: relative;
-  inset: auto;
-  width: 100%;
-  min-width: 0;
-  height: 100%;
-  min-height: 0;
-  padding: 0;
-  transform: none;
-  aspect-ratio: 1;
-}
-#equip-grid .slot-helmet { grid-area: 1 / 2; }
-#equip-grid .slot-shoulder { grid-area: 2 / 1; }
-#equip-grid .slot-chest { grid-area: 2 / 2; }
-#equip-grid .slot-amulet { grid-area: 2 / 3; }
-#equip-grid .slot-gloves { grid-area: 3 / 1; }
-#equip-grid .slot-belt { grid-area: 3 / 2; }
-#equip-grid .slot-wrist { grid-area: 3 / 3; }
-#equip-grid .slot-ring { grid-area: 4 / 1; }
-#equip-grid .slot-legs { grid-area: 4 / 2; }
-#equip-grid .slot-ring2 { grid-area: 4 / 3; }
-#equip-grid .slot-weapon { grid-area: 5 / 1; }
-#equip-grid .slot-boots { grid-area: 5 / 2; }
-#equip-grid .slot-weapon2 { grid-area: 5 / 3; }
-body #equip-grid #btn-equip-sets {
-  position: static;
-  grid-area: 1 / 3;
-  place-self: start end;
-}
-body #tab-equip > #inv-section-box {
-  display: flex;
-  flex-direction: column;
-  margin-top: 0 !important;
-  min-width: 0;
-  min-height: 0;
-  padding: 8px;
-}
 body #inv-section-box .inv-head {
-  flex-wrap: wrap;
-  row-gap: 5px;
-  margin: 0 0 6px;
-  padding: 4px 5px 7px;
-  border: 0;
-  border-bottom: 1px solid var(--bs-seam);
+  border-color: var(--bs-seam);
   background: linear-gradient(90deg, #30272b, #231e25);
   box-shadow: none;
-}
-body #tab-equip #inv-section-box #inventory-grid {
-  min-height: 0;
-  flex-shrink: 1;
 }
 body #tab-equip #detail-pane:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)),
 body #tab-equip :is(#equip-action-bar, .equip-material-panel) {
@@ -436,31 +208,18 @@ body #tab-equip :is(#equip-action-bar, .equip-material-panel) {
   border-radius: 2px !important;
   background: var(--bs-recess) !important;
 }
-body #tab-equip #equip-action-bar { padding: 7px 8px; }
 body #tab-equip #detail-pane:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)) .it-affix-row:nth-child(odd) {
   background: #31272a;
 }
-body #inventory-grid {
-  --inventory-slot-size: 58px;
-  grid-template-columns: repeat(auto-fill, var(--inventory-slot-size)) !important;
-  justify-content: start;
-  gap: 6px;
-  padding: 4px 3px;
-  background: #151218;
-}
+
+body #inventory-grid { background: #151218; }
 body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot, #forge-gem-grid .item-cell) {
-  border-width: 1px !important;
   border-radius: 2px !important;
 }
-body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot, #forge-gem-grid .item-cell):not(:is(.eff-mythic, .eff-genesis, .eff-chaos, .eff-godforged)) {
+body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot.filled, #forge-gem-grid .item-cell):not(:is(.eff-mythic, .eff-genesis, .eff-chaos, .eff-godforged)) {
   background: radial-gradient(ellipse at 50% 22%, #332b31, #18141a 72%) !important;
   box-shadow: inset 0 0 0 2px #100d14bc !important;
 }
-body #game-layout #equip-grid .eq-slot.empty {
-  border: 1px solid #65533e !important;
-  background: var(--bs-recess) !important;
-}
-body #game-layout #equip-grid .eq-slot.empty .eq-icon { opacity: .42; }
 body #game-layout #inventory-grid .item-cell.dimmed:not(.item-cell-dimmed) {
   opacity: .57 !important;
   filter: saturate(.48) brightness(.83) !important;
@@ -487,28 +246,20 @@ body #game-layout #inventory-grid .item-cell[data-slot]:not(:is(.eff-mythic, .ef
   z-index: 1;
   pointer-events: none;
 }
-body #game-layout :is(#inventory-grid .item-cell > .item-icon, #forge-gem-grid .item-cell > .item-icon, #equip-grid .eq-slot > .eq-icon) {
+
+/* 原圖在既有背包格內放大，保留物品格尺寸、欄數及標記位置。 */
+body #game-layout #inventory-grid .item-cell[data-slot] > .item-icon {
   width: 98%;
   height: 98%;
-  max-width: none;
-  max-height: none;
-  margin: 0;
-  padding: 0;
   object-fit: contain;
   filter: drop-shadow(0 2px 1px #08060a);
 }
-body #game-layout #equip-grid .eq-slot.empty > .eq-icon { width: 70%; height: 70%; }
-body #game-layout #equip-grid .eq-slot.filled > .eq-icon[src*="icon_weapon_"] { transform: none; }
-body #game-layout #inventory-grid .item-cell[data-slot] > .item-icon:is([src*="icon_ring"], [src*="icon_amulet"]) { transform: scale(1.15); }
+body #game-layout #inventory-grid .item-cell[data-slot] > .item-icon:is([src*="icon_ring"], [src*="icon_amulet"]) {
+  scale: 1.15;
+}
 body #game-layout #inventory-grid .item-cell[data-slot] .ic-lv {
-  inset: 2px auto auto 2px !important;
-  padding: 1px 2px;
-  border-radius: 1px;
   background: #17131bcc;
   color: #e8e0cd;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  z-index: 3;
 }
 
 /* 圖卡融入標題，並以品質色延伸到圖卡金屬邊；詞條與數字在下方對齊。 */
@@ -588,14 +339,6 @@ body #sk-tooltip .equip-compare-container {
   gap: 8px !important;
 }
 
-/* 舊版縮放會延長直式畫布，限制高度以保持戰鬥區比例。固定畫布本身高度更小。 */
-@media (orientation: portrait) {
-  body #ui-stage #ui-shell { max-height: 1200px; }
-  body #ui-stage #ui-shell #game-layout { height: min(1150px, calc(var(--ui-canvas-height, 900px) - 50px)) !important; }
-  body #ui-stage #ui-shell.battle-fullscreen #game-layout { height: 100% !important; }
-}
-
-/* 在以實際像素定位 tooltip 的舊版窄視窗中維持可讀尺寸。 */
 @media (max-width: 740px) {
   body #sk-tooltip .equip-detail-card .it-name-icon {
     width: clamp(52px, calc(36 * var(--ui-vw, 1vw) - 76px), 106px);
