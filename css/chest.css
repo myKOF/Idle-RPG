@@ -207,10 +207,11 @@
   --nfc-gap: 6px;
   position: fixed;
   /* showModal() places the dialog in the top layer, outside the shell's transform. */
-  inset: 50% auto auto 50%;
+  inset: 0 auto auto 0;
   width: var(--ui-canvas-width, 100%);
   height: var(--ui-canvas-height, 100%);
-  transform: translate(-50%, -50%) scale(var(--ui-scale, 1));
+  transform: scale(var(--ui-scale, 1));
+  transform-origin: top left;
   margin: 0;
   max-width: none;
   max-height: none;

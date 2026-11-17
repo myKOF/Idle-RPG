@@ -47,7 +47,7 @@ test('positionAffixPool 依錨點位置動態計算 maxHeight 延伸至畫面底
     offsetHeight: 400
   };
 
-  const fakeWindow = mountCanvas(1200, 450);
+  const fakeWindow = mountCanvas(960, 400);
 
   const fnMatch = uiCode.match(/function positionAffixPool\(anchorEl\)\s*\{([\s\S]*?)\n\}\n\nfunction toggleAffixPool/);
   assert.ok(fnMatch, 'positionAffixPool 函式應能成功提取');
@@ -55,11 +55,11 @@ test('positionAffixPool 依錨點位置動態計算 maxHeight 延伸至畫面底
   const positionFn = new Function('$id', 'window', 'anchorEl', fnMatch[1]);
   const $id = (id) => (id === 'affix-pool-overlay' ? overlayEl : null);
 
-  // 左右黑邊各 120px，錨點換回畫布座標後 bottom 為 200，right 為 500。
+  // 倍率 0.5，畫布高 800。錨點換回畫布座標後 bottom 為 200，right 為 500。
   const anchorEl = {
     getBoundingClientRect: () => ({
-      left: 360,
-      right: 370,
+      left: 240,
+      right: 250,
       top: 90,
       bottom: 100
     })
@@ -68,9 +68,9 @@ test('positionAffixPool 依錨點位置動態計算 maxHeight 延伸至畫面底
   positionFn($id, fakeWindow, anchorEl);
 
   // y = bottom (200) + 8 = 208
-  // maxH = 900 - 208 - 8 = 684
+  // maxH = 800 - 208 - 8 = 584
   assert.equal(overlayStyle.top, '208px');
-  assert.equal(overlayStyle.maxHeight, '684px');
+  assert.equal(overlayStyle.maxHeight, '584px');
   // x = right (500) - tw (240) = 260
   assert.equal(overlayStyle.left, '260px');
 });
@@ -117,7 +117,7 @@ test('toggleAffixPool 與 hideAffixPool 正確管理顯示、錨點與 maxHeight
   const poolSource = { innerHTML: '<div>詞條清單內容</div>' };
   const poolBtn = {
     nextElementSibling: poolSource,
-    getBoundingClientRect: () => ({ left: 150, right: 160, top: 150, bottom: 160 })
+    getBoundingClientRect: () => ({ left: 150, right: 160, top: 50, bottom: 60 })
   };
 
   // 1. 呼叫 toggleAffixPool 開啟
@@ -128,8 +128,8 @@ test('toggleAffixPool 與 hideAffixPool 正確管理顯示、錨點與 maxHeight
   assert.equal(UI.affixPoolAnchor, poolBtn);
   assert.equal(UI.affixPoolItemId, 999);
   assert.equal(overlayStyle.top, '128px');
-  // 900 - 128 - 8 = 764px
-  assert.equal(overlayStyle.maxHeight, '764px');
+  // 1300 - 128 - 8 = 1164px
+  assert.equal(overlayStyle.maxHeight, '1164px');
 
   // 2. 呼叫 hideAffixPool 關閉
   hideFn($id, UI);
