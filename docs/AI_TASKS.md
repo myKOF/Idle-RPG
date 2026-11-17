@@ -16258,3 +16258,10 @@ Worker 存活且頁面正常完成載入。
 - Owner：Claude，Done。使用者指出 NPC 表的 3D 模型與動作名稱不統一（treant／boss3_character、Unsteady_Walk／Running…），要求一律 BOSS1、BOSS2 式檔名與 Walk／Die／Attack1～3。
 - 做法：`tools/meshy-pipeline/src/normalize-tower-boss-models.cjs` 把 9 個模型改名（樹人→boss2*、第3隻→boss3*、原 boss2／boss3 骷髏王二三階→boss1_lv2／lv3，鬼面 boss5* 本來就對），其中樹人×3、第3隻×3 另改 GLB 內動畫名稱（只改 JSON 區塊）；素材庫 9 個資產包的 exports 與 manifest 同步，9 支 `export-tower-*.cjs --check` 全部通過。NPC.xlsx 經 Excel 原生 API 一次改 16 列（44 格）的模型與 AC:AH 動作欄，重開驗證通過，CSV／data 同步。快取版號 `20261116-boss-models-v1`。
 - 測試：更新 treant／boss3／npc3d-config／tower-boss3d 測試，新增「所有塔BOSS綁定都是 bossN.glb＋標準動作名，且 GLB 內動作齊全、資料夾內沒有舊式檔名」；實機用遊戲自己的 Npc3D 載入全部 11 個不同模型都通過，並跑了第2層（樹人）與第3層（第3隻）真實塔戰確認渲染與動作。立繪檔名、.blend 與舊說明文件未改（見對照文件）。素材庫提交 2c326f15。
+
+## INTRO-REPLAY-HTTP-20261117 — 修復設置說明頁的序章重播
+
+- Codex，完成。重現點擊後影片停在 0 秒等載入，跳轉至片尾也會重新要求整檔。Node 測試服原先回傳 `200 application/octet-stream` 並忽略 Range。修正 `tools/test_server_manager.cjs` 為 `video/mp4`、非同步串流及單一位元組範圍，支援 HTTP 206／416 與 HEAD。
+- 修改測試服、`tests/test-server-manager.test.cjs`、功能文件及本紀錄。唯讀檢查主頁、`js/intro-player.js`、`js/intro-data.js`、`js/game-menu.js` 和既有序章成片。重播內容及音訊沿用 30.3 秒核准版。素材庫無變更。
+- 驗證：`node --test tests/test-server-manager.test.cjs tests/start-test-server.test.cjs tests/intro-player.test.cjs tests/intro-game-audio.test.cjs tests/intro-audio.test.cjs` 41 項通過，`npm.cmd run build` 723 檔、Git diff 檢查通過。隔離 Edge 從開始選單和實際遊戲點進說明頁，驗證起播、略過、再播、跳至片尾結束與焦點復原。已重啟原 8123 Codex 測試服，確認 206 及遊戲內同一路徑可播。
+- 可合併。驗證範圍為 Node 測試服及 Windows Edge。遊戲提交為本段所在的 `[Codex] fix: 修復測試服開頭動畫重播`。
