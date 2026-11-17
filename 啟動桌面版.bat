@@ -1,6 +1,8 @@
 @echo off
 rem Desktop build (Electron), dev mode: windowed, F12 devtools, F5 reload.
-rem Uses npm.cmd so the PowerShell execution policy does not matter.
+rem Launches electron.exe directly with "start" so this console closes right away.
+rem Startup log: %APPDATA%\idle-rpg\logs\desktop.log
+rem (Need console output? run "npm.cmd run desktop:dev" in a terminal instead.)
 cd /d "%~dp0"
 where node >nul 2>nul
 if errorlevel 1 (
@@ -9,4 +11,10 @@ if errorlevel 1 (
   exit /b 1
 )
 if not exist "node_modules\electron\dist\electron.exe" call npm.cmd install
-call npm.cmd run desktop:dev
+if not exist "node_modules\electron\dist\electron.exe" (
+  echo Electron install failed.
+  pause
+  exit /b 1
+)
+start "" "node_modules\electron\dist\electron.exe" . --dev --windowed
+exit /b 0
