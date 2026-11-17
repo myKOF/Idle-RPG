@@ -20,5 +20,5 @@ test('全螢幕按鈕保留網頁全螢幕退出邏輯並避免 F11 時重複 re
   assert.match(ui, /if \(document\.fullscreenElement\)\s*\{[\s\S]*?document\.exitFullscreen\(\)/);
   assert.match(ui, /else if \(isBrowserFullscreen\(\)\)/);
   assert.match(ui, /document\.documentElement\.requestFullscreen\(\)/);
-  assert.match(index, /id="btn-fullscreen"/);
+  assert.match(index, /id="btn-fullscreen"[^>]*data-tip="全螢幕"/);
 });

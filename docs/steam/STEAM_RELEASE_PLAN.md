@@ -75,7 +75,7 @@
 
 | 檔案 | 內容 |
 |---|---|
-| `electron/main.cjs` | 主行程：`app://game` 協議（含 Range 206）、權限白名單、單一實例、關窗前 `WorkerBridge.saveAutoNow()`（12 秒保底）、F11／Alt+Enter 代按遊戲自己的網頁全螢幕、擋外部導覽、`userData` 固定為 `%APPDATA%/idle-rpg`、日誌 `userData/logs/desktop.log` |
+| `electron/main.cjs` | 主行程：`app://game` 協議（含 Range 206）、權限白名單、單一實例、關窗前 `WorkerBridge.saveAutoNow()`（12 秒保底）、原生視窗全螢幕與遊戲頂欄及 F11／Alt+Enter 同步、擋外部導覽、`userData` 固定為 `%APPDATA%/idle-rpg`、日誌 `userData/logs/desktop.log` |
 | `electron/app-protocol.cjs` | 路徑解析（擋穿越與點開頭路徑）、MIME、Range 計算；`tests/desktop-app-protocol.test.cjs` |
 | `electron/preload.cjs` | `window.ApexHost`（沿用 `js/ui.js` 既有約定）：`isDesktop`、`quit()`；`openSaveFolder` 留給任務 C |
 | `electron/smoke.cjs` | 冒煙測試：開始選單 → 新遊戲／繼續 → 等揭幕 → 環境檢查、截圖、全螢幕往返、關窗存檔 |
@@ -85,7 +85,7 @@
 指令：
 
 ```
-npm run desktop          # 正式模式（最大化後自動全螢幕）
+npm run desktop          # 正式模式（直接進入原生全螢幕）
 npm run desktop:dev      # 視窗模式＋F12 開發者工具＋F5 重新整理
 npm run desktop -- --dev --url=http://127.0.0.1:8124/   # 載本機內測服（GM 開放）
 npm run desktop:smoke    # 冒煙測試，結果在 tmp/desktop-smoke/
@@ -103,7 +103,6 @@ Steam Overlay 需要它，任務 D 會和 `disable-direct-composition` 一起實
 觀察到但未處理（列入後續任務）：
 - 開機前頁面就讀 131 個檔、34 MB；冷磁碟快取時載入要 20～30 秒，熱快取 2.4 秒 → 任務 B 一併評估延後載入。
 - 視窗被其他視窗完全遮住時 Chromium 會把頁面判成隱藏、停止畫格，Loading 會等到視窗露出才揭開（與瀏覽器分頁行為相同）。
-- 全螢幕按鈕的提示文字寫的是「網頁全螢幕」，桌面版語意略不準，屬文字調整，未改。
 - 3D 主角（three.js `import()`）在冒煙測試的存檔沒有開啟，未實測。
 
 ### 4.2 任務 B 實作紀錄（2026-11-17，已完成）

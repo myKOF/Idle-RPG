@@ -204,7 +204,7 @@
 204,通用,名稱/文字/界面文字｜ui.js:13463 handlePauseClick、index.html:197,,🔄 排序 (等級),,
 205,通用,名稱/文字｜ui.js:13464 handlePauseClick,,✡️ 排序 (太古),,
 206,通用,提示｜ui.js:13726 syncFullscreenButton,,離開網頁全螢幕（Esc）,,
-207,通用,文字/提示｜ui.js:13727 syncFullscreenButton、index.html:57,,進入網頁全螢幕,,
+207,通用,文字/提示｜ui.js:13727 syncFullscreenButton、index.html:57,,全螢幕,,
 208,通用,指令失敗提示/文字｜ui.js:13822 syncFullscreenButton、ui.js:13824 syncFullscreenButton,,重新開局,,
 209,通用,對話框｜ui.js:13824 syncFullscreenButton,,重新開局確認,,
 210,通用,對話框｜ui.js:13847 syncFullscreenButton,{0}=代入參數：saveRecName(rec)；{1}=代入參數：rec.fname；{2}=代入參數：saveTimeStr(rec.savedAt),確定要刪除「{0}」嗎？ 檔名：{1} 時間：{2} 刪除後無法恢復，是否繼續？,,

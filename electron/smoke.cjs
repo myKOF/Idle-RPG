@@ -162,7 +162,8 @@ function run(win, ctx) {
       fails.push('存檔資料夾裡沒有自動存檔檔');
     }
     if (report.fullscreenOn && !(report.fullscreenOn.page && report.fullscreenOn.window)) fails.push('全螢幕無法進入');
-    if (report.fullscreenOff && report.fullscreenOff.window) fails.push('全螢幕無法離開');
+    if (report.fullscreenOn && !report.fullscreenOn.coversDisplay) fails.push('全螢幕內容未覆蓋整個螢幕');
+    if (report.fullscreenOff && (report.fullscreenOff.page || report.fullscreenOff.window)) fails.push('全螢幕無法離開');
     if (report.pageErrors.length) fails.push('頁面錯誤 ' + report.pageErrors.length + ' 筆');
     // 打包版少檔最直接的訊號：app:// 回了 404（開發模式下也應該是 0）
     if (report.notFound && report.notFound.length) fails.push('找不到檔案 ' + report.notFound.length + ' 個');
@@ -232,18 +233,34 @@ function run(win, ctx) {
     function onScreenChecks(screen) {
       report.screen = screen;
       step('on-screen', screen);
-      // F11 走的同一條路：代按網頁全螢幕，視窗要跟著進入，再按一次要能離開
-      return ctx.toggleFullscreen(win).then(function () { return sleep(1500); }).then(function () {
-        report.fullscreenOn = { page: null, window: win.isFullScreen() };
+      // F11 同時切換網頁與原生視窗，內容區域應覆蓋整個螢幕。
+      pressF11();
+      return sleep(1500).then(function () {
+        var display = require('electron').screen.getDisplayMatching(win.getBounds()).bounds;
+        var content = win.getContentBounds();
+        report.fullscreenOn = {
+          page: null,
+          window: win.isFullScreen(),
+          coversDisplay: Object.keys(display).every(function (key) { return content[key] === display[key]; })
+        };
         return evalJs('!!document.fullscreenElement');
       }).then(function (pageFs) {
         report.fullscreenOn.page = pageFs;
-        return ctx.toggleFullscreen(win);
-      }).then(function () { return sleep(1500); }).then(function () {
-        report.fullscreenOff = { window: win.isFullScreen() };
+        pressF11();
+        return sleep(1500);
+      }).then(function () {
+        return evalJs('!!document.fullscreenElement');
+      }).then(function (pageFs) {
+        report.fullscreenOff = { page: pageFs, window: win.isFullScreen() };
         step('fullscreen', { on: report.fullscreenOn, off: report.fullscreenOff });
         return ctx.flushSave(win);
       });
+    }
+
+    function pressF11() {
+      win.focus();
+      wc.sendInputEvent({ type: 'keyDown', keyCode: 'F11' });
+      wc.sendInputEvent({ type: 'keyUp', keyCode: 'F11' });
     }
   });
 }

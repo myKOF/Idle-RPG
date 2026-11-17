@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = 'd405a516';
+var STRING_DATA_VERSION = '97f9a9f9';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -209,7 +209,7 @@ var STRING_DATA = {
   "204": ["🔄 排序 (等級)"],
   "205": ["✡️ 排序 (太古)"],
   "206": ["離開網頁全螢幕（Esc）"],
-  "207": ["進入網頁全螢幕"],
+  "207": ["全螢幕"],
   "208": ["重新開局"],
   "209": ["重新開局確認"],
   "210": ["確定要刪除「{0}」嗎？ 檔名：{1} 時間：{2} 刪除後無法恢復，是否繼續？"],
