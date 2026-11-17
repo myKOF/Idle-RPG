@@ -106,6 +106,39 @@ Steam Overlay 需要它，任務 D 會和 `disable-direct-composition` 一起實
 - 全螢幕按鈕的提示文字寫的是「網頁全螢幕」，桌面版語意略不準，屬文字調整，未改。
 - 3D 主角（three.js `import()`）在冒煙測試的存檔沒有開啟，未實測。
 
+### 4.2 任務 B 實作紀錄（2026-11-17，已完成）
+
+```
+npm run desktop:pack                      # → dist/win-unpacked/IdleRPG.exe 與 dist/ship-report.json
+node tools/desktop/build_desktop.cjs --stage-only   # 只產生出貨清單與報告，不打包
+dist/win-unpacked/IdleRPG.exe --smoke=tmp/smoke-packaged   # 對打包版跑冒煙測試（背景、不顯示視窗）
+```
+
+| 檔案 | 內容 |
+|---|---|
+| `tools/desktop/ship-rules.cjs` | 出貨白名單：git 追蹤 ∩ 執行期根目錄 − 排除規則；授權檔一律保留 |
+| `tools/desktop/build_desktop.cjs` | 硬連結暫存到 `build/desktop/app/` → electron-builder `dir` x64 → `dist/win-unpacked/`；寫出貨報告 |
+| `tests/desktop-ship-rules.test.cjs` | index.html 引用全出貨、程式寫死的資源路徑全出貨、逐檔排除的檔沒被引用、授權檔保留 |
+| `electron/smoke.cjs` | 新增 404 檢查（打包版少檔的直接訊號）；預設背景執行，`--smoke-onscreen` 才顯示視窗做螢幕實拍與全螢幕往返 |
+
+結果：出貨 2479 個檔、754 MB（排除 418 MB，其中序章剪輯舊版影片 352 MB）；`win-unpacked` 共 1074 MB（Electron 本體約 320 MB）。
+打包版冒煙測試連跑兩次通過：404 為 0、頁面錯誤 0、GM 關閉、關窗存檔 ok、第二次走「繼續」。
+第一版打包時 404 檢查抓到 `index.html` 載入的 `tools/startup-diagnostics.js` 沒出貨，已加進白名單並由測試守住。
+
+決策：
+- **asar: false**：SteamPipe 以區塊比對，單一 asar 內任何檔案長度變動都會讓後面區塊位移，小更新也可能整包重下；asar 也不提供保護。
+- **白名單以目錄為單位**：圖示、怪物圖、glb 外部貼圖（例如 `role5.glb` 引用 `role5/base.jpg`）大量用拼接或由資料引用，grep 證明不了沒被用到；沒把握的一律出貨。
+- **只留繁中與英文的 Chromium 語系檔**；打包後刪除 Electron 的 `default_app.asar`。
+
+待確認（目前用暫定值，不影響開發）：
+- 產品名稱 `神力之巔：放置暗黑`、exe 檔名 `IdleRPG.exe`（刻意用 ASCII）、appId `com.idlerpg.desktop`——見 `tools/desktop/build_desktop.cjs` 開頭。
+- **應用程式圖示**：目前是 Electron 預設圖示；需要一張 256×256 以上的正式圖（`images/icon_avatar.png` 其實是 JPEG，不能直接用）。
+- `npm audit` 回報 electron-builder 相依的 minimatch 有 6 個中度 ReDoS，只在開發機打包時執行，不進遊戲。
+
+未處理：
+- 開機前讀 34 MB 的延後載入（任務 A 觀察到）沒有在這次動：它是遊戲載入流程的改動，不是打包問題，建議另開任務。
+- `audio/ui-preview/`（15.8 MB）多數是音效試聽候選，但檔名可能被拼接使用，這次保留；確認哪些在用後可再瘦身。
+
 ## 5. 明確不做
 
 - `electron-updater` 或任何自行下載更新的機制（Steam 規範禁止，與原規範一致）。

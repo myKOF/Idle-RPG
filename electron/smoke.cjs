@@ -6,6 +6,11 @@
         → 收集環境檢查與截圖 → 走一次正常關窗（觸發關窗存檔）。
    連跑兩次（不清 userData）時，第二次的 continueVisible 為 true 就代表第一次關窗存檔有落地。
 
+   兩種模式：
+   - 預設背景模式：視窗從不顯示（關掉背景節流，頁面照常畫格），不打擾正在用電腦的人
+   - --smoke-onscreen：顯示視窗，加做螢幕實拍（空白畫面偵測）與全螢幕往返；
+     會短暫置頂並切換全螢幕，跑之前要先跟使用者說
+
    這是給人跟 AI 自測用的開機檢查，不是遊戲測試：只回答「桌面外殼有沒有把遊戲跑起來、
    GM 工具有沒有外露、關窗會不會存檔」。 */
 
@@ -33,7 +38,7 @@ var CHECK_SCRIPT = [
   "  r.loadingVisible = (function(){ var el = document.getElementById('loading-screen'); return !!el && !el.classList.contains('is-hidden'); })();",
   '  r.idb = await new Promise(function(res){ try { var q = indexedDB.open("__desktop_smoke__", 1); q.onsuccess = function(){ q.result.close(); res(true); }; q.onerror = function(){ res(false); }; } catch (e) { res("throw: " + e.message); } });',
   "  r.locks = !!(navigator.locks && navigator.locks.request);",
-  "  try { var f = await fetch('params_version.txt', { cache: 'no-store' }); r.fetchStatus = f.status; } catch (e) { r.fetchStatus = 'throw: ' + e.message; }",
+  "  try { var f = await fetch('vfx/shipped-assets.json', { cache: 'no-store' }); r.fetchStatus = f.status; } catch (e) { r.fetchStatus = 'throw: ' + e.message; }",
   // 影片串流要靠 206；序章影片在新遊戲才播，冒煙測試會跳過，所以直接驗協議
   "  try { var v = await fetch('images/intro-parchment/shot-01-03.mp4?v=1', { headers: { Range: 'bytes=0-99' } }); r.videoRange = v.status + ' ' + v.headers.get('content-range') + ' ' + (await v.arrayBuffer()).byteLength; } catch (e) { r.videoRange = 'throw: ' + e.message; }",
   '  return r;',
@@ -145,16 +150,21 @@ function run(win, ctx) {
       // --url 載本機內測服時 GM 本來就該開，只有 app:// 時才算失敗
       if (String(c.origin) === 'app://game') fails.push('GM／內測工具外露');
     }
-    if (!report.screen || !report.screen.found) fails.push('螢幕截圖失敗');
+    if (report.screen && report.screen.skipped) { /* 背景模式不做螢幕實拍 */ }
+    else if (!report.screen || !report.screen.found) fails.push('螢幕截圖失敗');
     else if (report.screen.blank) fails.push('螢幕上是空白畫面');
     if (report.flush !== 'ok') fails.push('關窗存檔：' + report.flush);
     if (report.fullscreenOn && !(report.fullscreenOn.page && report.fullscreenOn.window)) fails.push('全螢幕無法進入');
     if (report.fullscreenOff && report.fullscreenOff.window) fails.push('全螢幕無法離開');
     if (report.pageErrors.length) fails.push('頁面錯誤 ' + report.pageErrors.length + ' 筆');
+    // 打包版少檔最直接的訊號：app:// 回了 404（開發模式下也應該是 0）
+    if (report.notFound && report.notFound.length) fails.push('找不到檔案 ' + report.notFound.length + ' 個');
     return fails;
   }
   function finish() {
     report.finishedAt = new Date().toISOString();
+    var stats = global.__desktopRequestStats;
+    if (stats) report.notFound = stats.notFound.slice();
     report.failures = verdict();
     report.ok = report.failures.length === 0;
     fs.writeFileSync(path.join(outDir, 'smoke-report.json'), JSON.stringify(report, null, 2));
@@ -188,8 +198,25 @@ function run(win, ctx) {
     }).then(function (image) {
       fs.writeFileSync(path.join(outDir, 'smoke.png'), image.toPNG());
       step('screenshot');
-      return captureOnScreen(win, path.join(outDir, 'smoke-screen.png'));
-    }).then(function (screen) {
+      /* 背景模式（預設）到此為止：螢幕實拍要把視窗置頂、全螢幕往返會佔滿整個螢幕，
+         都會打斷正在用電腦的人，只在 --smoke-onscreen 時做。 */
+      if (!ctx.onScreen) {
+        report.screen = { skipped: 'background' };
+        return ctx.flushSave(win);
+      }
+      return captureOnScreen(win, path.join(outDir, 'smoke-screen.png')).then(onScreenChecks);
+    }).then(function (flush) {
+      report.flush = flush;
+      finish();
+    }).catch(function (e) {
+      report.fatal = String(e && e.stack || e);
+      log('[smoke] 失敗：', report.fatal);
+      wc.capturePage().then(function (image) {
+        fs.writeFileSync(path.join(outDir, 'smoke.png'), image.toPNG());
+      }).catch(function () {}).then(finish);
+    });
+
+    function onScreenChecks(screen) {
       report.screen = screen;
       step('on-screen', screen);
       // F11 走的同一條路：代按網頁全螢幕，視窗要跟著進入，再按一次要能離開
@@ -204,16 +231,7 @@ function run(win, ctx) {
         step('fullscreen', { on: report.fullscreenOn, off: report.fullscreenOff });
         return ctx.flushSave(win);
       });
-    }).then(function (flush) {
-      report.flush = flush;
-      finish();
-    }).catch(function (e) {
-      report.fatal = String(e && e.stack || e);
-      log('[smoke] 失敗：', report.fatal);
-      wc.capturePage().then(function (image) {
-        fs.writeFileSync(path.join(outDir, 'smoke.png'), image.toPNG());
-      }).catch(function () {}).then(finish);
-    });
+    }
   });
 }
 

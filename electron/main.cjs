@@ -16,7 +16,10 @@
      --windowed       開機不進全螢幕
      --in-process-gpu 開啟 in-process-gpu（Steam Overlay 需要；單獨開會讓畫面空白，見下方說明）
      --profile=<資料夾> 改用另一份 userData（可與正在玩的視窗並存，除錯用）
-     --smoke=<資料夾> 冒煙測試：隔離的 userData、開機後截圖並輸出檢查結果，然後關閉 */
+     --smoke=<資料夾> 冒煙測試：隔離的 userData、開機後截圖並輸出檢查結果，然後關閉。
+                      預設在背景跑（視窗不顯示），不打擾正在用電腦的人
+     --smoke-onscreen 冒煙測試改為顯示視窗，加做螢幕實拍（空白畫面偵測）與全螢幕往返；
+                      會短暫置頂並切換全螢幕，跑之前先跟使用者說 */
 
 var path = require('path');
 var fs = require('fs');
@@ -46,6 +49,7 @@ var OPTS = {
   windowed: !!argValue('windowed'),
   inProcessGpu: !!argValue('in-process-gpu'),
   smoke: typeof argValue('smoke') === 'string' ? path.resolve(argValue('smoke')) : null,
+  smokeOnScreen: !!argValue('smoke-onscreen'),
   profile: typeof argValue('profile') === 'string' ? path.resolve(argValue('profile')) : null
 };
 
@@ -108,7 +112,7 @@ var mainWindow = null;
 var GAME_ROOT = app.getAppPath();
 
 /* 冒煙測試用的請求統計：數量、位元組、最慢的幾筆（開到 stat 完成為止的時間） */
-var requestStats = { count: 0, bytes: 0, slow: [] };
+var requestStats = { count: 0, bytes: 0, slow: [], notFound: [] };
 global.__desktopRequestStats = requestStats;
 
 /* ---- app:// 的檔案伺服 ---- */
@@ -128,6 +132,7 @@ function serveFileImpl(request) {
   var file = AppProtocol.resolveRequestPath(GAME_ROOT, request.url);
   var notFound = function () {
     log('[app] 404', request.url);
+    if (OPTS.smoke && requestStats.notFound.length < 200) requestStats.notFound.push(request.url);
     return new Response('Not Found', { status: 404 });
   };
   if (!file) return Promise.resolve(notFound());
@@ -246,7 +251,9 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      spellcheck: false
+      spellcheck: false,
+      // 背景冒煙測試的視窗從不顯示：不關節流的話頁面會被判成隱藏、畫格停止，Loading 永遠不揭幕
+      backgroundThrottling: !(OPTS.smoke && !OPTS.smokeOnScreen)
     }
   });
   mainWindow = win;
@@ -255,6 +262,7 @@ function createWindow() {
   log('[desktop] 啟動', app.getVersion(), 'electron', process.versions.electron, '→', url);
 
   win.once('ready-to-show', function () {
+    if (OPTS.smoke && !OPTS.smokeOnScreen) return;   // 背景冒煙測試：不顯示、不搶焦點
     if (!OPTS.windowed && !OPTS.smoke) win.maximize();
     win.show();
   });
@@ -331,7 +339,7 @@ function onReady() {
   var win = createWindow();
   if (OPTS.smoke) {
     require('./smoke.cjs').run(win, {
-      outDir: OPTS.smoke, log: log, flushSave: flushSave,
+      outDir: OPTS.smoke, log: log, flushSave: flushSave, onScreen: OPTS.smokeOnScreen,
       toggleFullscreen: function (w) { return runInPage(w, FULLSCREEN_TOGGLE, true); }
     });
   }
