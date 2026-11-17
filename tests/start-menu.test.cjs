@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(require.resolve('../js/start-menu.js'), 'utf8');
 const flush = () => new Promise(setImmediate);
 
-function setup({ save = null, info = {}, records = [], files = [], background, deferBoot = false } = {}) {
+function setup({ save = null, info = {}, records = [], files = [], background, deferBoot = false, host } = {}) {
   const nodes = new Map();
   const launches = [];
   const audio = [];
@@ -56,6 +56,7 @@ function setup({ save = null, info = {}, records = [], files = [], background, d
     readSaveRawV2: rec => Promise.resolve(rec.raw),
     parseSaveTextV2: raw => JSON.parse(raw)
   };
+  if (host) ctx.ApexHost = host;
   vm.createContext(ctx);
   vm.runInContext(source, ctx);
   ctx.StartMenu.init((snapshot, runId) => { launches.push({ snapshot, runId }); return true; });
@@ -168,6 +169,15 @@ test('成就讀取存檔的紀錄，模式與離開不啟動模擬', () => {
   assert.equal(e.node('start-menu-modes').hidden, true);
   e.click('exit');
   assert.equal(e.state.reloads, 1);
+  assert.deepEqual(e.launches, []);
+});
+
+test('桌面版（electron/preload.cjs 的 ApexHost）按離開遊戲會關閉程式而不是重新整理', () => {
+  let quits = 0;
+  const e = setup({ host: { isDesktop: true, quit() { quits++; } } });
+  e.click('exit');
+  assert.equal(quits, 1);
+  assert.equal(e.state.reloads, 0);
   assert.deepEqual(e.launches, []);
 });
 

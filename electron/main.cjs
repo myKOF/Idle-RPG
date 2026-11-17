@@ -1,0 +1,332 @@
+'use strict';
+/* ============ Electron 主行程：桌面版外殼 ============
+   計畫與決策見 docs/steam/STEAM_RELEASE_PLAN.md（任務 A）。
+
+   這支只負責「把網頁版原封不動跑在桌面視窗裡」，遊戲程式不知道自己在 Electron：
+   - 檔案經 app://game 伺服（electron/app-protocol.cjs），不走 file://
+   - 全螢幕沿用遊戲自己的網頁全螢幕按鈕（js/ui.js 的 btn-fullscreen），
+     外殼只在開機與 F11／Alt+Enter 時代按一次，所以遊戲內的按鈕狀態與提示永遠正確
+   - 關窗前呼叫遊戲既有的 WorkerBridge.saveAutoNow() 把進度落地，再真正關閉
+   - 雙開由 requestSingleInstanceLock 擋下（取代網頁版 tablock.js 的多分頁鎖的角色；
+     tablock 照樣運作，只是同一個 origin 永遠只會有一個視窗）
+
+   啟動參數（npm run desktop -- <參數>）：
+     --dev            允許 F12 開發者工具、F5 重新整理
+     --url=<網址>     改載本機內測服（只接受 localhost／127.0.0.1），GM 與內測工具隨之開放
+     --windowed       開機不進全螢幕
+     --no-in-process-gpu  關閉 in-process-gpu（Steam Overlay 需要它；效能比對用）
+     --smoke=<資料夾> 冒煙測試：隔離的 userData、開機後截圖並輸出檢查結果，然後關閉 */
+
+var path = require('path');
+var fs = require('fs');
+var stream = require('stream');
+var electron = require('electron');
+var app = electron.app;
+var BrowserWindow = electron.BrowserWindow;
+var protocol = electron.protocol;
+var session = electron.session;
+var shell = electron.shell;
+var Menu = electron.Menu;
+var ipcMain = electron.ipcMain;
+var AppProtocol = require('./app-protocol.cjs');
+
+/* ---- 啟動參數 ---- */
+function argValue(name) {
+  var prefix = '--' + name + '=';
+  for (var i = 0; i < process.argv.length; i++) {
+    if (process.argv[i] === '--' + name) return true;
+    if (process.argv[i].indexOf(prefix) === 0) return process.argv[i].slice(prefix.length);
+  }
+  return null;
+}
+var OPTS = {
+  dev: !!argValue('dev'),
+  url: typeof argValue('url') === 'string' ? argValue('url') : null,
+  windowed: !!argValue('windowed'),
+  inProcessGpu: !argValue('no-in-process-gpu'),
+  smoke: typeof argValue('smoke') === 'string' ? path.resolve(argValue('smoke')) : null
+};
+
+/* ---- userData 位置凍結 ----
+   Steam Auto-Cloud 會指向這個資料夾，上市後就不能再搬。預設值取自 package.json 的 name，
+   日後若改 productName 會讓它跟著換位置——所以這裡寫死，不讓它隨打包設定漂移。 */
+var USER_DATA_DIR_NAME = 'idle-rpg';
+if (OPTS.smoke) {
+  app.setPath('userData', path.join(OPTS.smoke, 'userData'));
+} else {
+  app.setPath('userData', path.join(app.getPath('appData'), USER_DATA_DIR_NAME));
+}
+
+/* ---- 日誌：userData/logs/desktop.log（超過 1 MB 就從頭寫） ---- */
+var LOG_FILE = path.join(app.getPath('userData'), 'logs', 'desktop.log');
+function log() {
+  var line = new Date().toISOString() + ' ' + Array.prototype.join.call(arguments, ' ') + '\n';
+  try {
+    fs.mkdirSync(path.dirname(LOG_FILE), { recursive: true });
+    var size = 0;
+    try { size = fs.statSync(LOG_FILE).size; } catch (e) {}
+    if (size > 1024 * 1024) fs.writeFileSync(LOG_FILE, line); else fs.appendFileSync(LOG_FILE, line);
+  } catch (e) {}
+  if (OPTS.dev || OPTS.smoke) process.stdout.write(line);
+}
+
+/* ---- 開機前必須完成的設定 ---- */
+if (OPTS.inProcessGpu) {
+  // Steam Overlay（Shift+Tab）要注入 GPU 所在的行程才畫得出來；Overlay 本身在任務 D 實測。
+  app.commandLine.appendSwitch('in-process-gpu');
+}
+/* 刻意不加 disable-frame-rate-limit：主執行緒已知會被 rAF 塞滿而餓死計時器
+   （見 docs 與 2026-10-06 調查），解除 vsync 上限只會更糟。 */
+
+protocol.registerSchemesAsPrivileged([{
+  scheme: AppProtocol.SCHEME,
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true, codeCache: true }
+}]);
+
+if (!OPTS.smoke && !app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', function () {
+    var win = mainWindow;
+    if (!win) return;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  });
+  app.whenReady().then(onReady);
+}
+
+var mainWindow = null;
+var GAME_ROOT = app.getAppPath();
+
+/* 冒煙測試用的請求統計：數量、位元組、最慢的幾筆（開到 stat 完成為止的時間） */
+var requestStats = { count: 0, bytes: 0, slow: [] };
+global.__desktopRequestStats = requestStats;
+
+/* ---- app:// 的檔案伺服 ---- */
+function serveFile(request) {
+  if (!OPTS.smoke) return serveFileImpl(request);
+  var t0 = Date.now();
+  return serveFileImpl(request).then(function (res) {
+    var ms = Date.now() - t0;
+    requestStats.count++;
+    requestStats.bytes += Number(res.headers.get('content-length')) || 0;
+    if (ms > 200) requestStats.slow.push(ms + 'ms ' + request.url);
+    return res;
+  });
+}
+
+function serveFileImpl(request) {
+  var file = AppProtocol.resolveRequestPath(GAME_ROOT, request.url);
+  var notFound = function () {
+    log('[app] 404', request.url);
+    return new Response('Not Found', { status: 404 });
+  };
+  if (!file) return Promise.resolve(notFound());
+  return fs.promises.stat(file).then(function (st) {
+    if (!st.isFile()) return notFound();
+    var headers = {
+      'Content-Type': AppProtocol.mimeFor(file),
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'no-cache'
+    };
+    var range = AppProtocol.parseRange(request.headers.get('range'), st.size);
+    if (range === false) {
+      headers['Content-Range'] = 'bytes */' + st.size;
+      return new Response(null, { status: 416, headers: headers });
+    }
+    var start = range ? range.start : 0;
+    var end = range ? range.end : st.size - 1;
+    headers['Content-Length'] = String(st.size === 0 ? 0 : end - start + 1);
+    if (range) headers['Content-Range'] = 'bytes ' + start + '-' + end + '/' + st.size;
+    if (request.method === 'HEAD' || st.size === 0) {
+      return new Response(null, { status: range ? 206 : 200, headers: headers });
+    }
+    var body = stream.Readable.toWeb(fs.createReadStream(file, { start: start, end: end }));
+    return new Response(body, { status: range ? 206 : 200, headers: headers });
+  }, notFound);
+}
+
+/* 只接受本機內測服；外部網址一律不載入（外殼不是瀏覽器）。 */
+function devUrlAllowed(url) {
+  try {
+    var u = new URL(url);
+    return (u.protocol === 'http:' || u.protocol === 'https:') &&
+      (u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname === '[::1]');
+  } catch (e) { return false; }
+}
+
+function startUrl() {
+  if (OPTS.url) {
+    if (devUrlAllowed(OPTS.url)) return OPTS.url;
+    log('[desktop] 拒絕 --url（只接受 localhost／127.0.0.1）：', OPTS.url);
+  }
+  return AppProtocol.ORIGIN + '/index.html';
+}
+
+function sameOrigin(a, b) {
+  try { return new URL(a).origin === new URL(b).origin; } catch (e) { return false; }
+}
+
+/* ---- 權限：只放行遊戲用得到的，其餘（通知、定位、相機…）一律拒絕。
+   Electron 預設是全部允許，不設處理器等於把權限交給任何載入的內容。 ---- */
+var ALLOWED_PERMISSIONS = {
+  'fullscreen': true,
+  'pointerLock': true,
+  'clipboard-sanitized-write': true,
+  'fileSystem': true,          // 網頁版的存檔資料夾（showDirectoryPicker）；任務 C 會在桌面版隱藏該功能
+  'window-management': true    // Document Picture-in-Picture 迷你視窗
+};
+function setupPermissions(ses) {
+  ses.setPermissionRequestHandler(function (wc, permission, callback) {
+    callback(!!ALLOWED_PERMISSIONS[permission]);
+  });
+  ses.setPermissionCheckHandler(function (wc, permission) {
+    return !!ALLOWED_PERMISSIONS[permission];
+  });
+}
+
+/* ---- 全螢幕：代按遊戲自己的網頁全螢幕 ----
+   requestFullscreen 需要使用者手勢，executeJavaScript 的 userGesture 參數就是為此存在。
+   這樣遊戲內的全螢幕按鈕、Esc 離開、按鈕提示文字都與網頁版一致。 */
+var FULLSCREEN_ON = 'document.fullscreenElement ? true : document.documentElement.requestFullscreen().then(function(){return true;},function(){return false;})';
+var FULLSCREEN_TOGGLE = 'document.fullscreenElement ? document.exitFullscreen().then(function(){return false;},function(){return true;}) : (' + FULLSCREEN_ON + ')';
+
+function runInPage(win, code, userGesture) {
+  if (!win || win.isDestroyed()) return Promise.resolve(null);
+  return win.webContents.executeJavaScript(code, !!userGesture).catch(function (e) {
+    log('[desktop] executeJavaScript 失敗：', e && e.message);
+    return null;
+  });
+}
+
+/* ---- 關窗前存檔 ----
+   遊戲每 15 秒自動存一次（js/worker/sim.worker.js AUTOSAVE_SEC），直接關窗最多掉 15 秒進度。
+   saveAutoNow() 會等主執行緒真的寫完 IndexedDB 才 resolve，本身有 10 秒逾時；
+   外殼再包一層 12 秒，頁面整個卡死（executeJavaScript 永不回來）也一定關得掉。 */
+var FLUSH_SCRIPT = [
+  '(function(){',
+  '  try {',
+  "    if (typeof WorkerBridge === 'undefined' || !WorkerBridge.status().booted) return 'skip';",
+  "    return WorkerBridge.saveAutoNow().then(function(){ return 'ok'; }, function(e){ return 'error: ' + (e && e.message); });",
+  "  } catch (e) { return 'error: ' + e.message; }",
+  '})()'
+].join('\n');
+var FLUSH_TIMEOUT_MS = 12000;
+
+function flushSave(win) {
+  var t0 = Date.now();
+  var timeout = new Promise(function (resolve) { setTimeout(function () { resolve('timeout'); }, FLUSH_TIMEOUT_MS); });
+  return Promise.race([runInPage(win, FLUSH_SCRIPT, false), timeout]).then(function (result) {
+    log('[desktop] 關窗存檔：', result, (Date.now() - t0) + 'ms');
+    return result;
+  });
+}
+
+function createWindow() {
+  var win = new BrowserWindow({
+    width: 1600,
+    height: 900,
+    minWidth: 1280,
+    minHeight: 720,
+    show: false,
+    backgroundColor: '#000000',
+    autoHideMenuBar: true,
+    // 視窗標題跟隨頁面 <title>（String 表 48），不在外殼另寫一份
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      spellcheck: false
+    }
+  });
+  mainWindow = win;
+  var url = startUrl();
+  var wc = win.webContents;
+  log('[desktop] 啟動', app.getVersion(), 'electron', process.versions.electron, '→', url);
+
+  win.once('ready-to-show', function () {
+    if (!OPTS.windowed && !OPTS.smoke) win.maximize();
+    win.show();
+  });
+
+  /* 重新整理（讀檔、重新開局都會 location.reload()）會讓網頁全螢幕失效，
+     所以記住導覽開始當下是不是全螢幕，載完再補回去。 */
+  var wantFullscreen = !OPTS.windowed && !OPTS.smoke;
+  wc.on('did-start-navigation', function (details) {
+    if (details.isMainFrame && !details.isSameDocument) wantFullscreen = win.isFullScreen() || wantFullscreen;
+  });
+  wc.on('did-finish-load', function () {
+    if (wantFullscreen) runInPage(win, FULLSCREEN_ON, true);
+    wantFullscreen = false;
+  });
+
+  wc.on('before-input-event', function (event, input) {
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'F11' || (input.key === 'Enter' && input.alt)) {
+      event.preventDefault();
+      runInPage(win, FULLSCREEN_TOGGLE, true);
+      return;
+    }
+    if (OPTS.dev && input.key === 'F12') { event.preventDefault(); wc.toggleDevTools(); return; }
+    if (OPTS.dev && input.key === 'F5') { event.preventDefault(); wc.reload(); }
+  });
+
+  // 外殼不是瀏覽器：不跳離遊戲、不開新視窗（Document PiP 不經過這裡）
+  wc.on('will-navigate', function (event, target) {
+    if (!sameOrigin(target, url)) { event.preventDefault(); log('[desktop] 擋下導覽：', target); }
+  });
+  wc.setWindowOpenHandler(function (details) {
+    if (/^https?:\/\//.test(details.url) && !devUrlAllowed(details.url)) {
+      shell.openExternal(details.url);
+    }
+    return { action: 'deny' };
+  });
+  wc.on('render-process-gone', function (event, details) {
+    log('[desktop] 畫面行程結束：', details.reason, details.exitCode);
+  });
+  wc.on('unresponsive', function () { log('[desktop] 頁面無回應'); });
+  wc.on('console-message', function (event) {
+    // 只收錯誤，避免日誌被遊戲的除錯輸出淹沒
+    var level = event.level;
+    if (level === 'error' || level === 3) log('[page:error]', event.message, '(' + (event.sourceId || '') + ':' + (event.lineNumber || '') + ')');
+  });
+
+  var closing = { started: false, done: false };
+  win.on('close', function (event) {
+    if (closing.done) return;
+    event.preventDefault();
+    if (closing.started) return;
+    closing.started = true;
+    flushSave(win).then(function () {
+      closing.done = true;
+      if (!win.isDestroyed()) win.destroy();
+    });
+  });
+  win.on('closed', function () { if (mainWindow === win) mainWindow = null; });
+
+  win.loadURL(url);
+  return win;
+}
+
+function onReady() {
+  Menu.setApplicationMenu(null);
+  protocol.handle(AppProtocol.SCHEME, serveFile);
+  setupPermissions(session.defaultSession);
+
+  ipcMain.on('apexhost:quit', function (event) {
+    var win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.close();   // 走 close 事件，一樣會先存檔
+  });
+
+  var win = createWindow();
+  if (OPTS.smoke) {
+    require('./smoke.cjs').run(win, {
+      outDir: OPTS.smoke, log: log, flushSave: flushSave,
+      toggleFullscreen: function (w) { return runInPage(w, FULLSCREEN_TOGGLE, true); }
+    });
+  }
+}
+
+app.on('window-all-closed', function () { app.quit(); });

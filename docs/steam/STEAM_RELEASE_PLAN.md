@@ -27,7 +27,7 @@
 
 ### 2.2 GM／內測工具的開關
 - 正式版：`app://game` 不符合 `isInternalServer()`／`isGMHost()`，自動關閉。
-- 開發版：Electron 以 `--dev` 啟動時改載內測服網址（沿用現有判定），**不在遊戲程式裡新增第三種判定**。
+- 開發版：Electron 以 `--url=http://127.0.0.1:<埠>/` 改載本機內測服（沿用現有判定，外殼只接受 localhost），**不在遊戲程式裡新增第三種判定**。
 - `ai-key-setting.js`（Gemini 金鑰）在正式版不得出現：打包清單排除或維持現有主機判定，驗收時要實測。
 
 ### 2.3 存檔落地
@@ -70,6 +70,35 @@
 | **F. 存檔版本凍結** | 上市基準 `schemaVersion`、更新 `ONE_TIME_MIGRATIONS.md` 原則（上市後不再刪檔）、遷移測試範本 | 無 | 文件與一條遷移測試 |
 
 建議順序：**A → B →（C、D 可並行）→ E**；F 可隨時做，但必須在第一次對外上傳之前完成。
+
+### 4.1 任務 A 實作紀錄（2026-11-17，已完成）
+
+| 檔案 | 內容 |
+|---|---|
+| `electron/main.cjs` | 主行程：`app://game` 協議（含 Range 206）、權限白名單、單一實例、關窗前 `WorkerBridge.saveAutoNow()`（12 秒保底）、F11／Alt+Enter 代按遊戲自己的網頁全螢幕、擋外部導覽、`userData` 固定為 `%APPDATA%/idle-rpg`、日誌 `userData/logs/desktop.log` |
+| `electron/app-protocol.cjs` | 路徑解析（擋穿越與點開頭路徑）、MIME、Range 計算；`tests/desktop-app-protocol.test.cjs` |
+| `electron/preload.cjs` | `window.ApexHost`（沿用 `js/ui.js` 既有約定）：`isDesktop`、`quit()`；`openSaveFolder` 留給任務 C |
+| `electron/smoke.cjs` | 冒煙測試：開始選單 → 新遊戲／繼續 → 等揭幕 → 環境檢查、截圖、全螢幕往返、關窗存檔 |
+| `js/start-menu.js` | 「離開遊戲」在桌面版呼叫 `ApexHost.quit()`（網頁版維持重新整理） |
+| `package.json` | `electron@44.10.1`（精確版本）、`main`、三支指令 |
+
+指令：
+
+```
+npm run desktop          # 正式模式（最大化後自動全螢幕）
+npm run desktop:dev      # 視窗模式＋F12 開發者工具＋F5 重新整理
+npm run desktop -- --dev --url=http://127.0.0.1:8124/   # 載本機內測服（GM 開放）
+npm run desktop:smoke    # 冒煙測試，結果在 tmp/desktop-smoke/
+```
+
+實測結果（冒煙測試連跑兩次，第二次走「繼續」）：Worker 開機、Pixi 戰場、VFX Preset 302 份、IndexedDB、`navigator.locks`、fetch、影片 Range 206 均正常；
+`isInternalServer()`／`isGMHost()` 皆為 false；全螢幕進出正常；關窗存檔回 ok，重開後「繼續」出現；頁面錯誤 0。
+
+觀察到但未處理（列入後續任務）：
+- 開機前頁面就讀 131 個檔、34 MB；冷磁碟快取時載入要 20～30 秒，熱快取 2.4 秒 → 任務 B 一併評估延後載入。
+- 視窗被其他視窗完全遮住時 Chromium 會把頁面判成隱藏、停止畫格，Loading 會等到視窗露出才揭開（與瀏覽器分頁行為相同）。
+- 全螢幕按鈕的提示文字寫的是「網頁全螢幕」，桌面版語意略不準，屬文字調整，未改。
+- 3D 主角（three.js `import()`）在冒煙測試的存檔沒有開啟，未實測。
 
 ## 5. 明確不做
 

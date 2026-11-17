@@ -157,7 +157,11 @@ var StartMenu = (function () {
       openPanel('achv', function () { GameMenu.openAchievements(save && save.achv && save.achv.got || {}); });
     });
     button('settings').addEventListener('click', function () { openPanel('settings', GameMenu.openSettings); });
-    button('exit').addEventListener('click', function () { location.reload(); });
+    // 桌面版（electron/preload.cjs 的 ApexHost）真的關閉程式；網頁版關不了分頁，維持重新整理
+    button('exit').addEventListener('click', function () {
+      if (typeof ApexHost !== 'undefined' && ApexHost && typeof ApexHost.quit === 'function') ApexHost.quit();
+      else location.reload();
+    });
 
     var deterministic = WorkerBridge.isDeterministicTest();
     var backdropReady;
