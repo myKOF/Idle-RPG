@@ -12813,6 +12813,12 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 }
 .merchant-alert { position:absolute; right:-3px; top:-2px; z-index:2; width:18px; height:18px; border-radius:50%; color:#fff; background:#db3225; border:2px solid #ffe6bd; text-align:center; font:bold 14px/14px sans-serif; }
 .merchant-alert[hidden], #mystery-merchant-panel[hidden] { display:none; }
+#workspace-area main:has(> #tab-tower.active > #mystery-merchant-panel:not([hidden])) {
+  scrollbar-width:none;
+}
+#workspace-area main:has(> #tab-tower.active > #mystery-merchant-panel:not([hidden]))::-webkit-scrollbar {
+  display:none;
+}
 .merchant-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:8px; }
 .merchant-heading #merchant-back { margin-left:auto; }
 .merchant-showcase {
@@ -12845,7 +12851,6 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 .merchant-stock-frame {
   box-sizing:border-box;
   width:100%;
-  margin:18px auto 0;
   padding:clamp(36px, 4.8%, 56px) max(46px, 7.5%);
   background:url('../images/ui/mystery-merchant-tray.webp') center / 100% 100% no-repeat;
 }

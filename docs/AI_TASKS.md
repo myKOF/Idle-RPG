@@ -1,3 +1,8 @@
+## MERCHANT-PANEL-LAYOUT-20261117 — 神祕商人商品區貼齊店景
+
+- Codex，已完成。`css/style.css` 在神祕商人開啟時隱藏工作區的直向捲軸並保留捲動，移除商品木框與店景之間的間距。`index.html` 更新樣式快取，`LV_upgrade_system.md` 同步介面紀錄。唯讀核對 `css/ashen-forge.css`、`js/ui.js`、商店底圖、商品格與封魔塔入口。
+- `node --test` 執行 mystery-merchant、gem-compose-all、vfx-editor-cache-versions，共 25/25。`npm.cmd run build` 通過 723 檔。Edge 靜音隔離測試以內測 GM 發券並進店，驗證 1920×900、1600×720、1280×760 的店景和商品框邊緣貼齊、40 格正方形及隱藏捲軸。溢出時滾輪可用，返回封魔塔恢復捲軸樣式，頁面例外 0。差異檢查通過，可供合併。
+
 ## SYNC-MERGE-20261117-011256 ? develop integration validated
 
 - Owner: Codex. Done; designated integrator for HEAD 9bb1279ecd26e3a78987a6bee3308ef622c8867d and MERGE_HEAD 0ac76f10a8390d508a25d0175971432bf237cec9 only. Scope: seven original conflicts, necessary cache/generated data, tests and this record; no staging, commits, metadata or other worktree writes. Controller completes merge.
