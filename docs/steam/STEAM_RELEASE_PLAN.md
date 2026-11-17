@@ -178,6 +178,32 @@ dist/win-unpacked/IdleRPG.exe --smoke=tmp/smoke-packaged   # 對打包版跑冒�
 - 手動存檔超過 10 份時，清單索引會丟掉最舊的，但資料夾裡的檔案不會刪（網頁版既有行為）。雲端配額吃緊時再處理。
 - 網頁版玩家的存檔無法自動搬進桌面版（origin 不同）；如需要，另做「匯入存檔」流程。
 
+### 4.4 任務 D 實作紀錄（2026-11-17，程式完成；Steam 實機驗證待做）
+
+| 檔案 | 內容 |
+|---|---|
+| `electron/steam.cjs` | steamworks.js 初始化、`restartAppIfNecessary`、Overlay、成就解鎖（已達成的不重送、整批只 `stats.store()` 一次）；任何失敗都只是「Steam 功能關閉」 |
+| `electron/steam-config.json` | **正式 AppID 填這裡**（目前 0＝不接 Steam）；測試確保提交的值不是 480 |
+| `electron/main.cjs` | app ready 前初始化 Steam（Overlay 的 GPU 參數只在 ready 前有效）；`steam:status`／`steam:activate-achievements` IPC |
+| `js/desktop-steam.js` | 成就轉發：即時解鎖（`js/ui.js` 的 `achievementUnlocked` 通知）＋開機補發（`js/main.js` 的 `enterGame(save)` 讀 `achv.got`） |
+| `tools/desktop/build_desktop.cjs` | 打包時只帶 win64 的 steamworks.js 到 `electron/vendor/`（不走 electron-builder 的 node_modules 收集） |
+| `tools/desktop/steam_achievements.cjs` | 產生 `dist/steam-achievements.csv`：115 條成就的 API 名稱／顯示名稱／說明／圖示，供後台建立成就 |
+| `tests/desktop-steam.test.cjs` | AppID 規則、各種失敗容錯、成就過濾、編號→API 名稱、轉發與接線（13 項） |
+
+決策：
+- **成就 API 名稱用命名規則 `ACH_` + 三位數編號，不在配置表加欄位**（計畫原本寫加欄位）。理由：不必動 Excel（欄位順序會被調整、寫回有錯位風險），115 條名稱永遠一致；日後某條需要特殊名稱再加欄位。
+- **不需要 `steam_appid.txt`**：`init(appId)` 直接帶 AppID，也就沒有「上傳前忘了刪」的風險。開發測試用 `--steam-appid=480`。
+- **`restartAppIfNecessary` 只在「打包版＋設定檔的正式 AppID＋非開發／冒煙」時呼叫**，開發跑 480 不會被踢掉。
+
+已驗證（Steam 用戶端未執行的情況）：
+- 沒設定 AppID：不載入 steamworks.js，遊戲照常。
+- `--steam-appid=480`、Steam 沒開：原生模組與 `steam_api64.dll` 正常載入（開發與打包版皆是），回報「Steam 未連線」，遊戲照常、冒煙測試通過。
+
+**待做（需要 Steam 用戶端登入）**：
+- 以 480 實測連線成功、Overlay（Shift+Tab）畫面正常、不出現任務 A 的空白畫面——要用 `--smoke-onscreen` 做螢幕實拍。
+- 成就解鎖要等正式 AppID 的後台建好成就（480 的 Spacewar 沒有 `ACH_###`，送出會記為失敗，這是預期的）。
+- 後台成就圖示：Steam 要 64×64 JPG（已達成／未達成灰階各一），由 `images/achievements/` 轉檔，任務 E 處理。
+
 ## 5. 明確不做
 
 - `electron-updater` 或任何自行下載更新的機制（Steam 規範禁止，與原規範一致）。
