@@ -1,4 +1,5 @@
 'use strict';
+if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']'; }; } // STR 安全網：單檔載入時的備援，真正的實作在 js/strings.js
 /* ============ 桌面版存檔資料夾：File System Access 目錄把手的替身（主執行緒）============
    計畫見 docs/steam/STEAM_RELEASE_PLAN.md 任務 C。
 

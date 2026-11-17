@@ -108,11 +108,68 @@ var SaveOrigin = (function () {
     if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
   }
 
+  /* ---- 存檔比遊戲新（js/save-schema.js）----
+     Steam 測試分支切回正式版、或兩台電腦版本不同時，Steam Cloud 會把新版本寫的存檔帶到舊版本的遊戲。
+     這時不能載入，也不能讓玩家「開新遊戲」——新遊戲的自動存檔會覆寫那份較新的存檔，雲端再把它同步出去，
+     新進度就沒了。所以攔截畫面只給「離開遊戲」，存檔一個 byte 都不動。 */
+  function isTooNew(save) {
+    return typeof saveSchemaTooNew === 'function' && !!save && saveSchemaTooNew(save);
+  }
+
+  function showTooNew(save) {
+    removeOverlay();
+    var overlay = document.createElement('div');
+    overlay.id = 'save-schema-notice';
+    overlay.setAttribute('role', 'alertdialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;' +
+      'justify-content:center;padding:24px;background:rgba(3,7,18,.92);';
+
+    var card = document.createElement('div');
+    card.style.cssText = 'width:min(560px,100%);padding:24px;border:1px solid #f59e0b;border-radius:14px;' +
+      'background:#111827;color:#f9fafb;box-shadow:0 20px 60px rgba(0,0,0,.55);text-align:center;';
+
+    var title = document.createElement('h2');
+    title.style.cssText = 'margin:0 0 12px;color:#fcd34d;';
+    title.textContent = STR(2528);
+
+    var desc = document.createElement('p');
+    desc.style.cssText = 'margin:0 0 14px;line-height:1.65;text-align:left;white-space:pre-line;';
+    desc.textContent = STR(2529, saveSchemaOf(save), SAVE_SCHEMA_VERSION);
+
+    var detail = document.createElement('p');
+    detail.style.cssText = 'margin:0 0 18px;padding:10px 12px;border-radius:8px;background:#0b1220;' +
+      'font-family:ui-monospace,monospace;line-height:1.6;';
+    detail.textContent = describe(save);
+
+    var quit = document.createElement('button');
+    quit.type = 'button';
+    quit.className = 'btn';
+    quit.textContent = STR(1947);
+    quit.addEventListener('click', function () {
+      // 桌面版關閉程式；網頁版關不了分頁，與開始選單的「離開遊戲」一樣重新整理
+      if (typeof ApexHost !== 'undefined' && ApexHost && typeof ApexHost.quit === 'function') ApexHost.quit();
+      else location.reload();
+    });
+
+    card.appendChild(title);
+    card.appendChild(desc);
+    card.appendChild(detail);
+    card.appendChild(quit);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    _overlay = overlay;
+    quit.focus();
+    if (typeof hideLoadingScreen === 'function') hideLoadingScreen();
+  }
+
   /* 開機流程的關卡。`info` 由 SaveStorage.readBootSave 提供。
      只有「回退讀到的舊檔名」與「標記著別的 origin」兩種來源需要確認；
      自己的檔案與瀏覽器本機快取一律直接放行，正式環境的玩家永遠不會看到這個視窗。 */
   function gate(save, info, next) {
     info = info || {};
+    // 存檔比遊戲新：攔下且永遠不呼叫 next（不能載入，也不能退回較舊的快取再被它覆寫）
+    if (isTooNew(save) && typeof document !== 'undefined' && document.body) { showTooNew(save); return; }
     if (!save || (info.source !== 'legacy' && info.source !== 'foreign')) { next(save); return; }
     if (typeof document === 'undefined' || !document.body) { next(save); return; }
     showConfirm(save, info, function (accepted) {
@@ -122,6 +179,8 @@ var SaveOrigin = (function () {
 
   return {
     gate: gate,
+    isTooNew: isTooNew,
+    showTooNew: showTooNew,
     /* 測試與除錯用 */
     _internal: { describe: describe, reason: reason }
   };

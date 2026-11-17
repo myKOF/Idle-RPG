@@ -166,6 +166,12 @@ var StartMenu = (function () {
     var deterministic = WorkerBridge.isDeterministicTest();
     var backdropReady;
     function prepare(save, info) {
+      /* 存檔比遊戲新（js/save-schema.js）：不顯示選單——「新遊戲」會覆寫那份較新的存檔。
+         攔截畫面在 js/save_origin.js，只能離開遊戲。 */
+      if (typeof SaveOrigin !== 'undefined' && SaveOrigin.isTooNew && SaveOrigin.isTooNew(save)) {
+        SaveOrigin.showTooNew(save);
+        return;
+      }
       bootSave = save;
       bootInfo = info;
       folderAuto = info.folderAuto;

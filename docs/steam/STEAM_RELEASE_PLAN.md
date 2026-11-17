@@ -210,6 +210,25 @@ dist/win-unpacked/IdleRPG.exe --smoke=tmp/smoke-packaged   # 對打包版跑冒�
 - 成就解鎖要等正式 AppID 的後台建好成就（480 的 Spacewar 沒有 `ACH_###`，送出會記為失敗，這是預期的）。
 - 後台成就圖示：Steam 要 64×64 JPG（已達成／未達成灰階各一），由 `images/achievements/` 轉檔，任務 E 處理。
 
+### 4.5 任務 F 實作紀錄（2026-11-17，已完成）
+
+規則全文見 `ONE_TIME_MIGRATIONS.md` 最上方「上市後的存檔遷移」。
+
+| 檔案 | 內容 |
+|---|---|
+| `js/save-schema.js` | `SAVE_SCHEMA_VERSION = 1`（上市基準）、`SAVE_SCHEMA_MIGRATIONS` 登錄表、執行器、登錄表自我檢查 |
+| `js/player.js` | `newGameState()` 帶 `saveSchema` |
+| `js/save.js` | `migrateSave()` 開頭（mergeDefaults 之前）取版本、比遊戲新就拒絕；結尾依序執行遷移並標版本 |
+| `js/save_origin.js`／`js/start-menu.js` | 開機發現存檔比遊戲新：攔截畫面只能離開，不顯示開始選單 |
+| String 表 2528～2530 | 攔截畫面標題、說明、讀檔失敗訊息（以 `excel-update-sheets.ps1` 寫入 String.xlsx） |
+| `tests/save-schema.test.cjs` | 登錄表檢查、執行器、真的 migrateSave、開機攔截、接線，以及給上市後照抄的「遷移範本」（13 項） |
+
+決策：
+- **既有的具名旗標遷移不動**：它們處理上市前的存檔；上市後新增的結構變更一律走版本號。不是第二套系統，而是上市前後的分界。
+- **遷移在 migrateSave 最後執行**：看到的是補齊預設值的存檔，靠版本號判斷新舊，不必再做「mergeDefaults 前偷看欄位」。
+  版本號本身必須在 mergeDefaults 之前取得（否則上市前的存檔會被補成目前版本、遷移全部跳過）——有突變測試守住。
+- **存檔比遊戲新時完全不給玩**：退回較舊的本機快取或開新遊戲，都會讓自動存檔把較新的雲端存檔覆寫掉。
+
 ## 5. 明確不做
 
 - `electron-updater` 或任何自行下載更新的機制（Steam 規範禁止，與原規範一致）。

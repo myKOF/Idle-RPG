@@ -76,6 +76,8 @@ function newGameState() {
   for (var gt in GEM_TYPES) gems[gt] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   return {
     version: 1,
+    // 存檔格式版本（js/save-schema.js）：新局直接是目前版本，不跑任何上市後遷移
+    saveSchema: (typeof SAVE_SCHEMA_VERSION === 'number') ? SAVE_SCHEMA_VERSION : 0,
     fieldBiomesV2: true,
     runId: 1,           // 第幾局（重新開局 +1；每局的自動存檔各自獨立，舊存檔以 mergeDefaults 補 1）
 

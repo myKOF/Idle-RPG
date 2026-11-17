@@ -309,6 +309,16 @@ function migrateEquipmentRarityOrder(data) {
   data.equipmentRarityVersion = 2;
 }
 function migrateSave(data) {
+  /* 存檔格式版本（js/save-schema.js）：必須在任何修改之前取得——newGameState 帶著目前版本，
+     mergeDefaults 一補，舊存檔看起來就跟新的一樣。
+     存檔比遊戲新：拒絕載入（丟例外）。開機時 js/save_origin.js 已經攔下並說明；
+     這裡是最後一道防線——讀進來再被自動存檔寫回，等於用舊程式毀掉新版本的進度。 */
+  var fromSchema = (typeof saveSchemaOf === 'function') ? saveSchemaOf(data) : 0;
+  if (typeof saveSchemaTooNew === 'function' && saveSchemaTooNew(data)) {
+    var tooNew = new Error(STR(2530, fromSchema, SAVE_SCHEMA_VERSION));
+    tooNew.code = 'SAVE_SCHEMA_TOO_NEW';
+    throw tooNew;
+  }
   migrateEquipmentRarityOrder(data);
   // 技能熟練度遷移旗標（2026-07-30 改制）：需在 mergeDefaults 前判斷（merge 會補 skillMastery 預設）。
   var hadSkillPointBudget = !!(data.player && data.player.skillPointBudget !== undefined);
@@ -929,6 +939,10 @@ function migrateSave(data) {
   (typeof newForgeAllQueuedItems === 'function' ? newForgeAllQueuedItems(data) : ((data.newForge && data.newForge.queue) || [])).forEach(fixName);
   ((data.forge && data.forge.slots) || []).forEach(function (it) { if (it && it.kind !== 'gem') fixName(it); });
   if (data.forge && data.forge.result && data.forge.result.kind !== 'gem' && data.forge.result.kind !== 'divineGem') fixName(data.forge.result);
+
+  /* 上市後的存檔遷移（js/save-schema.js 的登錄表）：排在所有既有相容處理之後、依版本號依序執行，
+     最後把 saveSchema 標成目前版本。上市前的存檔（沒有 saveSchema）視為 0。 */
+  if (typeof applySaveSchemaMigrations === 'function') applySaveSchemaMigrations(data, fromSchema);
 
   return data;
 }
