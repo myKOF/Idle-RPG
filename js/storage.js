@@ -64,7 +64,7 @@ var SaveStorage = (function () {
         cb(best ? best.data : null, info);
       });
     };
-    if (!window.showDirectoryPicker) { finish(null); return; }
+    if (!window.showDirectoryPicker && !desktopDir()) { finish(null); return; }
     idbGetDir(function (stored) {
       if (!stored || !isValidSaveDirectoryV2(stored)) { finish(null); return; }
       stored.requestPermission({ mode: 'readwrite' }).then(function (perm) {
@@ -94,9 +94,30 @@ var SaveStorage = (function () {
     return maxRun;
   }
 
+  /* ---- 桌面版：每次自動存檔都同步寫存檔檔 ----
+     網頁版的存檔資料夾是選配，每 10 分鐘同步一次就夠；桌面版的存檔檔是 Steam Cloud 唯一能同步的東西
+     （IndexedDB 是資料庫檔，不能拿去雲端同步）。若仍是 10 分鐘一次，玩家關掉遊戲時雲端拿到的
+     可能是 10 分鐘前的進度，換台電腦就倒退——所以桌面版的 auto／autoNow／shutdown／restart
+     在 IndexedDB 寫完後一律接著寫自動存檔檔。
+
+     存檔檔寫入失敗不算這次存檔失敗：IndexedDB 已經寫進去了，本機進度沒有遺失，
+     只是雲端暫時落後；下一次自動存檔（15 秒後）會再寫一次。 */
+  function isDesktopFolder(dir) { return !!(dir && dir.isDesktop); }
+  function desktopDir() { return (typeof DesktopSaveDir !== 'undefined' && DesktopSaveDir) ? DesktopSaveDir : null; }
+  function thenDesktopFolder(json, meta, done) {
+    return function (err) {
+      if (err || !isDesktopFolder(_saveDir)) { done(err); return; }
+      writeFolderAuto(json, meta, function (folderErr) {
+        if (folderErr) console.error('[storage] 存檔檔寫入失敗（IndexedDB 已寫入，下次自動存檔會重試）:', folderErr);
+        done(null);
+      });
+    };
+  }
+
   /* 自動存檔：完整快照只進 IndexedDB，localStorage 僅留小型 metadata
      （與 saveGameV2 相同策略，避免配額阻塞索引）。 */
   function writeAuto(json, meta, done) {
+    done = thenDesktopFolder(json, meta, done);
     try {
       if (_saveDir && typeof removeLegacyRecordPayloadsV2 === 'function' && !_legacyPayloadsCompactedV2) {
         removeLegacyRecordPayloadsV2();
@@ -144,6 +165,8 @@ var SaveStorage = (function () {
      這條路徑不能要求資料夾：一鍵分解前的保護存檔走的就是它，
      多數玩家沒有連接資料夾，若在此失敗，那份保護存檔就等於不存在。 */
   function writeManual(json, meta, done) {
+    // 桌面版：手動存檔直接寫成存檔檔（瀏覽器存檔記錄不會被 Steam Cloud 同步）
+    if (isDesktopFolder(_saveDir)) { writeManualFolder(json, meta, done); return; }
     var stored = false;
     try { stored = putSaveRecord(meta, json); } catch (e) { stored = false; }
     if (stored) { done(null); return; }
@@ -165,6 +188,7 @@ var SaveStorage = (function () {
   var WRITERS = {
     auto: writeAuto,
     autoNow: function (json, meta, done) {
+      done = thenDesktopFolder(json, meta, done);   // 桌面版關窗存檔也要讓雲端拿到最新進度
       // 明確操作需等到IndexedDB交易完成，不以主端鏡像或手動另存檔替代。
       idbSetAutoV2(json, function (err) {
         if (err) { done(err); return; }

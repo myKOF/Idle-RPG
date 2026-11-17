@@ -3,8 +3,25 @@
   "version": "1.0.0",
   "private": true,
   "description": "無限征途：合成之巔（零建置網頁遊戲）— build 為全檔語法/編譯檢查",
+  "main": "electron/main.cjs",
   "scripts": {
     "build": "node tools/build_check.cjs",
-    "test": "node --test \"tests/*.test.cjs\""
+    "test": "node --test \"tests/*.test.cjs\"",
+    "desktop": "electron .",
+    "desktop:dev": "electron . --dev --windowed",
+    "desktop:smoke": "electron . --smoke=tmp/desktop-smoke",
+    "desktop:pack": "node tools/desktop/build_desktop.cjs",
+    "steam:vdf": "node tools/steam/steampipe.cjs --vdf-only",
+    "steam:preview": "node tools/steam/steampipe.cjs --preview",
+    "steam:upload": "node tools/steam/steampipe.cjs --upload",
+    "steam:icons": "electron tools/steam/achievement_icons.cjs",
+    "steam:achievements": "node tools/desktop/steam_achievements.cjs"
+  },
+  "devDependencies": {
+    "electron": "44.10.1",
+    "electron-builder": "26.18.1"
+  },
+  "dependencies": {
+    "steamworks.js": "0.4.0"
   }
 }

@@ -128,6 +128,8 @@ function enterGame(save, maxRunId) {
   document.body.classList.remove('start-menu-pending');
   if (typeof initGM === 'function') initGM();
   setInterval(uiTickGuarded, 200);
+  // 桌面版：把存檔裡已達成的成就補送給 Steam（網頁版是空操作，見 js/desktop-steam.js）
+  if (typeof DesktopSteam !== 'undefined') DesktopSteam.syncFromSave(save);
   return true;
 }
 

@@ -1,0 +1,6 @@
+{
+  "說明": "SteamPipe 上傳設定（與機器無關、可提交）。AppID 不在這裡——唯一來源是 electron/steam-config.json（遊戲本身也要用）。depotId 填 Steamworks 後台 SteamPipe → Depots 的編號，0 代表用 AppID + 1（後台預設）。setLiveBranch 只能填非預設分支（例如 beta）；預設分支（default）一律到 Steamworks 網頁按 Set Build Live，腳本不碰。機器專用的設定（SDK 路徑、帳號名稱）放 steampipe.local.json，範本見 steampipe.local.example.json。",
+  "depotId": 0,
+  "setLiveBranch": "",
+  "fileExclusions": ["*.pdb", "steam_appid.txt", "*.bak", "*.log"]
+}

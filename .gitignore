@@ -85,3 +85,11 @@ sim_server.port
 # runtime 的授權綁 Spine 編輯器授權，把二進位檔提交進 repo 等於散布它。
 # 要用的人自己抓：node tools/spine/fetch-runtime.cjs
 tools/spine/vendor/*.js
+
+# --- 桌面版打包輸出（npm run desktop:pack）---
+/build/desktop/
+/dist/
+
+# --- Steam 上傳（tools/steam/steampipe.cjs）：產生的 VDF 與本機專用設定 ---
+/build/steampipe/
+tools/steam/steampipe.local.json

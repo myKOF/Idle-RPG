@@ -16311,3 +16311,10 @@ Worker 存活且頁面正常完成載入。
 - Codex，完成。使用者指定第一鏡開頭 3～5 秒。重播音效的鐘聲含中央及左右聲道尾音，以 2.34～2.96 秒的平滑包絡收掉鐘鳴，保留敲擊提示、環境風聲和後續事件。遊戲 BGM、影片、核准母帶及第一鏡原始 WAV 沿用既有版本。
 - 素材庫提交 `6d478bf299a8825b76c47c3106fa33266b22dc86`。更新第一鏡音效重製選項、前四鏡純音效匯出、MP3、來源與 SHA-256 清單。遊戲同步重播音效和清單、音軌與腳本快取、既有測試及功能說明。唯讀檢查播放器與音訊控制。
 - 驗證：3～5 秒主鐘頻率 91／182 Hz 分別降低 17.5／25.2 dB，原始 PCM 起敲前後至 2.34 秒及 7.91 秒之後一致，編碼後第 16 秒起解碼 PCM 完全一致。FFprobe 確認 48 kHz／100.70 秒，完整音效解碼、素材清單、序章與測試服回歸 52 項及 723 檔建置通過。Edge 在 8123 測試服由遊戲內重播，確認新版音效與原 BGM 同時起播，實際播放到 4.42 秒，亦驗證略過、重播與收尾。可合併。遊戲提交見本段所在的 `[Codex] fix: 移除序章開頭多餘鐘鳴`。
+
+## SYNC-MERGE-20261117-181708 — develop 整合固定畫布／技能與桌面 Steam 存檔
+
+- Owner：Codex；Done。處理 pending merge `2874d08fbbcb56fd55e0edde84978726d178da78` / `a5e4f7d7938a82624a4e3b4484a390666ec094bf`（base `3072e5e5ed361a5b0d62a2105de08d147bf31be9`），原始衝突僅 `index.html` 與 `js/worker/sim.worker.js`。保留 HEAD 的固定畫布、Knife Waltz 與相關快取，同時保留 incoming 的 Electron／Steam、桌面存檔與 save-schema 載入順序；未改動 incoming 的 `String.xlsx` bytes，且本次沒有原始 XLSX 衝突或素材庫交付。
+- 衝突解法：主頁 `ui.js` 使用新聯合快取 `20261117-fixed-canvas-steam-v1`，`save_origin.js` 使用 `20261117-fixed-canvas-save-schema-v1`；Worker 同時載入 Knife Waltz `skills2.js` 與 `save-schema.js`／新版 player、save。因 Worker 載入集合已合併，`bridge.js` 的 `WORKER_ASSET_VERSION` 及主頁 bridge 引用同步更新為 `20261117-knife-waltz-save-schema-v1`。沒有整側覆蓋，衝突標記已全部移除。
+- 驗證：`node --test tests/save-schema.test.cjs tests/desktop-saves.test.cjs tests/desktop-steam.test.cjs tests/start-menu.test.cjs tests/ui-fixed-canvas.test.cjs tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 為 69/77 通過；8 個 `hall-of-radiance` 失敗是原 HEAD 既存資料／測試不一致（HEAD 技能資料 `sec:4`，HEAD 測試期望 `sec:2`），本次未修改該公式、資料或斷言。其餘 save-schema、桌面存檔、Steam、開始選單、固定畫布、Worker protocol 與 VFX editor 快取測試全部通過。`npm.cmd run build` 732 檔通過。
+- 最終檢查：保留 controller 已做的 EOF 空白修正；`git diff HEAD --check` 檢查完整 merged result。HEAD／MERGE_HEAD 維持不變，未 stage、commit、push、切分支或執行同步腳本；由 controller 暫存回報檔案並建立 merge commit。

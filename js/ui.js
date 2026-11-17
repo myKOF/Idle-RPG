@@ -1012,6 +1012,7 @@ function handleWorkerUiEvents(events) {
       requestPanelData('header', true);
     } else if (event.key === 'achievementUnlocked') {
       if (typeof AchievementUI !== 'undefined') AchievementUI.onUnlocked(event.data);
+      if (typeof DesktopSteam !== 'undefined') DesktopSteam.onUnlocked(event.data);   // 桌面版轉發 Steam 成就
     } else if (event.key === 'forgeUnlocked') {
       requestPanelData('forge', true);
       requestPanelData('header', true);
