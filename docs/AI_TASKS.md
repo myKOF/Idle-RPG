@@ -1,3 +1,9 @@
+## WIDTH-BASED-UI — 依寬度縮放，讓介面填滿高度
+
+- Codex，完成。依使用者試玩回饋，沿用 1920 設計寬度，視窗寬度決定等比縮放倍率。裝備與戰鬥兩欄依可用高度延伸或收縮至視窗底部，取消畫布外的遮罩留白。原生開箱彈窗使用同一個畫布原點，素材庫無變更。
+- Edge 靜音實測 1569 × 509、1569 × 911、1280 × 720、3440 × 1440、390 × 844。兩個 1569 寬的視窗中，左右欄與戰鬥畫布寬度相同，高度差 402 像素。短視窗的裝備區可捲動，世界地圖、開箱對話框、戰鬥全螢幕均可操作。網頁原生全螢幕按鈕以既有回歸測試驗證，無頭 Edge 未確認切換成功。
+- `node --test` 重點回歸 177/177，`npm.cmd run build` 通過 732 檔，`git diff --check` 通過。可合併。
+
 ## SYNC-CODEX-ANTIGRAVITY-20261117 — 整合 Codex 與 Antigravity 分支
 
 - Codex 整合。使用者指定本輪整合 Codex 與 Antigravity 的本地及遠端成果，暫不納入 Claude。原 `develop` 為 `ec0ac037`，待完成的合併來源為 `be8847ad`，共六筆 Codex 提交。Antigravity `3072e5e5` 及 `codex/brass-and-slate`、`codex/lava-terrain`、遠端 `codex/npc-black-outlines-20261102` 的來源提交均已在主線歷史。`codex/background-catchup` 依既有設定隔離於 `08013b4db0e3f03f336810a128cd801547f89f6d`。

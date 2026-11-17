@@ -11009,28 +11009,24 @@ button.nf-part-slot.nf-part-ico {
 }
 
 /* ==========================================================================
-   Fixed reference canvas
+   Width-based canvas
 
-   The game is authored for one 1920x900 surface. Browser resizing changes
-   only the complete canvas transform; it must never reflow individual panels.
-   Smaller layouts query the design canvas rather than the browser viewport.
-   These rules keep the default layout stable when browser dimensions change.
-   The canvas dimensions stay constant across viewport sizes.
+   The canvas has a fixed design width and adapts its layout height to the viewport.
+   Panels query the canvas in design pixels, and the transform scales both axes equally.
    ========================================================================== */
 #ui-stage {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: #000;
 }
 
 #ui-shell {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  inset: 0 auto auto 0;
   width: var(--ui-canvas-width);
   height: var(--ui-canvas-height);
-  transform: translate(-50%, -50%) scale(var(--ui-scale, 1));
+  transform: scale(var(--ui-scale, 1));
+  transform-origin: top left;
   container: game-ui / size;
   overflow: clip;
 }
@@ -11051,8 +11047,8 @@ button.nf-part-slot.nf-part-ico {
   width: 100% !important;
   /* 戰鬥改造：佔滿 1920 設計寬（原 1720 置中），側欄貼齊左緣 */
   max-width: 1920px !important;
-  height: 850px !important;
-  min-height: 850px !important;
+  height: calc(100% - 50px) !important;
+  min-height: 0 !important;
   flex: none !important;
   flex-direction: row !important;
   padding: 0 !important;
