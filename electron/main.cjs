@@ -4,8 +4,7 @@
 
    這支只負責「把網頁版原封不動跑在桌面視窗裡」，遊戲程式不知道自己在 Electron：
    - 檔案經 app://game 伺服（electron/app-protocol.cjs），不走 file://
-   - 全螢幕沿用遊戲自己的網頁全螢幕按鈕（js/ui.js 的 btn-fullscreen），
-     外殼只在開機與 F11／Alt+Enter 時代按一次，所以遊戲內的按鈕狀態與提示永遠正確
+   - 全螢幕由外殼切換原生視窗，並同步遊戲的 HTML 全螢幕與頂欄按鈕狀態
    - 關窗前呼叫遊戲既有的 WorkerBridge.saveAutoNow() 把進度落地，再真正關閉
    - 雙開由 requestSingleInstanceLock 擋下（取代網頁版 tablock.js 的多分頁鎖的角色；
      tablock 照樣運作，只是同一個 origin 永遠只會有一個視窗）
@@ -229,7 +228,7 @@ function setupPermissions(ses) {
   });
 }
 
-/* ---- 全螢幕：代按遊戲自己的網頁全螢幕 ----
+/* ---- 全螢幕：開機、快捷鍵與 Windows 最大化沿用遊戲的 HTML 全螢幕 ----
    requestFullscreen 需要使用者手勢，executeJavaScript 的 userGesture 參數就是為此存在。
    這樣遊戲內的全螢幕按鈕、Esc 離開、按鈕提示文字都與網頁版一致。 */
 var FULLSCREEN_ON = 'document.fullscreenElement ? true : document.documentElement.requestFullscreen().then(function(){return true;},function(){return false;})';
@@ -267,11 +266,13 @@ function flushSave(win) {
 }
 
 function createWindow() {
+  var wantFullscreen = !OPTS.windowed && !OPTS.smoke;
   var win = new BrowserWindow({
     width: 1600,
     height: 900,
     minWidth: 1280,
     minHeight: 720,
+    fullscreen: wantFullscreen,
     show: false,
     backgroundColor: '#000000',
     autoHideMenuBar: true,
@@ -282,6 +283,8 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: true,
       spellcheck: false,
+      // 由下面的 HTML 全螢幕事件統一切換原生視窗。
+      disableHtmlFullscreenWindowResize: true,
       // 背景冒煙測試的視窗從不顯示：不關節流的話頁面會被判成隱藏、畫格停止，Loading 永遠不揭幕
       backgroundThrottling: !(OPTS.smoke && !OPTS.smokeOnScreen)
     }
@@ -293,19 +296,35 @@ function createWindow() {
 
   win.once('ready-to-show', function () {
     if (OPTS.smoke && !OPTS.smokeOnScreen) return;   // 背景冒煙測試：不顯示、不搶焦點
-    if (!OPTS.windowed && !OPTS.smoke) win.maximize();
     win.show();
   });
 
-  /* 重新整理（讀檔、重新開局都會 location.reload()）會讓網頁全螢幕失效，
-     所以記住導覽開始當下是不是全螢幕，載完再補回去。 */
-  var wantFullscreen = !OPTS.windowed && !OPTS.smoke;
+  if (process.platform === 'win32') {
+    win.on('maximize', function () {
+      if (win.isMaximized() && !win.isFullScreen()) runInPage(win, FULLSCREEN_ON, true);
+    });
+  }
+
+  win.on('enter-html-full-screen', function () {
+    if (win.isFullScreen()) return;
+    // 先回到原視窗，讓離開全螢幕時還原原本的尺寸與位置。
+    if (process.platform === 'win32' && win.isMaximized()) win.unmaximize();
+    win.setFullScreen(true);
+  });
+  win.on('leave-html-full-screen', function () {
+    // 重新整理會清除頁面的全螢幕狀態。保留原生全螢幕，待新頁就緒再同步。
+    if (!wantFullscreen) win.setFullScreen(false);
+  });
+
   wc.on('did-start-navigation', function (details) {
     if (details.isMainFrame && !details.isSameDocument) wantFullscreen = win.isFullScreen() || wantFullscreen;
   });
   wc.on('did-finish-load', function () {
-    if (wantFullscreen) runInPage(win, FULLSCREEN_ON, true);
+    if (!wantFullscreen) return;
     wantFullscreen = false;
+    runInPage(win, FULLSCREEN_ON, true).then(function (entered) {
+      if (entered !== true && !win.isDestroyed()) win.setFullScreen(false);
+    });
   });
 
   wc.on('before-input-event', function (event, input) {
@@ -415,8 +434,7 @@ function onReady() {
   var win = createWindow();
   if (OPTS.smoke) {
     require('./smoke.cjs').run(win, {
-      outDir: OPTS.smoke, log: log, flushSave: flushSave, onScreen: OPTS.smokeOnScreen,
-      toggleFullscreen: function (w) { return runInPage(w, FULLSCREEN_TOGGLE, true); }
+      outDir: OPTS.smoke, log: log, flushSave: flushSave, onScreen: OPTS.smokeOnScreen
     });
   }
 }

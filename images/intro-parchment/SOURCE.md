@@ -71,24 +71,25 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 ## 遊戲重播（2026-11-17）
 
-設置說明頁播放最新版前四鏡。從核准母帶轉碼的 1080p／30 fps H.264 影片為 `web/shots-01-04-replay.mp4`，前三鏡到第四鏡的剪接時間不變。遊戲以荒漠首曲 Desert Ascendant 及 `web/shots-01-04-replay-sfx.mp3` 獨立播放，分別套用音樂和音效音量。音效從各鏡原始音效合成，第三鏡音效於第 68.50 秒接第四鏡。遊戲重播在 3 秒前收掉第一鏡鐘鳴的尾音，保留最初敲擊。第一鏡的持續環境風聲與立體聲氣流振幅減半，敵軍來襲、翼振、掠過與撞擊各分量維持原值。核准母帶保留審片混音。
+設置說明頁播放 109.7 秒前五鏡。`web/shots-01-05-replay.mp4` 以 1080p／30 fps 接續前四鏡的核准畫面與第五鏡，第 100.7 秒進入荒漠終章。遊戲以同一個 Desert Ascendant 播放器全程播放配樂，並以 `web/shots-01-05-replay-sfx.mp3` 獨立播放演出音效，各自套用遊戲音量。第三鏡音效於第 68.5 秒接第四鏡，第五鏡於第 100.7 秒接入原始風沙音效。遊戲重播在 3 秒前收掉第一鏡鐘鳴的尾音，保留最初敲擊。第一鏡的持續環境風聲與立體聲氣流振幅減半，敵軍來襲、翼振、掠過與撞擊各分量維持原值。核准母帶保留審片混音。
 
 還原核准 MP4 後，可在素材庫的序章目錄執行下列指令重製遊戲匯出。輸出目錄使用新資料夾，避免覆寫既有匯出。
 
 ```powershell
 node extended-shot-four/export-replay.cjs shots-01-04-100.7s.mp4 replay-export
 node extended-shot-four/export-replay.cjs --audio-only replay-audio-export
+node extended-shot-four/export-replay.cjs --five-shots replay-five-export
 ```
 
 ## 第五鏡荒漠終章（2026-11-17）
 
 核准成片長 9 秒。第一格直接呈現風沙、地面與飛行魔軍，天空和拱門分速左移，近地與人物右移，中景地表固定，最後淡至黑幕。三類飛行惡魔各有 16 格拍翼週期。成片保存為 `web/shot-05-desert-finale-orbit.mp4`，遊戲匯出為 `images/intro-parchment/shot-05-desert-finale-orbit.mp4`。
 
-`extended-shot-five/` 保存分層程式、ImageGen 補景、提示詞、獨立音效與審片混音。重製和預覽方式見該目錄的 `SOURCE.md`。遊戲說明頁重播目前播放 100.7 秒前四鏡連播。
+`extended-shot-five/` 保存分層程式、ImageGen 補景、提示詞、獨立音效與審片混音。重製和預覽方式見該目錄的 `SOURCE.md`。目前獨立成片用於審片，遊戲重播使用前五鏡連播。
 
 ## 可編輯來源
 
-Effects-Materials 內的 `codex-authored/intro-parchment-shots-20261111` 保存核准成片、可編輯程式、透明分件、雲海和深淵背景、音軌、聲景產生器及提示詞。角色、流光翼、神殿、遠雲、地面敵軍、飛行敵軍、火焰、煙與粒子分開合成。大天使長的頭罩與右手由獨立透明圖接回角色。第二鏡大天使長沿用第一鏡流光翼分件。第三鏡的地圖、荒漠地表、星點、紫霧、光束、圓形神光及沙塵分開合成。
+Asset 內的 `codex-authored/intro-parchment-shots-20261111` 保存核准成片、可編輯程式、透明分件、雲海和深淵背景、音軌、聲景產生器及提示詞。角色、流光翼、神殿、遠雲、地面敵軍、飛行敵軍、火焰、煙與粒子分開合成。大天使長的頭罩與右手由獨立透明圖接回角色。第二鏡大天使長沿用第一鏡流光翼分件。第三鏡的地圖、荒漠地表、星點、紫霧、光束、圓形神光及沙塵分開合成。
 
 原 30.3 秒版本的入片繪圖均由 ImageGen 原創生成或修訂。使用者提供的天使立繪、姿勢與神殿截圖、指定影片、遊戲內薩爾維恩地圖及使用者圈選的荒漠位置，用於造型、地理與分鏡參考。音軌由本地程序合成。RPG Mote Studio 主要適合像素圖，本案採用適合高解析蝕刻圖與透明分件的 ImageGen。
 

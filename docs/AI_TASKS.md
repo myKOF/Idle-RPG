@@ -1,3 +1,22 @@
+## VERSION-UPDATE-TOPBAR-20261118 — 頂欄版本更新按鈕
+
+- Codex，Done。發現新版本時顯示「發現新版本！點擊此處更新」。正式版按鈕緊接全螢幕入口，內測版沿用既有傷害／承傷資訊插入順序，按鈕接在四項資訊後。前置為既有頂欄、版本偵測及 String 表。
+- 更新 `index.html`、`css/style.css`、`js/main.js`、`config/Excel/String.xlsx`、`config/CSV/String.csv`、`js/strings_data.js`、`tools/vfx/editor/index.html` 的字串快取、`LV_upgrade_system.md` 與本段。唯讀核對 `js/ui.js` 的承傷欄、Electron 外殼、配置表工具與相關測試。與 `codex/intro-shot-five-white-sword` 共用主頁、系統說明及任務紀錄，各自修改不同區段，三方內容試合通過。
+- 隔離 Electron `app://game` 與本機內測 HTTP 全靜音入局。模擬版本探測回應更新，確認按鈕原先隱藏、文案與位置正確、內測四項資訊皆可命中，並以滑鼠點擊驗證實際重新載入。Excel 原生正常重開，逐列核對只改 E50，保留儲存格、欄位與檢視格式。
+- 63 項字串、全螢幕、啟動及桌面回歸通過。`npm.cmd run build` 通過 732 檔，字串同步、寫死文字檢查及 Git 差異檢查通過。交使用者整合，可合併。
+
+## DESKTOP-FULLSCREEN-20261117 — 桌面版原生全螢幕與頂欄提示
+
+- Codex，完成。Electron 啟動直接建立原生全螢幕視窗，並以 HTML 全螢幕事件同步視窗與頂欄。F11、Alt+Enter、Esc、頂欄切換及重新整理均可用。頂欄進入提示從 String.xlsx 第 207 號改為「全螢幕」，同步 CSV、生成資料、主頁與 VFX 編輯器快取。
+- 更新 Electron 主行程、桌面冒煙測試、頂欄文字回歸、Steam 與系統說明及本段。唯讀檢查 js/ui.js、js/ui-scale.js、electron/preload.cjs 和字串匯出流程。衝突預檢通過。Excel 原生重開確認文字，逐列比對匯出只有指定文字變更。
+- Windows 隔離新局驗證預設全螢幕、視窗模式、最大化後進出、頂欄點擊、F11、Alt+Enter、Esc 和重新整理。全螢幕時視窗與內容邊界為 1536 × 864 DIP，與實體 1920 × 1080 螢幕相符。桌面冒煙含真實 F11 事件、範圍檢查與關窗存檔通過。79 項相關回歸、732 檔建置、字串與差異檢查通過。交使用者整合，可合併。
+
+## DESKTOP-MAXIMIZE-FULLSCREEN-20261117 — Windows 標題列進入原生全螢幕
+
+- Codex，完成。將 Windows 標題列「最大化」接入既有桌面版原生全螢幕，退出時恢復原視窗尺寸與位置。更新 Electron 主行程、桌面冒煙、Steam 與系統說明。唯讀檢查遊戲頂欄及戰鬥全螢幕入口、Electron preload。
+- 隔離存檔以 Windows `SC_MAXIMIZE` 重現最大化只覆蓋工作區。修正後連續兩次進入均覆蓋完整螢幕，Esc、F11 退出恢復原位置與尺寸。遊戲內的可見桌面冒煙、兩支 Electron 腳本語法檢查、75 項相關回歸及差異檢查通過。
+- 系統說明與本檔和序章終章工作區的編輯分屬不同段落，三方試合通過。同副本 NPC 護罩工作也分段暫存。可交使用者整合。
+
 ## SYNC-INTRO-REPLAY-20261117 — 整合第五鏡封存與第一鏡降噪
 
 - Codex 完成使用者指定的 `develop` 合併。第一父提交 `f65c2e55` 封存 9 秒第五鏡，第二父提交 `4d18a2fc` 更新第一鏡持續風聲及重播快取。保留兩份任務記錄及素材清單的來源條目，依合併後 `SOURCE.md` 重新計算 SHA-256。遊戲說明頁重播沿用前四鏡時間軸與分軌播放。
@@ -16,6 +35,12 @@
 - 唯一衝突為本檔。以 index 三方原始 blob 執行 `git merge-file -p` 回傳 0，結果與現場內容逐位元組相同，保留兩方完整任務紀錄。其他檔案沿用已暫存合併結果，包含固定比例畫布、商人版面、序章前四鏡重播與鐘鳴修正、輪舞刃及測試服修正。序章素材來源提交為 `6fc403d`、`6d478bf`。
 - 驗證包含 `node --test` 執行 13 份相關測試共 106/106、`npm.cmd run build` 通過 723 檔、`node tools/intro/sync-parchment-shots.cjs --check` 確認素材與遊戲輸出 SHA-256、`git diff --cached --check`。紀錄位於 `logs/manual-merge-20261117/`。本輪以既有測試驗證合併結果。
 - 本段所在合併提交整合 Codex 六筆新提交。同步僅指定 `develop`、`ai/codex`、`ai/antigravity` 與已核對的序章素材提交。Claude 本地 `a5b588e5` 及遠端各分支、既有試作保留。
+
+## INTRO-REPLAY-FIVE-20261117 — 接入序章第五鏡
+
+- Codex，完成。遊戲以原有前四鏡接續核准第五鏡，第 100.7 秒進入荒漠終章，共 109.7 秒。配樂全程使用同一個 Desert Ascendant 播放器與場景音量，風沙接入獨立的序章音效軌。
+- Asset 原始來源 `ffcdac76`，匯出與重製程式提交 `e4a87082`。遊戲更新重播資料、快取、合併成片與音效匯出、出貨清單、既有回歸及功能說明。唯讀核對既有播放器、場景接續與前四鏡母帶。本機素材庫設定使用更名後的 Asset。
+- 驗證：完整解碼 3,291 格，與兩段來源畫格逐格一致。獨立音效解碼 109.7 秒，前 100.5 秒逐樣本與既有重播一致。Asset 與遊戲清單 SHA-256 通過，77 項回歸測試及 `npm.cmd run build` 通過 732 檔。隔離 Edge 實測設定頁跨入第五鏡，配樂一個播放器且與影片同步，並驗證片尾收場、略過、重播、焦點復原與 HTTP 206。可合併。
 
 ## FIXED-UI-CANVAS-20261117 — 遊戲介面固定比例
 
@@ -100,6 +125,13 @@
 - ???`node --test tests/intro-audio.test.cjs tests/intro-game-audio.test.cjs tests/intro-motion.test.cjs tests/intro-player.test.cjs tests/intro-scene.test.cjs tests/skill-sfx.test.cjs tests/start-menu-background.test.cjs tests/start-menu.test.cjs tests/ui-sound.test.cjs tests/zone-music.test.cjs tests/vfx-editor-cache-versions.test.cjs`?98/99??????????? BGM ????? Node Module._compile ?? `git show 48719af:tests/zone-music.test.cjs` ??????16/17??????actual ? expected?????Zones.xlsx?CSV ? js/data.js ? original HEAD ?????????
 - `npm.cmd run build` ?? 720 ??`node tools/intro/sync-parchment-shots.cjs --check` ??????? SHA-256?`node tools/string-table/build_string_csv.cjs --check` ??? 0?`git diff HEAD --check` ????????????HEAD?MERGE_HEAD ?????? Excel ????????????? incoming ????????????
 - ?????????? index.html?sfx.js?sfx-synth.js ?????????????build ??????????????????????? ignored `logs/sync-20261113-014228-{tests,baseline}.tap` ? `{build,assets,strings}.log`???????????????????????? controller ????????? add?commit?
+
+## NPC-SHIELD-FIT-20261117 — NPC 護罩跟隨本體
+
+- Codex，Done。修正野外與封魔塔共用的無敵護罩定位。護罩逐幀跟隨可見本體及透視，以既有半徑作為量測失敗時的備援。2D 沿用貼圖邊界快取，3D 在護罩生效時量測當前剪影。免疫判定、持續時間及解鎖均沿用既有規則。
+- 唯讀核對 NPC.xlsx／CSV 的 530 筆配置、120 種野外 NPC 的 480 組動作共 3,075 幀、50 筆封魔塔 BOSS（19 筆套用 14 款 3D 模型），以及 Status、Skills2、菁英狀態引擎、護罩 Preset 和 3D 載入。素材庫無變更。
+- 隔離 Chrome 使用正式 Pixi／Three 戰鬥渲染及測試快照，確認暗影蝠、毒蚊群、嵐翼飛蛇和 3D 鬼面的護罩位置。14 款模型共 112 個取樣姿勢皆可量測輪廓。相關 Node 回歸 265 項中 250 通過，15 項失敗均可在修改前版本重現。兩個新增回歸均通過，並確認可在舊版重現問題。建置 732 檔通過。完整測試套件因長時間無進度而中止。
+- 更新戰鬥渲染、VFX Runtime、主頁／編輯器／場景預覽快取、護罩回歸及文件。序章工作區同檔修改落在不同區段，三方試合通過。可交使用者整合。
 
 ## SETTINGS-HELP-RELICS-CHESTS-20261113 — 補充遺物與熔爐寶箱說明
 

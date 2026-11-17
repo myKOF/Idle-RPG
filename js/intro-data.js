@@ -28,12 +28,12 @@
    顯示文字一律用 String 表編號（AI_RULES 8.10），不在這裡寫字。
    ============================================================================= */
 var INTRO_REPLAY_TIMELINE = {
-  video: 'images/intro-parchment/shots-01-04-replay.mp4?v=1',
-  duration: 100700,
+  video: 'images/intro-parchment/shots-01-05-replay.mp4?v=1',
+  duration: 109700,
   audio: {
     music: typeof ZONES !== 'undefined' && ZONES.desert && ZONES.desert.bgm,
     sceneMusic: true,
-    sfx: 'images/intro-parchment/shots-01-04-replay-sfx.mp3?v=3'
+    sfx: 'images/intro-parchment/shots-01-05-replay-sfx.mp3?v=1'
   }
 };
 

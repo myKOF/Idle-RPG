@@ -38,7 +38,7 @@ function checkForUpdates() {
       if (!window._appVersionHash) window._appVersionHash = hash;
       else if (window._appVersionHash !== hash) {
         var banner = document.getElementById('update-banner');
-        if (banner) banner.style.display = 'block';
+        if (banner) banner.hidden = false;
       }
     })
     .catch(function(e){});
