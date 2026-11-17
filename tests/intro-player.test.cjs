@@ -435,7 +435,7 @@ test('成片以荒漠第一首配樂及獨立音效跟隨影片，離場才恢�
   const video = env.playerRoot().children[0].children[0];
   assert.equal(video.muted, true);
   assert.equal(audioConfig.music, env.ctx.ZONES.desert.bgm);
-  assert.equal(audioConfig.sfx, 'images/intro-parchment/shots-01-04-replay-sfx.mp3?v=2');
+  assert.equal(audioConfig.sfx, 'images/intro-parchment/shots-01-04-replay-sfx.mp3?v=3');
   assert.ok(fs.existsSync(path.join(root, audioConfig.sfx.split('?')[0])));
   assert.deepEqual(calls, ['ui true', 'battle true', 'intro prepare']);
   video.listeners.playing[0]();
