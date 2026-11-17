@@ -28,7 +28,7 @@
    顯示文字一律用 String 表編號（AI_RULES 8.10），不在這裡寫字。
    ============================================================================= */
 var INTRO_REPLAY_TIMELINE = {
-  video: 'images/intro-parchment/shots-01-05-replay.mp4?v=2',
+  video: 'images/intro-parchment/shots-01-05-replay.mp4?v=3',
   duration: 113700,
   audio: {
     music: typeof ZONES !== 'undefined' && ZONES.desert && ZONES.desert.bgm,
