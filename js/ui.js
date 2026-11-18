@@ -11438,12 +11438,12 @@ function initUI() {
     });
   }
 
-  // 本地測試服承傷顯示初始化：顯示在全螢幕按鈕右側
+  // 本地測試服傷害及承傷資訊放在版本更新提示前。
   var host = window.location.hostname;
   var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
   if (isLocal) {
-    var fsBtn = $id('btn-fullscreen');
-    if (fsBtn && !$id('r-phys-absorb')) {
+    var updateBanner = $id('update-banner');
+    if (updateBanner && !$id('r-phys-absorb')) {
       var wrap = document.createElement('span');
       wrap.id = 'test-only-dmg-wrap';
       wrap.style.marginLeft = '14px';
@@ -11458,7 +11458,7 @@ function initUI() {
         '<span id="r-magic-dmg-span" style="cursor: pointer;">' + STR(189) + ' <b id="r-magic-dmg" style="color: #4ade80;">0</b></span>' +
         '<span id="r-phys-span" style="cursor: pointer;">' + STR(190) + ' <b id="r-phys-absorb" style="color: #4ade80;">0</b></span>' +
         '<span id="r-magic-span" style="cursor: pointer;">' + STR(191) + ' <b id="r-magic-absorb" style="color: #4ade80;">0</b></span>';
-      fsBtn.parentNode.insertBefore(wrap, fsBtn.nextSibling);
+      updateBanner.before(wrap);
     }
   }
   // 分頁
@@ -13081,57 +13081,6 @@ function initUI() {
       : STR(1240), 'info');
     return;
   });
-  // 頂欄網頁全螢幕切換；瀏覽器 F11 屬於瀏覽器層級，網頁無法代替 F11 退出
-  function isBrowserFullscreen() {
-    var screenObj = typeof screen !== 'undefined' ? screen : null;
-    if (!screenObj || document.fullscreenElement) return false;
-    var firefoxF11 = typeof window.fullScreen === 'boolean' && window.fullScreen;
-    var sizeF11 = window.outerWidth >= screenObj.width && window.outerHeight >= screenObj.height;
-    return !!(firefoxF11 || sizeF11);
-  }
-  var fsBtn = $id('btn-fullscreen');
-  if (fsBtn) {
-    var nativeDisplay = window.ApexHost && window.ApexHost.display;
-    var nativeFullscreen = false;
-    function syncFullscreenButton() {
-      var pageFullscreen = nativeDisplay ? nativeFullscreen : !!document.fullscreenElement;
-      var browserFullscreen = !nativeDisplay && !pageFullscreen && isBrowserFullscreen();
-      fsBtn.classList.toggle('active', pageFullscreen || browserFullscreen);
-      fsBtn.setAttribute('data-tip', pageFullscreen
-        ? STR(2072)
-        : (browserFullscreen ? STR(2074) : STR(207)));
-    }
-    if (nativeDisplay) {
-      var syncNativeFullscreen = function (state) {
-        nativeFullscreen = state.mode !== 'windowed';
-        syncFullscreenButton();
-      };
-      nativeDisplay.onChange(syncNativeFullscreen);
-      nativeDisplay.get().then(syncNativeFullscreen).catch(function () {});
-    }
-    fsBtn.addEventListener('click', function () {
-      if (nativeDisplay) {
-        nativeDisplay.toggle().then(syncNativeFullscreen).catch(function () { blog(STR(2560), 'warn', 'system'); });
-        return;
-      }
-      if (document.fullscreenElement) {
-        // 第二次按下：離開全螢幕恢復正常
-        document.exitFullscreen().catch(function () { });
-      } else if (isBrowserFullscreen()) {
-        blog(STR(2075), 'warn', 'system');
-      } else {
-        document.documentElement.requestFullscreen().catch(function () {
-          blog(STR(2076), 'warn', 'system');
-        });
-      }
-    });
-    document.addEventListener('fullscreenchange', function () {
-      syncFullscreenButton();
-    });
-    window.addEventListener('resize', syncFullscreenButton);
-    syncFullscreenButton();
-  }
-
   // 熔爐頁設定（舊生產線的篩選/合成節點已移除）
 
   // 設定分頁：存檔管理——只有三個動作：立刻存檔（手動存檔進下方列表）、匯出存檔（彈出路徑視窗）、開啟存檔資料夾（桌面外殼提供）
