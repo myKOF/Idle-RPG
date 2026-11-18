@@ -146,11 +146,6 @@
   color: #a39d90;
 }
 
-#tab-gems .gx-actions .btn:disabled {
-  opacity: .45;
-  cursor: default;
-}
-
 /* ---- 寶石共鳴（js/ui-gem-resonance.js）---- */
 #tab-gems .gx-panel[data-gem-panel="resonance"] { position: relative; container-type: inline-size; }
 .gres-help { position: absolute; top: 8px; left: -36px; z-index: 1; }

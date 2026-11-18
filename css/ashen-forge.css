@@ -482,10 +482,7 @@ textarea:hover {
 .btn.warn,
 .btn.danger,
 .btn.active,
-.forge-inv-tabs .btn.active,
-#btn-salvage-confirm,
-#fuse-btn,
-#forge-go {
+.forge-inv-tabs .btn.active {
   border-color: #9b6d59 !important;
   background: linear-gradient(#98251cce, #681310d9 45%, #32090deb), var(--af-iron) center / 180px !important;
   color: #e9d9c0 !important;
@@ -1002,16 +999,10 @@ select option {
   flex: 1 1 0 !important;
   min-width: 0 !important;
   padding: 6px 2px !important;
-  font-size: 13px !important;
+  font-size: var(--bs-button-size) !important;
   text-align: center !important;
   white-space: nowrap !important;
   letter-spacing: 0.04em !important;
-}
-
-#equip-action-bar .btn:disabled {
-  opacity: 0.45;
-  cursor: default;
-  filter: grayscale(0.8);
 }
 
 .equip-material-panel {
@@ -1785,7 +1776,7 @@ html *::-webkit-scrollbar-corner {
   border-style: dashed;
 }
 
-/* 操作列＝詳情卡的底部：一個紅色主按鈕＋次按鈕＋卸下圖示 */
+/* 操作列接在詳情卡下方。 */
 #tab-equip #equip-action-bar {
   margin-top: 0 !important;
   padding: 10px 12px;
@@ -1798,36 +1789,10 @@ html *::-webkit-scrollbar-corner {
 
 #tab-equip #equip-action-bar .btn {
   height: 36px;
-  border: 1px solid #3a3d44 !important;
-  border-radius: 6px !important;
-  background: #1b1e24 !important;
-  color: #ece6d8 !important;
-  box-shadow: none !important;
-  text-shadow: none;
-}
-
-#tab-equip #equip-action-bar .btn:hover:not(:disabled) {
-  border-color: #5a5d66 !important;
-  background: #23262d !important;
-  filter: none;
 }
 
 #tab-equip #equip-action-bar .btn.btn-primary {
-  border-color: #a8322c !important;
-  background: #a8322c !important;
-  color: #ffffff !important;
   font-weight: 700;
-}
-
-#tab-equip #equip-action-bar .btn.btn-primary:hover:not(:disabled) {
-  border-color: #bf3a33 !important;
-  background: #bf3a33 !important;
-}
-
-#tab-equip #equip-action-bar .btn[aria-pressed='true']:not(.btn-primary) {
-  border-color: #c9a35e !important;
-  background: #2a2218 !important;
-  color: #f0cf86 !important;
 }
 
 #tab-equip #equip-action-bar .btn.btn-icon {
@@ -1975,7 +1940,6 @@ html *::-webkit-scrollbar-corner {
   box-shadow: none !important;
 }
 
-#inv-section-box .inv-head .btn.sm,
 #inv-section-box .inv-head .input.sm,
 #inv-section-box .inv-head select {
   height: 30px;
@@ -1988,16 +1952,10 @@ html *::-webkit-scrollbar-corner {
   font-size: 13px;
 }
 
-#inv-section-box .inv-head .btn.sm:hover:not(:disabled) {
-  border-color: #5a5d66 !important;
-  background: #1b1e24 !important;
-}
-
-#btn-salvage-settings {
-  background: transparent !important;
-  border-color: #7a2a26 !important;
-  color: #f08a80 !important;
-  font-weight: 700;
+#inv-section-box .inv-head .btn.sm {
+  height: 30px;
+  padding-inline: 8px;
+  font-size: var(--bs-button-small-size);
 }
 
 /* 背包格：照設計稿改成暗底細框，品質色只留在 1px 邊框上（inline 的內發光拿掉）。
@@ -2163,8 +2121,8 @@ html *::-webkit-scrollbar-corner {
   border-radius: 6px;
   background: transparent;
   box-shadow: none;
-  color: #a39d90;
-  font-size: 12px;
+  color: var(--bs-muted);
+  font-size: 13px;
   line-height: 16px;
   letter-spacing: .04em;
   text-shadow: none;
@@ -2288,7 +2246,8 @@ html *::-webkit-scrollbar-corner {
   border-radius: 6px 6px 0 0;
   background: #1b1a17;
   color: #b9a982;
-  font-size: 15px;
+  font-size: 16px;
+  line-height: 21px;
   cursor: pointer;
 }
 .settings-tab-btn:is(:hover, :focus-visible) { background: #2a251b; color: #ead7ad; }
@@ -2401,22 +2360,17 @@ html *::-webkit-scrollbar-corner {
 }
 
 #game-layout #workspace-area .unlock-tab-pending {
-  background: linear-gradient(#765622, #483315) !important;
-  color: #fff0b5 !important;
-  border-color: #e9bd61 !important;
   animation: unlockTabPulse 1.4s ease-in-out infinite !important;
   outline: 2px solid #e9bd61;
   outline-offset: -2px;
 }
 @keyframes unlockTabPulse {
-  0%, 100% { filter: brightness(1); outline-color: #b78a3d; }
-  50% { filter: brightness(1.65); outline-color: #ffe2a0; }
+  0%, 100% { outline-color: #b78a3d; }
+  50% { outline-color: #ffe2a0; }
 }
 @media (prefers-reduced-motion: reduce) {
   #game-layout #workspace-area .unlock-tab-pending {
     animation: none !important;
-    background: #57421b;
-    color: #fff0b5;
   }
 }
 
@@ -3470,50 +3424,10 @@ html *::-webkit-scrollbar-corner {
   color: #c9c3b5;
 }
 
-/* 技能頁按鈕：扁平樣式，主按鈕紅色、次要按鈕透明 */
 #tab-skills .sgb .btn {
   height: 32px;
-  padding: 0 12px;
-  border: 1px solid #3a3d44 !important;
-  border-radius: 6px !important;
-  background: #1b1e24 !important;
-  box-shadow: none !important;
-  color: #ece6d8 !important;
-  font-size: 13px;
-  text-shadow: none;
-}
-
-#tab-skills .sgb .btn:hover:not(:disabled) {
-  border-color: #5a5d66 !important;
-  background: #23262d !important;
-  filter: none;
-}
-
-#tab-skills .sgb .btn:disabled {
-  opacity: .45;
-  cursor: default;
-}
-
-#tab-skills .sgb .btn.sgb-btn-primary {
-  border-color: #a8322c !important;
-  background: #a8322c !important;
-  color: #ffffff !important;
-  font-weight: 700;
-}
-
-#tab-skills .sgb .btn.sgb-btn-primary:hover:not(:disabled) {
-  border-color: #bf3a33 !important;
-  background: #bf3a33 !important;
-}
-
-#tab-skills .sgb .btn.sgb-btn-quiet {
-  background: transparent !important;
-  color: #a39d90 !important;
-}
-
-#tab-skills .sgb .btn.sgb-btn-danger:hover:not(:disabled) {
-  border-color: #7a2a26 !important;
-  color: #f08a80 !important;
+  padding: 0 9px;
+  font-size: var(--bs-button-size);
 }
 
 /* 底部技能列：跟著分頁捲動黏在底部 */
@@ -3675,13 +3589,13 @@ html *::-webkit-scrollbar-corner {
 
 #tab-gems .gx-chip {
   height: 28px;
-  padding: 0 9px;
+  padding: 0 7px;
   border: 1px solid #2a2d34;
   border-radius: 999px;
   background: #0e1013;
   color: #c9c3b5;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--bs-button-small-size);
   cursor: pointer;
 }
 
@@ -3944,7 +3858,7 @@ html *::-webkit-scrollbar-corner {
   background: transparent;
   color: #a39d90;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--bs-button-size);
   cursor: pointer;
 }
 
@@ -4014,7 +3928,7 @@ html *::-webkit-scrollbar-corner {
 #tab-gems .gx-actions .btn {
   flex: 1 1 0;
   height: 40px;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 #tab-gems .gx-recipe {
@@ -4163,7 +4077,7 @@ html *::-webkit-scrollbar-corner {
 #tab-newforge .nf-add-btn {
   height: 30px;
   margin-left: auto;
-  padding: 0 14px;
+  padding: 0 11.5px;
   border-color: #7a6440;
   background: #2a2218;
   color: #f0cf86;
@@ -4767,13 +4681,13 @@ html *::-webkit-scrollbar-corner {
   align-items: baseline;
   gap: 6px;
   height: 28px;
-  padding: 0 12px;
+  padding: 0 10px;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
   color: #a39d90;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--bs-button-small-size);
   line-height: 26px;
   cursor: pointer;
 }
@@ -5423,7 +5337,8 @@ html *::-webkit-scrollbar-corner {
 }
 
 #tab-talents .tlx-tier-state {
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 15.5px;
   color: #929eaa;
   white-space: nowrap;
 }

@@ -10211,6 +10211,7 @@ function renderGems() {
   if (resonanceTab) {
     var resonanceTabClass = 'gx-tab' + (resonanceOpen ? '' : ' is-locked');
     if (resonanceTab.className !== resonanceTabClass) resonanceTab.className = resonanceTabClass;
+    setAttrIfChanged(resonanceTab, 'aria-disabled', String(!resonanceOpen));
     if (resonanceOpen) {
       resonanceTab.removeAttribute('data-tt-title');
       resonanceTab.removeAttribute('data-tt-desc');

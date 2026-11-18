@@ -132,7 +132,7 @@
 /* 與神鑄裝備品質頁籤共用色票與尺寸，僅作用於成就篩選。 */
 #achv-modal .achv-filters button {
   min-width: 76px; min-height: 30px; padding: 4px 14px;
-  border: 1px solid transparent; border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 0;
+  border: 1px solid transparent; border-radius: 6px; font-size: var(--bs-button-size); font-weight: 700; letter-spacing: 0;
   color: var(--afl-text-dim); background: transparent; box-shadow: none; text-shadow: none;
   font-family: inherit;
 }

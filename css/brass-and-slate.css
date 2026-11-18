@@ -13,6 +13,9 @@
   --bs-green-dark: #26372f;
   --bs-tab-selected-top: #c4dbc6;
   --bs-tab-selected-bottom: #a7c5ae;
+  --bs-tab-selected-ink: #1c2d23;
+  --bs-button-size: 15px;
+  --bs-button-small-size: 14px;
   --bs-corners:
     linear-gradient(135deg, #231c20 0 16%, #aa8c60 18% 24%, #5e4c37 26% 38%, transparent 40%) left top,
     linear-gradient(225deg, #231c20 0 16%, #aa8c60 18% 24%, #5e4c37 26% 38%, transparent 40%) right top,
@@ -55,7 +58,7 @@ body #res-bar .res {
 
 body :is(#workspace-area, #combat-area),
 body :is(#inv-section-box, #forge-gem-box),
-body :is(.modal-box, .confirm-box, .system-card, .detail-log-box, #battle-info-drawer, #salvage-settings-panel),
+body :is(.inv-filter-panel, #forge-stone-popover),
 body #sk-tooltip:not(:has(.equip-detail-card)),
 body #sk-tooltip .equip-detail-card:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)) {
   border-color: var(--bs-brass) !important;
@@ -90,71 +93,95 @@ body #workspace-area #tabs {
 }
 
 /* 綠琺瑯底、切角銅邊。警示與停用保有不同明度及色相。 */
-body :is(.btn, .fs-btn, .info-btn, .zone-btn, .btn-equip-sets, .modal-x, .realm-btn),
-body #workspace-area .eqset-tab,
-body #tab-equip #equip-action-bar .btn:is(.btn, .btn-primary),
-body #tab-equip #equip-action-bar .btn.btn-primary:hover:not(:disabled),
+body :is(.btn, .fs-btn, .info-btn, .zone-btn, .btn-equip-sets, .modal-x, .realm-btn, .eqset-popup-close, .eqset-tab),
+body .btn:is(.warn, .danger, .active, [aria-pressed], :disabled),
+body #tab-equip #equip-action-bar .btn,
+body #tab-skills .sgb .btn,
 body #inv-section-box .inv-head .btn.sm,
 body #world-map-modal .btn,
 body :is(.settings-tab-btn, .system-close),
 body #achv-modal .achv-filters button,
-body #workspace-area :is(.gx-tab, .rx-tab, .rx-detail-toggle),
+body #workspace-area :is(.gx-tab, .rx-tab, .rx-detail-toggle, .twx-tier, .tlx-tier, .gx-chip),
+body #tab-forge :is(.forge-mode-tabs, #forge-quality-tabs) .btn,
 body #zone-bar #btn-world-map,
 body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button {
   border-color: var(--bs-button-edge, #a58659) !important;
   border-radius: 0 !important;
   background:
-    linear-gradient(135deg, #dabc7d99 0 3px, transparent 4px) left top / 9px 9px no-repeat,
-    linear-gradient(315deg, #8f6542 0 3px, transparent 4px) right bottom / 9px 9px no-repeat,
+    linear-gradient(135deg, var(--bs-button-corner-top, #dabc7d99) 0 3px, transparent 4px) left top / 9px 9px no-repeat,
+    linear-gradient(315deg, var(--bs-button-corner-bottom, #8f6542) 0 3px, transparent 4px) right bottom / 9px 9px no-repeat,
     linear-gradient(170deg, var(--bs-button-top, var(--bs-green)), var(--bs-button-bottom, var(--bs-green-dark))) !important;
   box-shadow: inset 0 0 0 1px var(--bs-button-edge, #a58659), inset 0 0 0 2px #100d12b3 !important;
-  color: var(--bs-text) !important;
-  text-shadow: 0 1px #090d0b;
+  color: var(--bs-button-text, var(--bs-text)) !important;
+  text-shadow: var(--bs-button-shadow, 0 1px #090d0b) !important;
 }
 
-body :is(.btn, .fs-btn, .info-btn, .zone-btn, .btn-equip-sets, .modal-x, .realm-btn):is(:hover, :focus-visible):not(:disabled),
-body #workspace-area :is(.eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle):is(:hover, :focus-visible):not(:disabled),
-body :is(.settings-tab-btn, .system-close, #achv-modal .achv-filters button):is(:hover, :focus-visible):not(:disabled),
-body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button:is(:hover, :focus-visible):not(:disabled) {
-  --bs-button-top: #546c5e;
+body :is(.btn, .fs-btn, .info-btn, .zone-btn, .btn-equip-sets, .modal-x, .realm-btn, .eqset-popup-close,
+    .eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle, .twx-tier, .tlx-tier, .gx-chip,
+    .settings-tab-btn, .system-close, .achv-filters button, .system-menu-actions button):where(:hover, :focus-visible) {
+  --bs-button-top: #4c6356;
   --bs-button-bottom: #354b3f;
   --bs-button-edge: #e1bf7d;
 }
 
-body :is(.btn, .zone-btn, .realm-btn):is(.active, [aria-pressed="true"]),
-body #achv-modal .achv-filters button.on {
+body :is(.btn, .zone-btn, .realm-btn):where(.active, [aria-pressed="true"]) {
   --bs-button-top: #485d4a;
   --bs-button-bottom: #263b31;
   --bs-button-edge: var(--bs-gold);
-  color: #fff0c9 !important;
+  --bs-button-text: #fff0c9;
 }
 
-body :is(.btn, .modal-x):is(.warn, .danger, .modal-x),
-body #btn-salvage-settings.btn {
+body .btn:where(.warn, .danger, .sgb-btn-danger) {
   --bs-button-top: #63423b;
   --bs-button-bottom: #3b2829;
   --bs-button-edge: #af785c;
+  --bs-button-text: #ffe1d5;
 }
 
-body :is(.btn, .zone-btn, .realm-btn):disabled,
-body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button:disabled {
-  --bs-button-top: #322c2e;
-  --bs-button-bottom: #221e23;
-  --bs-button-edge: #594b3c;
-  color: #9c9185 !important;
-  cursor: default;
+body .btn:where(.warn, .danger, .sgb-btn-danger):where(:hover, :focus-visible) {
+  --bs-button-top: #794b40;
+  --bs-button-bottom: #503032;
+  --bs-button-edge: #d59378;
 }
 
-body #tab-equip #equip-action-bar .btn.btn-primary,
-body #workspace-area :is(.gx-tab, .rx-tab)[aria-selected="true"]:not(:disabled),
-body #workspace-area .eqset-tab.viewing:not(:disabled),
-body #settings-modal button.settings-tab-btn[aria-selected="true"]:not(:disabled) {
+body :is(#equip-action-bar .btn-primary, .gx-tab, .rx-tab, .twx-tier, .tlx-tier, .settings-tab-btn,
+    .eqset-tab, .achv-filters button, .gx-chip, .forge-mode-tabs .btn,
+    #forge-quality-tabs .btn):where([aria-selected="true"], .viewing, .on, .is-on, .active, .btn-primary),
+body .rx-detail-toggle[aria-pressed="true"] {
   --bs-button-top: var(--bs-tab-selected-top);
   --bs-button-bottom: var(--bs-tab-selected-bottom);
   --bs-button-edge: #d4e6d3;
-  color: #1c2d23 !important;
-  text-shadow: none;
+  --bs-button-text: var(--bs-tab-selected-ink);
+  --bs-button-shadow: none;
+  --bs-button-focus: var(--bs-tab-selected-ink);
 }
+
+body :is(.btn, .fs-btn, .info-btn, .zone-btn, .realm-btn, .btn-equip-sets, .settings-tab-btn,
+    .eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle, .twx-tier, .tlx-tier, .gx-chip, .achv-filters button,
+    .system-menu-actions button, #equip-action-bar .btn):where(:disabled, [aria-disabled="true"], .is-locked) {
+  --bs-button-top: #302e31;
+  --bs-button-bottom: #232124;
+  --bs-button-edge: #545156;
+  --bs-button-corner-top: var(--bs-button-edge);
+  --bs-button-corner-bottom: var(--bs-button-edge);
+  --bs-button-text: #aaa5ab;
+  --bs-button-shadow: none;
+  --bs-button-focus: #aaa5ab;
+  opacity: 1;
+  filter: none;
+  cursor: default;
+}
+
+body :is(.twx-tier span, .tlx-tier-state) {
+  color: var(--bs-button-text, var(--bs-muted));
+}
+
+.btn:where(:not(.sm)) { font-size: var(--bs-button-size); }
+.btn.sm { font-size: var(--bs-button-small-size); }
+.btn { line-height: 19px; }
+.btn.sm { line-height: 18px; }
+.stage-tools :is(#btn-combat-pause, #btn-battle-fullscreen).btn.sm { padding-inline: 8.5px; }
+#btn-battle-info.btn.sm { font-size: 13px; }
 
 body .btn.btn-it-lock,
 body .btn.btn-it-lock:hover:not(:disabled) {
@@ -164,8 +191,9 @@ body .btn.btn-it-lock:hover:not(:disabled) {
   transition-property: color;
 }
 
-body :is(.btn, .zone-btn, .realm-btn, .modal-x, .btn-equip-sets, .tab-btn, .settings-tab-btn, .system-close, .system-menu-actions button):focus-visible {
-  outline: 2px solid #f4d899;
+body :is(.btn, .zone-btn, .realm-btn, .modal-x, .btn-equip-sets, .tab-btn, .settings-tab-btn, .system-close,
+    .system-menu-actions button, .eqset-popup-close, .eqset-tab, .gx-tab, .rx-tab, .twx-tier, .tlx-tier):focus-visible {
+  outline: 2px solid var(--bs-button-focus, #f4d899);
   outline-offset: -3px;
 }
 
@@ -187,6 +215,18 @@ body :is(.system-card, .modal-box, .detail-log-box) :is(.panel, .summary-card, .
   border-color: var(--bs-seam);
   border-radius: 2px;
   background-color: var(--bs-slate);
+}
+body #workspace-area :is(.gx-lib, .gx-focus, .gx-panel, .rx-lib, .rx-focus) {
+  border-color: var(--bs-seam);
+  background-color: var(--bs-slate);
+}
+body #workspace-area :is(.gx-tabs, .rx-tabs, .twx-tiers, .forge-mode-tabs, #forge-quality-tabs) {
+  border-color: var(--bs-seam);
+  background-color: var(--bs-recess);
+}
+body .rl-ascension {
+  border-color: var(--bs-brass);
+  background: radial-gradient(ellipse at 50% 35%, #51402366, transparent 60%), var(--bs-surface);
 }
 body :is(.modal-box, .confirm-box, .system-card, .detail-log-box) :is(h2, h3) {
   color: var(--bs-gold);
