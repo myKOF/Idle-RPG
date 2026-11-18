@@ -1,26 +1,174 @@
 /* 固定五欄；小視窗保留五件一列並可水平捲動。 */
 #workspace-area main > #tab-relics.active { height:100%; min-height:0; display:flex; flex-direction:column; }
+#tab-relics .pg-top {
+  margin-bottom:8px;
+  padding:8px 12px;
+  border-block:1px solid #a47b4533;
+  background:linear-gradient(100deg,#29231df5,#111114d9 68%),var(--af-stone) center / 320px;
+}
+#tab-relics .pg-title { margin-inline-end:auto; }
+#tab-relics .pg-help { margin-left:0; }
+#tab-relics .pg-pill, #tab-relics .pg-help { border-color:#6c55364d; background:#101014b8; }
 #tab-relics .rl-buff { border-color:#6b5a2c; color:#f6dd9a; }
 #tab-relics [hidden], .rl-celebration[hidden] { display:none !important; }
-#tab-relics .rl-list { flex:1 1 auto; min-height:0; overflow:auto; padding:12px 10px 28px; scrollbar-gutter:stable; }
-#tab-relics .rl-grid { display:grid; grid-template-columns:repeat(5,minmax(130px,1fr)); gap:0 10px; align-items:start; }
+#tab-relics .rl-list {
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+  padding:9px 10px 22px;
+  scrollbar-gutter:stable;
+  border:1px solid #6f573955;
+  background:
+    radial-gradient(ellipse 90% 85% at 50% 2%,#1312179e,#0a0a0dd6),
+    var(--af-stone) left top / 360px repeat #19181b;
+  background-attachment:scroll,local;
+  box-shadow:inset 0 0 22px #050408af;
+}
+#tab-relics .rl-grid { display:grid; grid-template-columns:repeat(5,minmax(130px,1fr)); column-gap:4px; }
 /* 下方固定留出操作區；展開按鈕不參與卡片／下一列的尺寸計算。 */
-#tab-relics .rl-card { min-width:0; position:relative; text-align:center; border:1px solid transparent; border-radius:12px; padding:10px 6px 76px; color:#ece6d8; transition:border-color .2s,background .2s; }
-#tab-relics .rl-card.is-selected { border-color:#8b6c37; background:linear-gradient(180deg,#d0a25013,#0c0d11c9); box-shadow:inset 0 0 18px #d4a14b09; }
+#tab-relics .rl-card {
+  --rl-niche-width:min(95%,168px);
+  --rl-niche-light:#bd874617;
+  min-width:0;
+  position:relative;
+  isolation:isolate;
+  container:relic-card / inline-size;
+  text-align:center;
+  border:1px solid transparent;
+  border-radius:5px;
+  padding:24px 6px 74px;
+  color:#ece6d8;
+  background:
+    linear-gradient(90deg,#785e3f2b,#9c7b4e58,#785e3f2b) center bottom / 100% 1px no-repeat,
+    linear-gradient(90deg,transparent,#08070999,transparent) center bottom 1px / 100% 2px no-repeat,
+    linear-gradient(#6d533825,#1b161999 5%,#0d0c1040 80%,transparent) center bottom 12px / var(--rl-niche-width) 58px no-repeat;
+  transition:background-color .2s;
+}
+#tab-relics .rl-card.is-owned { --rl-niche-light:#c98a3e56; }
+#tab-relics .rl-card.is-selected { background-color:#c99c551b; }
+
+/* 外稜、石面、細槽與壁龕共用同一條拱線。肩部垂直切線順接立邊。 */
+#tab-relics .rl-card::before,
+#tab-relics .rl-niche,
+#tab-relics .rl-niche::before,
+#tab-relics .rl-niche::after {
+  position:absolute;
+  /* 不支援 shape() 時，沿同一條曲線取樣。 */
+  clip-path:polygon(
+    50% 0%,53.86% 1.99%,57.89% 4.2%,62.04% 6.63%,66.25% 9.25%,70.46% 12.06%,
+    74.61% 15.05%,78.64% 18.2%,82.5% 21.5%,86.12% 24.94%,89.45% 28.52%,92.43% 32.21%,
+    95% 36%,97.1% 39.89%,98.67% 43.86%,99.66% 47.9%,100% 52%,100% 100%,
+    0% 100%,0% 52%,.34% 47.9%,1.33% 43.86%,2.9% 39.89%,5% 36%,
+    7.57% 32.21%,10.55% 28.52%,13.88% 24.94%,17.5% 21.5%,21.36% 18.2%,25.39% 15.05%,
+    29.54% 12.06%,33.75% 9.25%,37.96% 6.63%,42.11% 4.2%,46.14% 1.99%
+  );
+  clip-path:shape(from 50% 0%,
+    curve to 100% 52% with 70% 10% / 100% 30%,
+    vline to 100%, hline to 0%, vline to 52%,
+    curve to 50% 0% with 0% 30% / 30% 10%, close
+  );
+  pointer-events:none;
+}
+#tab-relics .rl-card::before, #tab-relics .rl-niche {
+  left:50%;
+  z-index:-1;
+  transform:translateX(-50%);
+}
+#tab-relics .rl-card::before {
+  content:"";
+  top:4px;
+  bottom:70px;
+  width:var(--rl-niche-width);
+  border-bottom:1px solid #756049a6;
+  background:linear-gradient(108deg,#6b5f52,#4c443e 43%,#322a29 74%,#3c312b);
+  box-shadow:inset 0 -1px #100c0d;
+}
+#tab-relics .rl-niche {
+  top:5px;
+  bottom:72px;
+  width:calc(var(--rl-niche-width) - 2px);
+  background:
+    linear-gradient(112deg,#75695b80,#322b2c9e 51%,#171419d9),
+    var(--af-stone) left center / 188px #282426;
+  box-shadow:inset 0 -1px #654c354c;
+}
+#tab-relics .rl-niche::before {
+  content:"";
+  inset:3px 3px 2px;
+  background:linear-gradient(117deg,#201818,#362c26 49%,#5a4738 76%,#42342d);
+}
+#tab-relics .rl-niche::after {
+  content:"";
+  inset:5px 5px 4px;
+  background:
+    radial-gradient(ellipse 73% 48% at 50% 64%,var(--rl-niche-light),transparent),
+    linear-gradient(#0a090deb,#0d0c119c 58%,#09090c9c),
+    var(--af-stone) center / 280px #1b1a1f;
+  box-shadow:inset 0 -1px #090709;
+}
 #tab-relics .rl-select { display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; padding:0; border:0; background:none; cursor:pointer; color:inherit; font:inherit; }
+/* 符印放在側壁內，與拱肩留開距離。 */
+#tab-relics .rl-select::before, #tab-relics .rl-select::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:10px;
+  height:17px;
+  background:#d5ae76;
+  opacity:.09;
+  pointer-events:none;
+}
+#tab-relics .rl-select::before {
+  top:94px;
+  left:calc(50% - min(36%,68px));
+  clip-path:polygon(44% 0,57% 0,57% 23%,100% 50%,57% 76%,57% 100%,44% 100%,44% 65%,78% 50%,44% 29%);
+  transform:rotate(-9deg);
+}
+#tab-relics .rl-select::after {
+  top:129px;
+  right:calc(50% - min(36%,68px));
+  clip-path:polygon(0 10%,14% 5%,52% 37%,86% 5%,100% 10%,60% 48%,60% 100%,44% 100%,44% 48%);
+  transform:rotate(12deg);
+}
+#tab-relics .rl-card:nth-child(3n) .rl-select::before { top:124px; transform:rotate(18deg); }
+#tab-relics .rl-card:nth-child(4n) .rl-select::after { top:108px; transform:rotate(-14deg); }
 .rl-icon { position:relative; display:block; width:104px; height:104px; flex:none; border:2px solid #917345; border-radius:50%; background:#08090d; overflow:hidden; box-shadow:0 5px 14px #0009,inset 0 0 6px #ebc57450; }
 .rl-icon::after { content:""; position:absolute; inset:2px; border:1px solid #ecc17845; border-radius:50%; pointer-events:none; }
 .rl-icon img { display:block; width:100%; height:100%; object-fit:contain; border-radius:50%; }
+#tab-relics .is-owned .rl-icon { box-shadow:0 0 24px #d7a14e30,0 5px 14px #0009; }
 #tab-relics .rl-select:hover .rl-icon, #tab-relics .rl-select:focus-visible .rl-icon { border-color:#f1cc7c; box-shadow:0 0 20px #e8b95a38,0 5px 14px #0009; }
 #tab-relics .rl-select:focus-visible { outline:1px solid #dfba70; outline-offset:5px; border-radius:8px; }
 #tab-relics .is-ready .rl-icon { border-color:#dfbb68; box-shadow:0 0 16px #dbab4340,0 5px 14px #0009; }
 #tab-relics .is-ready .rl-lv { color:#f0ce7f; }
 #tab-relics .is-locked .rl-icon { filter:saturate(.45) brightness(.66); border-color:#615a4a; }
-#tab-relics .rl-name { order:-1; font-family:var(--af-serif); font-size:15px; color:#eed7a5; line-height:1.5; }
-#tab-relics .rl-lv { position:relative; z-index:1; margin-top:-20px; padding:1px 6px; border-radius:3px; background:#0c0f14d9; color:#c7c1b5; font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.3; text-shadow:0 1px 2px #000; }
+#tab-relics .rl-name { order:-1; font-family:var(--af-serif); font-size:15px; color:#eed7a5; line-height:1.5; text-shadow:0 1px 3px #000; }
+#tab-relics .is-locked .rl-name { color:#c2b59c; }
+#tab-relics .rl-lv {
+  position:absolute;
+  z-index:1;
+  right:calc((100% - var(--rl-niche-width)) / 2 + 8px);
+  bottom:77px;
+  color:#c7c1b5;
+  font-size:9.5px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  line-height:1.1;
+  white-space:nowrap;
+  text-shadow:0 1px 2px #000,0 0 3px #000;
+}
+/* 側邊太窄時，等級靠在圓框內側的右下方。 */
+@container relic-card (max-width:164px) {
+  #tab-relics .rl-lv {
+    right:calc(50% - 31px);
+    bottom:92px;
+    padding:1px 2px;
+    border-radius:3px;
+    background:#0c0f14e0;
+  }
+}
 #tab-relics .is-max .rl-lv { color:#efcc80; }
-#tab-relics .rl-actions { position:absolute; left:6px; right:6px; bottom:10px; height:64px; display:flex; flex-direction:column; align-items:center; gap:7px; }
-#tab-relics .rl-up { flex:none; width:106px; min-height:29px; border-color:#9b7d45; color:#f2d99e; background:linear-gradient(#58401e,#2b2216); }
+#tab-relics .rl-actions { position:absolute; left:6px; right:6px; bottom:4px; height:64px; display:flex; flex-direction:column; align-items:center; gap:4px; }
+#tab-relics .rl-up { flex:none; width:106px; min-height:29px; margin-top:3px; border-color:#9b7d45; color:#f2d99e; background:linear-gradient(#58401e,#2b2216); }
 #tab-relics .rl-up:disabled { cursor:default; opacity:.45; }
 #tab-relics .rl-requirement { max-width:100%; overflow-wrap:anywhere; font-size:11px; color:#b2a99a; line-height:1.5; font-variant-numeric:tabular-nums; }
 #tab-relics .rl-requirement.is-enough, .rl-tip-next { color:#b4d6af; }
