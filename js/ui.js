@@ -3150,7 +3150,7 @@ function renderHeader() {
     removeAttrIfPresent(reincBtn, 'title');
   }
   var need = uiHeaderXpMax(p);
-  var isMaxedOut = (p.level >= MAX_LEVEL && reinc >= REINCARNATION_MAX);
+  var isMaxedOut = p.level >= playerMaxLevel() && (reinc >= REINCARNATION_MAX || playerMaxLevel() < MAX_LEVEL);
   var xpFull = canReincarnate || isMaxedOut;
   var xpWidth = xpFull ? '100%' : (clamp(p.xp / need * 100, 0, 100) + '%');
   ['xp-fill', 'battle-xp-fill'].forEach(function (id) {
@@ -3714,6 +3714,8 @@ function renderSceneTabs() {
       ttDesc = lockTip + (ttDesc ? ('\n' + ttDesc) : '');
     }
 
+    // demo 版：入口已依進度出現、但不在開放範圍 → 置灰並提示未開放
+    if (!locked && !demoZoneOpen(z)) { locked = true; ttDesc = STR(DEMO_NOT_OPEN_STR); }
     var badgeText = locked
       ? '🔒'
       : '(' + fmt(zoneBestOf(z)) + ')';
@@ -7189,7 +7191,7 @@ function bindTowerBossImageFallback(root) {
 function towerRewardRows(fl, highest) {
   var rw = towerRewardFor(fl, false);
   var rows = [
-    { icon: '✨', label: STR(1864), value: fmt(bossStatsFor(fl).xp), note: STR(1865) },
+    { icon: '✨', label: STR(1864), value: fmt(Math.round(bossStatsFor(fl).xp * demoMult(DEMO_ENEMY_XP_MULT))), note: STR(1865) },   // demo 版顯示乘上經驗倍率後的值
     { icon: '🔮', label: STR(99), value: '×' + fmt(rw.essence) },
     { icon: '💎', label: STR(1866), value: GEM_NAMES[rw.gemLevel] + ' ×2' },
     { icon: divineStoneIconHTML(), label: STR(100), value: fmt1(bossDustRate(fl)) + '%', note: STR(1868) }
@@ -7225,10 +7227,11 @@ function towerEquipDropRows(fl) {
 function towerTierTabsHTML(highest) {
   var h = '';
   towerTiers().forEach(function (t) {
-    var open = highest + 1 >= t.start;
+    var demoClosed = t.start > towerOpenMaxFloor();   // demo 版：超過開放樓層的塔置灰並提示未開放
+    var open = highest + 1 >= t.start && !demoClosed;
     var on = UI.towerBrowse.tier === t.id;
     h += '<button type="button" role="tab" class="twx-tier' + (on ? ' is-on' : '') + (open ? '' : ' is-locked') + '" data-tower-tier="' + t.id + '"' +
-      (open ? '' : ' disabled') + ' aria-selected="' + on + '">' + t.name + '<span>' + t.start + '–' + t.end + '</span></button>';
+      (open ? '' : ' disabled') + (demoClosed ? ' data-tip="' + esc(STR(DEMO_NOT_OPEN_STR)) + '"' : '') + ' aria-selected="' + on + '">' + t.name + '<span>' + t.start + '–' + t.end + '</span></button>';
   });
   return h;
 }
@@ -7282,6 +7285,11 @@ function towerActionsHTML(fl, highest, gold, active) {
   var primary;
   if (active) {
     primary = '<button class="btn twx-go warn" data-tower-flee' + buttonAttrs + '>' + STR(68) + '</button>';
+  } else if (fl > towerOpenMaxFloor()) {
+    // demo 版：超過開放樓層 → 挑戰與連挑都置灰並提示未開放
+    var closedTip = ' disabled data-tip="' + esc(STR(DEMO_NOT_OPEN_STR)) + '"';
+    return '<button class="btn twx-go"' + closedTip + '>' + STR(1879, fl) + '</button>' +
+      '<button class="btn twx-auto"' + closedTip + '>' + STR(1880) + '</button>';
   } else {
     var cost = towerChallengeCost(fl);
     primary = '<button class="btn twx-go" data-tower-floor="' + fl + '"' + buttonAttrs + '>' + STR(1879, fl) + '<span class="twx-cost' + (gold >= cost ? '' : ' is-poor') + '"><img src="images/icon_gold.png" class="res-icon" alt="">' + fmt(cost) + '</span></button>';
@@ -10854,6 +10862,9 @@ function showConfirmDialog(message, onConfirm, options) {
   ok.textContent = options.okText || STR(149);
   cancel.textContent = options.cancelText || STR(76);
   ok.className = 'btn' + (options.danger ? ' danger' : '');
+  // okDisabledTip：確認鈕置灰不可按，滑過顯示這段提示（demo 版的轉生）；每次開啟都重設，不殘留到下一個對話框
+  ok.disabled = !!options.okDisabledTip;
+  if (options.okDisabledTip) ok.setAttribute('data-tip', options.okDisabledTip); else ok.removeAttribute('data-tip');
   cancel.className = 'btn';
 
   // 可選文字輸入框（options.input）：改名等需要輸入的操作用；未指定則維持純是/否確認
@@ -10885,6 +10896,7 @@ function showConfirmDialog(message, onConfirm, options) {
     if (startMenuFocus && startMenuFocus.isConnected) startMenuFocus.focus();
   }
   function doConfirm() {
+    if (ok.disabled) return;   // okDisabledTip：Enter 也不能送出
     var val = useInput && input ? input.value : undefined;
     close();
     if (typeof onConfirm === 'function') onConfirm(val);
@@ -11530,7 +11542,9 @@ function initUI() {
           return;
         },
         { title: STR(194, actTitle), okText: STR(195, actTitle), dialogClass: 'reincarnation-confirm',
-          unlockNotices: reincarnationUnlockNotices(header) }
+          unlockNotices: reincarnationUnlockNotices(header),
+          // demo 版：可以看確認內容，但轉生按鈕置灰（data/Worker 端也會拒絕）
+          okDisabledTip: demoReincarnationClosed() ? STR(DEMO_NOT_OPEN_STR) : null }
       );
     });
   }

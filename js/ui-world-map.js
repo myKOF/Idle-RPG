@@ -43,6 +43,8 @@ var WorldMapUI = (function () {
       current: unlocked ? Math.min(max, Math.max(0, Number(stage && stage.current) || 0)) : 0 };
   }
   function lockReason(key) {
+    var row = ((peekUiPanelData('battle') || {}).zones || []).filter(function (entry) { return entry.key === key; })[0];
+    if (row && row.demoLocked) return STR(DEMO_NOT_OPEN_STR);   // demo 版：入口已出現但未開放
     var def = ZONES[key];
     var parts = [];
     if (def.reqZone && ZONES[def.reqZone]) parts.push(STR(2100, ZONES[def.reqZone].name, def.reqStage));
@@ -77,6 +79,8 @@ var WorldMapUI = (function () {
     go.hidden = !selected;
     go.disabled = !info.ready || !info.unlocked || (info.active && !info.testMap) || !!state.pending || !!state.transition;
     go.textContent = state.pending ? STR(2109) : STR(2110);
+    if (info.ready && !info.unlocked && lockReason(key) === STR(DEMO_NOT_OPEN_STR)) go.setAttribute('data-tip', STR(DEMO_NOT_OPEN_STR));
+    else go.removeAttribute('data-tip');
     if (locations[key]) {
       var point = locations[key];
       card.style.left = 'clamp(min(143px, 50%), ' + point.x + '%, max(calc(100% - 143px), 50%))';

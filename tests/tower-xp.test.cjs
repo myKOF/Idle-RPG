@@ -78,12 +78,13 @@ test('高塔通關流程會發放 BOSS 經驗並套用經驗加成', () => {
   // 2026-11-09 獎勵抽成 grantTowerBossRewards（離線「星圖殘頁」共用）：勝利時傳入 BOSS 實體的經驗
   assert.match(tower, /grantTowerBossRewards\(floor, firstClear, b \? b\.xp : 0, result\.rewards\)/);
   assert.match(tower, /var xpGain = Math\.round\(\(bossXp \|\| 0\) \* \(1 \+ st2\.xpBonus \/ 100\) \* scale\)/);   // scale：星圖殘頁的部分獎勵（2026-11-10），一般勝利＝1
-  assert.match(tower, /gainXp\(xpGain\)/);
+  assert.match(tower, /xpGain = gainEnemyXp\(xpGain\)/);   // 2026-11-18：玩家經驗＋熟練度一起入帳（js/player.js gainEnemyXp，demo 倍率在裡面）
   assert.match(tower, /hellSoulOriginDropChance\(floor\)/);
   assert.match(html, /id="r-soul-origin"/);
   assert.match(ui, /r-soul-origin/);
   // 高塔提示與詳情面板共用 towerRewardRows：經驗取 BOSS 的基礎經驗（另加經驗加成）
-  assert.match(ui, /icon: '✨', label: '經驗', value: fmt\(bossStatsFor\(fl\)\.xp\)/);
+  // demo 版顯示乘上經驗倍率後的值（正式版 demoMult＝1）
+  assert.match(ui, /icon: '✨', label: '經驗', value: fmt\(Math\.round\(bossStatsFor\(fl\)\.xp \* demoMult\(DEMO_ENEMY_XP_MULT\)\)\)/);
   assert.match(ui, /hellSoulOriginDropChance\(fl\)/);
   assert.match(ui, /ancientEssenceDropChanceForBoss\(fl\)/);
   assert.match(ui, /icon_ancient_essence\.png/);

@@ -1300,9 +1300,8 @@ function applyOfflineProgress(options) {
   var gold = goldPer * kills, xp = xpPer * kills;
   G.player.gold += gold;
   if (typeof achAddGold === 'function') achAddGold(gold);
-  gainXp(xp);
-  // 技能熟練度經驗（2026-07-30）：離線擊殺比照野外
-  if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xp * SKILL_MASTERY_XP_RATE / 100));
+  // 玩家經驗＋技能熟練度經驗：離線擊殺比照野外（demo 倍率在 gainEnemyXp）
+  xp = gainEnemyXp(xp);
 
   // 掉落：與 rollFieldDrops 同一套表與倍率（無戰鬥中增益），逐殺單獨擲骰
   var lootBonus = st.loot;

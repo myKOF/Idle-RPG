@@ -95,6 +95,7 @@ function startTowerFight(floor) {
     return;
   }
   if (floor > G.tower.highest + 1) { blog(STR(1823), 'warn'); return; }
+  if (floor > towerOpenMaxFloor()) { blog(STR(DEMO_NOT_OPEN_STR), 'warn'); return; }   // demo 版：超過開放樓層
   // 挑戰金幣消耗 = round(a × 高塔樓層^b)，a/b 依樓層分層（towerChallengeCost → formula.js §5）
   var cost = towerChallengeCost(floor);
   if (G.player.gold < cost) {
@@ -536,9 +537,8 @@ function grantTowerBossRewards(floor, firstClear, bossXp, rewards, scale) {
   var rw = towerRewardFor(floor, firstClear);
   var st2 = getStats();
   var xpGain = Math.round((bossXp || 0) * (1 + st2.xpBonus / 100) * scale);
-  gainXp(xpGain);
-  // 技能熟練度經驗（2026-07-30）：高塔通關比照野外擊殺
-  if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(Math.round(xpGain * SKILL_MASTERY_XP_RATE / 100));
+  // 玩家經驗＋技能熟練度經驗：高塔通關比照野外擊殺（demo 倍率在 gainEnemyXp）
+  xpGain = gainEnemyXp(xpGain);
   UI.dirty.header = true;
   rewards.push(STR(106, fmt(xpGain)));
   var soulOriginRate = hellSoulOriginDropChance(floor);

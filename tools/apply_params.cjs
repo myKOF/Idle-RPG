@@ -343,6 +343,16 @@ scalar('renderer', 'NPC_ELITE_ADV_BLEND_ALPHA', '8-戰鬥畫面', '菁英光暈�
 scalar('player', 'INITIAL_SCRAP', '0-遊戲預設', '開場裝備碎片', 0);
 scalar('player', 'INITIAL_ESSENCE', '0-遊戲預設', '開場附魔精華', 0);
 
+// Demo 版（Steam 封測）倍率與開放範圍：只在 GAME_EDITION === 'demo' 時生效（js/data.js「Demo 版」區塊）
+scalar('data', 'DEMO_ENEMY_XP_MULT', '11-Demo版', 'Demo 敵人經驗倍率', 0);
+scalar('data', 'DEMO_MASTERY_XP_MULT', '11-Demo版', 'Demo 敵人經驗倍率', 1);
+scalar('data', 'DEMO_SKILL_GOLD_MULT', '11-Demo版', 'Demo 技能升級金幣倍率', 0);
+scalar('data', 'DEMO_CHEST_FORGE_XP_MULT', '11-Demo版', 'Demo 寶箱鍛造經驗倍率', 0);
+scalar('data', 'DEMO_MAX_LEVEL', '11-Demo版', 'Demo 等級上限 / 轉生', 0);
+scalar('data', 'DEMO_REINCARNATION_OPEN', '11-Demo版', 'Demo 等級上限 / 轉生', 1);
+scalar('data', 'DEMO_OPEN_ZONE_COUNT', '11-Demo版', 'Demo 開放場景數', 0);
+scalar('data', 'DEMO_TOWER_MAX_FLOOR', '11-Demo版', 'Demo 封魔塔開放樓層', 0);
+
 const ZONE_KEYS = Object.fromEntries(Object.keys(zoneById).map(id => [ZP(id,'地圖名稱'),id]));
 Object.keys(ZONE_KEYS).forEach(nm => {
   const zoneKey = ZONE_KEYS[nm];

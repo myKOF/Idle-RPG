@@ -193,7 +193,39 @@ var DEMON_SEED_BOSS_RATE_CAP = 100;
 var MAX_LEVEL = 1000;             // 角色等級上限（升級所需經驗 參數 d）
 var REINCARNATION_LEVEL = 1000;   // 可轉生等級：達此級可轉生（system_unlock 表「轉生」）
 var REINCARNATION_MAX = 10;
-var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神', '神位1階', '神位2階', '神位3階', '神位4階', '神位5階', '神位6階', '神位7階', '神位8階', '神位9階', '神位終階'];
+
+/* ---- Demo 版（Steam 封測）：數值倍率與開放範圍 ----
+   版本旗標 GAME_EDITION 在 js/game-edition.js（網頁與正式版是 'full'；桌面版 --demo 或 demo 打包由外殼改成 'demo'）。
+   以下常數只在 demo 版生效，正式版一律不讀；數值來源是 game_parameters「11-Demo版」（tools/apply_params.cjs）。 */
+var DEMO_ENEMY_XP_MULT = 1.5;        // 打敵人得到的玩家經驗倍率（野外、離線、封魔塔 BOSS）
+var DEMO_MASTERY_XP_MULT = 5;        // 打敵人得到的技能熟練度經驗倍率
+var DEMO_SKILL_GOLD_MULT = 0.5;      // 技能升級（含終極進化）金幣消耗倍率
+var DEMO_CHEST_FORGE_XP_MULT = 2;    // 熔爐寶箱的鍛造經驗倍率
+var DEMO_MAX_LEVEL = 1000;           // 角色等級上限（不超過 MAX_LEVEL）
+var DEMO_REINCARNATION_OPEN = 0;     // 1＝開放轉生；0＝確認視窗的轉生按鈕置灰（未開放）
+var DEMO_OPEN_ZONE_COUNT = 2;        // 依 ZONE_LIST（Zones 表順序）開放前幾張地圖
+var DEMO_TOWER_MAX_FLOOR = 50;       // 封魔塔開放到第幾層
+var DEMO_NOT_OPEN_STR = 2531;        // String 表「未開放」（置灰按鈕的提示與 Worker 拒絕訊息共用）
+function isDemoEdition() { return typeof GAME_EDITION !== 'undefined' && GAME_EDITION === 'demo'; }
+function demoMult(value) { return isDemoEdition() ? (Number(value) || 0) : 1; }
+/* 角色等級上限：demo 版取 DEMO_MAX_LEVEL（不超過 MAX_LEVEL，升級經驗表只到那裡） */
+function playerMaxLevel() {
+  if (!isDemoEdition()) return MAX_LEVEL;
+  return Math.max(1, Math.min(MAX_LEVEL, Math.floor(Number(DEMO_MAX_LEVEL) || MAX_LEVEL)));
+}
+function demoReincarnationClosed() { return isDemoEdition() && !(Number(DEMO_REINCARNATION_OPEN) > 0); }
+/* 地圖是否在 demo 開放範圍內（正式版一律 true）。ZONE_LIST 在本檔後段定義，呼叫時已存在。 */
+function demoZoneOpen(zoneKey) {
+  if (!isDemoEdition()) return true;
+  var idx = ZONE_LIST.indexOf(zoneKey);
+  return idx >= 0 && idx < Math.floor(Number(DEMO_OPEN_ZONE_COUNT) || 0);
+}
+/* 封魔塔開放的最高樓層（正式版＝TOWER_MAX_FLOOR） */
+function towerOpenMaxFloor() {
+  if (!isDemoEdition()) return TOWER_MAX_FLOOR;
+  return Math.max(0, Math.min(TOWER_MAX_FLOOR, Math.floor(Number(DEMO_TOWER_MAX_FLOOR) || 0)));
+}
+var REINCARNATION_RANKS =['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神', '神位1階', '神位2階', '神位3階', '神位4階', '神位5階', '神位6階', '神位7階', '神位8階', '神位9階', '神位終階'];
 var REINCARNATION_HP_MULTIPLIERS = [1, 1.5, 2.5, 3.5, 5, 7, 9, 11, 15, 19, 25, 60, 100, 150, 200, 300, 450, 650, 800, 1200, 2500];
 var REINCARNATION_MP_MULTIPLIERS = [1, 1.5, 2.5, 3.5, 5, 7, 9, 11, 15, 19, 25, 60, 100, 150, 200, 300, 450, 650, 800, 1200, 2500];
 var REINCARNATION_STAT_MULTIPLIERS = [1, 1.5, 2.5, 3.5, 5, 7, 9, 11, 15, 19, 25, 60, 100, 150, 200, 300, 450, 650, 800, 1200, 2500];
@@ -1783,6 +1815,10 @@ function isFieldBossDefeated(zoneKey, stage) {
   return s > 0 && zoneClearedStage(zoneKey) >= s;
 }
 function isZoneUnlocked(zoneKey) {
+  return demoZoneOpen(zoneKey) && zoneUnlockedByProgress(zoneKey);
+}
+/* 依進度（前置地圖、轉生次數）是否解鎖，不看 demo 開放範圍——demo 版用它判斷「入口已出現、但未開放」 */
+function zoneUnlockedByProgress(zoneKey) {
   var zone = ZONES[zoneKey];
   if (!zone) return false;
   if (!zone.reqZone && !zone.reqReincarnation) return true;

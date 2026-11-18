@@ -1399,7 +1399,8 @@ function skills2UpgradeCost(gid, tierIdx, curLv) {
   var t = g && g.tiers[tierIdx];
   if (!t) return 0;
   var grow = Number(t.goldGrow) || 1;
-  return Math.floor((Number(t.goldBase) || 0) * Math.pow(grow, Math.max(0, Number(curLv) || 0)));
+  // demo 版乘 DEMO_SKILL_GOLD_MULT（js/data.js；正式版倍率 1，結果不變）
+  return Math.floor((Number(t.goldBase) || 0) * Math.pow(grow, Math.max(0, Number(curLv) || 0)) * demoMult(DEMO_SKILL_GOLD_MULT));
 }
 
 /* 終極進化的升級費用：曲線與各階相同（goldBase × goldGrow^目前等級）。
@@ -1408,7 +1409,7 @@ function skills2UltCost(gid, optIdx, curLv) {
   var opt = sgUltOption(gid, optIdx);
   if (!opt) return 0;
   var grow = Number(opt.goldGrow) || 1;
-  return Math.floor((Number(opt.goldBase) || 0) * Math.pow(grow, Math.max(0, Number(curLv) || 0)));
+  return Math.floor((Number(opt.goldBase) || 0) * Math.pow(grow, Math.max(0, Number(curLv) || 0)) * demoMult(DEMO_SKILL_GOLD_MULT));
 }
 
 /* 群組總投資等級（前端「同一個技能不斷變強」的顯示用；包含終極進化等級，全滿為 80 級）。 */
