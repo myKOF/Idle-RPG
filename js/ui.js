@@ -982,7 +982,7 @@ function handleWorkerUiEvents(events) {
        與傷害數字開關無關，不走特效佇列（一則一次性的提示，排隊反而會被洪峰擠掉）。 */
     if (event.kind === 'levelup') {
       if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) return;
-      if (typeof Sfx !== 'undefined') Sfx.play('levelUp');
+      if (typeof Sfx !== 'undefined') Sfx.playGroup('levelUp');
       if (typeof BattleRenderer !== 'undefined' && typeof BattleRenderer.onLevelUp === 'function') {
         BattleRenderer.onLevelUp(event);
       }
