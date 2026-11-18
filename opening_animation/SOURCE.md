@@ -71,6 +71,8 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 ## 遊戲重播（2026-11-17）
 
+2026-11-18 核准的第二鏡由第 16.0 秒接入，第 34.0 秒接第三鏡。大天使長沿用原立繪、墜落姿勢及鏡頭路徑，換上焦黑甲裂、反光、燃燒、煙塵碎屑與同向拖曳的流光翼。核准的 18 秒無字畫面保存在 `web/shot-02-effects-18s.mp4`。分層來源為 `extended-shot-two/index-effects.html`、`shot-two-effects.js` 和 `commander-impact.js`，共用原立繪及音效。`node extended-shot-two/render-shot-two.cjs --effects` 可重製單鏡。`--five-shots` 先還原無字連播，再以核准畫面替換第 480 至 1019 幀。
+
 正式前五鏡的畫面與旁白分離。前三鏡使用原分層重製含舊字的畫面區段。字幕由遊戲工作區的 `opening_animation/旁白.md` 提供，修改文案或時間後，下次播放直接讀取。舊版母帶仍可供審片。重製前五鏡時，`--five-shots` 會執行 `export-clean-replay.cjs` 產生無字畫面，之後接上原本的獨立音效匯出流程。
 
 設置說明頁播放 116.7 秒前五鏡。`web/shots-01-05-replay.mp4` 以 1080p／30 fps 接續前四鏡的核准畫面與第五鏡，第 100.7 秒進入荒漠終章。遊戲以同一個 Desert Ascendant 播放器全程播放配樂，並以 `web/shots-01-05-replay-sfx.mp3` 獨立播放演出音效，各自套用遊戲音量。第三鏡音效於第 68.5 秒接第四鏡，第五鏡於第 100.7 秒接入原始風沙音效。遊戲重播在 3 秒前收掉第一鏡鐘鳴的尾音，保留最初敲擊。第一鏡的持續環境風聲與立體聲氣流振幅減半，敵軍來襲、翼振、掠過與撞擊各分量維持原值。核准母帶保留審片混音。

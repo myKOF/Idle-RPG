@@ -32,7 +32,8 @@ const sources = [
   'assets/noto-serif-tc-bold.woff2', 'assets/shot-one-effects.wav', 'assets/shot-one-preview.wav'
 ].map(file => 'extended-shot-one/' + file), [
   'PROMPTS.json', 'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-two.js',
-  'commander-reference.js', 'build-audio.cjs', 'render-shot-two.cjs', 'package-preview.cjs',
+  'commander-reference.js', 'commander-impact.js', 'index-effects.html', 'shot-two-effects.js',
+  'build-audio.cjs', 'render-shot-two.cjs', 'package-preview.cjs',
   'assets/04-heavy-fire-roar.wav', 'assets/archangel-user-reference.png',
   'assets/archangel-hood-chin-tucked.png', 'assets/archangel-hood-edge-left.png',
   'assets/charred-feather.png', 'assets/shot-one-tail.png', 'assets/shot-two-effects.wav',
@@ -58,6 +59,7 @@ const sources = [
   'SOURCE.md', 'index.html', 'shot-timing.js', 'shot.js', 'shot-cinematics.js',
   'brace-effects.js', 'cloth-motion.js', 'kneel-orbit.js', 'rise-gust.js', 'rise-matte.js', 'rise-scene.js',
   'build-audio.cjs', 'render-shot-four.cjs', 'restore-master.cjs', 'export-replay.cjs', 'export-clean-replay.cjs',
+  'replace-replay-shot-two.cjs',
   'assets/brace.png', 'assets/cloth-ribbon.png', 'assets/flare.png', 'assets/kneel.png',
   'assets/kneel-desert.png', 'assets/rise.png', 'assets/rise-desert.png', 'assets/vista.png',
   'assets/shot-four-effects.wav', 'assets/shot-four-mix.wav'
@@ -65,7 +67,7 @@ const sources = [
   'SOURCE.md', 'PROMPT.md', 'index.html', 'finale-timing.js', 'finale.js', 'finale-mattes.js', 'finale-fx.js',
   'finale-backdrop.js', 'build-score.cjs', 'render-finale.cjs', 'align-mp4-presentation.cjs',
   'assets/vista-clean.png', 'assets/finale-effects.wav', 'assets/finale-audio.wav'
-].map(file => 'extended-shot-five/' + file), 'render-preview.cjs', 'web/shot-02-archangel-fall-18s.mp4',
+].map(file => 'extended-shot-five/' + file), 'render-preview.cjs', 'web/shot-02-archangel-fall-18s.mp4', 'web/shot-02-effects-18s.mp4',
 'web/shot-03-extended-32s.mp4', 'web/shot-03-extended-33.5s.mp4', 'web/shots-01-04-100.7s.json',
 'web/shots-01-04-100.7s.mp4.part01', 'web/shots-01-04-100.7s.mp4.part02');
 const exportsByName = {
