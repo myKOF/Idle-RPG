@@ -5,7 +5,7 @@
    範圍：寫死在程式與 HTML 裡、不在任何配置表（config/CSV 其他表）的玩家可見文字。
    做法：chain.cjs 把 `'第 ' + n + ' 階'` 這類 + 串接合併成一條 `第 {0} 階`，
         非字面值部分以 {N} 代替，原運算式寫進「替代字符參數說明」。
-   排除：GM／錄製／延遲探針／VFX 驗證／效能診斷等內部工具；console／Error／比對用字面值；
+   排除：GM／錄製／延遲探針／VFX 驗證／效能診斷等內部工具；console／Error／比對用字面值；序章字幕資源路徑；
         資料型檔案(data.js 等)中與配置表儲存格完全相同的字串（已在表內）。
    用法：node tools/string-table/build_string_csv.cjs [輸出路徑] [--force]
          node tools/string-table/build_string_csv.cjs --check     # 漏登記檢查：寫死又沒進 String 表的字串（有就非 0 結束）
@@ -49,7 +49,7 @@ const DATA_FILES = /^js\/(data|skills2|status|runeword_data|elite_data|gem_reson
 
 /* ---------- 排除範圍 ---------- */
 const { scopeReason } = require('./scope.cjs');
-const ex = { file: 0, fn: 0, callee: 0, cmp: 0, csv: 0, noText: 0, regex: 0 };
+const ex = { file: 0, fn: 0, callee: 0, cmp: 0, csv: 0, noText: 0, regex: 0, asset: 0 };
 const kept = [];
 for (const r of rows) {
   const why = scopeReason(r);

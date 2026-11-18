@@ -6,13 +6,16 @@ const dropCallee = /^(console\.\w+|Error|errors\.push|String|\w*\.?(includes|ind
 /* config_tables.cjs --apply 會由 CSV 重建整段字面值；這些頂層變數裡的字串不能直接改。 */
 const GENERATED_TOP = /^(GEM_TYPES|TALENT_TREES|AFFIX_POOL|PASSIVE_POOL|GODFORGE_POOL|TASKS|SKILLS2|ENEMY_SKILLS2|STATUS|RUNES|RUNEWORDS|RUNE_SETTINGS|GEM_RESONANCE_\w+|\w+_POOL)$/;
 
-/* 回傳不收的原因（'file'|'fn'|'callee'|'cmp'|'regex'），要收則回傳空字串 */
+/* 回傳不收的原因（'file'|'fn'|'callee'|'cmp'|'regex'|'asset'），要收則回傳空字串 */
 function scopeReason(r) {
   if (EXCLUDE_FILE.test(r.file)) return 'file';
   if (EXCLUDE_FN.test(r.fn)) return 'fn';
   if (dropCallee.test(r.callee) || /(^|\.)(includes|indexOf|startsWith|endsWith|test|match)$/.test(r.callee)) return 'callee';
   if (['===', '==', '!==', '!='].includes(r.prev)) return 'cmp';
   if (/^\^|\(\?:/.test(r.text)) return 'regex';
+  // 序章播放器會讀取 captions 所指的 Markdown 內容。
+  if (r.file === 'js/intro-data.js' && r.top === 'INTRO_REPLAY_TIMELINE' && r.key === 'captions' &&
+      r.params.length === 0 && /^opening_animation\/[^\s?#]+\.md(?:[?#]\S*)?$/.test(r.text)) return 'asset';
   return '';
 }
 /* 資料型檔案：裡面和配置表儲存格完全相同的字串，來源是配置表，不進 String 表（也不能改成 STR，否則下次套用參數會被蓋回去） */

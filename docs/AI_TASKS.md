@@ -1,3 +1,8 @@
+## STRING-SCAN-INTRO-CAPTIONS-20261119 — 修正字串稽核對序章旁白路徑的誤判
+
+- Owner：Codex，Done。共用字串掃描規則將 `js/intro-data.js` 的 `INTRO_REPLAY_TIMELINE.captions` 辨識為 Markdown 資源路徑。回歸確認同一字串寫在顯示欄位時仍受稽核。修改 `tools/string-table/scope.cjs`、`tools/string-table/build_string_csv.cjs`、`tests/string-table.test.cjs` 及本段。唯讀核對字幕設定、播放器、共用遷移器與 String 表。任務紀錄與 develop 的新手導引差異三方試合通過。
+- `node tools/string-table/build_string_csv.cjs --check` 回報 0 筆，試匯出也核對 1 筆資源路徑排除。`node tools/string-table/apply_strings.cjs --check` 確認 2554 條同步。前次 64 項與序章播放器／路徑回歸共 90/90 通過，`npm.cmd run build` 通過 739 檔，差異檢查通過。String 表及素材庫無變更，可供整合。
+
 ## OFFLINE-FIELD-WAVES-20261119 — 離線依存檔關卡逐波結算
 
 - Owner：Codex，Done。每 5 秒於存檔關卡結算一場，沿用野外權重抽普通波、純／混合菁英群、高級菁英與 BOSS，再按實際怪物隻數結算。每關的野外 BOSS 離線獎勵限一次，正式通關由線上挑戰記錄。Worker 分批處理、摘要分列場次與擊殺數，結算完成才寫入存檔。
