@@ -109,11 +109,11 @@
     "extended-shot-three/assets/shot-three-preview.wav": "611a0335ff746edd10d6cc051f0c9c858414addd8ddb6371c064006e28747fdf",
     "extended-shot-three/assets/opening-66s-preview.wav": "3d122f91090f808728792724e4249245ec24daf3a6dd79f1c5029392ac187cb9",
     "extended-shot-three/assets/opening-67.5s-preview.wav": "ace3d5bc702d378d21edca07c5669771a13da5249396502b8fd8d5e7c786578e",
-    "extended-shot-three-35.5s/index.html": "d88d008acac1461679fd89d5e82bb269d09c2fc79d53092afca6586fa494b8cf",
+    "extended-shot-three-35.5s/index.html": "102a5ea558ca151e49291b3fa8d57d19d2933c75f6c27017ef3680be19e0c692",
     "extended-shot-three-35.5s/shot-timing.js": "a5a0458ebe238dc9cb2f76620663f68953ec2b9562fdbd1087afc32d8d7db2b7",
     "extended-shot-three-35.5s/shot.js": "aeda80c680b5c6914d3931e37abdf6576a760638d3529f65ecbac23ffab009af",
-    "extended-shot-three-35.5s/shot-three.js": "2ae8f764476b535751f06262d1a694d188d41d5564dd69edd2da7c5b904c3de5",
-    "extended-shot-three-35.5s/shot-ground.js": "79b871fdbd430ecf3a7b54fe2dea93bfd7a5cc3cc24b0d644f8767d4fac725af",
+    "extended-shot-three-35.5s/shot-three.js": "30e1746b0b367bcc8c72e024bf3c685d5b81c7f73058ebe364063e3c923cc0b1",
+    "extended-shot-three-35.5s/shot-ground.js": "961c40ba92c7b04c3f48ff4da57e87ef5218f5c6ea567005c6e7eee7acf68ab1",
     "extended-shot-three-35.5s/shot-feather.js": "91ff7219ece98afa6bcdc0080bbca998322d4e4cbbcc46d6929c05a5ead5935c",
     "extended-shot-three-35.5s/build-audio.cjs": "e0ce51798119189cb58977004a62f57e6b63ec4cb45f24bf77607bf3086cf5c8",
     "extended-shot-three-35.5s/render-shot-three.cjs": "ddf39f824b48a5652901fb4fc703acee3df2f147f82d670af3badd60cb17d3d6",
@@ -126,7 +126,7 @@
     "extended-shot-four/shot.js": "807cc8b4973857fd19164d37fb9cb85b6241e9bdc76f50c59b4736468b7f4386",
     "extended-shot-four/shot-cinematics.js": "7719532197d8c59cc5c610ff2c31dcb5996911aa243937d448018f4aeb45b8af",
     "extended-shot-four/brace-effects.js": "234681e7873b2f78028f4b0427d584f7c6f53f43c27c0f3ee283dd6ded560b2d",
-    "extended-shot-four/cloth-motion.js": "af9aef8cbd1ddf7be10ff90486446a8fa2f06b943ff0a463ef36bdb6925bb350",
+    "extended-shot-four/cloth-motion.js": "9a7a64e4bf1e04fde3ab279b229ee1f24f628411ecdcd399a749c46e80f3f766",
     "extended-shot-four/kneel-orbit.js": "767dbed31c2cf67d3fdbaa42a80e07226689b46b26af5c2c0bf25c96a2064811",
     "extended-shot-four/rise-gust.js": "6731d485cf533f7dc2d676cfffaed0e8277dac85706299e9779be385eaada6e9",
     "extended-shot-four/rise-matte.js": "e353c3fb371943089b2b000c9569dab2c808284754ea1a010f20b596e17e2f09",
@@ -165,7 +165,7 @@
     "web/shot-02-archangel-fall-18s.mp4": "0d49096b3383f7c405d32b1069dc782163d71f31f7844df3b09918511e288d84",
     "web/shot-02-effects-18s.mp4": "b723235feff0837e6098882a97287620aa1f362323382b27f0383e0a59115ce2",
     "web/shot-03-valley-dust.mp4": "985e15482b3020a2eff0acf3ec99a4a5ee057f0538f67a950a39c1ef9cf657e3",
-    "web/shot-03-flat-left-hand.mp4": "b16cf5008beca1f48630cc99ccc38c46739e293586681d06c133803006e3d117",
+    "web/shot-03-flat-left-hand.mp4": "e3c1ea606fdbf5bcb964a8dc85965f184d8f42b4729d785f983c53ce784c9bd0",
     "web/shot-04-rise-radiance.mp4": "cab2123e56000f1f6f9c7ecd59230bf55315ea3c6385d682827b4d3987126a16",
     "web/shot-03-extended-32s.mp4": "cb3631b2a5b074913316f0cf88b866a361d51afe356f984207a3b5051a028bb1",
     "web/shot-03-extended-33.5s.mp4": "cdc42057988e800b5bdf62d8906df6c4d5b77574880e016f8e1305df86bd5f8c",
@@ -220,7 +220,7 @@
     },
     "shots-01-05-replay.mp4": {
       "source": "web/shots-01-05-replay.mp4",
-      "sha256": "19772fb3bdd4ae5cd60279b37e52fdb8c7f96570dfef3f295958fec368d61471"
+      "sha256": "dc5a4c966f838fa15c96704d340ac11af87a22b986eb5dd1b56908a0b6ed7f15"
     },
     "shots-01-05-replay-sfx.mp3": {
       "source": "web/shots-01-05-replay-sfx.mp3",
@@ -228,7 +228,7 @@
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "a805c67e9a63ee89bd7efebfd84719a78d5131833ea95d4d9ebd00d9b1fcfa7a"
+      "sha256": "dc671323754183c009d24586b04a28602291bf3a1a73e92117f3ff597e55c284"
     }
   }
 }
