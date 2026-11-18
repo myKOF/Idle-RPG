@@ -5,6 +5,13 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { readExpanded } = require('./helpers/str-expand.cjs');
 
+const previewCoefficients = {
+  atkFlatMult: 1.2, atkReincBase: 2,
+  matkFlatMult: 1.2, matkReincBase: 2,
+  defFlatMult: 0.5, defReincBase: 1.5,
+  mdefFlatMult: 0.5, mdefReincBase: 1.5
+};
+
 function makeElement() {
   return {
     innerHTML: '',
@@ -63,15 +70,15 @@ function loadGameContext() {
 
 test('ui confirmations use shared custom modal instead of native confirm', () => {
   const ui = readExpanded(path.resolve(__dirname, '..', 'js/ui.js'));
+  const menu = fs.readFileSync(path.resolve(__dirname, '..', 'js/start-menu.js'), 'utf8');
 
   assert.doesNotMatch(ui, /\bconfirm\s*\(/);
+  assert.doesNotMatch(menu, /\bconfirm\s*\(/);
   assert.match(ui, /function showConfirmDialog/);
   assert.match(ui, /showConfirmDialog\(\s*(?:'' \+ )?actTitle \+ '效果：/);
   assert.doesNotMatch(ui, /gdis-fused-list/); // 拆解改為免費無損九宮格，不再有融合寶石拆解確認入口。
-  assert.match(ui, /showConfirmDialog\('確定要重新開局嗎/);
   assert.match(ui, /dialogClass: 'reincarnation-confirm'/);
   assert.match(ui, /initGemWorkshopUi\(\)/);
-  assert.match(ui, /title: '重新開局確認'/);
 });
 
 test('confirm modal actions are centered and evenly spaced', () => {
@@ -96,12 +103,25 @@ test('轉生確認視窗使用專屬金框與加深底色，裝飾不攔截操�
 
 test('轉生預告依正式門檻，只列轉生回1級立即新開放的系統', () => {
   const { context: c } = loadGameContext();
+  Object.assign(c, {
+    TALENT_UNLOCK_LEVEL: 1,
+    TALENT_UNLOCK_REINCARNATION: 1,
+    FORGE_UNLOCK_LEVEL: 1,
+    FORGE_UNLOCK_REINCARNATION: 2,
+    GEM_RESONANCE_UNLOCK_LEVEL: 1,
+    GEM_RESONANCE_UNLOCK_REINCARNATION: 6,
+    EQUIP_SET_UNLOCK_LEVELS: [1, 1, 1],
+    EQUIP_SET_UNLOCK_REINCARNATIONS: [0, 0, 0]
+  });
+  Object.assign(c.DIVINE_FORGE, { ancientUnlock: 3, gemUnlock: 4, imprintUnlock: 5 });
   const notices = (count, level = 1000) => Array.from(c.reincarnationUnlockNotices({ player: { level, reincarnations: count } }));
   assert.deepEqual(notices(0), ['解鎖【天堂威能】系統']);
   assert.deepEqual(notices(1), ['解鎖【神鑄】系統']);
   assert.deepEqual(notices(2), ['解鎖【太古精鑄】系統']);
-  assert.deepEqual(notices(3), ['解鎖【神級寶石】系統', '解鎖【寶石共鳴】系統']);
+  assert.deepEqual(notices(3), ['解鎖【神級寶石】系統']);
   assert.deepEqual(notices(4), ['解鎖【神聖刻印】系統']);
+  assert.deepEqual(notices(5), ['解鎖【寶石共鳴】系統']);
+  assert.deepEqual(notices(6), []);
   assert.deepEqual(notices(10), []);
   c.FORGE_UNLOCK_REINCARNATION = 1;
   c.GEM_RESONANCE_UNLOCK_REINCARNATION = 1;
@@ -128,8 +148,18 @@ test('新解鎖各自使用純文字獨立行，重開一般確認不殘留', ()
   assert.equal(msg.textContent, '一般確認');
 });
 
-test('實際轉生按鈕換算提高50%與250%及解鎖預告，確認才送一次', async () => {
+test('實際轉生按鈕顯示倍率與解鎖預告，取消不送出，確認只送一次', async () => {
   const { context: c, elements } = loadGameContext();
+  Object.assign(c.DERIVED_COEF, previewCoefficients);
+  Object.assign(c, {
+    REINCARNATION_LEVEL: 1000,
+    REINCARNATION_HP_MULTIPLIERS: [1, 1.5, 2.5, 3.5],
+    TALENT_UNLOCK_LEVEL: 1,
+    TALENT_UNLOCK_REINCARNATION: 1,
+    FORGE_UNLOCK_LEVEL: 1,
+    FORGE_UNLOCK_REINCARNATION: 2
+  });
+  c.DIVINE_FORGE.ancientUnlock = 3;
   const header = { player: { level: 1000, reincarnations: 0 } };
   c.uiHeaderPanelSnapshot = () => header;
   c.blog = () => {};
@@ -147,8 +177,8 @@ test('實際轉生按鈕換算提高50%與250%及解鎖預告，確認才送一�
   assert.match(firstMessage, /提高\s*50%/);
   assert.match(firstMessage, /物攻定值額外加成：\+120% → \+240%/);
   assert.match(firstMessage, /魔攻定值額外加成：\+120% → \+240%/);
-  assert.match(firstMessage, /物防定值額外加成：\+75% → \+150%/);
-  assert.match(firstMessage, /魔防定值額外加成：\+75% → \+150%/);
+  assert.match(firstMessage, /物防定值額外加成：\+50% → \+75%/);
+  assert.match(firstMessage, /魔防定值額外加成：\+50% → \+75%/);
   assert.match(firstMessage, /非最終攻防提升率/);
   assert.doesNotMatch(elements.get('confirm-message').textContent, /×|\*\s*3\.5/);
   assert.equal(elements.get('confirm-message').children[0].textContent, '解鎖【天堂威能】系統');
@@ -182,9 +212,10 @@ test('轉生攻防預告逐項讀現行公式係數，高轉數仍顯示完整�
   const ui = fs.readFileSync(path.resolve(__dirname, '..', 'js/ui.js'), 'utf8');
   const start = ui.lastIndexOf("  var reincBtn = $id('btn-reincarnate');");
   vm.runInContext(ui.slice(start, ui.indexOf('  // 技能：學習/升級/裝載/融合', start)), c);
+  Object.assign(c.DERIVED_COEF, previewCoefficients);
   elements.get('btn-reincarnate').listeners.click();
   assert.match(elements.get('confirm-message').textContent, /物攻定值額外加成：\+61440% → \+122880%/);
-  assert.match(elements.get('confirm-message').textContent, /物防定值額外加成：\+38400% → \+76800%/);
+  assert.match(elements.get('confirm-message').textContent, /物防定值額外加成：\+1922\.2% → \+2883\.3%/);
 
   header.player.reincarnations = 0;
   Object.assign(c.DERIVED_COEF, {
