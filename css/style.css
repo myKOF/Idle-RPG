@@ -1313,6 +1313,7 @@ textarea#save-io {
 
 #tb-name {
   font-size: calc(1em + 4px);
+  white-space: nowrap;
 }
 
 .cb-name.elite {

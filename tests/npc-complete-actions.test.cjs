@@ -96,12 +96,15 @@ test('既有NPC重排與新生共用表格倍率、本體不隨視窗變大，�
  Object.assign(c,{densityScale:()=>c.density,cellSize:()=>c.cell,npcSpriteDef:()=>c.NPC_CONFIG_TABLE.desert_2,
   posTrack(){},drawHpBar(){},requestNpcSheet(){},requestMobImage(){},requestNpc3d(){},
   spriteHitBox:body=>({height:64*body.scale.y,center:32*body.scale.y})});
+ c.ELEM_INFO=data().ELEM_INFO;
+ vm.runInContext(extractFunction(fs.readFileSync(path.join(root,'js/ui.js'),'utf8'),'enemyNameText'),c);
  vm.runInContext(['makeNpcSpriteBody','enemyLayout','makeEnemy','syncEnemyLayout','adoptNpcSprite'].map(n=>extractFunction(renderer,n)).join('\n'),c);
- const data={npcId:'desert_2',floatSel:'first',name:'哥布林',attr:'fire',level:10,hp:100,maxHp:100,pos:{x:0,y:0}},e=c.makeEnemy(data);
- assert.equal(e.visScale,2);assert.equal(e.nameText.style.fontSize,12);assert.equal(e.nameText.text,data.name);
+ const enemyData={npcId:'desert_2',floatSel:'first',name:'哥布林',attr:'fire',level:10,hp:100,maxHp:100,pos:{x:0,y:0}},e=c.makeEnemy(enemyData);
+ assert.equal(e.visScale,2);assert.equal(e.nameText.style.fontSize,12);
+ assert.equal(e.nameText.text,c.ELEM_INFO.fire.emoji+'\u00a0'+enemyData.name);
  const body=e.body;c.playAnim(e,'attack');body.gotoAndStop(2);body.scale.x=-body.scale.x;e.state='dying';e.dieT=.2;e.bodyWrap.scale.y=.7;
  for(const [density,w,h]of [[1,100,80],[.5,60,50],[1,100,80]]){
-  c.density=density;c.cell={w,h};c.syncEnemyLayout(e);const fresh=c.makeEnemy({...data,floatSel:'fresh'});
+  c.density=density;c.cell={w,h};c.syncEnemyLayout(e);const fresh=c.makeEnemy({...enemyData,floatSel:'fresh'});
   assert.equal(e.visScale,2);assert.equal(e.visScale,fresh.visScale);
   assert.equal(Math.abs(e.body.scale.x),fresh.body.scale.x);assert.equal(e.body.scale.y,fresh.body.scale.y);
   assert.equal(e.hitHeight,fresh.hitHeight);assert.equal(e.hitCenter,fresh.hitCenter);
@@ -115,7 +118,7 @@ test('既有NPC重排與新生共用表格倍率、本體不隨視窗變大，�
  e.root.destroy({children:true});
  const sheet=c.S.sheets['npc:desert_goblin'];delete c.S.sheets['npc:desert_goblin'];
  c.makeMobBody=()=>new P.Sprite(P.Texture.EMPTY);c.density=.5;c.cell={w:60,h:50};
- const cold=c.makeEnemy(data);assert.equal(cold.npcSprite,false);
+ const cold=c.makeEnemy(enemyData);assert.equal(cold.npcSprite,false);
  c.density=1;c.cell={w:100,h:80};c.syncEnemyLayout(cold);
  c.S.sheets['npc:desert_goblin']=sheet;c.adoptNpcSprite(cold);
  assert.equal(cold.npcSprite,true);assert.equal(cold.visScale,2);

@@ -4583,7 +4583,7 @@ function fitEnemyNames(party) {
   for (ni = 0; ni < measured.length; ni++) {
     var m = measured[ni];
     if (m.naturalWidth > m.available) {
-      m.el.style.fontSize = Math.max(6, m.baseSize * m.available / m.naturalWidth) + 'px';
+      m.el.style.fontSize = Math.max(10, m.baseSize * m.available / m.naturalWidth) + 'px';
     }
   }
 }
@@ -4631,15 +4631,12 @@ function enemyCellStyle(enemy) {
     ';grid-row:' + cell.row + ' / span ' + (cell.h || 1) + '"';
 }
 
-function enemyAttributeIcon(enemy) {
+function enemyNameText(enemy) {
   var attr = typeof skill2CurrentEnemyAttr === 'function' ? skill2CurrentEnemyAttr(enemy) : enemy.attr;
-  return attr && ELEM_INFO[attr] ? ELEM_INFO[attr].emoji : '';
-}
-
-function enemyStatusHTML(enemy) {
-  var icon = enemyAttributeIcon(enemy);
-  var status = entStatus(enemy);
-  return icon && status ? icon + ' ' + status : icon || status;
+  var element = ELEM_INFO[attr] || (enemy.isBoss && ENCHANTS[enemy.elem]);
+  var icon = element && element.emoji;
+  var name = enemy.name || '';
+  return icon ? icon + (name ? '\u00a0' + name : '') : name;
 }
 function enemyFloatLayerId(enemy, index) {
   var id = enemy && enemy.floatSel;
@@ -4843,9 +4840,9 @@ function renderBattle() {
     partyHtml += '<div class="enemy-card enemy-rank-' + rank + '"' + enemyCellStyle(enemy) + '>' +
       '<div class="float-layer" id="' + enemyFloatLayerId(enemy, ei) + '"></div>' +
       (rankIcon ? '<div class="enemy-rank-icon">' + rankIcon + '</div>' : '') + icon +
-      '<div class="enemy-name">' + esc(enemy.name || '') + '</div>' +
+      '<div class="enemy-name">' + esc(enemyNameText(enemy)) + '</div>' +
       '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
-      '<div class="enemy-status" data-enemy-buff-tip data-enemy-index="' + ei + '">' + enemyStatusHTML(enemy) + '</div></div>';
+      '<div class="enemy-status" data-enemy-buff-tip data-enemy-index="' + ei + '">' + entStatus(enemy) + '</div></div>';
   }
   // 只有換波、敵人數量或敵人身分變化時才重建 DOM；避免刪除尚未播完的傷害浮字。
   if (party.getAttribute('data-enemy-signature') !== enemySignature) {
@@ -4871,6 +4868,7 @@ function renderBattle() {
     var fill = card.querySelector('.enemy-hp .hp-fill');
     var hpText = card.querySelector('.enemy-hp .hp-text');
     var status = card.querySelector('.enemy-status');
+    setTextIfChanged(card.querySelector('.enemy-name'), enemyNameText(liveEnemy));
     var liveEnemyFloatId = enemyFloatLayerId(liveEnemy, ci);
     var instantKillFloat = liveEnemy.hp <= 0 && hasRecentEnemyDamageFloat(liveEnemyFloatId, recentEnemyDamageFloats, recentEnemyDamageAt);
     if (instantKillFloat) {
@@ -4881,7 +4879,7 @@ function renderBattle() {
     setHtmlIfChanged(hpText, fmt(Math.max(0, liveEnemy.hp)) + (liveEnemy.shield > 0.5 ? '<span class="enemy-shield">+' + fmt(Math.max(0, liveEnemy.shield)) + '</span>' : '') + ' / ' + fmt(liveEnemy.maxHp));
     if (status) {
       if (status.getAttribute('data-enemy-index') !== String(ci)) status.setAttribute('data-enemy-index', String(ci));
-      setHtmlIfChanged(status, enemyStatusHTML(liveEnemy));
+      setHtmlIfChanged(status, entStatus(liveEnemy));
     }
     if (liveEnemy.hp > 0) card._deathFadeStartedAt = 0;
     else if (!card.classList.contains('is-dead')) card._deathFadeStartedAt = Date.now();
@@ -7630,12 +7628,13 @@ function renderTowerFight() {
     $id('tb-emoji').innerHTML = '<span style="font-size:48px;">' + (b.emoji || '👾') + '</span>';
   }
   $id('tb-name').className = 'cb-name' + (b.purgatory ? ' purgatory-boss' : '');
-  setHtmlIfChanged($id('tb-name'), b.name);
+  setTextIfChanged($id('tb-name'), enemyNameText(b));
   setStyleIfChanged($id('tb-hp'), 'width', clamp(b.hp / b.maxHp * 100, 0, 100) + '%');
   var bSh = (b.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, b.shield)) + '</span>' : '';
   setHtmlIfChanged($id('tb-hptext'), fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）');
   var bossAttr = typeof skill2CurrentEnemyAttr === 'function' ? skill2CurrentEnemyAttr(b) : b.attr;
-  setHtmlIfChanged($id('tb-status'), entStatus(b) + (bossAttr && ELEM_INFO[bossAttr] ? ' ' + STR(1892, ELEM_INFO[bossAttr].emoji, (ELEM_INFO[bossAttr].short || ELEM_INFO[bossAttr].name)) : (b.elem ? ' ' + STR(1893, ENCHANTS[b.elem].emoji) : ''))); // 屬性語境用 short（聖非光）
+  var bossElement = ELEM_INFO[bossAttr];
+  setHtmlIfChanged($id('tb-status'), entStatus(b) + (bossElement ? ' ' + STR(1892, '', bossElement.short || bossElement.name) : '')); // 屬性語境用 short（聖非光）
   setStyleIfChanged($id('tp-hp'), 'width', clamp(p.hp / st.hp * 100, 0, 100) + '%');
   renderPlayerShieldBar('tp', p, st);
   setHtmlIfChanged($id('tp-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));

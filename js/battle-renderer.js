@@ -2071,8 +2071,7 @@ var BattleRenderer = (function () {
         _statusStrip.innerHTML = html;
         _statusStripOut = (_statusStrip.textContent || '').slice(0, 14);
       }
-      var icon = typeof enemyAttributeIcon === 'function' ? enemyAttributeIcon(data) : '';
-      return icon && _statusStripOut ? icon + ' ' + _statusStripOut : icon || _statusStripOut;
+      return _statusStripOut;
     } catch (e) { return ''; }
   }
 
@@ -2185,7 +2184,7 @@ var BattleRenderer = (function () {
 
     /* 名條與狀態列依介面密度縮放，並保留最小可讀字級。 */
     var name = new PIXI.Text({
-      text: data.name || '',
+      text: enemyNameText(data),
       style: {
         fontFamily: 'sans-serif', fontSize: m.nameSize, fontWeight: 'bold',
         fill: isBoss ? '#ffb3b3' : (tierName === 'elite_adv' ? '#ffe27a' : (isElite ? '#d9b3ff' : '#cfd6e4')),
@@ -2866,6 +2865,8 @@ var BattleRenderer = (function () {
         if (d.pos && isFinite(d.pos.x)) posTrack(ent, d.pos.x, d.pos.y);
       }
       drawHpBar(ent);
+      var name = enemyNameText(d);
+      if (ent.nameText.text !== name) ent.nameText.text = name;
       var stTxt = statusTextOf(d);
       if (ent.statusText.text !== stTxt) ent.statusText.text = stTxt;
       if (!alive && ent.state !== 'dying' && ent.state !== 'gone') startDeath(ent, true);

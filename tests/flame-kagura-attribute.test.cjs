@@ -88,27 +88,21 @@ test('神樂轉火實際接入對火屬性敵人增傷，正式施放確實附�
   assert.equal(c.monsterDefCfg(target).attr, 'fire');
 });
 
-test('DOM與Pixi狀態列在轉屬生效及到期時同步顯示當前屬性', () => {
+test('DOM 與 Pixi 名牌在名稱左側同列顯示當前屬性', () => {
   const c = setup(), e = enemy();
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   const renderer = fs.readFileSync(path.join(root, 'js/battle-renderer.js'), 'utf8');
-  c.entStatus = () => '狀態';
-  c.document = { createElement: () => ({ get textContent() { return this.innerHTML; } }) };
-  vm.runInContext([
-    extractFunction(ui, 'enemyAttributeIcon'), extractFunction(ui, 'enemyStatusHTML'),
-    "var _statusStrip = null, _statusStripIn = null, _statusStripOut = '';",
-    extractFunction(renderer, 'statusTextOf')
-  ].join('\n'), c);
-  function assertStatus(attr) {
-    const expected = c.ELEM_INFO[attr].emoji + ' 狀態';
-    assert.equal(c.enemyStatusHTML(e), expected);
-    assert.equal(c.statusTextOf(e), expected);
+  vm.runInContext(extractFunction(ui, 'enemyNameText'), c);
+  function assertName(attr) {
+    assert.equal(c.enemyNameText(e), c.ELEM_INFO[attr].emoji + '\u00a0' + e.name);
   }
-  assertStatus('ice');
+  assertName('ice');
   c.sgApplyKagura(e, spec);
-  assertStatus('fire');
+  assertName('fire');
   c.GT = 2;
-  assertStatus('ice');
-  assert.match(ui, /setHtmlIfChanged\(status, enemyStatusHTML\(liveEnemy\)\)/);
-  assert.match(renderer, /var stTxt = statusTextOf\(d\);\s*if \(ent\.statusText\.text !== stTxt\) ent\.statusText\.text = stTxt/);
+  assertName('ice');
+  assert.equal(c.enemyNameText(enemy(null)), e.name);
+  assert.match(ui, /setTextIfChanged\(card\.querySelector\('\.enemy-name'\), enemyNameText\(liveEnemy\)\)/);
+  assert.match(ui, /setTextIfChanged\(\$id\('tb-name'\), enemyNameText\(b\)\)/);
+  assert.match(renderer, /var name = enemyNameText\(d\);\s*if \(ent\.nameText\.text !== name\) ent\.nameText\.text = name/);
 });
