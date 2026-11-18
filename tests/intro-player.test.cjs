@@ -445,7 +445,7 @@ test('重播按鈕播放前五鏡，播完回到按鈕且可再從頭播放', ()
   assert.ok(fs.existsSync(path.join(root, video.src.split('?')[0])));
   assert.ok(video.playsInline);
   assert.equal(video.paused, false);
-  assert.equal(env.P.state().duration, 110400);
+  assert.equal(env.P.state().duration, 114400);
   assert.equal(env.clock(), undefined, '影片以媒體時間為準');
   assert.ok(!env.playerRoot().children.some((c) => c.className === 'intro-hold-dots'), '重播不停格');
   assert.equal(env.P.replay(), false, '播放中再點無效');
@@ -511,6 +511,7 @@ test('成片以荒漠第一首配樂及獨立音效跟隨影片，離場才恢�
     audioConfig = config; audioClock = clock;
     return { prepare() { calls.push('intro prepare'); }, start() { calls.push('intro start'); },
       pause(keepMusic) { calls.push(keepMusic ? 'intro pause effects' : 'intro pause'); },
+      updatePlayback() { calls.push(['intro update', clock()]); },
       takeSceneMusic() { calls.push('intro handoff'); return handoff; },
       dispose() { calls.push('intro dispose'); } };
   } };
@@ -522,13 +523,17 @@ test('成片以荒漠第一首配樂及獨立音效跟隨影片，離場才恢�
   const video = env.playerRoot().children[0].children[0];
   assert.equal(video.muted, true);
   assert.equal(audioConfig.music, env.ctx.ZONES.desert.bgm);
-  assert.equal(audioConfig.sfx, 'opening_animation/shots-01-05-replay-sfx.mp3?v=4');
+  assert.equal(audioConfig.sfx, 'opening_animation/shots-01-05-replay-sfx.mp3?v=5');
+  assert.equal(audioConfig.musicFade.from, 109300);
+  assert.equal(audioConfig.musicFade.to, 114350);
   assert.ok(fs.existsSync(path.join(root, audioConfig.sfx.split('?')[0])));
   assert.deepEqual(calls, ['ui true', 'battle true', 'intro prepare']);
   video.listeners.playing[0]();
   video.listeners.waiting[0]();
   assert.deepEqual(calls.slice(-2), ['intro start', 'intro pause']);
   video.currentTime = 109.35;
+  video.listeners.timeupdate[0]();
+  assert.deepEqual(calls.at(-1), ['intro update', 109350]);
   env.ctx.document.hidden = true;
   env.docListeners.visibilitychange[0]();
   assert.equal(video.paused, true);

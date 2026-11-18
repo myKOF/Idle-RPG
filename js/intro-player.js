@@ -151,6 +151,10 @@ var IntroPlayer = (function () {
       armFailsafe(c);
     });
     video.addEventListener('waiting', function () { if (c.audio && !c.skipping) c.audio.pause(); });
+    if (c.audio && c.audio.updatePlayback) {
+      video.addEventListener('timeupdate', c.audio.updatePlayback);
+      video.addEventListener('seeked', c.audio.updatePlayback);
+    }
     video.src = src;
     return video;
   }

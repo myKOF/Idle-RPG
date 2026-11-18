@@ -32,9 +32,20 @@ var IntroAudio = (function () {
       });
       voices = [];
     }
+    function updatePlayback() {
+      if (!music) return;
+      var fade = config.musicFade;
+      var multiplier = 1;
+      if (fade && fade.to > fade.from) {
+        var phase = Math.max(0, Math.min(1, (clock() - fade.from) / (fade.to - fade.from)));
+        multiplier = (1 + Math.cos(Math.PI * phase)) / 2;
+      }
+      var volume = level('music', config) * multiplier;
+      if (music.volume !== volume) music.volume = volume;
+    }
     function update() {
       voices.forEach(function (v) { v.gain.gain.setTargetAtTime(level(v.kind, config), context.currentTime, .025); });
-      if (music) music.volume = level('music', config);
+      updatePlayback();
     }
     function pause(keepMusic) {
       wanted = false;
@@ -47,7 +58,7 @@ var IntroAudio = (function () {
       // 場景首曲用可移交的媒體播放器，音效仍隨畫面時鐘。
       music = new window.Audio();
       music.preload = 'auto';
-      music.volume = level('music', config);
+      updatePlayback();
       music.src = config.music;
     }
     function startMusic() {
@@ -56,6 +67,7 @@ var IntroAudio = (function () {
         var position = Math.max(0, clock() / 1000);
         if (isFinite(music.duration) && position >= music.duration) return;
         if (Math.abs(music.currentTime - position) > .15) music.currentTime = position;
+        updatePlayback();
         Promise.resolve(music.play()).catch(function () {});
       } catch (_) { /* 音樂播放失敗時影片及演出音效仍可繼續。 */ }
     }
@@ -102,6 +114,7 @@ var IntroAudio = (function () {
     }
     function takeSceneMusic() {
       if (!config.sceneMusic) return null;
+      updatePlayback();
       var transfer = { track: config.music, audio: music };
       music = null;
       return transfer;
@@ -110,7 +123,7 @@ var IntroAudio = (function () {
       prepare: prepare, start: start, pause: pause,
       takeSceneMusic: takeSceneMusic,
       dispose: function () { disposed = true; pause(); if (active === controller) active = null; },
-      update: update
+      update: update, updatePlayback: updatePlayback
     };
     if (active) active.dispose();
     active = controller;
