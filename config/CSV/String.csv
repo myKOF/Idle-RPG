@@ -2084,7 +2084,7 @@
 1943,存檔與系統,狀態列｜game-menu.js:82 runAction,{0}=代入參數：(error && error.message ? error.message : String(error)),存檔失敗：{0},,
 1944,存檔與系統,提示｜index.html:738,,關閉菜單,,
 1945,存檔與系統,界面文字｜index.html:739,,遊戲菜單,,
-1946,存檔與系統,界面文字｜index.html:741,,重啟遊戲,,
+1946,存檔與系統,界面文字｜index.html:741,,回開始選單,,
 1947,存檔與系統,界面文字｜index.html:742,,離開遊戲,,
 1948,存檔與系統,界面文字｜index.html:743,,立即存檔,,
 1949,存檔與系統,界面文字｜index.html:744、index.html:752,,設置,,
