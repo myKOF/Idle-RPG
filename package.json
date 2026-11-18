@@ -14,6 +14,8 @@
     "desktop:smoke": "electron . --smoke=tmp/desktop-smoke",
     "desktop:pack": "node tools/desktop/build_desktop.cjs",
     "desktop:pack:demo": "node tools/desktop/build_desktop.cjs --edition=demo",
+    "desktop:installer": "node tools/desktop/build_desktop.cjs --installer",
+    "desktop:installer:demo": "node tools/desktop/build_desktop.cjs --edition=demo --installer",
     "steam:vdf": "node tools/steam/steampipe.cjs --vdf-only",
     "steam:preview": "node tools/steam/steampipe.cjs --preview",
     "steam:upload": "node tools/steam/steampipe.cjs --upload",

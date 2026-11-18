@@ -9,6 +9,10 @@
      --stage-only   只做到第 2 步（檢查清單用，不呼叫 electron-builder）
      --edition=demo Steam 封測 demo：暫存區多寫一份 electron/edition.json（外殼據此把 GAME_EDITION 改成 'demo'），
                     輸出到 dist/demo/win-unpacked/，與正式版的 dist/win-unpacked/ 分開
+     --installer    另外打一份 Windows 安裝包（NSIS），給 Steam 以外的測試散佈用，輸出到 dist/installer/<版本>/。
+                    安裝包版一律不接 Steam：不放 steamworks.js、打包版的 steam-config.json 的 AppID 全部歸 0。
+                    （接了 Steam 的版本若不是從 Steam 啟動會交給 Steam 重開、自己結束，裝在 Steam 以外就打不開。）
+                    與 Steam 上傳用的 dist/win-unpacked、dist/demo/win-unpacked 分開，不會互相覆蓋。
 
    ---- 為什麼 asar: false ----
    SteamPipe 以 1 MB 區塊比對新舊版本。asar 是一個巨大的單檔，裡面任何檔案變長或變短，
@@ -28,7 +32,9 @@ var REPO = path.resolve(__dirname, '..', '..');
 var STAGE = path.join(REPO, 'build', 'desktop', 'app');
 var EDITION = (process.argv.filter(function (a) { return a.indexOf('--edition=') === 0; })[0] || '--edition=full').slice(10);
 if (EDITION !== 'full' && EDITION !== 'demo') { console.error('❌ --edition 只能是 full 或 demo：' + EDITION); process.exit(1); }
-var OUT = EDITION === 'demo' ? path.join(REPO, 'dist', 'demo') : path.join(REPO, 'dist');
+var INSTALLER = process.argv.indexOf('--installer') >= 0;
+var OUT = INSTALLER ? path.join(REPO, 'dist', 'installer', EDITION)
+  : (EDITION === 'demo' ? path.join(REPO, 'dist', 'demo') : path.join(REPO, 'dist'));
 var ROOT_PKG = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
 
 /* 玩家看得到的名稱。exe 檔名刻意用 ASCII：Steam 的啟動選項、防毒白名單、命令列都比較不會出事。
@@ -102,6 +108,43 @@ function stage(list) {
     main: ROOT_PKG.main
   }, null, 2) + '\n');
   return { linked: linked, copied: copied };
+}
+
+/* 安裝包版不接 Steam：拿掉 steamworks.js，暫存區的 steam-config.json 換成 AppID 全 0 的新檔。
+   暫存區的檔案是原始碼的硬連結，直接寫會改到原始碼——一定要先 unlink 再寫。 */
+function detachSteam() {
+  rmrf(path.join(STAGE, 'electron', 'vendor', 'steamworks.js'));
+  var cfg = path.join(STAGE, 'electron', 'steam-config.json');
+  fs.unlinkSync(cfg);
+  fs.writeFileSync(cfg, JSON.stringify({
+    '說明': '安裝包版（Steam 以外散佈的測試版）：不接 Steam。由 tools/desktop/build_desktop.cjs --installer 產生。',
+    appId: 0,
+    demoAppId: 0
+  }, null, 2) + '\n');
+}
+
+/* 安裝包設定：以 builderConfig 為底。appId 依版本分開，否則 demo 與正式版的安裝包會被 Windows 當成同一個程式而互相覆蓋。
+   安裝到使用者資料夾（免系統管理員）；解除安裝不刪存檔（存檔在 %APPDATA%，見 electron/main.cjs）。 */
+function installerConfig() {
+  var c = builderConfig();
+  c.appId = APP_ID + (EDITION === 'demo' ? '.demo' : '');
+  c.win = { target: [{ target: 'nsis', arch: ['x64'] }] };
+  c.nsis = {
+    oneClick: false,
+    perMachine: false,
+    allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+    shortcutName: c.productName,
+    uninstallDisplayName: c.productName,
+    deleteAppDataOnUninstall: false,
+    differentialPackage: false,
+    installerLanguages: ['zh_TW'],
+    language: '1028',
+    // 檔名用 ASCII：瀏覽器下載、雲端硬碟、命令列都比較不會出事
+    artifactName: EXECUTABLE_NAME + (EDITION === 'demo' ? '-Demo' : '') + '-Setup-${version}.${ext}'
+  };
+  return c;
 }
 
 function dirSize(dir) {
@@ -193,6 +236,10 @@ function main() {
     fs.writeFileSync(path.join(STAGE, 'electron', 'edition.json'), JSON.stringify({ edition: 'demo' }, null, 2) + '\n');
     console.log('版本：demo（electron/edition.json）');
   }
+  if (INSTALLER) {
+    detachSteam();
+    console.log('安裝包版：不接 Steam（已移除 steamworks.js、AppID 歸 0）');
+  }
   console.log('暫存：' + list.ship.length + ' 個檔案（硬連結 ' + st.linked + '、複製 ' + st.copied + '）→ ' + path.relative(REPO, STAGE));
   fs.mkdirSync(OUT, { recursive: true });
   var reportFile = path.join(OUT, 'ship-report.json');
@@ -222,6 +269,23 @@ function main() {
     fs.writeFileSync(reportFile, JSON.stringify(r, null, 2));
     console.log('✅ 完成：' + r.output + '\\' + r.executable + '（資料夾 ' + r.outputMB + ' MB，遊戲檔 ' + r.shippedMB + ' MB，排除 ' + r.excludedMB + ' MB）');
     console.log('   報告：' + path.relative(REPO, reportFile));
+    if (!INSTALLER) return null;
+    console.log('製作安裝包（NSIS，約數分鐘）…');
+    return builder.build({
+      projectDir: STAGE,
+      prepackaged: unpacked,
+      targets: builder.Platform.WINDOWS.createTarget('nsis', builder.Arch.x64),
+      config: installerConfig(),
+      publish: 'never'
+    }).then(function (files) {
+      var setup = (files || []).filter(function (f) { return /\.exe$/i.test(f); })[0];
+      if (!setup) throw new Error('electron-builder 沒有產生安裝檔：' + JSON.stringify(files));
+      r.installer = path.relative(REPO, setup);
+      r.installerMB = mb(fs.statSync(setup).size);
+      r.seconds = Math.round((Date.now() - t0) / 1000);
+      fs.writeFileSync(reportFile, JSON.stringify(r, null, 2));
+      console.log('✅ 安裝包：' + r.installer + '（' + r.installerMB + ' MB）');
+    });
   });
 }
 
@@ -229,4 +293,4 @@ if (require.main === module) {
   main().catch(function (e) { console.error(e && e.stack || e); process.exit(1); });
 }
 
-module.exports = { collect: collect, builderConfig: builderConfig };
+module.exports = { collect: collect, builderConfig: builderConfig, installerConfig: installerConfig };
