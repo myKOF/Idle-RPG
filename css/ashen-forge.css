@@ -4856,16 +4856,11 @@ button:is(.sgb-chip, #gem-filter .gx-chip, #rune-tier-filter .gx-chip).is-on {
 #tab-tower .tower-floor .tf-emoji {
   display: flex;
   flex: 0 0 34px;
-  margin: 0;
-}
-
-#tab-tower .twx-fl-ico {
-  width: 34px;
   height: 34px;
+  margin: 0;
+  overflow: hidden;
   border: 1px solid #3a3d44;
   border-radius: 50%;
-  object-fit: cover;
-  object-position: 50% 6%;
   background: #0c0d10;
 }
 
@@ -4876,7 +4871,7 @@ button:is(.sgb-chip, #gem-filter .gx-chip, #rune-tier-filter .gx-chip).is-on {
   font-size: 20px;
 }
 
-#tab-tower .tower-floor.locked .twx-fl-ico {
+#tab-tower .tower-floor.locked .tf-emoji {
   filter: grayscale(1) brightness(.5);
 }
 
@@ -4940,12 +4935,67 @@ button:is(.sgb-chip, #gem-filter .gx-chip, #rune-tier-filter .gx-chip).is-on {
   background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--c) 40%, transparent), #0c0d10 72%);
 }
 
-/* BOSS 圖是從帶標題的大圖切出來的，底部約兩成印著檔名：對齊上緣裁切，正方形框只露出上方約 73% */
-#tab-tower .twx-boss-img {
+#tab-tower .twx-boss-img,
+#tab-tower .twx-fl-ico {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 0;
+  object-position: center top;
+  transform: var(--boss-portrait-crop, none);
+  transform-origin: top left;
+}
+
+/* 詳情與列表共用同一取景。位移以原本對齊上緣的方形畫面為基準。 */
+#tab-tower [data-tower-boss-image^="sprites/boss/boss_skeleton_king"] {
+  --boss-portrait-crop: scale(1.52) translate(-19%, -19%);
+}
+
+#tab-tower [data-tower-boss-image^="sprites/boss/boss3_character"] {
+  --boss-portrait-crop: scale(1.55) translate(-17.7%, -4.5%);
+}
+
+#tab-tower [data-tower-boss-image^="sprites/boss/boss4_centaur"] {
+  --boss-portrait-crop: scale(2.03) translate(-30.5%, -2.5%);
+}
+
+#tab-tower [data-tower-boss-image^="sprites/boss/boss5_oni"] {
+  --boss-portrait-crop: scale(1.08) translate(-6%, -4%);
+}
+
+#tab-tower [data-tower-boss-image^="sprites/boss/boss6_abyss"] {
+  --boss-portrait-crop: scale(2.5) translate(-41%, -20%);
+}
+
+#tab-tower [data-tower-boss-image="sprites/boss/boss_abyss.png"] {
+  --boss-portrait-crop: scale(1.22) translate(-9%, 0);
+}
+
+#tab-tower [data-tower-boss-image="sprites/boss/boss_chaos.png"] {
+  --boss-portrait-crop: scale(1.22) translate(-9%, -4.5%);
+}
+
+#tab-tower [data-tower-boss-image="sprites/boss/boss_dragon.png"] {
+  --boss-portrait-crop: scale(1.23) translate(-7%, -1.5%);
+}
+
+#tab-tower [data-tower-boss-image="sprites/boss/boss_iron.png"] {
+  --boss-portrait-crop: scale(1.28) translate(-11%, -3.5%);
+}
+
+#tab-tower [data-tower-boss-image="sprites/boss/boss_light.png"] {
+  --boss-portrait-crop: scale(1.22) translate(-11%, -2%);
+}
+
+#tab-tower [data-tower-boss-image="sprites/boss/boss_poison.png"] {
+  --boss-portrait-crop: scale(1.28) translate(-11%, -10%);
+}
+
+#tab-tower [data-tower-boss-image="sprites/boss/boss_storm.png"] {
+  --boss-portrait-crop: scale(1.18) translate(-7.5%, -2%);
+}
+
+#tab-tower [data-tower-boss-image="sprites/boss/boss_thunder.png"] {
+  --boss-portrait-crop: scale(1.12) translate(-5.5%, -3%);
 }
 
 #tab-tower span.twx-boss-img.is-emoji {
