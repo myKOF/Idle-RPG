@@ -6107,7 +6107,16 @@ function renderDetail() {
     /* 有暫放的符文：「符文」鈕變「刻印」，按下才真的鑲上 */
     actionsHtml += '<button class="btn btn-primary act-btn-tooltip engrave-pending" data-act="engrave-rune" data-tip="' + esc(STR(1207, Object.keys(runeMode.draft).length)) + '"' + pendingUiButtonAttributes(pendingKey) + '>' + STR(1208) + '</button>';
   } else {
-    actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '"' + (equipRuneUiUnlocked(headerSnapshot) ? '' : ' disabled') + '>' + STR(150) + '</button>';
+    var runeAttrs = '';
+    if (!equipRuneUiUnlocked(headerSnapshot)) {
+      var unlockProgress = STR(2101, RUNE_UNLOCK_REINCARNATION);
+      if (RUNE_UNLOCK_LEVEL > 1) {
+        unlockProgress = STR(680, STR(679, RUNE_UNLOCK_REINCARNATION) + ' ' + RUNE_UNLOCK_LEVEL, '') +
+          ' / ' + STR(2101, RUNE_UNLOCK_REINCARNATION + 1);
+      }
+      runeAttrs = ' disabled data-tip="' + esc(STR(2103, unlockProgress)) + '"';
+    }
+    actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '"' + runeAttrs + '>' + STR(150) + '</button>';
   }
   if (!fromInv) {
     actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="' + STR(74) + '" data-tip="' + STR(74) + '"' +

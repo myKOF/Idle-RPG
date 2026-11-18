@@ -101,6 +101,12 @@
 - 修改共用樣式、銅邊樣式、首頁快取、功能說明及本段。唯讀核對技能、寶石及符文篩選接線。首頁與文件的其他改動分段試合及暫存。
 - 隔離靜音 Edge 對照三頁的預設及選中樣式，核對寶石單列、類別與只看持有、共鳴獨立篩選、符文品質與材料齊全篩選，頁面錯誤及警告皆為 0。三個測試檔共 72 項通過，`npm.cmd run build` 通過 738 檔。可供使用者驗收與整合。
 
+## EQUIP-RUNE-UNLOCK-TIP-20261118 — 裝備符文入口的解鎖提示
+
+- Owner：Codex，Done。裝備詳情「符文」入口鎖定時懸停顯示門檻。沿用既有停用判斷、共用 Tips 與 String 表詞句，門檻讀同一對設定值。
+- 修改 `js/ui.js`、`index.html` 快取、`tests/equip-socket-ui.test.cjs`、`LV_upgrade_system.md` 及本段。唯讀核對 `js/data.js`、`system_unlock.csv`、String 表與停用樣式。與任務導引、遺物介面的共用檔案為不同區段，三方試合通過並分段暫存。
+- 靜音隔離 Edge 實測滑鼠懸停及移出、鎖定時點擊、升級與轉生兩條解鎖路徑及解鎖後進入。頁面警告與例外 0。`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs` 通過 42 項，`npm.cmd run build` 通過 739 檔。可供整合。
+
 ## PUBLIC-HERO-EQUIP-UI-20261118 — 外部版 3D 主角及裝備介面調整
 
 - Owner：Codex，Done。外部版開局載入既有 3D 主角，依轉生換外觀，載入失敗時回到 2D。移除左側導覽的綠底框、背包裝備角標及詳情鎖頭底框，非同部位背包格亮度由 0.83 改為 0.66。裝備操作、符文、寶石、裝備方案和設定的選中項採淺茉綠底。
