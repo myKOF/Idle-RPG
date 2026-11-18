@@ -79,6 +79,8 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 第三鏡倒地遠景的腰側破布和肩後碎布隨風掀動。近景換用較小的動作幅度，集中在兜帽破邊、胸腹布褶和肩後碎布。遮罩沿原角色局部取樣，保留原地表構圖，接近第四鏡時風勢收束。運動烘入 `web/shot-03-flat-left-hand.mp4`。
 
+倒地畫面的肩後與兜帽下緣沿原固定端把布尾轉向畫面左方，並清除右手與腿上方懸空的翼片，露出原沙地。正式連播第 1593 至 2120 幀採用 `web/shot-03-fallen-wind-handoff.mp4`，包含第三鏡倒地演出與第四鏡開頭 2.2 秒的金光銜接。可分別執行 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 573 1035` 及 `node extended-shot-four/render-shot-four.cjs --frames 0 66` 重製兩段，再接成 17.6 秒的片段。
+
 2026-11-18 調整第三鏡落地後的揭露煙塵。沙塵沿地勢鋪開，順同一風向散去，天使在原時點現身。正式連播替換第 1506 至 1711 幀。單獨重製可執行 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 486 692`，完成的畫面封存於 `web/shot-03-valley-dust.mp4`。
 
 2026-11-18 核准的第二鏡由第 16.0 秒接入，第 34.0 秒接第三鏡。大天使長沿用原立繪、墜落姿勢及鏡頭路徑，換上焦黑甲裂、反光、燃燒、煙塵碎屑與同向拖曳的流光翼。核准的 18 秒無字畫面保存在 `web/shot-02-effects-18s.mp4`。分層來源為 `extended-shot-two/index-effects.html`、`shot-two-effects.js` 和 `commander-impact.js`，共用原立繪及音效。`node extended-shot-two/render-shot-two.cjs --effects` 可重製單鏡。`--five-shots` 先還原無字連播，再以核准畫面替換第 480 至 1019 幀。
