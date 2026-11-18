@@ -905,7 +905,10 @@ function itemHeaderHTML(it, opts) {
     headActionsHtml +
     '</div>';
 
-  h += '<div class="it-sub"><span>' + STR(1145, r.name, ((typeof itemTypeLabel === 'function') ? itemTypeLabel(it) : SLOT_INFO[it.slot].name)) + '<span class="it-level" style="color:' + levelRarity.color + '">' + STR(1146, it.level) + '</span>';
+  var rarityLabel = '<span class="it-rarity" style="--item-rarity-color:' + r.color + '">' + esc(r.name) + '</span>';
+  var typeLabel = typeof itemTypeLabel === 'function' ? itemTypeLabel(it) : SLOT_INFO[it.slot].name;
+  h += '<div class="it-sub"><span>' + STR(1145, rarityLabel, typeLabel) +
+    '<span class="it-level" style="color:' + levelRarity.color + '">' + STR(1146, it.level) + '</span>';
   return '' + h + '</span>' + STR(1147, fmt(curScore)) + '</div>';
 }
 
