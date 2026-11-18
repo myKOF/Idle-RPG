@@ -59,9 +59,14 @@ test('NPC table: tower_boss_4 / 14 / 24 use the centaur looks and every new-mode
     named++;
   }
   assert.ok(named >= 22);
-  for (const [id, suf] of [['tower_boss_4', ''], ['tower_boss_14', '_lv2'], ['tower_boss_24', '_lv3']]) {
+  for (const [id, suf, name] of [['tower_boss_4', '', '角獸騎士'], ['tower_boss_14', '_lv2', '角獸騎士Ⅱ'], ['tower_boss_24', '_lv3', '角獸騎士Ⅲ']]) {
     const r = rows.find(x => x[0] === id);
     assert.equal(r[ix('3D模型')], 'images/models/npc3d/boss4' + suf + '.glb');
     assert.equal(r[ix('站立圖像')], 'sprites/boss/boss4_centaur' + suf + '.png');
+    // 使用者 2026-11-18：名稱與技能改成符合持長槍的半人馬（衝鋒＋閃電矛）；屬性、數值不變
+    assert.equal(r[ix('NPC名稱')], name);
+    assert.equal(r[ix('外觀')], '🐎');
+    assert.equal(r[ix('專屬技能')], 'e_charge;e_lightningspear');
+    assert.equal(r[ix('屬性')], 'lightning');
   }
 });

@@ -16401,3 +16401,9 @@ Worker 存活且頁面正常完成載入。
 - 測試：新增 `tests/boss4-character-asset.test.cjs`（4 項），更新 `npc3d-config`、`tower-boss3d`（4／14／24 及 +50／+100 層用新模型、34 層維持原樣），共 14 項全過。NPC／塔／BOSS／快取／Worker 相關 462 項中 20 項失敗；其中 NPC-SKILL-4／6、NPC-SPRITE-4／5、TBMA-5 以 HEAD 乾淨工作樹重跑同樣失敗（既有），塔 BOSS 50 列備註與產生器輸出逐列一致。字串寫死 0。
 - 實機：`node tools/boss4/verify-ingame.cjs` 在無頭瀏覽器開真正的遊戲頁，以遊戲的 `Npc3D.create` 載入三版，五動作皆存在、秒數正確並逐動作渲染成功。舊的 `tools/boss5/capture-ingame.cjs` 因序章開場後新遊戲流程改變，找不到挑戰按鈕，未跑完整場塔戰。
 - 待使用者決定：名稱仍為「鋼鐵魔像」🤖、技能野蠻衝鋒／震地衝擊；未做戰鬥特效。
+
+## TOWER-BOSS4-RENAME-20261118 — 第4隻BOSS名稱與技能改成半人馬
+
+- Owner：Claude，Done。使用者同意把 tower_boss_4／14／24 的名稱與技能改成符合持長槍的半人馬。
+- NPC.xlsx 第485／495／505列（`tools/excel-update-sheets.ps1`，兩次寫入皆重開驗證）：名稱 鋼鐵魔像 → 角獸騎士／角獸騎士Ⅱ／角獸騎士Ⅲ、外觀 🤖 → 🐎、專屬技能 `e_charge;e_shockwave` → `e_charge;e_lightningspear`；備註由產生器重新產生後寫回（塔 BOSS 50 列備註與產生器逐列一致）。屬性、攻速、距離、倍率、隨機技能數量不變；第34、44列（無新模型）維持鋼鐵魔像。快取 `20261118-boss4-centaur-name`。
+- 文件：`docs/ELITE_AFFIXES.md` tower_boss_4 列、`docs/BOSS_PLAYER_SKILLS.md` 第24／54／74層名稱、`docs/assets/BOSS4_SOURCE.md`。測試：`boss4-character-asset` 加名稱／圖示／技能／屬性斷言；BOSS／塔／NPC 37 項中 3 項失敗為既有（NPC-SKILL-4／6、TBMA-5，HEAD 同樣失敗）；字串寫死 0。
