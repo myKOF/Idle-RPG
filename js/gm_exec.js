@@ -1762,11 +1762,11 @@
     if (command === 'offline') {
       /* offline <小時>：模擬「離線 N 小時後回來」——把存檔時間往前撥、立刻跑一次離線結算（與開機同一支 applyOfflineProgress，
          分批處理不卡畫面），完成後跳出離線收益彈窗，再把存檔時間設回現在，避免下次開機重複結算。
-         離線結算只在開機時發生、存檔又在 IndexedDB，測試離線類遺物（長夜沙漏、夜班熔爐、夢境捕手、晨鐘、星圖殘頁）沒有別的辦法。 */
+         供測試存檔關卡的離線波次與離線類遺物。 */
       var offHours = gmNumber(args[0], 0.02, 1000);
       if (offHours === null) return { ok: false, message: '格式：offline 小時（0.02～1000，可小數）' };
       G.savedAt = Date.now() - offHours * 3600 * 1000;
-      applyOfflineProgress({ chunkSize: 24, done: function () {
+      applyOfflineProgress({ done: function () {
         G.savedAt = Date.now();
         if (typeof requestPersist === 'function' && typeof PERSIST_KINDS !== 'undefined') requestPersist(PERSIST_KINDS.AUTO);
       } });

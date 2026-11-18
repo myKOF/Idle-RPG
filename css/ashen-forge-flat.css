@@ -75,11 +75,8 @@
   letter-spacing: 0;
 }
 
-.btn:hover:not(:disabled),
 .dropdown:hover,
-.info-btn:hover,
-.damage-toggle-btn:hover,
-.fs-btn:hover {
+.damage-toggle-btn:hover {
   border-color: var(--afl-line-hover) !important;
   background: var(--afl-btn-hover) !important;
   color: #fff !important;
@@ -90,44 +87,6 @@
   border-color: var(--afl-line) !important;
   background: var(--afl-list) !important;
   color: #5c5f66 !important;
-}
-
-/* 警示類（暫停、撤退、危險操作）：深底紅邊紅字，不再整塊染紅 */
-.btn.warn,
-.btn.danger {
-  border-color: #7a2a26 !important;
-  background: var(--afl-btn) !important;
-  color: #f08a80 !important;
-  box-shadow: none;
-}
-
-.btn.warn:hover:not(:disabled),
-.btn.danger:hover:not(:disabled) {
-  border-color: #a8322c !important;
-  background: #2a1616 !important;
-  color: #ffb0a6 !important;
-  filter: none;
-}
-
-/* 主要動作（確認、合成、鍛造）：紅色實心 */
-#btn-salvage-confirm,
-#fuse-btn,
-#forge-go,
-.btn.primary,
-.btn.btn-primary {
-  border: 1px solid var(--afl-red) !important;
-  background: var(--afl-red) !important;
-  color: #fff !important;
-  box-shadow: none;
-}
-
-#btn-salvage-confirm:hover:not(:disabled),
-#fuse-btn:hover:not(:disabled),
-#forge-go:hover:not(:disabled),
-.btn.primary:hover:not(:disabled),
-.btn.btn-primary:hover:not(:disabled) {
-  border-color: var(--afl-red-hover) !important;
-  background: var(--afl-red-hover) !important;
 }
 
 /* 啟用中的切換鈕：金色 */

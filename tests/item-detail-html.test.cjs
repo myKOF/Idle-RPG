@@ -59,6 +59,15 @@ test('不讀取 G——沒有 G 的環境下也能產生完整詳情', () => {
   assert.match(html, /洗煉區間/, '詞條應有洗煉區間提示');
 });
 
+test('裝備副標題為各品質名稱帶入該品質的色值', () => {
+  const c = loadItemContext();
+  c.RARITIES.forEach((rarity, index) => {
+    const html = c.itemHeaderHTML(makeItem({ rarity: index }), { showAffixReroll: false });
+    const label = /<span class="it-rarity" style="--item-rarity-color:([^"]+)">([^<]*)<\/span>/.exec(html);
+    assert.deepEqual(label?.slice(1), [rarity.color, rarity.name]);
+  });
+});
+
 test('洗煉模式只選屬性，不渲染骰子或逐條執行按鈕', () => {
   const c = loadItemContext();
   const it = makeItem({ affixes: [affixAt(c, 'atkFlat', 10), affixAt(c, 'str', 10)] });

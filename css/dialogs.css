@@ -1,13 +1,13 @@
-/* 遊戲彈窗共用外觀。最後載入以收斂舊主題與inline外觀；保留原尺寸、層級與事件。
+/* 遊戲彈窗共用銅框與石板色；保留原尺寸、層級與事件。
    統計維持獨立懸浮／拖曳；提示工具不在此範圍。 */
 :root {
-  --dialog-frame: linear-gradient(135deg, #8e9490, #535957 38%, #343a38 62%, #797f7b);
-  --dialog-surface: linear-gradient(145deg, #1c2025, #111417 75%);
-  --dialog-text: #e7e1d5;
-  --dialog-muted: #b5afa2;
-  --dialog-gold: #e7c784;
-  --dialog-line: #414643;
-  --dialog-inset: 0 0 0 1px #262b2a, inset 0 0 0 1px #92958a55;
+  --dialog-frame: linear-gradient(135deg, #b39769, #715538 38%, #453227 62%, #96764d);
+  --dialog-surface: var(--bs-surface);
+  --dialog-text: var(--bs-text);
+  --dialog-muted: var(--bs-muted);
+  --dialog-gold: var(--bs-gold);
+  --dialog-line: var(--bs-seam);
+  --dialog-inset: 0 0 0 1px #231a17, inset 0 0 0 1px #b49d7355;
   --dialog-shadow: 0 18px 56px #000b, var(--dialog-inset);
 }
 body.game-menu-paused :is(#topbar, #game-layout) *,
@@ -17,12 +17,9 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
 #game-menu-title:focus { outline: none; }
 
 :is(.modal-overlay, .system-overlay, .detail-log-modal, #tower-result-modal,
-    #worker-dead-notice, #save-origin-notice, #tab-lock-notice) {
+    #worker-dead-notice, #save-origin-notice, #save-schema-notice, #tab-lock-notice) {
   box-sizing: border-box;
   padding: 20px !important;
-}
-:is(.modal-overlay, .system-overlay, .detail-log-modal, #tower-result-modal,
-    #worker-dead-notice, #save-origin-notice, #tab-lock-notice) {
   background: #050709c9 !important;
   backdrop-filter: none !important;
 }
@@ -30,20 +27,21 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
 #summary-modal { background: transparent !important; pointer-events: none; }
 
 :is(.modal-box, .system-card, .detail-log-box, #tower-result-modal > div,
-    #worker-dead-notice > div, #save-origin-notice > div, #tab-lock-notice > div,
+    #worker-dead-notice > div, #save-origin-notice > div, #save-schema-notice > div, #tab-lock-notice > div,
     #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) {
   box-sizing: border-box;
   /* 同一層漸層沿四角連續包覆，避免ridge分邊明暗在轉角形成尖縫。 */
   border: 6px solid transparent !important;
   border-radius: 4px !important;
   background: var(--dialog-surface) padding-box, var(--dialog-frame) border-box !important;
-  color: var(--dialog-text);
+  color: var(--dialog-text) !important;
   box-shadow: var(--dialog-shadow) !important;
   text-shadow: none !important;
   font-family: inherit;
+  scrollbar-color: #896b43 var(--bs-recess);
 }
 :is(.modal-box, .system-card, .detail-log-box, #tower-result-modal > div,
-    #worker-dead-notice > div, #save-origin-notice > div, #tab-lock-notice > div) {
+    #worker-dead-notice > div, #save-origin-notice > div, #save-schema-notice > div, #tab-lock-notice > div) {
   padding: 24px !important;
   max-width: calc(var(--ui-canvas-width, 100vw) - 40px);
   max-height: calc(var(--ui-canvas-height, 100dvh) - 40px) !important;
@@ -95,14 +93,14 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
 /* 普通小框自行捲動；大型flex視窗保留內文捲動與固定標頭。 */
 .modal-box:not(:is(#summary-modal-box, #quest-modal > .modal-box)),
 #tower-result-modal > div,
-:is(#worker-dead-notice, #save-origin-notice, #tab-lock-notice) > div { overflow-y: auto; }
+:is(#worker-dead-notice, #save-origin-notice, #save-schema-notice, #tab-lock-notice) > div { overflow-y: auto; }
 .detail-log-box { min-height: 0; }
 .system-settings-body, #stats-scroll, #quest-modal-list, .detail-log-content { min-height: 0; }
 
 :is(.system-card h2, .confirm-title, .modal-box > .sec-title,
     .summary-modal-header > .sec-title, .detail-log-head > .sec-title,
     .talent-modal-head, #skill-modal-body .skd-head, #trm-title,
-    #worker-dead-notice h2, #save-origin-notice h2, #tab-lock-notice h2) {
+    #worker-dead-notice h2, #save-origin-notice h2, #save-schema-notice h2, #tab-lock-notice h2) {
   color: var(--dialog-gold) !important;
   font-size: 19px !important;
   font-weight: 700;
@@ -129,6 +127,17 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
 .detail-log-head { border-bottom: 0; padding: 0; min-height: 0; }
 .detail-log-head > .sec-title { width: 100%; }
 .confirm-message { color: var(--dialog-text); font-size: 14px; line-height: 1.8; white-space: pre-line; }
+.quest-list-head {
+  background: var(--bs-recess);
+  border-color: var(--dialog-line);
+  color: var(--dialog-gold);
+}
+#quest-modal-list .quest-row { border-bottom-color: color-mix(in srgb, var(--dialog-line) 65%, transparent); }
+#quest-modal-list .quest-row.claimed .quest-col-name::before,
+#quest-modal-list .quest-row.claimed,
+#quest-modal-list .quest-row.claimed .quest-col-reward { color: #aaa39b; }
+#quest-modal-list .quest-row.current { color: var(--dialog-gold); }
+#quest-modal-list { scrollbar-color: #896b43 var(--bs-recess); }
 .system-menu-status { color: var(--dialog-muted); }
 .system-menu-status:empty { min-height: 0; margin-top: 0; }
 
@@ -142,83 +151,30 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #626863 !important;
-  border-radius: 4px !important;
-  background: #24292a !important;
-  color: #d2caba !important;
-  box-shadow: inset 0 1px 0 #ffffff0c;
+  border: 1px solid;
   font: 20px/1 sans-serif;
   cursor: pointer;
 }
 :is(.modal-box, .system-card) > :is(.modal-x, .system-close),
 .system-settings-heading .system-close { top: 10px; right: 10px; }
 .detail-log-head .modal-x { top: 0; right: 0; }
-:is(.modal-x, .system-close, .eqset-popup-close):hover {
-  background: #39332b !important;
-  border-color: #be9b5c !important;
-  color: #ffe3aa !important;
-}
-
 :is(.modal-box, .system-card, .detail-log-box, .nfc-result, #tower-result-modal,
-    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
+    #worker-dead-notice, #save-origin-notice, #save-schema-notice, #tab-lock-notice,
     #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(.btn, .system-menu-actions button) {
-  border: 1px solid #686451 !important;
-  border-radius: 5px !important;
-  background: #272925 !important;
-  color: var(--dialog-text) !important;
-  box-shadow: inset 0 1px 0 #ffffff08 !important;
-  text-shadow: none !important;
   font-family: inherit;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: var(--bs-button-size);
+  line-height: 19.6px;
   min-height: 36px;
-  padding: 8px 16px;
-  cursor: pointer;
+  padding: 8px 14px;
 }
 :is(.modal-box, .system-card, .detail-log-box, .nfc-result, #tower-result-modal,
-    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
-    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(.btn, .system-menu-actions button):hover:not(:disabled) {
-  border-color: #c7a765 !important;
-  background: #3b3326 !important;
-  color: #ffe6af !important;
-  filter: none;
-}
-:is(.modal-box, .system-card, .detail-log-box, .nfc-result, #tower-result-modal,
-    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
-    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer)
-    :is(.btn.primary, .btn.btn-primary, .btn.active, #confirm-ok, #trm-confirm):not(.danger, .warn) {
-  border-color: #ad915c !important;
-  background: #3a3021 !important;
-  color: #f4d79c !important;
-}
-:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
-    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
-    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) .btn:is(.danger, .warn) {
-  border-color: #92524a !important;
-  color: #f0a095 !important;
-  background: #302221 !important;
-}
-:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
-    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
-    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) .btn:is(.danger, .warn):hover:not(:disabled) {
-  border-color: #cf786a !important;
-  color: #ffc1b6 !important;
-  background: #482b28 !important;
-}
-:is(.modal-box, .system-card, .detail-log-box, #tower-result-modal,
-    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
-    #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(.btn, .system-menu-actions button):disabled {
-  opacity: .5;
-  cursor: default;
-}
-:is(.modal-box, .system-card, .detail-log-box, .nfc-result, #tower-result-modal,
-    #worker-dead-notice, #save-origin-notice, #tab-lock-notice,
+    #worker-dead-notice, #save-origin-notice, #save-schema-notice, #tab-lock-notice,
     #equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) :is(button, input, select, textarea):focus-visible {
   outline: 2px solid var(--dialog-gold);
   outline-offset: 3px;
 }
 .system-menu-actions { gap: 12px; }
-.system-menu-actions button { min-height: 44px !important; font-size: 16px !important; }
+.system-menu-actions button { min-height: 44px !important; font-size: 17px !important; }
 .confirm-actions {
   grid-template-columns: repeat(2, minmax(96px, 120px));
   column-gap: 16px;
@@ -229,16 +185,16 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
   width: 100%;
   margin-top: 16px;
   padding: 10px 12px;
-  border: 1px solid #646b64;
-  border-radius: 4px;
-  background: #101315;
+  border: 1px solid var(--dialog-line);
+  border-radius: 2px;
+  background: var(--bs-recess);
   color: var(--dialog-text);
 }
 #btn-summary-detail-log { top: 10px; left: 12px; }
 .detail-log-toolbar .btn, #btn-summary-detail-log, #btn-summary-clear {
   min-height: 28px !important;
   padding: 4px 10px !important;
-  font-size: 12px !important;
+  font-size: var(--bs-button-small-size) !important;
 }
 :is(#equip-set-tabs, #salvage-settings-panel, #battle-info-drawer) {
   padding: 16px !important;
@@ -248,9 +204,9 @@ body.game-menu-paused :is(.quest-fly-reward, .fly-trail-particle, .game-floating
 
 @container game-ui (max-width: 600px) or (max-height: 500px) {
   :is(.modal-overlay, .system-overlay, .detail-log-modal, #tower-result-modal,
-      #worker-dead-notice, #save-origin-notice, #tab-lock-notice) { padding: 10px !important; }
+      #worker-dead-notice, #save-origin-notice, #save-schema-notice, #tab-lock-notice) { padding: 10px !important; }
   :is(.modal-box, .system-card, .detail-log-box, #tower-result-modal > div,
-      #worker-dead-notice > div, #save-origin-notice > div, #tab-lock-notice > div) {
+      #worker-dead-notice > div, #save-origin-notice > div, #save-schema-notice > div, #tab-lock-notice > div) {
     padding: 18px !important;
     max-width: calc(var(--ui-canvas-width, 100vw) - 20px);
     max-height: calc(var(--ui-canvas-height, 100dvh) - 20px) !important;

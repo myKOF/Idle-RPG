@@ -1268,12 +1268,21 @@ function downloadSingleSave(id, fname) {
   return Promise.resolve(false);
 }
 
-/* ---- 離線收益（計算等級 / 擊殺速率公式 → js/formula.js §10） ----
-   以「目前地圖最高階段 −10 捨去個位數」等級的當前場景菁英怪、每 20 秒 1 隻計算擊殺數；
-   每一隻菁英怪及其掉落單獨擲骰（與野外擊殺同一套掉落表與倍率），完成後彈出離線收益確認界面。 */
+/* ---- 離線收益 ----
+   依存檔所在關卡和野外出怪表抽取每場戰鬥，逐隻結算獎勵。 */
+var _offlineProgressState = null;
+
+function offlineBattleSummaryText(sum) {
+  var hasWaves = sum.waves !== undefined;
+  var kind = hasWaves ? '' : STR(sum.elite === false ? 2052 : 2053);
+  var kills = STR(2054, fmtFull(sum.stage), esc(sum.zoneName || ''), kind, fmtFull(sum.kills));
+  return hasWaves ? STR(398) + ' ' + fmtFull(sum.waves) + ' · ' + kills : kills;
+}
+
 function applyOfflineProgress(options) {
   options = options || {};
-  if (!G.savedAt) return;
+  if (!G.savedAt || _offlineProgressState === G) return;
+  var state = G;
   var elapsed = (Date.now() - G.savedAt) / 1000;
   if (elapsed < 60) return; // 一分鐘內不計
   // 上限含遺物「長夜沙漏」（js/relic.js；只載入本檔的測試沒有遺物，退回參數表值）
@@ -1283,40 +1292,50 @@ function applyOfflineProgress(options) {
   var relicEquipMult = 1 + (typeof relicPct === 'function' ? relicPct('offlineEquipDrop') : 0);
 
   var st = getStats();
-  var kills = offlineKillCount(elapsed, 0);
-  if (kills < 1) return;
-  var stage = Math.min(zoneMaxStage(G.stage.zone), offlineStageFor(G.stage.best));
-  /* 怪物種類由參數表決定（formula.js §10 OFFLINE_ELITE）。掉落倍率一定要跟著同一個
-     旗標走，否則調成普通怪之後會變成「普通怪的經驗、菁英怪的掉落倍率」。 */
-  var offElite = offlineUsesElite();
-  var m = monsterStatsFor(stage, offElite);
-  var eliteMult = offElite ? ELITE_DROP_MULT : 1;
+  var waves = offlineWaveCount(elapsed);
+  if (waves < 1) return;
+  var onDone = typeof options.done === 'function' ? options.done : null;
+  if (onDone) _offlineProgressState = state;
+  var zone = G.stage.zone || 'desert';
+  var stage = clamp(Math.floor(Number(G.stage.current) || 1), 1, zoneMaxStage(zone));
+  var eliteStage = isEliteStage(stage);
+  var waveCapacity = fieldMaxLiveEnemiesFor();
+  // 每張地圖每個 BOSS 的離線獎勵只結算一次。正式挑戰的過關記錄仍由線上戰鬥管理。
+  var bossKey = zone + ':' + stage;
+  var bossAvailable = isFieldBossStage(stage) && !isFieldBossDefeated(zone, stage) &&
+    !(G.offlineFieldBossRewards && G.offlineFieldBossRewards[bossKey] === true);
+  var bossRewarded = false;
   var zn = currentZoneDef();
   var rw = zn.rewardMult;
 
-  // 金幣 / 經驗：單殺值（含場景倍率與加成）× 擊殺數
-  var goldPer = Math.round(m.gold * rw * (1 + st.goldBonus / 100));
-  var xpPer = Math.round(m.xp * rw * (1 + st.xpBonus / 100) * relicXpMult);
-  var gold = goldPer * kills, xp = xpPer * kills;
-  G.player.gold += gold;
-  if (typeof achAddGold === 'function') achAddGold(gold);
-  // 玩家經驗＋技能熟練度經驗：離線擊殺比照野外（demo 倍率在 gainEnemyXp）
-  xp = gainEnemyXp(xp);
-
-  // 掉落：與 rollFieldDrops 同一套表與倍率（無戰鬥中增益），逐殺單獨擲骰
-  var lootBonus = st.loot;
-  var dropMult = (1 + lootBonus / 100) * eliteMult;
-  var zoneDrop = fieldMaterialConfigFor(G.stage.zone, stage);
-  var rates = fieldDropRatesFor(stage, m.level, G.stage.zone);
+  // 掉落依關卡查表，逐隻套用敵種倍率與玩家掉寶屬性。
+  var lootMult = 1 + st.loot / 100;
+  var zoneDrop = fieldMaterialConfigFor(zone, stage);
+  var normal = monsterStatsFor(stage, false, false);
+  var rates = fieldDropRatesFor(stage, normal.level, zone);
   var gemRates = Array.isArray(zoneDrop.gemRates) ? zoneDrop.gemRates : [];
-  var essenceRate = Number(zoneDrop.ancientEssenceRate || 0) * eliteMult;
-  var dustRate = Number(zoneDrop.dustRate || 0) * eliteMult;
+  var essenceRate = Number(zoneDrop.ancientEssenceRate || 0);
+  var dustRate = Number(zoneDrop.dustRate || 0);
+
+  var elite = monsterStatsFor(stage, true, false);
+  var rewards = {
+    normal: rewardFor(normal, 'normal'), minion: rewardFor(normal, 'minion'),
+    elite: rewardFor(elite, 'elite'), elite_adv: rewardFor(elite, 'elite_adv'),
+    boss: bossAvailable ? rewardFor(monsterStatsFor(stage, false, true), 'boss') : null
+  };
+
+  function rewardFor(monster, rank) {
+    var groupMult = eliteGroupMemberRewardMult(rank);
+    return {
+      gold: Math.round(monster.gold * rw * groupMult * (1 + st.goldBonus / 100)),
+      xp: Math.round(monster.xp * rw * groupMult * (1 + st.xpBonus / 100) * relicXpMult),
+      dropMult: fieldEnemyDropMult(monster.elite, monster.isBoss)
+    };
+  }
 
   var sum = {
-    /* 給彈窗顯示用：怪物種類可由參數表切換，寫死「菁英怪」的話調成普通怪之後會說謊。 */
-    elite: offElite,
-    seconds: elapsed, stage: stage, zoneName: zn.name, zoneEmoji: zn.emoji, kills: kills,
-    gold: gold, xp: xp, equips: {}, scrap: 0, gems: {}, books: 0, essence: 0, dust: 0
+    seconds: elapsed, stage: stage, zoneName: zn.name, zoneEmoji: zn.emoji, waves: waves, kills: 0,
+    gold: 0, xp: 0, equips: {}, scrap: 0, gems: {}, books: 0, essence: 0, dust: 0
   };
   /* 熔爐離線作業：只處理「離線前佇列裡既有、尚未分解」的裝備（見 newforge.js），
      離線期間才掉的裝備不在範圍內。必須在離線掉落入佇列之前執行，
@@ -1334,44 +1353,82 @@ function applyOfflineProgress(options) {
     }
   }
   var conveyorFull = false;
-  function processOfflineKill() {
+  var overflow = [];
+  function processOfflineKill(rank) {
+    var reward = rewards[rank];
+    sum.kills++;
+    sum.gold += reward.gold;
+    sum.xp += reward.xp;
+    var enemyDropMult = reward.dropMult;
     // 裝備（各品質獨立擲骰；輸送帶滿載時折算碎片，不丟失）
     for (var r = 0; r < rates.length; r++) {
       if (!rates[r]) continue;
-      var n = rollDropCount(rates[r] * dropMult * relicEquipMult);
-      for (var i = 0; i < n; i++) {
-        sum.equips[r] = (sum.equips[r] || 0) + 1;
-        if (!conveyorFull) {
-          if (!pushConveyor(makeEquipment(stage, { rarity: r }))) {
-            conveyorFull = true;
-            sum.scrap += Math.round(3 * RARITIES[r].salv);
-            if (typeof chestGainSalvageXp === 'function') chestGainSalvageXp(r); // 折算碎片視同已拆解：寶箱鍛造經驗照給
-          }
-        } else {
-          sum.scrap += Math.round(3 * RARITIES[r].salv);
-          if (typeof chestGainSalvageXp === 'function') chestGainSalvageXp(r);
-        }
+      var n = rollDropCount(rates[r] * lootMult * enemyDropMult * relicEquipMult);
+      if (!n) continue;
+      sum.equips[r] = (sum.equips[r] || 0) + n;
+      var accepted = 0;
+      while (accepted < n && !conveyorFull) {
+        if (pushConveyor(makeEquipment(stage, { rarity: r }))) accepted++;
+        else conveyorFull = true;
+      }
+      var excess = n - accepted;
+      if (excess > 0) {
+        overflow[r] = (overflow[r] || 0) + excess;
+        sum.scrap += Math.round(3 * RARITIES[r].salv) * excess;
       }
     }
     // 寶石（各階級獨立擲骰）
     for (var glv = 0; glv < gemRates.length; glv++) {
       if (!gemRates[glv]) continue;
-      var gemN = rollDropCount(gemRates[glv] * (1 + lootBonus / 100) * rw * ELITE_DROP_MULT);
+      var gemN = rollDropCount(gemRates[glv] * lootMult * rw * enemyDropMult);
       for (var gi = 0; gi < gemN; gi++) {
-        var gemType = randomGemTypeForLevel(m.level);
+        var gemType = randomGemTypeForLevel(stage);
         if (!gemType) continue;
         addGem(gemType, glv + 1, 1);
         sum.gems[glv + 1] = (sum.gems[glv + 1] || 0) + 1;
       }
     }
-    // 太古精華（250 級以上敵人）
-    if (essenceRate > 0 && chance(essenceRate)) { G.player.ancientEssence = (G.player.ancientEssence || 0) + 1; sum.essence++; }
-    // 魔塵（150 級起）
-    if (dustRate > 0 && chance(dustRate)) { G.player.dust = (G.player.dust || 0) + 1; sum.dust++; }
+    if (essenceRate > 0 && chance(essenceRate * enemyDropMult)) sum.essence++;
+    if (dustRate > 0 && chance(dustRate * enemyDropMult)) sum.dust++;
+  }
+
+  function processOfflineWave() {
+    var rank = rollFieldWaveRank(stage, zone, bossAvailable, true);
+    if (rank === 'eliteGroup') {
+      var groups = planEliteWave(stage, zone, eliteStage);
+      var room = waveCapacity;
+      for (var g = 0; g < groups.length && room > 0; g++) {
+        var count = Math.min(room, groups[g].size);
+        var leaders = eliteGroupLeaderCount(groups[g]);
+        for (var member = 0; member < count; member++) processOfflineKill(rollEliteGroupMember(member, leaders, eliteStage));
+        room -= count;
+      }
+      return;
+    }
+    var count = rollFieldEnemyCount(rank, stage, zone);
+    if (rank === 'boss') {
+      count = Math.min(count, Math.max(1, Math.floor(waveCapacity / (BF_BOSS_W * BF_BOSS_H))));
+      bossAvailable = false;
+      bossRewarded = true;
+    }
+    for (var j = 0; j < count; j++) processOfflineKill(rank);
   }
 
   function finishOfflineProgress() {
+    if (bossRewarded) {
+      var paidBosses = G.offlineFieldBossRewards;
+      if (!paidBosses || typeof paidBosses !== 'object' || Array.isArray(paidBosses)) G.offlineFieldBossRewards = {};
+      G.offlineFieldBossRewards[bossKey] = true;
+    }
+    G.player.gold += sum.gold;
+    if (typeof achAddGold === 'function') achAddGold(sum.gold);
+    sum.xp = gainEnemyXp(sum.xp);
     if (sum.scrap) G.player.scrap += sum.scrap;
+    if (sum.essence) G.player.ancientEssence = (G.player.ancientEssence || 0) + sum.essence;
+    if (sum.dust) G.player.dust = (G.player.dust || 0) + sum.dust;
+    if (typeof chestGainSalvageXp === 'function') {
+      overflow.forEach(function (count, rarity) { chestGainSalvageXp(rarity, count); });
+    }
     /* 遺物「星圖殘頁」（2026-11-10 改）：每離線 1 小時（取整）額外獲得「已通關最高層」封魔塔 BOSS 獎勵的 N%（不含首通解鎖）。
        合計比例拆成整場數＋零頭：整場給完整獎勵，零頭給一次部分獎勵（grantTowerBossRewards 的 scale）。
        遺物「晨鐘」（2026-11-10 改）：回到遊戲後的限時經驗／掉寶加成，時間＝每離線 1 小時（取整）N 分鐘，從這一刻起算。 */
@@ -1394,36 +1451,44 @@ function applyOfflineProgress(options) {
       var buffMin = relicStartReturnBuff(null, offHours);
       if (buffMin > 0) { sum.returnBuff = { minutes: buffMin, pct: RELIC_RETURN_BUFF_PCT }; blog(STR(2467, buffMin, RELIC_RETURN_BUFF_PCT), 'good'); }
     }
-  UI.dirty.header = true; UI.dirty.factory = true; UI.dirty.gems = true;
+    UI.dirty.header = true; UI.dirty.factory = true; UI.dirty.gems = true;
 
-  var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);
-  var equipTotal = 0;
-  for (var er in sum.equips) equipTotal += sum.equips[er];
-  blog(STR(1995, (hrs ? STR(78, hrs) + ' ' : ''), mins, stage, zn.name, fmt(kills), fmt(gold), fmt(xp), fmt(equipTotal), (sum.scrap ? STR(1996, fmt(sum.scrap)) : '')), 'good');
+    var hrs = Math.floor(elapsed / 3600), mins = Math.floor((elapsed % 3600) / 60);
+    var equipTotal = 0;
+    for (var er in sum.equips) equipTotal += sum.equips[er];
+    blog([
+      STR(2099, hrs ? STR(78, hrs) + ' ' : '', mins),
+      offlineBattleSummaryText(sum),
+      STR(2055, fmt(sum.xp), fmt(sum.gold)), STR(394, fmtFull(equipTotal))
+    ].join(' · ') + (sum.scrap ? STR(1996, fmt(sum.scrap)) : ''), 'good');
+    if (_offlineProgressState === state) _offlineProgressState = null;
     if (typeof showOfflineSummary === 'function') showOfflineSummary(sum);
-    if (typeof options.done === 'function') options.done(sum);
+    if (onDone) onDone(sum);
     return sum;
   }
 
-  var onDone = typeof options.done === 'function' ? options.done : null;
   if (onDone) {
-    var chunkSize = Math.max(1, Math.floor(Number(options.chunkSize) || 24));
+    var chunkSize = Math.max(1, Math.floor(Number(options.chunkSize) || 256));
     var cursor = 0;
     var processChunk = function () {
-      if (typeof _booted !== 'undefined' && !_booted) return;
-      var end = Math.min(kills, cursor + chunkSize);
-      while (cursor < end) {
-        processOfflineKill();
-        cursor++;
+      if (G !== state || (typeof _booted !== 'undefined' && !_booted)) {
+        if (_offlineProgressState === state) _offlineProgressState = null;
+        return;
       }
-      if (cursor < kills) setTimeout(processChunk, 0);
+      var end = Math.min(waves, cursor + chunkSize);
+      var deadline = Date.now() + 12;
+      do {
+        processOfflineWave();
+        cursor++;
+      } while (cursor < end && Date.now() < deadline);
+      if (cursor < waves) setTimeout(processChunk, 0);
       else finishOfflineProgress();
     };
     setTimeout(processChunk, 0);
     return null;
   }
 
-  for (var k = 0; k < kills; k++) processOfflineKill();
+  for (var k = 0; k < waves; k++) processOfflineWave();
   return finishOfflineProgress();
 }
 

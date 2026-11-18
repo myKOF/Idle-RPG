@@ -194,7 +194,7 @@ test('achTick：每 ACH_CHECK_SEC 秒才掃一次', () => {
 test('累計統計掛點：金幣來源、符文製作、神鑄／精鑄／刻印、轉生前結算', () => {
   assert.match(read('js/combat.js'), /achAddGold\(goldGain\)/);
   assert.match(read('js/factory.js'), /achAddGold\(res\.gold\)/);
-  assert.match(read('js/save.js'), /achAddGold\(gold\)/);
+  assert.match(read('js/save.js'), /achAddGold\(sum\.gold\)/);
   assert.match(read('js/runeword.js'), /achNoteRune\(next\.id\)/);
   const forge = read('js/forge.js');
   assert.match(forge, /achAddStat\('divineConsumed', items\.length\)/);

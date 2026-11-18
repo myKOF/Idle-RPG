@@ -1,17 +1,6 @@
 'use strict';
 
-/* 背包選取時，對應裝備欄的高亮長什麼樣子。
-
-   這支測試換過一次設計，過程值得留著：
-
-   舊版用「2px 內框 + 2px 向外 outline + filter: brightness()」。outline 的顏色
-   沒辦法直接取到品質色，所以 js/ui.js 在 inline style 上多餵一個
-   --eq-selection-border-color 自訂屬性給它用。而 brightness 會把整格提亮，
-   結果是**品質色整個往黃色推**——橘色的傳說與金色的史詩尤其明顯，
-   而品質色正是這個高亮本來要傳達的資訊。
-
-   現在改成直接加粗原本的 border。border-color 在 js/ui.js 的 inline style 裡
-   本來就已經是品質色，加粗不動顏色，也就不需要那個自訂屬性了。 */
+/* 已穿裝備與背包共用品質邊框，選取描邊畫在邊框外。 */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -28,15 +17,21 @@ function selectionRule() {
   return match[1];
 }
 
-test('選取黃框保持方角及向外描框，厚度在原比例上共減3px', () => {
-  const skin = fs.readFileSync(path.join(root, 'css/ashen-forge.css'), 'utf8');
-  const rule = skin.match(/#workspace-area \.item-cell\.selected,\s*#workspace-area \.eq-slot\.selected\s*\{([^}]+)\}/)[1];
-  assert.match(rule, /outline:\s*2px solid #ffe354/);
-  assert.match(rule, /outline-offset:\s*0\s*;/);
-  assert.match(rule, /border-radius:\s*0\s*!important/);
-  assert.doesNotMatch(rule, /(?:^|;)\s*(?:width|height|padding|border-width):/);
-  assert.match(skin, /#equip-grid\s*\{[^}]*container-type:\s*inline-size/);
-  assert.match(skin, /#workspace-area #equip-grid \.eq-slot\.selected\s*\{\s*outline-width:\s*calc\(2\.2cqw - 3px\)/);
+test('銅邊主題將同品質選取描邊畫在裝備格外，部位提示的黃虛線只供空格使用', () => {
+  const skin = fs.readFileSync(path.join(root, 'css/brass-and-slate.css'), 'utf8');
+  const rule = skin.match(/:is\(#inventory-grid \.item-cell, #equip-grid \.eq-slot\)\.selected\s*\{([^}]+)\}/)[1];
+  assert.match(rule, /outline:\s*2px solid var\(--item-frame-color, var\(--bs-gold\)\)/);
+  assert.match(rule, /outline-offset:\s*1px\s*;/);
+  assert.match(skin, /#equip-grid \.eq-slot\.filled\.selected\s*\{\s*outline-width:\s*3px\s*!important/);
+  const matchSelectors = Array.from(skin.matchAll(/^([^\n{]+\.inventory-selection-match)\s*\{/gm), m => m[1].trim());
+  assert.deepEqual(matchSelectors, ['body #game-layout #equip-grid .eq-slot.empty.inventory-selection-match']);
+});
+
+test('背包非同部位遮蔽量為 72.8%，只調暗裝備格內容', () => {
+  const skin = fs.readFileSync(path.join(root, 'css/brass-and-slate.css'), 'utf8');
+  const selector = String.raw`#inventory-grid \.item-cell\[data-slot\]\.dimmed:not\(\.item-cell-dimmed\)`;
+  assert.match(skin, new RegExp(selector + String.raw`\s*\{\s*opacity:\s*1\s*!important`));
+  assert.match(skin, new RegExp(selector + String.raw`\s*>\s*\*\s*\{\s*opacity:\s*\.272\s*;`));
 });
 
 test('背包選取對應裝備欄以加粗原本的品質邊框呈現', () => {
@@ -65,10 +60,14 @@ test('不得用 outline——顏色餵不進去，而 border-color 本來就是�
   assert.doesNotMatch(selectionRule(), /outline/);
 });
 
-test('裝備欄的 border-color 就是稀有度顏色，高亮不必另外傳色', () => {
-  /* 加粗方案成立的前提。這一行沒了的話高亮會變成預設色，
-     而樣式表那邊完全看不出來。 */
-  assert.match(ui, /border-color:'\s*\+\s*r\.color/);
+test('背包及裝備欄的外框沿用同一個品質色', () => {
+  for (const section of [
+    ui.slice(ui.indexOf('function itemCellHTML('), ui.indexOf('function itemCellNodeFromHtml(')),
+    ui.slice(ui.indexOf('function renderEquip('), ui.indexOf('function equipFlashActive('))
+  ]) {
+    assert.match(section, /itemFrameColor\(it\.rarity\)/);
+    assert.match(section, /--item-frame-color:' \+ frameColor \+ ';border-color:var\(--item-frame-color\)/);
+  }
 });
 
 test('不再輸出已經沒人用的 --eq-selection-border-color', () => {

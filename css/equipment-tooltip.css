@@ -10,6 +10,10 @@
   padding-right: 76px !important;
 }
 
+#sk-tooltip .equip-detail-card .it-rarity {
+  color: var(--item-rarity-color);
+}
+
 /* 窄畫面保留完整標題，超出視窗時可在提示內水平捲動。 */
 #sk-tooltip:has(> .equip-detail-card),
 #sk-tooltip:has(> .equip-compare-container) {

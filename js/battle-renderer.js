@@ -2066,11 +2066,11 @@ var BattleRenderer = (function () {
     if (!_statusStrip) _statusStrip = document.createElement('div');
     try {
       var html = entStatus(data);
-      if (html === _statusStripIn) return _statusStripOut;
-      _statusStripIn = html;
-      _statusStrip.innerHTML = html;
-      var txt = _statusStrip.textContent || '';
-      _statusStripOut = txt.length > 14 ? txt.slice(0, 14) : txt;
+      if (html !== _statusStripIn) {
+        _statusStripIn = html;
+        _statusStrip.innerHTML = html;
+        _statusStripOut = (_statusStrip.textContent || '').slice(0, 14);
+      }
       return _statusStripOut;
     } catch (e) { return ''; }
   }
@@ -2088,12 +2088,15 @@ var BattleRenderer = (function () {
     var npcCfg = (typeof NPC_CONFIG_TABLE !== 'undefined' && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
     var visScale = (tierSize || (isBoss ? 1 : (isElite ? 1.28 : 1))) * (npcCfg && npcCfg.scale > 0 ? npcCfg.scale : 1);
     var sz = cellSize();
+    var nameSize = Math.max(8, Math.round((isBoss ? 14 : 11) * dScale)) + 4;
+    var nameY = 8 + 6 * dScale;
     return {
-      isBoss: isBoss, isElite: isElite, dScale: dScale, tierSize: tierSize, tierName: tierName, visScale: visScale, cell: sz,
+      isBoss: isBoss, isElite: isElite, tierSize: tierSize, tierName: tierName, visScale: visScale, cell: sz,
       shadowW: tierSize ? sz.w * 0.25 * Math.max(1, tierSize * 0.8) : (isBoss ? sz.w * 1.4 : sz.w * 0.5) * 0.5,
       barW: tierSize ? Math.max(isBoss ? sz.w * 1.5 : 60 * dScale, 48 * dScale * Math.min(tierSize, 3.2)) : (isBoss ? sz.w * 1.5 : (isElite ? 60 : 48) * dScale),
-      nameSize: Math.max(8, Math.round((isBoss ? 14 : 11) * dScale)),
-      statusSize: Math.max(8, Math.round(11 * dScale))
+      nameSize: nameSize, nameY: nameY,
+      statusSize: Math.max(8, Math.round(11 * dScale)),
+      statusY: Math.max((isBoss ? 32 : 28) * Math.max(0.7, dScale) + 4, nameY + Math.ceil(nameSize * 1.35) + 5)
     };
   }
   /* 與初次生成共用尺寸；視窗／全螢幕重排不重建本體，不重設動畫、朝向或死亡進度。 */
@@ -2119,15 +2122,15 @@ var BattleRenderer = (function () {
     ent.shadow.clear();
     ent.shadow.ellipse(0, 0, m.shadowW, m.shadowW * 0.32).fill({ color: 0x000000, alpha: 0.35 });
     ent.barW = m.barW; ent.hpShown = -1; ent.shieldShown = -1;
-    ent.nameText.style.fontSize = m.nameSize; ent.nameText.y = 8 + 6 * m.dScale;
-    ent.statusText.style.fontSize = m.statusSize; ent.statusText.y = (m.isBoss ? 32 : 28) * Math.max(0.7, m.dScale);
+    ent.nameText.style.fontSize = m.nameSize; ent.nameText.y = m.nameY;
+    ent.statusText.style.fontSize = m.statusSize; ent.statusText.y = m.statusY;
     if (ent.eliteMark) ent.eliteMark.y = -58 * m.visScale;
     if (ent.eliteDeco) ent.eliteDeco.baseScale = Math.abs(ent.body.scale.x);
     drawHpBar(ent); syncNpcRankGlow(ent);
   }
   function makeEnemy(data) {
     var m = enemyLayout(data);
-    var isBoss = m.isBoss, isElite = m.isElite, dScale = m.dScale, tierSize = m.tierSize, tierName = m.tierName, visScale = m.visScale;
+    var isBoss = m.isBoss, isElite = m.isElite, tierSize = m.tierSize, tierName = m.tierName, visScale = m.visScale;
 
     var root = new PIXI.Container();
     var sz = m.cell;
@@ -2179,29 +2182,26 @@ var BattleRenderer = (function () {
     hpBar.y = 7;
     view.addChild(hpBar);
 
-    /* 名條與狀態列同樣依密度縮放；格數多的時候不縮，字會糊成一片連在一起。
-       字級有下限 8px，再小就完全看不出寫什麼了。 */
-    var nameSize = m.nameSize;
-    var statusSize = m.statusSize;
+    /* 名條與狀態列依介面密度縮放，並保留最小可讀字級。 */
     var name = new PIXI.Text({
       text: enemyNameText(data),
       style: {
-        fontFamily: 'sans-serif', fontSize: nameSize, fontWeight: 'bold',
+        fontFamily: 'sans-serif', fontSize: m.nameSize, fontWeight: 'bold',
         fill: isBoss ? '#ffb3b3' : (tierName === 'elite_adv' ? '#ffe27a' : (isElite ? '#d9b3ff' : '#cfd6e4')),
         stroke: { color: '#000000', width: 3 }
       }
     });
     name.anchor.set(0.5, 0);
-    name.y = 8 + 6 * dScale;
+    name.y = m.nameY;
     name.alpha = 0.92;
     view.addChild(name);
 
     var status = new PIXI.Text({
       text: '',
-      style: { fontFamily: 'sans-serif', fontSize: statusSize, fill: '#ffffff', stroke: { color: '#000', width: 2 } }
+      style: { fontFamily: 'sans-serif', fontSize: m.statusSize, fill: '#ffffff', stroke: { color: '#000', width: 2 } }
     });
     status.anchor.set(0.5, 0);
-    status.y = (isBoss ? 32 : 28) * Math.max(0.7, dScale);
+    status.y = m.statusY;
     view.addChild(status);
 
     var hitBox = sheetName ? spriteHitBox(body) : null;
@@ -2251,12 +2251,6 @@ var BattleRenderer = (function () {
     return ent;
   }
 
-  function enemyNameText(data) {
-    var attr = typeof skill2CurrentEnemyAttr === 'function' ? skill2CurrentEnemyAttr(data) : data.attr;
-    var icon = attr && typeof ELEM_INFO !== 'undefined' && ELEM_INFO[attr] ? ELEM_INFO[attr].emoji : '';
-    return 'Lv.' + data.level + ' ' + icon + (data.name || '');
-  }
-
   function drawHpBar(ent) {
     ent.hpBar.visible = ent.state !== 'dying' && ent.state !== 'gone' && ent.data.hp > 0;
     if (!ent.hpBar.visible) return;
@@ -2282,7 +2276,7 @@ var BattleRenderer = (function () {
     if (ent.isBoss && S.bossBar) drawBossBar(ent);
   }
 
-  var BOSS_BAR_Y = 68; // 避開頂部任務快捷列（y: 8~42），讓 BOSS 標籤與血條完整顯示
+  var BOSS_BAR_Y = 74; // 避開頂部任務快捷列，為放大的 BOSS 標籤騰出空間
 
   function ensureBossBar(ent) {
     if (S.bossBar) return;
@@ -2291,12 +2285,12 @@ var BattleRenderer = (function () {
     var label = new PIXI.Text({
       text: '',
       style: {
-        fontFamily: 'sans-serif', fontSize: 15, fontWeight: 'bold',
+        fontFamily: 'sans-serif', fontSize: 19, fontWeight: 'bold',
         fill: '#ffd7d7', stroke: { color: '#000', width: 4 }
       }
     });
-    label.anchor.set(0.5, 0);
-    label.y = -22;
+    label.anchor.set(0.5, 1);
+    label.y = -3;
     /* 技能標籤列：BOSS 的專屬／隨機技能名（依屬性上色），擺在血條正下方（BOSS 頭頂不再放圖示列） */
     var tags = new PIXI.Container();
     tags.y = 21;
@@ -2319,7 +2313,7 @@ var BattleRenderer = (function () {
     bar.g.roundRect(-w / 2 - 2, -2, w + 4, h + 4, 4).fill({ color: 0x000000, alpha: 0.7 })
       .stroke({ color: 0x8b0000, width: 2, alpha: 0.9 });
     if (pct > 0) bar.g.roundRect(-w / 2, 0, w * pct, h, 3).fill(0xd9484f);
-    bar.label.text = '👑 Lv.' + d.level + ' ' + (d.name || 'BOSS') +
+    bar.label.text = '👑 ' + (d.name || 'BOSS') +
       '　' + fmtNum(Math.max(0, d.hp)) + ' / ' + fmtNum(d.maxHp);
     var list = (typeof BattleElite !== 'undefined' && BattleElite.skillTags) ? BattleElite.skillTags(d) : [];
     var sig = list.map(function (t) { return t.text + t.color; }).join('|');
@@ -2871,8 +2865,8 @@ var BattleRenderer = (function () {
         if (d.pos && isFinite(d.pos.x)) posTrack(ent, d.pos.x, d.pos.y);
       }
       drawHpBar(ent);
-      var nameTxt = enemyNameText(d);
-      if (ent.nameText.text !== nameTxt) ent.nameText.text = nameTxt;
+      var name = enemyNameText(d);
+      if (ent.nameText.text !== name) ent.nameText.text = name;
       var stTxt = statusTextOf(d);
       if (ent.statusText.text !== stTxt) ent.statusText.text = stTxt;
       if (!alive && ent.state !== 'dying' && ent.state !== 'gone') startDeath(ent, true);

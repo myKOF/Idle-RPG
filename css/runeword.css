@@ -6,13 +6,13 @@
 #tab-runes .rx-detail-toggle {
   margin-left: auto;
   height: 26px;
-  padding: 0 12px;
+  padding: 0 6px;
   border: 1px solid #2a2d34;
   border-radius: 999px;
   background: #121418;
   color: #a39d90;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--bs-button-small-size);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -46,7 +46,7 @@
   background: transparent;
   color: #a39d90;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--bs-button-size);
   cursor: pointer;
 }
 

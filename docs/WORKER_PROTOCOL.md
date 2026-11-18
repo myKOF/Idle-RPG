@@ -1,4 +1,6 @@
-# Worker 協議 v81
+# Worker 協議 v82
+
+v82（2026-11-19 離線波次）：`notice.key === 'offlineSummary'` 的 `data` 新增 `waves`（已結算戰鬥場次），`kills` 表示實際怪物隻數。單一怪物種類欄位 `elite` 由新版摘要移除，介面仍可顯示缺少 `waves` 的舊摘要。
 
 v81（2026-11-12 寶箱裝備等級與太古星）：`chest.open` 的 `k: 'equip'` 獎勵保留 `r`（品質）和 `n`（總件數），以 `items: [{ icon, level, ancientCount, n }]` 取代 `icons`。同品質、同圖示、同裝備等級及同太古條數可共用一筆，UI 按 `n` 逐件呈現。等級及太古條數在 Worker 產生裝備時取得，涵蓋直接拆解的裝備。發放與存檔格式維持。
 
@@ -73,7 +75,7 @@ v53（2026-10-17 寶石共鳴）：新增指令`gem.resonanceSocket {region,hole
 v52（2026-10-14 Esc全遊戲暫停）：新增主端訊息`MENU_PAUSE: menuPause {paused:bool}`，BOOT可攜帶`menuPaused`以維持Worker重啟時的菜單狀態。暫停整體loop與決定論loop，不改原combat paused；暫停時間不進catchup，既有欠帳保留，神鑄startedAt在恢復及暫停存檔時排除菜單時間。背景遊戲指令排隊，恢復後依序執行；save／settings／stats、面板與PING仍回應。Worker的分批timeout透過GameClock暫停，離線結算chunk也不繼續；主端同時暫停Pixi／DOM特效／遊戲計時器，WebGL以暫存單幀保持原畫面，恢復時釋放；設定返回菜單保持暫停，重啟先保存暫停快照再刷新。指令仍94條，存檔格式不變。
 
 v51（2026-10-14 Esc菜單）：新增`save.auto`（無參數，指令93→94），Worker從權威G產生auto_current快照，PERSIST.kind新增`autoNow`，ACK.result回傳persist token。主執行緒WorkerBridge.saveAutoNow()僅在該token的IndexedDB交易成功後resolve，寫入失敗／逾時reject，支援PERSIST完成早於ACK。不建立手動存檔、不要求資料夾，沿原自動存檔格式；此明確玩家操作不受測試模式的未要求自動寫入抑制。Esc離開必須先await成功，失敗不離開；定期資料夾同步沿原流程。
-> 協議版本：`WORKER_PROTOCOL_VERSION = 59`　最後更新：2026-10-21
+> 協議版本：`WORKER_PROTOCOL_VERSION = 82`　最後更新：2026-11-19
 
 v50（2026-10-08 BOSS 戰配置鎖）：新增共用判定 `bossFightBlocksCommand(name)`。`G.tower.active` 期間（含登場、暫停、結算未退出）既有換裝／換套、裝備強化／洗煉／附魔、寶石鑲卸與融合寶石、符文刻印／抹除、技能裝載與排序、技能降級／重置／超神進化切換、威能與潛力變更指令，均以既有錯誤封包 `{ok:false,error:'BOSS 戰中不可變更戰鬥配置'}` 拒絕，在解析物件與扣資源前守門。UI 共用同一判定並置灰入口；自動穿裝在戰中暫停。退出後恢復；純瀏覽、庫存素材合成、一般技能升級保留。指令仍 93 條，參數、快照、存檔格式不變。
 
@@ -319,9 +321,10 @@ v21 補 2 條、v23 補 1 條）。
 ```
 主：讀存檔資料夾 + IndexedDB 快取 → 取較新者（不 migrate）
 主 → boot { save, now, maxRunId }
-Worker：migrateSave → applyOfflineProgress → 收集公告
-Worker → booted { snapshot, offlineSummary, notices }
+Worker：migrateSave → 收集公告
+Worker → booted { snapshot, offlineSummary: null, notices }
 主：渲染、關閉 Loading
+Worker：分批執行 applyOfflineProgress → 送收益摘要與資源快照 → 自動存檔
 ```
 
 **主執行緒不得 migrate。** 遷移是 Worker 的職責；兩邊都做會讓一次性遷移跑兩次。
@@ -353,7 +356,7 @@ load 訊息：  主執行緒讀出存檔 → load { save }
 ### 分頁隱藏 / 離線結算（v9 改）
 
 **遊戲規則：分頁在背景＝仍在線上掛機，只有整個遊戲被關掉才算離線。**
-所以隱藏分頁一律維持即時模擬，`applyOfflineProgress` **只在 `boot` 時執行**。
+隱藏分頁維持即時模擬。正式開機與手動讀檔會在載入該存檔後分批執行 `applyOfflineProgress`，完成前避免把中途收益寫進檔案。
 
 `visibility` 訊息剩下的唯一作用是「切走時落地一次 `shutdown`」，讓分頁後來被瀏覽器丟棄時至少有個新的存檔點。
 
@@ -410,6 +413,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
 
 | 版本 | 日期 | 變更 |
 | :--- | :--- | :--- |
+| 82 | 2026-11-19 | 離線摘要新增 `waves`，分別顯示以時間換算的場次與依野外權重抽得的擊殺隻數。 |
 | 58 | 2026-10-18 | 符文資訊：gems.runewordSeen 擴充為成功成形或封魔塔通關永久解鎖，沿用既有欄位結構與指令。 |
 | 50 | 2026-10-08 | BOSS 戰期間共用配置變更限制；既有指令回錯誤，指令數與封包格式不變。 |
 | 49 | 2026-10-08 | 符文刻印／抹除：rune.unsocket 改為 rune.erase（扣碎片與附魔精華、符文不退還），指令數不變。 |
@@ -471,7 +475,7 @@ Worker 真正的收益是：主執行緒永不被模擬阻塞、批次操作不�
    但同一個模擬步驟仍必須合併，禁止每則事件一次 `postMessage`。
 5. **Snapshot 分層，禁止每 200 ms 傳送整份 `G`。** 詳見第 3 節。
 6. **背景＝在線掛機，關掉遊戲才算離線。**（v9 改，取代原本的「保留背景休眠語意」）
-   隱藏分頁維持即時模擬，`applyOfflineProgress` 只在 `boot` 執行。瀏覽器對背景計時器
+   隱藏分頁維持即時模擬，`applyOfflineProgress` 在載入存檔時執行。瀏覽器對背景計時器
    的降頻用「欠帳 + CPU 預算分次補完」吸收，時間不得截斷丟棄（見第 6 節）。
    這條是遊戲規則，不是效能取捨——要改請先問使用者。
 7. **同一時間只有一個分頁能跑模擬。**（v8）「Worker 是唯一權威」只在單一分頁內成立，

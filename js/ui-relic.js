@@ -37,6 +37,7 @@ function relicCardHTML(relic, store) {
   var pending = relicUiPending(relic.id), ready = owned && !maxed && cur.n >= cost;
   var cls = 'rl-card' + (owned ? ' is-owned' : ' is-locked') + (maxed ? ' is-max' : '') + (ready ? ' is-ready' : '') + (selected ? ' is-selected' : '');
   var h = '<article class="' + cls + '" data-relic-id="' + relic.id + '">';
+  h += '<span class="rl-niche" aria-hidden="true"></span>';
   h += '<button type="button" class="rl-select" data-relic-select="' + relic.id + '" aria-expanded="' + selected + '" aria-controls="rl-actions-' + relic.id + '" data-tt-title="' + relicUiEsc(relicUiEsc(relic.name)) + '" data-tt-desc="' + relicUiEsc(relicTooltipDesc(relic, store)) + '">';
   h += relicIconHTML(relic) + '<span class="rl-name">' + relicUiEsc(relic.name) + '</span>';
   h += '<span class="rl-lv">' + relicUiEsc(owned ? STR(2463, cur.lv, max) : STR(2476, max)) + '</span></button>';

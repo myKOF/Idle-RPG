@@ -1,5 +1,5 @@
 'use strict';
-/* 狀態光環貼合本體（playback.fitBody）：罩子大小與中心取自圖像目前可見範圍，而不是體型倍率與腳底。 */
+/* 狀態光環貼合本體（playback.fitBody）：罩子生成時取樣可見輪廓。 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -59,31 +59,59 @@ test('FIT-3 未開 fitBody 的光環不受影響；en-gold-dome 已開啟', () =
   assert.equal(Core.validatePreset ? Core.validatePreset(dome).ok : true, true);
 });
 
-test('NPC 護盾狀態帶 Worker 半徑時仍逐幀貼合，離場即收掉', () => {
+test('NPC 護罩生成時貼合，姿勢與狀態半徑更新時維持尺寸和相對位置', () => {
   const c = loadEliteEnv();
   const enemy = makeElite(c, ['e_shield']);
   c.eliteStatusOn(enemy, 'eInvuln', 3);
   const radius = c.statusEntries(enemy).find(s => s.sid === 'eInvuln').vfxR;
   assert.ok(radius > 0);
-  let box = { w: 80, h: 100, cx: 10, cy: 150 };
-  withAura({ fitBody: true }, () => box, (rt, node, foot) => {
-    rt.syncStatuses([{ key: enemy.floatSel, sids: ['eInvuln'], radii: { eInvuln: radius } }]);
-    for (const pose of [box, { w: 50, h: 80, cx: -14, cy: 182 }]) {
-      box = pose;
-      rt.update(.016);
+  const initial = { w: 80, h: 100, cx: 10, cy: 150 };
+  const next = { w: 50, h: 80, cx: -14, cy: 182 };
+  let box = initial, reads = 0;
+  const measure = () => { reads++; return box; };
+  withAura({ fitBody: true }, measure, (rt, node, foot) => {
+    function sync(r) {
+      rt.syncStatuses([{ key: enemy.floatSel, sids: ['eInvuln'], radii: { eInvuln: r } }]);
+    }
+    function assertFit(expected) {
       const t = node().t;
-      close(t.scaleX * 60, box.w * 1.15);
-      close(t.scaleY * 60, box.h * 1.15);
-      close(t.x - foot.x, box.cx);
-      close(t.y - foot.y - t.scaleY * 30, -box.cy);
+      close(t.scaleX * 60, expected.w * 1.15);
+      close(t.scaleY * 60, expected.h * 1.15);
+      close(t.x - foot.x, expected.cx);
+      close(t.y - foot.y - t.scaleY * 30, -expected.cy);
       assert.equal(t.sortY, foot.y);
     }
-    box = null;
-    rt.update(.016);
-    close(node().t.y, foot.y);
-    close(node().t.scaleX * 60, radius * 2);
+    sync(radius);
+    for (const pose of [next, null]) {
+      box = pose;
+      foot.x += 29;
+      foot.y -= 31;
+      sync(radius * 2);
+      rt.update(.016);
+      assertFit(initial);
+    }
+    assert.equal(reads, 1);
     rt.syncStatuses([]);
     assert.equal(node(), undefined);
+    box = next;
+    sync(radius);
+    rt.update(.016);
+    assertFit(next);
+    assert.equal(reads, 2);
+  });
+});
+
+test('生成時量不到本體的護罩維持備援尺寸', () => {
+  let box = null;
+  withAura({ fitBody: true }, () => box, (rt, node, foot) => {
+    rt.syncStatuses([{ key: 'e1', sids: ['eInvuln'], radii: { eInvuln: 32 } }]);
+    box = { w: 80, h: 100, cx: 10, cy: 150 };
+    rt.syncStatuses([{ key: 'e1', sids: ['eInvuln'], radii: { eInvuln: 60 } }]);
+    rt.update(.1);
+    close(node().t.scaleX * 60, 64);
+    close(node().t.scaleY * 60, 64);
+    close(node().t.x, foot.x);
+    close(node().t.y, foot.y);
   });
 });
 

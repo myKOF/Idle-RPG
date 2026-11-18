@@ -16,6 +16,8 @@ var SFX_FILES = {
    高攻速時每秒會有很多下，所以有兩道限流，超過直接丟掉、不排隊補播（補播只會讓聲音黏成一團）：
    minGapMs＝同一群組兩次發聲的最短間隔；maxVoices＝同一群組同時最多幾個聲音還在播。 */
 var SFX_GROUPS = {
+  // 震懾清怪的經驗可能緊接著升級，同一段提示音播完前不再疊播。
+  levelUp: { names: ['levelUp'], minGapMs: 0, maxVoices: 1 },
   basicHit: { names: ['hitSlashA', 'hitSlashB', 'hitSword'], minGapMs: 90, maxVoices: 3 }
 };
 

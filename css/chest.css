@@ -69,6 +69,7 @@
   width: min(100%, 118px);
   height: 100%;
   object-fit: contain;
+  transform: scaleX(.88);
 }
 #tab-newforge .nfc-card.is-locked .nfc-art-chest {
   filter: grayscale(1) brightness(.46);

@@ -1311,6 +1311,11 @@ textarea#save-io {
   margin-top: 4px;
 }
 
+#tb-name {
+  font-size: calc(1em + 4px);
+  white-space: nowrap;
+}
+
 .cb-name.elite {
   color: var(--warn);
 }
@@ -2974,6 +2979,44 @@ textarea#save-io {
 
 .forge-slot .ancient-star-badge {
   top: 2px;
+}
+
+/* 裝備欄與背包共用品質色；窄格縮短菱形間距，尾顆仍保留完整寬度。 */
+:is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge {
+  inset: 3px auto auto 4px;
+  transform: none;
+  display: flex;
+  justify-content: flex-start;
+  max-width: calc(100% - 8px);
+  height: 9px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.item-cell[data-slot]:has(> :is(.ic-lock, .ic-up)) > .ancient-star-badge {
+  top: 20px;
+}
+
+:is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge > .ancient-star {
+  width: 9px;
+  min-width: 0;
+  height: 9px;
+  margin: 0;
+  font-size: 0;
+}
+
+:is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge > .ancient-star:last-child {
+  flex-shrink: 0;
+}
+
+:is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge > .ancient-star::after {
+  inset: 1.5px auto auto 1.5px;
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--item-frame-color);
+  background: none;
+  transform: rotate(45deg);
 }
 
 .ic-up {
@@ -9909,7 +9952,8 @@ textarea:disabled,
    BOSS：深紫名稱、深紫血條＋高階外框、專屬圖標
    階級圖示與名稱由 js/ui.js 的 ENEMY_RANK_ICONS / enemyRankOf 產生。 */
 .enemy-rank-icon {
-  margin-right: 2px;
+  font-size: max(calc(12px * var(--ec-scale)), 9px);
+  margin-bottom: calc(3px * var(--ec-scale));
 }
 
 .enemy-card.enemy-rank-normal .enemy-name {
@@ -9956,14 +10000,6 @@ textarea:disabled,
   background: linear-gradient(180deg, #7e22ce, #2e1065);
 }
 
-/* 敵人卡片內的等級、頭像、名稱、血條與狀態列都以 --ec-scale 統一縮放；
-   max() 只負責避免小螢幕時字體縮到不可讀。 */
-.enemy-card .cb-level {
-  color: #f5b942;
-  font-size: max(calc(12px * var(--ec-scale)), 9px);
-  margin-bottom: calc(3px * var(--ec-scale));
-}
-
 .enemy-card .cb-icon {
   /* 敵人圖片基本尺寸 72px；實際尺寸會乘上 --ec-scale。 */
   width: calc(72px * var(--ec-scale));
@@ -9985,7 +10021,7 @@ textarea:disabled,
   text-overflow: clip;
   white-space: nowrap;
   color: var(--text);
-  font-size: max(calc(15px * var(--ec-scale)), 6px);
+  font-size: calc(max(15px * var(--ec-scale), 6px) + 4px);
   font-weight: bold;
   margin-top: calc(4px * var(--ec-scale));
 }

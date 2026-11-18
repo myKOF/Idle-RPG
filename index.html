@@ -9,25 +9,25 @@
   <link rel="icon" href="images/icon_avatar.png" type="image/png">
   <link rel="preload" as="image" href="images/ui/gem-resonance/hex-backplate.png" fetchpriority="low">
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
-  <link rel="stylesheet" href="css/style.css?v=20261118-width-canvas-topbar">
+  <link rel="stylesheet" href="css/style.css?v=20261118-battle-npc-attribute">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=20261118-display-v1">
-  <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
-  <link rel="stylesheet" href="css/brass-and-slate.css?v=20261118-equip-ui-v1">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=20261118-tower-boss-portraits">
+  <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.5">
+  <link rel="stylesheet" href="css/brass-and-slate.css?v=20261118-inventory-slot-dim">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
-  <link rel="stylesheet" href="css/runeword.css?v=20261117-fixed-canvas-v1">
-  <link rel="stylesheet" href="css/relic.css?v=20261117-fixed-canvas-v1">
-  <link rel="stylesheet" href="css/chest.css?v=20261117-width-canvas-v1">
-  <link rel="stylesheet" href="css/gems.css?v=20261117-fixed-canvas-v1">
-  <link rel="stylesheet" href="css/dialogs.css?v=20261117-fixed-canvas-v1">
-  <link rel="stylesheet" href="css/achievements.css?v=20261117-fixed-canvas-v1">
-  <link rel="stylesheet" href="css/world-map.css?v=20261117-fixed-canvas-v1">
-  <link rel="stylesheet" href="css/divine-forge.css?v=20261117-fixed-canvas-v1">
-  <link rel="stylesheet" href="css/equipment-chaos.css?v=1.0.6">
-  <link rel="stylesheet" href="css/equipment-tooltip.css?v=20261117-fixed-canvas-v1">
-  <link rel="stylesheet" href="css/intro.css?v=20261118-caption-file">
-  <link rel="stylesheet" href="css/start-menu.css?v=20261117-fixed-canvas-v1">
-  <link rel="stylesheet" href="css/quest-guide.css?v=1">
+  <link rel="stylesheet" href="css/runeword.css?v=20261118-ui-palette">
+  <link rel="stylesheet" href="css/relic.css?v=20261118-relic-temple-v4">
+  <link rel="stylesheet" href="css/chest.css?v=20261119-art-proportions">
+  <link rel="stylesheet" href="css/gems.css?v=20261118-ui-palette">
+  <link rel="stylesheet" href="css/dialogs.css?v=20261118-ui-palette">
+  <link rel="stylesheet" href="css/achievements.css?v=20261118-ui-palette">
+  <link rel="stylesheet" href="css/world-map.css?v=20261118-ui-palette">
+  <link rel="stylesheet" href="css/divine-forge.css?v=20261118-ui-palette">
+  <link rel="stylesheet" href="css/equipment-chaos.css?v=1.0.7">
+  <link rel="stylesheet" href="css/equipment-tooltip.css?v=20261118-tooltip-quality-color">
+  <link rel="stylesheet" href="css/intro.css?v=20261118-intro-width">
+  <link rel="stylesheet" href="css/start-menu.css?v=20261118-ui-palette">
+  <link rel="stylesheet" href="css/quest-guide.css?v=20261119-develop-merge-1">
 </head>
 
 <body class="start-menu-pending">
@@ -170,6 +170,7 @@
               <span class="sec-title" style="display: flex; align-items: center; gap: 8px;">
                 <span data-str="1068"></span> <span id="inv-count">0/60</span>
                 <button id="inv-expand" class="btn sm" data-str-attr="data-tt-title:1069;data-tt-desc:1070"><span data-str="1071"></span><img src="images/icon_gold.png" class="res-icon">)</button>
+                <span id="inv-full-notice" role="status" data-str="2567" hidden></span>
               </span>
               <div style="display: flex; gap: 6px; align-items: center;">
                 <input type="text" id="inv-keyword-filter" class="input sm" style="display: none; background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; font-size: 12px; height: 25px; width: 85px; outline: none; white-space: nowrap;" data-str-attr="placeholder:1072;data-tt-title:1072;data-tt-desc:1073">
@@ -211,7 +212,7 @@
                 </div>
                 <button id="inv-sort" class="btn sm" data-str="204"></button>
                 <div style="position: relative; display: inline-block;" id="salvage-settings-container">
-                  <button id="btn-salvage-settings" class="btn sm warn" data-str="1096"></button>
+                  <button id="btn-salvage-settings" class="btn sm" data-str="1096"></button>
                   <div id="salvage-settings-panel"
                     style="display: none; position: absolute; top: 100%; right: 0; background: #0b0f16; border: 1px solid #1b2230; padding: 12px; border-radius: 8px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.8); width: max-content; min-width: 250px; margin-top: 5px; flex-direction: column; gap: 10px;">
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #94a3b8; width: 100%;">
@@ -556,7 +557,6 @@
               <div class="combatant boss">
                 <div id="btn-boss-tip" class="info-btn">!</div>
                 <div class="float-layer" id="tb-float"></div>
-                <div class="cb-level" id="tb-level"></div>
                 <div id="tb-emoji"></div>
                 <div class="cb-name" id="tb-name">BOSS</div>
                 <div class="hp-bar">
@@ -792,11 +792,11 @@
       <button id="game-menu-close" class="system-close" type="button" data-str-attr="aria-label:1944">×</button>
       <h2 id="game-menu-title" data-str="1945"></h2>
       <div class="system-menu-actions">
+        <button id="game-menu-save" type="button" data-str="1948"></button>
+        <button id="game-menu-settings" type="button" data-str="1949"></button>
+        <button id="game-menu-achv" type="button" data-str="2228"></button>
         <button id="game-menu-reload" type="button" data-str="1946"></button>
         <button id="game-menu-exit" type="button" data-str="1947"></button>
-        <button id="game-menu-save" type="button" data-str="1948"></button>
-        <button id="game-menu-achv" type="button" data-str="2228"></button>
-        <button id="game-menu-settings" type="button" data-str="1949"></button>
         <button id="game-menu-ai-key" type="button" style="display:none; border:1px dashed #0284c7; color:#38bdf8;" data-str="1950"></button>
       </div>
       <div id="game-menu-status" class="system-menu-status" role="status" aria-live="polite"></div>
@@ -1252,7 +1252,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=80939d23"></script>
+  <script src="js/strings_data.js?v=ad07f5c0"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=20261118-display-v1"></script>
   <script src="js/game-edition.js?v=1.0.0"></script>
@@ -1265,7 +1265,7 @@
   <script src="js/relic.js?v=20261112-chest-v1"></script>
   <script src="js/chest_data.js?v=20261112-sync-chest-v3"></script>
   <script src="js/chest.js?v=20261118-demo-edition"></script>
-  <script src="js/formula.js?v=20261113-reroll-r8-v1"></script>
+  <script src="js/formula.js?v=20261119-develop-merge-1"></script>
   <script src="js/battle-terrain.js?v=1.0.6"></script>
   <script src="js/battlefield.js?v=20261109-treant-audio-sync-a54d6904"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
@@ -1285,7 +1285,7 @@
   <script src="js/vfx-celebration.js?v=1.0.0"></script>
   <script src="js/vfx-core.js?v=20261105-celebration-v1"></script>
   <script src="js/vfx-pixi-backend.js?v=20261105-celebration-v1"></script>
-  <script src="js/vfx-runtime.js?v=20261117-npc-shield-v1"></script>
+  <script src="js/vfx-runtime.js?v=20261119-develop-merge-1"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
   <script src="js/vfx-tower.js?v=1.0.3"></script>
   <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。
@@ -1297,11 +1297,11 @@
   <script src="js/battle-arena.js?v=20261108-tower-bounds-gait"></script>
   <script src="js/battle-elite.js?v=20261102-black-outlines"></script>
   <script src="js/boss-oni-fx.js?v=20261114-oni-relic-sync-v1"></script>
-  <script src="js/battle-renderer.js?v=20261118-display-v1"></script>
+  <script src="js/battle-renderer.js?v=20261118-battle-npc-attribute"></script>
   <script src="js/sfx-synth.js?v=20261116-vacuum-twin"></script>
-  <script src="js/sfx.js?v=20261112-parchment-audio-v1"></script>
+  <script src="js/sfx.js?v=20261118-levelup-audio"></script>
   <script src="js/stats.js?v=20261109-mystery-merchant"></script>
-  <script src="js/item.js?v=20261113-reroll-count-v1"></script>
+  <script src="js/item.js?v=20261119-develop-merge-1"></script>
   <script src="js/gem_resonance.js?v=1.0.10"></script>
   <script src="js/runeword.js?v=20261109-relics"></script>
   <script src="js/skills.js?v=20261106-skill-sfx"></script>
@@ -1313,20 +1313,20 @@
   <script src="js/save-schema.js?v=1.0.0"></script>
   <script src="js/player.js?v=20261118-demo-edition"></script>
   <script src="js/system-unlocks.js?v=20261103-unlock-hints"></script>
-  <script src="js/combat.js?v=20261118-demo-edition"></script>
+  <script src="js/combat.js?v=20261119-develop-merge-1"></script>
   <script src="js/tower.js?v=20261118-demo-edition"></script>
   <!-- 桌面版存檔資料夾的把手（只有 Electron 的 ApexHost 存在時才生效，網頁版為 null）；save.js 的 idbGetDir 會用到 -->
   <script src="js/desktop-save-dir.js?v=1.0.1"></script>
-  <script src="js/save.js?v=20261118-demo-edition"></script>
+  <script src="js/save.js?v=20261119-develop-merge-1"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261118-opening-music-handoff"></script>
-  <script src="js/ui.js?v=20261118-quest-guide-develop"></script>
+  <script src="js/ui.js?v=20261119-develop-merge-1"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=20261118-quest-guide"></script>
-  <script src="js/quest-guide.js?v=1"></script>
+  <script src="js/quest-guide.js?v=20261119-develop-merge-1"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
-  <script src="js/ui-relic.js?v=20261117-fixed-canvas-v1"></script>
-  <script src="js/ui-chest.js?v=20261117-fixed-canvas-v1"></script>
+  <script src="js/ui-relic.js?v=20261118-relic-temple-v2"></script>
+  <script src="js/ui-chest.js?v=20261118-equipment-quality-frames"></script>
   <script src="js/ui-achievements.js?v=20261106-start-menu-v2"></script>
   <script src="js/ui-gem-resonance.js?v=1.0.22"></script>
   <script src="js/ui-gem-workshop.js?v=1.0.3"></script>
@@ -1338,7 +1338,7 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- ?? Worker ???????? main.js ????????? -->
-  <script src="js/worker/protocol.js?v=20261112-sync-chest-v3"></script>
+  <script src="js/worker/protocol.js?v=20261119-develop-merge-1"></script>
   <script src="js/storage.js?v=1.0.3"></script>
   <script src="js/save_origin.js?v=20261117-fixed-canvas-save-schema-v1"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
@@ -1347,8 +1347,8 @@
   <script src="js/intro-motion.js?v=1.0.0"></script>
   <script src="js/intro-scene.js?v=20261117-fixed-canvas-v1"></script>
   <script src="js/intro-audio.js?v=20261118-finale-fade"></script>
-  <script src="js/intro-player.js?v=20261118-finale-fade"></script>
-  <script src="js/bridge.js?v=20261118-claude-codex-integration-v1"></script>
+  <script src="js/intro-player.js?v=20261118-intro-width"></script>
+  <script src="js/bridge.js?v=20261119-develop-merge-1"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -1357,7 +1357,7 @@
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
   <script src="js/lagprobe.js?v=20261111-merchant-layout"></script>
-  <script src="js/display-settings-ui.js?v=20261118-display-v1"></script>
+  <script src="js/display-settings-ui.js?v=20261118-topbar-restore"></script>
   <script src="js/game-menu.js?v=20261118-display-v1"></script>
   <script src="js/start-menu-background.js?v=1.0.13"></script>
   <script src="js/start-menu.js?v=20261118-opening-animation"></script>

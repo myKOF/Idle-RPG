@@ -7,59 +7,51 @@
 .quest-guide-bubble {
   position: absolute;
   right: 88px;
-  top: -34px;
+  top: -24px;
   width: 260px;
   margin: 0;
-  padding: 16px 20px;
-  border: 2px solid #78ac59;
-  border-radius: 19px;
-  background: linear-gradient(155deg, #badca9, #93c17f);
-  box-shadow: 0 6px 18px #0008;
-  color: #142115;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.65;
+  padding: 12px 15px;
+  border: 3px solid transparent;
+  border-radius: 4px;
+  background: var(--bs-surface) padding-box,
+    var(--dialog-frame, linear-gradient(135deg, var(--bs-gold), var(--bs-brass))) border-box;
+  box-shadow: var(--bs-frame-shadow), 0 6px 18px #0008;
+  color: var(--bs-text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.6;
   box-sizing: border-box;
 }
 
 .quest-guide-bubble::after {
   content: '';
   position: absolute;
-  left: 100%;
-  top: 22px;
-  border: 12px solid transparent;
-  border-left: 18px solid #9ec98a;
+  right: -9px;
+  top: 14px;
+  width: 13px;
+  height: 13px;
+  border-top: 2px solid var(--bs-brass);
+  border-right: 2px solid var(--bs-brass);
+  background: var(--bs-slate);
+  transform: rotate(45deg);
 }
 
 .quest-guide-dagger {
   position: absolute;
-  right: 9px;
+  right: 13px;
   top: -15px;
   width: 65px;
   height: 30px;
-  animation: quest-guide-dagger 1.25s ease-in-out infinite alternate;
-}
-
-.quest-guide-dagger::before,
-.quest-guide-dagger::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
+  --quest-dagger-travel: 8px;
+  --quest-dagger-half-cycle: 740ms;
+  animation: quest-guide-dagger var(--quest-dagger-half-cycle) ease-in-out infinite alternate;
 }
 
 .quest-guide-dagger::before {
-  left: 26%;
-  right: 0;
-  background: linear-gradient(#d48f21 27%, #ffe175 48%, #fff3b2 51%, #d99524 68%);
-  clip-path: polygon(0 33%, 27% 34%, 100% 50%, 27% 66%, 0 67%);
-}
-
-.quest-guide-dagger::after {
-  left: 0;
-  width: 37%;
-  background: linear-gradient(110deg, #a76114, #ffe28a 82%, #b47821);
-  clip-path: polygon(0 38%, 17% 36%, 20% 41%, 67% 44%, 81% 30%, 70% 18%, 85% 10%, 100% 26%, 92% 50%, 100% 74%, 85% 90%, 70% 82%, 81% 70%, 67% 56%, 20% 59%, 17% 64%, 0 62%);
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../images/ui/quest-guide-dagger.png?v=1') center / contain no-repeat;
 }
 
 #quest-guide.quest-guide-below .quest-guide-dagger {
@@ -75,35 +67,69 @@
 }
 
 #quest-guide.quest-guide-below .quest-guide-bubble::after {
-  left: calc(50% - 12px);
-  top: -29px;
-  border: 12px solid transparent;
-  border-bottom: 17px solid #b0d49e;
+  left: calc(50% - 7px);
+  right: auto;
+  top: -9px;
+  transform: rotate(-45deg);
 }
 
-#quest-bar.quest-guide-intro-target, .quest-guide-highlight {
+#quest-bar.quest-guide-intro-target {
   outline: 2px solid #ffde5a;
   outline-offset: 2px;
 }
 
-.quest-guide-highlight {
-  animation: quest-guide-pulse 850ms ease-in-out infinite alternate;
+@property --quest-guide-light {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 64%;
+}
+
+/* 直接照亮按鈕底色及輪廓，保留原有尺寸與文字對比。 */
+#ui-stage #ui-shell :is(.quest-guide-highlight:not(.nf-qchip), .nf-qchip.quest-guide-highlight > span) {
+  --quest-guide-light-low: 14%;
+  --quest-guide-light-high: 100%;
+  --quest-guide-button-edge: color-mix(in srgb, #b48742, #ffec8b var(--quest-guide-light));
+  background: linear-gradient(165deg,
+    color-mix(in srgb, #c39a54, #fff2a3 var(--quest-guide-light)),
+    color-mix(in srgb, #9b6b2d, #ffd04d var(--quest-guide-light))) !important;
+  color: #21160d !important;
+  border-color: var(--quest-guide-button-edge) !important;
+  text-shadow: none !important;
+  box-shadow:
+    inset 0 0 0 1px #fff1aa91,
+    inset 0 0 10px color-mix(in srgb, transparent, #fff9cf var(--quest-guide-light)),
+    0 0 15px color-mix(in srgb, transparent, #ffce54dc var(--quest-guide-light)) !important;
+  transition: none;
+  animation: quest-guide-pulse 1.32s ease-in-out infinite;
 }
 
 @keyframes quest-guide-dagger {
-  from { transform: translateX(-5px); filter: drop-shadow(0 0 2px #ffb800); }
-  to { transform: translateX(5px); filter: drop-shadow(0 0 8px #ffdc53); }
+  from {
+    translate: calc(-1 * var(--quest-dagger-travel)) 0;
+    filter: sepia(.32) saturate(1.5) brightness(1.3) drop-shadow(0 0 2px #ffc4669c);
+  }
+  to {
+    translate: var(--quest-dagger-travel) 0;
+    filter: sepia(.54) saturate(1.8) brightness(1.7) drop-shadow(0 0 3px #ffe277)
+      drop-shadow(0 0 7px #ffb526c9);
+  }
 }
 
 @keyframes quest-guide-pulse {
-  from { outline-color: #c9983f; }
-  to { outline-color: #fff05e; }
+  0%, 100% { --quest-guide-light: var(--quest-guide-light-low); }
+  48% { --quest-guide-light: var(--quest-guide-light-high); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .quest-guide-dagger,
-  .quest-guide-highlight { animation: none; }
-  .quest-guide-dagger { filter: drop-shadow(0 0 5px #ffdc53); }
+  .quest-guide-dagger {
+    --quest-dagger-travel: 4px;
+    --quest-dagger-half-cycle: 1100ms;
+  }
+  #ui-stage #ui-shell :is(.quest-guide-highlight:not(.nf-qchip), .nf-qchip.quest-guide-highlight > span) {
+    --quest-guide-light-low: 38%;
+    --quest-guide-light-high: 91%;
+    animation-duration: 1.85s;
+  }
 }
 
 .quest-row {

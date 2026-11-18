@@ -4,11 +4,12 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 var DisplaySettingsUI = (function () {
   var host, state, busy = false, failed = false;
   function el(id) { return document.getElementById(id); }
+  function currentMode() { return state ? state.mode : (document.fullscreenElement ? 'fullscreen' : 'windowed'); }
 
   function paint() {
     var pane = el('settings-pane-display');
     if (!pane) return;
-    var mode = state ? state.mode : (document.fullscreenElement ? 'fullscreen' : 'windowed');
+    var mode = currentMode();
     pane.querySelectorAll('[name="display-mode"]').forEach(function (radio) {
       radio.checked = radio.value === mode;
       radio.disabled = busy || (host ? !state : radio.value === 'borderless' ||
@@ -69,6 +70,15 @@ var DisplaySettingsUI = (function () {
     } else {
       document.addEventListener('fullscreenchange', paint);
       paint();
+    }
+    var topbar = el('topbar'), resources = el('res-bar');
+    var brand = topbar && topbar.querySelector('.brand');
+    if (brand && resources) {
+      topbar.addEventListener('dblclick', function (event) {
+        if (event.button !== 0 || event.target !== topbar || currentMode() === 'windowed') return;
+        if (event.clientX < brand.getBoundingClientRect().right || event.clientX >= resources.getBoundingClientRect().left) return;
+        run(function () { return setMode('windowed'); });
+      });
     }
     pane.addEventListener('change', function (event) {
       var input = event.target;

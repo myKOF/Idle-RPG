@@ -140,7 +140,7 @@ var IntroPlayer = (function () {
 
   function buildVideo(c, src) {
     var video = document.createElement('video');
-    video.className = 'intro-layer intro-place-full intro-image-cinema';
+    video.className = 'intro-layer intro-video intro-image-cinema';
     video.playsInline = true;
     video.muted = true;
     video.addEventListener('ended', function () { if (!c.skipping) finish(c, 'end'); });

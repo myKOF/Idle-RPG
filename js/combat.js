@@ -312,26 +312,25 @@ function spawnFieldMonster(append) {
     if (FIELD.mapComplete) return [];
     if (!append) FIELD._waveClearPending = false;
     var s = G.stage.current;
+    var zone = G.stage.zone || 'desert';
     /* 野外 BOSS 規則 → formula.js §4（優先於菁英）；每個 BOSS 只能打一次，
        該關通關後 BOSS 不再出現（isFieldBossDefeated → data.js），退回菁英規則。 */
-    var boss = isFieldBossStage(s) && !isFieldBossDefeated(G.stage.zone, s);
+    var boss = isFieldBossStage(s) && !isFieldBossDefeated(zone, s);
     var eliteStage = !boss && isEliteStage(s); // 菁英規則 → formula.js §4（打過的 BOSS 階由此接手）
     /* 菁英群：菁英關每一波都是菁英群；普通關每一波有一定機率改成菁英群。
        參數與擲骰 → data.js ELITE_GROUP／formula.js planEliteWave；
        詞條引擎（js/elite.js，只在 Worker 載入）沒載入的環境（部分單元測試）維持原本的單隻菁英。 */
-    if (!boss && typeof eliteEquip === 'function' && typeof planEliteWave === 'function' &&
-        typeof ELITE_GROUP !== 'undefined') {
-        var eliteWave = eliteStage || chance(eliteNormalChanceFor(s, G.stage.zone || 'desert'));
-        if (eliteWave) {
-            var wave = spawnEliteWave(append, eliteStage);
-            if (wave) return wave;
-        }
+    var rank = rollFieldWaveRank(s, zone, boss, typeof eliteEquip === 'function' && typeof ELITE_GROUP !== 'undefined');
+    if (rank === 'eliteGroup') {
+        var wave = spawnEliteWave(append, eliteStage);
+        if (wave) return wave;
+        rank = eliteStage ? 'elite' : 'normal';
     }
     var elite = eliteStage;
     var base = monsterStatsFor(s, elite, boss);
     var zn = currentZoneDef();
     // 數量依敵種各自擲骰（小怪／菁英／BOSS 三張權重表 → data.js）
-    var count = rollFieldEnemyCount(boss ? 'boss' : (elite ? 'elite' : 'normal'), s, G.stage.zone || 'desert');
+    var count = rollFieldEnemyCount(rank, s, zone);
     /* 串流補波：一次最多只能生「棋盤剩幾格」那麼多隻，超過的在配格時會被丟掉，
        白白吃掉浮字序號與掉落擲骰。屍體不佔格（它們只是還在播淡出）。 */
     var standing = append ? liveFieldEnemies() : [];
@@ -446,12 +445,11 @@ function tickFieldEncounters() {
    菁英＝FIELD_ELITE；高級菁英＝ELITE_GROUP.adv*（參數表「高級菁英倍率」）。
    makeFieldEnemy 吃的是「相對 base 的額外倍率」，而 eliteBase 已經含菁英倍率，所以這裡換算成比例。 */
 function eliteAdvMults() {
-    var f = (typeof FIELD_ELITE !== 'undefined' && FIELD_ELITE) ? FIELD_ELITE : { hpMult: 4, atkMult: 2, rewardMult: 2 };
+    var f = FIELD_ELITE;
     var g = ELITE_GROUP;
     return {
         hp: (Number(g.advHp) > 0 ? Number(g.advHp) : f.hpMult) / (f.hpMult || 1),
-        atk: (Number(g.advAtk) > 0 ? Number(g.advAtk) : f.atkMult) / (f.atkMult || 1),
-        reward: (Number(g.advReward) > 0 ? Number(g.advReward) : f.rewardMult) / (f.rewardMult || 1)
+        atk: (Number(g.advAtk) > 0 ? Number(g.advAtk) : f.atkMult) / (f.atkMult || 1)
     };
 }
 /* 替一隻已建好的敵人配技能與體型（技能由 NPC 表決定 → js/elite.js eliteRollSkills）。
@@ -489,27 +487,26 @@ function spawnEliteWave(append, eliteStage, encounter) {
         room = encounter ? free : Math.min(fieldMaxLiveEnemiesFor() - fieldWavePopulation(standing), free);
         if (room < 1) return [];
     }
-    var leadersCfg = Math.max(1, Math.floor(Number(ELITE_GROUP.leaders) || 1));
-    var advPct = Array.isArray(ELITE_GROUP.advChance) ? Number(ELITE_GROUP.advChance[eliteStage ? 1 : 0]) || 0 : 0;
     var adv = eliteAdvMults();
     var enemies = [];
     var summary = [];
     for (var gi = 0; gi < plan.length; gi++) {
         var g = plan[gi];
         var gid = ++FIELD_ELITE_GROUP_SEQ;
-        var leaders = g.pure ? g.size : Math.min(g.size, leadersCfg);
+        var leaders = eliteGroupLeaderCount(g);
         var enterCd = FIELD_ENEMY_ENTER_DELAY + gi * FIELD_ENEMY_ENTER_STAGGER * 2;
         var shown = [];   // 這一群實際帶的技能，給戰鬥日誌用
         var advCount = 0;
         for (var k = 0; k < g.size; k++) {
-            var isElite = k < leaders;
-            var isAdv = isElite && chance(advPct);
+            var rank = rollEliteGroupMember(k, leaders, eliteStage);
+            var isElite = rank !== 'minion';
+            var isAdv = rank === 'elite_adv';
             var mt = pickZoneMonsterType(zn);
             var e = makeFieldEnemy(mt, isElite ? eliteBase : normalBase, zn, s, {
                 elite: isElite, enterCd: enterCd + k * 0.03,
                 hpMult: isElite ? (isAdv ? adv.hp : 1) : ELITE_GROUP.minionHp,
                 atkMult: isElite ? (isAdv ? adv.atk : 1) : ELITE_GROUP.minionAtk,
-                rewardMult: isElite ? (isAdv ? adv.reward : 1) : ELITE_GROUP.minionReward
+                rewardMult: eliteGroupMemberRewardMult(rank)
             });
             e._gid = gid;
             if (encounter) e._encounterKey = encounter.key;
@@ -2688,7 +2685,7 @@ function rollFieldDrops(m) {
     var zoneDrop = fieldMaterialConfigFor(G.stage.zone, s);
     var rates = fieldDropRatesFor(s, m.level - (Number(m._powerLevelBonus) || 0), G.stage.zone);
     // 敵種掉落倍率：BOSS ＞ 菁英 ＞ 普通（BOSS 倍率 → data.js FIELD_BOSS_DROP_MULT）
-    var eliteDropMult = m.isBoss ? FIELD_BOSS_DROP_MULT : (m.elite ? ELITE_DROP_MULT : 1);
+    var eliteDropMult = fieldEnemyDropMult(m.elite, m.isBoss);
     var dropMult = (1 + lootBonus / 100) * eliteDropMult;
     for (var r = 0; r < rates.length; r++) {
         if (!rates[r]) continue;

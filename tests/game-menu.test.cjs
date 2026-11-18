@@ -6,16 +6,19 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
+const html = readExpanded(path.join(root, 'index.html'));
+const menu = html.match(/id="game-menu"[\s\S]*?id="game-menu-status"/)[0];
+const menuButtonIds = [...menu.matchAll(/id="(game-menu-(?:close|save|settings|achv|reload|exit))"/g)].map(match => match[1]);
 
 function setup() {
   const nodes = {}, handlers = {}, events = [], timers = [];
   const doc = { activeElement: null, getElementById: id => nodes[id] || null, addEventListener(name, fn) { handlers[name] = fn; } };
-  for (const id of ['game-menu-title', 'game-menu', 'settings-modal', 'game-menu-reload', 'game-menu-exit', 'game-menu-save', 'game-menu-settings', 'game-menu-close', 'settings-modal-close', 'game-menu-status']) {
+  for (const id of [...menuButtonIds, 'game-menu-title', 'game-menu', 'settings-modal', 'settings-modal-close', 'game-menu-status']) {
     nodes[id] = { style: { display: 'none' }, disabled: false, textContent: '', tabIndex: 0, isConnected: true, listeners: {},
       setAttribute() {}, addEventListener(name, fn) { this.listeners[name] = fn; },
       focus() { doc.activeElement = this; }, getClientRects: () => [1], querySelectorAll: () => [] };
   }
-  nodes['game-menu'].querySelectorAll = () => ['reload', 'exit', 'save', 'settings', 'close'].map(n => nodes['game-menu-' + n]);
+  nodes['game-menu'].querySelectorAll = () => menuButtonIds.map(id => nodes[id]);
   nodes['settings-modal'].querySelectorAll = () => [nodes['settings-modal-close']];
   const ctx = { document: doc, Promise, setTimeout(fn) { timers.push(fn); },
     window: { close() { events.push('close'); }, closed: false },
@@ -68,9 +71,11 @@ test('Tab與Shift+Tab循環，避免焦點離開對話框', () => {
   const s = setup(); s.ctx.GameMenu.open(); s.nodes['game-menu-close'].focus();
   let prevented = 0;
   s.handlers.keydown({ key: 'Tab', preventDefault() { prevented++; } });
-  assert.equal(s.doc.activeElement, s.nodes['game-menu-reload']);
+  assert.equal(s.doc.activeElement, s.nodes['game-menu-save']);
   s.handlers.keydown({ key: 'Tab', shiftKey: true, preventDefault() { prevented++; } });
-  assert.equal(s.doc.activeElement, s.nodes['game-menu-close']); assert.equal(prevented, 2);
+  assert.equal(s.doc.activeElement, s.nodes['game-menu-close']);
+  s.handlers.keydown({ key: 'Tab', shiftKey: true, preventDefault() { prevented++; } });
+  assert.equal(s.doc.activeElement, s.nodes['game-menu-exit']); assert.equal(prevented, 3);
 });
 test('菜單與設置共用暫停，返回菜單不恢復，完全關閉才恢復；預設焦點不在重啟', () => {
   const s=setup(), clock=[], worker=[];
@@ -81,11 +86,9 @@ test('菜單與設置共用暫停，返回菜單不恢復，完全關閉才恢�
   s.ctx.GameMenu.close();assert.deepEqual(clock,[true,false]);assert.deepEqual(worker,[true,false]);
 });
 
-test('主側欄移除設定，設定區位於獨立dialog內，菜單四項順序固定', () => {
-  const html = readExpanded(path.join(root, 'index.html'));
+test('主側欄移除設定，設定區位於獨立dialog內，菜單五項順序固定', () => {
   assert.doesNotMatch(html.match(/<nav id="tabs"[\s\S]*?<\/nav>/)[0], /data-tab="settings"/);
   assert.match(html, /id="settings-modal"[\s\S]*?role="dialog"[\s\S]*?id="tab-settings" class="system-settings-content settings-pane"/);
-  const menu = html.match(/id="game-menu"[\s\S]*?id="game-menu-status"/)[0];
-  const order = [...menu.matchAll(/id="game-menu-(reload|exit|save|settings)"/g)].map(m => m[1]);
-  assert.deepEqual(order, ['reload', 'exit', 'save', 'settings']);
+  const order = menuButtonIds.filter(id => id !== 'game-menu-close');
+  assert.deepEqual(order, ['game-menu-save', 'game-menu-settings', 'game-menu-achv', 'game-menu-reload', 'game-menu-exit']);
 });

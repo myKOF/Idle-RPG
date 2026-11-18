@@ -11,7 +11,7 @@ const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
 
 function mount() {
   const elements = Object.fromEntries(['detail-pane', 'equip-action-bar', 'equip-material-panel'].map((id) => [id, {
-    innerHTML: '', style: {}, classList: { add() {}, remove() {} }
+    innerHTML: '', style: { setProperty() {} }, classList: { add() {}, remove() {} }
   }]));
   const c = { console, document: { addEventListener() {}, querySelectorAll() { return []; }, getElementById(id) { return elements[id] || null; } } };
   c.clock = 0;

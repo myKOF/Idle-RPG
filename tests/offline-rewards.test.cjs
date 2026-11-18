@@ -5,15 +5,6 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
-/* 離線收益：固定速率獵殺「歷史最高階段 × 比例 − 扣減，捨去到取整單位」等級的怪，
-   每隻掉落單獨擲骰。
-   固定化隨機：chance 只在機率 ≥100% 成立 → rollDropCount 退化為 ⌊pct/100⌋，結果可精確斷言。
-
-   ⚠️ 這一段的期望值一律從遊戲常數推導，不寫死 20 秒／180 隻。
-   那幾個值是參數表旋鈕（10-離線），設計者調一次就會讓這幾支測試整片紅燈，
-   而紅燈的原因跟程式對錯無關——那是假警報，久了就沒人看測試了。
-   實際踩過：把擊殺速率從 20 秒調成 10 秒，三支測試同時失敗。 */
-
 function loadGameContext() {
   const context = { console, UI: { dirty: {} }, GT: 0 };
   context.window = context;
@@ -23,103 +14,173 @@ function loadGameContext() {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   });
   context.chance = (p) => p >= 100;
+  context.wpick = (pairs) => pairs[0][0];
   context.rnd = () => 1;
   context.blog = () => {};
   context.flog = () => {};
-  context.FIELD = { player: null, monster: null, monsters: [] }; // gainXp 升級回滿血藍用（combat.js 未載入）
+  context.FIELD = { player: null, monster: null, monsters: [] };
   context.G = context.newGameState();
   return context;
 }
 
-/* 依當前參數推出期望值。公式與 formula.js §10 一致，但這裡的重點是
-   「有沒有真的照參數走」，數值本身的正確性由 tests/offline-stage-params.test.cjs 顧。 */
-function expectStage(c, best) {
-  const unit = Math.max(1, Math.floor(c.OFFLINE_STAGE_ROUND));
-  return Math.max(1, Math.floor((best * c.OFFLINE_STAGE_RATIO - c.OFFLINE_LEVEL_REDUCE) / unit) * unit);
-}
-function expectKills(c, sec) { return Math.floor(sec / c.OFFLINE_KILL_INTERVAL); }
-
-test('離線計算等級：歷史最高階段扣減後捨去到取整單位，下限 1', () => {
-  const c = loadGameContext();
-  for (const best of [256, 265, 250, 20, 15, 1]) {
-    assert.equal(c.offlineStageFor(best), expectStage(c, best), `best=${best}`);
-  }
-  assert.equal(c.offlineStageFor(1), 1, '下限永遠是 1');
-});
-
-test('離線擊殺數僅依擊殺速率換算，舊加成參數不再作用', () => {
-  const c = loadGameContext();
-  const iv = c.OFFLINE_KILL_INTERVAL;
-  assert.equal(c.offlineKillCount(3600, 0), expectKills(c, 3600));
-  assert.equal(c.offlineKillCount(3600, 10), expectKills(c, 3600), '已移除的加成不影響擊殺數');
-  assert.equal(c.offlineKillCount(iv - 1, 0), 0, '不足一個間隔就是 0 隻');
-});
-
-test('離線收益逐殺結算：每隻菁英單獨擲骰、金幣經驗依菁英與場景倍率', () => {
-  const c = loadGameContext();
-  // 每殺必掉 1 件普通裝備：100% × 菁英掉落倍率 1.3 = 130% → ⌊130/100⌋ = 1
-  c.ZONE_STAGE_DROP_TABLE.swamp = [{ min: 1, max: 400, equipmentRates: [100], materials: { gemRates: [], bookRate: 0, ancientEssenceRate: 0, dustRate: 0, partRate: 0 } }];
+function setup(c, stage, enemies = 2, equipment = 0) {
   c.G.stage.zone = 'swamp';
-  c.G.stage.best = 256;
-  c.G.stage.current = 256;
-  c.G.savedAt = Date.now() - 3600 * 1000; // 離線 1 小時
+  c.G.stage.best = 290;
+  c.G.stage.current = stage;
+  c.G.savedAt = Date.now() - 61_000;
+  c.ZONE_ENCOUNTER.swamp = {
+    mobCount: [[1, 300, [[enemies, 1]]]], eliteChance: [[1, 300, 0]],
+    eliteCount: [[1, 300, [[1, 1]]]], eliteSize: [[1, 300, enemies, 1]], elitePure: [[1, 300, 0]],
+  };
+  c.ZONE_STAGE_DROP_TABLE.swamp = [{
+    min: stage, max: stage, equipmentRates: [equipment],
+    materials: { gemRates: [], ancientEssenceRate: 0, dustRate: 0 },
+  }];
+}
 
+test('按存檔所在關卡結算，每 5 秒 1 場且每場可擊殺多隻普通怪', () => {
+  const c = loadGameContext();
+  setup(c, 256, 3, 100);
   const goldBefore = c.G.player.gold;
-  const kills = expectKills(c, 3600);
-  const stage = expectStage(c, 256);
+  const achievementGold = [];
+  c.achAddGold = (gold) => achievementGold.push(gold);
+  const m = c.monsterStatsFor(256, false);
+  const rw = c.ZONES.swamp.rewardMult;
   const summary = c.applyOfflineProgress();
 
-  assert.ok(summary, '應回傳離線收益彙總');
-  assert.equal(summary.kills, kills);
-  assert.equal(summary.stage, stage);
-  assert.equal(summary.equips[0], kills);       // 普通裝備 ×擊殺數（每隻 1 件）
-  assert.equal(c.G.factory.conveyor.length, kills); // 實體裝備進輸送帶
-
-  const m = c.monsterStatsFor(stage, true);     // 菁英怪
-  const rw = c.ZONES.swamp.rewardMult;          // 沼澤場景倍率
-  assert.equal(summary.gold, Math.round(m.gold * rw) * kills);
-  assert.equal(summary.xp, Math.round(m.xp * rw) * kills);
+  assert.equal(summary.stage, 256);
+  assert.equal(summary.waves, 12);
+  assert.equal(summary.kills, 36);
+  assert.equal(summary.equips[0], 36);
+  assert.equal(c.G.factory.conveyor.length, 36);
+  assert.equal(summary.gold, Math.round(m.gold * rw) * 36);
+  assert.equal(summary.xp, Math.round(m.xp * rw) * 36);
   assert.equal(c.G.player.gold - goldBefore, summary.gold);
+  assert.deepEqual(achievementGold, [summary.gold]);
 });
 
-test('離線收益採用玩家上線時的經驗/金幣/掉寶加成', () => {
+test('普通關逐波選普通或菁英群，高級菁英及小兵分別套用收益和掉落倍率', () => {
   const c = loadGameContext();
-  c.ZONE_STAGE_DROP_TABLE.swamp = [{ min: 1, max: 400, equipmentRates: [100], materials: { gemRates: [], bookRate: 0, ancientEssenceRate: 0, dustRate: 0, partRate: 0 } }];
-  // 上線時裝備：金幣 +50%、經驗 +100%、掉寶率 200（有效掉寶率折半 → +100%）
+  setup(c, 256, 3, 200);
+  c.ZONE_ENCOUNTER.swamp.eliteChance[0][2] = 40;
+  c.ELITE_GROUP.normalGroupCount = [[1, 1]];
+  c.ELITE_GROUP.leaders = 1;
+  c.ELITE_GROUP.advChance = [33, 0];
+  let encounterRolls = 0;
+  let advancedRolls = 0;
+  c.chance = (pct) => {
+    if (pct === 40) return ++encounterRolls % 2 === 0;
+    if (pct === 33) { advancedRolls++; return true; }
+    return pct >= 100;
+  };
+  const st = c.getStats();
+  const rw = c.ZONES.swamp.rewardMult;
+  const normal = c.monsterStatsFor(256, false);
+  const elite = c.monsterStatsFor(256, true);
+  const sum = c.applyOfflineProgress();
+
+  assert.equal(encounterRolls, 12);
+  assert.equal(advancedRolls, 6);
+  assert.equal(sum.kills, 36);
+  assert.equal(sum.equips[0], (30 * 2) + (6 * 3));
+  for (const key of ['gold', 'xp']) {
+    const bonus = 1 + st[key + 'Bonus'] / 100;
+    const normalReward = Math.round(normal[key] * rw * bonus);
+    const minionReward = Math.round(normal[key] * rw * c.ELITE_GROUP.minionReward * bonus);
+    const advancedReward = Math.round(elite[key] * rw * c.ELITE_GROUP.advReward / c.FIELD_ELITE.rewardMult * bonus);
+    assert.equal(sum[key], 18 * normalReward + 12 * minionReward + 6 * advancedReward);
+  }
+});
+
+test('菁英關每場使用多群與純菁英配置，掉落收益依玩家屬性', () => {
+  const c = loadGameContext();
+  setup(c, 260, 3, 100);
+  c.ZONE_ENCOUNTER.swamp.eliteCount[0][2] = [[2, 1]];
+  c.ZONE_ENCOUNTER.swamp.elitePure[0][2] = 100;
   c.G.equipment.helmet = {
     affixes: [{ key: 'goldBonus', val: 50 }, { key: 'xpBonus', val: 100 }, { key: 'loot', val: 200 }],
     sockets: []
   };
-  c.G.stage.zone = 'swamp';
-  c.G.stage.best = 256;
-  c.G.savedAt = Date.now() - 3600 * 1000;
-
-  const kills = expectKills(c, 3600);
-  const summary = c.applyOfflineProgress();
-  const m = c.monsterStatsFor(expectStage(c, 256), true);
+  const sum = c.applyOfflineProgress();
+  const m = c.monsterStatsFor(260, true);
   const rw = c.ZONES.swamp.rewardMult;
-  assert.equal(summary.gold, Math.round(m.gold * rw * 1.5) * kills); // 金幣加成 +50%
-  assert.equal(summary.xp, Math.round(m.xp * rw * 2) * kills);       // 經驗加成 +100%
-  /* 掉寶：100% × (1 + 100%) × 菁英 ELITE_DROP_MULT = 300% → 每殺必掉 3 件。
-     依 AI_RULES.md 9.1 例外釘住目前數值；2026-08-10 菁英倍率 1.3 → 1.5（使用者確認），
-     此處從 260%（2 件）變成 300%（3 件）。 */
-  assert.equal(summary.equips[0], kills * 3);
+
+  assert.equal(sum.kills, 72);
+  assert.equal(sum.gold, Math.round(m.gold * rw * 1.5) * 72);
+  assert.equal(sum.xp, Math.round(m.xp * rw * 2) * 72);
+  assert.equal(sum.equips[0], 72 * 3);
 });
 
-test('有效離線時間上限（OFFLINE_MAX_HOURS），1 分鐘內不計', () => {
+test('野外 BOSS 離線只結算一波，記錄隨存檔保留且正式通關另行記錄', () => {
   const c = loadGameContext();
-  c.ZONE_STAGE_DROP_TABLE.swamp = [{ min: 1, max: 400, equipmentRates: [0], materials: { gemRates: [], bookRate: 0, ancientEssenceRate: 0, dustRate: 0, partRate: 0 } }];
-  c.G.stage.best = 100;
-  // 超過上限 2 小時 → 以 OFFLINE_MAX_HOURS 計（上限值由參數表調整，不寫死）
+  setup(c, 50, 2, 100);
+  c.G.stage.zone = 'desert';
+  c.G.stage.best = 50;
+  c.ZONE_ENCOUNTER.desert = c.ZONE_ENCOUNTER.swamp;
+  c.ZONE_STAGE_DROP_TABLE.desert = c.ZONE_STAGE_DROP_TABLE.swamp;
+  c.ZONE_ENCOUNTER.desert.elitePure[0][2] = 100;
+  const first = c.applyOfflineProgress();
+  assert.equal(first.kills, 1 + 11 * 2);
+  assert.equal(first.equips[0], c.FIELD_BOSS_DROP_MULT + 22);
+  assert.equal(c.zoneClearedStage('desert'), 49);
+  assert.equal(c.G.stage.current, 50);
+
+  c.G = c.migrateSave(JSON.parse(JSON.stringify(c.G)));
+  assert.equal(c.G.stage.current, 50);
+  assert.equal(c.G.offlineFieldBossRewards['desert:50'], true);
+  c.G.savedAt = Date.now() - 61_000;
+  const revisit = c.applyOfflineProgress();
+  assert.equal(revisit.kills, 12 * 2);
+  assert.equal(revisit.equips[0], 24);
+});
+
+test('各敵種寶石及材料倍率跟隨各自敵種，滿載仍按品質折算碎片與寶箱經驗', () => {
+  const c = loadGameContext();
+  setup(c, 256, 2, 100);
+  c.ZONE_STAGE_DROP_TABLE.swamp[0].materials = { gemRates: [60], ancientEssenceRate: 70, dustRate: 70 };
+  c.randomGemTypeForLevel = () => 'testGem';
+  c.addGem = () => {};
+  let chestXpCount = 0;
+  c.chestGainSalvageXp = (_rarity, count) => { chestXpCount += count; };
+  c.pushConveyor = () => false;
+  const sum = c.applyOfflineProgress();
+  // 普通怪：60% × 沼澤 1.5 = 90%，在此測試的必掉判定中不產出；材料 70% 同理。
+  assert.deepEqual([sum.gems[1], sum.essence, sum.dust], [undefined, 0, 0]);
+  assert.equal(sum.equips[0], 24);
+  assert.equal(sum.scrap, Math.round(3 * c.RARITIES[0].salv) * 24);
+  assert.equal(chestXpCount, 24);
+});
+
+test('有效離線時間上限與最短時間門檻', () => {
+  const c = loadGameContext();
+  setup(c, 256);
   c.G.savedAt = Date.now() - (c.OFFLINE_MAX_HOURS + 2) * 3600 * 1000;
   const summary = c.applyOfflineProgress();
-  assert.equal(summary.kills, Math.floor(c.OFFLINE_MAX_HOURS * 3600 / c.OFFLINE_KILL_INTERVAL));
+  assert.equal(summary.waves, Math.floor(c.OFFLINE_MAX_HOURS * 3600 / c.OFFLINE_WAVE_INTERVAL));
+  assert.equal(summary.kills, summary.waves * 2);
 
-  const c2 = loadGameContext();
-  const gold2 = c2.G.player.gold;
-  c2.G.savedAt = Date.now() - 30 * 1000; // 30 秒不計
-  assert.equal(c2.applyOfflineProgress(), undefined);
-  assert.equal(c2.G.player.gold, gold2);
+  c.G.savedAt = Date.now() - 59_000;
+  const gold = c.G.player.gold;
+  assert.equal(c.applyOfflineProgress(), undefined);
+  assert.equal(c.G.player.gold, gold);
+});
+
+test('非同步尚未結算完換檔時，舊波次無法寫進新存檔', () => {
+  const c = loadGameContext();
+  setup(c, 256, 2, 100);
+  const jobs = [];
+  const results = [];
+  c.setTimeout = (job) => jobs.push(job);
+  c.applyOfflineProgress({ chunkSize: 1, done: (sum) => results.push(sum) });
+  jobs.shift()();
+  const replacement = c.newGameState();
+  const gold = replacement.player.gold;
+  c.G = replacement;
+  jobs.shift()();
+  assert.equal(c.G.player.gold, gold);
+  assert.equal(c.G.factory.conveyor.length, 0);
+  assert.equal(c._offlineProgressState, null);
+  assert.equal(results.length, 0);
 });
 
 test('離線收益彈窗接線：上線時顯示擊殺/經驗/金幣/掉落明細', () => {
@@ -144,14 +205,15 @@ test('離線裝備與寶石接續排列，材料數量置於框外，擊殺顯�
   c.ENCHANT_ENABLED = true;
 
   const summary = {
-    seconds: 3600, stage: 280, zoneName: '<zone>', kills: 3991, xp: 300, gold: 200,
+    seconds: 3600, stage: 280, zoneName: '<zone>', waves: 1200, kills: 3991, xp: 300, gold: 200,
     equips: { 0: 2 }, gems: Object.fromEntries(Array.from({ length: 10 }, (_, i) => [i + 1, i + 1])),
     essence: 11, dust: 12, parts: 13, scrap: 14, books: 15,
     forge: { salvaged: 5, gold: 50, scrap: 16, essence: 17, ancientEssence: 18 },
   };
   c.showOfflineSummary(summary);
   assert.equal(overlay.style.display, 'flex');
-  assert.ok(body.innerHTML.includes(c.STR(2054, 280, '&lt;zone&gt;', c.STR(2053), '3,991')));
+  assert.ok(body.innerHTML.includes(c.STR(398) + ' 1,200'));
+  assert.ok(body.innerHTML.includes(c.STR(2054, '280', '&lt;zone&gt;', '', '3,991')));
   assert.ok(body.innerHTML.includes(`<div class="offline-sum-row">${c.STR(2409, 5, c.STR(1049, 50))}</div>`));
   const grids = [...body.innerHTML.matchAll(/<div class="offline-sum-grid">(.*?)<\/div>/g)];
   assert.equal(grids.length, 1);
@@ -177,18 +239,4 @@ test('離線裝備與寶石接續排列，材料數量置於框外，擊殺顯�
 
   c.showOfflineSummary({ seconds: 3600, stage: 280, kills: 3, xp: 300, gold: 200 });
   assert.ok(body.innerHTML.includes(`<div class="offline-sum-loot">${c.STR(2064)}</div>`));
-});
-
-test('參數表 10-離線段：新增計算等級與擊殺速率、移除舊估算列，錨點同步', () => {
-  const csv = fs.readFileSync(path.join(root, 'config', 'CSV', 'game_parameters.csv'), 'utf8');
-  assert.match(csv, /10-離線,有效離線時間/);
-  assert.match(csv, /10-離線,計算等級/);
-  assert.match(csv, /10-離線,擊殺速率/);
-  for (const removed of ['期望暴擊倍率', '估算 DPS', '單殺耗時', '擊殺數', '裝備收益']) {
-    assert.doesNotMatch(csv, new RegExp('10-離線,' + removed));
-  }
-  const ap = fs.readFileSync(path.join(root, 'tools', 'apply_params.cjs'), 'utf8');
-  assert.match(ap, /OFFLINE_LEVEL_REDUCE.*10-離線.*計算等級/);
-  assert.match(ap, /OFFLINE_KILL_INTERVAL.*10-離線.*擊殺速率/);
-  assert.doesNotMatch(ap, /OFFLINE_EFFICIENCY|OFFLINE_MAX_KILLS/);
 });

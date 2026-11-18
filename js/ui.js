@@ -982,7 +982,7 @@ function handleWorkerUiEvents(events) {
        與傷害數字開關無關，不走特效佇列（一則一次性的提示，排隊反而會被洪峰擠掉）。 */
     if (event.kind === 'levelup') {
       if (typeof uiRenderingSuspended === 'function' && uiRenderingSuspended()) return;
-      if (typeof Sfx !== 'undefined') Sfx.play('levelUp');
+      if (typeof Sfx !== 'undefined') Sfx.playGroup('levelUp');
       if (typeof BattleRenderer !== 'undefined' && typeof BattleRenderer.onLevelUp === 'function') {
         BattleRenderer.onLevelUp(event);
       }
@@ -4583,7 +4583,7 @@ function fitEnemyNames(party) {
   for (ni = 0; ni < measured.length; ni++) {
     var m = measured[ni];
     if (m.naturalWidth > m.available) {
-      m.el.style.fontSize = Math.max(6, m.baseSize * m.available / m.naturalWidth) + 'px';
+      m.el.style.fontSize = Math.max(10, m.baseSize * m.available / m.naturalWidth) + 'px';
     }
   }
 }
@@ -4631,9 +4631,12 @@ function enemyCellStyle(enemy) {
     ';grid-row:' + cell.row + ' / span ' + (cell.h || 1) + '"';
 }
 
-function enemyNameHTML(enemy) {
+function enemyNameText(enemy) {
   var attr = typeof skill2CurrentEnemyAttr === 'function' ? skill2CurrentEnemyAttr(enemy) : enemy.attr;
-  return (attr && ELEM_INFO[attr] ? ELEM_INFO[attr].emoji : '') + (enemy.name || '');
+  var element = ELEM_INFO[attr] || (enemy.isBoss && ENCHANTS[enemy.elem]);
+  var icon = element && element.emoji;
+  var name = enemy.name || '';
+  return icon ? icon + (name ? '\u00a0' + name : '') : name;
 }
 function enemyFloatLayerId(enemy, index) {
   var id = enemy && enemy.floatSel;
@@ -4836,8 +4839,8 @@ function renderBattle() {
     var rankIcon = ENEMY_RANK_ICONS[rank] || '';         // 小怪無圖示、菁英骷髏頭、BOSS 專屬圖標
     partyHtml += '<div class="enemy-card enemy-rank-' + rank + '"' + enemyCellStyle(enemy) + '>' +
       '<div class="float-layer" id="' + enemyFloatLayerId(enemy, ei) + '"></div>' +
-      '<div class="cb-level">' + (rankIcon ? '<span class="enemy-rank-icon">' + rankIcon + '</span>' : '') + 'Lv.' + enemy.level + '</div>' + icon +
-      '<div class="enemy-name">' + enemyNameHTML(enemy) + '</div>' +
+      (rankIcon ? '<div class="enemy-rank-icon">' + rankIcon + '</div>' : '') + icon +
+      '<div class="enemy-name">' + esc(enemyNameText(enemy)) + '</div>' +
       '<div class="enemy-hp hp-bar"><div class="hp-fill monster" style="width:' + enemyHp + '%"></div><span class="hp-text">' + fmt(Math.max(0, enemy.hp)) + enemyShield + ' / ' + fmt(enemy.maxHp) + '</span></div>' +
       '<div class="enemy-status" data-enemy-buff-tip data-enemy-index="' + ei + '">' + entStatus(enemy) + '</div></div>';
   }
@@ -4865,7 +4868,7 @@ function renderBattle() {
     var fill = card.querySelector('.enemy-hp .hp-fill');
     var hpText = card.querySelector('.enemy-hp .hp-text');
     var status = card.querySelector('.enemy-status');
-    setHtmlIfChanged(card.querySelector('.enemy-name'), enemyNameHTML(liveEnemy));
+    setTextIfChanged(card.querySelector('.enemy-name'), enemyNameText(liveEnemy));
     var liveEnemyFloatId = enemyFloatLayerId(liveEnemy, ci);
     var instantKillFloat = liveEnemy.hp <= 0 && hasRecentEnemyDamageFloat(liveEnemyFloatId, recentEnemyDamageFloats, recentEnemyDamageAt);
     if (instantKillFloat) {
@@ -5026,8 +5029,8 @@ function itemIconFile(it, info) {
   return equipIconFile(it) || (info && info.icon) || '';
 }
 function itemCellHTML(it, source, extraClass, pendingKey) {
-  var r = RARITIES[divineForgeBaseRarity(it.rarity)];
-  var effClass = itemRarityEffectClass(it);
+  var frameColor = itemFrameColor(it.rarity);
+  var effClass = itemRarityEffectClass(it.rarity);
   var info = SLOT_INFO[it.slot];
   var iconFile = itemIconFile(it, info);
   var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="item-icon">' : '<span class="ic-emoji">' + info.emoji + '</span>';
@@ -5036,7 +5039,7 @@ function itemCellHTML(it, source, extraClass, pendingKey) {
     ? equipSlotsForItem(it, uiAsuraDualWield()).join(',') : it.slot;
   return '<div class="item-cell' + effClass + (extraClass || '') + '" data-id="' + it.id + '" data-src="' + source + '" data-slot="' + it.slot + '" data-eqslots="' + eqSlots + '"' +
     (pendingKey ? pendingUiButtonAttributes(pendingKey) : '') + ' ' +
-    'style="border-color:' + r.color + ';box-shadow:inset 0 0 12px ' + r.color + '33">' +
+    'style="--item-frame-color:' + frameColor + ';border-color:var(--item-frame-color);box-shadow:inset 0 0 12px ' + frameColor + '33">' +
     iconHtml +
     ancientStarBadgeHTML(it) +
     (it.upgrade ? '<span class="ic-up">+' + it.upgrade + '</span>' : '') +
@@ -5131,9 +5134,12 @@ function syncItemGridCells(box, keys, htmls) {
 }
 
 // 只映射顯示外觀，裝備本身的品質、名稱與數值仍使用原始 rarity。
-function itemRarityEffectClass(it) {
-  var rarity = divineForgeBaseRarity(it.rarity);
+function itemRarityEffectClass(rarity) {
+  rarity = divineForgeBaseRarity(rarity);
   return rarity === 6 ? ' eff-mythic' : rarity === 7 ? ' eff-genesis' : rarity === 10 ? ' eff-chaos' : '';
+}
+function itemFrameColor(rarity) {
+  return RARITIES[divineForgeBaseRarity(rarity)].color;
 }
 function itemDetailClass(it) {
   var rarity = it && divineForgeBaseRarity(it.rarity);
@@ -5177,12 +5183,12 @@ function renderEquip() {
     var inert = !!it && slot === 'weapon2' && !twoHandDuplicate && !asuraOn &&
       typeof isTwoHandItem === 'function' && isTwoHandItem(it);
     if (it) {
-      var r = RARITIES[divineForgeBaseRarity(it.rarity)];
-      var effClass = itemRarityEffectClass(it);
+      var frameColor = itemFrameColor(it.rarity);
+      var effClass = itemRarityEffectClass(it.rarity);
       var iconFile = itemIconFile(it, info);
       var iconHtml = iconFile ? '<img src="images/' + iconFile + '" class="eq-icon">' : '<div class="eq-emoji">' + info.emoji + '</div>';
       var flashHtml = equipFlashActive(slot) ? '<span class="equip-flash-overlay" aria-hidden="true"></span>' : '';
-      h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + (inert ? ' eq-inert' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="border-color:' + r.color + '; box-shadow: inset 0 0 15px ' + r.color + '40">' +
+      h += '<div class="eq-slot filled' + effClass + (twoHandDuplicate ? ' twohand-duplicate' : '') + (inert ? ' eq-inert' : '') + ' slot-' + slot + '" data-id="' + it.id + '" data-src="equip" data-slot="' + slot + '" style="--item-frame-color:' + frameColor + ';border-color:var(--item-frame-color);box-shadow:inset 0 0 15px ' + frameColor + '40">' +
         iconHtml + ancientStarBadgeHTML(it) + flashHtml +
         (twoHandDuplicate ? twoHandSharedBadgeHTML(false) : '') +
         (inert ? '<span class="th-occupied-mark" title="' + STR(1186) + '">🚫</span>' : '') +
@@ -5493,6 +5499,8 @@ function renderInventory() {
 
   var box = $id('inventory-grid');
   $id('inv-count').textContent = invSnapshot.count + '/' + cap;
+  var fullNotice = $id('inv-full-notice');
+  if (fullNotice) fullNotice.hidden = !(cap > 0 && invSnapshot.count >= cap);
 
   var kwInput = $id('inv-keyword-filter');
   var isInternal = isInternalServer();
@@ -5980,6 +5988,7 @@ function renderDetail() {
     return;
   }
   var detailClass = itemDetailClass(it);
+  pane.style.setProperty('--item-frame-color', it ? itemFrameColor(it.rarity) : '');
   if (detailClass === ' mythic-detail') pane.classList.add('mythic-detail');
   else pane.classList.remove('mythic-detail');
   if (detailClass === ' genesis-detail') pane.classList.add('genesis-detail');
@@ -6096,7 +6105,16 @@ function renderDetail() {
     /* 有暫放的符文：「符文」鈕變「刻印」，按下才真的鑲上 */
     actionsHtml += '<button class="btn btn-primary act-btn-tooltip engrave-pending" data-act="engrave-rune" data-tip="' + esc(STR(1207, Object.keys(runeMode.draft).length)) + '"' + pendingUiButtonAttributes(pendingKey) + '>' + STR(1208) + '</button>';
   } else {
-    actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '"' + (equipRuneUiUnlocked(headerSnapshot) ? '' : ' disabled') + '>' + STR(150) + '</button>';
+    var runeAttrs = '';
+    if (!equipRuneUiUnlocked(headerSnapshot)) {
+      var unlockProgress = STR(2101, RUNE_UNLOCK_REINCARNATION);
+      if (RUNE_UNLOCK_LEVEL > 1) {
+        unlockProgress = STR(680, STR(679, RUNE_UNLOCK_REINCARNATION) + ' ' + RUNE_UNLOCK_LEVEL, '') +
+          ' / ' + STR(2101, RUNE_UNLOCK_REINCARNATION + 1);
+      }
+      runeAttrs = ' disabled data-tip="' + esc(STR(2103, unlockProgress)) + '"';
+    }
+    actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '"' + runeAttrs + '>' + STR(150) + '</button>';
   }
   if (!fromInv) {
     actionsHtml += '<button class="btn btn-icon act-btn-tooltip" data-act="unequip" aria-label="' + STR(74) + '" data-tip="' + STR(74) + '"' +
@@ -6560,11 +6578,10 @@ function nfQualityChipsHTML(fu) {
 function nfBeltChipsHTML(fu) {
   var show = fu.belt.slice(0, NEW_FORGE_BELT_SHOW);
   var chips = show.map(function (it) {
-    var r = RARITIES[it.rarity];
     var info = SLOT_INFO[it.slot];
     var iconFile = itemIconFile(it, info);
     var icon = iconFile ? '<img src="images/' + esc(iconFile) + '" class="nf-belt-icon" alt="">' : info.emoji;
-    return '<span class="conv-chip" style="border-color:' + r.color + ';color:' + r.color + '" data-tip="' +
+    return '<span class="conv-chip' + itemRarityEffectClass(it.rarity) + '" style="border-color:' + itemFrameColor(it.rarity) + '" data-tip="' +
       esc(rarityTag(it)) + '">' + icon + '</span>';
   }).join('');
   return chips || STR(1423);
@@ -7056,7 +7073,7 @@ function renderForge() {
   for (var i = 0; i < FORGE_SLOTS; i++) {
     var it = f.slots[i], pos = FORGE_SLOT_POS[i], active = i < needed;
     var content = '', cls = 'forge-slot ' + (it ? 'filled' : 'empty') + (active ? '' : ' forge-inactive');
-    if (it && it.kind !== 'gem') cls += itemRarityEffectClass(it); // 與背包格同一套品質底框
+    if (it && it.kind !== 'gem') cls += itemRarityEffectClass(it.rarity); // 與背包格同一套品質底框
     var attrs = ' style="left:' + pos.x + '%;top:' + pos.y + '%;" data-forge-slot="' + i + '"';
     if (it && it.kind === 'gem') content = gemIconHTML(it.type, it.level, 'gi-cell');
     else if (it) {
@@ -7064,7 +7081,7 @@ function renderForge() {
       content = icon ? '<img class="item-icon" src="images/' + icon + '" alt="">' : info.emoji;
       content += ancientStarBadgeHTML(it) + '<span class="ic-lv">' + it.level + '</span>';
       attrs += ' data-id="' + esc(it.id) + '"';
-      var rarityColor = RARITIES[divineForgeBaseRarity(it.rarity)].color;
+      var rarityColor = itemFrameColor(it.rarity);
       attrs = attrs.replace('style="', 'style="border-color:' + rarityColor + ';box-shadow:inset 0 0 10px ' + rarityColor + '33;');
     }
     if (!it) attrs += ' data-tip="' + esc(active ? STR(2198, i + 1) : STR(2199)) + '"';
@@ -7611,16 +7628,13 @@ function renderTowerFight() {
     $id('tb-emoji').innerHTML = '<span style="font-size:48px;">' + (b.emoji || '👾') + '</span>';
   }
   $id('tb-name').className = 'cb-name' + (b.purgatory ? ' purgatory-boss' : '');
-  setHtmlIfChanged($id('tb-name'), b.name);
-  if ($id('tb-level')) {
-    $id('tb-level').className = 'cb-level' + (b.purgatory ? ' purgatory-boss' : '');
-    setTextIfChanged($id('tb-level'), 'Lv.' + b.level);
-  }
+  setTextIfChanged($id('tb-name'), enemyNameText(b));
   setStyleIfChanged($id('tb-hp'), 'width', clamp(b.hp / b.maxHp * 100, 0, 100) + '%');
   var bSh = (b.shield > 0.5) ? '<span style="color:var(--info)">+' + fmt(Math.max(0, b.shield)) + '</span>' : '';
   setHtmlIfChanged($id('tb-hptext'), fmt(Math.max(0, b.hp)) + bSh + ' / ' + fmt(b.maxHp) + '（' + Math.round(b.hp / b.maxHp * 100) + '%）');
   var bossAttr = typeof skill2CurrentEnemyAttr === 'function' ? skill2CurrentEnemyAttr(b) : b.attr;
-  setHtmlIfChanged($id('tb-status'), entStatus(b) + (bossAttr && ELEM_INFO[bossAttr] ? ' ' + STR(1892, ELEM_INFO[bossAttr].emoji, (ELEM_INFO[bossAttr].short || ELEM_INFO[bossAttr].name)) : (b.elem ? ' ' + STR(1893, ENCHANTS[b.elem].emoji) : ''))); // 屬性語境用 short（聖非光）
+  var bossElement = ELEM_INFO[bossAttr];
+  setHtmlIfChanged($id('tb-status'), entStatus(b) + (bossElement ? ' ' + STR(1892, '', bossElement.short || bossElement.name) : '')); // 屬性語境用 short（聖非光）
   setStyleIfChanged($id('tp-hp'), 'width', clamp(p.hp / st.hp * 100, 0, 100) + '%');
   renderPlayerShieldBar('tp', p, st);
   setHtmlIfChanged($id('tp-hptext'), fmt(Math.max(0, p.hp)) + playerShieldText(p) + ' / ' + fmt(st.hp));
@@ -8351,9 +8365,6 @@ function showOfflineSummary(sum) {
   if (!overlay || !body || !sum) return;
   var hrs = Math.floor(sum.seconds / 3600), mins = Math.floor((sum.seconds % 3600) / 60);
   var h = '<div class="talent-modal-head"><span class="talent-modal-icon">🌙</span>' + STR(2099, (hrs ? STR(78, hrs) + ' ' : ''), mins) + '</div>';
-  /* 怪物種類由參數表決定（formula.js §10 OFFLINE_ELITE），不能寫死「菁英怪」。
-     舊的離線摘要沒有 elite 欄位，視為菁英以維持原本的顯示。 */
-  var offKind = (sum.elite === false) ? STR(2052) : STR(2053);
   h += '<div class="offline-sum-row offline-sum-primary">' + STR(2055, fmt(sum.xp), fmt(sum.gold)) + '</div>';
   var forge = sum.forge || {};
   if (forge.salvaged > 0) {
@@ -8362,7 +8373,7 @@ function showOfflineSummary(sum) {
   // 遺物獎勵與回歸加成列在收益區，讓掉落物維持在最後。
   if (sum.towerRewards) h += '<div class="offline-sum-row">' + esc(STR(2466, fmt(sum.towerRewards.hours), fmt(sum.towerRewards.pct), sum.towerRewards.floor)) + '</div>';
   if (sum.returnBuff) h += '<div class="offline-sum-row">' + esc(STR(2467, sum.returnBuff.minutes, sum.returnBuff.pct)) + '</div>';
-  h += '<div class="offline-sum-row">' + STR(2054, fmt(sum.stage), esc(sum.zoneName || ''), offKind, fmtFull(sum.kills)) + '</div>';
+  h += '<div class="offline-sum-row">' + offlineBattleSummaryText(sum) + '</div>';
   var drops = [], materials = [];
   for (var r = 0; r < RARITIES.length; r++) {
     if (sum.equips && sum.equips[r]) {
@@ -9773,10 +9784,11 @@ function showItemTooltip(it, anchorEl, opts) {
   var h = '';
   var twoHandShared = uiIsTwoHandSharedSlot(it, tooltipSource, anchorEl && anchorEl.getAttribute('data-slot'));
   var mainCard = '<div class="equip-detail-card' + itemDetailClass(it) +
-    (twoHandShared ? ' twohand-shared' : '') + '">' +
+    (twoHandShared ? ' twohand-shared' : '') + '" style="--item-frame-color:' + itemFrameColor(it.rarity) + '">' +
     (twoHandShared ? twoHandSharedBadgeHTML(true) : '') + detailHtml + '</div>';
   if (compareItem && compareItem.id !== it.id) {
-    var compCard = '<div class="equip-detail-card' + itemDetailClass(compareItem) + '">' + itemDetailHTML(compareItem, null, {
+    var compCard = '<div class="equip-detail-card' + itemDetailClass(compareItem) + '" style="--item-frame-color:' +
+      itemFrameColor(compareItem.rarity) + '">' + itemDetailHTML(compareItem, null, {
       equipment: tooltipEquipment,
       asuraOn: uiAsuraDualWield(),
       isEquipped: true,
@@ -10211,6 +10223,7 @@ function renderGems() {
   if (resonanceTab) {
     var resonanceTabClass = 'gx-tab' + (resonanceOpen ? '' : ' is-locked');
     if (resonanceTab.className !== resonanceTabClass) resonanceTab.className = resonanceTabClass;
+    setAttrIfChanged(resonanceTab, 'aria-disabled', String(!resonanceOpen));
     if (resonanceOpen) {
       resonanceTab.removeAttribute('data-tt-title');
       resonanceTab.removeAttribute('data-tt-desc');
@@ -10573,7 +10586,7 @@ function renderGemShop(merchant, player) {
   }
   var emptySlot = '<div class="shop-card empty" aria-hidden="true"></div>';
   var htmls = s.items.slice(0, MYSTERY_MERCHANT_SLOTS).map(function (item, i) {
-    var name, icon, stat = '', c = '#c7a65c';
+    var name, icon, stat = '', c = '#c7a65c', effClass = '', frameColor;
     if (!item.kind || item.kind === 'gem') {
       if (!GEM_TYPES[item.type]) return emptySlot;
       var gt = GEM_TYPES[item.type];
@@ -10583,6 +10596,8 @@ function renderGemShop(merchant, player) {
     } else if (item.kind === 'equipment' && item.equipment) {
       var eq = item.equipment;
       name = eq.name; c = RARITIES[eq.rarity].color;
+      frameColor = itemFrameColor(eq.rarity);
+      effClass = itemRarityEffectClass(eq.rarity);
       icon = '<img src="images/' + esc(equipIconFile(eq)) + '" class="merchant-equipment-icon" alt="">';
       stat = esc(RARITIES[eq.rarity].name) + ' ' + esc(STR(1563, eq.level));
     } else if (item.kind === 'rune' && RUNE_BY_ID[item.runeId]) {
@@ -10590,7 +10605,7 @@ function renderGemShop(merchant, player) {
     } else return emptySlot;
     var price = merchantItemPrice(item);
     var unavailable = item.kind === 'gem' && !isGemEnabled(item.type);
-    return '<div class="shop-card' + (item.sold ? ' sold' : '') + '"' + (item.kind === 'equipment' ? ' data-merchant-equipment="' + i + '" tabindex="0"' : '') + ' style="border-color:' + c + '">' +
+    return '<div class="shop-card' + effClass + (item.sold ? ' sold' : '') + '"' + (item.kind === 'equipment' ? ' data-merchant-equipment="' + i + '" tabindex="0"' : '') + ' style="border-color:' + (frameColor || c) + '">' +
       '<div class="shop-emoji">' + icon + '</div>' +
       '<div class="shop-name" title="' + esc(name) + '" style="color:' + c + '">' + esc(name) + '</div>' +
       '<div class="shop-stat">' + stat + '</div>' +

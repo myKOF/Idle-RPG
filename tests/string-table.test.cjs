@@ -155,6 +155,18 @@ test('applyDom：data-str／data-str-html／data-str-attr 會被替換，載入�
   assert.equal(c.attrs['data-tt-desc'], '說明：值');
 });
 
+test('序章字幕路徑不列為文案，同一檔案的文字仍受字串稽核', () => {
+  const { extract } = require('../tools/string-table/chain.cjs');
+  const { scopeReason } = require('../tools/string-table/scope.cjs');
+  const captionPath = 'opening_animation/序章旁白.md?v=2';
+  const setting = (key, text) => `var INTRO_REPLAY_TIMELINE = { ${key}: '${text}' };`;
+  const reason = (source, file = 'js/intro-data.js') => scopeReason({ ...extract(source)[0], file });
+  assert.equal(reason(setting('captions', captionPath)), 'asset');
+  assert.equal(reason(setting('title', captionPath)), '');
+  assert.equal(reason(setting('captions', '這是序章文案')), '');
+  assert.equal(reason(setting('captions', captionPath), 'js/ui.js'), '');
+});
+
 test('程式與 HTML 裡沒有寫死的顯示文字（全部走 String 表，AI_RULES 8.10）', () => {
   let out = '';
   try {
