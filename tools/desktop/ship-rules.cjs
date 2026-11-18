@@ -55,6 +55,8 @@ var EXCLUDE_EXTS = {
 var EXCLUDE_FILES = [
   // 序章以 js/intro-data.js 的播放路徑出貨，這裡列出只供編輯保存的成片。
   { path: 'opening_animation/shot-01-02.mp4', reason: '序章剪輯舊版' },
+  { path: 'opening_animation/shot-01-03.mp4', reason: '前三鏡重播封存版' },
+  { path: 'opening_animation/shot-01-03-sfx.mp3', reason: '前三鏡音效封存版' },
   { path: 'opening_animation/shot-01-extended.mp4', reason: '序章剪輯舊版' },
   { path: 'opening_animation/shot-04-32.2s.mp4', reason: '序章剪輯舊版' },
   { path: 'opening_animation/shots-01-02-34s.mp4', reason: '序章剪輯舊版' },

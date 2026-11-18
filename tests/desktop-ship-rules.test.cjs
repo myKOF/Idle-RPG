@@ -80,7 +80,6 @@ test('授權檔一律出貨，原始檔與開發目錄不出貨', () => {
   assert.strictEqual(Rules.classify('tests/desktop-ship-rules.test.cjs').ship, false);
   assert.strictEqual(Rules.classify('config/param-patches/.gitignore').ship, false);
   assert.strictEqual(Rules.classify('js/main.js').ship, true);
-  assert.strictEqual(Rules.classify('opening_animation/shot-01-03.mp4').ship, true);
 });
 
 test('序章實際播放的影片與音效有出貨', () => {
@@ -91,6 +90,8 @@ test('序章實際播放的影片與音效有出貨', () => {
   assert.ok(refs.includes('opening_animation/shots-01-05-replay-sfx.mp3'));
   assert.ok(refs.includes('opening_animation/prologue-audio/prologue-sfx.wav'));
   assert.ok(refs.includes('opening_animation/storybook/paper.webp'));
+  assert.strictEqual(Rules.classify('opening_animation/shot-01-03.mp4').ship, false);
+  assert.strictEqual(Rules.classify('opening_animation/shot-01-03-sfx.mp3').ship, false);
   assert.strictEqual(Rules.classify('opening_animation/review/draft.mp4').ship, false);
   for (const r of refs) assert.ok(shipped.has(r), r + ' 沒有出貨');
 });
