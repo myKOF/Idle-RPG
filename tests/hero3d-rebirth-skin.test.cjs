@@ -38,7 +38,7 @@ test('轉生數快速變動時過期載入會釋放，回到同一目標仍可�
  assert.equal(h.pending.length,2);const stale=h.ctrl(1);h.pending[0].resolve(stale);await a;assert.equal(stale.disposed,true);assert.equal(h.S.hero3d,h.initial);
  const latest=h.ctrl(1);h.pending[1].resolve(latest);await b;assert.equal(h.S.hero3d,latest);
 });
-test('新皮膚失敗保留原模型，不因每次header快照重複下載；正式服不建立載入',async()=>{
+test('新皮膚失敗保留原模型，不因每次header快照重複下載；2D模式不載入模型',async()=>{
  const h=setup(),p=h.c.syncHero3dAppearance(1);h.pending[0].reject(Error('404'));await p;
  assert.equal(h.S.hero3d,h.initial);assert.equal(h.initial.disposed,false);assert.equal(h.warnings.length,1);
  assert.equal(h.c.syncHero3dAppearance(1),null);assert.equal(h.pending.length,1);

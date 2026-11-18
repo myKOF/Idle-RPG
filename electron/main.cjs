@@ -214,6 +214,7 @@ function sameOrigin(a, b) {
    Electron 預設是全部允許，不設處理器等於把權限交給任何載入的內容。 ---- */
 var ALLOWED_PERMISSIONS = {
   'fullscreen': true,
+  'keyboardLock': true,
   'pointerLock': true,
   'clipboard-sanitized-write': true,
   'fileSystem': true,          // 網頁版的存檔資料夾（showDirectoryPicker）；任務 C 會在桌面版隱藏該功能
@@ -230,7 +231,7 @@ function setupPermissions(ses) {
 
 /* ---- 全螢幕：開機、快捷鍵與 Windows 最大化沿用遊戲的 HTML 全螢幕 ----
    requestFullscreen 需要使用者手勢，executeJavaScript 的 userGesture 參數就是為此存在。
-   這樣遊戲內的全螢幕按鈕、Esc 離開、按鈕提示文字都與網頁版一致。 */
+   這樣遊戲內的全螢幕按鈕和鍵盤處理都與網頁版一致。 */
 var FULLSCREEN_ON = 'document.fullscreenElement ? true : document.documentElement.requestFullscreen().then(function(){return true;},function(){return false;})';
 var FULLSCREEN_TOGGLE = 'document.fullscreenElement ? document.exitFullscreen().then(function(){return false;},function(){return true;}) : (' + FULLSCREEN_ON + ')';
 

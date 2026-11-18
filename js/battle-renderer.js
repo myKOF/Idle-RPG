@@ -2347,10 +2347,10 @@ var BattleRenderer = (function () {
     }
   }
 
-  /* ---- 3D 主角（內測，js/hero3d.js）----
+  /* ---- 3D 主角（js/hero3d.js）----
      只換主角「身體怎麼畫」：站位、鏡頭、陰影、特效、血條全沿用 2D 那一套。
-     Hero3D.enabled() 在正式版恆為 false，這裡直接回傳、不下載 three.js 與模型。
-     載入失敗就關掉開關退回 2D，不讓戰鬥畫面壞掉。 */
+     外部版預設載入，內測版由 3D 開關決定。
+     載入失敗時本次戰鬥退回 2D，內測版也會關閉開關。 */
   var hero3dWantedSkin = 0, hero3dSkinRequest = 0, hero3dLoadingSkin = null, hero3dFailedSkin = null;
   function syncHero3dAppearance(count) {
     if (typeof Hero3D === 'undefined' || !Hero3D.enabled()) return null;
