@@ -1,3 +1,10 @@
+## CHEST-ART-PROPORTIONS-20261119 — 微調熔爐寶箱比例
+
+- Codex，Done。依使用者截圖將五種寶箱與鎖鏈的顯示寬度縮小 12%，高度與卡片位置維持原尺寸。前置依賴為現有熔爐寶箱列。
+- 範圍限 `css/chest.css`、主頁樣式快取、寶箱功能說明及本段。素材、程式邏輯與配置表排除於本次修改範圍。驗證五種箱身、鎖鏈置中、卡片排版及寶箱回歸，交使用者驗收與整合。
+- 唯讀核對 `js/ui-chest.js` 的箱身與鎖鏈及既有寶箱測試。共用首頁與文件的修改分段試合，只暫存本次內容。隔離靜音 Edge 在 1920×1080 與 1280×720 驗證五種圖示和三幅鎖鏈疊圖的寬度、高度、中心與卡片配置，頁面例外 0。
+- `node --test tests/chest.test.cjs tests/task-chest-relic.test.cjs tests/ui-fixed-canvas.test.cjs` 31 項通過，`npm.cmd run build` 通過 739 檔。可供整合。
+
 ## BATTLE-NPC-ATTRIBUTE-INLINE-20261118 — 屬性圖示與 NPC 名稱同列
 
 - Owner：Codex，Done。野外與封魔塔的 NPC 名牌將屬性圖示放在名稱左邊並維持同列，沿用放大後的基礎字級。備援卡片的縮字下限為 10 px。
