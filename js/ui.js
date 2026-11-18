@@ -8365,9 +8365,6 @@ function showOfflineSummary(sum) {
   if (!overlay || !body || !sum) return;
   var hrs = Math.floor(sum.seconds / 3600), mins = Math.floor((sum.seconds % 3600) / 60);
   var h = '<div class="talent-modal-head"><span class="talent-modal-icon">🌙</span>' + STR(2099, (hrs ? STR(78, hrs) + ' ' : ''), mins) + '</div>';
-  /* 怪物種類由參數表決定（formula.js §10 OFFLINE_ELITE），不能寫死「菁英怪」。
-     舊的離線摘要沒有 elite 欄位，視為菁英以維持原本的顯示。 */
-  var offKind = (sum.elite === false) ? STR(2052) : STR(2053);
   h += '<div class="offline-sum-row offline-sum-primary">' + STR(2055, fmt(sum.xp), fmt(sum.gold)) + '</div>';
   var forge = sum.forge || {};
   if (forge.salvaged > 0) {
@@ -8376,7 +8373,7 @@ function showOfflineSummary(sum) {
   // 遺物獎勵與回歸加成列在收益區，讓掉落物維持在最後。
   if (sum.towerRewards) h += '<div class="offline-sum-row">' + esc(STR(2466, fmt(sum.towerRewards.hours), fmt(sum.towerRewards.pct), sum.towerRewards.floor)) + '</div>';
   if (sum.returnBuff) h += '<div class="offline-sum-row">' + esc(STR(2467, sum.returnBuff.minutes, sum.returnBuff.pct)) + '</div>';
-  h += '<div class="offline-sum-row">' + STR(2054, fmt(sum.stage), esc(sum.zoneName || ''), offKind, fmtFull(sum.kills)) + '</div>';
+  h += '<div class="offline-sum-row">' + offlineBattleSummaryText(sum) + '</div>';
   var drops = [], materials = [];
   for (var r = 0; r < RARITIES.length; r++) {
     if (sum.equips && sum.equips[r]) {

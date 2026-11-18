@@ -1265,7 +1265,7 @@
   <script src="js/relic.js?v=20261112-chest-v1"></script>
   <script src="js/chest_data.js?v=20261112-sync-chest-v3"></script>
   <script src="js/chest.js?v=20261118-demo-edition"></script>
-  <script src="js/formula.js?v=20261113-reroll-r8-v1"></script>
+  <script src="js/formula.js?v=20261119-offline-waves"></script>
   <script src="js/battle-terrain.js?v=1.0.6"></script>
   <script src="js/battlefield.js?v=20261109-treant-audio-sync-a54d6904"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
@@ -1313,14 +1313,14 @@
   <script src="js/save-schema.js?v=1.0.0"></script>
   <script src="js/player.js?v=20261118-demo-edition"></script>
   <script src="js/system-unlocks.js?v=20261103-unlock-hints"></script>
-  <script src="js/combat.js?v=20261118-demo-edition"></script>
+  <script src="js/combat.js?v=20261119-offline-waves"></script>
   <script src="js/tower.js?v=20261118-demo-edition"></script>
   <!-- 桌面版存檔資料夾的把手（只有 Electron 的 ApexHost 存在時才生效，網頁版為 null）；save.js 的 idbGetDir 會用到 -->
   <script src="js/desktop-save-dir.js?v=1.0.1"></script>
-  <script src="js/save.js?v=20261118-demo-edition"></script>
+  <script src="js/save.js?v=20261119-offline-waves"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261118-opening-music-handoff"></script>
-  <script src="js/ui.js?v=20261118-battle-npc-attribute"></script>
+  <script src="js/ui.js?v=20261119-offline-waves"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=20261118-quest-guide"></script>
   <script src="js/quest-guide.js?v=2"></script>
@@ -1338,7 +1338,7 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- ?? Worker ???????? main.js ????????? -->
-  <script src="js/worker/protocol.js?v=20261112-sync-chest-v3"></script>
+  <script src="js/worker/protocol.js?v=20261119-offline-waves"></script>
   <script src="js/storage.js?v=1.0.3"></script>
   <script src="js/save_origin.js?v=20261117-fixed-canvas-save-schema-v1"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
@@ -1348,7 +1348,7 @@
   <script src="js/intro-scene.js?v=20261117-fixed-canvas-v1"></script>
   <script src="js/intro-audio.js?v=20261118-finale-fade"></script>
   <script src="js/intro-player.js?v=20261118-intro-width"></script>
-  <script src="js/bridge.js?v=20261118-claude-codex-integration-v1"></script>
+  <script src="js/bridge.js?v=20261119-offline-waves"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

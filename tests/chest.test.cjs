@@ -416,7 +416,8 @@ test('接線：拆解入口、離線結算、存檔遷移、Worker 面板與載�
   const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
   assert.match(read('js/factory.js'), /chestGainSalvageXp\(it\.rarity\)/);
   const save = read('js/save.js');
-  assert.equal((save.match(/chestGainSalvageXp\(r\)/g) || []).length, 2, '離線滿載折算的兩個分支都要給經驗');
+  assert.match(save, /overflow\.forEach\(function \(count, rarity\) \{ chestGainSalvageXp\(rarity, count\); \}\)/,
+    '離線滿載折算依品質與件數補發鍛造經驗');
   assert.match(save, /chestCountsSnapshot\(\)/);
   assert.match(save, /sanitizeChests\(data\)/);
   const worker = read('js/worker/sim.worker.js');

@@ -180,13 +180,19 @@ test('離線：長夜沙漏延長上限，夜班熔爐／夢境捕手另外乘�
   c.ZONE_STAGE_DROP_TABLE.swamp = [{ min: 1, max: 400, equipmentRates: [100], materials: { gemRates: [], bookRate: 0, ancientEssenceRate: 0, dustRate: 0, partRate: 0 } }];
   c.G.stage.zone = 'swamp';
   c.G.stage.best = 256;
+  c.G.stage.current = 250;
+  c.ZONE_ENCOUNTER.swamp.eliteCount = [[1, 300, [[1, 1]]]];
+  c.ZONE_ENCOUNTER.swamp.eliteSize = [[1, 300, 1, 1]];
+  c.ZONE_ENCOUNTER.swamp.elitePure = [[1, 300, 100]];
+  c.pushConveyor = () => false;
   setLevel(c, 'offlineHours', 2);
   setLevel(c, 'offlineXp', 1);
   setLevel(c, 'offlineEquipDrop', 10);
   const hours = c.OFFLINE_MAX_HOURS + valueAt(c, 'offlineHours', 2);
   c.G.savedAt = Date.now() - (hours + 5) * 3600 * 1000;   // 離線超過延長後的上限
   const sum = c.applyOfflineProgress();
-  const kills = Math.floor(hours * 3600 / c.OFFLINE_KILL_INTERVAL);
+  const kills = Math.floor(hours * 3600 / c.OFFLINE_WAVE_INTERVAL);
+  assert.equal(sum.waves, kills);
   assert.equal(sum.kills, kills, '上限＝參數表＋長夜沙漏');
   const stage = sum.stage, m = c.monsterStatsFor(stage, true), rw = c.ZONES.swamp.rewardMult;
   assert.equal(sum.xp, Math.round(m.xp * rw * (1 + valueAt(c, 'offlineXp', 1) / 100)) * kills);

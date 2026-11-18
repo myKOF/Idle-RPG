@@ -1490,7 +1490,7 @@ function rollFieldEnemyCount(rank, stage, zone) {
 
 /* ---- 菁英群組（表本體與欄位語意 → data.js ELITE_GROUP）----
    這一組函式只負責「擲骰」：這一波要不要出菁英群、出幾群、每群幾隻、全員菁英還是帶小兵、
-   每隻是菁英還是高級菁英由 combat.js spawnEliteWave 擲骰。技能與數量不在這裡：NPC 表決定（js/elite.js eliteRollSkills）。 */
+   逐隻抽一般或高級菁英。線上出怪與離線戰鬥共用；敵人技能由 NPC 表決定。 */
 /* 取「這一關落在哪一列」。列＝[最低關, 最高關, …]；沒有任何一列涵蓋時回 null。 */
 function eliteBandRows(rows, stage) {
   var s = Math.floor(Number(stage) || 0);
@@ -1539,6 +1539,38 @@ function planEliteWave(stage, zone, onEliteStage) {
     plan.push({ size: rollEliteGroupSize(stage, zone), pure: rollEliteGroupPure(stage, zone) });
   }
   return plan;
+}
+
+function rollFieldWaveRank(stage, zone, bossAvailable, useEliteGroups) {
+  if (bossAvailable) return 'boss';
+  var eliteStage = isEliteStage(stage);
+  if (useEliteGroups && (eliteStage || chance(eliteNormalChanceFor(stage, zone)))) return 'eliteGroup';
+  return eliteStage ? 'elite' : 'normal';
+}
+
+function eliteGroupLeaderCount(group) {
+  var leaders = Math.max(1, Math.floor(Number(ELITE_GROUP.leaders) || 1));
+  return group.pure ? group.size : Math.min(group.size, leaders);
+}
+
+function rollEliteGroupMember(index, leaders, eliteStage) {
+  if (index >= leaders) return 'minion';
+  var rates = ELITE_GROUP.advChance;
+  var pct = Array.isArray(rates) ? Number(rates[eliteStage ? 1 : 0]) || 0 : 0;
+  return chance(pct) ? 'elite_adv' : 'elite';
+}
+
+// 群成員倍率乘在已含敵種基礎倍率的收益上。
+function eliteGroupMemberRewardMult(rank) {
+  if (rank === 'minion') {
+    var minion = Number(ELITE_GROUP.minionReward);
+    return minion >= 0 ? minion : 1;
+  }
+  if (rank === 'elite_adv') {
+    var elite = FIELD_ELITE.rewardMult || 1;
+    return (Number(ELITE_GROUP.advReward) > 0 ? Number(ELITE_GROUP.advReward) : elite) / elite;
+  }
+  return 1;
 }
 
 /* 野外 BOSS 階段：階段為 FIELD_BOSS_STAGE_INTERVAL 的倍數；與菁英階段重疊時 BOSS 優先。
@@ -1801,6 +1833,10 @@ function rollRarity(stage, lootBonus) {
 
 /* ---- 野外材料掉落（基礎機率由 Zone_Stage_Drops.csv 提供） ---- */
 var ELITE_DROP_MULT = 1.5;       // 菁英掉落倍率：裝備與材料都在一般基礎上乘此值（野外與離線收益共用）
+
+function fieldEnemyDropMult(elite, boss) {
+  return boss ? FIELD_BOSS_DROP_MULT : (elite ? ELITE_DROP_MULT : 1);
+}
 
 /* ---- 太古詞條／太古精華機率 ---- */
 // 裝備產出時擲骰太古詞條條數：依「詞條數量」查權重表 ANCIENT_COUNT_WEIGHTS（data.js），
@@ -2636,39 +2672,12 @@ function skillCdFor(sk) {
    §10 離線收益
    ============================================================ */
 
-/* 離線收益是「以歷史最高關卡為基準的固定費率」模型：不看命中率、不看怪物血量、
-   也不看玩家傷害，時間到就照表發。下面五個值就是這個模型的全部旋鈕。
+/* 離線依存檔所在關卡抽野外波次。時間只決定戰鬥場次，敵種與隻數由每一波的權重決定。 */
+var OFFLINE_MAX_HOURS = 24;      // 基礎離線上限（小時）
+var OFFLINE_WAVE_INTERVAL = 5;  // 每隔此秒數結算一場野外戰鬥
 
-   ⚠️ 模擬器實測過這個模型的後果：關卡數一旦跑贏傷害，固定費率會發放玩家實際
-   做不到的擊殺（停在關卡 188 時線上每分鐘殺 0~1 隻，離線照發 3 隻菁英怪），
-   於是「推到推不動然後掛機」成為最佳解。這是刻意保留的設計，用下面的旋鈕調整
-   強度即可；量測與取捨記在 docs/SIM_HARNESS.md「產出閘門」一節。 */
-var OFFLINE_MAX_HOURS = 24;        // 離線收益時間上限（小時）；1 分鐘內不計
-var OFFLINE_LEVEL_REDUCE = 10;    // 計算等級扣減：歷史最高階段 × 比例 − 此值
-var OFFLINE_STAGE_RATIO = 1;      // 計算等級比例：先把歷史最高階段乘上這個值再扣減（1＝不打折）
-var OFFLINE_STAGE_ROUND = 10;     // 計算等級取整單位：扣減後無條件捨去到此值的倍數
-var OFFLINE_KILL_INTERVAL = 10;   // 擊殺速率：每隔此秒數擊殺 1 隻（20 秒＝每分鐘 3 隻）
-var OFFLINE_ELITE = 1;            // 離線怪物種類：1＝菁英（經驗掉落較高，並套用菁英掉落倍率）0＝普通
-
-// 離線計算等級 = max(1, ⌊(歷史最高階段 × 比例 − 扣減) / 取整單位⌋ × 取整單位)
-// 流程：取該圖最高關卡 → 減去偏移 → 捨去到整數倍 → 得到菁英怪等級
-function offlineStageFor(best) {
-  var b = Math.max(1, Math.floor(Number(best) || 1));
-  /* 取整單位若被設成 0 或負數，除法會得到 Infinity/NaN 而不是「不取整」。
-     這是配置檔常見的手誤，夾在 1 以上讓它退化成「不取整」而不是壞掉。 */
-  var unit = Math.max(1, Math.floor(Number(OFFLINE_STAGE_ROUND) || 1));
-  var ratio = Number(OFFLINE_STAGE_RATIO);
-  if (!isFinite(ratio) || ratio <= 0) ratio = 1;
-  var s = Math.floor((b * ratio - OFFLINE_LEVEL_REDUCE) / unit) * unit;
-  return Math.max(1, s);
-}
-
-// 離線是否結算菁英怪。掉落倍率也跟著這個旗標，才不會出現「普通怪卻吃菁英掉落倍率」。
-function offlineUsesElite() { return !!Number(OFFLINE_ELITE); }
-
-// 離線擊殺數 = ⌊有效離線秒數 / 擊殺間隔⌋；每隻怪的掉落單獨擲骰（save.js）
-function offlineKillCount(elapsed) {
-  var interval = Math.max(1, Number(OFFLINE_KILL_INTERVAL) || 1);
+function offlineWaveCount(elapsed) {
+  var interval = Math.max(1, Number(OFFLINE_WAVE_INTERVAL) || 1);
   return Math.max(0, Math.floor(elapsed / interval));
 }
 

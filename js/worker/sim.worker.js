@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-  importScripts('protocol.js?v=20261112-sync-chest-v3', '../game-clock.js?v=1.0.1', 'shim.js?v=20261109-treant-audio-sync-a54d6904');
+  importScripts('protocol.js?v=20261119-offline-waves', '../game-clock.js?v=1.0.1', 'shim.js?v=20261109-treant-audio-sync-a54d6904');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,17 +20,17 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../game-edition.js?v=1.0.0', '../data.js?v=20261118-claude-codex-integration-v1', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261114-oni-relic-sync-v1', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-sync-chest-v3', '../chest.js?v=20261118-demo-edition', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261113-reroll-r8-v1', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../game-edition.js?v=1.0.0', '../data.js?v=20261118-claude-codex-integration-v1', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261114-oni-relic-sync-v1', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-sync-chest-v3', '../chest.js?v=20261118-demo-edition', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261119-offline-waves', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
   '../item.js?v=20261113-reroll-count-v1', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261109-relics',
   '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261118-demo-edition', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
   '../save-schema.js?v=1.0.0', '../player.js?v=20261118-demo-edition', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261118-demo-edition', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261118-demo-edition',
-  '../factory.js?v=20261112-chest-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261118-demo-edition',
+  '../combat.js?v=20261119-offline-waves', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261118-demo-edition',
+  '../factory.js?v=20261112-chest-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261119-offline-waves',
   '../tasks.js?v=20261112-task-chest-relic', '../achievements.js?v=20261103-equipment-rarity-v3'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
-importScripts('../gm_exec.js?v=20261112-chest-levels-v1');
+importScripts('../gm_exec.js?v=20261119-offline-waves');
 
 /* ---- 決定論測試模式（只在本機、只在網址帶 ?seed=N 時啟用）----
    存在的唯一理由：讓瀏覽器實機跑出來的結果，能和 headless 模擬器
@@ -156,11 +156,8 @@ function reportError(where, err) {
    遊戲規則：**分頁在背景＝仍在線上掛機，只有整個遊戲被關掉才算離線。**
    所以隱藏分頁一律維持即時模擬，離線結算只在開機時發生（見 boot）。
 
-   舊版在隱藏 60 秒後停止推進、回前景改用離線收益補，那是從單執行緒 main.js
-   繼承來的。它有兩個問題：離線收益是**另一套固定費率模型**（每 20 秒殺一隻
-   best−10 的菁英怪，與玩家實際 DPS 與所在關卡無關），拿它替代即時模擬等於
-   在背景換一套玩法；而且休眠門檻用 `_hiddenAt` 起算、離線結算的 60 秒下限卻用
-   `savedAt` 起算，兩個基準不同——背景約 60～120 秒這段會兩邊都不給，收益是 0。
+   離線收益按固定戰鬥間隔抽取存檔關卡的野外波次，背景分頁則繼續逐步模擬戰鬥。
+   將兩套流程混用時，隱藏時間從 `_hiddenAt` 起算，離線時間從 `savedAt` 起算，會漏掉一段收益。
 
    真正要解決的是瀏覽器對背景分頁計時器的降頻：計時器晚回來時，
    `elapsed` 會一次很大，舊碼直接截斷成 10 秒，等於把降頻期間的時間丟掉。
@@ -427,6 +424,7 @@ function deterministicLoop() {
 function loop() {
   if (!_booted) return;
   if (_menuPaused) return;
+  if (offlineProgressPending()) return;
   if (DETERMINISTIC_STEPS) { deterministicLoop(); return; }
   var _lt0 = slowLoopBegin();
   try {
@@ -1043,6 +1041,7 @@ function requestPersist(kind, opts) {
   if (DETERMINISTIC_STEPS && isUnattendedPersist(kind)) return null;
   if (_restarting && kind !== PERSIST_KINDS.RESTART) return null;
   opts = opts || {};
+  if ((!opts.state || opts.state === G) && offlineProgressPending()) return null;
   try {
     var token = 'p' + (++_persistSeq);
     var prevSavedAt = G.savedAt;
@@ -1115,6 +1114,7 @@ function installStorageGuards() {
   /* 一般手動存檔：未連接資料夾時仍要落地（舊路徑是寫進瀏覽器存檔記錄）。
      一鍵分解前的保護存檔走的就是這條，不能因為沒接資料夾就靜靜消失。 */
   self.manualSave = function (label) {
+    if (offlineProgressPending()) return null;
     var meta = buildManualMeta(label);
     requestPersist(PERSIST_KINDS.MANUAL, { meta: meta });
     return meta;
@@ -1122,6 +1122,7 @@ function installStorageGuards() {
 
   /* 明確「另存到資料夾」：沒接資料夾就該失敗，不要偷偷存到別的地方 */
   self.createManualSaveToFolderV2 = function (label) {
+    if (offlineProgressPending()) return null;
     var meta = buildManualMeta(label);
     requestPersist(PERSIST_KINDS.MANUAL_FOLDER, { meta: meta });
     return meta;
@@ -1858,20 +1859,25 @@ function boot(msg) {
     events: shimDrainEvents()
   });
 
-  if (deferOfflineProgress) {
-    _offlineBootTimer = setTimeout(function () {
-      _offlineBootTimer = 0;
-      if (!_booted) return;
-      applyOfflineProgress({ chunkSize: 24, done: function (offlineSummary) {
-        if (!offlineSummary) return;
-        /* applyOfflineProgress() 會透過 shim 累積 dirty/events；立即送出，
-           不必等下一個 tick 才讓資源、輸送帶與離線收益摘要出現在 UI。 */
-        emitTick();
-        G.savedAt = Date.now();
-        requestPersist(PERSIST_KINDS.AUTO);
-      }});
-    }, 0);
-  }
+  if (deferOfflineProgress) scheduleOfflineProgress(false);
+}
+
+function offlineProgressPending() {
+  return _offlineBootTimer || (typeof _offlineProgressState !== 'undefined' && _offlineProgressState === G);
+}
+
+function scheduleOfflineProgress(persistIfEmpty) {
+  if (_offlineBootTimer) clearTimeout(_offlineBootTimer);
+  var state = G;
+  _offlineBootTimer = setTimeout(function () {
+    _offlineBootTimer = 0;
+    if (!_booted || G !== state) return;
+    var result = applyOfflineProgress({ done: function () {
+      emitTick();
+      requestPersist(PERSIST_KINDS.AUTO);
+    }});
+    if (result === undefined && persistIfEmpty) requestPersist(PERSIST_KINDS.AUTO);
+  }, 0);
 }
 
 /* ---- 執行中讀檔（v2 新增）----
@@ -1887,12 +1893,12 @@ function loadIntoRunningSim(msg) {
   updateShownRes();
   if (typeof markStatsDirty === 'function') markStatsDirty();
   if (typeof initFieldPlayer === 'function') initFieldPlayer();
-  if (typeof applyOfflineProgress === 'function') applyOfflineProgress();
   _lastTickAt = Date.now();
   _lastEmitAt = _lastAutoAt = _lastFolderAt = _lastTickAt;
   PANEL_KEYS.forEach(function (k) { UI.dirty[k] = true; });
   post(MSG_OUT.FULL, { snapshot: { view: buildView() }, events: shimDrainEvents() });
-  requestPersist(PERSIST_KINDS.AUTO); // 換檔後立刻鎖定 savedAt 基準
+  if (typeof applyOfflineProgress === 'function') scheduleOfflineProgress(true);
+  else requestPersist(PERSIST_KINDS.AUTO);
 }
 
 /* ---- 分頁顯示狀態（v9 起）----

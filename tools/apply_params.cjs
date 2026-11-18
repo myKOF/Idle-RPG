@@ -883,13 +883,7 @@ scalar('data', 'NEW_FORGE_SLOT_COST_B', '7-分解槽', '分解槽解鎖費用', 
 scalar('data', 'NEW_FORGE_SLOT_COST_C', '7-分解槽', '分解槽解鎖費用', 2);
 scalar('data', 'NEW_FORGE_SLOT_COST_D', '7-分解槽', '分解槽解鎖費用', 3);
 scalar('formula', 'OFFLINE_MAX_HOURS', '10-離線', '有效離線時間', 0);
-scalar('formula', 'OFFLINE_LEVEL_REDUCE', '10-離線', '計算等級', 0);
-scalar('formula', 'OFFLINE_KILL_INTERVAL', '10-離線', '擊殺速率', 0);
-/* 下面三個要等 Excel 補上欄位／列才會生效，在那之前 scalarOpt 會跳過並列在報表最後。
-   「計算等級」列目前只有參數a（扣減），b（取整單位）與 c（關卡比例）是新增的欄位。 */
-scalarOpt('formula', 'OFFLINE_STAGE_ROUND', '10-離線', '計算等級', 1);
-scalarOpt('formula', 'OFFLINE_STAGE_RATIO', '10-離線', '計算等級', 2);
-scalarOpt('formula', 'OFFLINE_ELITE', '10-離線', '怪物種類', 0);
+scalar('formula', 'OFFLINE_WAVE_INTERVAL', '10-離線', '戰鬥間隔', 0);
 scalar('formula', 'SKILL_CAST_LOCK', '9-技能', '施放硬直', 0);
 // 參數b：放出後角色多站定幾秒（等 Excel 參數b 填值才生效；填 0 或空白＝不站定，scalarOpt 會跳過）
 scalarOpt('formula', 'SKILL_CAST_HOLD', '9-技能', '施放硬直', 1);

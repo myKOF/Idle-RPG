@@ -65,10 +65,9 @@ test('offlineFor 推進牆鐘但不推進 gt，收益由遊戲的 applyOfflinePr
   /* 摘要是遊戲原生的物件，欄位名不由 harness 決定 */
   assert.ok(sum, '8 小時離線應該要有結算結果');
   assert.equal(sum.seconds, 8 * 3600);
-  /* 每 OFFLINE_KILL_INTERVAL 秒一隻，這是遊戲的固定費率模型，與線上 DPS 無關。
-     不在這裡寫死 20 秒——那會變成公式的第二份副本；改讀遊戲自己的常數。 */
-  const interval = eng.ctx.OFFLINE_KILL_INTERVAL;
-  assert.equal(sum.kills, Math.floor(8 * 3600 / interval));
+  const interval = eng.ctx.OFFLINE_WAVE_INTERVAL;
+  assert.equal(sum.waves, Math.floor(8 * 3600 / interval));
+  assert.ok(sum.kills >= sum.waves);
   assert.ok(sum.gold > 0 && sum.xp > 0, '離線應該要有金幣與經驗');
   assert.ok(after.gold > before.gold, '金幣要真的入帳到 G，不是只出現在摘要裡');
 });

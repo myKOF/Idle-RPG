@@ -222,10 +222,8 @@ function createEngine(opts) {
          3. applyOfflineProgress()  遊戲自己的離線結算
 
        ⚠️ 收益一律由 js/save.js 的 applyOfflineProgress 計算，harness 不碰任何公式。
-       那是與線上**完全不同的一套模型**（固定費率：每 OFFLINE_KILL_INTERVAL 秒殺一隻
-       比最高關卡低十幾關的菁英怪），這正是「輕度玩家掛機 22 小時」與「在線掛機 22 小時」
-       結果差很多的原因——也正是不模擬離線就會失真的地方。
-       上限（OFFLINE_MAX_HOURS）與「一分鐘內不計」也都由它自己判斷，這裡不預先過濾。
+       離線使用固定戰鬥間隔，依存檔的地圖和關卡抽取野外波次。
+       結算函式同時處理時間上限與最短時間門檻。
 
        不傳 done 就走同步路徑（js/save.js 結尾的 for 迴圈），直接回傳摘要；
        非同步分塊路徑是給瀏覽器不要卡住主執行緒用的，headless 不需要。

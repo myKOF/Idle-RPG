@@ -133,12 +133,12 @@ test('分頁隱藏只落地存檔，不再結算離線收益', () => {
     '切回前景不得重設 _lastTickAt——那段正是玩家掛機的時間，重設等於丟掉');
 });
 
-test('離線結算只發生在開機（遊戲真的被關掉）', () => {
-  assert.match(workerSrc, /function boot\(msg\)[\s\S]*?applyOfflineProgress\(\)/,
-    'boot 仍應結算離線收益');
+test('開機與手動讀檔都結算離線收益，分頁切換只維持即時戰鬥', () => {
+  assert.match(workerSrc, /if \(deferOfflineProgress\) scheduleOfflineProgress\(false\)/);
+  assert.match(workerSrc, /function loadIntoRunningSim\(msg\)[\s\S]*?scheduleOfflineProgress\(true\)/);
   const visibilityFn = workerSrc.slice(workerSrc.indexOf('function onVisibility'));
   const body = visibilityFn.slice(0, visibilityFn.indexOf('\n}'));
-  assert.doesNotMatch(body, /applyOfflineProgress/,
+  assert.doesNotMatch(body, /applyOfflineProgress|scheduleOfflineProgress/,
     'onVisibility 不得再結算離線收益');
 });
 
