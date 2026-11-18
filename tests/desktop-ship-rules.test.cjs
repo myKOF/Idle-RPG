@@ -10,6 +10,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
+const vm = require('node:vm');
 const { execFileSync } = require('child_process');
 const Rules = require('../tools/desktop/ship-rules.cjs');
 
@@ -18,6 +19,11 @@ const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, maxBuffer: 
   .toString('utf8').split('\0').filter(Boolean);
 const trackedSet = new Set(tracked);
 const shipped = new Set(tracked.filter((p) => Rules.classify(p).ship));
+const introDataPath = 'js/intro-data.js';
+
+function replayTimeline(source) {
+  return vm.runInNewContext(source + '\nINTRO_REPLAY_TIMELINE;');
+}
 
 function runtimeSources() {
   return tracked.filter((p) => /^js\/.*\.js$/.test(p) || /^css\/.*\.css$/.test(p) || p === 'index.html')
@@ -43,8 +49,10 @@ test('執行期程式碼寫死的資源路徑全部在出貨清單裡', () => {
   const missing = new Set();
   const re = /['"`]((?:images|audio|assets|vfx|fonts|js|css|opening_animation)\/[^'"`?#\s]+\.[a-z0-9]{2,5})(?=[?#'"`])/gi;
   for (const src of runtimeSources()) {
+    // 序章另有本機 GM 專用時間軸，正式版只讀重播設定。
+    const content = src.path === introDataPath ? JSON.stringify(replayTimeline(src.text)) : src.text;
     let m;
-    while ((m = re.exec(src.text))) {
+    while ((m = re.exec(content))) {
       const rel = m[1];
       if (rel.includes('${') || rel.includes('*')) continue;
       if (trackedSet.has(rel) && !shipped.has(rel)) missing.add(rel + '（' + src.path + '）');
@@ -83,15 +91,34 @@ test('授權檔一律出貨，原始檔與開發目錄不出貨', () => {
 });
 
 test('序章實際播放的影片與音效有出貨', () => {
-  const intro = fs.readFileSync(path.join(ROOT, 'js', 'intro-data.js'), 'utf8');
-  const refs = [...intro.matchAll(/'(opening_animation\/[^'?]+)/g)].map((m) => m[1]);
+  const intro = replayTimeline(fs.readFileSync(path.join(ROOT, introDataPath), 'utf8'));
+  const refs = [intro.video, intro.captions, intro.audio.sfx].map((ref) => ref.split('?')[0]);
   assert.ok(refs.includes('opening_animation/shots-01-05-replay.mp4'));
   assert.ok(refs.includes('opening_animation/旁白.md'));
   assert.ok(refs.includes('opening_animation/shots-01-05-replay-sfx.mp3'));
-  assert.ok(refs.includes('opening_animation/prologue-audio/prologue-sfx.wav'));
-  assert.ok(refs.includes('opening_animation/storybook/paper.webp'));
+  assert.ok(shipped.has('audio/zones/desert-ascendant.mp3'));
   assert.strictEqual(Rules.classify('opening_animation/shot-01-03.mp4').ship, false);
   assert.strictEqual(Rules.classify('opening_animation/shot-01-03-sfx.mp3').ship, false);
   assert.strictEqual(Rules.classify('opening_animation/review/draft.mp4').ship, false);
   for (const r of refs) assert.ok(shipped.has(r), r + ' 沒有出貨');
+});
+
+test('舊序章素材只供本機 GM 預覽，桌面版不出貨', () => {
+  const sources = runtimeSources();
+  const previewReaders = sources.filter((src) => src.path !== introDataPath && /\bINTRO_TIMELINES\b/.test(src.text));
+  assert.deepStrictEqual(previewReaders.map((src) => src.path), ['js/gm.js']);
+  const context = {
+    location: new URL('app://game/'),
+    document: { readyState: 'complete' },
+    window: {},
+    module: { exports: {} }
+  };
+  vm.runInNewContext(previewReaders[0].text, context);
+  assert.strictEqual(context.module.exports.runClientCommand('intro list'), null);
+
+  for (const dir of ['prologue', 'prologue-v2', 'prologue-audio', 'storybook']) {
+    const files = tracked.filter((p) => p.startsWith('opening_animation/' + dir + '/'));
+    assert.ok(files.length > 0, dir + ' 仍供本機預覽');
+    assert.ok(files.every((p) => !shipped.has(p)), dir + ' 不出貨');
+  }
 });

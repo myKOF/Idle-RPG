@@ -30,6 +30,10 @@ var RUNTIME_ROOTS = [
 /* 整個目錄排除（前綴比對） */
 var EXCLUDE_DIRS = [
   { prefix: 'opening_animation/review/', reason: '本機序章審片與草稿' },
+  { prefix: 'opening_animation/prologue/', reason: '本機 GM 舊序章預覽素材' },
+  { prefix: 'opening_animation/prologue-v2/', reason: '本機 GM 舊序章預覽素材' },
+  { prefix: 'opening_animation/prologue-audio/', reason: '本機 GM 舊序章預覽素材' },
+  { prefix: 'opening_animation/storybook/', reason: '本機 GM 繪本序章預覽素材' },
   { prefix: 'assets/characters/', reason: '3D 騎士製作流程的中間產物（.blend／.mhm／試作 glb）；執行期模型在 images/models/' },
   { prefix: 'vfx/layouts/', reason: 'VFX 編輯器的圖層排版，執行期只讀 vfx/presets/ 與 vfx/shipped-assets.json' }
 ];
