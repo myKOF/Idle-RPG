@@ -71,13 +71,15 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 ## 遊戲重播（2026-11-17）
 
-2026-11-18 第四鏡由半跪進入持劍畫面時，以 0.5 秒的柔焦疊化銜接。左側細碎布尾沿原披風根部隨風擺動，白光從整個角色輪廓及盔甲亮面逐漸泛開。正式連播第 2585 至 2831 幀使用 `web/shot-04-rise-radiance.mp4`。執行 `node extended-shot-four/render-shot-four.cjs --frames 530 777` 可重製畫面。
+2026-11-18 第四鏡由半跪進入持劍畫面時，以 0.5 秒的柔焦疊化銜接。左側細碎布尾沿原披風根部隨風擺動。角色白光的不透明度上限為 10%，胸甲、護臂與腿甲附近有少量白光粒子緩慢上浮。正式連播第 2585 至 2831 幀使用 `web/shot-04-rise-radiance.mp4`。執行 `node extended-shot-four/render-shot-four.cjs --frames 530 777` 可重製畫面。
 
 2026-11-18 第三鏡前景左手改為手背朝上貼地、五指微張。以使用者提供的姿勢裁圖為參考，ImageGen 依原盔甲的銀白鋼片與暖金雕飾重繪透明手甲，保存為 `extended-shot-three/assets/archangel-left-hand-flat.png`。原前臂接合處以局部遮罩羽化。以腕甲接點為基準，手掌尺寸縮小約 10%，指節沿手指長軸再縮短約 10%。手下露出原沙漠底圖，並在指尖與掌緣添加低強度接地陰影。含左手修正的畫面可用 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 573 1035` 重製。正式連播的第 1593 至 2054 幀採用 `web/shot-03-flat-left-hand.mp4`。
 
 2026-11-18 調整第三鏡落地後的揭露煙塵。沙塵沿地勢鋪開，順同一風向散去，天使在原時點現身。正式連播替換第 1506 至 1711 幀。單獨重製可執行 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 486 692`，完成的畫面封存於 `web/shot-03-valley-dust.mp4`。
 
 2026-11-18 核准的第二鏡由第 16.0 秒接入，第 34.0 秒接第三鏡。大天使長沿用原立繪、墜落姿勢及鏡頭路徑，換上焦黑甲裂、反光、燃燒、煙塵碎屑與同向拖曳的流光翼。核准的 18 秒無字畫面保存在 `web/shot-02-effects-18s.mp4`。分層來源為 `extended-shot-two/index-effects.html`、`shot-two-effects.js` 和 `commander-impact.js`，共用原立繪及音效。`node extended-shot-two/render-shot-two.cjs --effects` 可重製單鏡。`--five-shots` 先還原無字連播，再以核准畫面替換第 480 至 1019 幀。
+
+第二鏡群墜時，深淵遠雲與左、右、頂部三片雲壁各自漂移、緩慢起伏，額外的前後霧層沿不同方向流動。角色、羽毛、轉場白光和雲層分開合成。
 
 正式前五鏡的畫面與旁白分離。前三鏡使用原分層重製含舊字的畫面區段。字幕由遊戲工作區的 `opening_animation/旁白.md` 提供，修改文案或時間後，下次播放直接讀取。舊版母帶仍可供審片。重製前五鏡時，`--five-shots` 會執行 `export-clean-replay.cjs` 產生無字畫面，之後接上原本的獨立音效匯出流程。
 

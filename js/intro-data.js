@@ -28,7 +28,7 @@
    其他文字圖層以 String 表編號指定（AI_RULES 8.10）。
    ============================================================================= */
 var INTRO_REPLAY_TIMELINE = {
-  video: 'opening_animation/shots-01-05-replay.mp4?v=11',
+  video: 'opening_animation/shots-01-05-replay.mp4?v=12',
   captions: 'opening_animation/旁白.md',
   duration: 110400,
   audio: {
