@@ -2983,7 +2983,7 @@ textarea#save-io {
   display: flex;
   justify-content: flex-start;
   max-width: calc(100% - 8px);
-  height: 8px;
+  height: 9px;
   padding: 0;
   overflow: hidden;
 }
@@ -2995,21 +2995,20 @@ textarea#save-io {
 :is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge > .ancient-star {
   width: 9px;
   min-width: 0;
-  height: 8px;
+  height: 9px;
   margin: 0;
   font-size: 0;
 }
 
 :is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge > .ancient-star:last-child {
   flex-shrink: 0;
-  width: 8px;
 }
 
 :is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge > .ancient-star::after {
   inset: 1.5px auto auto 1.5px;
   box-sizing: border-box;
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border: 1px solid var(--item-frame-color);
   background: none;
   transform: rotate(45deg);
