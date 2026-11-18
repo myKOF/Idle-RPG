@@ -1247,6 +1247,7 @@
 1170,裝備,文字｜player.js:15 EQUIP_SET_NAMES,,第三套,,
 1171,裝備,日誌｜sim.worker.js:1324 COMMAND_IMPL,,⚠️ 背包已滿，無法卸下,,
 1172,裝備,文字｜sim.worker.js:1325 COMMAND_IMPL,,背包已滿,,
+2567,裝備,背包容量｜擴充按鈕右側的滿包提示,,背包已滿！,,
 1173,裝備,文字｜sim.worker.js:1372 COMMAND_IMPL,,該裝備不在背包中,,
 1174,裝備,日誌｜sim.worker.js:1406 COMMAND_IMPL,{0}=代入參數：count；{1}=代入參數：fmt(scrap)（數字(縮寫)）,⚒️ 一鍵分解 {0} 件 → 碎片x{1},,
 1175,裝備,文字｜sim.worker.js:1413 COMMAND_IMPL,,沒有裝備套資料,,

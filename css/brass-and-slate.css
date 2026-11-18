@@ -254,6 +254,25 @@ body #inv-section-box .inv-head {
   background: linear-gradient(90deg, #30272b, #231e25);
   box-shadow: none;
 }
+
+#inv-full-notice {
+  margin-inline-start: 10px;
+  color: #ffb0ad;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #inv-full-notice {
+    animation: inventory-full-pulse 1s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes inventory-full-pulse {
+  from { opacity: .55; }
+  to { opacity: 1; }
+}
+
 body #tab-equip #detail-pane:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)),
 body #tab-equip :is(#equip-action-bar, .equip-material-panel) {
   border-color: var(--item-frame-color, var(--bs-seam)) !important;

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/inventory-offset.css">
   <link rel="stylesheet" href="css/ashen-forge.css?v=20261118-gem-rune-filter-chips">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.5">
-  <link rel="stylesheet" href="css/brass-and-slate.css?v=20261118-gem-rune-filter-chips">
+  <link rel="stylesheet" href="css/brass-and-slate.css?v=20261118-inventory-full-notice">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
   <link rel="stylesheet" href="css/runeword.css?v=20261118-ui-palette">
   <link rel="stylesheet" href="css/relic.css?v=20261117-fixed-canvas-v1">
@@ -170,6 +170,7 @@
               <span class="sec-title" style="display: flex; align-items: center; gap: 8px;">
                 <span data-str="1068"></span> <span id="inv-count">0/60</span>
                 <button id="inv-expand" class="btn sm" data-str-attr="data-tt-title:1069;data-tt-desc:1070"><span data-str="1071"></span><img src="images/icon_gold.png" class="res-icon">)</button>
+                <span id="inv-full-notice" role="status" data-str="2567" hidden></span>
               </span>
               <div style="display: flex; gap: 6px; align-items: center;">
                 <input type="text" id="inv-keyword-filter" class="input sm" style="display: none; background: #0b0f16; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; font-size: 12px; height: 25px; width: 85px; outline: none; white-space: nowrap;" data-str-attr="placeholder:1072;data-tt-title:1072;data-tt-desc:1073">
@@ -1252,7 +1253,7 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=536770e8"></script>
+  <script src="js/strings_data.js?v=e348fa16"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=20261118-display-v1"></script>
   <script src="js/game-edition.js?v=1.0.0"></script>
@@ -1320,7 +1321,7 @@
   <script src="js/save.js?v=20261118-demo-edition"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261118-opening-music-handoff"></script>
-  <script src="js/ui.js?v=20261118-quest-guide"></script>
+  <script src="js/ui.js?v=20261118-inventory-full-notice"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=20261118-quest-guide"></script>
   <script src="js/quest-guide.js?v=1"></script>

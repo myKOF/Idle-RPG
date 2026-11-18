@@ -5496,6 +5496,8 @@ function renderInventory() {
 
   var box = $id('inventory-grid');
   $id('inv-count').textContent = invSnapshot.count + '/' + cap;
+  var fullNotice = $id('inv-full-notice');
+  if (fullNotice) fullNotice.hidden = !(cap > 0 && invSnapshot.count >= cap);
 
   var kwInput = $id('inv-keyword-filter');
   var isInternal = isInternalServer();
