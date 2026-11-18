@@ -43,7 +43,8 @@ var CHECK_SCRIPT = [
   "  r.locks = !!(navigator.locks && navigator.locks.request);",
   "  try { var f = await fetch('vfx/shipped-assets.json', { cache: 'no-store' }); r.fetchStatus = f.status; } catch (e) { r.fetchStatus = 'throw: ' + e.message; }",
   // 影片串流要靠 206；序章影片在新遊戲才播，冒煙測試會跳過，所以直接驗協議
-  "  try { var v = await fetch('opening_animation/shots-01-05-replay.mp4?v=6', { headers: { Range: 'bytes=0-99' } }); r.videoRange = v.status + ' ' + v.headers.get('content-range') + ' ' + (await v.arrayBuffer()).byteLength; } catch (e) { r.videoRange = 'throw: ' + e.message; }",
+  "  try { var v = await fetch(INTRO_REPLAY_TIMELINE.video, { headers: { Range: 'bytes=0-99' } }); r.videoRange = v.status + ' ' + v.headers.get('content-range') + ' ' + (await v.arrayBuffer()).byteLength; } catch (e) { r.videoRange = 'throw: ' + e.message; }",
+  "  try { var captions = await fetch(INTRO_REPLAY_TIMELINE.captions); r.captionStatus = captions.status; } catch (e) { r.captionStatus = 'throw: ' + e.message; }",
   '  return r;',
   '})()'
 ].join('\n');
@@ -149,6 +150,7 @@ function run(win, ctx) {
     if (report.fatal) fails.push('fatal');
     if (!c.worker || c.worker.booted !== true) fails.push('worker 未開機');
     if (c.loadingVisible !== false) fails.push('Loading 未揭開');
+    if (c.captionStatus !== 200) fails.push('序章旁白未載入');
     if (c.isGMHost !== false || c.isInternalServer !== false) {
       // --url 載本機內測服時 GM 本來就該開，只有 app:// 時才算失敗
       if (String(c.origin) === 'app://game') fails.push('GM／內測工具外露');

@@ -20,6 +20,7 @@ function makeEnv(opts) {
       removeChild(c) { e.children = e.children.filter((x) => x !== c); c.parentNode = null; return c; },
       setAttribute(k, v) { e.attrs[k] = v; },
       addEventListener(t, fn) { (e.listeners[t] = e.listeners[t] || []).push(fn); },
+      removeEventListener(t, fn) { e.listeners[t] = (e.listeners[t] || []).filter((listener) => listener !== fn); },
       focus() {},
       setPointerCapture(id) { e.capturedPointer = id; },
       animate(frames, timing) {
@@ -71,6 +72,7 @@ function makeEnv(opts) {
     clearTimeout(id) { if (id && timers[id - 1]) timers[id - 1].alive = false; }
   };
   if (opts.audio) ctx.IntroAudio = opts.audio;
+  if (opts.fetch) Object.assign(ctx, { fetch: opts.fetch, AbortController });
   if (opts.soundGate) {
     ctx.UISound = { setIntroActive: (value, music) => opts.soundGate('ui', value, music) };
     ctx.Sfx = { setIntroActive: value => opts.soundGate('battle', value) };
@@ -456,6 +458,42 @@ test('重播按鈕播放前五鏡，播完回到按鈕且可再從頭播放', ()
   click({});
   assert.equal(env.P.state().time, 0);
   assert.notEqual(env.playerRoot().children[0].children[0], video);
+  env.P.abort();
+});
+
+test('正式影片按媒體時間淡入旁白，每次播放重新讀取文字檔', async () => {
+  const filename = 'opening_animation/旁白.md';
+  const original = read(filename);
+  const requests = [];
+  let markdown = original;
+  const env = makeEnv({ fetch: async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, text: async () => markdown };
+  } });
+  const ready = () => new Promise(resolve => setImmediate(resolve));
+  const captions = () => env.playerRoot().children[0].children[1];
+  assert.ok(env.P.replay());
+  await ready();
+  assert.equal(captions().hidden, true);
+  env.P.seek(4570);
+  assert.equal(captions().hidden, false);
+  assert.equal(captions().style.opacity, '0.5');
+  assert.equal(captions().attrs['data-shot'], '1');
+  const firstLine = original.split('\n').find(line => line.startsWith('| 1 |')).split('|').at(-2).trim();
+  assert.equal(captions().children[0].textContent, firstLine);
+  env.P.seek(20000);
+  assert.ok(+captions().style.opacity < 1, '淡出依影片時間');
+  env.P.seek(50700);
+  assert.equal(captions().hidden, true);
+  env.P.abort();
+  assert.equal(requests[0].options.signal.aborted, true);
+  markdown = original.replace(firstLine, '<b>新旁白</b>');
+  assert.ok(env.P.replay());
+  await ready();
+  env.P.seek(6000);
+  assert.equal(captions().children[0].textContent, '<b>新旁白</b>', '只呈現純文字');
+  assert.deepStrictEqual(requests.map(r => [r.url, r.options.cache]),
+    [[filename, 'no-cache'], [filename, 'no-cache']]);
   env.P.abort();
 });
 

@@ -57,7 +57,7 @@ const sources = [
 ].map(file => 'extended-shot-three-35.5s/' + file), [
   'SOURCE.md', 'index.html', 'shot-timing.js', 'shot.js', 'shot-cinematics.js',
   'brace-effects.js', 'cloth-motion.js', 'kneel-orbit.js', 'rise-gust.js', 'rise-matte.js', 'rise-scene.js',
-  'build-audio.cjs', 'render-shot-four.cjs', 'restore-master.cjs', 'export-replay.cjs',
+  'build-audio.cjs', 'render-shot-four.cjs', 'restore-master.cjs', 'export-replay.cjs', 'export-clean-replay.cjs',
   'assets/brace.png', 'assets/cloth-ribbon.png', 'assets/flare.png', 'assets/kneel.png',
   'assets/kneel-desert.png', 'assets/rise.png', 'assets/rise-desert.png', 'assets/vista.png',
   'assets/shot-four-effects.wav', 'assets/shot-four-mix.wav'
@@ -65,7 +65,7 @@ const sources = [
   'SOURCE.md', 'PROMPT.md', 'index.html', 'finale-timing.js', 'finale.js', 'finale-mattes.js', 'finale-fx.js',
   'finale-backdrop.js', 'build-score.cjs', 'render-finale.cjs', 'align-mp4-presentation.cjs',
   'assets/vista-clean.png', 'assets/finale-effects.wav', 'assets/finale-audio.wav'
-].map(file => 'extended-shot-five/' + file), 'web/shot-02-archangel-fall-18s.mp4',
+].map(file => 'extended-shot-five/' + file), 'render-preview.cjs', 'web/shot-02-archangel-fall-18s.mp4',
 'web/shot-03-extended-32s.mp4', 'web/shot-03-extended-33.5s.mp4', 'web/shots-01-04-100.7s.json',
 'web/shots-01-04-100.7s.mp4.part01', 'web/shots-01-04-100.7s.mp4.part02');
 const exportsByName = {

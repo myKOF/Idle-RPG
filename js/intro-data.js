@@ -24,11 +24,12 @@
                sx／sy 分別縮放寬高（省略時取 scale）；省略的欄位取預設 0／1
      easing    移動的緩動（預設 'ease-in-out'）
 
-   設置重播的成片以 video 指定來源，duration 提供載入或播放卡住時的保底時間。
-   顯示文字一律用 String 表編號（AI_RULES 8.10），不在這裡寫字。
+   正式成片以 video 指定來源，captions 指向旁白表，duration 提供播放卡住時的保底時間。
+   其他文字圖層以 String 表編號指定（AI_RULES 8.10）。
    ============================================================================= */
 var INTRO_REPLAY_TIMELINE = {
-  video: 'opening_animation/shots-01-05-replay.mp4?v=6',
+  video: 'opening_animation/shots-01-05-replay.mp4?v=7',
+  captions: 'opening_animation/旁白.md',
   duration: 116700,
   audio: {
     music: typeof ZONES !== 'undefined' && ZONES.desert && ZONES.desert.bgm,

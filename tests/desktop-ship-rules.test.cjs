@@ -87,6 +87,7 @@ test('序章實際播放的影片與音效有出貨', () => {
   const intro = fs.readFileSync(path.join(ROOT, 'js', 'intro-data.js'), 'utf8');
   const refs = [...intro.matchAll(/'(opening_animation\/[^'?]+)/g)].map((m) => m[1]);
   assert.ok(refs.includes('opening_animation/shots-01-05-replay.mp4'));
+  assert.ok(refs.includes('opening_animation/旁白.md'));
   assert.ok(refs.includes('opening_animation/shots-01-05-replay-sfx.mp3'));
   assert.ok(refs.includes('opening_animation/prologue-audio/prologue-sfx.wav'));
   assert.ok(refs.includes('opening_animation/storybook/paper.webp'));

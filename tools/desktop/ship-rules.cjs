@@ -85,6 +85,7 @@ function classify(relPath) {
   // 點開頭的檔案與目錄（.gitignore、.gitkeep）不出貨；協議本來就拒絕伺服它們
   if (p.split('/').some(function (seg) { return seg.charAt(0) === '.'; })) return { ship: false, reason: '點開頭的路徑' };
   if (KEEP_ALWAYS.test(p)) return { ship: true };
+  if (p === 'opening_animation/旁白.md') return { ship: true };
   for (var i = 0; i < EXCLUDE_DIRS.length; i++) {
     if (p.indexOf(EXCLUDE_DIRS[i].prefix) === 0) return { ship: false, reason: EXCLUDE_DIRS[i].reason };
   }
