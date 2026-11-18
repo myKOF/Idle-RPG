@@ -2976,6 +2976,45 @@ textarea#save-io {
   top: 2px;
 }
 
+/* 裝備欄與背包共用品質色；窄格縮短菱形間距，尾顆仍保留完整寬度。 */
+:is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge {
+  inset: 3px auto auto 4px;
+  transform: none;
+  display: flex;
+  justify-content: flex-start;
+  max-width: calc(100% - 8px);
+  height: 8px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.item-cell[data-slot]:has(> :is(.ic-lock, .ic-up)) > .ancient-star-badge {
+  top: 20px;
+}
+
+:is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge > .ancient-star {
+  width: 9px;
+  min-width: 0;
+  height: 8px;
+  margin: 0;
+  font-size: 0;
+}
+
+:is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge > .ancient-star:last-child {
+  flex-shrink: 0;
+  width: 8px;
+}
+
+:is(.eq-slot, .item-cell[data-slot]) > .ancient-star-badge > .ancient-star::after {
+  inset: 1.5px auto auto 1.5px;
+  box-sizing: border-box;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--item-frame-color);
+  background: none;
+  transform: rotate(45deg);
+}
+
 .ic-up {
   position: absolute;
   top: 1px;
