@@ -190,6 +190,15 @@ var WorldMapUI = (function () {
     refresh();
     el('world-map-close').focus();
   }
+  function openForQuest(key) {
+    open();
+    var info = zoneState(key);
+    if (!info || !info.unlocked) return false;
+    var realm = ZONES[key].realm;
+    if (state.realm !== realm) applyRealm(realm);
+    select(key);
+    return !el('world-map-go').disabled;
+  }
   function go() {
     var key = state.selected, info = zoneState(key);
     if (!info || !info.unlocked || (info.active && !info.testMap) || state.pending || state.transition) return;
@@ -362,5 +371,5 @@ var WorldMapUI = (function () {
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     }, true);
   }
-  return { init: init, open: open, close: close, refresh: refresh, zoneState: zoneState };
+  return { init: init, open: open, openForQuest: openForQuest, close: close, refresh: refresh, zoneState: zoneState };
 })();

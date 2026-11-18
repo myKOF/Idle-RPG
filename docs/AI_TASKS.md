@@ -16502,6 +16502,12 @@ Worker 存活且頁面正常完成載入。
 - 做法：`tools/meshy-pipeline/src/normalize-tower-boss-models.cjs` 把 9 個模型改名（樹人→boss2*、第3隻→boss3*、原 boss2／boss3 骷髏王二三階→boss1_lv2／lv3，鬼面 boss5* 本來就對），其中樹人×3、第3隻×3 另改 GLB 內動畫名稱（只改 JSON 區塊）；素材庫 9 個資產包的 exports 與 manifest 同步，9 支 `export-tower-*.cjs --check` 全部通過。NPC.xlsx 經 Excel 原生 API 一次改 16 列（44 格）的模型與 AC:AH 動作欄，重開驗證通過，CSV／data 同步。快取版號 `20261116-boss-models-v1`。
 - 測試：更新 treant／boss3／npc3d-config／tower-boss3d 測試，新增「所有塔BOSS綁定都是 bossN.glb＋標準動作名，且 GLB 內動作齊全、資料夾內沒有舊式檔名」；實機用遊戲自己的 Npc3D 載入全部 11 個不同模型都通過，並跑了第2層（樹人）與第3層（第3隻）真實塔戰確認渲染與動作。立繪檔名、.blend 與舊說明文件未改（見對照文件）。素材庫提交 2c326f15。
 
+## QUEST-GUIDE-20261118 — 新手導引與任務總覽導航
+
+- Owner：Codex，Done。新遊戲以 CSS 自製金色匕首及泡泡指向任務欄，未確認的提示依本機局號續接。任務總覽聚焦當前任務，整列可前往對應頁面。可操作的按鈕提示最多 5 秒，鎖定頁面在點擊處顯示飄字。地圖進入仍由玩家確認。
+- 變更包括新導引 JS／CSS、主頁與 UI／地圖／啟動接線、String 原生 Excel 及匯出、地圖回歸與解鎖說明。唯讀核對 Task 表、存檔啟動、Worker 任務及地圖投影和既有解鎖。Excel 重開核對 8 個新增欄位值及全部既有內容，String 2553 條同步。匕首參考使用者截圖，素材庫交付為零項。
+- 隔離靜音 Edge 驗證新遊戲、續玩、背景操作、整列導航、目前與後段任務焦點、領獎按鈕和非同步重繪；冰原開放與功能頁鎖定以測試快照驗證，頁面例外 0。任務、地圖、選單、字串、快取、顯示和音效等 135 項回歸，134 項通過。既有字串稽核將 `opening_animation/旁白.md` 檔名判為顯示文字。建置 738 檔通過。可供使用者驗收與整合。
+
 ## INTRO-REPLAY-HTTP-20261117 — 修復設置說明頁的序章重播
 
 - Codex，完成。重現點擊後影片停在 0 秒等載入，跳轉至片尾也會重新要求整檔。Node 測試服原先回傳 `200 application/octet-stream` 並忽略 Range。修正 `tools/test_server_manager.cjs` 為 `video/mp4`、非同步串流及單一位元組範圍，支援 HTTP 206／416 與 HEAD。
