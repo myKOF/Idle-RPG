@@ -16392,3 +16392,12 @@ Worker 存活且頁面正常完成載入。
 - 衝突解法：主頁 `ui.js` 使用新聯合快取 `20261117-fixed-canvas-steam-v1`，`save_origin.js` 使用 `20261117-fixed-canvas-save-schema-v1`；Worker 同時載入 Knife Waltz `skills2.js` 與 `save-schema.js`／新版 player、save。因 Worker 載入集合已合併，`bridge.js` 的 `WORKER_ASSET_VERSION` 及主頁 bridge 引用同步更新為 `20261117-knife-waltz-save-schema-v1`。沒有整側覆蓋，衝突標記已全部移除。
 - 驗證：`node --test tests/save-schema.test.cjs tests/desktop-saves.test.cjs tests/desktop-steam.test.cjs tests/start-menu.test.cjs tests/ui-fixed-canvas.test.cjs tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 為 69/77 通過；8 個 `hall-of-radiance` 失敗是原 HEAD 既存資料／測試不一致（HEAD 技能資料 `sec:4`，HEAD 測試期望 `sec:2`），本次未修改該公式、資料或斷言。其餘 save-schema、桌面存檔、Steam、開始選單、固定畫布、Worker protocol 與 VFX editor 快取測試全部通過。`npm.cmd run build` 732 檔通過。
 - 最終檢查：保留 controller 已做的 EOF 空白修正；`git diff HEAD --check` 檢查完整 merged result。HEAD／MERGE_HEAD 維持不變，未 stage、commit、push、切分支或執行同步腳本；由 controller 暫存回報檔案並建立 merge commit。
+
+## TOWER-BOSS4-CENTAUR-20261118 — 半人馬接入第4隻封魔塔BOSS（三套材質）
+
+- Owner：Claude，Done。使用者提供三個正式貼圖版 `BOSS4.glb`／`BOSS4_2.glb`／`BOSS4_3.glb`（同一份 9262 頂點網格、原始扭轉姿勢、未綁骨），要求綁上已定稿的骨架與動作、拆下武器、頭回正並接入封魔塔；途中追加「NPC 表備註寫外觀名稱」。
+- 模型：`tools/boss4/build_variant.py`（UV 對應 11-10 轉正網格＋剛體 ICP 對齊動畫骨架、長矛拉直重握 43%、權重最近表面轉移）→ `rest_fix.py`（手臂拉回骨架靜止姿勢、右拳對齊矛軸）→ `game_export.py`（四蹄置中）。新增 `images/models/npc3d/boss4.glb`、`boss4_lv2.glb`、`boss4_lv3.glb`（56 關節、Walk／Attack1～3／Die）與 `images/sprites/boss/boss4_centaur*.png`（1080 透明頭像）。動作製作腳本歸檔於 `tools/boss4/anim/`，說明見 `docs/assets/BOSS4_SOURCE.md`。
+- NPC 表：`NPC.xlsx` 第485／495／505列 G:J 頭像、AB 模型、AC:AH 動作、攻擊速度 3→0.4（經 `tools/excel-update-sheets.ps1`，重開驗證 58 格）；22 列新版模型的備註前加「外觀：名稱＋材質編號｜」，並把規則寫進產生器 `tools/config_tables.cjs`（`npcLookNote`／`NPC_MODEL_LOOK`），`config_tables --apply --write NPC` 後 data.js 只有 BOSS_LIST 三筆變動。快取：`index.html`（data／bridge）、`js/bridge.js` Worker 版本、`js/worker/sim.worker.js` data 為 `20261118-boss4-centaur`。
+- 測試：新增 `tests/boss4-character-asset.test.cjs`（4 項），更新 `npc3d-config`、`tower-boss3d`（4／14／24 及 +50／+100 層用新模型、34 層維持原樣），共 14 項全過。NPC／塔／BOSS／快取／Worker 相關 462 項中 20 項失敗；其中 NPC-SKILL-4／6、NPC-SPRITE-4／5、TBMA-5 以 HEAD 乾淨工作樹重跑同樣失敗（既有），塔 BOSS 50 列備註與產生器輸出逐列一致。字串寫死 0。
+- 實機：`node tools/boss4/verify-ingame.cjs` 在無頭瀏覽器開真正的遊戲頁，以遊戲的 `Npc3D.create` 載入三版，五動作皆存在、秒數正確並逐動作渲染成功。舊的 `tools/boss5/capture-ingame.cjs` 因序章開場後新遊戲流程改變，找不到挑戰按鈕，未跑完整場塔戰。
+- 待使用者決定：名稱仍為「鋼鐵魔像」🤖、技能野蠻衝鋒／震地衝擊；未做戰鬥特效。

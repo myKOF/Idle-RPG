@@ -46,6 +46,15 @@ test('first tower boss becomes Skeleton King without changing stats; floor 11 us
     assert.equal(b.aspd,bosses[(f-1)%50].atkSpeed,'stats and skills are untouched by the new look');
   }
   assert.equal(context.makeBoss(35).model3d,null,'the other poison rows keep their previous appearance');
+  // fourth tower boss: the spear centaur (three textures) on 4/54/104, 14/64/114, 24/74/124; melee row keeps its name and skills
+  for(const [f,id,file] of [[4,'tower_boss_4','boss4'],[54,'tower_boss_4','boss4'],[104,'tower_boss_4','boss4'],[14,'tower_boss_14','boss4_lv2'],[64,'tower_boss_14','boss4_lv2'],[114,'tower_boss_14','boss4_lv2'],[24,'tower_boss_24','boss4_lv3'],[74,'tower_boss_24','boss4_lv3'],[124,'tower_boss_24','boss4_lv3']]){
+    const b=context.makeBoss(f);
+    assert.equal(b.npcId,id);
+    assert.equal(b.model3d.file,'images/models/npc3d/'+file+'.glb');
+    assert.deepEqual(b.model3d.clips,{idle:'Walk',walk:'Walk',attack1:'Attack1',attack2:'Attack2',attack3:'Attack3',die:'Die'});
+    assert.equal(b.aspd,0.4,'1.5-2.25 s spear attacks are not squeezed into a 0.33 s interval');
+  }
+  assert.equal(context.makeBoss(34).model3d,null,'the other iron-golem rows keep their previous appearance');
   const knightClips = context.makeBoss(6).model3d.clips;
   for (const [baseFloor, suffix] of [[6, ''], [16, '_lv2'], [26, '_lv3']]) {
     for (const offset of [0, 50, 100]) {
