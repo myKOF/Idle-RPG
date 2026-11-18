@@ -86,12 +86,21 @@
 
 ```
 npm run desktop          # 正式模式（直接進入原生全螢幕）
-npm run desktop:dev      # 視窗模式＋F12 開發者工具＋F5 重新整理
+npm run desktop:dev      # 視窗模式＋F12 開發者工具＋F5 重新整理（雙擊「啟動桌面版.bat」）
+npm run desktop:internal # 內測模式（雙擊「啟動桌面版(內測).bat」），見下方說明
 npm run desktop -- --dev --url=http://127.0.0.1:8124/   # 載本機內測服（GM 開放）
 npm run desktop:smoke    # 冒煙測試，結果在 tmp/desktop-smoke/
 ```
 
 Windows 標題列的「最大化」會進入原生全螢幕，退出時恢復原視窗的尺寸與位置。
+
+**內測模式（`--internal`，2026-11-18 加）**：不需要另外開內測服。外殼改用 `app://localhost` 伺服同一個資料夾，
+遊戲既有的 localhost 判定（`isGMHost()`／`isInternalServer()`、參數自動重載）就照網頁內測服的方式打開，
+遊戲程式沒有改。三個隔離：
+- 存檔另放 `%APPDATA%\idle-rpg-internal\saves`，GM 改過的存檔不會混進正式存檔與 Steam Cloud；兩種模式可以同時開。
+- 一律不接 Steam：GM 能直接解鎖成就，會解到真正的帳號上。
+- 只限從原始碼執行：打包版看到 `--internal` 直接忽略（記在 desktop.log），玩家不能用 Steam 啟動選項打開 GM。
+協議一次只伺服一個主機名（正式模式拒絕 `app://localhost`、內測模式拒絕 `app://game`）；冒煙測試加 `--internal` 時改成檢查「GM 必須開、Steam 必須關」。
 
 實測結果（冒煙測試連跑兩次，第二次走「繼續」）：Worker 開機、Pixi 戰場、VFX Preset 302 份、IndexedDB、`navigator.locks`、fetch、影片 Range 206 均正常；
 `isInternalServer()`／`isGMHost()` 皆為 false；全螢幕進出正常；關窗存檔回 ok，重開後「繼續」出現；頁面錯誤 0。

@@ -110,6 +110,11 @@ function captureOnScreen(win, outFile) {
   }).catch(function (e) { return { found: false, error: String(e && e.message || e) }; });
 }
 
+/* 自動存檔的資料夾檔名：與 js/save.js saveOriginTagV2() 同一個公式（app://game → IC_autosave_app-game.json） */
+function autosaveFileFor(origin) {
+  return 'IC_autosave_' + String(origin).replace(/^([a-z]+):\/\//i, '$1-').replace(/[^A-Za-z0-9._-]+/g, '-') + '.json';
+}
+
 function run(win, ctx) {
   var outDir = ctx.outDir;
   var log = ctx.log;
@@ -149,16 +154,22 @@ function run(win, ctx) {
     if (report.fatal) fails.push('fatal');
     if (!c.worker || c.worker.booted !== true) fails.push('worker 未開機');
     if (c.loadingVisible !== false) fails.push('Loading 未揭開');
-    if (c.isGMHost !== false || c.isInternalServer !== false) {
-      // --url 載本機內測服時 GM 本來就該開，只有 app:// 時才算失敗
-      if (String(c.origin) === 'app://game') fails.push('GM／內測工具外露');
+    var origin = String(c.origin);
+    var isApp = origin.indexOf('app://') === 0;   // --url 載本機內測服時不檢查 GM 與存檔資料夾
+    if (isApp && ctx.internal) {
+      // 內測模式（--internal）：GM 與內測工具必須打開、不能接 Steam
+      if (origin !== 'app://localhost') fails.push('內測模式的 origin 不是 app://localhost：' + origin);
+      if (c.isGMHost !== true || c.isInternalServer !== true) fails.push('內測模式沒有開放 GM／內測工具');
+      if (report.steam && report.steam.enabled) fails.push('內測模式接上了 Steam');
+    } else if (isApp && (c.isGMHost !== false || c.isInternalServer !== false)) {
+      fails.push('GM／內測工具外露');
     }
     if (report.screen && report.screen.skipped) { /* 背景模式不做螢幕實拍 */ }
     else if (!report.screen || !report.screen.found) fails.push('螢幕截圖失敗');
     else if (report.screen.blank) fails.push('螢幕上是空白畫面');
-    if (String(c.origin) === 'app://game' && c.saveDirIsDesktop !== true) fails.push('存檔資料夾沒有接上 userData/saves');
+    if (isApp && c.saveDirIsDesktop !== true) fails.push('存檔資料夾沒有接上 userData/saves');
     if (report.flush !== 'ok') fails.push('關窗存檔：' + report.flush);
-    else if (String(c.origin) === 'app://game' && (report.saveFiles || []).indexOf('IC_autosave_app-game.json') < 0) {
+    else if (isApp && (report.saveFiles || []).indexOf(autosaveFileFor(origin)) < 0) {
       fails.push('存檔資料夾裡沒有自動存檔檔');
     }
     if (report.fullscreenOn && !(report.fullscreenOn.page && report.fullscreenOn.window)) fails.push('全螢幕無法進入');
@@ -172,7 +183,9 @@ function run(win, ctx) {
     }
     if (report.pageErrors.length) fails.push('頁面錯誤 ' + report.pageErrors.length + ' 筆');
     // 打包版少檔最直接的訊號：app:// 回了 404（開發模式下也應該是 0）
-    if (report.notFound && report.notFound.length) fails.push('找不到檔案 ' + report.notFound.length + ' 個');
+    // 內測模式的參數自動重載（js/param_autoreload.js）會探測 params_version.txt：沒跑過「套用參數.bat」的副本本來就沒有這個檔
+    var missing = (report.notFound || []).filter(function (u) { return !(ctx.internal && /\/params_version\.txt(\?|$)/.test(u)); });
+    if (missing.length) fails.push('找不到檔案 ' + missing.length + ' 個');
     return fails;
   }
   function finish() {

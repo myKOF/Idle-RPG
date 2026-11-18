@@ -12,13 +12,21 @@
    127.0.0.1、file: 判定開放 GM 與內測工具。主機名 game 不在名單內，
    正式版因此天然關閉這些工具，不必在遊戲程式裡新增第三種判定。
 
+   ---- 內測模式：app://localhost ----
+   反過來用同一條規則：主機名換成 localhost，GM 與內測工具就照網頁內測服的方式開放，
+   遊戲程式一行都不用改（啟動桌面版(內測).bat → --internal，只限從原始碼執行，見 main.cjs）。
+   一次只伺服一個主機名：正式模式拒絕 app://localhost，內測模式拒絕 app://game。
+
    本檔只做路徑與標頭的計算；讀檔與串流在 electron/main.cjs。 */
 
 var path = require('path');
 
 var SCHEME = 'app';
 var HOST = 'game';
+var INTERNAL_HOST = 'localhost';
 var ORIGIN = SCHEME + '://' + HOST;
+
+function originFor(host) { return SCHEME + '://' + (host || HOST); }
 
 var MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -67,15 +75,15 @@ function mimeFor(filePath) {
 }
 
 /* 請求網址 → 磁碟上的絕對路徑。不合法一律回 null（呼叫端回 404）：
-   - 不是 app://game（別的主機名）
+   - 不是 app://<host>（host 預設 game；內測模式傳 INTERNAL_HOST）
    - 解碼失敗、含 NUL
    - 正規化後跑出根目錄（../ 或 %2e%2e 穿越、磁碟代號、UNC）
    - 任何一段以 . 開頭（.git、.env、.claude 之類的開發檔案）
    query 與 hash 一律忽略：index.html 的 ?v= 只是快取版本號。 */
-function resolveRequestPath(rootDir, requestUrl) {
+function resolveRequestPath(rootDir, requestUrl, host) {
   var u;
   try { u = new URL(requestUrl); } catch (e) { return null; }
-  if (u.protocol !== SCHEME + ':' || u.hostname !== HOST) return null;
+  if (u.protocol !== SCHEME + ':' || u.hostname !== (host || HOST)) return null;
   var rel;
   try { rel = decodeURIComponent(u.pathname); } catch (e) { return null; }
   if (rel.indexOf('\0') >= 0) return null;
@@ -119,7 +127,9 @@ function parseRange(header, size) {
 module.exports = {
   SCHEME: SCHEME,
   HOST: HOST,
+  INTERNAL_HOST: INTERNAL_HOST,
   ORIGIN: ORIGIN,
+  originFor: originFor,
   mimeFor: mimeFor,
   resolveRequestPath: resolveRequestPath,
   parseRange: parseRange

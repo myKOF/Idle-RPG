@@ -73,3 +73,24 @@ test('Range 標頭解析', () => {
   assert.strictEqual(P.parseRange('bytes=-', 100), false);
   assert.strictEqual(P.parseRange('bytes=0-1,5-6', 100), null);   // 多區段退回整檔
 });
+
+test('內測模式：一次只伺服一個主機名；localhost 讓 GM 判定成立，game 不成立', () => {
+  const ri = (url) => P.resolveRequestPath(ROOT, url, P.INTERNAL_HOST);
+  assert.strictEqual(ri('app://localhost/js/main.js'), path.join(ROOT, 'js', 'main.js'));
+  assert.strictEqual(ri('app://game/js/main.js'), null, '內測模式不伺服正式主機名');
+  assert.strictEqual(r('app://localhost/js/main.js'), null, '正式模式不伺服 localhost');
+  assert.strictEqual(ri('app://localhost/.git/config'), null);
+  assert.strictEqual(P.originFor(P.INTERNAL_HOST), 'app://localhost');
+  assert.strictEqual(P.originFor(), P.ORIGIN);
+  // js/gm.js、js/gm_exec.js、js/ui.js 的 isGMHost 只認這幾個主機名
+  assert.ok(['localhost', '127.0.0.1', '::1'].includes(new URL(P.originFor(P.INTERNAL_HOST)).hostname));
+  assert.ok(!['localhost', '127.0.0.1', '::1'].includes(new URL(P.ORIGIN).hostname));
+});
+
+test('內測模式只限從原始碼執行：main.cjs 以 app.isPackaged 擋下、不接 Steam、存檔另放', () => {
+  const src = require('fs').readFileSync(path.join(ROOT, 'electron', 'main.cjs'), 'utf8');
+  assert.match(src, /internal: !!argValue\('internal'\) && !app\.isPackaged/);
+  assert.match(src, /cliAppId: OPTS\.internal \? 0 :/);
+  assert.match(src, /configAppId: OPTS\.internal \? 0 :/);
+  assert.match(src, /INTERNAL_USER_DATA_DIR_NAME = 'idle-rpg-internal'/);
+});

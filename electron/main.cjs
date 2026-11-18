@@ -13,6 +13,9 @@
      --dev            允許 F12 開發者工具、F5 重新整理
      --url=<網址>     改載本機內測服（只接受 localhost／127.0.0.1），GM 與內測工具隨之開放
      --windowed       開機不進全螢幕
+     --internal       內測模式：改由 app://localhost 伺服，GM 與內測工具照網頁內測服的規則開放；
+                      存檔另放 %APPDATA%/idle-rpg-internal、不接 Steam。只限從原始碼執行，
+                      打包版忽略此參數（玩家不能用啟動選項打開 GM）。啟動桌面版(內測).bat 用的就是它
      --in-process-gpu 開啟 in-process-gpu（Steam Overlay 需要；單獨開會讓畫面空白，見下方說明）
      --profile=<資料夾> 改用另一份 userData（可與正在玩的視窗並存，除錯用）
      --steam-appid=<編號> 以指定 AppID 接 Steam（開發測試用 480）；正式值寫在 electron/steam-config.json
@@ -57,6 +60,7 @@ function argValue(name) {
 }
 var OPTS = {
   dev: !!argValue('dev'),
+  internal: !!argValue('internal') && !app.isPackaged,
   url: typeof argValue('url') === 'string' ? argValue('url') : null,
   windowed: !!argValue('windowed'),
   inProcessGpu: !!argValue('in-process-gpu'),
@@ -71,11 +75,14 @@ var OPTS = {
    Steam Auto-Cloud 會指向這個資料夾，上市後就不能再搬。預設值取自 package.json 的 name，
    日後若改 productName 會讓它跟著換位置——所以這裡寫死，不讓它隨打包設定漂移。 */
 var USER_DATA_DIR_NAME = 'idle-rpg';
+var INTERNAL_USER_DATA_DIR_NAME = 'idle-rpg-internal';   // 內測模式：GM 改過的存檔不能混進正式存檔與 Steam Cloud
 if (OPTS.smoke) {
   app.setPath('userData', path.join(OPTS.smoke, 'userData'));
 } else if (OPTS.profile) {
   // 另一份隔離的資料夾：單一實例鎖以 userData 為準，所以能和正在玩的那個視窗並存
   app.setPath('userData', OPTS.profile);
+} else if (OPTS.internal) {
+  app.setPath('userData', path.join(app.getPath('appData'), INTERNAL_USER_DATA_DIR_NAME));
 } else {
   app.setPath('userData', path.join(app.getPath('appData'), USER_DATA_DIR_NAME));
 }
@@ -92,6 +99,8 @@ function log() {
   } catch (e) {}
   if (OPTS.dev || OPTS.smoke) process.stdout.write(line);
 }
+
+if (argValue('internal') && app.isPackaged) log('[desktop] 打包版忽略 --internal');
 
 /* ---- 開機前必須完成的設定 ---- */
 /* in-process-gpu 預設關閉（2026-11-17 實測）：單獨開它時，視窗在螢幕上是一片淡青色空白，
@@ -110,10 +119,11 @@ protocol.registerSchemesAsPrivileged([{
 }]);
 
 /* Steam（任務 D）：必須在 app ready 之前初始化——Overlay 要加的 GPU 參數只在 ready 前有效。
-   任何失敗都只是「Steam 功能關閉」，遊戲照常啟動。 */
+   任何失敗都只是「Steam 功能關閉」，遊戲照常啟動。
+   內測模式一律不接：GM 能直接解鎖成就，會解到真正的 Steam 帳號上。 */
 var Steam = require('./steam.cjs').create({
-  cliAppId: OPTS.steamAppId,
-  configAppId: require('./steam.cjs').readConfig(__dirname).appId,
+  cliAppId: OPTS.internal ? 0 : OPTS.steamAppId,
+  configAppId: OPTS.internal ? 0 : require('./steam.cjs').readConfig(__dirname).appId,
   isPackaged: app.isPackaged,
   dev: OPTS.dev,
   smoke: !!OPTS.smoke,
@@ -139,6 +149,7 @@ if (Steam.shouldQuitForRestart()) {
 
 var mainWindow = null;
 var GAME_ROOT = app.getAppPath();
+var APP_HOST = OPTS.internal ? AppProtocol.INTERNAL_HOST : AppProtocol.HOST;
 
 /* 冒煙測試用的請求統計：數量、位元組、最慢的幾筆（開到 stat 完成為止的時間） */
 var requestStats = { count: 0, bytes: 0, slow: [], notFound: [] };
@@ -158,7 +169,7 @@ function serveFile(request) {
 }
 
 function serveFileImpl(request) {
-  var file = AppProtocol.resolveRequestPath(GAME_ROOT, request.url);
+  var file = AppProtocol.resolveRequestPath(GAME_ROOT, request.url, APP_HOST);
   var notFound = function () {
     log('[app] 404', request.url);
     if (OPTS.smoke && requestStats.notFound.length < 200) requestStats.notFound.push(request.url);
@@ -203,7 +214,7 @@ function startUrl() {
     if (devUrlAllowed(OPTS.url)) return OPTS.url;
     log('[desktop] 拒絕 --url（只接受 localhost／127.0.0.1）：', OPTS.url);
   }
-  return AppProtocol.ORIGIN + '/index.html';
+  return AppProtocol.originFor(APP_HOST) + '/index.html';
 }
 
 function sameOrigin(a, b) {
@@ -434,7 +445,7 @@ function onReady() {
   var win = createWindow();
   if (OPTS.smoke) {
     require('./smoke.cjs').run(win, {
-      outDir: OPTS.smoke, log: log, flushSave: flushSave, onScreen: OPTS.smokeOnScreen
+      outDir: OPTS.smoke, log: log, flushSave: flushSave, onScreen: OPTS.smokeOnScreen, internal: OPTS.internal
     });
   }
 }
