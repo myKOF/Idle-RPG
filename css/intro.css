@@ -74,13 +74,19 @@
   object-position: 50% 50%;
 }
 
+/* 影片與旁白共用等比畫框，由寬度決定縮放。舞台外的部分只在上下裁切。 */
+.intro-video,
 .intro-video-captions {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  width: min(100%, calc(var(--ui-canvas-height, 100vh) * 16 / 9));
+  inset: 50% auto auto 0;
+  translate: 0 -50%;
+  width: 100%;
   aspect-ratio: 16 / 9;
+}
+
+.intro-video-captions {
+  /* 取成片構圖下緣與視窗下緣中較高者，避免超寬視窗裁去旁白。 */
+  --intro-caption-bottom: min(91.67%, calc(50% + var(--ui-canvas-height, 100vh) / 2));
   container-type: inline-size;
   color: #f7e5be;
 }
@@ -88,16 +94,18 @@
 .intro-video-captions[data-shot="3"]::before {
   content: "";
   position: absolute;
-  inset: 76.02% 0 8.33%;
+  inset: min(76.02%, calc(var(--intro-caption-bottom) - 8cqw)) 0 calc(100% - var(--intro-caption-bottom));
   background: linear-gradient(transparent, rgba(18, 9, 16, .46));
 }
 
 .intro-video-caption-line {
+  --intro-caption-center: 83.89%;
+  --intro-caption-size: 2.55cqw;
   position: absolute;
-  inset: 83.89% 6% auto;
+  inset: min(var(--intro-caption-center), calc(var(--intro-caption-bottom) - min(4cqw, 12 * var(--ui-vh, 1vh)))) 6% auto;
   translate: 0 -50%;
   text-align: center;
-  font: 700 2.55cqw / 1.25 "Noto Serif TC", "Microsoft JhengHei", MingLiU, serif;
+  font: 700 min(var(--intro-caption-size), 8 * var(--ui-vh, 1vh)) / 1.25 "Noto Serif TC", "Microsoft JhengHei", MingLiU, serif;
   letter-spacing: .14em;
   -webkit-text-stroke: .20cqw rgba(22, 11, 8, .89);
   paint-order: stroke fill;
@@ -105,13 +113,13 @@
 }
 
 [data-shot="1"] .intro-video-caption-line {
-  font-size: 2.14cqw;
+  --intro-caption-size: 2.14cqw;
   letter-spacing: .07em;
 }
 
 [data-shot="3"] .intro-video-caption-line {
-  top: 83.33%;
-  font-size: 2.45cqw;
+  --intro-caption-center: 83.33%;
+  --intro-caption-size: 2.45cqw;
   letter-spacing: .18em;
 }
 .intro-image-awakening { transform-origin: 51% 59%; }
