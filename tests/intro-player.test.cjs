@@ -445,7 +445,7 @@ test('重播按鈕播放前五鏡，播完回到按鈕且可再從頭播放', ()
   assert.ok(fs.existsSync(path.join(root, video.src.split('?')[0])));
   assert.ok(video.playsInline);
   assert.equal(video.paused, false);
-  assert.equal(env.P.state().duration, 116700);
+  assert.equal(env.P.state().duration, 110400);
   assert.equal(env.clock(), undefined, '影片以媒體時間為準');
   assert.ok(!env.playerRoot().children.some((c) => c.className === 'intro-hold-dots'), '重播不停格');
   assert.equal(env.P.replay(), false, '播放中再點無效');
@@ -463,7 +463,14 @@ test('重播按鈕播放前五鏡，播完回到按鈕且可再從頭播放', ()
 
 test('正式影片按媒體時間淡入旁白，每次播放重新讀取文字檔', async () => {
   const filename = 'opening_animation/旁白.md';
-  const original = read(filename);
+  assert.ok(fs.existsSync(path.join(root, filename)));
+  const firstLine = '序章旁白測試';
+  const original = [
+    '| 鏡號 | 開始 | 結束 | 淡入（毫秒） | 淡出（毫秒） | 旁白 |',
+    '| --- | --- | --- | --- | --- | --- |',
+    '| 1 | 00:00:04.280 | 00:00:09.560 | 580 | 680 | ' + firstLine + ' |',
+    '| 2 | 00:00:17.180 | 00:00:20.470 | 560 | 490 | 第二句 |'
+  ].join('\n');
   const requests = [];
   let markdown = original;
   const env = makeEnv({ fetch: async (url, options) => {
@@ -479,7 +486,6 @@ test('正式影片按媒體時間淡入旁白，每次播放重新讀取文字�
   assert.equal(captions().hidden, false);
   assert.equal(captions().style.opacity, '0.5');
   assert.equal(captions().attrs['data-shot'], '1');
-  const firstLine = original.split('\n').find(line => line.startsWith('| 1 |')).split('|').at(-2).trim();
   assert.equal(captions().children[0].textContent, firstLine);
   env.P.seek(20000);
   assert.ok(+captions().style.opacity < 1, '淡出依影片時間');
@@ -516,21 +522,21 @@ test('成片以荒漠第一首配樂及獨立音效跟隨影片，離場才恢�
   const video = env.playerRoot().children[0].children[0];
   assert.equal(video.muted, true);
   assert.equal(audioConfig.music, env.ctx.ZONES.desert.bgm);
-  assert.equal(audioConfig.sfx, 'opening_animation/shots-01-05-replay-sfx.mp3?v=3');
+  assert.equal(audioConfig.sfx, 'opening_animation/shots-01-05-replay-sfx.mp3?v=4');
   assert.ok(fs.existsSync(path.join(root, audioConfig.sfx.split('?')[0])));
   assert.deepEqual(calls, ['ui true', 'battle true', 'intro prepare']);
   video.listeners.playing[0]();
   video.listeners.waiting[0]();
   assert.deepEqual(calls.slice(-2), ['intro start', 'intro pause']);
-  video.currentTime = 115.35;
+  video.currentTime = 109.35;
   env.ctx.document.hidden = true;
   env.docListeners.visibilitychange[0]();
   assert.equal(video.paused, true);
   env.ctx.document.hidden = false;
   env.docListeners.visibilitychange[0]();
   assert.equal(video.paused, false);
-  assert.equal(env.P.state().time, 115350);
-  assert.equal(audioClock(), 115350);
+  assert.equal(env.P.state().time, 109350);
+  assert.equal(audioClock(), 109350);
   video.listeners.playing[0]();
   assert.equal(calls.at(-1), 'intro start');
   env.P.skip();

@@ -71,7 +71,9 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 ## 遊戲重播（2026-11-17）
 
-2026-11-18 第三鏡前景左手改為手背朝上貼地、五指微張。以使用者提供的姿勢裁圖為參考，ImageGen 依原盔甲的銀白鋼片與暖金雕飾重繪透明手甲，保存為 `extended-shot-three/assets/archangel-left-hand-flat.png`。原前臂接合處以局部遮罩羽化。手下露出原沙漠底圖，並在指尖與掌緣添加低強度接地陰影。含左手修正的畫面可用 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 573 1035` 重製。正式連播的第 1593 至 2054 幀採用 `web/shot-03-flat-left-hand.mp4`。
+2026-11-18 第四鏡由半跪進入持劍畫面時，以 0.5 秒的柔焦疊化銜接。左側細碎布尾沿原披風根部隨風擺動，白光從整個角色輪廓及盔甲亮面逐漸泛開。正式連播第 2585 至 2831 幀使用 `web/shot-04-rise-radiance.mp4`。執行 `node extended-shot-four/render-shot-four.cjs --frames 530 777` 可重製畫面。
+
+2026-11-18 第三鏡前景左手改為手背朝上貼地、五指微張。以使用者提供的姿勢裁圖為參考，ImageGen 依原盔甲的銀白鋼片與暖金雕飾重繪透明手甲，保存為 `extended-shot-three/assets/archangel-left-hand-flat.png`。原前臂接合處以局部遮罩羽化。以腕甲接點為基準，手掌尺寸縮小約 10%，指節沿手指長軸再縮短約 10%。手下露出原沙漠底圖，並在指尖與掌緣添加低強度接地陰影。含左手修正的畫面可用 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 573 1035` 重製。正式連播的第 1593 至 2054 幀採用 `web/shot-03-flat-left-hand.mp4`。
 
 2026-11-18 調整第三鏡落地後的揭露煙塵。沙塵沿地勢鋪開，順同一風向散去，天使在原時點現身。正式連播替換第 1506 至 1711 幀。單獨重製可執行 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 486 692`，完成的畫面封存於 `web/shot-03-valley-dust.mp4`。
 
@@ -79,7 +81,7 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 正式前五鏡的畫面與旁白分離。前三鏡使用原分層重製含舊字的畫面區段。字幕由遊戲工作區的 `opening_animation/旁白.md` 提供，修改文案或時間後，下次播放直接讀取。舊版母帶仍可供審片。重製前五鏡時，`--five-shots` 會執行 `export-clean-replay.cjs` 產生無字畫面，之後接上原本的獨立音效匯出流程。
 
-設置說明頁播放 116.7 秒前五鏡。`web/shots-01-05-replay.mp4` 以 1080p／30 fps 接續前四鏡的核准畫面與第五鏡，第 100.7 秒進入荒漠終章。遊戲以同一個 Desert Ascendant 播放器全程播放配樂，並以 `web/shots-01-05-replay-sfx.mp3` 獨立播放演出音效，各自套用遊戲音量。第三鏡音效於第 68.5 秒接第四鏡，第五鏡於第 100.7 秒接入原始風沙音效。遊戲重播在 3 秒前收掉第一鏡鐘鳴的尾音，保留最初敲擊。第一鏡的持續環境風聲與立體聲氣流振幅減半，敵軍來襲、翼振、掠過與撞擊各分量維持原值。核准母帶保留審片混音。
+設置說明頁播放 110.4 秒前五鏡。`web/shots-01-05-replay.mp4` 以 1080p／30 fps 串接五鏡，第 94.4 秒直接從第四鏡的持劍姿勢切到荒漠終章，剪除舊版 6.3 秒定鏡。遊戲以同一個 Desert Ascendant 播放器全程播放配樂，並以 `web/shots-01-05-replay-sfx.mp3` 獨立播放演出音效，各自套用遊戲音量。第三鏡音效於第 68.5 秒接第四鏡，第五鏡於第 94.4 秒接入原始風沙音效。遊戲重播在 3 秒前收掉第一鏡鐘鳴的尾音，保留最初敲擊。第一鏡的持續環境風聲與立體聲氣流振幅減半，敵軍來襲、翼振、掠過與撞擊各分量維持原值。核准母帶保留審片混音。
 
 還原核准 MP4 後，可在素材庫的序章目錄執行下列指令重製遊戲匯出。輸出目錄使用新資料夾，避免覆寫既有匯出。
 
@@ -91,7 +93,7 @@ node extended-shot-four/export-replay.cjs --five-shots replay-five-export
 
 ## 第五鏡荒漠終章（2026-11-17）
 
-目前成片長 16 秒。入鏡後第 3 秒，白光從劍柄、護手與整片劍身向外放射，光束緩慢順時針旋轉，並和光暈一同逐漸擴大。第一格直接呈現風沙、地面與飛行魔軍，天空和拱門分速左移，近地與人物右移，中景地表固定。白光在新增的尾段持續轉動，約第 14.9 秒和場景一起淡至黑幕。三類飛行惡魔各有 16 格拍翼週期。成片保存為 `web/shot-05-desert-finale-orbit.mp4`，遊戲匯出為 `opening_animation/shot-05-desert-finale-orbit.mp4`。
+目前成片長 16 秒。入鏡後第 3 秒，白光從劍柄、護手與整片劍身向外放射，光束緩慢順時針旋轉，並和光暈一同逐漸擴大。光束與光暈的尺寸縮至前版的 70%，沿用原有亮度曲線。第一格直接呈現風沙、地面與飛行魔軍，天空和拱門分速左移，近地與人物右移，中景地表固定。白光在新增的尾段持續轉動，約第 14.9 秒和場景一起淡至黑幕。三類飛行惡魔各有 16 格拍翼週期。成片保存為 `web/shot-05-desert-finale-orbit.mp4`，遊戲匯出為 `opening_animation/shot-05-desert-finale-orbit.mp4`。
 
 `extended-shot-five/` 保存分層程式、ImageGen 補景、提示詞、獨立音效與審片混音。重製和預覽方式見該目錄的 `SOURCE.md`。目前獨立成片用於審片，遊戲使用前五鏡連播。各工作區以自己的專案根目錄讀取及匯出素材。手動渲染時可把 PARCHMENT_REVIEW_DIR 設為該工作區 opening_animation/review 下的審片目錄。
 
