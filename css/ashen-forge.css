@@ -2689,13 +2689,14 @@ html *::-webkit-scrollbar-corner {
   min-height: 0;
 }
 
-.sgb-chips {
+.sgb-chips,
+.gx-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.sgb-chip {
+button:is(.sgb-chip, #gem-filter .gx-chip, #rune-tier-filter .gx-chip) {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -2710,20 +2711,27 @@ html *::-webkit-scrollbar-corner {
   cursor: pointer;
 }
 
-.sgb-chip:hover {
+button:is(.sgb-chip, #gem-filter .gx-chip, #rune-tier-filter .gx-chip):hover {
   border-color: #3a3d44;
 }
 
-.sgb-chip.is-on {
+button:is(.sgb-chip, #gem-filter .gx-chip, #rune-tier-filter .gx-chip).is-on {
   border-color: #7a6440;
   background: #2a2218;
   color: #f0cf86;
 }
 
-.sgb-chip-dot {
+.sgb-chip-dot,
+.gx-chip::before {
   width: 7px;
   height: 7px;
+  flex: 0 0 7px;
   border-radius: 50%;
+}
+
+.gx-chip::before {
+  content: '';
+  background: var(--c, #a39d90);
 }
 
 .sgb-items {
@@ -3581,33 +3589,19 @@ html *::-webkit-scrollbar-corner {
   background: #111317;
 }
 
-#tab-gems .gx-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+#gem-filter {
+  gap: 4px;
 }
 
-#tab-gems .gx-chip {
-  height: 28px;
-  padding: 0 7px;
-  border: 1px solid #2a2d34;
-  border-radius: 999px;
-  background: #0e1013;
-  color: #c9c3b5;
-  font: inherit;
-  font-size: var(--bs-button-small-size);
-  cursor: pointer;
+#gem-filter button.gx-chip {
+  padding-inline: 5px;
+  gap: 4px;
 }
 
-#tab-gems .gx-chip:hover {
-  border-color: #3a3d44;
-}
-
-#tab-gems .gx-chip.is-on {
-  border-color: #7a6440;
-  background: #2a2218;
-  color: #f0cf86;
-}
+#gem-filter [data-gem-filter="atk"] { --c: #ef9382; }
+#gem-filter [data-gem-filter="def"] { --c: #8fc7a5; }
+#gem-filter [data-gem-filter="elem"] { --c: #8ec5ff; }
+#gem-filter [data-gem-filter="res"] { --c: #c6a3e8; }
 
 #tab-gems .gx-owned {
   display: flex;

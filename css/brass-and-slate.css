@@ -101,7 +101,7 @@ body #inv-section-box .inv-head .btn.sm,
 body #world-map-modal .btn,
 body :is(.settings-tab-btn, .system-close),
 body #achv-modal .achv-filters button,
-body #workspace-area :is(.gx-tab, .rx-tab, .rx-detail-toggle, .twx-tier, .tlx-tier, .gx-chip),
+body #workspace-area :is(.gx-tab, .rx-tab, .rx-detail-toggle, .twx-tier, .tlx-tier),
 body #tab-forge :is(.forge-mode-tabs, #forge-quality-tabs) .btn,
 body #zone-bar #btn-world-map,
 body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button {
@@ -117,7 +117,7 @@ body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button {
 }
 
 body :is(.btn, .fs-btn, .info-btn, .zone-btn, .btn-equip-sets, .modal-x, .realm-btn, .eqset-popup-close,
-    .eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle, .twx-tier, .tlx-tier, .gx-chip,
+    .eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle, .twx-tier, .tlx-tier,
     .settings-tab-btn, .system-close, .achv-filters button, .system-menu-actions button):where(:hover, :focus-visible) {
   --bs-button-top: #4c6356;
   --bs-button-bottom: #354b3f;
@@ -145,7 +145,7 @@ body .btn:where(.warn, .danger, .sgb-btn-danger):where(:hover, :focus-visible) {
 }
 
 body :is(#equip-action-bar .btn-primary, .gx-tab, .rx-tab, .twx-tier, .tlx-tier, .settings-tab-btn,
-    .eqset-tab, .achv-filters button, .gx-chip, .forge-mode-tabs .btn,
+    .eqset-tab, .achv-filters button, .forge-mode-tabs .btn,
     #forge-quality-tabs .btn):where([aria-selected="true"], .viewing, .on, .is-on, .active, .btn-primary),
 body .rx-detail-toggle[aria-pressed="true"] {
   --bs-button-top: var(--bs-tab-selected-top);
@@ -157,7 +157,7 @@ body .rx-detail-toggle[aria-pressed="true"] {
 }
 
 body :is(.btn, .fs-btn, .info-btn, .zone-btn, .realm-btn, .btn-equip-sets, .settings-tab-btn,
-    .eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle, .twx-tier, .tlx-tier, .gx-chip, .achv-filters button,
+    .eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle, .twx-tier, .tlx-tier, .achv-filters button,
     .system-menu-actions button, #equip-action-bar .btn):where(:disabled, [aria-disabled="true"], .is-locked) {
   --bs-button-top: #302e31;
   --bs-button-bottom: #232124;
