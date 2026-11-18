@@ -64,7 +64,7 @@ test('傳送帶沿正式武器分類與各部位圖示，舊快照可退回部�
   const context = { rarityTag: it => it.name };
   vm.createContext(context);
   for (const file of ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js']) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context);
-  vm.runInContext(extract('itemIconFile') + extract('nfBeltChipsHTML'), context);
+  vm.runInContext(['itemIconFile', 'itemRarityEffectClass', 'itemFrameColor', 'nfBeltChipsHTML'].map(extract).join('\n'), context);
   for (const weaponType of Object.keys(context.WEAPON_TYPES)) {
     const html = context.nfBeltChipsHTML({ belt: [{ rarity: 2, slot: 'weapon', name: '測試', weaponType }] });
     assert.ok(html.includes('images/' + context.WEAPON_TYPE_ICONS[weaponType]), weaponType);

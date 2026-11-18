@@ -50,7 +50,7 @@ test('雙手武器在副手欄顯示同一把武器，但仍以視覺 duplicate 
   };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/data.js'), 'utf8').match(/^function divineForgeBaseRarity[^\n]+/m)[0], context);
-  vm.runInContext(functionBody('itemRarityEffectClass') + '\n' + functionBody('twoHandSharedBadgeHTML') + '\n' + functionBody('renderEquip'), context);
+  vm.runInContext(['itemRarityEffectClass', 'itemFrameColor', 'twoHandSharedBadgeHTML', 'renderEquip'].map(functionBody).join('\n'), context);
   context.renderEquip();
 
   const html = equipGrid.innerHTML;

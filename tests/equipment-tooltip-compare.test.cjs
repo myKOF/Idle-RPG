@@ -17,6 +17,7 @@ function tooltip(sourceName, item, target, checked = true, equippedRarity = 5, c
   if (config.offHand) eq.weapon2 = config.offHand;
   const c = {
     UI: {}, window: { innerWidth: 1400, innerHeight: 900 },
+    RARITIES: Array.from({ length: 12 }, (_, i) => ({ color: 'rarity-' + i })),
     $id: id => id === 'sk-tooltip' ? tip : { checked },
     uiInventoryPanelSnapshot: () => ({ viewEquipment: eq }),
     uiHeaderPanelSnapshot: () => ({ player: { gold: 100, essence: 10 } }),
@@ -32,7 +33,7 @@ function tooltip(sourceName, item, target, checked = true, equippedRarity = 5, c
   vm.runInContext(source.slice(source.indexOf('function itemRarityEffectClass('), source.indexOf('function renderEquip(')), c);
   vm.runInContext(source.slice(source.indexOf('function positionSkTooltip('), source.indexOf('function showSkillTooltipHTML(')), c);
   vm.runInContext(source.slice(source.indexOf('function showItemTooltip('), source.indexOf('function showTowerTooltip(')), c);
-  c.showItemTooltip(item, { getAttribute: name => name === 'data-src' ? sourceName : name === 'data-slot' ? target : null, getBoundingClientRect: () => ({ left: 10, right: 60, top: 40 }) });
+  c.showItemTooltip({ rarity: 0, ...item }, { getAttribute: name => name === 'data-src' ? sourceName : name === 'data-slot' ? target : null, getBoundingClientRect: () => ({ left: 10, right: 60, top: 40 }) });
   return { tip, cards };
 }
 
@@ -67,6 +68,7 @@ test('關閉比較、空目標槽或相同裝備維持單卡', () => {
 
 test('混合品質比較依原品質套框，包含神鑄神話與神鑄創世，混沌兩品質共用授權框', () => {
   const classes = result => Array.from(result.tip.innerHTML.matchAll(/class="(equip-detail-card[^"]*)"/g), m => m[1]);
+  const colors = result => Array.from(result.tip.innerHTML.matchAll(/--item-frame-color:(rarity-\d+)/g), m => m[1]);
   for (let rarity = 0; rarity <= 11; rarity++) {
     const item = { id: 'candidate', rarity };
     const expected = [6, 8].includes(rarity) ? 'equip-detail-card mythic-detail' : [7, 9].includes(rarity) ? 'equip-detail-card genesis-detail' : [10, 11].includes(rarity) ? 'equip-detail-card chaos-detail' : 'equip-detail-card';
@@ -77,6 +79,8 @@ test('混合品質比較依原品質套框，包含神鑄神話與神鑄創世�
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 9)), [expected, 'equip-detail-card genesis-detail']);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 10)), [expected, 'equip-detail-card chaos-detail']);
     assert.deepEqual(classes(tooltip('inv', item, 'weapon', true, 5)), [expected, 'equip-detail-card']);
+    const baseRarity = { 8: 6, 9: 7, 11: 10 }[rarity] ?? rarity;
+    assert.deepEqual(colors(tooltip('inv', item, 'weapon', true, 5)), ['rarity-' + baseRarity, 'rarity-5']);
   }
 });
 

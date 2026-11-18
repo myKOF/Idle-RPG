@@ -216,7 +216,7 @@ body #inv-section-box .inv-head {
 }
 body #tab-equip #detail-pane:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)),
 body #tab-equip :is(#equip-action-bar, .equip-material-panel) {
-  border-color: var(--bs-seam) !important;
+  border-color: var(--item-frame-color, var(--bs-seam)) !important;
   border-radius: 2px !important;
   background: var(--bs-recess) !important;
 }
@@ -236,11 +236,25 @@ body #game-layout #inventory-grid .item-cell.dimmed:not(.item-cell-dimmed) {
   opacity: .57 !important;
   filter: saturate(.48) brightness(.66) !important;
 }
-body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot).selected {
-  outline: 2px solid var(--bs-gold) !important;
-  outline-offset: -2px;
+/* 部位篩選只調暗裝備內容，保留可辨識的品質框。 */
+body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed) {
+  opacity: 1 !important;
+  filter: none !important;
 }
-body #game-layout #equip-grid .inventory-selection-match {
+body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed) > * {
+  opacity: .57;
+}
+body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed) > :is(.item-icon, .ic-emoji) {
+  filter: saturate(.48) brightness(.66);
+}
+body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot).selected {
+  outline: 2px solid var(--item-frame-color, var(--bs-gold)) !important;
+  outline-offset: 1px;
+}
+body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot).selected:is(.eff-mythic, .eff-genesis, .eff-chaos) {
+  outline-color: var(--bs-gold) !important;
+}
+body #game-layout #equip-grid .eq-slot.empty.inventory-selection-match {
   outline: 1px dashed #f3d196 !important;
   outline-offset: -3px;
 }
@@ -271,7 +285,10 @@ body #sk-tooltip .equip-detail-card {
   color: var(--bs-text);
   text-shadow: none;
 }
-body #sk-tooltip .equip-detail-card:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)) { padding: 12px !important; }
+body #sk-tooltip .equip-detail-card:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)) {
+  border-color: var(--item-frame-color, var(--bs-brass)) !important;
+  padding: 12px !important;
+}
 body #sk-tooltip .equip-detail-card .it-name {
   display: flex;
   align-items: center;
@@ -300,6 +317,9 @@ body #sk-tooltip .equip-detail-card .it-name-icon {
   background-repeat: no-repeat;
   box-shadow: inset 0 0 0 3px #17141c, inset 0 0 0 4px #c8ab6b29;
   clip-path: var(--bs-cut);
+}
+body #sk-tooltip .equip-detail-card:not(:is(.mythic-detail, .genesis-detail, .chaos-detail)) .it-name-icon {
+  border-color: var(--item-frame-color, currentColor);
 }
 body #sk-tooltip .equip-detail-card .it-sub {
   margin: 0 0 7px;

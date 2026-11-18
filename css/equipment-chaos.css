@@ -24,7 +24,8 @@
 .item-cell.eff-chaos,
 #workspace-area .item-cell.eff-chaos,
 .eq-slot.eff-chaos,
-.forge-slot.eff-chaos {
+.forge-slot.eff-chaos,
+:is(.conv-chip, .nfc-res-slot, .shop-card).eff-chaos {
   isolation: isolate;
   border: 0 !important;
   border-radius: 0 !important;
@@ -56,6 +57,7 @@
 
 /* 圖框不影響紙娃娃各槽原有的絕對定位與大小。 */
 .eq-slot.eff-chaos { transform: translate(-50%, -50%); }
+.shop-card.eff-chaos { position: relative; }
 .eq-slot.eff-chaos.twohand-duplicate::after {
   inset: 2px;
   background: var(--chaos-icon-surface);

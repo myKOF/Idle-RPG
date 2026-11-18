@@ -17,7 +17,7 @@ function section() {
   return el;
 }
 function pane() {
-  const el={style:{},classList:classList()};let html='';
+  const el={style:{setProperty(){}},classList:classList()};let html='';
   Object.defineProperty(el,'innerHTML',{get:()=>html,set(value){html=value;el.header=el.holes=el.gems=null;
     const match=value.match(/^<div class="equip-socket-header">([\s\S]*?)<\/div><div class="equip-socket-page">([\s\S]*)<\/div><div class="equip-socket-gems">([\s\S]*)<\/div>$/);
     if(match){el.header=section();el.header.innerHTML=match[1];el.holes=section();el.holes.innerHTML=match[2];el.gems=section();el.gems.innerHTML=match[3];}

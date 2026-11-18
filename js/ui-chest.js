@@ -195,9 +195,11 @@ function chestResultSlots(rewards) {
   });
   var slots = [], end = 0;
   function add(rw, item) {
-    var rarity = rw.k === 'equip' ? RARITIES[rw.r] : rw.k === 'gem' ? RARITIES[rw.lv - 1] : null;
-    var color = rarity ? ' style="--nfc-rarity:' + rarity.color + '"' : '';
+    var rarity = rw.k === 'gem' ? RARITIES[rw.lv - 1] : null;
+    var frameColor = rw.k === 'equip' ? itemFrameColor(rw.r) : rarity && rarity.color;
+    var color = frameColor ? ' style="--nfc-rarity:' + frameColor + '"' : '';
     var cls = 'nfc-res-slot' + (rw.k === 'relic' ? ' is-relic' : '');
+    if (rw.k === 'equip') cls += itemRarityEffectClass(rw.r);
     var label = chestRewardName(rw), icon, badge = '';
     if (item) {
       label += ' ' + STR(1146, item.level) + ' ' + STR(1184, item.ancientCount);
