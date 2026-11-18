@@ -2271,7 +2271,7 @@ html *::-webkit-scrollbar-corner {
 }
 .system-settings-heading { flex: 0 0 auto; }
 .system-settings-heading h2 { margin-bottom: 20px; }
-/* 設置視窗頁籤：遊戲設定／音訊／存檔 */
+/* 設置視窗頁籤 */
 .settings-tabs {
   display: flex;
   gap: 6px;
@@ -2315,6 +2315,22 @@ html *::-webkit-scrollbar-corner {
 .settings-opt-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .settings-opt-name { color: #ead7ad; font-size: 15px; }
 .settings-opt-tip { color: var(--dim, #9a8f78); font-size: 12px; line-height: 1.5; }
+.settings-display { color: var(--text); }
+.settings-display-group { margin: 0 0 14px; padding: 0 0 12px; border: 0; border-bottom: 1px solid var(--border); min-width: 0; }
+.settings-display :is(legend, label.settings-opt-name) { margin-bottom: 7px; }
+.settings-display :is(legend, .settings-opt-name)[data-tip] { cursor: help; }
+.settings-display-modes, .settings-display-options { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.settings-display-modes label, .settings-display-options label { display: inline-flex; align-items: center; gap: 5px; min-height: 23px; }
+.settings-display label:has(:disabled) { opacity: .6; }
+.settings-display input:is([type="radio"], [type="checkbox"]) { margin: 0; }
+.settings-display .settings-select { display: block; width: 100%; }
+.settings-display .settings-display-scale { margin-top: 12px; grid-template-columns: minmax(0, 1fr); gap: 5px; }
+.settings-display-scale label.settings-opt-name { margin: 0; }
+.settings-display-scale .settings-slider-head, .settings-display-scale-ends, .settings-display-vsync { display: flex; justify-content: space-between; align-items: center; }
+.settings-display-fps { margin: 10px 0; padding: 0; border: 0; }
+.settings-display-footer { display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+.settings-display-footer p { flex: 1; margin: 0; }
+.settings-display-footer button { flex: 0 0 auto; }
 .settings-slider {
   display: grid;
   grid-template-columns: 96px 1fr 44px;

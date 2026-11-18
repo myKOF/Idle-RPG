@@ -1,12 +1,11 @@
 /* ============================================================
-   hero3d.js — 內測用的 3D 主角（即時 3D 骨架動畫）
+   hero3d.js — 3D 主角（即時 3D 骨架動畫）
 
    戰鬥畫面仍是 Pixi 的 2D 場景。這支檔把一隻 3D 角色（GLB，three.js）畫進一張離屏畫布，
    再當成一張貼圖貼在主角的 Sprite 上，所以站位、鏡頭、陰影、特效層、血條全都沿用原本那一套。
    只換「角色身體怎麼畫」。
 
-   - 只在內測版載入模型：Hero3D.enabled() 要同時滿足 isInternalServer() 與使用者開了開關（localStorage）。
-     正式版即使 localStorage 被寫了也回傳 false，不會下載 three.js 或模型。
+   - 外部版預設使用 3D 主角，內測版依 localStorage 的開關決定。
    - three.js 以 <script type="importmap"> 對應 'three'（見 index.html），第一次 create() 才動態 import，
      沒開 3D 模式就完全不下載。
    - 動畫名稱沿用 2D 序列幀的名稱（idle／walk／attack1／attack2／cast／die／rise），CLIP_FOR 把它們對到 GLB 裡的動畫。
@@ -208,9 +207,9 @@
   function stored() {
     try { return global.localStorage.getItem(STORE_KEY) === '1'; } catch (e) { return false; }
   }
-  /* 是否使用 3D 主角：只有內測版、且使用者開了開關。 */
-  function enabled() { return isInternal() && stored(); }
+  function enabled() { return !isInternal() || stored(); }
   function setEnabled(on) {
+    if (!isInternal()) return;
     try {
       if (on) global.localStorage.setItem(STORE_KEY, '1');
       else global.localStorage.removeItem(STORE_KEY);

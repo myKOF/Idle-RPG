@@ -32,7 +32,8 @@ const sources = [
   'assets/noto-serif-tc-bold.woff2', 'assets/shot-one-effects.wav', 'assets/shot-one-preview.wav'
 ].map(file => 'extended-shot-one/' + file), [
   'PROMPTS.json', 'index.html', 'preview.js', 'shot-timing.js', 'shot.js', 'shot-two.js',
-  'commander-reference.js', 'build-audio.cjs', 'render-shot-two.cjs', 'package-preview.cjs',
+  'commander-reference.js', 'commander-impact.js', 'index-effects.html', 'shot-two-effects.js',
+  'build-audio.cjs', 'render-shot-two.cjs', 'package-preview.cjs',
   'assets/04-heavy-fire-roar.wav', 'assets/archangel-user-reference.png',
   'assets/archangel-hood-chin-tucked.png', 'assets/archangel-hood-edge-left.png',
   'assets/charred-feather.png', 'assets/shot-one-tail.png', 'assets/shot-two-effects.wav',
@@ -43,6 +44,7 @@ const sources = [
   'package-preview.cjs', 'feather-vfx.js', 'vfx-core.js', 'assets/archangel-fallen-ivory.png',
   'assets/archangel-left-thumb-reference-edit.png', 'assets/desert-high-oblique.png',
   'assets/hand-source.png', 'assets/hand-buried-approved.png', 'assets/wrist-sand-relief.png',
+  'assets/archangel-left-hand-flat.png',
   'assets/mortal-map.png', 'assets/desert-surface.png', 'assets/desert-wide-extended.png',
   'assets/collapse-smoke.png', 'assets/charred-feather.png', 'assets/noto-serif-tc-bold.woff2',
   'assets/feather-vfx/intro-feather-radiance.json', 'assets/feather-vfx/intro-feather-radiance.layout.json',
@@ -57,7 +59,8 @@ const sources = [
 ].map(file => 'extended-shot-three-35.5s/' + file), [
   'SOURCE.md', 'index.html', 'shot-timing.js', 'shot.js', 'shot-cinematics.js',
   'brace-effects.js', 'cloth-motion.js', 'kneel-orbit.js', 'rise-gust.js', 'rise-matte.js', 'rise-scene.js',
-  'build-audio.cjs', 'render-shot-four.cjs', 'restore-master.cjs', 'export-replay.cjs',
+  'build-audio.cjs', 'render-shot-four.cjs', 'restore-master.cjs', 'export-replay.cjs', 'export-clean-replay.cjs',
+  'replace-replay-shot-two.cjs',
   'assets/brace.png', 'assets/cloth-ribbon.png', 'assets/flare.png', 'assets/kneel.png',
   'assets/kneel-desert.png', 'assets/rise.png', 'assets/rise-desert.png', 'assets/vista.png',
   'assets/shot-four-effects.wav', 'assets/shot-four-mix.wav'
@@ -65,7 +68,9 @@ const sources = [
   'SOURCE.md', 'PROMPT.md', 'index.html', 'finale-timing.js', 'finale.js', 'finale-mattes.js', 'finale-fx.js',
   'finale-backdrop.js', 'build-score.cjs', 'render-finale.cjs', 'align-mp4-presentation.cjs',
   'assets/vista-clean.png', 'assets/finale-effects.wav', 'assets/finale-audio.wav'
-].map(file => 'extended-shot-five/' + file), 'web/shot-02-archangel-fall-18s.mp4',
+].map(file => 'extended-shot-five/' + file), 'render-preview.cjs', 'web/shot-02-archangel-fall-18s.mp4', 'web/shot-02-effects-18s.mp4',
+'web/shot-03-valley-dust.mp4', 'web/shot-03-flat-left-hand.mp4', 'web/shot-03-fallen-wind-handoff.mp4',
+'web/shot-04-rise-radiance.mp4',
 'web/shot-03-extended-32s.mp4', 'web/shot-03-extended-33.5s.mp4', 'web/shots-01-04-100.7s.json',
 'web/shots-01-04-100.7s.mp4.part01', 'web/shots-01-04-100.7s.mp4.part02');
 const exportsByName = {

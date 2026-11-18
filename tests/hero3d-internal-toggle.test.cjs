@@ -12,8 +12,16 @@ function setup(internal,stored='0'){
  assert(start>=0&&end>start);vm.runInContext(ui.slice(start,end),c);c.initHero3dToggle();
  return {c,button,listeners,reloads:()=>reloads,imports:()=>imports};
 }
-test('正式環境即使留有3D偏好，也不啟用、不顯示控制或下載模型',()=>{
- const t=setup(false,'1');assert.equal(t.c.Hero3D.enabled(),false);assert.equal(t.button.hidden,true);assert.equal(t.listeners.click,undefined);assert.equal(t.imports(),0);
+test('外部版開局啟用3D並隱藏內測按鈕，在渲染器建立模型前維持延遲載入',()=>{
+ for (const state of [null, '0', '1']) {
+  const t = setup(false, state);
+  assert.equal(t.c.Hero3D.enabled(), true);
+  assert.equal(t.button.hidden, true);
+  assert.equal(t.listeners.click, undefined);
+  t.c.Hero3D.setEnabled(false);
+  assert.equal(t.c.localStorage.getItem('idle-rpg.hero3d.v1'), state);
+  assert.equal(t.imports(), 0);
+ }
 });
 test('內測按鈕統一顯示3D並以pressed反映開關，轉生及傳奇字串保持原意',()=>{
  for(const state of ['0','1']){const t=setup(true,state);assert.equal(t.button.hidden,false);assert.equal(t.button.textContent,'3D');assert.equal(t.button['aria-pressed'],state==='1'?'true':'false');t.listeners.click();assert.equal(t.c.Hero3D.enabled(),state!=='1');assert.equal(t.reloads(),1);assert.equal(t.imports(),0);assert.match(t.c.STR(2146,'轉生',250,'轉生'),/250/);assert.match(t.c.STR(2153),/內測專用/);}

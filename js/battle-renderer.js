@@ -48,7 +48,7 @@ var BattleRenderer = (function () {
   var BATTLE_MAX_FPS = 60;
   function battleMaxFps() {
     var m = (typeof location !== 'undefined') && /[?&]fps=(\d+)(&|$)/.exec(location.search || '');
-    if (!m) return BATTLE_MAX_FPS;
+    if (!m) return typeof GameSettings !== 'undefined' ? GameSettings.get('fpsLimit') : BATTLE_MAX_FPS;
     var n = Number(m[1]) || 0;
     if (n <= 0) return 0;                 // ?fps=0：不設上限（跟著螢幕跑）
     return Math.max(15, Math.min(240, n));
@@ -2347,10 +2347,10 @@ var BattleRenderer = (function () {
     }
   }
 
-  /* ---- 3D 主角（內測，js/hero3d.js）----
+  /* ---- 3D 主角（js/hero3d.js）----
      只換主角「身體怎麼畫」：站位、鏡頭、陰影、特效、血條全沿用 2D 那一套。
-     Hero3D.enabled() 在正式版恆為 false，這裡直接回傳、不下載 three.js 與模型。
-     載入失敗就關掉開關退回 2D，不讓戰鬥畫面壞掉。 */
+     外部版預設載入，內測版由 3D 開關決定。
+     載入失敗時本次戰鬥退回 2D，內測版也會關閉開關。 */
   var hero3dWantedSkin = 0, hero3dSkinRequest = 0, hero3dLoadingSkin = null, hero3dFailedSkin = null;
   function syncHero3dAppearance(count) {
     if (typeof Hero3D === 'undefined' || !Hero3D.enabled()) return null;
@@ -8457,13 +8457,17 @@ var BattleRenderer = (function () {
   function currentResolution() {
     var forced = resolutionByQuery();
     if (forced) return forced;
-    if (perfMode) return 1;   // 效能模式：不隨 DPR／UI 縮放放大，填色像素數降到最低
+    if (typeof GameSettings !== 'undefined') {
+      var size = GameSettings.get('displayResolution').split('x');
+      var viewport = document.documentElement;
+      var scale = Math.min(+size[0] / (viewport.clientWidth || +size[0]), +size[1] / (viewport.clientHeight || +size[1]));
+      return Math.max(0.25, Math.min(perfMode ? 1 : 2.5, scale * uiShellScale() * GameSettings.get('renderScale') / 100));
+    }
+    if (perfMode) return 1;
     var dpr = (typeof devicePixelRatio === 'number' && devicePixelRatio > 0) ? devicePixelRatio : 1;
     return Math.max(1,Math.min(2.5, dpr * uiShellScale()));
   }
-  /* ?res=0.5：強制 Canvas 的渲染解析度（A／B 用，下限 0.25）。
-     正常的下限是 1——縮小只會變糊，沒有理由在正式流程裡用；
-     這個開關是為了在「特效多到 FPS 崩掉」的場景裡判斷瓶頸是不是填色（像素數）。 */
+  /* ?res=0.5：用於效能比對，優先於玩家的解析度與渲染比例。 */
   function resolutionByQuery() {
     var m = (typeof location !== 'undefined') && /[?&]res=([0-9.]+)(&|$)/.exec(location.search || '');
     var v = m ? Number(m[1]) : 0;
@@ -8934,6 +8938,17 @@ var BattleRenderer = (function () {
     }
   }
   var clearDamageFloats = clearAllFloats;
+
+  if (typeof GameSettings !== 'undefined') {
+    GameSettings.subscribe(function (name) {
+      if (!S.app || !S.ready) return;
+      if (name === 'fpsLimit') S.app.ticker.maxFPS = battleMaxFps();
+      if (name === 'displayResolution' || name === 'renderScale') {
+        resize();
+        S.app.render();
+      }
+    });
+  }
 
   return {
     init: init,

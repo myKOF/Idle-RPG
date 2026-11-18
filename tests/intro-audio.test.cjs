@@ -105,6 +105,33 @@ test('手勢預載解鎖音訊，影片起播前保持安靜', async () => {
   audio.dispose();
 });
 
+test('片尾配樂依影片時間淡出至靜音，讀取遊戲音量並能從其他時點恢復', async () => {
+  const e = env();
+  const audio = e.A.create({ ...config, sceneMusic: true, musicFade: { from: 109300, to: 114350 } }, e.clock);
+  audio.start(); await settle();
+  const music = e.music[0];
+  assert.equal(music.volume, .5);
+  e.setClock(111825);
+  audio.updatePlayback();
+  assert.equal(music.volume, .25);
+  e.values.musicVolume = 80;
+  e.subscribers[0]();
+  assert.equal(music.volume, .4);
+  assert.equal(e.gains[0].gain.value, 1, '獨立音效沿用自己音軌的淡出');
+  e.setClock(114400);
+  assert.equal(audio.takeSceneMusic().audio.volume, 0);
+  audio.dispose();
+
+  const resumed = e.A.create({ ...config, sceneMusic: true, musicFade: { from: 109300, to: 114350 } }, e.clock);
+  resumed.start(); await settle();
+  assert.equal(e.music[1].volume, 0);
+  resumed.pause();
+  e.setClock(100000);
+  resumed.start(); await settle();
+  assert.equal(e.music[1].volume, .8);
+  resumed.dispose();
+});
+
 test('下載中略過／暫停取消非同步起播，恢復從新位置開始', async () => {
   let resolveFetch;
   const response = new Promise(resolve => { resolveFetch = resolve; });

@@ -73,6 +73,47 @@
   object-fit: contain;
   object-position: 50% 50%;
 }
+
+.intro-video-captions {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(100%, calc(var(--ui-canvas-height, 100vh) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  container-type: inline-size;
+  color: #f7e5be;
+}
+
+.intro-video-captions[data-shot="3"]::before {
+  content: "";
+  position: absolute;
+  inset: 76.02% 0 8.33%;
+  background: linear-gradient(transparent, rgba(18, 9, 16, .46));
+}
+
+.intro-video-caption-line {
+  position: absolute;
+  inset: 83.89% 6% auto;
+  translate: 0 -50%;
+  text-align: center;
+  font: 700 2.55cqw / 1.25 "Noto Serif TC", "Microsoft JhengHei", MingLiU, serif;
+  letter-spacing: .14em;
+  -webkit-text-stroke: .20cqw rgba(22, 11, 8, .89);
+  paint-order: stroke fill;
+  text-shadow: 0 0 1cqw rgba(16, 9, 7, .87);
+}
+
+[data-shot="1"] .intro-video-caption-line {
+  font-size: 2.14cqw;
+  letter-spacing: .07em;
+}
+
+[data-shot="3"] .intro-video-caption-line {
+  top: 83.33%;
+  font-size: 2.45cqw;
+  letter-spacing: .18em;
+}
 .intro-image-awakening { transform-origin: 51% 59%; }
 .intro-infernal-glow {
   background: radial-gradient(ellipse at 51% 25%, rgba(170, 32, 8, .24), transparent 48%);

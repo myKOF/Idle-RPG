@@ -30,6 +30,10 @@ var RUNTIME_ROOTS = [
 /* 整個目錄排除（前綴比對） */
 var EXCLUDE_DIRS = [
   { prefix: 'opening_animation/review/', reason: '本機序章審片與草稿' },
+  { prefix: 'opening_animation/prologue/', reason: '本機 GM 舊序章預覽素材' },
+  { prefix: 'opening_animation/prologue-v2/', reason: '本機 GM 舊序章預覽素材' },
+  { prefix: 'opening_animation/prologue-audio/', reason: '本機 GM 舊序章預覽素材' },
+  { prefix: 'opening_animation/storybook/', reason: '本機 GM 繪本序章預覽素材' },
   { prefix: 'assets/characters/', reason: '3D 騎士製作流程的中間產物（.blend／.mhm／試作 glb）；執行期模型在 images/models/' },
   { prefix: 'vfx/layouts/', reason: 'VFX 編輯器的圖層排版，執行期只讀 vfx/presets/ 與 vfx/shipped-assets.json' }
 ];
@@ -55,6 +59,8 @@ var EXCLUDE_EXTS = {
 var EXCLUDE_FILES = [
   // 序章以 js/intro-data.js 的播放路徑出貨，這裡列出只供編輯保存的成片。
   { path: 'opening_animation/shot-01-02.mp4', reason: '序章剪輯舊版' },
+  { path: 'opening_animation/shot-01-03.mp4', reason: '前三鏡重播封存版' },
+  { path: 'opening_animation/shot-01-03-sfx.mp3', reason: '前三鏡音效封存版' },
   { path: 'opening_animation/shot-01-extended.mp4', reason: '序章剪輯舊版' },
   { path: 'opening_animation/shot-04-32.2s.mp4', reason: '序章剪輯舊版' },
   { path: 'opening_animation/shots-01-02-34s.mp4', reason: '序章剪輯舊版' },
@@ -85,6 +91,7 @@ function classify(relPath) {
   // 點開頭的檔案與目錄（.gitignore、.gitkeep）不出貨；協議本來就拒絕伺服它們
   if (p.split('/').some(function (seg) { return seg.charAt(0) === '.'; })) return { ship: false, reason: '點開頭的路徑' };
   if (KEEP_ALWAYS.test(p)) return { ship: true };
+  if (p === 'opening_animation/旁白.md') return { ship: true };
   for (var i = 0; i < EXCLUDE_DIRS.length; i++) {
     if (p.indexOf(EXCLUDE_DIRS[i].prefix) === 0) return { ship: false, reason: EXCLUDE_DIRS[i].reason };
   }

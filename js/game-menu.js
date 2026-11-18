@@ -51,11 +51,11 @@ var GameMenu = (function () {
     pauseGame(false);
     if (previousFocus && typeof previousFocus.focus === 'function' && previousFocus.isConnected !== false) previousFocus.focus();
   }
-  /* ---- 設置視窗：遊戲設定／音訊／存檔 三個頁籤 ----
+  /* ---- 設置視窗 ----
      自己保存的偏好（輪廓、鏡頭鎖定、音訊）在 GameSettings；其餘四項轉接各自原本的開關（見 js/game-settings.js 開頭），
      所以每次開啟都從來源重新讀一次勾選狀態，不另存一份。 */
-  var SETTINGS_TABS = ['game', 'audio', 'save', 'help'];
-  var SETTINGS_PANES = { game: 'settings-pane-game', audio: 'settings-pane-audio', save: 'tab-settings', help: 'settings-pane-help' };
+  var SETTINGS_TABS = ['game', 'display', 'audio', 'save', 'help'];
+  var SETTINGS_PANES = { game: 'settings-pane-game', display: 'settings-pane-display', audio: 'settings-pane-audio', save: 'tab-settings', help: 'settings-pane-help' };
   function selectSettingsTab(name, focusTab) {
     if (SETTINGS_TABS.indexOf(name) < 0) name = 'game';
     SETTINGS_TABS.forEach(function (key) {
@@ -69,6 +69,7 @@ var GameMenu = (function () {
       if (pane) pane.hidden = !on;
     });
     if (name === 'save' && typeof refreshSettingsPanel === 'function') refreshSettingsPanel();   // 存檔列表只在看得到時才讀
+    if (name === 'display' && typeof DisplaySettingsUI !== 'undefined') DisplaySettingsUI.refresh();
   }
   function checkbox(id) { return el(id); }
   function syncSettingsControls() {
@@ -107,6 +108,7 @@ var GameMenu = (function () {
   function bindSettingsControls() {
     var gs = typeof GameSettings !== 'undefined' ? GameSettings : null;
     var muteButton = el('btn-battle-mute');
+    if (typeof DisplaySettingsUI !== 'undefined') DisplaySettingsUI.init();
     function syncMuteControls() {
       if (!gs) return;
       var muted = !!gs.get('mute');
@@ -163,8 +165,7 @@ var GameMenu = (function () {
     onChange('set-auto-equip', proxy('toggle-autoequip'));
     onChange('set-compare-equip', proxy('toggle-compare'));
   }
-  /* 視窗高度固定為「遊戲設定」頁籤的高度：切到較長的頁籤（存檔）時內容在視窗內捲動，視窗本身不變高。
-     每次開啟與視窗縮放時重新量：先放掉舊高度、切到第一頁籤量，再切回原頁籤。 */
+  /* 視窗高度取遊戲設定與顯示頁中較高者。長頁面仍在視窗內捲動。 */
   function lockSettingsHeight() {
     var modal = el('settings-modal');
     var card = modal && typeof modal.querySelector === 'function' ? modal.querySelector('.system-settings-card') : null;
@@ -174,8 +175,10 @@ var GameMenu = (function () {
     card.style.height = '';
     selectSettingsTab('game');
     var height = card.offsetHeight;
+    selectSettingsTab('display');
+    height = Math.max(height, card.offsetHeight);
     if (height > 0) card.style.height = height + 'px';
-    if (current && current !== 'game') selectSettingsTab(current);
+    selectSettingsTab(current || 'game');
   }
   function openSettings(tab) {
     if (busy) return;

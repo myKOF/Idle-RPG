@@ -151,6 +151,10 @@ var IntroPlayer = (function () {
       armFailsafe(c);
     });
     video.addEventListener('waiting', function () { if (c.audio && !c.skipping) c.audio.pause(); });
+    if (c.audio && c.audio.updatePlayback) {
+      video.addEventListener('timeupdate', c.audio.updatePlayback);
+      video.addEventListener('seeked', c.audio.updatePlayback);
+    }
     video.src = src;
     return video;
   }
@@ -160,6 +164,92 @@ var IntroPlayer = (function () {
       // 隱藏分頁、略過或卸載都可能中斷尚未完成的 play()。
       if (!c.paused && error.name !== 'AbortError') failVideo(c);
     });
+  }
+
+  function captionTime(value) {
+    var parts = /^(\d{2}):([0-5]\d):([0-5]\d)\.(\d{3})$/.exec(value);
+    return parts ? Number(parts[1]) * 3600000 + Number(parts[2]) * 60000 +
+      Number(parts[3]) * 1000 + Number(parts[4]) : NaN;
+  }
+
+  function parseCaptions(markdown, duration) {
+    var lastEnd = 0;
+    return markdown.split(/\r?\n/).filter(function (row) {
+      return /^\s*\|\s*\d/.test(row);
+    }).map(function (row) {
+      var cells = row.trim().slice(1, -1).split('|').map(function (cell) { return cell.trim(); });
+      var start = captionTime(cells[1]), end = captionTime(cells[2]);
+      var fadeIn = Number(cells[3]), fadeOut = Number(cells[4]);
+      if (!row.trim().endsWith('|') || cells.length !== 6 || !/^[1-5]$/.test(cells[0]) ||
+          !/^\d+$/.test(cells[3]) || !/^\d+$/.test(cells[4]) || !cells[5] ||
+          !(start >= lastEnd && end > start && end <= duration && fadeIn + fadeOut <= end - start)) {
+        throw new Error('旁白的時間或格式有誤：' + row);
+      }
+      lastEnd = end;
+      return { shot: cells[0], start: start, end: end, fadeIn: fadeIn, fadeOut: fadeOut, text: cells[5] };
+    });
+  }
+
+  function mountCaptions(c, stage, src) {
+    if (typeof fetch !== 'function') return null;
+    var video = c.video;
+    var frame = document.createElement('div');
+    var line = document.createElement('div');
+    frame.className = 'intro-video-captions';
+    frame.hidden = true;
+    line.className = 'intro-video-caption-line';
+    frame.appendChild(line);
+    stage.appendChild(frame);
+
+    var request = new AbortController();
+    var cues = [], active, frameId = null;
+    function smooth(amount) { return amount * amount * (3 - 2 * amount); }
+    function paint(time) {
+      var cue = cues.find(function (item) { return time >= item.start && time < item.end; });
+      if (cue !== active) {
+        active = cue;
+        frame.hidden = !cue;
+        if (cue) {
+          frame.setAttribute('data-shot', cue.shot);
+          line.textContent = cue.text;
+        }
+      }
+      if (!cue) return;
+      var rise = cue.fadeIn ? (time - cue.start) / cue.fadeIn : 1;
+      var fall = cue.fadeOut ? (cue.end - time) / cue.fadeOut : 1;
+      frame.style.opacity = String(smooth(Math.min(1, rise, fall)));
+    }
+    function refresh() { paint(playbackTime(c)); }
+    function schedule() {
+      if (frameId !== null || !cues.length || typeof video.requestVideoFrameCallback !== 'function') return;
+      frameId = video.requestVideoFrameCallback(function (_, metadata) {
+        frameId = null;
+        paint(metadata.mediaTime * 1000);
+        schedule();
+      });
+    }
+    video.addEventListener('timeupdate', refresh);
+    video.addEventListener('seeked', refresh);
+    fetch(src, { cache: 'no-cache', signal: request.signal }).then(function (response) {
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      return response.text();
+    }).then(function (markdown) {
+      if (_cur !== c) return;
+      cues = parseCaptions(markdown, c.duration);
+      refresh();
+      schedule();
+    }).catch(function (error) {
+      if (_cur === c) console.warn('[intro] 旁白載入失敗', error);
+    });
+    return {
+      refresh: refresh,
+      dispose: function () {
+        request.abort();
+        video.removeEventListener('timeupdate', refresh);
+        video.removeEventListener('seeked', refresh);
+        if (frameId !== null) video.cancelVideoFrameCallback(frameId);
+      }
+    };
   }
 
   function animate(c, el, frames, opts) {
@@ -334,6 +424,7 @@ var IntroPlayer = (function () {
       c.audio.dispose();
     }
     if (c.video) {
+      if (c.captions) c.captions.dispose();
       c.video.pause();
       c.video.removeAttribute('src');
       c.video.load();
@@ -396,6 +487,7 @@ var IntroPlayer = (function () {
       if (timeline.video) {
         c.video = buildVideo(c, timeline.video);
         stage.appendChild(c.video);
+        if (timeline.captions) c.captions = mountCaptions(c, stage, timeline.captions);
       }
 
       (timeline.layers || []).forEach(function (layer) {
@@ -507,7 +599,10 @@ var IntroPlayer = (function () {
     pauseAll(c);
     c.seeking = true;
     c.anims.forEach(function (a) { try { a.currentTime = ms; } catch (e) {} });
-    if (c.video) c.video.currentTime = Math.max(0, num(ms, 0)) / 1000;
+    if (c.video) {
+      c.video.currentTime = Math.max(0, num(ms, 0)) / 1000;
+      if (c.captions) c.captions.refresh();
+    }
     paintMotion(c, true);
     return true;
   }

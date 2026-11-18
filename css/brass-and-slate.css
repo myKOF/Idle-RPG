@@ -11,6 +11,8 @@
   --bs-muted: #b1a48f;
   --bs-green: #3c5348;
   --bs-green-dark: #26372f;
+  --bs-tab-selected-top: #c4dbc6;
+  --bs-tab-selected-bottom: #a7c5ae;
   --bs-corners:
     linear-gradient(135deg, #231c20 0 16%, #aa8c60 18% 24%, #5e4c37 26% 38%, transparent 40%) left top,
     linear-gradient(225deg, #231c20 0 16%, #aa8c60 18% 24%, #5e4c37 26% 38%, transparent 40%) right top,
@@ -89,8 +91,9 @@ body #workspace-area #tabs {
 
 /* 綠琺瑯底、切角銅邊。警示與停用保有不同明度及色相。 */
 body :is(.btn, .fs-btn, .info-btn, .zone-btn, .btn-equip-sets, .modal-x, .realm-btn),
-body #workspace-area :is(.eqset-tab, .tab-btn),
+body #workspace-area .eqset-tab,
 body #tab-equip #equip-action-bar .btn:is(.btn, .btn-primary),
+body #tab-equip #equip-action-bar .btn.btn-primary:hover:not(:disabled),
 body #inv-section-box .inv-head .btn.sm,
 body #world-map-modal .btn,
 body :is(.settings-tab-btn, .system-close),
@@ -109,14 +112,8 @@ body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button {
   text-shadow: 0 1px #090d0b;
 }
 
-body #workspace-area #tabs .tab-btn {
-  --bs-button-top: #2d3130;
-  --bs-button-bottom: #232626;
-  --bs-button-edge: #554b3d;
-}
-
 body :is(.btn, .fs-btn, .info-btn, .zone-btn, .btn-equip-sets, .modal-x, .realm-btn):is(:hover, :focus-visible):not(:disabled),
-body #workspace-area :is(.tab-btn, .eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle):is(:hover, :focus-visible):not(:disabled),
+body #workspace-area :is(.eqset-tab, .gx-tab, .rx-tab, .rx-detail-toggle):is(:hover, :focus-visible):not(:disabled),
 body :is(.settings-tab-btn, .system-close, #achv-modal .achv-filters button):is(:hover, :focus-visible):not(:disabled),
 body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button:is(:hover, :focus-visible):not(:disabled) {
   --bs-button-top: #546c5e;
@@ -125,10 +122,7 @@ body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button:i
 }
 
 body :is(.btn, .zone-btn, .realm-btn):is(.active, [aria-pressed="true"]),
-body #workspace-area #tabs .tab-btn.active,
-body #workspace-area .eqset-tab.viewing,
-body :is(.settings-tab-btn.active, #achv-modal .achv-filters button.on),
-body #equip-action-bar .btn-primary:not(:disabled) {
+body #achv-modal .achv-filters button.on {
   --bs-button-top: #485d4a;
   --bs-button-bottom: #263b31;
   --bs-button-edge: var(--bs-gold);
@@ -143,13 +137,31 @@ body #btn-salvage-settings.btn {
 }
 
 body :is(.btn, .zone-btn, .realm-btn):disabled,
-body #workspace-area #tabs .tab-btn:disabled,
 body :is(#game-menu, #settings-modal, #start-menu) .system-menu-actions button:disabled {
   --bs-button-top: #322c2e;
   --bs-button-bottom: #221e23;
   --bs-button-edge: #594b3c;
   color: #9c9185 !important;
   cursor: default;
+}
+
+body #tab-equip #equip-action-bar .btn.btn-primary,
+body #workspace-area :is(.gx-tab, .rx-tab)[aria-selected="true"]:not(:disabled),
+body #workspace-area .eqset-tab.viewing:not(:disabled),
+body #settings-modal button.settings-tab-btn[aria-selected="true"]:not(:disabled) {
+  --bs-button-top: var(--bs-tab-selected-top);
+  --bs-button-bottom: var(--bs-tab-selected-bottom);
+  --bs-button-edge: #d4e6d3;
+  color: #1c2d23 !important;
+  text-shadow: none;
+}
+
+body .btn.btn-it-lock,
+body .btn.btn-it-lock:hover:not(:disabled) {
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transition-property: color;
 }
 
 body :is(.btn, .zone-btn, .realm-btn, .modal-x, .btn-equip-sets, .tab-btn, .settings-tab-btn, .system-close, .system-menu-actions button):focus-visible {
@@ -222,7 +234,7 @@ body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot.filled, #
 }
 body #game-layout #inventory-grid .item-cell.dimmed:not(.item-cell-dimmed) {
   opacity: .57 !important;
-  filter: saturate(.48) brightness(.83) !important;
+  filter: saturate(.48) brightness(.66) !important;
 }
 body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot).selected {
   outline: 2px solid var(--bs-gold) !important;
@@ -232,21 +244,6 @@ body #game-layout #equip-grid .inventory-selection-match {
   outline: 1px dashed #f3d196 !important;
   outline-offset: -3px;
 }
-body #game-layout #inventory-grid .item-cell[data-slot]:not(:is(.eff-mythic, .eff-genesis, .eff-chaos, .eff-godforged))::before {
-  content: "";
-  position: absolute;
-  top: 4px;
-  right: 5px;
-  width: 7px;
-  height: 7px;
-  border: 1px solid;
-  border-color: inherit;
-  background: linear-gradient(135deg, #a3acb160, #100e13 75%);
-  transform: rotate(45deg);
-  z-index: 1;
-  pointer-events: none;
-}
-
 /* 原圖在既有背包格內放大，保留物品格尺寸、欄數及標記位置。 */
 body #game-layout #inventory-grid .item-cell[data-slot] > .item-icon {
   width: 98%;

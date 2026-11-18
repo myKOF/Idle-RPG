@@ -11319,21 +11319,24 @@ function setBattleFullscreen(enabled) {
   shell.classList.toggle('battle-fullscreen', !!enabled);
   button.textContent = enabled ? STR(2072) : STR(186);
   button.setAttribute('aria-pressed', String(!!enabled));
-  button.setAttribute('data-tip', enabled ? STR(2073) : STR(187));
+  button.setAttribute('data-tip', enabled ? STR(2072) : STR(186));
   // 沿用既有版面失效與 Canvas resize 路徑，不重建戰場或改變模擬狀態。
   window.dispatchEvent(new Event('resize'));
   button.focus();
 }
 
-function exitBattleFullscreen() {
-  var shell = $id('ui-shell');
-  if (!shell || !shell.classList.contains('battle-fullscreen')) return false;
-  setBattleFullscreen(false);
-  return true;
+function syncPageFullscreenKeyboard() {
+  var keyboard = navigator.keyboard;
+  if (!keyboard || typeof keyboard.lock !== 'function') return;
+  if (document.fullscreenElement === document.documentElement) {
+    keyboard.lock(['Escape']).catch(function () { /* 瀏覽器可保留原生全螢幕退出鍵 */ });
+  } else {
+    keyboard.unlock();
+  }
 }
 
 /* 內測專用：主角動畫系統切換（2D 序列幀／3D 骨架動畫，js/hero3d.js）。
-   正式版 isInternalServer() 為 false：按鈕保持 hidden、不綁事件，Hero3D.enabled() 也恆為 false。
+   外部版直接使用 3D，切換按鈕維持隱藏。
    渲染器在啟動時決定畫法，所以切換＝存好設定後重新整理頁面。 */
 function initHero3dToggle() {
   var btn = $id('btn-hero3d');
@@ -11384,10 +11387,8 @@ function initUI() {
     });
     // 介面縮放（js/ui-scale.js）會改變格線容器寬度，欄數快取一樣得作廢
     document.addEventListener('fullscreenchange', invalidateInventoryGridColumns);
-    document.addEventListener('fullscreenchange', function () {
-      // 瀏覽器先接收 Esc 離開網頁全螢幕時，也一併還原戰鬥區版面。
-      if (!document.fullscreenElement) exitBattleFullscreen();
-    });
+    document.addEventListener('fullscreenchange', syncPageFullscreenKeyboard);
+    syncPageFullscreenKeyboard();
     document.addEventListener('visibilitychange', handleVisibilityChange);
     document.addEventListener('pointerdown', noteUiInteraction, true);
     document.addEventListener('keydown', noteUiInteraction, true);
@@ -11396,7 +11397,8 @@ function initUI() {
     window.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' || e.keyCode === 27) {
         if (e.defaultPrevented || e.repeat || e.isComposing) return;
-        if (closeTopmostModalOrOverlay() || exitBattleFullscreen() || (typeof GameMenu !== 'undefined' && GameMenu.handleEscape())) {
+        if (closeTopmostModalOrOverlay() || (typeof GameMenu !== 'undefined' && GameMenu.handleEscape()) ||
+            document.fullscreenElement === document.documentElement) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -11436,12 +11438,12 @@ function initUI() {
     });
   }
 
-  // 本地測試服承傷顯示初始化：顯示在全螢幕按鈕右側
+  // 本地測試服傷害及承傷資訊放在版本更新提示前。
   var host = window.location.hostname;
   var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
   if (isLocal) {
-    var fsBtn = $id('btn-fullscreen');
-    if (fsBtn && !$id('r-phys-absorb')) {
+    var updateBanner = $id('update-banner');
+    if (updateBanner && !$id('r-phys-absorb')) {
       var wrap = document.createElement('span');
       wrap.id = 'test-only-dmg-wrap';
       wrap.style.marginLeft = '14px';
@@ -11456,7 +11458,7 @@ function initUI() {
         '<span id="r-magic-dmg-span" style="cursor: pointer;">' + STR(189) + ' <b id="r-magic-dmg" style="color: #4ade80;">0</b></span>' +
         '<span id="r-phys-span" style="cursor: pointer;">' + STR(190) + ' <b id="r-phys-absorb" style="color: #4ade80;">0</b></span>' +
         '<span id="r-magic-span" style="cursor: pointer;">' + STR(191) + ' <b id="r-magic-absorb" style="color: #4ade80;">0</b></span>';
-      fsBtn.parentNode.insertBefore(wrap, fsBtn.nextSibling);
+      updateBanner.before(wrap);
     }
   }
   // 分頁
@@ -13079,43 +13081,6 @@ function initUI() {
       : STR(1240), 'info');
     return;
   });
-  // 頂欄網頁全螢幕切換；瀏覽器 F11 屬於瀏覽器層級，網頁無法代替 F11 退出
-  function isBrowserFullscreen() {
-    var screenObj = typeof screen !== 'undefined' ? screen : null;
-    if (!screenObj || document.fullscreenElement) return false;
-    var firefoxF11 = typeof window.fullScreen === 'boolean' && window.fullScreen;
-    var sizeF11 = window.outerWidth >= screenObj.width && window.outerHeight >= screenObj.height;
-    return !!(firefoxF11 || sizeF11);
-  }
-  var fsBtn = $id('btn-fullscreen');
-  if (fsBtn) {
-    function syncFullscreenButton() {
-      var pageFullscreen = !!document.fullscreenElement;
-      var browserFullscreen = !pageFullscreen && isBrowserFullscreen();
-      fsBtn.classList.toggle('active', pageFullscreen || browserFullscreen);
-      fsBtn.setAttribute('data-tip', pageFullscreen
-        ? STR(206)
-        : (browserFullscreen ? STR(2074) : STR(207)));
-    }
-    fsBtn.addEventListener('click', function () {
-      if (document.fullscreenElement) {
-        // 第二次按下：離開全螢幕恢復正常
-        document.exitFullscreen().catch(function () { });
-      } else if (isBrowserFullscreen()) {
-        blog(STR(2075), 'warn', 'system');
-      } else {
-        document.documentElement.requestFullscreen().catch(function () {
-          blog(STR(2076), 'warn', 'system');
-        });
-      }
-    });
-    document.addEventListener('fullscreenchange', function () {
-      syncFullscreenButton();
-    });
-    window.addEventListener('resize', syncFullscreenButton);
-    syncFullscreenButton();
-  }
-
   // 熔爐頁設定（舊生產線的篩選/合成節點已移除）
 
   // 設定分頁：存檔管理——只有三個動作：立刻存檔（手動存檔進下方列表）、匯出存檔（彈出路徑視窗）、開啟存檔資料夾（桌面外殼提供）

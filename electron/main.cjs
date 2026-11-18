@@ -38,6 +38,7 @@ var stream = require('stream');
 var electron = require('electron');
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
+var screen = electron.screen;
 var protocol = electron.protocol;
 var session = electron.session;
 var shell = electron.shell;
@@ -94,6 +95,23 @@ function log() {
 }
 
 /* ---- 開機前必須完成的設定 ---- */
+var DISPLAY_PREFS_FILE = path.join(app.getPath('userData'), 'display-settings.json');
+var DISPLAY_MODES = ['borderless', 'fullscreen', 'windowed'];
+var displayPrefs = { mode: 'borderless', vsync: true };
+try {
+  var savedDisplay = JSON.parse(fs.readFileSync(DISPLAY_PREFS_FILE, 'utf8'));
+  if (DISPLAY_MODES.indexOf(savedDisplay.mode) >= 0) displayPrefs.mode = savedDisplay.mode;
+  displayPrefs.vsync = savedDisplay.vsync !== false;
+} catch (e) { /* 設定檔不存在或無法讀取時沿用預設 */ }
+var activeVsync = displayPrefs.vsync;
+function saveDisplayPrefs(next) {
+  if (next.mode === displayPrefs.mode && next.vsync === displayPrefs.vsync) return;
+  fs.mkdirSync(path.dirname(DISPLAY_PREFS_FILE), { recursive: true });
+  fs.writeFileSync(DISPLAY_PREFS_FILE + '.tmp', JSON.stringify(next));
+  fs.renameSync(DISPLAY_PREFS_FILE + '.tmp', DISPLAY_PREFS_FILE);
+  displayPrefs = next;
+}
+
 /* in-process-gpu 預設關閉（2026-11-17 實測）：單獨開它時，視窗在螢幕上是一片淡青色空白，
    頁面其實正常在跑（capturePage 截得到畫面）——合成結果送不上螢幕。
    Steam Overlay（Shift+Tab）需要它，steamworks.js 的建議是搭配 disable-direct-composition
@@ -101,8 +119,8 @@ function log() {
 if (OPTS.inProcessGpu) {
   app.commandLine.appendSwitch('in-process-gpu');
 }
-/* 刻意不加 disable-frame-rate-limit：主執行緒已知會被 rAF 塞滿而餓死計時器
-   （見 docs 與 2026-10-06 調查），解除 vsync 上限只會更糟。 */
+/* GPU VSync 可由玩家關閉，Chromium 的畫面排程仍保留節流。 */
+if (!activeVsync) app.commandLine.appendSwitch('disable-gpu-vsync', 'gpu');
 
 protocol.registerSchemesAsPrivileged([{
   scheme: AppProtocol.SCHEME,
@@ -214,6 +232,7 @@ function sameOrigin(a, b) {
    Electron 預設是全部允許，不設處理器等於把權限交給任何載入的內容。 ---- */
 var ALLOWED_PERMISSIONS = {
   'fullscreen': true,
+  'keyboardLock': true,
   'pointerLock': true,
   'clipboard-sanitized-write': true,
   'fileSystem': true,          // 網頁版的存檔資料夾（showDirectoryPicker）；任務 C 會在桌面版隱藏該功能
@@ -230,9 +249,9 @@ function setupPermissions(ses) {
 
 /* ---- 全螢幕：開機、快捷鍵與 Windows 最大化沿用遊戲的 HTML 全螢幕 ----
    requestFullscreen 需要使用者手勢，executeJavaScript 的 userGesture 參數就是為此存在。
-   這樣遊戲內的全螢幕按鈕、Esc 離開、按鈕提示文字都與網頁版一致。 */
+   這樣遊戲內的全螢幕按鈕和鍵盤處理都與網頁版一致。 */
 var FULLSCREEN_ON = 'document.fullscreenElement ? true : document.documentElement.requestFullscreen().then(function(){return true;},function(){return false;})';
-var FULLSCREEN_TOGGLE = 'document.fullscreenElement ? document.exitFullscreen().then(function(){return false;},function(){return true;}) : (' + FULLSCREEN_ON + ')';
+var FULLSCREEN_OFF = 'document.fullscreenElement ? document.exitFullscreen().then(function(){return true;},function(){return false;}) : true';
 
 function runInPage(win, code, userGesture) {
   if (!win || win.isDestroyed()) return Promise.resolve(null);
@@ -266,13 +285,16 @@ function flushSave(win) {
 }
 
 function createWindow() {
-  var wantFullscreen = !OPTS.windowed && !OPTS.smoke;
+  var mode = OPTS.windowed || OPTS.smoke ? 'windowed' : displayPrefs.mode;
+  var lastFullscreenMode = OPTS.smoke || displayPrefs.mode === 'fullscreen' ? 'fullscreen' : 'borderless';
+  var navigating = false, applyingMode = false, pendingWindowSize = null;
+  var displayQueue = Promise.resolve();
   var win = new BrowserWindow({
     width: 1600,
     height: 900,
-    minWidth: 1280,
-    minHeight: 720,
-    fullscreen: wantFullscreen,
+    minWidth: 640,
+    minHeight: 360,
+    fullscreen: mode !== 'windowed',
     show: false,
     backgroundColor: '#000000',
     autoHideMenuBar: true,
@@ -294,6 +316,99 @@ function createWindow() {
   var wc = win.webContents;
   log('[desktop] 啟動', app.getVersion(), 'electron', process.versions.electron, '→', url);
 
+  function displayState() {
+    return { mode: mode, vsync: displayPrefs.vsync, activeVsync: activeVsync };
+  }
+  function publishDisplayState() {
+    if (!wc.isDestroyed()) wc.send('display:change', displayState());
+    return displayState();
+  }
+  function resizeWindow() {
+    if (!pendingWindowSize || mode !== 'windowed' || win.isDestroyed() || win.isFullScreen()) return;
+    var monitor = screen.getDisplayMatching(win.getBounds());
+    var size = win.getSize(), content = win.getContentSize();
+    var width = Math.round(pendingWindowSize[0] / monitor.scaleFactor);
+    var height = Math.round(pendingWindowSize[1] / monitor.scaleFactor);
+    pendingWindowSize = null;
+    win.setContentSize(Math.min(width, monitor.workArea.width - (size[0] - content[0])),
+      Math.min(height, monitor.workArea.height - (size[1] - content[1])));
+    var bounds = win.getBounds(), area = monitor.workArea;
+    var x = Math.max(area.x, Math.min(bounds.x, area.x + area.width - bounds.width));
+    var y = Math.max(area.y, Math.min(bounds.y, area.y + area.height - bounds.height));
+    if (x !== bounds.x || y !== bounds.y) win.setPosition(x, y);
+  }
+  function setNativeFullscreen(enabled) {
+    if (win.isFullScreen() === enabled) return Promise.resolve();
+    return new Promise(function (resolve, reject) {
+      var eventName = enabled ? 'enter-full-screen' : 'leave-full-screen';
+      function transitioned() { finish(); }
+      function finish(error) {
+        clearTimeout(timeout);
+        win.removeListener(eventName, transitioned);
+        if (error) reject(error);
+        else resolve();
+      }
+      var timeout = setTimeout(function () {
+        finish(win.isDestroyed() || win.isFullScreen() !== enabled ? new Error('Native fullscreen transition timed out') : null);
+      }, 3000);
+      win.once(eventName, transitioned);
+      try { win.setFullScreen(enabled); }
+      catch (error) { finish(error); }
+    });
+  }
+  function setMode(requested) {
+    // 視窗切換依序執行，避免較早的全螢幕請求晚完成。
+    var change = displayQueue.then(async function () {
+      var next = typeof requested === 'function' ? requested() : requested;
+      if (DISPLAY_MODES.indexOf(next) < 0) throw new Error('Unsupported display mode');
+      if (win.isDestroyed()) throw new Error('Display window closed');
+      applyingMode = true;
+      try {
+        if (next !== 'fullscreen' && mode === 'fullscreen') {
+          if (await runInPage(win, FULLSCREEN_OFF, false) !== true) throw new Error('Could not leave HTML fullscreen');
+        }
+        if (next !== 'windowed') {
+          if (process.platform === 'win32' && win.isMaximized() && !win.isFullScreen()) win.unmaximize();
+          await setNativeFullscreen(true);
+          mode = next === 'fullscreen' && await runInPage(win, FULLSCREEN_ON, true) !== true ? 'borderless' : next;
+          lastFullscreenMode = mode;
+        } else {
+          await setNativeFullscreen(false);
+          mode = next;
+          resizeWindow();
+        }
+        saveDisplayPrefs({ mode: mode, vsync: displayPrefs.vsync });
+        if (mode !== next) throw new Error('Could not enter HTML fullscreen');
+        return displayState();
+      } finally {
+        applyingMode = false;
+        publishDisplayState();
+      }
+    });
+    displayQueue = change.catch(function () {});
+    return change;
+  }
+  function reportDisplayError(error) { log('[desktop] 顯示設定：', error.message); }
+  function toggleMode() {
+    return setMode(function () { return mode === 'windowed' ? lastFullscreenMode : 'windowed'; });
+  }
+  win.displaySettings = {
+    get: displayState,
+    setMode: setMode,
+    toggle: toggleMode,
+    setResolution: function (width, height) {
+      if (!Number.isInteger(width) || !Number.isInteger(height) ||
+          width < 1280 || width > 3840 || height < 720 || height > 2160) throw new Error('Unsupported resolution');
+      pendingWindowSize = [width, height];
+      resizeWindow();
+    },
+    setVsync: function (value) {
+      if (typeof value !== 'boolean') throw new Error('Invalid VSync setting');
+      saveDisplayPrefs({ mode: displayPrefs.mode, vsync: value });
+      return publishDisplayState();
+    }
+  };
+
   win.once('ready-to-show', function () {
     if (OPTS.smoke && !OPTS.smokeOnScreen) return;   // 背景冒煙測試：不顯示、不搶焦點
     win.show();
@@ -301,37 +416,28 @@ function createWindow() {
 
   if (process.platform === 'win32') {
     win.on('maximize', function () {
-      if (win.isMaximized() && !win.isFullScreen()) runInPage(win, FULLSCREEN_ON, true);
+      if (mode === 'windowed' && win.isMaximized()) setMode(lastFullscreenMode).catch(reportDisplayError);
     });
   }
 
-  win.on('enter-html-full-screen', function () {
-    if (win.isFullScreen()) return;
-    // 先回到原視窗，讓離開全螢幕時還原原本的尺寸與位置。
-    if (process.platform === 'win32' && win.isMaximized()) win.unmaximize();
-    win.setFullScreen(true);
-  });
+  win.on('leave-full-screen', resizeWindow);
   win.on('leave-html-full-screen', function () {
-    // 重新整理會清除頁面的全螢幕狀態。保留原生全螢幕，待新頁就緒再同步。
-    if (!wantFullscreen) win.setFullScreen(false);
+    if (mode === 'fullscreen' && !navigating && !applyingMode) setMode('windowed').catch(reportDisplayError);
   });
 
   wc.on('did-start-navigation', function (details) {
-    if (details.isMainFrame && !details.isSameDocument) wantFullscreen = win.isFullScreen() || wantFullscreen;
+    if (details.isMainFrame && !details.isSameDocument) navigating = true;
   });
   wc.on('did-finish-load', function () {
-    if (!wantFullscreen) return;
-    wantFullscreen = false;
-    runInPage(win, FULLSCREEN_ON, true).then(function (entered) {
-      if (entered !== true && !win.isDestroyed()) win.setFullScreen(false);
-    });
+    navigating = false;
+    if (mode === 'fullscreen') setMode(mode).catch(reportDisplayError);
   });
 
   wc.on('before-input-event', function (event, input) {
     if (input.type !== 'keyDown') return;
     if (input.key === 'F11' || (input.key === 'Enter' && input.alt)) {
       event.preventDefault();
-      runInPage(win, FULLSCREEN_TOGGLE, true);
+      if (!input.isAutoRepeat) toggleMode().catch(reportDisplayError);
       return;
     }
     if (OPTS.dev && input.key === 'F12') { event.preventDefault(); wc.toggleDevTools(); return; }
@@ -420,6 +526,15 @@ function setupSaveIpc() {
   }));
 }
 
+function setupDisplayIpc() {
+  ['get', 'setMode', 'toggle', 'setResolution', 'setVsync'].forEach(function (action) {
+    ipcMain.handle('display:' + action, function (event, ...args) {
+      if (!trustedSender(event)) throw new Error('Untrusted display settings sender');
+      return mainWindow.displaySettings[action](...args);
+    });
+  });
+}
+
 function onReady() {
   Menu.setApplicationMenu(null);
   protocol.handle(AppProtocol.SCHEME, serveFile);
@@ -430,6 +545,7 @@ function onReady() {
     if (win) win.close();   // 走 close 事件，一樣會先存檔
   });
   setupSaveIpc();
+  setupDisplayIpc();
 
   var win = createWindow();
   if (OPTS.smoke) {
