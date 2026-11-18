@@ -22,6 +22,7 @@ test('銅邊主題將同品質選取描邊畫在裝備格外，部位提示的�
   const rule = skin.match(/:is\(#inventory-grid \.item-cell, #equip-grid \.eq-slot\)\.selected\s*\{([^}]+)\}/)[1];
   assert.match(rule, /outline:\s*2px solid var\(--item-frame-color, var\(--bs-gold\)\)/);
   assert.match(rule, /outline-offset:\s*1px\s*;/);
+  assert.match(skin, /#equip-grid \.eq-slot\.filled\.selected\s*\{\s*outline-width:\s*3px\s*!important/);
   const matchSelectors = Array.from(skin.matchAll(/^([^\n{]+\.inventory-selection-match)\s*\{/gm), m => m[1].trim());
   assert.deepEqual(matchSelectors, ['body #game-layout #equip-grid .eq-slot.empty.inventory-selection-match']);
 });

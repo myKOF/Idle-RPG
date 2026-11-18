@@ -282,7 +282,7 @@ body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-di
   filter: none !important;
 }
 body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed) > * {
-  opacity: .57;
+  opacity: .44;
 }
 body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed) > :is(.item-icon, .ic-emoji) {
   filter: saturate(.48) brightness(.66);
@@ -290,6 +290,9 @@ body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-di
 body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot).selected {
   outline: 2px solid var(--item-frame-color, var(--bs-gold)) !important;
   outline-offset: 1px;
+}
+body #game-layout #equip-grid .eq-slot.filled.selected {
+  outline-width: 3px !important;
 }
 body #game-layout :is(#inventory-grid .item-cell, #equip-grid .eq-slot).selected:is(.eff-mythic, .eff-genesis, .eff-chaos) {
   outline-color: var(--bs-gold) !important;
