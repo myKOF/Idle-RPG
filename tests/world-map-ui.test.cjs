@@ -127,6 +127,32 @@ test('鎖定場景與目前場景可檢視，但不得前進；沒收到Worker�
   assert.equal(t.ids['world-map-level-Icefield'].hidden, true);
 });
 
+test('任務導航開啟地圖，只選取已解鎖的場景，回報可用的進入按鈕', () => {
+  const t = setup();
+  const map = t.c.WorldMapUI;
+  assert.equal(map.openForQuest('swamp'), false);
+  assert.equal(t.ids['world-map-modal'].hidden, false);
+  assert.equal(t.ids['world-map-info'].hidden, true);
+  map.close();
+
+  assert.equal(map.openForQuest('Icefield'), true);
+  assert.equal(t.button('Icefield').getAttribute('aria-pressed'), 'true');
+  assert.equal(t.ids['world-map-go'].disabled, false);
+  assert.equal(t.commands.length, 0);
+  map.close();
+
+  assert.equal(map.openForQuest('desert'), false);
+  assert.equal(t.button('desert').getAttribute('aria-pressed'), 'true');
+  assert.equal(t.ids['world-map-go'].disabled, true);
+  map.close();
+
+  const godZone = t.panels.battle.zones.find(row => row.key === 'god_battlefield');
+  godZone.unlocked = true;
+  assert.equal(map.openForQuest(godZone.key), true);
+  assert.equal(t.ids['world-map-god'].hidden, false);
+  assert.equal(t.button(godZone.key).getAttribute('aria-pressed'), 'true');
+});
+
 test('測試場景可從世界地圖返回目前地圖；等待測試旗標清除後關閉，不重複送出', async () => {
   const t = setup(); t.panels.battle.field = { _testMap: true };
   t.c.WorldMapUI.open(); t.button('desert').dispatch('click');

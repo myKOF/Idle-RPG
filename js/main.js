@@ -124,6 +124,7 @@ function waitForStartupUi() {
 
 function enterGame(save, maxRunId) {
   if (!WorkerBridge.start({ save: save, maxRunId: maxRunId, startedAt: Date.now() })) return false;
+  QuestGuide.start(save, maxRunId);
   waitForStartupUi();
   document.body.classList.remove('start-menu-pending');
   if (typeof initGM === 'function') initGM();

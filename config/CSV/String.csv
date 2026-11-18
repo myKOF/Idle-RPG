@@ -2072,6 +2072,8 @@
 1931,任務,文字｜ui.js:14483 renderQuestModal,,已完成,,
 1932,任務,文字｜ui.js:14488 renderQuestModal,,領取,,
 1933,任務,界面文字(含標記)｜ui.js:14490 renderQuestModal,"<span class=""quest-state-doing"">…</span>=套用樣式 quest-state-doing","<span class=""quest-state-doing"">（進行中）</span>",,
+2565,任務,新遊戲｜任務欄導引對話框,,這裡是你的遊戲目標，當你感到迷惘時就看看它吧…,,
+2566,任務,任務導航｜功能未解鎖飄字,,該功能未解鎖,,
 1934,存檔與系統,文字｜bridge.js:335 relaunch,{0}=代入參數：reason,{0}（重啟時無法建立 Worker）,,
 1935,存檔與系統,文字｜bridge.js:363 markWorkerDead,{0}=代入參數：dropped,，已取消 {0} 筆進行中的指令,,
 1936,存檔與系統,文字｜bridge.js:386 watchdog,,（補進度中，已放寬門檻）,,

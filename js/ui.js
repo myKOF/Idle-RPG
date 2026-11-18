@@ -2827,6 +2827,7 @@ function markTabDirty(name) {
 }
 
 function switchTab(name) {
+  if (typeof QuestGuide !== 'undefined') QuestGuide.clearHighlight();
   if (UI.tab === 'tower' && name !== 'tower') {
     sendGemUiCommand('merchant.close', {}, 'merchant-close', ['tower', 'header']);
   }
@@ -6330,14 +6331,17 @@ function updateSelectionUI() {
   });
 }
 
-function showFloatingText(btn, text, color) {
-  var rect = window.UiCanvas.rect(btn);
+function showFloatingText(btn, text, color, point) {
+  if (!point) {
+    var rect = window.UiCanvas.rect(btn);
+    point = { x: rect.left + rect.width / 2, y: rect.top };
+  }
   var el = document.createElement('div');
   el.textContent = text;
   el.className = 'game-floating-text';
   el.style.position = 'fixed';
-  el.style.left = (rect.left + rect.width / 2) + 'px';
-  el.style.top = rect.top + 'px';
+  el.style.left = point.x + 'px';
+  el.style.top = point.y + 'px';
   el.style.transform = 'translate(-50%, -100%)';
   el.style.color = color;
   el.style.fontWeight = 'bold';
@@ -6349,7 +6353,7 @@ function showFloatingText(btn, text, color) {
 
   el.offsetHeight; // force reflow
 
-  el.style.top = (rect.top - 40) + 'px';
+  el.style.top = (point.y - 40) + 'px';
   el.style.opacity = '0';
 
   UI_GAME_TIMING.setTimeout(function () {
@@ -13234,7 +13238,13 @@ function initUI() {
   /* 任務快捷列與任務總覽彈窗 */
   var questBar = $id('quest-bar');
   if (questBar) {
+    questBar.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      if (!e.repeat) questBar.click();
+    });
     questBar.addEventListener('click', function (e) {
+      QuestGuide.dismissIntro();
       var view = viewState() || {};
       // 可領取→領獎並觸發領取與飛行特效；否則開任務總覽
       if (view.taskIdx >= 0 && view.taskReady) questClaim(e ? e.target : questBar);
@@ -13246,7 +13256,10 @@ function initUI() {
     questModal.addEventListener('click', function (e) {
       if (e.target === questModal) { closeQuestModal(); return; }
       var claimBtn = e.target.closest('[data-quest-claim]');
-      if (claimBtn) questClaim(claimBtn);
+      if (claimBtn) { questClaim(claimBtn); return; }
+      var row = e.target.closest('[data-quest-index]');
+      var task = row && TASKS[Number(row.dataset.questIndex)];
+      if (task) QuestGuide.follow(task, row.querySelector('.quest-row-open'), e);
     });
     var questClose = $id('quest-modal-close');
     if (questClose) questClose.addEventListener('click', closeQuestModal);
@@ -13791,14 +13804,16 @@ function questClaim(sourceEl) {
 function openQuestModal() {
   var modal = $id('quest-modal');
   if (!modal) return;
+  QuestGuide.clearHighlight();
   UI.questPanelOpen = true;
+  UI.questFocusPending = true;
   refreshUiPanelSubscriptions();
   requestPanelData('task', true);
-  renderQuestModal();
   modal.style.display = 'flex';
-  // 預設捲到最下方，讓玩家直接看到進行中任務
   var qList = $id('quest-modal-list');
-  if (qList) qList.scrollTop = qList.scrollHeight;
+  if (qList) qList.scrollTop = 0;
+  $id('quest-modal-close').focus();
+  renderQuestModal();
   // 開著期間每秒重新索取並重繪：狀態型進度（穿裝/鑲嵌/生命上限）沒有固定髒區訊號
   if (questPanelTimer) clearInterval(questPanelTimer);
   questPanelTimer = setInterval(function () {
@@ -13814,7 +13829,10 @@ function closeQuestModal() {
   if (questPanelTimer) { clearInterval(questPanelTimer); questPanelTimer = null; }
   if (UI.questPanelOpen) {
     UI.questPanelOpen = false;
+    UI.questFocusPending = false;
     refreshUiPanelSubscriptions();
+    var bar = $id('quest-bar');
+    if (bar) bar.focus({ preventScroll: true });
   }
 }
 
@@ -13824,14 +13842,16 @@ function renderQuestModal() {
   if (uiRenderingSuspended()) return; // 背景分頁不重建
   var snapshot = peekUiPanelData('task');
   var states = (snapshot && snapshot.tasks) || [];
+  var view = viewState() || {};
+  var currentIndex = states.length ? states.findIndex(function (st) { return st && st.current; }) : view.taskIdx;
   var html = '';
   for (var i = 0; i < TASKS.length; i++) {
     var def = TASKS[i];
     var st = states[i] || null;
     var claimed = !!(st && st.claimed);
-    var current = !!(st && st.current);
-    var ready = !!(st && st.ready);
-    var prog = st ? st.prog : 0;
+    var current = i === currentIndex;
+    var ready = st ? st.ready : current && view.taskReady;
+    var prog = st ? st.prog : (current ? view.taskProg : 0);
     var cls = claimed ? 'claimed' : (current ? 'current' : 'future');
     var rewardHtml;
     if (claimed) {
@@ -13845,13 +13865,37 @@ function renderQuestModal() {
           : STR(1933);
       }
     }
-    html += '<div class="quest-row ' + cls + '">' +
+    html += '<div class="quest-row ' + cls + '" data-quest-index="' + i + '">' +
+      '<button type="button" class="quest-row-open" aria-label="' + esc(def.name) + '"></button>' +
       '<span class="quest-col-name">' + esc(def.name) + '</span>' +
       '<span class="quest-col-prog">（' + prog + ' / ' + def.count + '）</span>' +
       '<span class="quest-col-reward">' + rewardHtml + '</span>' +
       '</div>';
   }
-  setHtmlIfChanged(list, html);
+  if (list._questMarkup !== html) {
+    var focus = document.activeElement;
+    var focusedRow = list.contains(focus) && focus.closest('[data-quest-index]');
+    var scrollTop = list.scrollTop;
+    list.innerHTML = list._questMarkup = html;
+    list.scrollTop = scrollTop;
+    if (focusedRow) {
+      var row = list.querySelector('[data-quest-index="' + focusedRow.dataset.questIndex + '"]');
+      if (row) {
+        var claim = focus.hasAttribute('data-quest-claim') && row.querySelector('[data-quest-claim]:enabled');
+        (claim || row.querySelector('.quest-row-open')).focus({ preventScroll: true });
+      }
+    }
+  }
+  // 重新開啟時，任務欄的即時索引可能比上次留下的面板快照新。
+  var focusIndex = typeof view.taskIdx === 'number' ? view.taskIdx : currentIndex;
+  if (UI.questFocusPending && typeof focusIndex === 'number') {
+    UI.questFocusPending = false;
+    var activeQuest = list.querySelector('[data-quest-index="' + focusIndex + '"] .quest-row-open');
+    if (activeQuest) {
+      activeQuest.scrollIntoView({ block: 'center' });
+      activeQuest.focus({ preventScroll: true });
+    }
+  }
 }
 
 // 開啟結算彈窗時，將目前尚未死亡結算的戰鬥統計更新到最上方。
