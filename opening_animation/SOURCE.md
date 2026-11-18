@@ -71,7 +71,7 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 ## 遊戲重播（2026-11-17）
 
-2026-11-18 第四鏡由半跪進入持劍畫面時，以 0.5 秒柔焦疊化銜接。左側碎布尾隨風擺動。白光粒子在前 4 秒逐步加密，發射速率升到前版的兩倍，每粒用三層光疊合。人物白光從第 0 秒漸亮，第 6 秒達到 35% 不透明度。遠景橫移及近景環繞位移速度加倍，遠景保留橫移所需的外圍畫面。正式連播第 2585 至 2831 幀使用 `web/shot-04-rise-radiance.mp4`。執行 `node extended-shot-four/render-shot-four.cjs --frames 530 777` 可重製畫面。
+2026-11-18 第四鏡由半跪進入持劍畫面時，以 0.5 秒柔焦疊化銜接。左側碎布尾隨風擺動。白光粒子在前 4 秒逐步加密，發射速率升到前版的兩倍，每粒用三層光疊合。人物白光從第 0 秒漸亮，第 6 秒達到 35% 不透明度。遠景橫移及近景環繞速度為初版的四倍，遠景保留橫移所需的外圍畫面。正式連播第 2585 至 2831 幀使用 `web/shot-04-rise-radiance.mp4`。執行 `node extended-shot-four/render-shot-four.cjs --frames 530 777` 可重製畫面。
 
 2026-11-18 第三鏡前景左手改為手背朝上貼地、五指微張。以使用者提供的姿勢裁圖為參考，ImageGen 依原盔甲的銀白鋼片與暖金雕飾重繪透明手甲，保存為 `extended-shot-three/assets/archangel-left-hand-flat.png`。原前臂接合處以局部遮罩羽化。以腕甲接點為基準，手掌尺寸縮小約 10%，指節沿手指長軸再縮短約 10%。手下露出原沙漠底圖，並在指尖與掌緣添加低強度接地陰影。含左手修正的畫面可用 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 573 1035` 重製。正式連播的第 1593 至 2054 幀採用 `web/shot-03-flat-left-hand.mp4`。
 

@@ -130,7 +130,7 @@
     "extended-shot-four/kneel-orbit.js": "767dbed31c2cf67d3fdbaa42a80e07226689b46b26af5c2c0bf25c96a2064811",
     "extended-shot-four/rise-gust.js": "6731d485cf533f7dc2d676cfffaed0e8277dac85706299e9779be385eaada6e9",
     "extended-shot-four/rise-matte.js": "e353c3fb371943089b2b000c9569dab2c808284754ea1a010f20b596e17e2f09",
-    "extended-shot-four/rise-scene.js": "afabe1d91c573907c2436f596be651866dad3f060d24507e6b7b0b210d996c06",
+    "extended-shot-four/rise-scene.js": "02b0739453506e9ee3a3eca7e901df767a7587d79e0c6f00c345f15cd08ada2c",
     "extended-shot-four/build-audio.cjs": "29098ec2324482aeeabbb4fb243505aca824c03823609293f053a3f88a387156",
     "extended-shot-four/render-shot-four.cjs": "2fd5f2150c00e7483e54a3a8dae8ba2f53c48a05f852ee7fac824cb8285161f0",
     "extended-shot-four/restore-master.cjs": "55de235767ed338132197bcebf4c7d2c6e952d575f35a7c1321322cdd7733841",
@@ -166,7 +166,7 @@
     "web/shot-02-effects-18s.mp4": "b723235feff0837e6098882a97287620aa1f362323382b27f0383e0a59115ce2",
     "web/shot-03-valley-dust.mp4": "985e15482b3020a2eff0acf3ec99a4a5ee057f0538f67a950a39c1ef9cf657e3",
     "web/shot-03-flat-left-hand.mp4": "b16cf5008beca1f48630cc99ccc38c46739e293586681d06c133803006e3d117",
-    "web/shot-04-rise-radiance.mp4": "e4e5e69cd9bdcbc6e863279ff8b0164976161b4e2785beeaf4a08bb1f5fc265b",
+    "web/shot-04-rise-radiance.mp4": "cab2123e56000f1f6f9c7ecd59230bf55315ea3c6385d682827b4d3987126a16",
     "web/shot-03-extended-32s.mp4": "cb3631b2a5b074913316f0cf88b866a361d51afe356f984207a3b5051a028bb1",
     "web/shot-03-extended-33.5s.mp4": "cdc42057988e800b5bdf62d8906df6c4d5b77574880e016f8e1305df86bd5f8c",
     "web/shots-01-04-100.7s.json": "0404be6a6496a0244e5a28806ff649d63a108fc276e13c2809474452af673644",
@@ -220,7 +220,7 @@
     },
     "shots-01-05-replay.mp4": {
       "source": "web/shots-01-05-replay.mp4",
-      "sha256": "63d4e2a4da30cfaa14d451240cc3f6f3927955e45ad986a808b067ab23d1580c"
+      "sha256": "19772fb3bdd4ae5cd60279b37e52fdb8c7f96570dfef3f295958fec368d61471"
     },
     "shots-01-05-replay-sfx.mp3": {
       "source": "web/shots-01-05-replay-sfx.mp3",
@@ -228,7 +228,7 @@
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "058990d15d91e1dfe35953dd9176f5a26ba2b1c11e3fd8ec59616cb4931d021a"
+      "sha256": "a805c67e9a63ee89bd7efebfd84719a78d5131833ea95d4d9ebd00d9b1fcfa7a"
     }
   }
 }
