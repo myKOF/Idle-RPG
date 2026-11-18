@@ -71,7 +71,7 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 ## 遊戲重播（2026-11-17）
 
-2026-11-18 第四鏡由半跪進入持劍畫面時，以 0.5 秒柔焦疊化銜接。左側碎布尾隨風擺動。白光粒子在前 4 秒逐步加密，發射速率升到前版的兩倍，每粒用三層光疊合。人物白光從第 0 秒漸亮，第 6 秒達到 35% 不透明度。遠景橫移及近景環繞速度為初版的四倍，遠景保留橫移所需的外圍畫面。正式連播第 2585 至 2831 幀使用 `web/shot-04-rise-radiance.mp4`。執行 `node extended-shot-four/render-shot-four.cjs --frames 530 777` 可重製畫面。
+2026-11-18 第四鏡由半跪進入持劍畫面時，以 0.5 秒柔焦疊化銜接。左側碎布尾隨風擺動。白光粒子在前 4 秒逐步加密，發射速率升到前版的兩倍，每粒用三層光疊合。人物白光從第 0 秒漸亮，第 6 秒達到 28% 不透明度。遠景橫移及近景環繞速度為初版的四倍，遠景保留橫移所需的外圍畫面。正式連播第 2585 至 2831 幀使用 `web/shot-04-rise-radiance.mp4`。執行 `node extended-shot-four/render-shot-four.cjs --frames 530 777` 可重製畫面。
 
 2026-11-18 第三鏡前景左手改為手背朝上貼地、五指微張。以使用者提供的姿勢裁圖為參考，ImageGen 依原盔甲的銀白鋼片與暖金雕飾重繪透明手甲，保存為 `extended-shot-three/assets/archangel-left-hand-flat.png`。原前臂接合處以局部遮罩羽化。以腕甲接點為基準，手掌尺寸縮小約 10%，指節沿手指長軸再縮短約 10%。手下露出原沙漠底圖，並在指尖與掌緣添加低強度接地陰影。含左手修正的畫面可用 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 573 1035` 重製。正式連播的第 1593 至 2054 幀採用 `web/shot-03-flat-left-hand.mp4`。
 
@@ -81,7 +81,7 @@ node extended-shot-four/restore-master.cjs shots-01-04-100.7s.mp4
 
 倒地畫面的肩後與兜帽下緣沿原固定端把布尾轉向畫面左方，並清除右手與腿上方懸空的翼片，露出原沙地。肩後和兜帽的布尾拆成透明圖層，胸腹與腰側布料沿遮罩取樣，盔甲以固定底層繪製。遠近景的布料變形幅度減半。正式連播第 1593 至 2120 幀採用 `web/shot-03-fallen-wind-handoff.mp4`，包含第三鏡倒地演出與第四鏡開頭 2.2 秒的金光銜接。可分別執行 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 573 1035` 及 `node extended-shot-four/render-shot-four.cjs --frames 0 66` 重製兩段，再接成 17.6 秒的片段。
 
-2026-11-18 調整第三鏡落地後的揭露煙塵。沙塵沿地勢鋪開，順同一風向散去，天使在原時點現身。正式連播替換第 1506 至 1711 幀。單獨重製可執行 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 486 692`，完成的畫面封存於 `web/shot-03-valley-dust.mp4`。
+2026-11-18 調整第三鏡的落地煙塵。轉入地表時先由煙塵與落點金光接場，天使圖層於煙塵散開時逐漸顯現。正式連播第 1506 至 1592 幀採用 `web/shot-03-valley-dust.mp4`，可執行 `node extended-shot-three-35.5s/render-shot-three.cjs --frames 486 573` 重製。第 1593 至 1652 幀的現身接續包含在 `web/shot-03-fallen-wind-handoff.mp4` 開頭。
 
 2026-11-18 核准的第二鏡由第 16.0 秒接入，第 34.0 秒接第三鏡。大天使長沿用原立繪、墜落姿勢及鏡頭路徑，換上焦黑甲裂、反光、燃燒、煙塵碎屑與同向拖曳的流光翼。核准的 18 秒無字畫面保存在 `web/shot-02-effects-18s.mp4`。分層來源為 `extended-shot-two/index-effects.html`、`shot-two-effects.js` 和 `commander-impact.js`，共用原立繪及音效。`node extended-shot-two/render-shot-two.cjs --effects` 可重製單鏡。`--five-shots` 先還原無字連播，再以核准畫面替換第 480 至 1019 幀。
 
