@@ -93,3 +93,4 @@ tools/spine/vendor/*.js
 # --- Steam 上傳（tools/steam/steampipe.cjs）：產生的 VDF 與本機專用設定 ---
 /build/steampipe/
 tools/steam/steampipe.local.json
+/electron/edition.json

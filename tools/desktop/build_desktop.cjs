@@ -7,6 +7,8 @@
 
    參數：
      --stage-only   只做到第 2 步（檢查清單用，不呼叫 electron-builder）
+     --edition=demo Steam 封測 demo：暫存區多寫一份 electron/edition.json（外殼據此把 GAME_EDITION 改成 'demo'），
+                    輸出到 dist/demo/win-unpacked/，與正式版的 dist/win-unpacked/ 分開
 
    ---- 為什麼 asar: false ----
    SteamPipe 以 1 MB 區塊比對新舊版本。asar 是一個巨大的單檔，裡面任何檔案變長或變短，
@@ -24,7 +26,9 @@ var Rules = require('./ship-rules.cjs');
 
 var REPO = path.resolve(__dirname, '..', '..');
 var STAGE = path.join(REPO, 'build', 'desktop', 'app');
-var OUT = path.join(REPO, 'dist');
+var EDITION = (process.argv.filter(function (a) { return a.indexOf('--edition=') === 0; })[0] || '--edition=full').slice(10);
+if (EDITION !== 'full' && EDITION !== 'demo') { console.error('❌ --edition 只能是 full 或 demo：' + EDITION); process.exit(1); }
+var OUT = EDITION === 'demo' ? path.join(REPO, 'dist', 'demo') : path.join(REPO, 'dist');
 var ROOT_PKG = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
 
 /* 玩家看得到的名稱。exe 檔名刻意用 ASCII：Steam 的啟動選項、防毒白名單、命令列都比較不會出事。
@@ -146,7 +150,7 @@ function summarize(list, extra) {
 function builderConfig() {
   return {
     appId: APP_ID,
-    productName: PRODUCT_NAME,
+    productName: EDITION === 'demo' ? PRODUCT_NAME + ' Demo' : PRODUCT_NAME,
     executableName: EXECUTABLE_NAME,
     copyright: '',
     asar: false,
@@ -184,6 +188,11 @@ function main() {
     process.exit(1);
   }
   var st = stage(list);
+  if (EDITION === 'demo') {
+    // 新檔（不是硬連結），只存在暫存區；原始碼裡沒有這個檔，從原始碼執行時一律是正式版（除非 --demo）
+    fs.writeFileSync(path.join(STAGE, 'electron', 'edition.json'), JSON.stringify({ edition: 'demo' }, null, 2) + '\n');
+    console.log('版本：demo（electron/edition.json）');
+  }
   console.log('暫存：' + list.ship.length + ' 個檔案（硬連結 ' + st.linked + '、複製 ' + st.copied + '）→ ' + path.relative(REPO, STAGE));
   fs.mkdirSync(OUT, { recursive: true });
   var reportFile = path.join(OUT, 'ship-report.json');

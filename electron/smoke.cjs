@@ -25,6 +25,9 @@ var CHECK_SCRIPT = [
   "  r.apexHost = typeof window.ApexHost === 'object' && !!window.ApexHost && window.ApexHost.isDesktop === true;",
   "  r.isInternalServer = typeof isInternalServer === 'function' ? isInternalServer() : 'missing';",
   "  r.isGMHost = typeof isGMHost === 'function' ? isGMHost() : 'missing';",
+  "  r.edition = typeof GAME_EDITION !== 'undefined' ? GAME_EDITION : 'missing';",
+  "  var bp = typeof peekUiPanelData === 'function' ? peekUiPanelData('battle') : null;",
+  "  r.workerEdition = bp ? bp.edition : 'no-panel';",
   "  r.pixi = typeof PIXI !== 'undefined' ? (PIXI.VERSION || true) : false;",
   "  var ws = typeof WorkerBridge !== 'undefined' ? WorkerBridge.status() : null;",
   '  r.worker = ws && { booted: ws.booted, alive: ws.alive, ticks: ws.ticks, errors: ws.errors, persists: ws.persists, persistErrors: ws.persistErrors, lastError: ws.lastError };',
@@ -181,6 +184,10 @@ function run(win, ctx) {
     if (report.maximizeOff && (report.maximizeOff.page || report.maximizeOff.window || !report.maximizeOff.restored)) {
       fails.push('離開全螢幕後未還原原視窗');
     }
+    // 版本旗標：頁面與 Worker 都要讀到外殼決定的版本（demo 版靠外殼改寫 js/game-edition.js 的回應）
+    var wantEdition = ctx.edition || 'full';
+    if (c.edition !== wantEdition) fails.push('頁面版本是 ' + c.edition + '，應為 ' + wantEdition);
+    if (c.workerEdition !== wantEdition) fails.push('Worker 版本是 ' + c.workerEdition + '，應為 ' + wantEdition);
     if (report.pageErrors.length) fails.push('頁面錯誤 ' + report.pageErrors.length + ' 筆');
     // 打包版少檔最直接的訊號：app:// 回了 404（開發模式下也應該是 0）
     // 內測模式的參數自動重載（js/param_autoreload.js）會探測 params_version.txt：沒跑過「套用參數.bat」的副本本來就沒有這個檔
@@ -227,6 +234,15 @@ function run(win, ctx) {
     }).then(function (checks) {
       report.checks = checks;
       step('checks', checks);
+      /* 自測擴充（環境變數 SMOKE_EXTRA_SCRIPT＝JS 檔路徑）：在頁面裡執行一段情境腳本（回傳值須可序列化，可為 Promise），
+         結果記在 report.extra，截圖會拍到腳本做完的畫面。給 AI 驗證特定畫面用（例如 demo 版的置灰按鈕），不影響判定。 */
+      var extraFile = process.env.SMOKE_EXTRA_SCRIPT;
+      if (!extraFile) return null;
+      return evalJs(fs.readFileSync(extraFile, 'utf8')).then(function (extra) {
+        report.extra = extra;
+        step('extra', extra);
+      }, function (e) { report.extra = { error: String(e && e.message || e) }; });
+    }).then(function () {
       return wc.capturePage();
     }).then(function (image) {
       fs.writeFileSync(path.join(outDir, 'smoke.png'), image.toPNG());
