@@ -3,8 +3,8 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 
 var QuestGuide = (function () {
   var introStorageKey = null, introObserver = null;
-  var highlightObserver = null, highlightScope = null;
-  var highlighted = null, highlightTimer = null;
+  var highlightObserver = null, highlighted = null;
+  var highlightInputEvents = ['pointerdown', 'click', 'keydown', 'wheel'];
   var destinations = {
     equipSlots: { tab: 'equip' },
     upgradeCount: { tab: 'equip', target: '[data-act="upgrade"]' },
@@ -68,11 +68,18 @@ var QuestGuide = (function () {
   }
 
   function clearHighlight() {
-    if (highlightObserver) highlightObserver.disconnect();
+    if (!highlightObserver) return;
+    highlightObserver.disconnect();
     if (highlighted) highlighted.classList.remove('quest-guide-highlight');
-    if (highlightScope) highlightScope.removeEventListener('click', clearHighlight, true);
-    clearTimeout(highlightTimer);
-    highlightObserver = highlightScope = highlighted = highlightTimer = null;
+    highlightInputEvents.forEach(function (type) {
+      window.removeEventListener(type, dismissHighlightOnInput, true);
+    });
+    highlightObserver = highlighted = null;
+  }
+
+  function dismissHighlightOnInput(event) {
+    // 長按 Enter 開啟任務時，重複的 keydown 仍屬於同一次操作。
+    if (event.isTrusted && !event.repeat) clearHighlight();
   }
 
   function highlight(scope, selector) {
@@ -96,9 +103,10 @@ var QuestGuide = (function () {
       subtree: true, childList: true, attributes: true,
       attributeFilter: ['disabled', 'aria-disabled', 'hidden']
     });
-    highlightScope = scope;
-    scope.addEventListener('click', clearHighlight, true);
-    highlightTimer = setTimeout(clearHighlight, 5000);
+    // 任務列的 click 已通過捕獲階段，接下來才開始接收玩家輸入。
+    highlightInputEvents.forEach(function (type) {
+      window.addEventListener(type, dismissHighlightOnInput, { capture: true, passive: true });
+    });
     update();
   }
 

@@ -50,12 +50,8 @@
 .quest-guide-dagger::before {
   content: '';
   position: absolute;
-  left: calc(50% - 2px);
-  top: calc(50% - 2px);
-  width: 54px;
-  height: 54px;
-  background: url('../images/equipment/icon_weapon_dagger1h.png') center / contain no-repeat;
-  transform: translate(-50%, -50%) scaleY(1.14) rotate(-129deg);
+  inset: 0;
+  background: url('../images/ui/quest-guide-dagger.png?v=1') center / contain no-repeat;
 }
 
 #quest-guide.quest-guide-below .quest-guide-dagger {
