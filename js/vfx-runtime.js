@@ -2111,7 +2111,7 @@ var VFXRuntime = (function () {
        entries：[{ key, sids: [statusId...], radii?: { statusId: 半徑 } }]，key 即 posOf 認得的 elId
        尺寸：狀態實例帶半徑（以玩家為中心的領域，js/status.js statusSetVfxR）＝代表一個範圍，
        依權威半徑縮放（AI_RULES 8.3），半徑改變時逐幀補間（8.3.1）；
-       沒帶＝照 Preset 世界尺寸畫。fitBody 的護罩貼合本體，量不到時才用上述尺寸。
+       沒帶＝照 Preset 世界尺寸畫。fitBody 的護罩在生成時貼合本體，量不到時固定採用上述尺寸。
        腳底光環在地板層；直立光罩走 billboard 層。
        --------------------------------------------------------------- */
     function syncStatuses(entries) {
@@ -2127,14 +2127,14 @@ var VFXRuntime = (function () {
           var live = auras[k];
           if (live) {
             live.expireAt = clock + AURA_KEEP_SEC;
-            if (r !== live.r) auraTarget(live, r);
+            if (!live.fitOffset && r !== live.r) auraTarget(live, r);
             return;
           }
           var a = { key: e.key, presetId: presetId, expireAt: clock + AURA_KEEP_SEC,
-            mult: r > 0 ? profile.areaScale : profile.scale * bodyScaleOf(e.key),
-            fit: !!ctx.bodyBoxOf && tuning(presetId, 'fitBody') === true };
+            mult: r > 0 ? profile.areaScale : profile.scale * bodyScaleOf(e.key) };
           auraTarget(a, r);
           a.sx = a.tsx; a.sy = a.tsy;
+          if (ctx.bodyBoxOf && tuning(presetId, 'fitBody') === true) a.fitOffset = fitAura(a);
           /* 整份標 perspective:false 的光罩（護盾球…）走 billboard 層：不受視角方向與 FOV 影響；其餘（地面光環）留在場景層 */
           a.ref = play(billboardPresets[presetId] ? rtBillboard : rtZone, presetId, auraTransform(a), a.mult);
           if (a.ref) auras[k] = a;
@@ -2148,24 +2148,26 @@ var VFXRuntime = (function () {
         delete auras[k];
       });
     }
-    /* 護罩跟隨當幀本體，地面半徑保留作量不到圖像時的備援。投影以腳底深度縮放，
-       所以本體升空時，護罩也會隨之上移，仍與本體共用遠近倍率。 */
-    function auraTransform(a) {
-      var foot = footOf(a.key);
-      var fallback = { position: foot, scaleX: a.sx, scaleY: a.sy };
-      if (!a.fit) return fallback;
-      fallback.depthY = foot.y;
+    /* 生成時量一次輪廓，將寬高及中心相對腳點的偏移固定在這次護罩上。 */
+    function fitAura(a) {
       var box = ctx.bodyBoxOf(a.key), sz = presetSizes[a.presetId], au = sz && sz.authored;
       var aw = au && (au.width || au.radius * 2), ah = au && (au.height || au.radius * 2);
-      if (!box || !(box.w > 0) || !(box.h > 0) || !(aw > 0) || !(ah > 0) || !(a.mult > 0)) return fallback;
+      if (!box || !(box.w > 0) || !(box.h > 0) || !(aw > 0) || !(ah > 0) || !(a.mult > 0)) return { x: 0, y: 0 };
       var pad = tuning(a.presetId, 'fitPadding');
       var height = box.h * pad;
+      a.sx = box.w * pad / (aw * a.mult);
+      a.sy = height / (ah * a.mult);
       /* 名目罩心在原點上方 ah/2；縮放後補齊到實際中心的差。 */
-      return {
-        position: { x: foot.x + box.cx, y: foot.y - box.cy + height / 2 },
-        depthY: foot.y,
-        scaleX: box.w * pad / (aw * a.mult), scaleY: height / (ah * a.mult)
-      };
+      return { x: box.cx, y: height / 2 - box.cy };
+    }
+    function auraTransform(a) {
+      var foot = footOf(a.key), offset = a.fitOffset;
+      var params = { position: foot, scaleX: a.sx, scaleY: a.sy };
+      if (offset) {
+        params.position = { x: foot.x + offset.x, y: foot.y + offset.y };
+        params.depthY = foot.y;
+      }
+      return params;
     }
     function statusAuraPreset(sid) {
       if (typeof statusVfxPreset !== 'function') return '';
@@ -2376,15 +2378,17 @@ var VFXRuntime = (function () {
         }
       }
 
-      /* 狀態光環跟著實體走；範圍半徑改變時尺寸以時間常數補間，不一格一格跳 */
+      /* 狀態光環跟著實體走；代表範圍的光環在半徑改變時平滑補間。 */
 
       Object.keys(auras).forEach(function (k) {
         var a = auras[k];
-        var tau=tuning(a.presetId,'auraTau');
-        var auraK=step>0?(tau>0?1-Math.exp(-step/tau):1):0;
         if (a.expireAt <= clock) { stopRef(a.ref); delete auras[k]; return; }
-        a.sx += (a.tsx - a.sx) * auraK;
-        a.sy += (a.tsy - a.sy) * auraK;
+        if (!a.fitOffset) {
+          var tau = tuning(a.presetId, 'auraTau');
+          var auraK = step > 0 ? (tau > 0 ? 1 - Math.exp(-step / tau) : 1) : 0;
+          a.sx += (a.tsx - a.sx) * auraK;
+          a.sy += (a.tsy - a.sy) * auraK;
+        }
         if (!moveRef(a.ref, auraTransform(a), a.mult)) delete auras[k];
       });
 
