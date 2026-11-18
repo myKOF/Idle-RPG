@@ -113,6 +113,12 @@
 - 修改 `js/ui.js`、`index.html` 快取、`tests/equip-socket-ui.test.cjs`、`LV_upgrade_system.md` 及本段。唯讀核對 `js/data.js`、`system_unlock.csv`、String 表與停用樣式。與任務導引、遺物介面的共用檔案為不同區段，三方試合通過並分段暫存。
 - 靜音隔離 Edge 實測滑鼠懸停及移出、鎖定時點擊、升級與轉生兩條解鎖路徑及解鎖後進入。頁面警告與例外 0。`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs` 通過 42 項，`npm.cmd run build` 通過 739 檔。可供整合。
 
+## INVENTORY-SLOT-DIM-20261118 — 加深背包非同部位裝備
+
+- Owner：Codex，Done。背包非同部位的內容遮蔽量由 56% 乘以 1.3 調至 72.8%。品質框維持清楚，同部位維持原亮度。
+- 修改 `css/brass-and-slate.css`、首頁樣式快取、裝備外框回歸測試、系統說明及本段。唯讀核對 `js/ui.js` 的部位選取與 `css/style.css` 的關鍵字篩選。與新手導引、遺物及 NPC 名牌共用的檔案為不同區段，三方試合通過並分段暫存。
+- Edge 靜音實測舊版與新版本，含點選裝備欄及背包、確認同部位亮度、品質框與取消選取，頁面警告與例外均為 0。裝備選取、關鍵字篩選及神話背景回歸 36/36，`npm.cmd run build` 通過 739 檔。可供整合。
+
 ## PUBLIC-HERO-EQUIP-UI-20261118 — 外部版 3D 主角及裝備介面調整
 
 - Owner：Codex，Done。外部版開局載入既有 3D 主角，依轉生換外觀，載入失敗時回到 2D。移除左側導覽的綠底框、背包裝備角標及詳情鎖頭底框，非同部位背包格亮度由 0.83 改為 0.66。裝備操作、符文、寶石、裝備方案和設定的選中項採淺茉綠底。

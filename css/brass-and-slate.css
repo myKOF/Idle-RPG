@@ -305,7 +305,7 @@ body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-di
   filter: none !important;
 }
 body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed) > * {
-  opacity: .44;
+  opacity: .272;
 }
 body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed) > :is(.item-icon, .ic-emoji) {
   filter: saturate(.48) brightness(.66);

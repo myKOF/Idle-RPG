@@ -27,6 +27,13 @@ test('銅邊主題將同品質選取描邊畫在裝備格外，部位提示的�
   assert.deepEqual(matchSelectors, ['body #game-layout #equip-grid .eq-slot.empty.inventory-selection-match']);
 });
 
+test('背包非同部位遮蔽量為 72.8%，只調暗裝備格內容', () => {
+  const skin = fs.readFileSync(path.join(root, 'css/brass-and-slate.css'), 'utf8');
+  const selector = String.raw`#inventory-grid \.item-cell\[data-slot\]\.dimmed:not\(\.item-cell-dimmed\)`;
+  assert.match(skin, new RegExp(selector + String.raw`\s*\{\s*opacity:\s*1\s*!important`));
+  assert.match(skin, new RegExp(selector + String.raw`\s*>\s*\*\s*\{\s*opacity:\s*\.272\s*;`));
+});
+
 test('背包選取對應裝備欄以加粗原本的品質邊框呈現', () => {
   assert.match(selectionRule(), /border-width:\s*3px\s*!important/);
 });
