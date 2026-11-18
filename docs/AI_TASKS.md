@@ -94,6 +94,12 @@
 - Owner：Codex，Done。依截圖移除頂欄全螢幕按鈕與專用接線，將內測傷害／承傷資訊插入版本更新提示前。全螢幕可從顯示設定、戰鬥工具列或桌面快捷鍵操作。
 - 修改主頁、介面程式、原全螢幕測試與系統說明。唯讀確認版本提示、顯示設定和桌面快捷鍵接線。Edge 在隔離正式／內測環境驗證頂欄、版本提示、顯示設定與戰鬥區切換，頁面錯誤 0。全螢幕、選單、戰鬥工具列、介面縮放與快取回歸 38/38，`npm.cmd run build` 733 檔通過。素材庫無變更。可合併，交使用者驗收。
 
+## GAME-MENU-ORDER-20261119 — 調整 Esc 遊戲選單順序
+
+- Owner：Codex，Done。依使用者圖 2 將 Esc 選單由上到下排列為「立即存檔」、「設置」、「成就」、「回開始選單」、「離開遊戲」。
+- 修改 `index.html`、既有 `tests/game-menu.test.cjs`、`LV_upgrade_system.md` 及本段。唯讀核對 `js/game-menu.js` 的按鈕接線與焦點操作、`css/dialogs.css` 的顯示及 `config/CSV/String.csv` 的既有標籤。主頁與文件和 develop、`codex/game-help-20261119` 的變更分段試合通過。
+- 隔離靜音 Edge 驗證五個按鈕的實際排列、Tab／Shift+Tab 循環、Esc 開關與從設置及成就返回，頁面例外 0。`node --test tests/game-menu.test.cjs tests/game-menu-save.test.cjs tests/game-menu-pause.test.cjs tests/esc-shortcut.test.cjs tests/settings-tabs.test.cjs tests/start-menu.test.cjs` 47 項通過，`npm.cmd run build` 739 檔通過。可交使用者驗收及整合。
+
 ## DISPLAY-SETTINGS-20261118 — 顯示設定頁
 
 - Owner：Codex，Done。設置在遊戲設定之後新增「顯示」。包含三種顯示模式、九種解析度、50–100% 渲染比例、垂直同步、四種 FPS 上限、降低特效、恢復預設及對應 Tips。
