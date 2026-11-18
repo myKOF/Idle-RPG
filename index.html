@@ -11,7 +11,7 @@
   <link rel="preload" as="image" href="images/ui/heaven-power/dark-gold-seal.png?v=1" fetchpriority="low">
   <link rel="stylesheet" href="css/style.css?v=20261118-width-canvas-topbar">
   <link rel="stylesheet" href="css/inventory-offset.css">
-  <link rel="stylesheet" href="css/ashen-forge.css?v=20261117-width-canvas-v1">
+  <link rel="stylesheet" href="css/ashen-forge.css?v=20261118-display-v1">
   <link rel="stylesheet" href="css/ashen-forge-flat.css?v=1.0.4">
   <link rel="stylesheet" href="css/brass-and-slate.css?v=20261118-equip-ui-v1">
   <link rel="stylesheet" href="css/battle-hud.css?v=1.0.19">
@@ -823,6 +823,7 @@
       <div class="system-settings-heading"><h2 id="settings-modal-title" data-str="1949"></h2><button id="settings-modal-close" class="system-close" type="button" data-str-attr="aria-label:1951">×</button></div>
       <div class="settings-tabs" role="tablist" data-str-attr="aria-label:2317">
         <button type="button" role="tab" id="settings-tab-game" class="settings-tab-btn active" data-settings-tab="game" aria-selected="true" aria-controls="settings-pane-game" data-str="2318"></button>
+        <button type="button" role="tab" id="settings-tab-display" class="settings-tab-btn" data-settings-tab="display" aria-selected="false" aria-controls="settings-pane-display" tabindex="-1" data-str="2531"></button>
         <button type="button" role="tab" id="settings-tab-audio" class="settings-tab-btn" data-settings-tab="audio" aria-selected="false" aria-controls="settings-pane-audio" tabindex="-1" data-str="2319"></button>
         <button type="button" role="tab" id="settings-tab-save" class="settings-tab-btn" data-settings-tab="save" aria-selected="false" aria-controls="tab-settings" tabindex="-1" data-str="2320"></button>
         <button type="button" role="tab" id="settings-tab-help" class="settings-tab-btn" data-settings-tab="help" aria-selected="false" aria-controls="settings-pane-help" tabindex="-1" data-str="2339"></button>
@@ -830,11 +831,59 @@
       <div class="system-settings-body">
         <section id="settings-pane-game" class="settings-pane" role="tabpanel" aria-labelledby="settings-tab-game">
           <label class="settings-opt"><input type="checkbox" id="set-outline" checked><span class="settings-opt-text"><span class="settings-opt-name" data-str="2321"></span><span class="settings-opt-tip" data-str="2322"></span></span></label>
-          <label class="settings-opt"><input type="checkbox" id="set-reduce-fx"><span class="settings-opt-text"><span class="settings-opt-name" data-str="2323"></span><span class="settings-opt-tip" data-str="2324"></span></span></label>
           <label class="settings-opt"><input type="checkbox" id="set-damage-numbers" checked><span class="settings-opt-text"><span class="settings-opt-name" data-str="2325"></span><span class="settings-opt-tip" data-str="2326"></span></span></label>
           <label class="settings-opt"><input type="checkbox" id="set-camera-lock" checked><span class="settings-opt-text"><span class="settings-opt-name" data-str="2327"></span><span class="settings-opt-tip" data-str="2328"></span></span></label>
           <label class="settings-opt"><input type="checkbox" id="set-auto-equip" checked><span class="settings-opt-text"><span class="settings-opt-name" data-str="2329"></span><span class="settings-opt-tip" data-str="2330"></span></span></label>
           <label class="settings-opt"><input type="checkbox" id="set-compare-equip" checked><span class="settings-opt-text"><span class="settings-opt-name" data-str="2331"></span><span class="settings-opt-tip" data-str="2332"></span></span></label>
+        </section>
+        <section id="settings-pane-display" class="settings-pane settings-display" role="tabpanel" aria-labelledby="settings-tab-display" hidden>
+          <fieldset class="settings-display-group">
+            <legend class="settings-opt-name" data-str="2532" data-str-attr="data-tip:2533"></legend>
+            <div class="settings-display-modes">
+              <label><input type="radio" name="display-mode" value="borderless"><span data-str="2534"></span></label>
+              <label><input type="radio" name="display-mode" value="fullscreen"><span data-str="186"></span></label>
+              <label><input type="radio" name="display-mode" value="windowed"><span data-str="2535"></span></label>
+            </div>
+          </fieldset>
+          <div class="settings-display-group">
+            <label for="set-display-resolution" class="settings-opt-name" data-str="2536" data-str-attr="data-tip:2537"></label>
+            <select id="set-display-resolution" class="settings-select" data-str-attr="data-tip:2537">
+              <option value="1280x720" data-str="2549"></option>
+              <option value="1366x768" data-str="2550"></option>
+              <option value="1600x900" data-str="2551"></option>
+              <option value="1920x1080" data-str="2552" selected></option>
+              <option value="1920x1200" data-str="2553"></option>
+              <option value="2560x1440" data-str="2554"></option>
+              <option value="2560x1600" data-str="2555"></option>
+              <option value="3440x1440" data-str="2556"></option>
+              <option value="3840x2160" data-str="2557"></option>
+            </select>
+            <div class="settings-slider settings-display-scale">
+              <div class="settings-slider-head">
+                <label for="set-render-scale" class="settings-opt-name" data-str="2538" data-str-attr="data-tip:2539"></label>
+                <output id="set-render-scale-value" for="set-render-scale"></output>
+              </div>
+              <input type="range" id="set-render-scale" min="50" max="100" step="5" value="100" data-str-attr="data-tip:2539">
+              <div class="settings-display-scale-ends settings-opt-tip"><span data-str="2540"></span><span data-str="2541"></span></div>
+            </div>
+          </div>
+          <div class="settings-display-group">
+            <label class="settings-display-vsync" data-str-attr="data-tip:2543"><span class="settings-opt-name" data-str="2542"></span><input type="checkbox" id="set-vsync" checked></label>
+            <fieldset class="settings-display-fps">
+              <legend class="settings-opt-name" data-str="2544" data-str-attr="data-tip:2545"></legend>
+              <div class="settings-display-options">
+                <label><input type="radio" name="display-fps" value="30"><span data-str="2561"></span></label>
+                <label><input type="radio" name="display-fps" value="60" checked><span data-str="2562"></span></label>
+                <label><input type="radio" name="display-fps" value="120"><span data-str="2563"></span></label>
+                <label><input type="radio" name="display-fps" value="0"><span data-str="2546"></span></label>
+              </div>
+            </fieldset>
+            <label class="settings-opt"><input type="checkbox" id="set-reduce-fx"><span class="settings-opt-text"><span class="settings-opt-name" data-str="2323"></span><span class="settings-opt-tip" data-str="2324"></span></span></label>
+          </div>
+          <div class="settings-display-footer">
+            <p id="display-settings-status" class="settings-opt-tip" role="status" hidden></p>
+            <button id="reset-display-settings" class="btn sm" type="button" data-str="2547" data-str-attr="data-tip:2548"></button>
+          </div>
         </section>
         <section id="settings-pane-audio" class="settings-pane" role="tabpanel" aria-labelledby="settings-tab-audio" hidden>
           <label class="settings-opt"><input type="checkbox" id="set-mute"><span class="settings-opt-text"><span class="settings-opt-name" data-str="2333"></span><span class="settings-opt-tip" data-str="2334"></span></span></label>
@@ -1198,9 +1247,9 @@
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=841861e9"></script>
+  <script src="js/strings_data.js?v=c5abc728"></script>
   <script src="js/strings.js?v=1.0.1"></script>
-  <script src="js/game-settings.js?v=1.0.1"></script>
+  <script src="js/game-settings.js?v=20261118-display-v1"></script>
   <script src="js/data.js?v=20261117-pending-011256-merged-v1"></script>
   <script src="js/status.js?v=1.0.44"></script>
   <script src="js/runeword_data.js?v=20261106-ai-integration"></script>
@@ -1242,7 +1291,7 @@
   <script src="js/battle-arena.js?v=20261108-tower-bounds-gait"></script>
   <script src="js/battle-elite.js?v=20261102-black-outlines"></script>
   <script src="js/boss-oni-fx.js?v=20261114-oni-relic-sync-v1"></script>
-  <script src="js/battle-renderer.js?v=20261118-public-hero3d-v1"></script>
+  <script src="js/battle-renderer.js?v=20261118-display-v1"></script>
   <script src="js/sfx-synth.js?v=20261116-vacuum-twin"></script>
   <script src="js/sfx.js?v=20261112-parchment-audio-v1"></script>
   <script src="js/stats.js?v=20261109-mystery-merchant"></script>
@@ -1265,7 +1314,7 @@
   <script src="js/save.js?v=20261117-save-schema"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261118-opening-music-handoff"></script>
-  <script src="js/ui.js?v=20261118-equip-fullscreen-v1"></script>
+  <script src="js/ui.js?v=20261118-display-v1"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=1.0.9"></script>
   <script src="js/ui-runeword.js?v=1.0.16"></script>
@@ -1301,7 +1350,8 @@
        正式遊玩不包裝任何函式、不攔任何屬性。排在 main 之前，才來得及在
        DOMContentLoaded 就把 ui.js 的渲染函式包起來。用法：網址加 ?lag=1 -->
   <script src="js/lagprobe.js?v=20261111-merchant-layout"></script>
-  <script src="js/game-menu.js?v=20261108-battle-mute"></script>
+  <script src="js/display-settings-ui.js?v=20261118-display-v1"></script>
+  <script src="js/game-menu.js?v=20261118-display-v1"></script>
   <script src="js/start-menu-background.js?v=1.0.13"></script>
   <script src="js/start-menu.js?v=20261118-opening-animation"></script>
   <script src="js/ai-key-setting.js?v=20261105-settings-tabs"></script>

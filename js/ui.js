@@ -13091,15 +13091,29 @@ function initUI() {
   }
   var fsBtn = $id('btn-fullscreen');
   if (fsBtn) {
+    var nativeDisplay = window.ApexHost && window.ApexHost.display;
+    var nativeFullscreen = false;
     function syncFullscreenButton() {
-      var pageFullscreen = !!document.fullscreenElement;
-      var browserFullscreen = !pageFullscreen && isBrowserFullscreen();
+      var pageFullscreen = nativeDisplay ? nativeFullscreen : !!document.fullscreenElement;
+      var browserFullscreen = !nativeDisplay && !pageFullscreen && isBrowserFullscreen();
       fsBtn.classList.toggle('active', pageFullscreen || browserFullscreen);
       fsBtn.setAttribute('data-tip', pageFullscreen
         ? STR(2072)
         : (browserFullscreen ? STR(2074) : STR(207)));
     }
+    if (nativeDisplay) {
+      var syncNativeFullscreen = function (state) {
+        nativeFullscreen = state.mode !== 'windowed';
+        syncFullscreenButton();
+      };
+      nativeDisplay.onChange(syncNativeFullscreen);
+      nativeDisplay.get().then(syncNativeFullscreen).catch(function () {});
+    }
     fsBtn.addEventListener('click', function () {
+      if (nativeDisplay) {
+        nativeDisplay.toggle().then(syncNativeFullscreen).catch(function () { blog(STR(2560), 'warn', 'system'); });
+        return;
+      }
       if (document.fullscreenElement) {
         // 第二次按下：離開全螢幕恢復正常
         document.exitFullscreen().catch(function () { });

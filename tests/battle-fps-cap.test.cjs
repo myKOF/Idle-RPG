@@ -3,6 +3,7 @@ const { readExpanded } = require('./helpers/str-expand.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const src = readExpanded(path.join(root, 'js/battle-renderer.js'));
@@ -23,7 +24,13 @@ test('?fps=N 可覆寫上限，0 代表不設限，其餘夾在 15～240', () =>
   // 只釘行為，不釘正則的寫法：比對跳脫字元的斷言太脆，改一次就要修一次
   assert.ok(fn.indexOf("fps=") >= 0, '要從網址讀 fps 參數');
   assert.match(fn, /location.search/);
-  assert.match(fn, /if \(!m\) return BATTLE_MAX_FPS;/);
+  const context = vm.createContext({ BATTLE_MAX_FPS: 60, location: { search: '' }, GameSettings: { get: () => 30 } });
+  vm.runInContext(fn, context);
+  assert.equal(context.battleMaxFps(), 30);
+  context.location.search = '?fps=0';
+  assert.equal(context.battleMaxFps(), 0);
+  context.location.search = '?fps=500';
+  assert.equal(context.battleMaxFps(), 240);
   assert.match(fn, /if \(n <= 0\) return 0;/);
   assert.match(fn, /Math\.max\(15, Math\.min\(240, n\)\)/);
 });

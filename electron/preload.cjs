@@ -24,6 +24,14 @@ electron.contextBridge.exposeInMainWorld('ApexHost', {
   quit: function () { ipc.send('apexhost:quit'); },
   // 用檔案總管打開存檔資料夾（userData/saves，固定位置、不可自選）
   openSaveFolder: function () { return ipc.invoke('saves:open-folder'); },
+  display: {
+    get: function () { return ipc.invoke('display:get'); },
+    setMode: function (mode) { return ipc.invoke('display:setMode', mode); },
+    toggle: function () { return ipc.invoke('display:toggle'); },
+    setResolution: function (width, height) { return ipc.invoke('display:setResolution', width, height); },
+    setVsync: function (value) { return ipc.invoke('display:setVsync', value); },
+    onChange: function (fn) { ipc.on('display:change', function (_event, state) { fn(state); }); }
+  },
   /* 存檔檔案：js/desktop-save-dir.js 把它包成 File System Access 的目錄把手。
      檔名限單層 *.json（主行程再驗一次）；寫入是原子的（暫存檔＋rename）。 */
   /* Steam（任務 D）：沒接 Steam 時一樣存在，status().enabled 為 false、解鎖成就回傳空結果 */

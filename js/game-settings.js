@@ -1,5 +1,5 @@
 'use strict';
-/* ============ 玩家本機偏好（設置 → 遊戲設定／音訊） ============
+/* ============ 玩家本機偏好（設置 → 遊戲設定／顯示／音訊） ============
    只存在這台瀏覽器的 localStorage，不進存檔、不進 Worker——顯示與聲音偏好不屬於遊戲狀態。
    已經有自己儲存位置的三項不在這裡，設置頁直接轉接它們原本的開關，避免出現第二套狀態：
      戰鬥數字   ui.js setDamageNumbersEnabled（localStorage setting_damage_numbers）
@@ -8,9 +8,14 @@
    使用者是這些模組的唯一寫入口：Sfx、UISound、BattleRenderer 只讀 GameSettings，不各自存一份。 */
 var GameSettings = (function () {
   var KEY = 'idle-rpg.gameSettings.v1';
+  var RESOLUTIONS = ['1280x720', '1366x768', '1600x900', '1920x1080', '1920x1200',
+    '2560x1440', '2560x1600', '3440x1440', '3840x2160'];
   var DEFAULTS = {
     outline: true,          // 人物輪廓邊框
     cameraLock: true,       // 鏡頭鎖定（取消後滾輪可調鏡頭距離）
+    displayResolution: '1920x1080',
+    renderScale: 100,
+    fpsLimit: 60,
     mute: false,            // 全體靜音
     musicVolume: 50,        // 0～100；開場與開始選單配樂
     sfxVolume: 50,          // 0～100；50＝原本調好的音量，100＝兩倍
@@ -22,9 +27,12 @@ var GameSettings = (function () {
   for (key in DEFAULTS) values[key] = DEFAULTS[key];
 
   function sanitize(name, value) {
+    if (name === 'displayResolution') return RESOLUTIONS.indexOf(value) >= 0 ? value : DEFAULTS[name];
     if (typeof DEFAULTS[name] === 'boolean') return !!value;
     var n = Number(value);
     if (!isFinite(n)) return DEFAULTS[name];
+    if (name === 'fpsLimit') return [0, 30, 60, 120].indexOf(n) >= 0 ? n : DEFAULTS[name];
+    if (name === 'renderScale') return Math.max(50, Math.min(100, Math.round(n / 5) * 5));
     return Math.max(0, Math.min(100, Math.round(n)));
   }
   function load() {

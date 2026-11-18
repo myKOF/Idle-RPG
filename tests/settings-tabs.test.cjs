@@ -1,5 +1,5 @@
 'use strict';
-/* 設置視窗：三個頁籤（遊戲設定／音訊／存檔）、預設值、全體靜音聯動、音效增益與攻擊音效開關。 */
+/* 設置視窗頁籤、本機偏好、全體靜音聯動和攻擊音效開關。 */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -18,7 +18,8 @@ function loadSettings(stored) {
 
 test('GameSettings 預設值：輪廓／鏡頭鎖定／我方敵方音效開，靜音關，兩條音量 50%', () => {
   const { gs } = loadSettings();
-  assert.deepEqual(JSON.parse(JSON.stringify(gs.defaults())), { outline: true, cameraLock: true, mute: false, musicVolume: 50, sfxVolume: 50, allyAttackSfx: true, enemyAttackSfx: true });
+  assert.deepEqual(JSON.parse(JSON.stringify(gs.defaults())), { outline: true, cameraLock: true, displayResolution: '1920x1080',
+    renderScale: 100, fpsLimit: 60, mute: false, musicVolume: 50, sfxVolume: 50, allyAttackSfx: true, enemyAttackSfx: true });
   assert.equal(gs.sfxGain(), 1, '音效 50% ＝ 原本調好的音量');
 });
 
@@ -79,17 +80,22 @@ test('Sfx：音量依音效音量縮放、全體靜音不發聲、我方／敵�
   assert.equal(s.sfx.playGroup('basicHit', 0, 'ally'), true);
 });
 
-test('index.html：三個頁籤，遊戲設定頁六項與音訊頁五項，預設勾選與題目一致', () => {
+test('顯示頁在遊戲設定後，有完整解析度清單和原有降低特效開關', () => {
   const html = readExpanded(path.join(root, 'index.html'));
   const tabs = [...html.matchAll(/data-settings-tab="(\w+)"/g)].map(m => m[1]);
-  assert.deepEqual(tabs, ['game', 'audio', 'save', 'help']);
+  assert.deepEqual(tabs, ['game', 'display', 'audio', 'save', 'help']);
   assert.match(html, /<button[^>]*id="settings-tab-game"[^>]*>遊戲設定<\/button>/);
   assert.match(html, /<button[^>]*id="settings-tab-audio"[^>]*>音訊<\/button>/);
   assert.match(html, /<button[^>]*id="settings-tab-save"[^>]*>存檔<\/button>/);
   const gamePane = html.match(/id="settings-pane-game"[\s\S]*?<\/section>/)[0];
+  const displayPane = html.match(/id="settings-pane-display"[\s\S]*?<\/section>/)[0];
   const audioPane = html.match(/id="settings-pane-audio"[\s\S]*?<\/section>/)[0];
   const checked = (pane, id) => new RegExp('id="' + id + '"[^>]*\\bchecked').test(pane);
-  for (const [id, on] of [['set-outline', true], ['set-reduce-fx', false], ['set-damage-numbers', true], ['set-camera-lock', true], ['set-auto-equip', true], ['set-compare-equip', true]]) {
+  assert.doesNotMatch(gamePane, /id="set-reduce-fx"/);
+  assert.match(displayPane, /id="set-reduce-fx"/);
+  assert.deepEqual([...displayPane.matchAll(/<option value="([^"]+)"/g)].map(match => match[1]),
+    ['1280x720', '1366x768', '1600x900', '1920x1080', '1920x1200', '2560x1440', '2560x1600', '3440x1440', '3840x2160']);
+  for (const [id, on] of [['set-outline', true], ['set-damage-numbers', true], ['set-camera-lock', true], ['set-auto-equip', true], ['set-compare-equip', true]]) {
     assert.ok(gamePane.includes('id="' + id + '"'), id);
     assert.equal(checked(gamePane, id), on, id + ' 預設勾選');
   }
@@ -101,12 +107,27 @@ test('index.html：三個頁籤，遊戲設定頁六項與音訊頁五項，預�
   assert.match(read('css/ashen-forge.css'), /\.system-settings-card \{[^}]*width: min\(624px, 100%\)/, '寬度＝原 960px 的 65%');
 });
 
+test('顯示偏好驗證舊值、限制範圍，並儲存有效解析度和 FPS 上限', () => {
+  const { gs, store } = loadSettings({ displayResolution: 'bad', renderScale: 250, fpsLimit: 40 });
+  assert.equal(gs.get('displayResolution'), '1920x1080');
+  assert.equal(gs.get('renderScale'), 100);
+  assert.equal(gs.get('fpsLimit'), 60);
+  gs.set('displayResolution', '3440x1440');
+  gs.set('renderScale', 37);
+  gs.set('fpsLimit', '0');
+  const persisted = JSON.parse(store.get('idle-rpg.gameSettings.v1'));
+  assert.equal(persisted.displayResolution, '3440x1440');
+  assert.equal(persisted.renderScale, 50);
+  assert.equal(persisted.fpsLimit, 0);
+});
+
 function loadMenu(initial) {
   const nodes = {}, listeners = {};
   const mk = (id, extra) => (nodes[id] = Object.assign({ id, style: {}, classList: { toggle() {}, add() {}, remove() {} }, hidden: false, checked: false, disabled: false, value: '50', textContent: '', tabIndex: 0,
     setAttribute() {}, addEventListener(name, fn) { (listeners[id] = listeners[id] || {})[name] = fn; }, focus() {}, getClientRects: () => [1], querySelectorAll: () => [] }, extra));
   ['game-menu', 'settings-modal', 'game-menu-reload', 'game-menu-exit', 'game-menu-save', 'game-menu-settings', 'game-menu-close', 'settings-modal-close', 'game-menu-status',
-    'settings-tab-game', 'settings-tab-audio', 'settings-tab-save', 'settings-tab-help', 'settings-pane-game', 'settings-pane-audio', 'tab-settings', 'settings-pane-help',
+    'settings-tab-game', 'settings-tab-display', 'settings-tab-audio', 'settings-tab-save', 'settings-tab-help',
+    'settings-pane-game', 'settings-pane-display', 'settings-pane-audio', 'tab-settings', 'settings-pane-help',
     'set-outline', 'set-reduce-fx', 'set-damage-numbers', 'set-camera-lock', 'set-auto-equip', 'set-compare-equip', 'set-mute', 'set-ally-sfx', 'set-enemy-sfx',
     'set-music-volume', 'set-sfx-volume', 'set-music-volume-value', 'set-sfx-volume-value', 'toggle-autoequip', 'toggle-compare'].forEach(id => mk(id));
   const group = mk('settings-audio-group', { classes: new Set(), inputs: [nodes['set-music-volume'], nodes['set-sfx-volume'], nodes['set-ally-sfx'], nodes['set-enemy-sfx']] });
@@ -134,6 +155,9 @@ test('設置頁籤：預設開啟遊戲設定，切到存檔才讀存檔列表�
   m.ctx.GameMenu.openSettings();
   assert.equal(m.nodes['settings-pane-game'].hidden, false); assert.equal(m.nodes['settings-pane-audio'].hidden, true); assert.equal(m.nodes['tab-settings'].hidden, true);
   assert.ok(!m.calls.includes('refresh-save'));
+  m.fire('settings-tab-display', 'click');
+  assert.equal(m.nodes['settings-pane-display'].hidden, false);
+  assert.equal(m.nodes['settings-pane-game'].hidden, true);
   m.fire('settings-tab-audio', 'click');
   assert.equal(m.nodes['settings-pane-audio'].hidden, false); assert.equal(m.nodes['settings-pane-game'].hidden, true);
   m.fire('settings-tab-save', 'click');
