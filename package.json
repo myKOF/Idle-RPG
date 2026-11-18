@@ -17,6 +17,9 @@
     "steam:vdf": "node tools/steam/steampipe.cjs --vdf-only",
     "steam:preview": "node tools/steam/steampipe.cjs --preview",
     "steam:upload": "node tools/steam/steampipe.cjs --upload",
+    "steam:vdf:demo": "node tools/steam/steampipe.cjs --vdf-only --edition=demo",
+    "steam:preview:demo": "node tools/steam/steampipe.cjs --preview --edition=demo",
+    "steam:upload:demo": "node tools/steam/steampipe.cjs --upload --edition=demo",
     "steam:icons": "electron tools/steam/achievement_icons.cjs",
     "steam:achievements": "node tools/desktop/steam_achievements.cjs"
   },

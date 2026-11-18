@@ -40,30 +40,65 @@ function toVdf(rootKey, obj) {
 /* 建置描述：會顯示在 Steamworks 後台的 Builds 清單，用來分辨每一次上傳。 */
 function buildDescription(info) {
   var parts = ['v' + (info.version || '0.0.0')];
+  if (info.edition && info.edition !== 'full') parts.push(info.edition);
   if (info.commit) parts.push(info.commit + (info.dirty ? '+dirty' : ''));
   if (info.date) parts.push(info.date);
   if (info.note) parts.push(String(info.note).replace(/["\r\n]+/g, ' ').trim());
   return parts.join(' ').slice(0, 200);
 }
 
-/* 設定解析：把三個來源合併並驗證。回傳 { appId, depotId, setLiveBranch, fileExclusions, errors[] } */
+/* 每個版本讀設定檔裡的哪幾個鍵。demo 在 Steam 上是另一個應用程式（Demo／Playtest），AppID 與 Depot 都不同。 */
+var EDITION_KEYS = {
+  full: { appId: 'appId', depotId: 'depotId', setLiveBranch: 'setLiveBranch' },
+  demo: { appId: 'demoAppId', depotId: 'demoDepotId', setLiveBranch: 'demoSetLiveBranch' }
+};
+
+/* 設定解析：把三個來源合併並驗證。sources.edition：'full'（預設）或 'demo'。
+   回傳 { edition, appId, depotId, setLiveBranch, fileExclusions, errors[] } */
 function resolveConfig(sources) {
   var steam = sources.steamConfig || {};
   var pipe = sources.pipeConfig || {};
+  var edition = sources.edition || 'full';
   var errors = [];
-  var appId = Math.floor(Number(steam.appId) || 0);
-  if (!(appId > 0)) errors.push('electron/steam-config.json 的 appId 還是 0：先填 Steamworks 後台的正式 AppID');
-  if (appId === 480) errors.push('appId 是 480（Valve 的測試遊戲 Spacewar），不能拿來上傳');
-  var depotId = Math.floor(Number(pipe.depotId) || 0);
+  var keys = EDITION_KEYS[edition];
+  if (!keys) return { edition: edition, appId: 0, depotId: 0, setLiveBranch: '', fileExclusions: [], errors: ['版本只能是 full 或 demo：' + edition] };
+  var appId = Math.floor(Number(steam[keys.appId]) || 0);
+  if (!(appId > 0)) {
+    errors.push('electron/steam-config.json 的 ' + keys.appId + ' 還是 0：先填 Steamworks 後台' + (edition === 'demo' ? ' Demo 應用程式' : '正式') + '的 AppID');
+  }
+  if (appId === 480) errors.push(keys.appId + ' 是 480（Valve 的測試遊戲 Spacewar），不能拿來上傳');
+  // demo 傳到正式版的 AppID＝把封測版蓋掉正式版的建置，是最該擋的事故
+  if (edition === 'demo' && appId > 0 && appId === Math.floor(Number(steam.appId) || 0)) {
+    errors.push('demoAppId 和正式版 appId 相同（' + appId + '）：demo 必須是 Steamworks 上另一個應用程式');
+  }
+  var depotId = Math.floor(Number(pipe[keys.depotId]) || 0);
   if (!(depotId > 0) && appId > 0) depotId = appId + 1;
-  var branch = String(pipe.setLiveBranch || '').trim();
+  if (edition === 'demo' && depotId > 0 && depotId === Math.floor(Number(pipe.depotId) || 0)) {
+    errors.push('demoDepotId 和正式版 depotId 相同（' + depotId + '）');
+  }
+  var branch = String(pipe[keys.setLiveBranch] || '').trim();
   if (branch && /^(default|public)$/i.test(branch)) {
     errors.push('setLiveBranch 不能是預設分支——預設分支一律到 Steamworks 網頁手動 Set Build Live');
   }
   if (branch && !/^[A-Za-z0-9_-]{1,64}$/.test(branch)) errors.push('setLiveBranch 只能是英數、底線與減號：' + branch);
   var exclusions = Array.isArray(pipe.fileExclusions) ? pipe.fileExclusions.map(String) : [];
   if (exclusions.indexOf('steam_appid.txt') < 0) exclusions.push('steam_appid.txt');   // 一律排除，不靠設定記得
-  return { appId: appId, depotId: depotId, setLiveBranch: branch, fileExclusions: exclusions, errors: errors };
+  return { edition: edition, appId: appId, depotId: depotId, setLiveBranch: branch, fileExclusions: exclusions, errors: errors };
+}
+
+/* 打包版的內容是不是這個版本：demo 版必須帶 electron/edition.json（{edition:'demo'}），正式版必須沒有。
+   shipped：{ editionFile: 解析後的 edition.json 或 null, steamConfig: 打包版裡的 steam-config.json }。回傳錯誤清單。 */
+function checkShippedEdition(cfg, shipped) {
+  var errors = [];
+  var keys = EDITION_KEYS[cfg.edition] || EDITION_KEYS.full;
+  var ed = shipped.editionFile ? shipped.editionFile.edition : null;
+  if (cfg.edition === 'demo' && ed !== 'demo') errors.push('打包版不是 demo（沒有 electron/edition.json）——用 --edition=demo 打包');
+  if (cfg.edition !== 'demo' && ed) errors.push('打包版是 ' + ed + ' 版（帶了 electron/edition.json），不能傳到正式版');
+  var shippedId = Number((shipped.steamConfig || {})[keys.appId]);
+  if (!shipped.skipAppIdCheck && shippedId !== cfg.appId) {
+    errors.push('打包版裡的 ' + keys.appId + ' 是 ' + shippedId + '，設定是 ' + cfg.appId + '——改了 electron/steam-config.json 之後要提交並重新打包');
+  }
+  return errors;
 }
 
 /* 產生兩份 VDF 的內容。paths 一律傳絕對路徑（SteamCMD 會以 VDF 所在資料夾解析相對路徑，絕對路徑最不容易錯）。 */
@@ -92,4 +127,5 @@ function buildVdfs(cfg, opts) {
   };
 }
 
-module.exports = { toVdf: toVdf, vdfValue: vdfValue, buildDescription: buildDescription, resolveConfig: resolveConfig, buildVdfs: buildVdfs };
+module.exports = { toVdf: toVdf, vdfValue: vdfValue, buildDescription: buildDescription, resolveConfig: resolveConfig,
+  checkShippedEdition: checkShippedEdition, buildVdfs: buildVdfs };

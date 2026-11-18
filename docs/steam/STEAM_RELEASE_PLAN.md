@@ -244,7 +244,7 @@ dist/win-unpacked/IdleRPG.exe --smoke=tmp/smoke-packaged   # 對打包版跑冒�
 | 檔案 | 內容 |
 |---|---|
 | `tools/steam/steampipe.cjs` | 上傳流程：建置檢查 → 桌面版測試 → 打包 → 打包版背景冒煙 → 內容檢查 → 產生 VDF → SteamCMD；任何一步失敗就停 |
-| `tools/steam/steampipe-vdf.cjs` | 設定解析與 VDF 產生（純函式）；`tests/steampipe.test.cjs` 7 項 |
+| `tools/steam/steampipe-vdf.cjs` | 設定解析與 VDF 產生（純函式）；`tests/steampipe.test.cjs` 10 項（含 demo 版 3 項） |
 | `tools/steam/steampipe.json` | DepotID（0＝AppID+1）、上傳後自動上線的**非預設**分支、排除規則（可提交） |
 | `tools/steam/steampipe.local.example.json` | 本機設定範本：SDK 的 ContentBuilder 路徑、帳號名稱（實際檔案 `steampipe.local.json` 已 gitignore） |
 | `tools/steam/achievement_icons.cjs` | 後台成就圖示：`dist/steam-achievement-icons/ACH_###.jpg`＋`_locked.jpg`（64×64，115×2 張） |
@@ -300,7 +300,35 @@ Steam 用 `electron/steam-config.json` 的 `demoAppId`（Steam 上的 Demo／Pla
 **驗證**：`tests/demo-edition.test.cjs`（11 項，含正式版不變）；桌面冒煙測試核對頁面與 Worker 都讀到外殼決定的版本。
 `SMOKE_EXTRA_SCRIPT` 可在冒煙測試裡跑情境腳本（例：GM 拉到 1000 級、打通冰原與試煉之塔，檢查置灰與提示）。
 
-**尚未做**：SteamPipe 上傳 demo（`steam:upload` 目前只認正式版的 `appId` 與 `dist/win-unpacked`）——等 demo 的 AppID 下來再接。
+**上傳 demo（SteamPipe，流程已接好，等 demo 的 AppID）**：與任務 E 同一支腳本，加 `--edition=demo`：
+
+| 指令 | 作用 |
+|---|---|
+| `npm.cmd run steam:vdf:demo` | 只驗證並產生 VDF（不登入）；AppID 未下來前可加 `-- --skip-pack --dry-appid=<假編號>` 演練 |
+| `npm.cmd run steam:preview:demo` | SteamCMD 預覽，不上傳 |
+| `npm.cmd run steam:upload:demo` | 正式上傳到 Demo 應用程式 |
+
+與正式版不同的地方：
+
+- AppID 讀 `electron/steam-config.json` 的 `demoAppId`。DepotID 讀 `tools/steam/steampipe.json` 的 `demoDepotId`，0 代表 demoAppId+1。上線分支讀 `demoSetLiveBranch`。
+- 打包用 `--edition=demo`，內容是 `dist/demo/win-unpacked/`。VDF 與日誌放在 `build/steampipe/demo/`，冒煙暫存在 `tmp/steampipe-smoke-demo/`。
+- 防呆，以下任一情況都會停下來不上傳：
+  - demoAppId 或 demoDepotId 和正式版相同；
+  - 要傳 demo 但打包版沒有 `edition.json`；
+  - 要傳正式版但打包版帶著 `edition.json`；
+  - 打包版執行起來的頁面或 Worker 版本不是要上傳的版本；
+  - 打包版裡的 demoAppId 和設定不同（改了要提交並重新打包）。
+- 建置描述會標出 `demo`（例：`v1.0.0 demo abc1234 2026-11-18`）。
+
+第一次上傳 demo 的步驟：
+
+1. 在 Steamworks 的正式遊戲頁面建立 Demo（或 Playtest）應用程式。
+2. 把它的 AppID 填進 `demoAppId`，提交。
+3. 到 Demo 應用程式的後台，照任務 E 的方式設定 Depot、Auto-Cloud（`saves/*.json`）與啟動選項（`IdleRPG.exe`）。
+4. `npm.cmd run steam:preview:demo` 預覽，確認無誤後 `npm.cmd run steam:upload:demo`。
+5. 到 Demo 應用程式的 Builds 把這次建置設為上線。
+
+本機設定（`steampipe.local.json` 的 SDK 路徑與帳號）和正式版共用。
 
 ## 5. 明確不做
 
