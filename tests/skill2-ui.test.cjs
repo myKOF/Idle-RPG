@@ -411,6 +411,7 @@ test('切換二次確認顯示完整費用；取消不送指令，確認只送�
   function element() {
     return {
       style: {}, children: [], text: '',
+      setAttribute() {}, removeAttribute() {},
       set textContent(value) { this.text = value; this.children = []; },
       get textContent() { return this.text + this.children.map(child => child.textContent).join(''); },
       appendChild(child) { this.children.push(child); }

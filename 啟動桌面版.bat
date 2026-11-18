@@ -11,9 +11,14 @@ if errorlevel 1 (
   exit /b 1
 )
 if not exist "node_modules\electron\dist\electron.exe" call npm.cmd install
+rem npm says "up to date" when the electron package exists but its binary
+rem download (postinstall) never ran or failed; run the downloader directly.
+if not exist "node_modules\electron\dist\electron.exe" if exist "node_modules\electron\install.js" (
+  echo Downloading Electron binary...
+  node "node_modules\electron\install.js"
+)
 if not exist "node_modules\electron\dist\electron.exe" (
-  echo Electron install failed.
-  pause
+  echo Electron install failed. Check the network, then run: npm.cmd install  pause
   exit /b 1
 )
 start "" "node_modules\electron\dist\electron.exe" . --dev --windowed

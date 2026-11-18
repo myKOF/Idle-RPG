@@ -807,3 +807,20 @@ AI 打開遊戲做測試（自己的預覽伺服器、內測服、Antigravity �
 - 例外：測試對象本身就是聲音（音效、背景音樂、音量設定）時才開聲音，測完設回靜音。
 - 不得為此修改遊戲預設值（`js/game-settings.js` 的 `mute: false` 是玩家的預設）。
 - AI 寫給其他 AI 的測試指令，「環境與準備」要列出這一步。
+
+---
+
+# 18. AI 開的無畫面瀏覽器必須保證關閉（必要）
+
+使用者指定（2026-11-18）：背景殘留的無畫面 Edge 一直在跑遊戲，同時三個、最久的跑了 6 天，吃掉 2 GB 以上記憶體與大量 CPU，使用者的電腦嚴重卡頓。
+
+成因（實測）：
+- 腳本的 `finally`／`child.kill()` 只在正常結束時才會跑；AI 工具逾時直接砍掉 node 時，收尾程式碼根本沒執行。
+- Edge 啟動器預設會「自己重開一份再退出」，`spawn` 拿到的 PID 不是真正的瀏覽器，`child.kill()` 殺到的是已經結束的啟動器。
+- Edge 自動更新會用原參數（加上 `--restore-last-session --restart`）把無畫面瀏覽器重新拉起來，PID 改變、父行程變成 explorer。
+
+規定：
+- AI 自己開無畫面瀏覽器（截圖、壓測、重現問題、驗證），一律透過 `tools/lib/headless-browser.cjs` 的 `launchHeadless()`，不得自己 `spawn` msedge／chrome。它會加上標記參數、跳過 Edge 重開、預設靜音，並啟動看門狗：啟動它的 node 結束（包括被砍）或超過時限（預設 30 分鐘，`maxLifetimeMs` 或環境變數 `IDLE_TEST_BROWSER_MAX_MIN` 可調），就依設定檔資料夾把整組瀏覽器關掉並刪除暫存資料夾。用完呼叫 `await browser.close()`。
+- 用 Playwright（`chromium.launch`）的既有工具可沿用，它的瀏覽器靠管道連線、node 結束就會跟著關；但仍要在 `finally` 裡 `browser.close()`。
+- 每個任務結束前執行 `node tools/kill-test-browsers.cjs`：只關「孤兒」（啟動它的程式已不在、被 Edge 更新重新拉起，或已跑超過 30 分鐘），其他 AI 正在用的不動；`--list` 只列出，`--all` 全部關掉。使用者自己開的有畫面瀏覽器一律不碰。
+- 使用者覺得電腦變卡時，可直接執行根目錄的 `清除背景測試瀏覽器.bat`（等同 `--all`）。

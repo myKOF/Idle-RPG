@@ -29,7 +29,7 @@ function setup() {
     towerTierTabsHTML: () => '<tabs>', towerFloorRowHTML: fl => '<floor>' + fl + '</floor>',
     towerDetailHTML: fl => '<boss-and-rewards>' + fl + '</boss-and-rewards>',
     bindTowerBossImageFallback() {}, setTextIfChanged(el, text) { el.textContent = text; },
-    towerChallengeCost: () => 100, fmt: String, esc: String,
+    towerChallengeCost: () => 100, towerOpenMaxFloor: () => 150, fmt: String, esc: String,
     nodePendingKey: () => 'node:tower', isUiCommandPending: () => c.pending, pending: false,
     sendUiCommand: (name, args) => { sent.push({ name, args }); return Promise.resolve({ active: true }); },
     switchTab() {}, reportUiCommandFailure() {}

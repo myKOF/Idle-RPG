@@ -193,7 +193,39 @@ var DEMON_SEED_BOSS_RATE_CAP = 100;
 var MAX_LEVEL = 1000;             // 角色等級上限（升級所需經驗 參數 d）
 var REINCARNATION_LEVEL = 1000;   // 可轉生等級：達此級可轉生（system_unlock 表「轉生」）
 var REINCARNATION_MAX = 10;
-var REINCARNATION_RANKS = ['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神', '神位1階', '神位2階', '神位3階', '神位4階', '神位5階', '神位6階', '神位7階', '神位8階', '神位9階', '神位終階'];
+
+/* ---- Demo 版（Steam 封測）：數值倍率與開放範圍 ----
+   版本旗標 GAME_EDITION 在 js/game-edition.js（網頁與正式版是 'full'；桌面版 --demo 或 demo 打包由外殼改成 'demo'）。
+   以下常數只在 demo 版生效，正式版一律不讀；數值來源是 game_parameters「11-Demo版」（tools/apply_params.cjs）。 */
+var DEMO_ENEMY_XP_MULT = 1.5;        // 打敵人得到的玩家經驗倍率（野外、離線、封魔塔 BOSS）
+var DEMO_MASTERY_XP_MULT = 5;        // 打敵人得到的技能熟練度經驗倍率
+var DEMO_SKILL_GOLD_MULT = 0.5;      // 技能升級（含終極進化）金幣消耗倍率
+var DEMO_CHEST_FORGE_XP_MULT = 2;    // 熔爐寶箱的鍛造經驗倍率
+var DEMO_MAX_LEVEL = 1000;           // 角色等級上限（不超過 MAX_LEVEL）
+var DEMO_REINCARNATION_OPEN = 0;     // 1＝開放轉生；0＝確認視窗的轉生按鈕置灰（未開放）
+var DEMO_OPEN_ZONE_COUNT = 2;        // 依 ZONE_LIST（Zones 表順序）開放前幾張地圖
+var DEMO_TOWER_MAX_FLOOR = 50;       // 封魔塔開放到第幾層
+var DEMO_NOT_OPEN_STR = 2564;        // String 表「未開放」（置灰按鈕的提示與 Worker 拒絕訊息共用）
+function isDemoEdition() { return typeof GAME_EDITION !== 'undefined' && GAME_EDITION === 'demo'; }
+function demoMult(value) { return isDemoEdition() ? (Number(value) || 0) : 1; }
+/* 角色等級上限：demo 版取 DEMO_MAX_LEVEL（不超過 MAX_LEVEL，升級經驗表只到那裡） */
+function playerMaxLevel() {
+  if (!isDemoEdition()) return MAX_LEVEL;
+  return Math.max(1, Math.min(MAX_LEVEL, Math.floor(Number(DEMO_MAX_LEVEL) || MAX_LEVEL)));
+}
+function demoReincarnationClosed() { return isDemoEdition() && !(Number(DEMO_REINCARNATION_OPEN) > 0); }
+/* 地圖是否在 demo 開放範圍內（正式版一律 true）。ZONE_LIST 在本檔後段定義，呼叫時已存在。 */
+function demoZoneOpen(zoneKey) {
+  if (!isDemoEdition()) return true;
+  var idx = ZONE_LIST.indexOf(zoneKey);
+  return idx >= 0 && idx < Math.floor(Number(DEMO_OPEN_ZONE_COUNT) || 0);
+}
+/* 封魔塔開放的最高樓層（正式版＝TOWER_MAX_FLOOR） */
+function towerOpenMaxFloor() {
+  if (!isDemoEdition()) return TOWER_MAX_FLOOR;
+  return Math.max(0, Math.min(TOWER_MAX_FLOOR, Math.floor(Number(DEMO_TOWER_MAX_FLOOR) || 0)));
+}
+var REINCARNATION_RANKS =['冒險者', '勇者', '大劍師', '破世者', '不朽者', '王者', '大主宰', '神聖尊者', '大聖王', '至高主宰', '位面創世神', '神位1階', '神位2階', '神位3階', '神位4階', '神位5階', '神位6階', '神位7階', '神位8階', '神位9階', '神位終階'];
 var REINCARNATION_HP_MULTIPLIERS = [1, 1.5, 2.5, 3.5, 5, 7, 9, 11, 15, 19, 25, 60, 100, 150, 200, 300, 450, 650, 800, 1200, 2500];
 var REINCARNATION_MP_MULTIPLIERS = [1, 1.5, 2.5, 3.5, 5, 7, 9, 11, 15, 19, 25, 60, 100, 150, 200, 300, 450, 650, 800, 1200, 2500];
 var REINCARNATION_STAT_MULTIPLIERS = [1, 1.5, 2.5, 3.5, 5, 7, 9, 11, 15, 19, 25, 60, 100, 150, 200, 300, 450, 650, 800, 1200, 2500];
@@ -1783,6 +1815,10 @@ function isFieldBossDefeated(zoneKey, stage) {
   return s > 0 && zoneClearedStage(zoneKey) >= s;
 }
 function isZoneUnlocked(zoneKey) {
+  return demoZoneOpen(zoneKey) && zoneUnlockedByProgress(zoneKey);
+}
+/* 依進度（前置地圖、轉生次數）是否解鎖，不看 demo 開放範圍——demo 版用它判斷「入口已出現、但未開放」 */
+function zoneUnlockedByProgress(zoneKey) {
   var zone = ZONES[zoneKey];
   if (!zone) return false;
   if (!zone.reqZone && !zone.reqReincarnation) return true;
@@ -1877,7 +1913,7 @@ var BOSS_LIST = [
   { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_1', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, runSpeed: 12, atkSpeed: 0.4, atkRange: 32, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
   { name: '樹人', emoji: '🌳', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_treant.png', id: 'tower_boss_2', sightRange: 50, runSpeed: 12, atkSpeed: 0.4, atkRange: 32, model3d: { file: 'images/models/npc3d/boss2.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
   { name: '骷髏王Ⅲ', emoji: '💀', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss3_character.png', id: 'tower_boss_3', sightRange: 50, runSpeed: 12, atkSpeed: 0.4, atkRange: 32, model3d: { file: 'images/models/npc3d/boss3.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
-  { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_4', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 5, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
+  { name: '角獸騎士', emoji: '🐎', elem: null, attr: 'lightning', img: 'sprites/boss/boss4_centaur.png', id: 'tower_boss_4', sightRange: 50, runSpeed: 21, atkSpeed: 0.4, atkRange: 5, model3d: { file: 'images/models/npc3d/boss4.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_charge', 'e_lightningspear'], rnd: [4, 6] } },
   { name: '劇毒之母', emoji: '🕷️', elem: null, attr: 'poison', img: 'sprites/boss/boss5_oni.png', id: 'tower_boss_5', sightRange: 50, runSpeed: 21, atkSpeed: 0.4, atkRange: 5, model3d: { file: 'images/models/npc3d/boss5.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
   { name: '深淵領主', emoji: '😈', elem: null, attr: 'dark', img: 'sprites/boss/boss6_abyss.png', id: 'tower_boss_6', sightRange: 50, runSpeed: 21, atkSpeed: 0.4, atkRange: 5, model3d: { file: 'images/models/npc3d/boss6.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_darkzone', 'e_darkorbs'], rnd: [4, 6] } },
   { name: '亡靈霜龍', emoji: '🐲', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_dragon.png', id: 'tower_boss_7', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_iceshards', 'e_waterprison'], rnd: [4, 6] } },
@@ -1887,7 +1923,7 @@ var BOSS_LIST = [
   { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_11', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
   { name: '樹人Ⅱ', emoji: '🌳', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_treant_lv2.png', id: 'tower_boss_12', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/boss2_lv2.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
   { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss3_character_lv2.png', id: 'tower_boss_13', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/boss3_lv2.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
-  { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_14', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 5, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
+  { name: '角獸騎士Ⅱ', emoji: '🐎', elem: null, attr: 'lightning', img: 'sprites/boss/boss4_centaur_lv2.png', id: 'tower_boss_14', sightRange: 50, runSpeed: 21, atkSpeed: 0.4, atkRange: 5, model3d: { file: 'images/models/npc3d/boss4_lv2.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_charge', 'e_lightningspear'], rnd: [4, 6] } },
   { name: '劇毒之母', emoji: '🕷️', elem: null, attr: 'poison', img: 'sprites/boss/boss5_oni_lv2.png', id: 'tower_boss_15', sightRange: 50, runSpeed: 21, atkSpeed: 0.4, atkRange: 5, model3d: { file: 'images/models/npc3d/boss5_lv2.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
   { name: '深淵領主', emoji: '😈', elem: null, attr: 'dark', img: 'sprites/boss/boss6_abyss_lv2.png', id: 'tower_boss_16', sightRange: 50, runSpeed: 21, atkSpeed: 0.4, atkRange: 5, model3d: { file: 'images/models/npc3d/boss6_lv2.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_darkzone', 'e_darkorbs'], rnd: [4, 6] } },
   { name: '亡靈霜龍', emoji: '🐲', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_dragon.png', id: 'tower_boss_17', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_iceshards', 'e_waterprison'], rnd: [4, 6] } },
@@ -1897,7 +1933,7 @@ var BOSS_LIST = [
   { name: '骷髏王', emoji: '💀', elem: 'fire', attr: 'fire', img: 'sprites/boss/boss_skeleton_king.png', id: 'tower_boss_21', sightRange: 50, model3d: { file: 'images/models/npc3d/boss1.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_meteor', 'e_moltenblast'], rnd: [4, 6] } },
   { name: '樹人Ⅲ', emoji: '🌳', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_treant_lv3.png', id: 'tower_boss_22', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/boss2_lv3.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_blizzard', 'e_frostnova'], rnd: [4, 6] } },
   { name: '雷霆巨獸', emoji: '⚡', elem: 'lightning', attr: 'lightning', img: 'sprites/boss/boss3_character_lv3.png', id: 'tower_boss_23', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, model3d: { file: 'images/models/npc3d/boss3_lv3.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_thunderorb', 'e_chainlightning'], rnd: [4, 6] } },
-  { name: '鋼鐵魔像', emoji: '🤖', elem: null, attr: 'lightning', img: 'sprites/boss/boss_iron.png', id: 'tower_boss_24', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 5, skills: { ex: ['e_charge', 'e_shockwave'], rnd: [4, 6] } },
+  { name: '角獸騎士Ⅲ', emoji: '🐎', elem: null, attr: 'lightning', img: 'sprites/boss/boss4_centaur_lv3.png', id: 'tower_boss_24', sightRange: 50, runSpeed: 21, atkSpeed: 0.4, atkRange: 5, model3d: { file: 'images/models/npc3d/boss4_lv3.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_charge', 'e_lightningspear'], rnd: [4, 6] } },
   { name: '劇毒之母', emoji: '🕷️', elem: null, attr: 'poison', img: 'sprites/boss/boss5_oni_lv3.png', id: 'tower_boss_25', sightRange: 50, runSpeed: 21, atkSpeed: 0.4, atkRange: 5, model3d: { file: 'images/models/npc3d/boss5_lv3.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_poisonspit', 'e_vampiric'], rnd: [4, 6] } },
   { name: '深淵領主', emoji: '😈', elem: null, attr: 'dark', img: 'sprites/boss/boss6_abyss_lv3.png', id: 'tower_boss_26', sightRange: 50, runSpeed: 21, atkSpeed: 0.4, atkRange: 5, model3d: { file: 'images/models/npc3d/boss6_lv3.glb', clips: { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' } }, skills: { ex: ['e_darkzone', 'e_darkorbs'], rnd: [4, 6] } },
   { name: '亡靈霜龍', emoji: '🐲', elem: 'ice', attr: 'ice', img: 'sprites/boss/boss_dragon.png', id: 'tower_boss_27', sightRange: 50, runSpeed: 21, atkSpeed: 3, atkRange: 32, skills: { ex: ['e_iceshards', 'e_waterprison'], rnd: [4, 6] } },

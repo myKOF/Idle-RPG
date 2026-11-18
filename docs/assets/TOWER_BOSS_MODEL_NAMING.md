@@ -18,9 +18,14 @@
 | 2 | 樹人 | `boss2.glb` | `treant.glb` | Unsteady_Walk→Walk、Weapon_Combo_2→Attack1、Attack→Attack2、Basic_Jump→Attack3、Shot_and_Fall_Forward→Die |
 | 2 | 樹人Ⅱ／Ⅲ | `boss2_lv2.glb`／`boss2_lv3.glb` | `treant_lv2／lv3.glb` | 同上 |
 | 3 | 雷霆巨獸（骷髏王Ⅲ） | `boss3.glb`／`boss3_lv2.glb`／`boss3_lv3.glb` | `boss3_character*.glb` | Running→Walk、Basic_Jump→Attack1、Right_Hand_Sword_Slash→Attack2、Shield_Push_Left→Attack3、Shot_and_Fall_Forward→Die |
+| 4 | 半人馬（2026-11-18 接入） | `boss4.glb`／`boss4_lv2.glb`／`boss4_lv3.glb` | 新增 | Thrust→Attack1、Slash→Attack2、Power→Attack3、Death→Die（見 `BOSS4_SOURCE.md`） |
 | 5 | 鬼面 | `boss5.glb`／`boss5_lv2.glb`／`boss5_lv3.glb` | 同 | 本來就是 |
 
-注意：`boss2.glb`、`boss3.glb` 這兩個檔名**原本是第1隻骷髏王的第二、三階**，現在分別是樹人與第3隻BOSS，舊版瀏覽器快取以 `?v=` 版號（`js/npc3d.js` 的 `VERSION`）區分，已換新。第4隻BOSS（製作中）將是 `boss4.glb`。
+注意：`boss2.glb`、`boss3.glb` 這兩個檔名**原本是第1隻骷髏王的第二、三階**，現在分別是樹人與第3隻BOSS，舊版瀏覽器快取以 `?v=` 版號（`js/npc3d.js` 的 `VERSION`）區分，已換新。第4隻BOSS半人馬已於 2026-11-18 接為 `boss4.glb`。
+
+## NPC 表備註的外觀名稱（使用者 2026-11-18）
+
+改成新版 3D 模型的列，`備註` 最前面寫「外觀：名稱＋第幾套材質｜」（骷髏王1、樹人3、半人馬2…，`_lv2`／`_lv3` 為第 2／3 套）。備註由 `tools/config_tables.cjs` 自動產生，名稱對照在 `NPC_MODEL_LOOK`；新增BOSS時要在那裡加上名稱。
 
 ## 實作
 

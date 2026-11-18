@@ -3,10 +3,11 @@
 // 環境變數：CHROME_EXE、FRAMES_DUMP=資料夾（另存每張 PNG）、CROP=x,y,w,h（覆寫裁切區）、SCALE（縮圖倍率，預設 1）
 const http = require('http'), fs = require('fs'), path = require('path'), cp = require('child_process'), os = require('os');
 const { decodePNG, encodeGIF } = require('./gifenc.cjs');
+const { launchHeadless } = require('../lib/headless-browser.cjs');
 const [outGif, secArg, intArg, floorArg] = process.argv.slice(2);
 const SECONDS = Number(secArg || 20), INTERVAL = Number(intArg || 100), FLOOR = Number(floorArg || 5);
 const ROOT = path.resolve(__dirname, '../..');
-const W = 1400, H = 800, PORT = 8800 + Math.floor(Math.random() * 150), DBG = 9500 + Math.floor(Math.random() * 150);
+const W = 1400, H = 800, PORT = 8800 + Math.floor(Math.random() * 150);
 const CHROME = process.env.CHROME_EXE || ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(p => fs.existsSync(p));
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.glb': 'model/gltf-binary', '.css': 'text/css', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.mp4': 'video/mp4', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.woff': 'font/woff' };
 const server = http.createServer((req, res) => {
@@ -18,12 +19,9 @@ const server = http.createServer((req, res) => {
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 (async () => {
   await new Promise(r => server.listen(PORT, r));
-  const ud = fs.mkdtempSync(path.join(os.tmpdir(), 'b5game-'));
-  const chrome = cp.spawn(CHROME, ['--headless=new', `--remote-debugging-port=${DBG}`, `--user-data-dir=${ud}`, `--window-size=${W},${H}`, '--hide-scrollbars', '--mute-audio', '--autoplay-policy=no-user-gesture-required',
-    '--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-gpu-vsync', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', 'about:blank'], { stdio: 'ignore' });
-  let tabs;
-  for (let i = 0; i < 50; i++) { try { tabs = await (await fetch(`http://127.0.0.1:${DBG}/json`)).json(); if (tabs.find(t => t.type === 'page')) break; } catch (e) { } await sleep(200); }
-  const ws = new WebSocket(tabs.find(t => t.type === 'page').webSocketDebuggerUrl);
+  const chrome = await launchHeadless({ exe: CHROME, prefix: 'b5game-', args: [`--window-size=${W},${H}`, '--hide-scrollbars', '--autoplay-policy=no-user-gesture-required',
+    '--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-gpu-vsync', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'] });
+  const ws = new WebSocket((await chrome.waitForPage()).webSocketDebuggerUrl);
   await new Promise(r => ws.addEventListener('open', r));
   let id = 0; const pend = new Map(); const logs = [];
   ws.addEventListener('message', (m) => { const d = JSON.parse(m.data); if (d.id && pend.has(d.id)) { pend.get(d.id)(d); pend.delete(d.id); } else if (d.method === 'Runtime.consoleAPICalled') logs.push(d.params.type + ': ' + d.params.args.map(a => a.value || a.description).join(' ')); else if (d.method === 'Runtime.exceptionThrown') logs.push('EXC ' + JSON.stringify(d.params.exceptionDetails.exception && d.params.exceptionDetails.exception.description)); });
@@ -65,7 +63,6 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   console.log('captured', frames.length, 'frames', logs.filter(l => /error|EXC/i.test(l)).slice(-5));
   const bytes = encodeGIF(frames, Math.max(2, Math.round(INTERVAL / 10)), outGif, { dither: 0 });
   console.log('GIF', outGif, (bytes / 1048576).toFixed(2), 'MB');
-  ws.close(); chrome.kill(); server.close();
-  try { fs.rmSync(ud, { recursive: true, force: true }); } catch (e) { }
+  ws.close(); await chrome.close(); server.close();
   process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });

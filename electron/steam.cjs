@@ -45,9 +45,10 @@ function readConfig(dir) {
   try {
     var cfg = JSON.parse(fs.readFileSync(path.join(dir, 'steam-config.json'), 'utf8'));
     var appId = Number(cfg.appId) || 0;
-    return { appId: appId > 0 ? Math.floor(appId) : 0 };
+    var demoAppId = Number(cfg.demoAppId) || 0;   // demo 版（Steam 上獨立的 Demo／Playtest 應用程式）
+    return { appId: appId > 0 ? Math.floor(appId) : 0, demoAppId: demoAppId > 0 ? Math.floor(demoAppId) : 0 };
   } catch (e) {
-    return { appId: 0, error: e.message };
+    return { appId: 0, demoAppId: 0, error: e.message };
   }
 }
 

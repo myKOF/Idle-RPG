@@ -35,6 +35,7 @@ function setupField(context) {
   context.getStats = () => ({ hp: 100, goldBonus: 0, xpBonus: 0, moveSpeed: 0, passives: {} });
   context.healPlayer = () => {};
   context.gainXp = () => {};
+  context.gainEnemyXp = (xp) => xp;   // js/player.js：玩家經驗＋熟練度入帳（demo 倍率在裡面）
 }
 
 function enemy(id) {

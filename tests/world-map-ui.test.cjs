@@ -30,6 +30,7 @@ function setup() {
     }
     setAttribute(key, value) { this.attrs[key] = String(value); if (key === 'id') { this.id = value; ids[value] = this; } }
     getAttribute(key) { return this.attrs[key] ?? null; }
+    removeAttribute(key) { delete this.attrs[key]; }
     appendChild(node) { this.children.push(node); node.parent = this; return node; }
     addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
     dispatch(type, event = {}) { for (const fn of this.listeners[type] || []) fn.call(this, { target: this, ...event }); }

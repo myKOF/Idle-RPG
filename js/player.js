@@ -216,11 +216,12 @@ function settlePlayerXp(options) {
   if (!p) return 0;
 
   var level = Number(p.level);
-  p.level = Number.isFinite(level) ? clamp(Math.floor(level), 1, MAX_LEVEL) : 1;
+  var maxLevel = playerMaxLevel();   // demo 版可能低於 MAX_LEVEL（js/data.js）
+  p.level = Number.isFinite(level) ? clamp(Math.floor(level), 1, maxLevel) : 1;
   p.xp = normalizePlayerXpValue(p.xp);
 
   var gained = 0;
-  while (p.level < MAX_LEVEL) {
+  while (p.level < maxLevel) {
     var need = Number(xpForLevel(p.level));
     // 公式異常時停止，避免壞資料造成無限迴圈；正常公式永遠是正的有限值。
     if (!Number.isFinite(need) || need <= 0 || p.xp < need) break;
@@ -230,7 +231,7 @@ function settlePlayerXp(options) {
     // 2026-07-30 技能熟練度制：升級不再給技能點（技能點改由技能熟練度提供，見 skills.js）
     // 2026-10-22 威能點取消：威能升級改花金幣（js/talents.js），升級不再給威能點。
   }
-  if (p.level >= MAX_LEVEL) p.xp = 0;
+  if (p.level >= maxLevel) p.xp = 0;
   if (gained > 0) {
     markStatsDirty();
     var reward = '';
@@ -254,6 +255,20 @@ function settlePlayerXp(options) {
   return gained;
 }
 
+/* 打敵人得到的經驗（野外擊殺、離線擊殺、封魔塔 BOSS）：玩家經驗與技能熟練度經驗一起入帳。
+   xp＝已含經驗加成的玩家經驗；熟練度經驗＝xp × SKILL_MASTERY_XP_RATE%。
+   demo 版兩者各乘 DEMO_ENEMY_XP_MULT／DEMO_MASTERY_XP_MULT（各自乘在原值上，熟練度不吃玩家經驗倍率）。
+   回傳實際入帳的玩家經驗（給獎勵文字顯示）。 */
+function gainEnemyXp(xp) {
+  var base = Math.max(0, Number(xp) || 0);
+  var playerXp = Math.round(base * demoMult(DEMO_ENEMY_XP_MULT));
+  gainXp(playerXp);
+  if (typeof gainSkillMasteryXp === 'function') {
+    gainSkillMasteryXp(Math.round(base * SKILL_MASTERY_XP_RATE / 100 * demoMult(DEMO_MASTERY_XP_MULT)));
+  }
+  return playerXp;
+}
+
 function gainXp(n) {
   var p = G.player;
   var amount = Number(n);
@@ -273,6 +288,7 @@ function reincarnate() {
   var count = reincarnationCount();
   if (count >= REINCARNATION_MAX) return STR(375, REINCARNATION_MAX);
   if (p.level < REINCARNATION_LEVEL) return STR(376, REINCARNATION_LEVEL);
+  if (demoReincarnationClosed()) return STR(DEMO_NOT_OPEN_STR);   // demo 版：轉生未開放
   if (typeof achCheck === 'function') achCheck();   // 轉生會重置等級：先結算一次成就
   p.reincarnations = count + 1;
   p.level = 1;

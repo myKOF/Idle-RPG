@@ -86,12 +86,21 @@
 
 ```
 npm run desktop          # 正式模式（直接進入原生全螢幕）
-npm run desktop:dev      # 視窗模式＋F12 開發者工具＋F5 重新整理
+npm run desktop:dev      # 視窗模式＋F12 開發者工具＋F5 重新整理（雙擊「啟動桌面版.bat」）
+npm run desktop:internal # 內測模式（雙擊「啟動桌面版(內測).bat」），見下方說明
 npm run desktop -- --dev --url=http://127.0.0.1:8124/   # 載本機內測服（GM 開放）
 npm run desktop:smoke    # 冒煙測試，結果在 tmp/desktop-smoke/
 ```
 
 Windows 標題列的「最大化」會進入原生全螢幕，退出時恢復原視窗的尺寸與位置。
+
+**內測模式（`--internal`，2026-11-18 加）**：不需要另外開內測服。外殼改用 `app://localhost` 伺服同一個資料夾，
+遊戲既有的 localhost 判定（`isGMHost()`／`isInternalServer()`、參數自動重載）就照網頁內測服的方式打開，
+遊戲程式沒有改。三個隔離：
+- 存檔另放 `%APPDATA%\idle-rpg-internal\saves`，GM 改過的存檔不會混進正式存檔與 Steam Cloud；兩種模式可以同時開。
+- 一律不接 Steam：GM 能直接解鎖成就，會解到真正的帳號上。
+- 只限從原始碼執行：打包版看到 `--internal` 直接忽略（記在 desktop.log），玩家不能用 Steam 啟動選項打開 GM。
+協議一次只伺服一個主機名（正式模式拒絕 `app://localhost`、內測模式拒絕 `app://game`）；冒煙測試加 `--internal` 時改成檢查「GM 必須開、Steam 必須關」。
 
 實測結果（冒煙測試連跑兩次，第二次走「繼續」）：Worker 開機、Pixi 戰場、VFX Preset 302 份、IndexedDB、`navigator.locks`、fetch、影片 Range 206 均正常；
 `isInternalServer()`／`isGMHost()` 皆為 false；全螢幕進出正常；關窗存檔回 ok，重開後「繼續」出現；頁面錯誤 0。
@@ -265,6 +274,33 @@ AppID 為 0、預覽或上傳時帶 `--dry-appid` 都會被擋下。**SteamCMD �
    - Steam Cloud：Auto-Cloud，Root `WinAppDataRoaming`、Subdirectory `idle-rpg/saves`、Pattern `*.json`（見 4.3）。
    - 成就：`npm.cmd run steam:achievements` 產生清單（API 名稱／名稱／說明），`npm.cmd run steam:icons` 產生圖示，逐條建立。
    - 啟動選項：執行檔 `IdleRPG.exe`、作業系統 Windows。
+
+### 4.7 Demo 版（Steam 封測，2026-11-18）
+
+**判定**：版本旗標 `GAME_EDITION`（`js/game-edition.js`，主執行緒與 Worker 共載）。提交的檔案永遠是 `'full'`；
+demo 版由桌面外殼改寫這個檔的回應（`electron/main.cjs`）——從原始碼執行看 `--demo`，打包版看 `electron/edition.json`
+（`npm.cmd run desktop:pack:demo` 只寫進暫存區，輸出 `dist/demo/win-unpacked/`）。遊戲程式、存檔格式只有一份，網頁版永遠是正式版。
+
+**數值與限制**：常數在 `js/data.js`「Demo 版」區塊，來源 game_parameters「11-Demo版」（374～379），正式版一律不讀：
+
+| 參數 | 預設 | 作用位置 |
+|---|---|---|
+| 敵人經驗倍率 a／b | 1.5／5 | `gainEnemyXp()`（野外擊殺、離線擊殺、封魔塔 BOSS）；熟練度乘在原值上，不吃 a |
+| 技能升級金幣倍率 | 0.5 | `skills2UpgradeCost`／`skills2UltCost`（兩端共用，介面顯示與扣款一致） |
+| 寶箱鍛造經驗倍率 | 2 | `chestGainSalvageXp` |
+| 等級上限 a／轉生 b | 1000／0 | `playerMaxLevel()`；b=0 時轉生確認鈕置灰，Worker `reincarnate()` 也拒絕 |
+| 開放場景數 | 2 | `demoZoneOpen()`：Zones 表順序前 N 張；`isZoneUnlocked` 與入口置灰（依進度已出現才顯示「未開放」） |
+| 封魔塔開放樓層 | 50 | `towerOpenMaxFloor()`：`startTowerFight` 拒絕；地獄／煉獄頁籤與超過的樓層挑戰鈕置灰 |
+
+提示文字「未開放」是 String 表 2531（`DEMO_NOT_OPEN_STR`）。
+
+**隔離**：demo 存檔在 `%APPDATA%\idle-rpg-demo`（內測＋demo 為 `idle-rpg-demo-internal`），不會帶進正式版；
+Steam 用 `electron/steam-config.json` 的 `demoAppId`（Steam 上的 Demo／Playtest 是獨立應用程式，有自己的 AppID 與 Cloud）。
+
+**驗證**：`tests/demo-edition.test.cjs`（11 項，含正式版不變）；桌面冒煙測試核對頁面與 Worker 都讀到外殼決定的版本。
+`SMOKE_EXTRA_SCRIPT` 可在冒煙測試裡跑情境腳本（例：GM 拉到 1000 級、打通冰原與試煉之塔，檢查置灰與提示）。
+
+**尚未做**：SteamPipe 上傳 demo（`steam:upload` 目前只認正式版的 `appId` 與 `dist/win-unpacked`）——等 demo 的 AppID 下來再接。
 
 ## 5. 明確不做
 

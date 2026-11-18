@@ -449,6 +449,13 @@ function npcSkillNote(type, sk, catalog) {
   if (rnd && rnd[1] > 0) parts.push('隨機：從隨機技能池抽 ' + (rnd[0] === rnd[1] ? rnd[0] : rnd[0] + '~' + rnd[1]) + ' 個');
   return parts.length ? NPC_TYPE_LABEL[type] + '｜' + parts.join('｜') : NPC_TYPE_LABEL[type] + '｜沒有技能';
 }
+/* 封魔塔 BOSS 的外觀名稱（使用者 2026-11-18）：改成新版 3D 模型（images/models/npc3d/bossN[_lvM].glb）的列，
+   備註最前面寫「外觀：名稱＋第幾套材質｜」，例如 骷髏王1、樹人3；同一模型的 _lv2／_lv3 是第 2／3 套材質。 */
+const NPC_MODEL_LOOK = { boss1: '骷髏王', boss2: '樹人', boss3: '雷霆巨獸', boss4: '半人馬', boss5: '鬼面', boss6: '深淵領主' };
+function npcLookNote(b) {
+  const m = /npc3d\/(boss\d+)(?:_lv(\d+))?\.glb$/.exec((b && b.model3d && b.model3d.file) || '');
+  return m && NPC_MODEL_LOOK[m[1]] ? '外觀：' + NPC_MODEL_LOOK[m[1]] + (m[2] || '1') + '｜' : '';
+}
 function npcSkillCells(sk) {
   const ex = (sk && sk.ex) || [];
   const rnd = (sk && sk.rnd) || [0, 0];
@@ -536,7 +543,7 @@ SCHEMAS.NPC = {
         b.img || '', b.img || '', b.img || '', b.img || '', '舊版靜態圖（' + (b.img || '無') + '），尚無序列幀：缺移動／攻擊／死亡動畫', '1',
         numStr(b.runSpeed == null ? '' : b.runSpeed), numStr(b.atkSpeed == null ? '' : b.atkSpeed),
         numStr(b.atkRange == null ? '' : b.atkRange), numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(
-        NPC_TOWER_MULT_COLUMNS.map(([, key]) => numStr(b[key] == null ? 1 : b[key])), npcSkillCells(sk), [npcSkillNote('tower_boss', sk, catalog)], npcModelCells(b)));
+        NPC_TOWER_MULT_COLUMNS.map(([, key]) => numStr(b[key] == null ? 1 : b[key])), npcSkillCells(sk), [npcLookNote(b) + npcSkillNote('tower_boss', sk, catalog)], npcModelCells(b)));
     });
     return rows;
   },

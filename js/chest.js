@@ -158,6 +158,7 @@ function chestGainSalvageXp(rarity, count) {
   count = count === undefined ? 1 : Number(count);
   if (!(count > 0)) return;
   var mult = typeof relicChestSpeedMult === 'function' ? relicChestSpeedMult() : 1;
+  mult *= demoMult(DEMO_CHEST_FORGE_XP_MULT);   // demo 版鍛造經驗倍率（js/data.js）
   var changed = false;
   for (var i = 0; i < CHESTS.length; i++) {
     var def = CHESTS[i], st = chestState(def.id), row = chestLevelDef(def, st.lv);

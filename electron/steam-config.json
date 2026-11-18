@@ -1,4 +1,5 @@
 {
-  "說明": "appId 填 Steamworks 後台的正式 AppID；0 代表不接 Steam（遊戲照常可玩）。開發測試用 npm run desktop -- --steam-appid=480（Valve 官方測試用 Spacewar），不要把 480 填在這裡。",
-  "appId": 0
+  "說明": "appId 填 Steamworks 後台的正式 AppID；0 代表不接 Steam（遊戲照常可玩）。開發測試用 npm run desktop -- --steam-appid=480（Valve 官方測試用 Spacewar），不要把 480 填在這裡。 demoAppId 填 demo 版（Steam 上獨立的 Demo／Playtest 應用程式）的 AppID；0 代表 demo 版不接 Steam。",
+  "appId": 0,
+  "demoAppId": 0
 }

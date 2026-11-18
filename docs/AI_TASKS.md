@@ -1,3 +1,9 @@
+## SYNC-CLAUDE-20261118 — 補整合桌面模式與角獸騎士
+
+- Codex 完成整合。以 `9e6561f6` 合併 Claude 的 `70636bab`，納入七筆桌面啟動／內測／Demo、測試瀏覽器清理，以及封魔塔第 4 隻 BOSS 的提交。保留既有顯示設定、序章、桌面預載接口及兩側任務紀錄。合併提交含原 Claude 模型及對應配置，序章素材庫驗證一致。
+- String 表只有新增編號 `2531` 碰撞。保留已提交的顯示設定，另配 `2564` 給 Demo「未開放」。原生 Excel 正常重開驗證，重建 CSV 與字串檔共 2551 條。補合併桌面測試的旁白與內測檢查，以及相關快取。另驗證保留本機 14 筆未提交的工作簿文字修改與旁白文件。
+- 17 份相關測試有 153/154 通過，唯一失敗是合併前已重現的旁白檔名誤判。Electron 內測與 Demo 冒煙測試均成功且旁白 HTTP 200，建置 737 檔通過。NPC 生成器與遊戲參數乾跑無差異，原生試算表驗證、格式、序章素材雜湊與差異檢查通過。完整紀錄在 `logs/merge-claude-20261118/`。
+
 ## REMOVE-TOPBAR-FULLSCREEN-20261118 — 移除頂欄全螢幕按鈕
 
 - Owner：Codex，Done。依截圖移除頂欄全螢幕按鈕與專用接線，將內測傷害／承傷資訊插入版本更新提示前。全螢幕可從顯示設定、戰鬥工具列或桌面快捷鍵操作。
@@ -16521,3 +16527,18 @@ Worker 存活且頁面正常完成載入。
 - 衝突解法：主頁 `ui.js` 使用新聯合快取 `20261117-fixed-canvas-steam-v1`，`save_origin.js` 使用 `20261117-fixed-canvas-save-schema-v1`；Worker 同時載入 Knife Waltz `skills2.js` 與 `save-schema.js`／新版 player、save。因 Worker 載入集合已合併，`bridge.js` 的 `WORKER_ASSET_VERSION` 及主頁 bridge 引用同步更新為 `20261117-knife-waltz-save-schema-v1`。沒有整側覆蓋，衝突標記已全部移除。
 - 驗證：`node --test tests/save-schema.test.cjs tests/desktop-saves.test.cjs tests/desktop-steam.test.cjs tests/start-menu.test.cjs tests/ui-fixed-canvas.test.cjs tests/hall-of-radiance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 為 69/77 通過；8 個 `hall-of-radiance` 失敗是原 HEAD 既存資料／測試不一致（HEAD 技能資料 `sec:4`，HEAD 測試期望 `sec:2`），本次未修改該公式、資料或斷言。其餘 save-schema、桌面存檔、Steam、開始選單、固定畫布、Worker protocol 與 VFX editor 快取測試全部通過。`npm.cmd run build` 732 檔通過。
 - 最終檢查：保留 controller 已做的 EOF 空白修正；`git diff HEAD --check` 檢查完整 merged result。HEAD／MERGE_HEAD 維持不變，未 stage、commit、push、切分支或執行同步腳本；由 controller 暫存回報檔案並建立 merge commit。
+
+## TOWER-BOSS4-CENTAUR-20261118 — 半人馬接入第4隻封魔塔BOSS（三套材質）
+
+- Owner：Claude，Done。使用者提供三個正式貼圖版 `BOSS4.glb`／`BOSS4_2.glb`／`BOSS4_3.glb`（同一份 9262 頂點網格、原始扭轉姿勢、未綁骨），要求綁上已定稿的骨架與動作、拆下武器、頭回正並接入封魔塔；途中追加「NPC 表備註寫外觀名稱」。
+- 模型：`tools/boss4/build_variant.py`（UV 對應 11-10 轉正網格＋剛體 ICP 對齊動畫骨架、長矛拉直重握 43%、權重最近表面轉移）→ `rest_fix.py`（手臂拉回骨架靜止姿勢、右拳對齊矛軸）→ `game_export.py`（四蹄置中）。新增 `images/models/npc3d/boss4.glb`、`boss4_lv2.glb`、`boss4_lv3.glb`（56 關節、Walk／Attack1～3／Die）與 `images/sprites/boss/boss4_centaur*.png`（1080 透明頭像）。動作製作腳本歸檔於 `tools/boss4/anim/`，說明見 `docs/assets/BOSS4_SOURCE.md`。
+- NPC 表：`NPC.xlsx` 第485／495／505列 G:J 頭像、AB 模型、AC:AH 動作、攻擊速度 3→0.4（經 `tools/excel-update-sheets.ps1`，重開驗證 58 格）；22 列新版模型的備註前加「外觀：名稱＋材質編號｜」，並把規則寫進產生器 `tools/config_tables.cjs`（`npcLookNote`／`NPC_MODEL_LOOK`），`config_tables --apply --write NPC` 後 data.js 只有 BOSS_LIST 三筆變動。快取：`index.html`（data／bridge）、`js/bridge.js` Worker 版本、`js/worker/sim.worker.js` data 為 `20261118-boss4-centaur`。
+- 測試：新增 `tests/boss4-character-asset.test.cjs`（4 項），更新 `npc3d-config`、`tower-boss3d`（4／14／24 及 +50／+100 層用新模型、34 層維持原樣），共 14 項全過。NPC／塔／BOSS／快取／Worker 相關 462 項中 20 項失敗；其中 NPC-SKILL-4／6、NPC-SPRITE-4／5、TBMA-5 以 HEAD 乾淨工作樹重跑同樣失敗（既有），塔 BOSS 50 列備註與產生器輸出逐列一致。字串寫死 0。
+- 實機：`node tools/boss4/verify-ingame.cjs` 在無頭瀏覽器開真正的遊戲頁，以遊戲的 `Npc3D.create` 載入三版，五動作皆存在、秒數正確並逐動作渲染成功。舊的 `tools/boss5/capture-ingame.cjs` 因序章開場後新遊戲流程改變，找不到挑戰按鈕，未跑完整場塔戰。
+- 待使用者決定：名稱仍為「鋼鐵魔像」🤖、技能野蠻衝鋒／震地衝擊；未做戰鬥特效。
+
+## TOWER-BOSS4-RENAME-20261118 — 第4隻BOSS名稱與技能改成半人馬
+
+- Owner：Claude，Done。使用者同意把 tower_boss_4／14／24 的名稱與技能改成符合持長槍的半人馬。
+- NPC.xlsx 第485／495／505列（`tools/excel-update-sheets.ps1`，兩次寫入皆重開驗證）：名稱 鋼鐵魔像 → 角獸騎士／角獸騎士Ⅱ／角獸騎士Ⅲ、外觀 🤖 → 🐎、專屬技能 `e_charge;e_shockwave` → `e_charge;e_lightningspear`；備註由產生器重新產生後寫回（塔 BOSS 50 列備註與產生器逐列一致）。屬性、攻速、距離、倍率、隨機技能數量不變；第34、44列（無新模型）維持鋼鐵魔像。快取 `20261118-boss4-centaur-name`。
+- 文件：`docs/ELITE_AFFIXES.md` tower_boss_4 列、`docs/BOSS_PLAYER_SKILLS.md` 第24／54／74層名稱、`docs/assets/BOSS4_SOURCE.md`。測試：`boss4-character-asset` 加名稱／圖示／技能／屬性斷言；BOSS／塔／NPC 37 項中 3 項失敗為既有（NPC-SKILL-4／6、TBMA-5，HEAD 同樣失敗）；字串寫死 0。

@@ -20,12 +20,12 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../data.js?v=20261117-pending-011256-merged-v1', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261114-oni-relic-sync-v1', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-sync-chest-v3', '../chest.js?v=20261112-chest-indep-v1', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261113-reroll-r8-v1', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../game-edition.js?v=1.0.0', '../data.js?v=20261118-claude-codex-integration-v1', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261114-oni-relic-sync-v1', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-sync-chest-v3', '../chest.js?v=20261118-demo-edition', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261113-reroll-r8-v1', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261109-treant-audio-sync-a54d6904', '../stats.js?v=20261109-mystery-merchant',
   '../item.js?v=20261113-reroll-count-v1', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261109-relics',
-  '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261117-knife-waltz-v1', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
-  '../save-schema.js?v=1.0.0', '../player.js?v=20261117-save-schema', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261108-tower-boss-floors', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261112-ticket-drop-v1',
-  '../factory.js?v=20261112-chest-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261117-save-schema',
+  '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261118-demo-edition', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
+  '../save-schema.js?v=1.0.0', '../player.js?v=20261118-demo-edition', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
+  '../combat.js?v=20261118-demo-edition', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261118-demo-edition',
+  '../factory.js?v=20261112-chest-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261118-demo-edition',
   '../tasks.js?v=20261112-task-chest-relic', '../achievements.js?v=20261103-equipment-rarity-v3'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -861,13 +861,16 @@ function buildPanel(name, params) {
               order: zi,
               maxStage: (typeof zoneMaxStage === 'function') ? zoneMaxStage(zk) : 0,
               unlocked: (typeof isZoneUnlocked === 'function') ? !!isZoneUnlocked(zk) : false,
+              // demo 版：依進度已解鎖、但不在開放範圍（入口置灰並提示未開放）
+              demoLocked: (typeof demoZoneOpen === 'function') && !demoZoneOpen(zk) && zoneUnlockedByProgress(zk),
               current: (zk === G.stage.zone) ? G.stage.current : (zp ? zp.current : 0),
               best: (zk === G.stage.zone) ? G.stage.best : (zp ? zp.best : 0)
             });
           }
           return out;
         })(),
-        runStats: self.RUN_STATS || null, lootStats: self.LOOT_STATS || null
+        runStats: self.RUN_STATS || null, lootStats: self.LOOT_STATS || null,
+        edition: (typeof GAME_EDITION !== 'undefined') ? GAME_EDITION : null   // 版本旗標（Worker 端讀到的；桌面版冒煙測試核對）
       };
     case 'equip':
       return {

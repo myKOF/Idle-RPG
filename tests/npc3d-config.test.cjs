@@ -28,6 +28,15 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
       assert.equal(result[i].img, 'sprites/boss/boss3_character' + suffix + '.png');
       assert.equal(result[i].model3d.file, 'images/models/npc3d/boss3' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
+    } else if (i === 3 || i === 13 || i === 23) {
+      const suf = i === 3 ? '' : '_lv' + (i === 13 ? 2 : 3);
+      assert.equal(result[i].name, current[i].name);
+      assert.equal(result[i].atkSpeed, 0.4);
+      assert.equal(result[i].atkRange, 5);
+      assert.equal(result[i].img, 'sprites/boss/boss4_centaur' + suf + '.png');
+      assert.ok(fs.existsSync(path.join(root, 'images', result[i].img)));
+      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss4' + suf + '.glb');
+      assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
     } else if (i === 4 || i === 14 || i === 24) {
       const suf = i === 4 ? '' : '_lv' + (i === 14 ? 2 : 3);
       assert.equal(result[i].name, current[i].name);

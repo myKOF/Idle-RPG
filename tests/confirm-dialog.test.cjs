@@ -24,6 +24,7 @@ function makeElement() {
     querySelectorAll() { return []; },
     classList: { add() {}, remove() {}, toggle() {} },
     setAttribute() {},
+    removeAttribute() {},
     getAttribute() { return null; }
   };
 }
