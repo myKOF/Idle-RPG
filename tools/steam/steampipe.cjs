@@ -6,15 +6,21 @@
      npm.cmd run steam:preview   SteamCMD 預覽建置：完整跑一次但不上傳（要 SDK 與帳號）
      npm.cmd run steam:upload    正式上傳（要 SDK 與帳號）；上傳後到 Steamworks 網頁把建置設為上線
 
+     npm.cmd run steam:vdf:demo／steam:preview:demo／steam:upload:demo
+                                 同上，對象換成 demo 版（Steam 上另一個 Demo 應用程式）：
+                                 AppID 讀 steam-config.json 的 demoAppId、Depot 讀 steampipe.json 的 demoDepotId，
+                                 內容是 dist/demo/win-unpacked（--edition=demo 打包），VDF 與日誌放 build/steampipe/demo/
+
    參數（加在 npm.cmd run steam:xxx -- 後面）：
-     --skip-pack          不重新打包，直接用現有的 dist/win-unpacked（仍會做內容檢查）
+     --edition=demo       上傳 demo 版（steam:*:demo 已帶這個參數）
+     --skip-pack          不重新打包，直接用現有的 dist/win-unpacked（demo：dist/demo/win-unpacked；仍會做內容檢查）
      --note=<文字>        附加在建置描述後面（顯示在後台 Builds 清單）
      --dry-appid=<編號>   只限 --vdf-only：用假的 AppID 演練產生 VDF（正式 AppID 還沒下來時用）
 
    流程（任何一步失敗就停，不會上傳半成品）：
      1. 建置檢查（tools/build_check.cjs）＋桌面版相關測試
      2. 打包（tools/desktop/build_desktop.cjs）＋對打包版跑背景冒煙測試（不顯示視窗）
-     3. 內容檢查：exe 在、打包版裡的 AppID 與設定相同、沒有 steam_appid.txt
+     3. 內容檢查：exe 在、打包版的版本（edition.json）對、打包版裡的 AppID 與設定相同、沒有 steam_appid.txt
      4. 產生 VDF 到 build/steampipe/scripts/
      5. SteamCMD：+login <帳號> +run_app_build <VDF> +quit
         密碼與 Steam Guard 驗證碼由 SteamCMD 在這個終端機詢問；第一次驗證後會快取在這台電腦。 */
@@ -25,12 +31,21 @@ var childProcess = require('child_process');
 var Vdf = require('./steampipe-vdf.cjs');
 
 var REPO = path.resolve(__dirname, '..', '..');
-var UNPACKED = path.join(REPO, 'dist', 'win-unpacked');
-var OUT_DIR = path.join(REPO, 'build', 'steampipe');
 var EXE_NAME = 'IdleRPG.exe';
 var GATE_TESTS = ['tests/desktop-app-protocol.test.cjs', 'tests/desktop-ship-rules.test.cjs', 'tests/desktop-saves.test.cjs',
   'tests/desktop-steam.test.cjs', 'tests/save-schema.test.cjs', 'tests/steampipe.test.cjs', 'tests/start-menu.test.cjs',
-  'tests/string-table.test.cjs'];
+  'tests/string-table.test.cjs', 'tests/demo-edition.test.cjs'];
+
+/* 各版本的打包輸出與 VDF 資料夾（與 tools/desktop/build_desktop.cjs 的 OUT 一致） */
+function editionPaths(edition) {
+  var dist = edition === 'demo' ? path.join(REPO, 'dist', 'demo') : path.join(REPO, 'dist');
+  return {
+    unpacked: path.join(dist, 'win-unpacked'),
+    shipReport: path.join(dist, 'ship-report.json'),
+    outDir: edition === 'demo' ? path.join(REPO, 'build', 'steampipe', 'demo') : path.join(REPO, 'build', 'steampipe'),
+    smokeDir: path.join(REPO, 'tmp', edition === 'demo' ? 'steampipe-smoke-demo' : 'steampipe-smoke')
+  };
+}
 
 function arg(name) {
   var p = '--' + name + '=';
@@ -74,13 +89,18 @@ function main() {
   var mode = arg('upload') ? 'upload' : arg('preview') ? 'preview' : 'vdf';
   var dryAppId = Number(arg('dry-appid')) || 0;
   if (dryAppId && mode !== 'vdf') fail('--dry-appid 只能和 --vdf-only 一起用（假的 AppID 不能上傳）');
+  var edition = arg('edition') || 'full';
+  if (edition !== 'full' && edition !== 'demo') fail('--edition 只能是 full 或 demo：' + edition);
+  var P = editionPaths(edition);
+  var UNPACKED = P.unpacked;
+  var OUT_DIR = P.outDir;
 
   /* ---- 設定 ---- */
   var steamConfig = readJson(path.join(REPO, 'electron', 'steam-config.json'), {});
-  if (dryAppId) steamConfig = { appId: dryAppId };
+  if (dryAppId) steamConfig = edition === 'demo' ? { demoAppId: dryAppId } : { appId: dryAppId };
   var pipeConfig = readJson(path.join(__dirname, 'steampipe.json'), {});
   var local = readJson(path.join(__dirname, 'steampipe.local.json'), {});
-  var cfg = Vdf.resolveConfig({ steamConfig: steamConfig, pipeConfig: pipeConfig });
+  var cfg = Vdf.resolveConfig({ steamConfig: steamConfig, pipeConfig: pipeConfig, edition: edition });
   if (cfg.errors.length) fail('設定有誤：\n  ' + cfg.errors.join('\n  '));
   var contentBuilder = process.env.STEAM_CONTENT_BUILDER || local.contentBuilderDir || '';
   var account = process.env.STEAM_BUILD_ACCOUNT || local.account || '';
@@ -92,7 +112,7 @@ function main() {
     if (!account) fail('沒有設定上傳用的 Steam 帳號名稱：tools/steam/steampipe.local.json 的 account，或環境變數 STEAM_BUILD_ACCOUNT');
   }
   console.log('模式：' + { vdf: '只產生 VDF', preview: 'SteamCMD 預覽（不上傳）', upload: '正式上傳' }[mode] +
-    '　AppID ' + cfg.appId + (dryAppId ? '（演練用）' : '') + '　Depot ' + cfg.depotId +
+    '　版本 ' + (edition === 'demo' ? 'demo' : '正式版') + '　AppID ' + cfg.appId + (dryAppId ? '（演練用）' : '') + '　Depot ' + cfg.depotId +
     (cfg.setLiveBranch && mode === 'upload' ? '　上傳後設為上線：' + cfg.setLiveBranch : ''));
 
   /* ---- 1～2. 檢查、測試、打包、冒煙 ---- */
@@ -102,25 +122,33 @@ function main() {
     step('桌面版相關測試');
     if (run(process.execPath, ['--test'].concat(GATE_TESTS)) !== 0) fail('測試失敗');
     step('打包');
-    if (run(process.execPath, ['tools/desktop/build_desktop.cjs']) !== 0) fail('打包失敗');
+    if (run(process.execPath, ['tools/desktop/build_desktop.cjs', '--edition=' + edition]) !== 0) fail('打包失敗');
     step('打包版冒煙測試（背景執行，不顯示視窗）');
-    var smokeDir = path.join(REPO, 'tmp', 'steampipe-smoke');
+    var smokeDir = P.smokeDir;
     fs.rmSync(smokeDir, { recursive: true, force: true });
     if (run(path.join(UNPACKED, EXE_NAME), ['--smoke=' + smokeDir]) !== 0) {
       fail('打包版冒煙測試失敗，詳見 ' + path.relative(REPO, path.join(smokeDir, 'smoke-report.json')));
+    }
+    // 冒煙只比對「外殼讀到的版本」與「頁面／Worker 的版本」是否一致；這裡再確認它就是要上傳的版本
+    var smokeChecks = (readJson(path.join(smokeDir, 'smoke-report.json'), {}).checks) || {};
+    if (smokeChecks.edition !== edition || smokeChecks.workerEdition !== edition) {
+      fail('打包版執行起來是 ' + smokeChecks.edition + '／Worker ' + smokeChecks.workerEdition + ' 版，要上傳的是 ' + edition);
     }
   }
 
   /* ---- 3. 內容檢查 ---- */
   step('內容檢查');
   if (!fs.existsSync(path.join(UNPACKED, EXE_NAME))) fail('找不到 ' + path.relative(REPO, path.join(UNPACKED, EXE_NAME)) + '（先打包）');
-  var shippedSteam = readJson(path.join(UNPACKED, 'resources', 'app', 'electron', 'steam-config.json'), {});
-  if (!dryAppId && Number(shippedSteam.appId) !== cfg.appId) {
-    fail('打包版裡的 AppID 是 ' + shippedSteam.appId + '，設定是 ' + cfg.appId + '——改了 electron/steam-config.json 之後要提交並重新打包');
-  }
+  var shippedApp = path.join(UNPACKED, 'resources', 'app', 'electron');
+  var shippedErrors = Vdf.checkShippedEdition(cfg, {
+    editionFile: readJson(path.join(shippedApp, 'edition.json'), null),
+    steamConfig: readJson(path.join(shippedApp, 'steam-config.json'), {}),
+    skipAppIdCheck: !!dryAppId
+  });
+  if (shippedErrors.length) fail(shippedErrors.join('\n  '));
   var stray = findFiles(UNPACKED, 'steam_appid.txt');
   if (stray.length) fail('打包內容裡有 steam_appid.txt（不該存在）：\n  ' + stray.join('\n  '));
-  var report = readJson(path.join(REPO, 'dist', 'ship-report.json'), {});
+  var report = readJson(P.shipReport, {});
   console.log('  內容：' + path.relative(REPO, UNPACKED) + (report.outputMB ? '（' + report.outputMB + ' MB，' + report.builtAt + ' 打包）' : ''));
 
   /* ---- 4. VDF ---- */
@@ -128,7 +156,7 @@ function main() {
   var commit = git(['rev-parse', '--short', 'HEAD']);
   var dirty = git(['status', '--porcelain']) !== '';
   var desc = Vdf.buildDescription({
-    version: readJson(path.join(REPO, 'package.json'), {}).version,
+    version: readJson(path.join(REPO, 'package.json'), {}).version, edition: edition,
     commit: commit, dirty: dirty, date: new Date().toISOString().slice(0, 10), note: arg('note') || ''
   });
   if (dirty && mode === 'upload') console.warn('  ⚠️ 工作目錄有未提交的修改：建置描述會標 +dirty，之後追查不到確切的程式版本');
