@@ -16555,3 +16555,9 @@ Worker 存活且頁面正常完成載入。
 - Owner：Claude，Done。使用者同意把 tower_boss_4／14／24 的名稱與技能改成符合持長槍的半人馬。
 - NPC.xlsx 第485／495／505列（`tools/excel-update-sheets.ps1`，兩次寫入皆重開驗證）：名稱 鋼鐵魔像 → 角獸騎士／角獸騎士Ⅱ／角獸騎士Ⅲ、外觀 🤖 → 🐎、專屬技能 `e_charge;e_shockwave` → `e_charge;e_lightningspear`；備註由產生器重新產生後寫回（塔 BOSS 50 列備註與產生器逐列一致）。屬性、攻速、距離、倍率、隨機技能數量不變；第34、44列（無新模型）維持鋼鐵魔像。快取 `20261118-boss4-centaur-name`。
 - 文件：`docs/ELITE_AFFIXES.md` tower_boss_4 列、`docs/BOSS_PLAYER_SKILLS.md` 第24／54／74層名稱、`docs/assets/BOSS4_SOURCE.md`。測試：`boss4-character-asset` 加名稱／圖示／技能／屬性斷言；BOSS／塔／NPC 37 項中 3 項失敗為既有（NPC-SKILL-4／6、TBMA-5，HEAD 同樣失敗）；字串寫死 0。
+
+## SETTINGS-GAME-HELP-20261119 — 更新遊戲說明
+
+- Owner：Codex，Done。將設置頁籤改為「遊戲說明」，移除裝備欄位、裝備方案、比較裝備／自動穿裝的說明，新增太古詞條的「✡」標記、現有 35% 倍率及洗煉保留強度。說明頁概述、標題與內容字級各加 1px。
+- 修改 `index.html`、`css/ashen-forge.css`、`js/game-menu.js`、String 工作簿／CSV／遊戲資料、編輯器快取及功能文件。唯讀核對 `js/item.js`、`js/data.js`、`js/formula.js`、洗煉測試與配置工具。預檢發現固定 Codex 工作區已有遺物預覽及其他提交，所以從 `develop` 開獨立工作區。逐列確認既有說明的來源文字一致。
+- 原生 Excel 兩次重開及表格格式比對通過，全部匯出資料一致。Edge 實際開設置並切換遊戲說明，兩種視窗尺寸的文字、字級與捲動檢查通過。46 項相關回歸通過 44 項，太古精華掉落及將旁白檔名誤判為顯示文字的兩項失敗均在未修改的 `develop` 重現。`npm.cmd run build` 通過 738 檔。可獨立交使用者驗收及整合。

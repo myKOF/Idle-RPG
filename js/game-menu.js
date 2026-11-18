@@ -70,6 +70,10 @@ var GameMenu = (function () {
     });
     if (name === 'save' && typeof refreshSettingsPanel === 'function') refreshSettingsPanel();   // 存檔列表只在看得到時才讀
     if (name === 'display' && typeof DisplaySettingsUI !== 'undefined') DisplaySettingsUI.refresh();
+    if (name === 'help') {
+      var ancientAffix = el('settings-help-ancient-affix');
+      if (ancientAffix) ancientAffix.innerHTML = STR(2568, pctStr((ANCIENT_AFFIX_VALUE_MULT - 1) * 100));
+    }
   }
   function checkbox(id) { return el(id); }
   function syncSettingsControls() {
