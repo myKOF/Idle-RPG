@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(require.resolve('../js/start-menu.js'), 'utf8');
+const stringData = fs.readFileSync(require.resolve('../js/strings_data.js'), 'utf8');
+const strings = fs.readFileSync(require.resolve('../js/strings.js'), 'utf8');
 const flush = () => new Promise(setImmediate);
 
 function setup({ save = null, info = {}, records = [], files = [], background, deferBoot = false, host, introPlayback } = {}) {
@@ -46,7 +48,10 @@ function setup({ save = null, info = {}, records = [], files = [], background, d
       openSettings(tab) { state.settings = tab || 'game'; },
       openAchievements(got) { state.got = got; }
     },
-    showConfirmDialog(message, accept) { confirm = accept; },
+    showConfirmDialog(message, accept, options) {
+      state.confirmDialog = { message, ...options };
+      confirm = accept;
+    },
     showLoadingScreen() { state.loadingHidden = false; },
     hideLoadingScreen() { state.loadingHidden = true; },
     location: { reload() { state.reloads++; } },
@@ -59,6 +64,8 @@ function setup({ save = null, info = {}, records = [], files = [], background, d
   };
   if (host) ctx.ApexHost = host;
   vm.createContext(ctx);
+  vm.runInContext(stringData, ctx);
+  vm.runInContext(strings, ctx);
   vm.runInContext(source, ctx);
   ctx.StartMenu.init((snapshot, runId) => { launches.push({ snapshot, runId }); return true; });
   return {
@@ -161,6 +168,10 @@ test('繼續遊戲在點擊時再查最新自動存檔並經來源關卡', () =>
 test('已有自動存檔時，新遊戲確認後才啟動，並使用新局號', () => {
   const e = setup({ save: { runId: 5 } });
   e.click('new');
+  assert.match(e.state.confirmDialog.message, /取代目前的自動存檔/);
+  assert.equal(e.state.confirmDialog.title, '新遊戲');
+  assert.equal(e.state.confirmDialog.okText, '新遊戲');
+  assert.equal(e.state.confirmDialog.danger, true);
   assert.deepEqual(e.launches, []);
   e.confirm();
   assert.deepEqual(e.launches, [{ snapshot: null, runId: 6 }]);

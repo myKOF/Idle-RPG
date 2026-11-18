@@ -119,11 +119,14 @@ test('進化描線將縮放及捲動還原成面板座標，未變的路徑保�
   };
   c.sgbSyncPath(detail);
   assert.match(svg.markup, /d="M 19\.5 17 V 64\.5 V 64\.5 H 289 V 79"/);
-  assert.equal(attrs.width, 598);
+  assert.equal(attrs.width, undefined, '避免寫死寬度，導致捲軸出現時 SVG 撐出水平捲動');
+  assert.match(theme, /\.sgb-path-ink\s*\{[^}]*\bwidth:\s*100%;/);
   assert.equal(attrs.height, 83);
   assert.equal(properties['--sgb-flow-duration'], '3200ms');
+  detail.clientWidth = 583;
   c.sgbSyncPath(detail);
-  assert.equal(writes, 1, '尺寸未變不重建SVG子節點、不重新播放動畫');
+  assert.equal(attrs.width, undefined);
+  assert.equal(writes, 1, '捲軸佔去寬度但路徑未變時，不重建 SVG 動畫節點');
 });
 
 function detail(c, gid, snap, tier, gold, focus) {
@@ -570,39 +573,49 @@ test('戰鬥快捷列：主動型被動帶 active-passive class，不套冷卻�
   assert.match(css, /prefers-reduced-motion[\s\S]*?\.battle-skill-slot\.active-passive::before\s*\{[\s\S]*?animation:\s*none/);
 });
 
-test('技能上方的mp消耗顯示當前最高階技能的mp（含終極進化、一般階級與手動瀏覽不同階級時）', () => {
+test('技能標頭顯示當前最高生效階的耗魔與冷卻，套用轉生倍率且不受瀏覽階影響', () => {
   const c = loadContext();
+  const waterball = c.SKILLS2.waterball;
+  waterball.cd = 11;
+  waterball.tiers[0].cost = 17;
+  waterball.tiers[6].cost = 930;
+  waterball.ult[0].cost = 3200;
+  c.REINCARNATION_MP_MULTIPLIERS = [1, 2];
+
+  function assertMeta(snapshot, expected) {
+    const markup = c.sgbDetailHTML('waterball', snapshot, { player: { gold: 1e15 } });
+    const meta = markup.match(/<span class="sgb-meta" data-tip="([^"]*)">([^<]*)<\/span>/);
+    assert.ok(meta, '標頭有耗魔與冷卻欄位');
+    assert.equal(meta[1], expected);
+    assert.equal(meta[2], expected);
+  }
   const progressMax = { level: 900, reinc: 1, towerHighest: 150 };
-  // 1. 僅學第 1 階：顯示第 1 階消耗 (25 MP)
-  const snap1 = snapshot({ waterball: [1, 0, 0, 0, 0, 0, 0] }, { skills2: { levels: { waterball: [1, 0, 0, 0, 0, 0, 0] }, progress: progressMax } });
-  let h1 = c.sgbDetailHTML('waterball', snap1, { player: { gold: 1e15 } });
-  assert.match(h1, /<span class="sgb-meta"[^>]*>🔵 25 MP　⏱️ 8s<\/span>/);
+  const snap = snapshot({ waterball: [1, 0, 0, 0, 0, 0, 0] });
+  snap.skills2.progress = { ...progressMax, reinc: 0 };
+  assertMeta(snap, '🔵 17 MP　⏱️ 11s');
+  snap.skills2.progress = progressMax;
+  assertMeta(snap, '🔵 34 MP　⏱️ 11s');
 
-  // 2. 七階全滿但未點超神：顯示第 7 階消耗 (3000 MP)
-  const snap7 = snapshot({ waterball: Array(7).fill(10) }, { skills2: { levels: { waterball: Array(7).fill(10) }, progress: progressMax } });
-  let h7 = c.sgbDetailHTML('waterball', snap7, { player: { gold: 1e15 } });
-  assert.match(h7, /<span class="sgb-meta"[^>]*>🔵 3000 MP　⏱️ 8s<\/span>/);
+  snap.skills2.levels.waterball = Array(7).fill(10);
+  assertMeta(snap, '🔵 1860 MP　⏱️ 11s');
+  snap.skills2.ult = { waterball: { pick: 0, lv: 10 } };
+  assertMeta(snap, '🔵 6400 MP　⏱️ 11s');
 
-  // 3. 終極進化生效（水牢天瀑）：頂部標頭應顯示終極進化的消耗 (10000 MP)
-  const snapUlt = snapshot({ waterball: Array(7).fill(10) }, {
-    skills2: {
-      levels: { waterball: Array(7).fill(10) },
-      progress: progressMax,
-      ult: { waterball: { pick: 0, lv: 10 } }
-    }
-  });
-  let hUlt = c.sgbDetailHTML('waterball', snapUlt, { player: { gold: 1e15 } });
-  assert.match(hUlt, /<span class="sgb-meta"[^>]*>🔵 10000 MP　⏱️ 8s<\/span>/);
-
-  // 4. 手動點擊第 1 階瀏覽時，頂部標頭仍應維持當前最高階技能的消耗 (10000 MP)，不被 tierIdx 覆蓋
   c.UI.sgBrowse.tier = 0;
   c.UI.sgBrowse.focus = 'tier';
-  let hBrowse = c.sgbDetailHTML('waterball', snapUlt, { player: { gold: 1e15 } });
-  assert.match(hBrowse, /<span class="sgb-meta"[^>]*>🔵 10000 MP　⏱️ 8s<\/span>/);
+  assertMeta(snap, '🔵 6400 MP　⏱️ 11s');
+
+  snap.skills2.progress = { ...progressMax, towerHighest: 0 };
+  assertMeta(snap, '🔵 1860 MP　⏱️ 11s');
 });
 
-test('資產版號存在', () => {
-  assert.match(html, /css\/style\.css\?v=1\.0\.\d+/);
-  assert.match(html, /js\/ui\.js\?v=1\.0\.\d+/);
+test('首頁載入的主樣式與介面腳本都有快取版號', () => {
+  const styleLink = html.match(/<link\b[^>]*\bhref="(css\/style\.css(?:\?[^"]*)?)"[^>]*>/);
+  const uiScript = html.match(/<script\b[^>]*\bsrc="(js\/ui\.js(?:\?[^"]*)?)"[^>]*>/);
+  for (const [entry, asset] of [[styleLink, 'css/style.css'], [uiScript, 'js/ui.js']]) {
+    assert.ok(entry, '首頁載入 ' + asset);
+    const url = new URL(entry[1], 'https://game.invalid/');
+    assert.match(url.searchParams.get('v') || '', /^[0-9a-z][0-9a-z._-]*$/i, asset + ' 版號不可缺少');
+  }
 });
 
