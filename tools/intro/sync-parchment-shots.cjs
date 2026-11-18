@@ -68,6 +68,7 @@ const sources = [
   'finale-backdrop.js', 'build-score.cjs', 'render-finale.cjs', 'align-mp4-presentation.cjs',
   'assets/vista-clean.png', 'assets/finale-effects.wav', 'assets/finale-audio.wav'
 ].map(file => 'extended-shot-five/' + file), 'render-preview.cjs', 'web/shot-02-archangel-fall-18s.mp4', 'web/shot-02-effects-18s.mp4',
+'web/shot-03-valley-dust.mp4',
 'web/shot-03-extended-32s.mp4', 'web/shot-03-extended-33.5s.mp4', 'web/shots-01-04-100.7s.json',
 'web/shots-01-04-100.7s.mp4.part01', 'web/shots-01-04-100.7s.mp4.part02');
 const exportsByName = {

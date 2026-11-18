@@ -112,7 +112,7 @@
     "extended-shot-three-35.5s/shot-timing.js": "a5a0458ebe238dc9cb2f76620663f68953ec2b9562fdbd1087afc32d8d7db2b7",
     "extended-shot-three-35.5s/shot.js": "652316753e895c35bd636d855ba2930c98873e1b88c5c31d13a3a903d55773a7",
     "extended-shot-three-35.5s/shot-three.js": "2ae8f764476b535751f06262d1a694d188d41d5564dd69edd2da7c5b904c3de5",
-    "extended-shot-three-35.5s/shot-ground.js": "a063a2c6ecb767c56a815d198c0e9ff3c467bc6adb7652eeb2ad06284060d3ea",
+    "extended-shot-three-35.5s/shot-ground.js": "fbff003647bb964fff465bf188b0ce8a8b68af7849587313664ea39a7662c1fa",
     "extended-shot-three-35.5s/shot-feather.js": "91ff7219ece98afa6bcdc0080bbca998322d4e4cbbcc46d6929c05a5ead5935c",
     "extended-shot-three-35.5s/build-audio.cjs": "e0ce51798119189cb58977004a62f57e6b63ec4cb45f24bf77607bf3086cf5c8",
     "extended-shot-three-35.5s/render-shot-three.cjs": "ddf39f824b48a5652901fb4fc703acee3df2f147f82d670af3badd60cb17d3d6",
@@ -133,9 +133,9 @@
     "extended-shot-four/build-audio.cjs": "29098ec2324482aeeabbb4fb243505aca824c03823609293f053a3f88a387156",
     "extended-shot-four/render-shot-four.cjs": "618acd694035b5253128dd79147869ed09c02cbff6fe80d42b3ce78b151480b7",
     "extended-shot-four/restore-master.cjs": "55de235767ed338132197bcebf4c7d2c6e952d575f35a7c1321322cdd7733841",
-    "extended-shot-four/export-replay.cjs": "749ff62d063008196fbd66e9bd0c0506d8768a26c213dc5b5f5dcfbda11d602b",
+    "extended-shot-four/export-replay.cjs": "e46018e3a1057b0960ffea3c3f910f2f6c0d25aa76fa743a876ebe60a3d05f72",
     "extended-shot-four/export-clean-replay.cjs": "c0a1340beb288b65e95839cbfc85cb1a1bcf6105ee1bd5be03d8c73db6c94cb5",
-    "extended-shot-four/replace-replay-shot-two.cjs": "fe4e7c26739c84859975f74a1d907fbf9019d9c5f2a405d62934a50230e2fe29",
+    "extended-shot-four/replace-replay-shot-two.cjs": "189dd6b773bed9a981182fa89553f2e11460e36c506dedc9b902325ba397f261",
     "extended-shot-four/assets/brace.png": "56d93875d3fa12f75859babb807347d943e4154084aff267f018ce9240324b6e",
     "extended-shot-four/assets/cloth-ribbon.png": "2693ae3fee1cab38cd0bd9ebeea7fda6175d42619b5227e53522789df1c3be97",
     "extended-shot-four/assets/flare.png": "6df3fee00e1aa0be062899517e538217d3cd1c3b1797a7fe75d2da9cdb813a49",
@@ -163,6 +163,7 @@
     "render-preview.cjs": "71ce269d137b8bea7775a7c5406ef5114f1cf6df21dd8d6c6db292181ee4950c",
     "web/shot-02-archangel-fall-18s.mp4": "0d49096b3383f7c405d32b1069dc782163d71f31f7844df3b09918511e288d84",
     "web/shot-02-effects-18s.mp4": "46677aa0d43e1a37eee87944e7f64ca6bbe03cc6cc73dcb153d92842735a0632",
+    "web/shot-03-valley-dust.mp4": "985e15482b3020a2eff0acf3ec99a4a5ee057f0538f67a950a39c1ef9cf657e3",
     "web/shot-03-extended-32s.mp4": "cb3631b2a5b074913316f0cf88b866a361d51afe356f984207a3b5051a028bb1",
     "web/shot-03-extended-33.5s.mp4": "cdc42057988e800b5bdf62d8906df6c4d5b77574880e016f8e1305df86bd5f8c",
     "web/shots-01-04-100.7s.json": "0404be6a6496a0244e5a28806ff649d63a108fc276e13c2809474452af673644",
@@ -216,7 +217,7 @@
     },
     "shots-01-05-replay.mp4": {
       "source": "web/shots-01-05-replay.mp4",
-      "sha256": "92a9a49ae0cb739866afd0caff76fb60f0eb2a10a71dd13dbdbeebdcb061004b"
+      "sha256": "0ed69602e821513b052e259b01291c5a41dfa454a28c8ece9e54ed992b2665d2"
     },
     "shots-01-05-replay-sfx.mp3": {
       "source": "web/shots-01-05-replay-sfx.mp3",
@@ -224,7 +225,7 @@
     },
     "SOURCE.md": {
       "source": "SOURCE.md",
-      "sha256": "a4b4a82e9db965cd327a020c474cd9ef14d7c8d79dbff8f662b91573843828e6"
+      "sha256": "c9be51bd54fdeb75015d1dbb35f0ca4c23662c3e1ced185d896adc63782cc24c"
     }
   }
 }
