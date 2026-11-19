@@ -12893,13 +12893,19 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 }
 .merchant-stock-frame {
   box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
   width:100%;
+  aspect-ratio:5 / 2;
   padding:clamp(36px, 4.8%, 56px) max(46px, 7.5%);
   background:url('../images/ui/mystery-merchant-tray.webp') center / 100% 100% no-repeat;
 }
 .merchant-stock-scroll {
   container-type:inline-size;
+  flex:1;
+  min-height:0;
   overflow-x:hidden;
+  overflow-y:auto;
   scrollbar-color:#784a2a #0a0705;
   scrollbar-width:thin;
 }
