@@ -29,7 +29,7 @@ function renderer() {
     ctx.renderGemShop({ shop: { items, level }, tickets }, { gold }) };
 }
 
-test('商人卡使用實際寶石品質與符文階級，移除屬性數值並保留價格及40格', () => {
+test('商人卡使用實際寶石品質與符文階級，移除屬性數值並保留價格與三列占位', () => {
   const { ctx, nodes, render } = renderer();
   render([{kind:'gem', type:'garnet', lv:2, price:123, sold:false}, {kind:'rune', runeId:'r33', price:456, sold:false}]);
   const html = nodes['gem-shop-grid'].innerHTML;
@@ -38,7 +38,18 @@ test('商人卡使用實際寶石品質與符文階級，移除屬性數值並�
   assert.match(html, /data-shop-buy="0"/);
   assert.match(html, /merchant-gold-icon/);
   assert.doesNotMatch(html, /undefined|NaN| \+/);
-  assert.equal((html.match(/class="shop-card/g) || []).length, 40);
+  assert.equal((html.match(/class="shop-card/g) || []).length, 12);
+  assert.ok(!('data-scrollable-stock' in nodes['gem-shop-grid'].attrs));
+});
+
+test('商品十二件內隱藏捲軸，超過十二件才顯示並只補齊最後一列', () => {
+  const { nodes, render }=renderer();
+  const items=Array.from({length:13},()=>({kind:'rune',runeId:'r01',price:100,sold:false}));
+  render(items.slice(0,12));assert.ok(!('data-scrollable-stock' in nodes['gem-shop-grid'].attrs));
+  assert.equal((nodes['gem-shop-grid'].innerHTML.match(/class="shop-card/g)||[]).length,12);
+  render(items);assert.ok('data-scrollable-stock' in nodes['gem-shop-grid'].attrs);
+  assert.equal((nodes['gem-shop-grid'].innerHTML.match(/class="shop-card/g)||[]).length,16);
+  render(items.slice(0,6));assert.ok(!('data-scrollable-stock' in nodes['gem-shop-grid'].attrs));
 });
 
 test('一鍵購買僅顯示文字，tips總額隨售出變動並保留缺金與無券狀態', () => {
@@ -75,4 +86,18 @@ test('升級鈕純文字，費用tips以金幣圖示及完整數字顯示，滿�
   assert.equal(button.attrs['data-tt-desc'], ctx.STR(2504));
   assert.doesNotMatch(button.attrs['data-tt-desc'], /<img/);
   assert.ok('data-merchant-unavailable' in button.attrs);
+});
+
+test('商人倒計時以投影截止時間顯示，包含整分鐘與到期邊界', () => {
+  const { ctx } = renderer();
+  const node = { textContent:'' };
+  ctx.$id=id=>id==='merchant-countdown'?node:null;
+  let now=ctx.Date.now();ctx.Date.now=()=>now;
+  const source=fs.readFileSync(path.join(root,'js/ui.js'),'utf8');
+  vm.runInContext(source.slice(source.indexOf('function renderMerchantCountdown('),source.indexOf('function renderTower()')),ctx);
+  const merchant={active:true,expiresAt:now+600000};
+  ctx.renderMerchantCountdown(merchant);assert.equal(node.textContent,ctx.STR(2571,'10:00'));
+  now+=1000;ctx.renderMerchantCountdown(merchant);assert.equal(node.textContent,ctx.STR(2571,'09:59'));
+  merchant.expiresAt=now+1;ctx.renderMerchantCountdown(merchant);assert.equal(node.textContent,ctx.STR(2571,'00:01'));
+  now+=2;ctx.renderMerchantCountdown(merchant);assert.equal(node.textContent,ctx.STR(2571,'00:00'));
 });

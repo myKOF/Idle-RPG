@@ -788,7 +788,7 @@ test('神祕商人面板與遊戲一致：開著狀態、券數、實際售價�
   e.boot(null); e.step(20);
   const c = e.ctx, vm = require('node:vm');
   assert.deepEqual(JSON.parse(JSON.stringify(e.panel('merchantPlan'))), { active: false, tickets: 0, items: [] });
-  vm.runInContext('MYSTERY_MERCHANT_OPEN = true; rollGemShop(1)', c);
+  vm.runInContext('addMerchantInvitations(1); openMysteryMerchant()', c);
   const P = e.panel('merchantPlan');
   assert.equal(P.active, true);
   assert.ok(P.items.length > 0, '貨架應該有東西');

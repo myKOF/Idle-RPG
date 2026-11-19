@@ -2211,6 +2211,7 @@ var MERCHANT_INVITATION_DROP_RANGES = [
   [101, 150, 10]
 ];
 var MYSTERY_MERCHANT_SETTINGS = {
+  durationSeconds: 600,
   gemWeight: 50,
   equipmentWeight: 30,
   runeWeight: 20,

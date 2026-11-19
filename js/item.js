@@ -231,6 +231,7 @@ function removeFusedGem(id) {
 /* ================ 神祕商人 ================ */
 // 會話只存在模擬執行期間，重新載入不會免費恢復已離去的商人。
 var MYSTERY_MERCHANT_OPEN = false;
+var MYSTERY_MERCHANT_EXPIRES_AT = 0;
 var MYSTERY_INVITATION_ID = 'mystery_invitation';
 function merchantInvitationCount(player) {
   var n = Number(player && player.consumables && player.consumables[MYSTERY_INVITATION_ID]);
@@ -341,10 +342,20 @@ function merchantCategoryPairs(level) {
   });
 }
 function merchantPanelView() {
-  return { active: MYSTERY_MERCHANT_OPEN, tickets: merchantInvitationCount(G.player), shop: gemShop() };
+  var active = mysteryMerchantActive();
+  return { active: active, expiresAt: active ? MYSTERY_MERCHANT_EXPIRES_AT : 0, tickets: merchantInvitationCount(G.player), shop: gemShop() };
+}
+function expireMysteryMerchant() {
+  if (!MYSTERY_MERCHANT_OPEN || Date.now() < MYSTERY_MERCHANT_EXPIRES_AT) return false;
+  closeMysteryMerchant();
+  return true;
+}
+function mysteryMerchantActive() {
+  expireMysteryMerchant();
+  return MYSTERY_MERCHANT_OPEN;
 }
 function openMysteryMerchant() {
-  if (MYSTERY_MERCHANT_OPEN) return null;
+  if (mysteryMerchantActive()) return null;
   if (G.tower && G.tower.active) return STR(2441);
   var error = restockMerchantWithInvitation();
   if (error) return error;
@@ -353,6 +364,7 @@ function openMysteryMerchant() {
 }
 function closeMysteryMerchant() {
   MYSTERY_MERCHANT_OPEN = false;
+  MYSTERY_MERCHANT_EXPIRES_AT = 0;
   UI.dirty.tower = true;
   return null;
 }
@@ -377,15 +389,16 @@ function restockMerchantWithInvitation() {
   if (!merchantInvitationCount(G.player)) return STR(2437);
   if (!rollGemShop()) return STR(2449);
   G.player.consumables[MYSTERY_INVITATION_ID]--;
+  MYSTERY_MERCHANT_EXPIRES_AT = Date.now() + MYSTERY_MERCHANT_SETTINGS.durationSeconds * 1000;
   UI.dirty.header = true;
   return null;
 }
 function refreshGemShop() {
-  if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
+  if (!mysteryMerchantActive()) return STR(2441);
   return restockMerchantWithInvitation();
 }
 function upgradeGemShop() {
-  if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
+  if (!mysteryMerchantActive()) return STR(2441);
   var s = gemShop();
   if (s.level >= GEM_SHOP_MAX_LEVEL) return STR(1540);
   var cost = gemShopUpgradeCost(s.level);
@@ -403,7 +416,7 @@ function merchantItemPrice(it) {
   return price;
 }
 function buyShopGem(idx) {
-  if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
+  if (!mysteryMerchantActive()) return STR(2441);
   if (!Number.isInteger(idx) || idx < 0) return STR(1541);
   var item = gemShop().items[idx];
   if (!item || item.sold) return STR(1541);
@@ -420,7 +433,7 @@ function buyShopGem(idx) {
   return null;
 }
 function buyAllShopGems() {
-  if (!MYSTERY_MERCHANT_OPEN) return STR(2441);
+  if (!mysteryMerchantActive()) return STR(2441);
   var bought = 0, spent = 0, items = gemShop().items;
   for (var i = 0; i < items.length; i++) {
     var price = merchantItemPrice(items[i]);

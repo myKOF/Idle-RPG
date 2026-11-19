@@ -1,4 +1,6 @@
-# Worker 協議 v82
+# Worker 協議 v83
+
+v83（2026-11-19 神祕商人限時會話）：`tower.merchant` 新增 `expiresAt`（Unix實際時鐘毫秒，關閉為0）。每次成功消耗邀請券的召喚／刷新後，依Store「存在時間(秒)」重置期限，預設600秒；重複open冪等、購買／金幣升級及失敗操作不延長。切換功能不close；手動close或到期結束，Worker loop在選單暫停前檢查期限，面板及全部商店指令亦檢查到期。到期標記tower dirty並發tick，客戶端返回塔列表；期限本身不存檔，boot／load重設。指令數與存檔格式維持。
 
 v82（2026-11-19 離線波次）：`notice.key === 'offlineSummary'` 的 `data` 新增 `waves`（已結算戰鬥場次），`kills` 表示實際怪物隻數。單一怪物種類欄位 `elite` 由新版摘要移除，介面仍可顯示缺少 `waves` 的舊摘要。
 
@@ -75,7 +77,7 @@ v53（2026-10-17 寶石共鳴）：新增指令`gem.resonanceSocket {region,hole
 v52（2026-10-14 Esc全遊戲暫停）：新增主端訊息`MENU_PAUSE: menuPause {paused:bool}`，BOOT可攜帶`menuPaused`以維持Worker重啟時的菜單狀態。暫停整體loop與決定論loop，不改原combat paused；暫停時間不進catchup，既有欠帳保留，神鑄startedAt在恢復及暫停存檔時排除菜單時間。背景遊戲指令排隊，恢復後依序執行；save／settings／stats、面板與PING仍回應。Worker的分批timeout透過GameClock暫停，離線結算chunk也不繼續；主端同時暫停Pixi／DOM特效／遊戲計時器，WebGL以暫存單幀保持原畫面，恢復時釋放；設定返回菜單保持暫停，重啟先保存暫停快照再刷新。指令仍94條，存檔格式不變。
 
 v51（2026-10-14 Esc菜單）：新增`save.auto`（無參數，指令93→94），Worker從權威G產生auto_current快照，PERSIST.kind新增`autoNow`，ACK.result回傳persist token。主執行緒WorkerBridge.saveAutoNow()僅在該token的IndexedDB交易成功後resolve，寫入失敗／逾時reject，支援PERSIST完成早於ACK。不建立手動存檔、不要求資料夾，沿原自動存檔格式；此明確玩家操作不受測試模式的未要求自動寫入抑制。Esc離開必須先await成功，失敗不離開；定期資料夾同步沿原流程。
-> 協議版本：`WORKER_PROTOCOL_VERSION = 82`　最後更新：2026-11-19
+> 協議版本：`WORKER_PROTOCOL_VERSION = 83`　最後更新：2026-11-19
 
 v50（2026-10-08 BOSS 戰配置鎖）：新增共用判定 `bossFightBlocksCommand(name)`。`G.tower.active` 期間（含登場、暫停、結算未退出）既有換裝／換套、裝備強化／洗煉／附魔、寶石鑲卸與融合寶石、符文刻印／抹除、技能裝載與排序、技能降級／重置／超神進化切換、威能與潛力變更指令，均以既有錯誤封包 `{ok:false,error:'BOSS 戰中不可變更戰鬥配置'}` 拒絕，在解析物件與扣資源前守門。UI 共用同一判定並置灰入口；自動穿裝在戰中暫停。退出後恢復；純瀏覽、庫存素材合成、一般技能升級保留。指令仍 93 條，參數、快照、存檔格式不變。
 

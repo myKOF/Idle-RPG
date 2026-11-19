@@ -16921,3 +16921,31 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 38/38通過；`npm.cmd run build`752檔、字串稽核仍寫死0條、Git差異檢查通過。新增升級tips／滿級清費回歸，更新全買tips驗證圖示與完整金額／售出更新。
 - 實機：全靜音隔離Edge／新遊戲／正式Worker，1920及1366寬度的升級、全買、刷新底座標完全相等，支柄伸至原商品框上緣，四欄與5:2比例保持。三鈕無img／費用；升級tips實際為金幣圖＋4,100,000，全買一圖＋完整總額，刷新精確顯示指定文字。實際購買後總額降低，升級至Lv.2後費用45,354,833，刷新扣券通過，頁面例外0。預覽／report.json在本聊天merchant-sign目錄；瀏覽器／伺服器關閉，不使用Windows螢幕擷取。
 - 交接：無本項未完成／已知新增風險，限Edge兩種寬度及相關回歸，未跑全庫／真機。可供驗收合併，不合併推送；Commit為本段所在`[Codex] feat: 調整神祕商人招牌與費用提示`。下一步接續使用者新增的會話保留／倒計時需求，獨立實作驗證。編輯器因共用String快取更新，先保留未存內容再重載。
+
+## MYSTERY-MERCHANT-SESSION-20261119 — 保留跨功能商人會話與邀請券重置倒計時
+
+- Owner：Codex，Done，單人實作。使用者要求切換其他功能再回封魔塔仍保留商人、商品與已購狀態，手動退出或期限結束才回塔頁；返回鈕左方顯示剩餘時間。Store新增存在時間，預設600秒；每次成功耗券（召喚／刷新）重置完整設定時間，購買／金幣升級／失敗操作不延長。前置既有商人／招牌／tips／外框完成，預檢無實質衝突。
+- 實作：Worker保存實際時鐘截止時間，loop在選單暫停檢查前維護到期，所有交易先驗證會話。UI切頁不再關閉，也移除開啟回應晚於切頁時的錯誤關閉；倒計時在暫停中仍更新，到期切回塔列表，但不搶走其他功能。協議82→83新增`expiresAt`，關閉為0，Worker／主頁快取同步。重載與執行中讀檔仍結束暫態會話，不新增存檔欄位。
+- 表格：原生Excel獨占操作，Store第182列編號1139「神祕商人／存在時間(秒)」參數a＝600；String編號2571「剩餘時間 {0}」。各表正常重開兩次，原資料／公式／既有樣式與檢視保留，Store篩選延伸至182列；Excel原生存檔將Store欄寬正規化不足0.05字元。CSV／strings_data同步，參數錨點629→630；正整數驗證含無效0案例。
+- 修改：`js/item.js`、`js/data.js`、`js/ui.js`、`js/bridge.js`、`js/worker/{protocol.js,sim.worker.js}`、`index.html`、`css/style.css`、`config/Excel/{Store.xlsx,String.xlsx}`及對應CSV、`js/strings_data.js`、`tools/apply_params.cjs`、`tools/vfx/editor/index.html`、`tests/{mystery-merchant,merchant-cards-ui,gem-shop,gem-enabled,sim-skill-plan,worker-protocol}.test.cjs`、`LV_upgrade_system.md`、商人／協議文件與本段。同批木牌及捲軸授權另列下方。
+- 檢查未修改：`js/game-clock.js`、`js/strings.js`、原商人三張美術與既有匯出清單、`config/Excel/game_parameters.xlsx`；未改價格／商品機率／券掉率／其他玩法。
+- 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 接入後39/39通過；另已通過gem-shop／gem-enabled／worker-protocol、sim-skill-plan 48項與game-clock／apply-params相關回歸。`node tools/build_check.cjs`752檔通過；`node tools/apply_params.cjs --dry-run`630項一致、0變更／0錨點問題；`--check-anchors`574個擾動數值、630個唯一錨點通過；字串稽核0、Git差異檢查通過。
+- 全庫：`node --test --test-concurrency=8 --test-reporter=tap "tests/*.test.cjs"`6093項，5391通過、699失敗、3略過。將全部失敗名稱在唯讀起始提交`65abc732`檔案覆蓋層重跑，179支檔案的699項均同樣失敗，未重現0項；沒有用修改斷言接受失敗。完整TAP／逐檔基線報告保存在本次visualizations的`merchant-session`目錄，既有全庫失敗尚待其他任務修復。
+- 實機：隔離且靜音的正式瀏覽器／Worker驗證跨頁已購與庫存／券／期限不變、倒數持續、刷新重置10:00、升級不重置、手動返回、快速開啟後切頁競態、選單暫停及離頁期限到達。4秒期限僅測試伺服器fixture，正式Store保持600。1920／1366畫面及頁面例外0，截圖與JSON存於visualizations；測試瀏覽器關閉，驗證暫存移出工作區並保留於同次visualizations的`verification-sources`供追溯。
+- 交接：本項無未完成工作，可供驗收與合併；已知限制為全庫699項既有失敗、未驗行動真機，重載不保留會話為原規則。Commit為本段所在`[Codex] feat: 完成神祕商人限時會話與木牌介面`，素材庫Commit見下段。未合併／推送develop或main；下一步重載遊戲驗收。
+
+## MYSTERY-MERCHANT-SIGN-ART-20261119 — 核准自然斷面木牌接入
+
+- Owner：Codex，Done。先依要求產出透明底候選，使用者追加「像路邊斷掉的木牌」後繪製第二版，去除刻意裝飾框與角釘；使用者明確核准「OK，就這個，接上吧」，因此將原預覽範圍擴充為正式接入。
+- 完成：核准1501×1047原圖等比匯出768×536 lossless WebP，保留alpha、自然破邊與兩根樸素木柄，沒有重畫核准造型。替換CSS矩形邊框／假木紋／偽元素木柄，名稱／等級仍走String／DOM，升級鈕保持可操作並對齊全買／刷新底部；缺金禁用時仍置中。商品區外框不動。
+- 修改：`images/ui/mystery-merchant-sign.webp`、`css/style.css`、`index.html`快取、`tools/assets/export-mystery-merchant.cjs`、`docs/assets/MYSTERY_MERCHANT_PORTRAIT.md`、商人說明／LV／本段。素材包`codex-authored/mystery-merchant-sign-20261119`保存原始PNG、成品、兩階段提示詞、核准／來源紀錄、匯出腳本與SHA-256清單；第一版是淘汰候選，不入正式素材。
+- 來源：RPG Mote Studio經web工具嘗試無法存取，改用內建imagegen原創製作。僅參考既有店景色調及用途，沒有使用外部圖像／第三方素材。原立繪／店景／商品框檢查過且未修改。
+- 驗證：`node tools/assets/export-mystery-merchant.cjs --check`通過全部來源及正式成品雜湊；實際瀏覽器1920／1366寬度驗證新圖載入768×536、三鈕底齊、正常／禁用置中、動態文字可讀、5:2商品框不變，頁面例外0；相關39項與Build通過。素材原圖SHA-256`65c792fad7e64864fcf5346e794349a561ee386fa71ad5297485581f874d0a7c`，成品`f43db598ceffb95c210b7dec3b14716cbea3fe7aa04edf18fa865a49762836f9`。
+- 交接：素材庫先提交`d9262dec3945a2b34e2b70df5f4e064c7bd0c795`，遊戲Commit為本段所在`[Codex] feat: 完成神祕商人限時會話與木牌介面`。無未完成或已知新增風險，可供驗收及合併，未推送／合併；下一步重載遊戲觀看接入效果，換機須同步素材庫與遊戲兩個倉庫。
+
+## MYSTERY-MERCHANT-SCROLL-20261119 — 十二件內不顯示商品捲軸
+
+- Owner：Codex，Done，單人追加。12件內只補滿三列占位，CSS同時隱藏標準與WebKit捲軸；13件起顯示可見捲軸，末列補至四格，不再一律填40個占位。商品數包含已購原位，空白占位不計入。維持四欄、既有5:2外框及內容可捲動。
+- 修改：`js/ui.js`、`css/style.css`、`index.html`快取、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`與本段；預檢無實質衝突，與本次會話需求由同開發者分段整合。檢查未修改商品框原圖、數量配置／交易與價格。
+- 驗證：UI回歸5/5（含實際商品數12／13門檻）；1920／1366寬度實際瀏覽器驗證6／12件無捲軸且12格，13件16格／40件40格皆有捲軸且末列可見，框比例2.5，頁面例外0。接入後相關39項、Build752檔與Git差異檢查通過，截圖及JSON保留於visualizations的`merchant-final`目錄。
+- 交接：無未完成或已知新增風險，未測行動真機；Commit為本段所在`[Codex] feat: 完成神祕商人限時會話與木牌介面`，可供驗收與合併，未合併／推送；下一步重載遊戲確認無捲軸畫面。

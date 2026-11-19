@@ -12814,7 +12814,7 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   display:none;
 }
 .merchant-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:8px; }
-.merchant-heading #merchant-back { margin-left:auto; }
+.merchant-heading #merchant-countdown { margin-left:auto; color:#f1d194; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .merchant-showcase {
   display:flex;
   align-items:flex-end;
@@ -12848,34 +12848,12 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   flex-direction:column;
   align-items:center;
   flex:none;
-  width:156px;
-  gap:6px;
-  padding:12px 14px;
-  transform:translate(-36px, 15px);
-  border:3px double #a47743;
-  border-radius:3px;
-  background:
-    repeating-linear-gradient(2deg, transparent 0 6px, rgba(221,158,73,.08) 7px, transparent 9px 16px),
-    linear-gradient(90deg, rgba(8,4,2,.6), transparent 20% 80%, rgba(8,4,2,.6)),
-    linear-gradient(#50321c, #24150d 55%, #3b2415);
-  box-shadow:inset 0 0 0 2px #21130b, inset 0 3px 7px #0008, 0 4px 10px #0009;
+  width:200px;
+  aspect-ratio:1501 / 1047;
+  padding:22px 20px 32px;
+  transform:translate(-48px, 32px);
+  background:url('../images/ui/mystery-merchant-sign.webp') center / contain no-repeat;
 }
-.merchant-level-plaque::before,
-.merchant-level-plaque::after {
-  content:'';
-  position:absolute;
-  top:100%;
-  width:10px;
-  height:22px;
-  border:1px solid #82522d;
-  border-radius:0 0 2px 2px;
-  background:
-    repeating-linear-gradient(88deg, transparent 0 3px, #d39b4933 4px, transparent 5px),
-    linear-gradient(90deg, #241209, #80502a 40%, #4a2913 75%, #241209);
-  box-shadow:inset 1px 0 #b7804644, 2px 2px 3px #0009;
-}
-.merchant-level-plaque::before { left:24px; }
-.merchant-level-plaque::after { right:24px; }
 .merchant-level-plaque .shop-level-label {
   color:#f1d194;
   font-size:18px;
@@ -12885,7 +12863,7 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   letter-spacing:1px;
   text-shadow:0 2px 3px #000;
 }
-.merchant-level-plaque #shop-upgrade { min-width:88px; height:30px; padding:3px 16px; font-size:13px; }
+.merchant-level-plaque #shop-upgrade { position:absolute; left:calc(50% - 44px); bottom:32px; width:88px; min-width:88px; height:30px; padding:3px 16px; font-size:13px; }
 .merchant-shop-controls .gx-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:12px; margin:0; }
 .merchant-shop-controls .gx-actions .btn { min-width:100px; min-height:38px; padding:6px 18px; }
 .merchant-shop-controls .btn { max-width:100%; }
@@ -12913,8 +12891,11 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   overflow-x:hidden;
   overflow-y:auto;
   scrollbar-color:#784a2a #0a0705;
-  scrollbar-width:thin;
+  scrollbar-width:none;
 }
+.merchant-stock-scroll::-webkit-scrollbar { display:none; }
+.merchant-stock-scroll:has(> [data-scrollable-stock]) { scrollbar-width:thin; }
+.merchant-stock-scroll:has(> [data-scrollable-stock])::-webkit-scrollbar { display:block; }
 #mystery-merchant-panel #gem-shop-grid {
   --merchant-slot-gap:8px;
   grid-template-columns:repeat(4, minmax(0, 1fr));
@@ -12982,7 +12963,8 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 }
 @media(max-width:1100px) {
   .merchant-shop-controls { gap:10px; padding-right:12px; }
-  .merchant-level-plaque { padding:12px 10px 10px; transform:translate(-28px, 13px); }
+  .merchant-level-plaque { width:180px; padding:18px 18px 32px; transform:translate(-36px, 32px); }
+  .merchant-level-plaque .shop-level-label { font-size:16px; line-height:1.2; }
   .merchant-shop-controls .gx-actions { gap:8px; }
   .merchant-shop-controls .gx-actions .btn { min-width:82px; padding:6px 10px; }
   #mystery-merchant-panel .shop-card { grid-template-columns:38px minmax(0, 1fr); padding:6px; column-gap:5px; }

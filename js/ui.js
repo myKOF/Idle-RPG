@@ -2828,9 +2828,6 @@ function markTabDirty(name) {
 
 function switchTab(name) {
   if (typeof QuestGuide !== 'undefined') QuestGuide.clearHighlight();
-  if (UI.tab === 'tower' && name !== 'tower') {
-    sendGemUiCommand('merchant.close', {}, 'merchant-close', ['tower', 'header']);
-  }
   if (name !== 'forge') closeForgeStonePicker();
   if (name === 'settings' && typeof GameMenu !== 'undefined') { GameMenu.openSettings(); return; }
   if (name === 'talents') {
@@ -7347,6 +7344,16 @@ function updateMerchantEntry(player) {
   if (alert) alert.hidden = count < 1;
 }
 
+function renderMerchantCountdown(merchant) {
+  var el = $id('merchant-countdown');
+  if (!el || !merchant || !merchant.active) return;
+  var seconds = Math.ceil(Math.max(0, (Number(merchant.expiresAt) || 0) - Date.now()) / 1000);
+  var minutes = Math.floor(seconds / 60), remainder = seconds % 60;
+  var clock = (minutes < 10 ? '0' : '') + minutes + ':' + (remainder < 10 ? '0' : '') + remainder;
+  var text = STR(2571, clock);
+  if (el.textContent !== text) el.textContent = text;
+}
+
 function renderTower() {
   var fightBox = $id('tower-fight');
   var listBox = $id('tower-list-wrap');
@@ -7361,6 +7368,7 @@ function renderTower() {
   if (merchantActive) {
     fightBox.style.display = 'none'; listBox.style.display = 'none';
     renderGemShop(merchant, headerSnapshot.player);
+    renderMerchantCountdown(merchant);
     var ticketCount = $id('merchant-ticket-count');
     if (ticketCount) ticketCount.textContent = STR(2438, merchant.tickets);
     return;
@@ -7748,6 +7756,17 @@ function noteInventoryPanelRequested() {
 }
 
 function uiTick() {
+  if (UI.tab === 'tower') {
+    var merchantSnapshot = uiTowerPanelSnapshot();
+    if (merchantSnapshot && merchantSnapshot.merchant) {
+      renderMerchantCountdown(merchantSnapshot.merchant);
+      var merchantPanel = $id('mystery-merchant-panel');
+      if (merchantPanel && !merchantPanel.hidden && !merchantSnapshot.merchant.active) {
+        renderTower();
+        UI.dirty.tower = false;
+      }
+    }
+  }
   if (typeof GameClock !== 'undefined' && GameClock.isPaused()) return;
   if (uiRenderingSuspended()) return;
   uiApplyGameTime(); // 先對時，之後這一輪所有到期判定與倒數都以同一個時間為準
@@ -10618,7 +10637,9 @@ function renderGemShop(merchant, player) {
         '<button class="btn sm" data-shop-buy="' + i + '"' + pendingUiButtonAttributes(shopPendingKey) +
         (player.gold < price || unavailable ? ' data-merchant-unavailable disabled' : '') + '>' + merchantGoldPriceHTML(price) + '</button>') + '</div>';
   });
-  while (htmls.length < MYSTERY_MERCHANT_SLOTS) htmls.push(emptySlot);
+  var displaySlots = Math.max(12, Math.ceil(htmls.length / 4) * 4);
+  while (htmls.length < displaySlots) htmls.push(emptySlot);
+  grid.toggleAttribute('data-scrollable-stock', s.items.length > 12);
   var merchantHtml = htmls.join('');
   if (grid._merchantHtml !== merchantHtml) { grid._merchantHtml = merchantHtml; grid.innerHTML = merchantHtml; }
   var total = 0;
@@ -12360,9 +12381,7 @@ function initUI() {
   var merchantOpen = $id('mystery-merchant-open');
   if (merchantOpen) merchantOpen.addEventListener('click', function () {
     if (merchantOpen.disabled) return;
-    sendGemUiCommand('merchant.open', {}, 'merchant-session', ['tower', 'header', 'gems'], function () {
-      if (UI.tab !== 'tower') sendGemUiCommand('merchant.close', {}, 'merchant-close', ['tower', 'header']);
-    });
+    sendGemUiCommand('merchant.open', {}, 'merchant-session', ['tower', 'header', 'gems']);
   });
   var merchantBack = $id('merchant-back');
   if (merchantBack) merchantBack.addEventListener('click', function () {

@@ -15,7 +15,8 @@ function loadGameContext() {
   context.G = { player: { gold: 0, gems: {}, gemShop: { level: 1, items: [] } } };
   context.randomGemType = () => 'garnet';
   context.MERCHANT_CATEGORY_TABLE = Array.from({ length: 20 }, () => [['gem', 100]]);
-  context.MYSTERY_MERCHANT_OPEN = true;
+  context.addMerchantInvitations(1);
+  assert.equal(context.openMysteryMerchant(), null);
   context.flog = () => {};
   context.blog = () => {};
   return context;

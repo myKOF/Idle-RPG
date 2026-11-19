@@ -134,7 +134,7 @@ test('凍結的 Worker 指令表有 99 條且分類數量固定', () => {
   // v79：熔爐寶箱——新增 chest.open／chest.upgrade，99 → 101。
   // v80：chest.open 回傳裝備圖示數量，指令數不變。
   // v81：寶箱裝備顯示資料加入實際等級和太古星數。
-  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 82);
+  assert.equal(protocol.WORKER_PROTOCOL_VERSION, 83);
   assert.equal(protocol.MSG_OUT.VISUAL, 'visual');
   assert.equal(protocol.EVENT_KINDS.VFX, 'vfx');
   assert.equal(protocol.EVENT_KINDS.ACT, 'act');
