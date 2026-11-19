@@ -126,7 +126,7 @@ var Sfx = (function () {
   }
   function fireGroup(group, side) {
     var def = SFX_GROUPS[group];
-    if (!def || (typeof document !== 'undefined' && document.hidden) || !sideAllowed(side)) return false;
+    if (!def || (typeof document !== 'undefined' && (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden)) || !sideAllowed(side)) return false;
     var st = groupState[group] || (groupState[group] = { last: -1e9, voices: 0, lastName: null });
     var t = nowMs();
     if (t - st.last < def.minGapMs || st.voices >= def.maxVoices) return false;
@@ -226,7 +226,7 @@ var Sfx = (function () {
     return st;
   }
   function synthCanPlay(side) {
-    return !(typeof document !== 'undefined' && document.hidden) && sideAllowed(side) && masterGain() > 0;
+    return !(typeof document !== 'undefined' && (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden)) && sideAllowed(side) && masterGain() > 0;
   }
   /* 播放一個技能音：opts＝{ delaySec, durSec（飛行）, side } */
   function playSynth(id, opts) {
@@ -270,7 +270,7 @@ var Sfx = (function () {
 
   /* 循環音效：key＝哪一個場域；每次續命延長 until，過期就淡出停止 */
   function loopTick() {
-    var c = context(), t = nowMs(), hidden = typeof document !== 'undefined' && document.hidden, any = false;
+    var c = context(), t = nowMs(), hidden = typeof document !== 'undefined' && (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden), any = false;
     for (var key in loops) {
       var L = loops[key];
       if (hidden || t >= L.until || masterGain() <= 0) stopLoop(key); else any = true;

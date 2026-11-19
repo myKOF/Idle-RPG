@@ -16,7 +16,7 @@ var WorkerBridge = (function () {
   /* Worker 與其模擬層不是由 bundler 產生，瀏覽器可能把舊的 Worker
      腳本留在快取裡。每次修改 Worker 啟動／核心邏輯時更新這個鍵，避免
      使用者刷新後仍執行舊版升級公式。 */
-  var WORKER_ASSET_VERSION = '20261119-boss8-material3-v1';
+  var WORKER_ASSET_VERSION = '20261119-aoe-damage-v1';
   var _menuPaused = false;
   /* 開機等待：Loading 黑幕期間 Worker 不開始戰鬥，揭幕那一刻才放行。
      否則 Loading 期間模擬照跑、視覺事件堆在佇列，揭幕後一次播出（特效暴增、FPS 掉到個位數）。
@@ -283,7 +283,7 @@ var WorkerBridge = (function () {
      PiP（迷你監控視窗）狀態不再轉發：它當初存在的唯一理由是「觀戰中要豁免背景休眠」，
      休眠機制移除後就沒有接收端了。PiP 功能本身不受影響（狀態在 ui.js 的 MINI）。 */
   function postVisibility() {
-    return post(MSG_IN.VISIBILITY, { hidden: !!document.hidden, at: Date.now() });
+    return post(MSG_IN.VISIBILITY, { hidden: !!(typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden), at: Date.now() });
   }
 
   /* ---- 失效後自動重啟 ----
@@ -402,7 +402,7 @@ var WorkerBridge = (function () {
       _restartCount = 0;
     }
     // 背景分頁：節流與模擬休眠都會讓訊息停止，不能當成死亡
-    if (typeof document !== 'undefined' && document.hidden) { _lastMessageAt = Date.now(); return; }
+    if (typeof document !== 'undefined' && (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden)) { _lastMessageAt = Date.now(); return; }
     var now = Date.now();
     var catchingUp = stats.catchupSec > 0;
     var stallAfter = catchingUp ? CATCHUP_STALL_AFTER_MS : STALL_AFTER_MS;
@@ -493,11 +493,13 @@ var WorkerBridge = (function () {
     // 重啟時不重複註冊：監聽器掛在 document 上，不隨 Worker 消滅
     if (!_visibilityBound) {
       _visibilityBound = true;
-      document.addEventListener('visibilitychange', function () {
+      function onVisibilityChange() {
         // 切回前景時重置靜默計時：隱藏期間沒有訊息是正常的，不能算進去
-        if (!document.hidden) { _lastMessageAt = Date.now(); _probeAt = 0; }
+        if (!(typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden)) { _lastMessageAt = Date.now(); _probeAt = 0; }
         postVisibility();
-      });
+      }
+      document.addEventListener('visibilitychange', onVisibilityChange);
+      document.addEventListener('gamevisibilitychange', onVisibilityChange);
     }
 
     _watchdogTimer = setInterval(watchdog, STALL_CHECK_MS);

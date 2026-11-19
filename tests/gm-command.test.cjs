@@ -30,7 +30,11 @@ function loadGMContext(hostname) {
     body,
     listeners: {},
     addEventListener(type, handler) { this.listeners[type] = handler; },
-    createElement(tagName) { return makeElement(tagName); },
+    createElement(tagName) {
+      const element = makeElement(tagName);
+      element.focus = () => { document.activeElement = element; };
+      return element;
+    },
     getElementById() { return null; }
   };
   const context = {
@@ -175,12 +179,12 @@ test('本機 GM Enter/Escape 行為符合需求', async () => {
     { name: 'gm.exec', args: { line: 'gold 100' } }
   ]);
   assert.equal(context.G.player.gold, 100, '主執行緒面板不得直接變更遊戲狀態');
-  assert.equal(panel.style.display, 'none');
-  assert.equal(input.value, ''); // 指令執行後自動清空並關閉
+  assert.equal(panel.style.display, 'block');
+  assert.equal(input.value, '', '送出後清空，避免重複執行');
   await Promise.resolve();
   assert.equal(panel.children[1].textContent, 'Worker 已執行');
   assert.equal(panel.children[1].className, 'gm-status good');
-  assert.equal(panel.style.display, 'none', '非同步回覆不重新開啟指令框');
+  assert.equal(panel.style.display, 'block', '非同步回覆持續可見');
   document.listeners.keydown(event('Enter'));
   assert.equal(panel.style.display, 'block');
   input.value = 'gold 200';
@@ -190,12 +194,79 @@ test('本機 GM Enter/Escape 行為符合需求', async () => {
   assert.equal(context.gmMessages.length, 1, 'Shift+Enter不送出指令');
   input.listeners.keydown(event('Escape'));
   assert.equal(panel.style.display, 'none');
+  document.activeElement = body; // 瀏覽器隱藏取得焦點的欄位後，焦點回到 body。
   document.listeners.keydown(event('Enter'));
   assert.equal(panel.style.display, 'block');
   assert.equal(input.value, ''); // 重新開啟介面時也是空白
   input.listeners.keydown(event('Enter'));
-  assert.equal(panel.style.display, 'none', '空Enter仍關閉面板');
+  assert.equal(panel.style.display, 'block', '空Enter保留面板與結果');
   assert.equal(context.gmMessages.length, 1);
+});
+
+test('GM 面板失焦時 Enter 只取回焦點並保留草稿和結果，關閉時不搶其他輸入欄', async () => {
+  const { context, document, body } = loadGMContext('localhost');
+  const event = (extra = {}) => ({ key: 'Enter', preventDefault() { this.defaultPrevented = true; }, stopPropagation() {}, ...extra });
+  document.listeners.keydown(event());
+  const panel = body.children[0], input = panel.children[0], status = panel.children[1];
+  input.value = 'gold 1';
+  input.listeners.keydown(event());
+  await Promise.resolve();
+  input.value = 'gold 200';
+  for (const target of [body, makeElement('button'), makeElement('input'), makeElement('textarea'), { isContentEditable: true }]) {
+    document.activeElement = target;
+    const key = event();
+    document.listeners.keydown(key);
+    assert.equal(key.defaultPrevented, true);
+    assert.equal(document.activeElement, input);
+    assert.equal(input.value, 'gold 200');
+    assert.equal(status.textContent, 'Worker 已執行');
+    assert.equal(context.gmMessages.length, 1, '取回焦點不執行草稿');
+  }
+  input.listeners.keydown(event({ key: 'Escape' }));
+  for (const target of [makeElement('input'), makeElement('textarea'), { isContentEditable: true }]) {
+    document.activeElement = target;
+    const key = event();
+    document.listeners.keydown(key);
+    assert.equal(panel.style.display, 'none');
+    assert.equal(document.activeElement, target);
+    assert.equal(key.defaultPrevented, undefined);
+  }
+});
+
+test('GM 中文輸入法確認、Shift+Enter 與長按 Enter 不送出指令或搶焦點', () => {
+  const { context, document, body } = loadGMContext('localhost');
+  const input = body.children[0].children[0];
+  for (const extra of [{ isComposing: true }, { keyCode: 229 }, { shiftKey: true }, { repeat: true }]) {
+    const event = () => ({ key: 'Enter', preventDefault() {}, stopPropagation() {}, ...extra });
+    input.value = 'gold 10';
+    input.listeners.keydown(event());
+    assert.equal(input.value, 'gold 10');
+    document.activeElement = body;
+    document.listeners.keydown(event());
+    assert.equal(document.activeElement, body);
+    assert.equal(body.children[0].style.display, 'none');
+  }
+  assert.equal(context.gmMessages.length, 0);
+});
+
+test('GM 執行失敗與拒絕回應仍顯示結果，空白 Enter 不清除結果', async () => {
+  for (const response of [() => Promise.resolve({ ok: false, message: '無效指令' }), () => Promise.reject(new Error('連線失敗'))]) {
+    const { context, document, body } = loadGMContext('localhost');
+    context.WorkerBridge.send = response;
+    document.listeners.keydown({ key: 'Enter', preventDefault() {} });
+    const panel = body.children[0], input = panel.children[0], status = panel.children[1];
+    input.value = 'invalid';
+    const event = () => ({ key: 'Enter', preventDefault() {}, stopPropagation() {} });
+    input.listeners.keydown(event());
+    await Promise.resolve(); await Promise.resolve();
+    assert.equal(panel.style.display, 'block');
+    assert.equal(status.className, 'gm-status bad');
+    assert.match(status.textContent, /無效指令|連線失敗/);
+    const result = status.textContent;
+    input.listeners.keydown(event());
+    assert.equal(panel.style.display, 'block');
+    assert.equal(status.textContent, result);
+  }
 });
 
 test('金幣與材料允許負數扣減，但物品負數不會發放', () => {

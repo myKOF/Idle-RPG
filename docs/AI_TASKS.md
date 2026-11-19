@@ -1,3 +1,52 @@
+## DESKTOP-MINI-WINDOW-20261119 — 修復桌面迷你視窗與主視窗往返
+
+- Owner：Codex；Done，單人實作。使用者要求桌面版迷你視窗恢復作用，進入時隱藏原遊戲視窗，按迷你視窗還原回正常遊戲。前置為既有迷你戰況快照及 Electron 外殼，逐檔衝突預檢乾淨。
+- 允許：Electron 主行程／preload、迷你視窗控制器／頁面與專用 preload、共享迷你渲染、`js/ui.js` 迷你區塊、主頁載入／快取、相關回歸與實機驗證工具、LV 功能說明及本段。禁止：戰鬥規則、Worker 協議、存檔格式、解鎖、素材及其他功能；不合併或推送。
+- 驗收：實際桌面入口、置頂／即時戰況、主窗隱藏、還原按鈕／Esc／關閉迷你恢復、三種顯示模式及尺寸保持、重複開啟／失敗復原／結束清理／IPC來源限制、相關回歸與 Build。完成後交使用者驗收及整合。
+- 使用者追加：外部正式／Demo 版本在遊戲或迷你視窗有焦點時按 Enter 往返，Tips 標題加 (Enter)；內測保留 GM Enter。新增允許 String.xlsx／CSV／衍生字串、快捷回歸。使用者已明確同意與同工作區背景掛機任務分段共存，保留雙方並統一 UI 快取。
+- 完成：桌面入口優先呼叫原生迷你視窗，不再依賴 Chromium PiP；沿用主遊戲的 miniSnapshot／樣式／模板，獨立 sandbox 頁面共用 MiniMonitor 渲染，不啟動第二份遊戲或 Worker。renderer 初始化成功才隱藏主窗；迷你永遠置頂，還原鈕、Esc、視窗關閉或 renderer 異常帶回主窗，保留顯示模式／尺寸，載入失敗保留主窗。關閉遊戲、重新載入、第二次啟動會清理迷你及更新計時器。IPC 分別限定遊戲／迷你主框架，迷你頁不暴露存檔或顯示設定 API。
+- 快捷：外部 full／demo 可在主窗與迷你窗使用 Enter，逐窗檢查 document.hasFocus；失焦、內測／GM、文字輸入、組字、長按、修飾鍵、選單／對話框／序章不攔截。Tips 按版本取 String 2570「迷你視窗 (Enter)」；內測保持原標題與 GM 行為。String.xlsx 獨占確認、原生 Excel 寫入新列4格並正常重開兩次，原40,864格值／樣式／格式、欄寬／視窗／驗證／篩選保持，無繪圖物件；匯出CSV與strings_data、主頁及編輯器共用字串快取一致。
+- 修改：`electron/main.cjs`／`preload.cjs`、新增`mini-window.cjs`／`mini-preload.cjs`／`mini.html`、`js/ui.js`迷你與快捷區塊、新增`js/mini-monitor.js`、主頁載入／快取、String.xlsx／CSV／strings_data、`tools/vfx/editor/index.html`僅字串快取、兩份desktop-mini回歸、背景快取回歸支援遞增版號、`tools/desktop/verify-mini-window.cjs`、LV及本段。唯讀核對規範／Workflow／Agent、Electron smoke／出貨／存檔／顯示切換、bridge／Worker、GameVisibility／GameClock、GM、字串讀取與Excel工具；沒有素材改動，素材庫無交付變更。
+- 回歸：`node --test tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs tests/fullscreen-toggle.test.cjs tests/desktop-app-protocol.test.cjs tests/desktop-ship-rules.test.cjs tests/string-table.test.cjs tests/background-idle.test.cjs tests/desktop-background.test.cjs tests/desktop-saves.test.cjs tests/desktop-steam.test.cjs tests/game-menu.test.cjs tests/gm-command.test.cjs tests/vfx-editor-cache-versions.test.cjs`：119/119通過。`npm.cmd run build`750檔及Electron四支`node --check`通過，字串同步與Git差異檢查通過。曾發現編輯器字串快取落後，已同步並重跑通過。
+- 實測：`node tools/desktop/verify-mini-window.cjs <output> full|demo|internal` 三次均通過，Electron 44.10.1、隔離profile／新遊戲／靜音，略過序章後正常揭幕。三版本各驗windowed／borderless／fullscreen九組往返：實際入口、置頂、主窗隱藏、最新戰況推送、Worker時間／tick繼續、隱藏主窗降載、主／迷你窗失焦Enter不觸發、還原按鈕／Enter或Esc／X、原尺寸與HTML全螢幕保持、重複開啟。內測Enter真正開GM且迷你Enter不還原。頁面錯誤0，保存成功，所有測試視窗／profile與本次暫存均清理。
+- 交接：自我Review完成，可交使用者驗收與合併；Commit為本段所在的`[Codex] fix: 恢復桌面迷你視窗並加入 Enter 切換`。保留背景掛機已完成提交與其他進行中範圍傷害任務，僅分段提交本項。無本項功能待辦，不合併或推送develop。驗證Windows原始碼桌面版，未重製安裝檔；更新後重啟桌面版，安裝包需另行重打包。編輯器只更新共用字串快取，已開啟者先保留未存內容再重載。
+
+## DESKTOP-BACKGROUND-IDLE-20261119 — 桌面背景持續掛機與顯示降載
+
+- Owner：Codex；Done，單一開發者。使用者授權直接修正、實測並提交。前置為現有 Electron 外殼及 Worker 背景在線／欠帳補算；fetch 與逐檔衝突預檢乾淨。
+- 允許修改 Electron 主行程／preload／視窗活動模組、共用顯示狀態模組、bridge／UI／戰鬥畫布／DOM與塔特效／開始選單背景／戰鬥音效、主頁快取、背景回歸及桌面實測工具、LV與本段。禁止改動戰鬥公式、Worker協議／存檔格式、配置表及素材，不合併或推送。
+- 驗收正式執行模式下失焦與最小化持續模擬／收益／自動存檔、主要繪圖停止／背景特效不補播、還原刷新最新狀態、選單暫停相容、網頁顯示相容與IPC守門。使用隔離資料夾與靜音，不碰使用者存檔；相關回歸、Build、Electron實測後提交，交使用者驗收與整合。
+
+- 完成：正式與一般開發桌面視窗統一關閉背景節流；原生 focus／blur／minimize／restore／show／hide 經受守門 IPC 與 preload 合併到 GameVisibility。只暫停戰鬥、共享與塔 Pixi ticker／開始選單背景，UI／Worker 背景視覺分流略過過期特效與音效，切走清除既有特效、浮字與延遲佇列，回前景刷新資料。先包活動狀態、後包 GameClock，保留選單暫停與手動 ticker stop 意圖。原有欠帳補算、戰鬥公式、協議與存檔格式不變。
+- 修改：electron/main.cjs／preload.cjs／window-activity.cjs、js/game-visibility.js／bridge.js／ui.js／battle-renderer.js／vfx.js／vfx-tower.js／start-menu-background.js／sfx.js、主頁快取、tests/desktop-background.test.cjs、tools/desktop/verify_background.cjs、LV及本段。唯讀核對 game-clock、sim.worker、shim、Electron 存檔／出貨及冒煙路徑、背景／Loading／音樂回歸。無素材修改或素材庫交付。
+- 同工作區迷你視窗任務與本次共用 main／preload／ui／主頁／LV／任務紀錄：保留雙方不同區段，UI 快取統一 background-mini-v1；按各自內容分段提交，不納入對方 String 或迷你視窗未完成內容。UI 三方試合乾淨；其他共享檔案的試合標出鄰接插入（活動／迷你 API 與各自任務段落），按迷你任務已記錄的使用者同意保留兩邊，人工核對組合與各自候選內容。沒有協議／戰鬥公式語意相依。
+- 回歸：本次獨立候選內容的14份相關回歸105/105通過，含新增5項原生狀態、查詢競態、網頁visibility、ticker與選單交錯、IPC／快取。擴大原工作區154項135通過，19項失敗（Loading缺QuestGuide 16項、UI舊斷言2項、Zones音樂配置1項）逐項在HEAD重現。另一任務更新String時一度造成編輯器字串快取落後；本次獨立候選無此差異，沒有修改String或編輯器。npm.cmd run build通過750檔，Electron三支另跑node --check通過，Git差異檢查通過。
+- 實測：node tools/desktop/verify_background.cjs 使用真正Electron 44.10.1與app://game，一般模式（無--smoke／無--internal）、獨立臨時profile及靜音。失焦18秒GT增加17.990秒、金幣52808→56774、ticker幀92→92、自動存檔1→2；最小化18秒GT增加17.890秒、金幣58682→61762、幀153→153、自動存檔3→4。背景fx／浮字／延遲佇列皆0；還原恢復繪圖與最新介面，選單暫停GT保持44.603秒、解除後繼續。頁面錯誤／Worker錯誤／存檔錯誤／重啟皆0，磁碟產生IC_autosave_app-game.json，立即存檔Promise落地成功，查看還原畫面正常。腳本初輪路徑／回傳序列化／取樣欄位／Promise等待問題均已修正後重跑，實測也修正停止ticker時舊浮字殘留，未放寬斷言。測試視窗與profile已關閉清除。
+- 交接：Commit 為本段所在的 [Codex] fix: 修正桌面背景掛機並降低繪圖負載；無本次未完成項目，可供使用者驗收及合併。未合併／推送develop或main；執行中的舊桌面程式需退出再啟動，既有安裝包需重新打包才含修正。未驗證OS睡眠／休眠持續運算（沿用恢復後補算）。
+
+## AOE-DAMAGE-20261119 — 接通範圍傷害詞條與回歸驗證
+
+- Owner：Codex；Done，單人實作。使用者授權修復範圍傷害%與補測試，並確認以傷害段是否具範圍判定，範圍段只命中一隻也增傷。前置為既有詞條聚合、Skills2與共用傷害結算；逐檔衝突預檢乾淨。
+- 允許：formula／skills2的範圍傷害接線、必要快取、範圍傷害測試、game_formula／LV說明及本段。禁止改技能配置、存檔／Worker協議、素材、解鎖或其他進行中功能，不合併或推送。與桌面背景／迷你任務共用首頁及文件的不同區段，使用者已明確同意保留雙方並統一bridge快取版本。
+- 驗收：物理／魔法範圍直接傷害、飛行／延遲／場域／混合技能、單一與多目標、範圍持續傷害、衍生只加一次、普通單體與固定扣血不受影響；浮字／統計與實際扣血一致，主頁／Worker版本一致，相關回歸、Build與差異檢查。
+
+- 實作：共用純公式 `areaDamageMultiplier` 與 `resolveHit` 獨立乘區；Skills2逐傷害段以 `sgAreaHitOne` 標記範圍，飛行／延遲落地／場域沿用原幾何與時間。單體冰箭／飛刀／火球分裂／反擊保留單體；貫穿冰箭及飛刀路徑分別標記。泥沼的毒／岩漿／附加流血與惡疫在塗抹時計入一次，崩解／爆燃／過載獨立爆炸各加一次，已結算的突刺擴散與固定百分比／斬殺不重複加乘。補保存火球飛行物原有的blastRadius，讓傷害範圍判定與落點VFX共用同值。
+- 修改：`js/formula.js`、`js/skills2.js`、`tests/aoe-damage.test.cjs`、首頁／bridge／sim.worker快取、`game_formula.md`、`LV_upgrade_system.md`及本段。唯讀核對戰場幾何、combat普通攻擊／DoT／浮字／統計、runeword擴散、NPC／Worker載入、技能與詞條CSV、現有技能／傷害回歸與協作規範；無配置、字串、素材或協議變更，素材庫無變更。背景掛機及迷你視窗任務已各自提交，最後差異僅本輪內容。
+- 驗證：`node --test tests/aoe-damage.test.cjs` 34/34通過；含裝備聚合到實傷、十種物／魔範圍技能、0／50／100／1000%加成、單／多目標、無座標、混合單／範圍段、延遲落地重新選敵、泥沼實際跳傷與刷新、獨立／繼承爆炸、普通普攻／反擊與固定扣血、附傷與總傷乘區、浮字／DPS／統計、VFX幾何與命中時序及主頁／Worker版本。固定冰霜新星每隻825→1650（+100%）、9075（+1000%），三目標各自同額。
+- 擴大回歸：以 `rg --files tests` 選取 `skill2*.test.cjs`、`*damage*.test.cjs`、`skill-hit-timing.test.cjs`、`worker-protocol.test.cjs`、`vfx-editor-cache-versions.test.cjs`，執行 `node --test --test-concurrency=2`。當時新增30項加既有831項，共861項：570通過／291失敗；透過唯讀fs載入替換將formula與skills2還原HEAD原始內容，同批831項為540通過／291失敗，失敗名稱逐項相同，無新增失敗。最後再補四項專用案例至34/34，核心補驗71項68通過／3失敗，三項也全在上述基準失敗清單（舊吸取跳數與詞條配置斷言）；未修改或放寬既有測試。
+- `npm.cmd run build` 751檔通過；字串稽核寫死0條、差異檢查與自我Review通過，未啟動瀏覽器，沒有測試瀏覽器殘留。未進行實機UI驗收；本輪以實際模擬扣血及畫面事件內容驗證。可交使用者重新載入驗收與合併，已知限制為既有回歸仍未全綠，未合併／推送develop或main。Commit為本段所在 `[Codex] fix: 接通範圍傷害增幅並補齊回歸測試`，SHA見聊天回報。
+
+## GM-PANEL-ENTER-20261119 — 指令送出後保留面板與 Enter 取回焦點
+
+- Owner：Codex；Done，單一開發者。使用者要求 GM 指令送出後保留結果，面板失焦時 Enter 重新取得輸入焦點。前置為既有 GM 面板；fetch 與逐檔衝突預檢乾淨。
+- 允許修改 `js/gm.js`、`index.html` 對應快取、GM 鍵盤與解析逾時回歸、`GM_command.md`、`LV_upgrade_system.md` 及本段。禁止變更指令語意、Worker、存檔、解鎖條件與素材；不合併或推送。
+- 驗收同步／非同步結果持續顯示、空白 Enter 不關閉、失焦 Enter 僅取回焦點且保留草稿與結果、Esc 關閉取消解析、Shift+Enter 換行及中文輸入法保護；執行 GM 相關回歸、Build、隔離瀏覽器鍵盤驗證與差異檢查。完成後交使用者驗收及整合。
+- 使用者追加神祕商人邀請券 GM 指令：底層既有 `invite 正整數`，補齊 GM 文件、白話本機解析與雲端契約、翻譯快取版本及對應回歸。新增允許 `js/ai-key-setting.js`、商人與翻譯快取測試，其餘禁止範圍保持；新增檔案範圍預檢乾淨。
+- 完成 10 檔：GM 面板、白話解析、主頁兩份快取、四份既有回歸、GM 文件、LV 及本段。文件獨立列出神祕商人（神秘商人）邀請券、格式、數量限制、注釋、成功訊息與白話範例；四種神祕／神秘名稱通用且不需金鑰。唯讀核對 `js/gm_exec.js`、`js/item.js`、`js/bridge.js`、`js/start-menu.js`、`js/intro-player.js`、模擬引擎與既有商人／快取處理；未修改執行層、配置表或素材，素材庫無交付變更。
+- `node --test --test-reporter=tap tests/gm-command.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-translation-cache.test.cjs tests/gm-fastpath.test.cjs tests/gm-perf-command.test.cjs tests/gm-intro-command.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs`：106/106 通過。擴大至全部 `tests/gm-*.test.cjs` 的檢查有 6 項既有失敗：gm-modequip 2 項（45.3／43.3）、gm-skill-unlock 1 項（舊門檻）、gm-test-map 3 項（31／10 及缺 requestNpc3d）；用 HEAD 原始 GM／白話程式重跑這三份測試，逐項重現相同失敗，未修改不相關斷言。
+- `npm.cmd run build` 通過 745 檔；字串稽核為寫死 0 條，`node tools/string-table/apply_strings.cjs --check` 同步，差異檢查與自我 Review 通過。隔離靜音 Edge 正式主頁／Worker 發放 100 與 25 張券，確認成功與失敗可見、失焦 Enter 不啟動焦點按鈕或執行草稿、Esc／重新開啟正常；正式 GM 程式的隔離瀏覽器補驗原生 Shift+Enter 換行與空白 Enter。測試腳本初輪等待空 G 與 CDP 換行注入已修正；沒有產品異常，所有測試瀏覽器均關閉。
+- 無本次未完成項目，可供使用者驗收與合併；未合併或推送 develop／main。下一步重新載入 Codex 測試頁，使用 `invite 100` 或「加神祕／神秘商人邀請券100張」驗收。Commit 為本段所在 `[Codex] fix: 保留 GM 指令結果並補齊邀請券白話操作`，SHA 見聊天回報。
+
 ## SYNC-DEVELOP-20261119-012000 — 整合遊戲說明與太古詞條介紹
 
 - Codex，完成。續接 `26bc2939` 與 `ca57429b` 的待完成合併。保留新手導引、離線逐波、遺物、背包與 Esc 選單更新，納入遊戲說明頁籤、太古詞條說明及字級調整。核對兩側任務紀錄完整。

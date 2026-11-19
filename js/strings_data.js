@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = '2ed01140';
+var STRING_DATA_VERSION = '94eb3090';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -2556,5 +2556,6 @@ var STRING_DATA = {
   "2566": ["該功能未解鎖"],
   "2567": ["背包已滿！"],
   "2568": ["<b>太古詞條：</b>裝備詞條旁的「✡」代表太古詞條。標準太古詞條的強度比一般詞條的上限高 {0}。洗煉可更換詞條種類，仍保留太古標記與原本的強度等級。"],
-  "2569": ["神力之巔","","Idle: Divine Apex"]
+  "2569": ["神力之巔","","Idle: Divine Apex"],
+  "2570": ["迷你視窗 (Enter)"]
 };

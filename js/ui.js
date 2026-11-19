@@ -2013,7 +2013,7 @@ function resetPerfHint() {
 }
 function perfHintTick() {
   var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-  if (document.hidden) {
+  if (uiRenderingSuspended()) {
     perfHintSamples.length = 0;
     perfHintFrames = 0;
     perfHintLast = 0;
@@ -7017,7 +7017,7 @@ function bindForgeStoneControls(send) {
       function repeat() {
         if (hold.pointerId === null) return;
         var current = forgeViewState(uiForgePanelSnapshot()), p = (uiHeaderPanelSnapshot() || {}).player;
-        if (!current || !p || current.crafting || !UI.forgeStoneOpen || UI.tab !== 'forge' || document.hidden || isUiCommandPending(nodePendingKey('forge'))) {
+        if (!current || !p || current.crafting || !UI.forgeStoneOpen || UI.tab !== 'forge' || uiRenderingSuspended() || isUiCommandPending(nodePendingKey('forge'))) {
           finishForgeStoneHold(true);
           return;
         }
@@ -7039,7 +7039,7 @@ function bindForgeStoneControls(send) {
   });
   document.addEventListener('pointerup', function (event) { if (event.pointerId === hold.pointerId) finishForgeStoneHold(); }, true);
   document.addEventListener('pointercancel', function (event) { if (event.pointerId === hold.pointerId) finishForgeStoneHold(); }, true);
-  document.addEventListener('visibilitychange', function () { if (document.hidden) finishForgeStoneHold(); });
+  document.addEventListener('visibilitychange', function () { if (uiRenderingSuspended()) finishForgeStoneHold(); });
   window.addEventListener('blur', function () { finishForgeStoneHold(); });
 }
 function forgeInventoryTab(forge) { return forge && forge.operation === 'gem' ? 'gems' : 'items'; }
@@ -7646,7 +7646,7 @@ function renderTowerFight() {
 }
 
 function uiRenderingSuspended() {
-  return typeof document !== 'undefined' && document.hidden;
+  return typeof document !== 'undefined' && (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden);
 }
 
 var UI_BATTLE_RENDER_IDLE_MS = 400;
@@ -7679,6 +7679,7 @@ function handleVisibilityChange() {
     // 背景分頁會暫停 CSS animation 與 timer；保留這些節點會讓過期的
     // 領域／光束／粒子在回到前景時一起恢復，形成特效堆積。
     if (typeof vfxSetEnabled === 'function') vfxSetEnabled(false);
+    if (typeof VFXTower !== 'undefined') VFXTower.stop();
     clearBackgroundEnemyFloats();
     return;
   }
@@ -10632,7 +10633,7 @@ function renderGemShop(merchant, player) {
 /* ============ 迷你監控視窗（子母畫面 PiP） ============
    Chrome 會暫停被遮蔽視窗的繪製（工作列縮圖因此凍結），
    改用永遠置頂的 PiP 迷你視窗即時顯示戰況。               */
-var MINI = { win: null, canvas: null, video: null, timer: null };
+var MINI = { win: null, canvas: null, video: null, timer: null, desktop: false, desktopBound: false };
 
 var MINI_CSS = 'body{margin:0;background:#0d1017;color:#d7deed;font-family:"Microsoft JhengHei",sans-serif;font-size:11px;padding:6px 8px;overflow:hidden}' +
   '.m-head{display:flex;justify-content:space-between;color:#f5b942;font-weight:bold;font-size:11.5px;margin-bottom:3px}' +
@@ -10676,7 +10677,7 @@ function miniSnapshot() {
     p = field.player; enemy = field.monster || (Array.isArray(field.monsters) ? field.monsters[0] : null);
     var zone = ZONES[stage.zone] || {};
     s.stage = STR(629, (zone.emoji || '') + (zone.name || ''), (stage.current || 0));
-    s.info = '📈 DPS ' + fmt(header.dps || 0) + '　<img src="images/icon_gold.png" class="res-icon">' + fmt(view.gold || 0);
+    s.info = '📈 DPS ' + fmt(header.dps || 0) + '　🪙 ' + fmt(view.gold || 0);
   }
   if (p) {
     s.pHp = clamp(p.hp / st.hp * 100, 0, 100);
@@ -10698,26 +10699,38 @@ function miniSnapshot() {
 
 
 function renderMiniWindow() {
+  if (MINI.desktop) {
+    window.ApexHost.mini.update(miniSnapshot());
+    return;
+  }
   if (!MINI.win) return;
   try {
-    var d = MINI.win.document;
-    var s = miniSnapshot();
-    d.getElementById('m-stage').textContent = s.stage;
-    d.getElementById('m-lv').textContent = s.lv;
-    d.getElementById('m-php').style.width = s.pHp + '%';
-    d.getElementById('m-ptext').textContent = s.pHpText;
-    d.getElementById('m-pmp').style.width = s.pMp + '%';
-    d.getElementById('m-mtext').textContent = s.pMpText;
-    d.getElementById('m-ename').textContent = s.eName;
-    d.getElementById('m-ehp').style.width = s.eHp + '%';
-    d.getElementById('m-etext').textContent = s.eHpText;
-    d.getElementById('m-info').textContent = s.info;
-    d.getElementById('m-log').innerHTML = s.logs.map(function (l) { return esc(l); }).join('<br>');
+    MiniMonitor.render(MINI.win.document, miniSnapshot());
   } catch (e) { MINI.win = null; }
 }
 
 function openMiniWindow() {
-  if (MINI.win) { blog(STR(2065), 'info'); return; }
+  if (MINI.win || MINI.desktop) { blog(STR(2065), 'info'); return; }
+  if (window.ApexHost && window.ApexHost.mini) {
+    function stopped() {
+      MINI.desktop = false;
+      if (MINI.timer) { clearInterval(MINI.timer); MINI.timer = null; }
+    }
+    if (!MINI.desktopBound) {
+      window.ApexHost.mini.onClosed(stopped);
+      MINI.desktopBound = true;
+    }
+    MINI.desktop = true;
+    MINI.timer = setInterval(renderMiniWindow, 300);
+    window.ApexHost.mini.open({ css: MINI_CSS, html: MINI_HTML, title: STR(2066),
+      restoreLabel: STR(2072), restoreTip: STR(2073), enterShortcut: miniShortcutEnabled(), snapshot: miniSnapshot() }).then(function () {
+      if (MINI.desktop) blog(STR(2067), 'good');
+    }).catch(function (error) {
+      stopped();
+      blog(STR(2070, error && error.message || STR(2069)), 'warn');
+    });
+    return;
+  }
   // 主方案：Document Picture-in-Picture（Chrome 116+）
   if (window.documentPictureInPicture && documentPictureInPicture.requestWindow) {
     // 防呆：若 3 秒內沒有任何結果（極少數環境會懸置），改走影片 PiP
@@ -10741,6 +10754,27 @@ function openMiniWindow() {
   } else {
     openVideoPip();
   }
+}
+
+function miniShortcutEnabled() {
+  return !isInternalServer() && !isGMHost();
+}
+
+function handleMiniShortcut(event) {
+  if (!miniShortcutEnabled() || event.defaultPrevented || event.key !== 'Enter' ||
+      event.repeat || event.isComposing || event.keyCode === 229 || event.altKey ||
+      event.ctrlKey || event.metaKey || event.shiftKey || !document.hasFocus()) return;
+  // 文字輸入、對話框及開始選單的 Enter 保留原本行為。
+  var target = event.target;
+  if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+  if (typeof StartMenu !== 'undefined' && StartMenu.isActive()) return;
+  if (typeof IntroPlayer !== 'undefined' && IntroPlayer.isPlaying()) return;
+  var dialogs = document.querySelectorAll('.modal-overlay');
+  for (var i = 0; i < dialogs.length; i++) if (dialogs[i].getClientRects().length) return;
+  event.preventDefault();
+  if (MINI.win) { MINI.win.close(); window.focus(); }
+  else if (document.pictureInPictureElement) document.exitPictureInPicture();
+  else openMiniWindow();
 }
 
 /* ---- 分頁標題即時戰況（工作列懸停提示也會顯示） ---- */
@@ -11421,6 +11455,7 @@ function initUI() {
     document.addEventListener('fullscreenchange', syncPageFullscreenKeyboard);
     syncPageFullscreenKeyboard();
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('gamevisibilitychange', handleVisibilityChange);
     document.addEventListener('pointerdown', noteUiInteraction, true);
     document.addEventListener('keydown', noteUiInteraction, true);
 
@@ -12488,7 +12523,15 @@ function initUI() {
   }
 
   var pipBtn = $id('btn-pip');
-  if (pipBtn) pipBtn.addEventListener('click', openMiniWindow);
+  if (pipBtn) {
+    if (miniShortcutEnabled()) {
+      pipBtn.setAttribute('data-str-attr', 'data-tt-title:2570;data-tt-desc:583;aria-label:2570');
+      pipBtn.setAttribute('data-tt-title', STR(2570));
+      pipBtn.setAttribute('aria-label', STR(2570));
+    }
+    pipBtn.addEventListener('click', openMiniWindow);
+  }
+  document.addEventListener('keydown', handleMiniShortcut);
 
   // 世界地圖沿用既有場景切換指令，不在主執行緒寫進度。
   if (typeof WorldMapUI !== 'undefined') WorldMapUI.init();

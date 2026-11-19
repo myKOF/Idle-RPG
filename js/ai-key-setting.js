@@ -19,7 +19,7 @@
   ];
   var TRANSLATIONS_KEY = 'idle_rpg_gm_translations';
   // GM指令契約／翻譯規則變動時升版，避免重用舊語意。
-  var TRANSLATIONS_VERSION = 5;
+  var TRANSLATIONS_VERSION = 6;
   var TRANSLATIONS_TTL_MS = 7 * 86400000;
   var TRANSLATIONS_LIMIT = 32;
   var translationMemory = [];
@@ -210,7 +210,7 @@
   function cacheableCommands(commands) {
     return Array.isArray(commands) && commands.length > 0 && commands.length <= 32 && commands.every(function (line) {
       return typeof line === 'string' && line.length <= 256 && !/[\r\n]|@sel:|@gm-batch:/i.test(line) &&
-        /^(gold|scrap|essence|dust|equipset|equip|modequip|socketall|stage|stage_clear|level|turn|bag|skillmax|skill_unlock|skill_point|skillxp|masterylv|gem|rune|runeword|xp|mat|part)\s+\S/.test(line);
+        /^(gold|scrap|essence|dust|invite|equipset|equip|modequip|socketall|stage|stage_clear|level|turn|bag|skillmax|skill_unlock|skill_point|skillxp|masterylv|gem|rune|runeword|xp|mat|part)\s+\S/.test(line);
     });
   }
 
@@ -447,6 +447,12 @@
       s.match(/^(?:(?:把|將)?\s*)?(?:主線)?任務(?:進度)?\s*(?:跳到|跳至|設為|設定為|設到|設定到|改到|調整到)\s*第?\s*(\d+)\s*(?:個|項)?$/);
     if (mTask) return 'task goto ' + mTask[1];
     if (/^(?:(?:查詢|查看|顯示)\s*(?:目前|當前)?\s*(?:主線)?任務(?:進度|狀態)?|(?:目前|當前)?\s*(?:主線)?任務(?:進度|狀態))$/.test(s)) return 'task status';
+    var mInvite = s.match(/^(?:加|增加|給我|獲得)?\s*(?:神[祕秘](?:商人)?)?邀請券\s*([+]?\d+(?:\.\d+)?\s*[兆億萬千百kmb]?)\s*(?:張|個)?$/i) ||
+      s.match(/^(?:加|增加|給我|獲得)?\s*([+]?\d+(?:\.\d+)?\s*[兆億萬千百kmb]?)\s*(?:張|個)?\s*(?:神[祕秘](?:商人)?)?邀請券$/i);
+    if (mInvite) {
+      var inviteCount = parseChineseNum(mInvite[1], true);
+      return Number.isSafeInteger(inviteCount) && inviteCount > 0 ? 'invite ' + inviteCount : null;
+    }
     s = s.replace(/(\d)\s*(?:個|顆|點)$/, '$1');
 
     // 1. 貨幣與材料：金幣 / 碎片 / 精華 / 魔塵
@@ -713,6 +719,7 @@
       '   - rune all <數量>：33 種符文各加 N 顆；rune <r01~r33> <數量>：單一符文\n' +
       '   - runeword list：列出符文真言；runeword <id>：發放該組配方符文\n' +
       '10. 其他：\n' +
+      '   - invite <正整數數量>：增加神祕商人邀請券（神祕邀請券），例如「加神祕商人邀請券100張」→invite 100。只接受正整數，不扣除、不召喚或刷新商人。\n' +
       '   - task reset：重置所有主線任務，回第1項；只重置領取索引，不清養成統計、不補發或追回獎勵。\n' +
       '   - task complete：所有主線任務標記已完成，不發獎勵。\n' +
       '   - task goto <N>：跳到第N個任務（1起，該項為目前任務，前N-1項視為已完成）；task status：查詢目前任務進度。例：「重置所有任務」→task reset、「跳到第13個任務」→task goto 13；不要用舊task N近似，舊數字語意是前N項已完成。\n' +

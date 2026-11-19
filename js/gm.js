@@ -305,18 +305,15 @@
     (document.getElementById('ui-shell') || document.body).appendChild(panel);
 
     input.addEventListener('keydown', function (e) {
+      if (e.isComposing || e.keyCode === 229) return;
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         e.stopPropagation();
+        if (e.repeat) return;
         var val = input.value;
-        if (!val.trim()) {
-          closeGM();
-          return;
-        }
+        if (!val.trim()) return;
         submitGMCommand(val);
         input.value = '';
-        // 送出只收起面板；closeGM會取消仍在解析中的白話指令。
-        panel.style.display = 'none';
       } else if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
@@ -325,11 +322,14 @@
     });
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && (!gmUi || gmUi.panel.style.display === 'none') && isGMHost()) {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229 && !e.repeat && isGMHost()) {
         var ae = document.activeElement;
-        if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+        if (ae === gmUi.input) return;
+        var isClosed = gmUi.panel.style.display === 'none';
+        if (isClosed && ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
         e.preventDefault();
-        openGM();
+        if (isClosed) openGM();
+        else gmUi.input.focus();
       }
     });
 

@@ -74,6 +74,30 @@ test('常用白話無Key直接送Worker，完全不建立雲端請求或計時�
   assert.equal(env.timers.size, 0);
 });
 
+test('神祕商人邀請券英文及白話無金鑰均送既有 invite 指令，嚴格保留數量語意', async () => {
+  const env = setup({ key: false });
+  for (const [text, amount] of [['invite 100', 100], ['加神祕商人邀請券100張', 100], ['加神秘商人邀請券100張', 100], ['加神祕邀請券100張', 100], ['給我100張神秘邀請券', 100], ['請幫我加邀請券1.5萬張', 15000]]) {
+    env.type(text); await flush();
+    assert.equal(env.sent.at(-1).line, 'invite ' + amount);
+  }
+  assert.equal(env.calls.length, 0);
+  assert.equal(env.timers.size, 0);
+  for (const text of ['加邀請券0張', '加邀請券-1張', '加邀請券1.5張', '加邀請券100張且立即召喚', '加邀請券100張，未定義的操作']) {
+    assert.equal(env.ai.parseFastPath(text), null, text);
+  }
+  assert.deepEqual(Array.from(env.ai.parseFastPath('加邀請券10張，然後加金幣100個')), ['invite 10', 'gold 100']);
+});
+
+test('雲端翻譯契約包含 invite 且成功結果可以快取', async () => {
+  const env = setup();
+  env.context.respond = async () => success(['invite 5']);
+  const prompt = '請給測試用商人門票五張';
+  env.type(prompt); await flush();
+  assert.match(JSON.parse(env.calls[0].options.body).contents[0].parts[0].text, /invite <正整數數量>/);
+  assert.deepEqual(env.sent.map(s => s.line), ['invite 5']);
+  assert.deepEqual(Array.from(env.ai.getCachedNaturalCommand(prompt)), ['invite 5']);
+});
+
 test('任務白話與英文不需Key送Worker，預設重置只填文字不自動執行', async () => {
   const env=setup({key:false});
   for(const text of ['重置所有任務','完成所有任務','跳到第13個任務','查詢目前任務進度','task reset']){
@@ -249,21 +273,27 @@ test('新雲端解析取代舊解析，舊finally不能清掉新請求的取消�
   assert.equal(env.sent.length, 0);
 });
 
-test('Enter送出立即收框，延遲白話翻譯仍執行一次且不重新開框', async () => {
+test('Enter送出保留面板，空白Enter與失焦取回焦點不取消延遲白話翻譯', async () => {
   const env = setup();
   const panel = env.context.document.body.children[0];
   const pending = deferred(); env.context.respond = () => pending.promise;
   env.context.document.listeners.keydown({ key: 'Enter', preventDefault() {} });
   assert.equal(panel.style.display, 'block');
   env.type(unknownPrompt);
-  assert.equal(panel.style.display, 'none', '不等待雲端回覆便收框');
+  assert.equal(panel.style.display, 'block', '等待雲端回覆時顯示進度');
   assert.equal(env.input.value, '');
   await flush();
   assert.equal(env.calls[0].options.signal.aborted, false);
   assert.equal(env.sent.length, 0);
+  env.type('');
+  const progress = env.status.textContent;
+  env.context.document.listeners.keydown({ key: 'Enter', preventDefault() {} });
+  assert.equal(env.status.textContent, progress, '取回焦點不清除進度');
+  assert.equal(env.calls[0].options.signal.aborted, false);
   pending.resolve(success()); await flush();
   assert.deepEqual(env.sent.map(s => s.line), ['gold 123']);
-  assert.equal(panel.style.display, 'none');
+  assert.equal(panel.style.display, 'block');
+  assert.match(env.status.textContent, /已執行.*gold 123.*OK/);
   assert.equal(env.timers.size, 0);
 });
 

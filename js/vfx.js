@@ -2389,7 +2389,7 @@ function vfxCurse(spec, layer, pt, targetId, delayMs) {
    協議轉換；本函式只做目標座標解析、時間換算與視覺函式選擇，不回寫遊戲狀態。 */
 function renderCombatVfx(spec) {
   if (!_vfxEnabled || !spec) return;
-  if (typeof document === 'undefined' || document.hidden) return;
+  if (typeof document === 'undefined' || (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden)) return;
   var anchorId = (spec.targets && spec.targets.length) ? spec.targets[0] : null;
   var layer = vfxLayer(anchorId);
   if (!layer) return;
@@ -2954,7 +2954,7 @@ function vfxScheduleFlush() {
 /* 消化事件佇列的主迴圈：受品質限制的每幀預算，並丟掉超過 stale 門檻的舊事件。
    事件即使被丟掉也只影響畫面，不影響模擬層的權威結果。 */
 function vfxFlushQueue() {
-  if (!_vfxEnabled || _vfxQuality === VFX_QUALITY_LEVELS.OFF || (typeof document !== 'undefined' && document.hidden)) {
+  if (!_vfxEnabled || _vfxQuality === VFX_QUALITY_LEVELS.OFF || (typeof document !== 'undefined' && (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden))) {
     _vfxEventQueue.length = 0;
     return;
   }
@@ -3007,12 +3007,12 @@ function vfxEnqueue(spec) {
 }
 
 /* 對外唯一入口：所有模擬層／UI 呼叫都從這裡進入品質裁切與佇列。
-   document.hidden 時直接略過，返回前不補播背景期間累積的過期特效。 */
+   背景時直接略過，返回前不補播背景期間累積的過期特效。 */
 function playCombatVfx(spec) {
   /* presetOnly（協議 v27）：DOM 路徑（高塔）沒有 Pixi，也就沒有 Preset Runtime，
      這類事件在這裡整則忽略——退回泛用畫法會憑空多出一堆爆點。 */
   if (spec && spec.presetOnly) return;
   var next = vfxSpecForQuality(spec);
-  if (!next || !_vfxEnabled || (typeof document !== 'undefined' && document.hidden)) return;
+  if (!next || !_vfxEnabled || (typeof document !== 'undefined' && (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden))) return;
   vfxEnqueue(next);
 }

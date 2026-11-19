@@ -200,7 +200,7 @@ var BattleRenderer = (function () {
 
   /* ---- 小工具 ---- */
   function documentHidden() {
-    return typeof document !== 'undefined' && document.hidden;
+    return typeof document !== 'undefined' && (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden);
   }
   /* ---- 塔戰定址 ----
      封魔塔也畫在這個戰場上（2026-10-03）。模擬層的塔戰定址照舊：我方 tp-float、BOSS tb-float。
@@ -8490,10 +8490,12 @@ var BattleRenderer = (function () {
     /* 分頁切到背景：rAF 停擺，這時候還活著的特效會整批凍在畫面上，
        回到前景時就是一堆殘留的小圖示與圈點。乾脆直接清掉（與 DOM 版
        handleVisibilityChange 呼叫 vfxSetEnabled(false) 的處置一致）。 */
-    document.addEventListener('visibilitychange', function () {
-      if (documentHidden()) clearAllFx();
-      else { retryVfxRuntimeIfMissing(); setTimeout(function () { reviveCanvas('visible'); }, 150); }
-    });
+    function onRenderVisibilityChange() {
+      if (documentHidden()) { clearAllFx(); clearAllFloats(); S.later.dropped += S.later.q.length; S.later.q.length = 0; }
+      else { retryVfxRuntimeIfMissing(); setTimeout(function () { if (!documentHidden()) reviveCanvas('visible'); }, 150); }
+    }
+    document.addEventListener('visibilitychange', onRenderVisibilityChange);
+    document.addEventListener('gamevisibilitychange', onRenderVisibilityChange);
     /* WebGL 內容遺失（縮小視窗、切走久了、GPU 重置）→ 回來時戰鬥區整片空白（透出後面的白底）。
        Pixi 自己會在 context 還原時重建資源，但這裡再保險一層：
        還原後強制走一次完整的尺寸／場景重建並補畫一幀，並把狀態寫進 console 方便回報。 */
@@ -8815,6 +8817,11 @@ var BattleRenderer = (function () {
          不是 tickWorld 自己判斷要不要跑。maxFPS = 0 代表不節流。 */
       app.ticker.maxFPS = battleMaxFps();
       app.ticker.add(tickWorld);
+      // 活動狀態先包、選單時鐘後包，兩種暫停各自保留 start 意圖。
+      if (typeof GameVisibility !== 'undefined') {
+        GameVisibility.trackTicker(app.ticker);
+        GameVisibility.trackTicker(PIXI.Ticker.shared);
+      }
       if (typeof GameClock !== 'undefined') {
         GameClock.trackTicker(app.ticker);
         GameClock.trackTicker(PIXI.Ticker.shared);

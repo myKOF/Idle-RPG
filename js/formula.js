@@ -760,11 +760,11 @@ function effectiveMPen(st, ent) { return ((st && st.mPen) || 0) + penBuffValue(e
    結算順序：命中 → 防禦減傷（含破甲/穿透）→ 物/魔抗性 → 技能屬性化（元素抗性＋屬性傷害提升）
            → ±20% 浮動 → 暴擊 → 元素附加 → 元素特效（屬性化段＋附加段合計判定）
            → 真實傷害 → 對普通/菁英/BOSS 加成 → 對屬性敵人加成
-           → 總傷害額外增幅 → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 對屬性敵人抗性
+           → 總傷害額外增幅 → 範圍傷害增幅 → 格擋 → 聖佑 → 全局減傷 → 敵種傷害抗性 → 對屬性敵人抗性
            → 護盾吸收 → 扣血 → 反震
    aCfg: { atk, dmgType('phys'|'magic'|'both'), level, critRate, critDmg, hit, sunder, pen,
      trueDmgPct, skillElem, skillElemMix, skillElemDmgUpPct, elemAtk, elemDmgPct, elemDmgUp,
-     eliteDmg, bossDmg, normalDmg, totalDmgPct, dmgVsElem, attr, isElite, isBoss, isPlayer }
+     eliteDmg, bossDmg, normalDmg, totalDmgPct, aoeDmg, isArea, isSkill, dmgVsElem, attr, isElite, isBoss, isPlayer }
          （skillElem = 技能屬性化：本體傷害段整段歸屬該屬性，於防禦/抗性之後、
            浮動與暴擊之前套用元素抗性與屬性傷害提升；因此屬性傷害吃得到暴擊倍率）
          （skillElemMix = 多屬性本體歸屬比例；skillElemDmgUpPct = 已加權合計的本體增傷%，
@@ -877,6 +877,12 @@ function applyEnemyHpDamage(ent, damage, drainHits, opts) {
    一律從 applyEnemyHpDamage 出去（衍生傷害、持續傷害跳段、傳奇、潛能、符文真言），兩者不重複。 */
 var HIT_CALLS = 0;
 var HIT_DIRECT = 0;
+/* 範圍傷害%為獨立乘區；未提供、非有限值或負加成都不產生額外增傷。 */
+function areaDamageMultiplier(value) {
+  var pct = Number(value);
+  return 1 + (isFinite(pct) ? Math.max(0, pct) : 0) / 100;
+}
+
 function resolveHit(attacker, defender, aCfg, dCfg) {
   if (aCfg && aCfg.isPlayer) HIT_CALLS++;
   var defenderWasAlive = defender.hp > 0;
@@ -1019,6 +1025,8 @@ function resolveHit(attacker, defender, aCfg, dCfg) {
   if (attrDmg) dmg *= 1 + attrDmg / 100;
   // 總傷害額外增幅（7/10 轉天賦）：攻擊端最終獨立乘區。
   if (aCfg.totalDmgPct) dmg *= 1 + aCfg.totalDmgPct / 100;
+  // 範圍由傷害段標記；不依命中人數，不改傷害半徑、次數或命中時序。
+  if (aCfg.isPlayer && aCfg.isSkill && aCfg.isArea) dmg *= areaDamageMultiplier(aCfg.aoeDmg);
   // 傳奇特效最終輸出乘區（受控增傷、無盾／低血增傷、狂暴、凍傷）。
   if (typeof legendaryOutgoingDamageMultiplier === 'function') {
     dmg *= legendaryOutgoingDamageMultiplier(attacker, defender, aCfg);
