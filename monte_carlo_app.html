@@ -16,6 +16,7 @@
     <script src="js/stats.js"></script>
     <script src="js/item.js"></script>
     <script src="js/skills.js"></script>
+    <script src="js/skills2.js"></script>
     <script src="js/talents.js"></script>
     <script src="js/player.js"></script>
     <script src="js/special_rules.js"></script>
@@ -607,6 +608,21 @@
         .skills-panel-meta { font-size: 12px; color: #94a3b8; }
         .skills-panel-meta b { color: #e2e8f0; }
 
+        .sk-card { background: #111827; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+        .sk-card.equipped { border-color: #a78bfa; }
+        .sk-card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 8px; }
+        .sk-card-head .sk-name { font-size: 15px; font-weight: 700; color: #e2e8f0; }
+        .sk-card-head .sk-slot { color: #a78bfa; font-size: 12px; font-weight: 700; }
+        .sk-card-head .sk-sum { color: #94a3b8; font-size: 12px; }
+        .sk-tiers { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 6px; }
+        .sk-tier { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 5px 8px; font-size: 12px; display: flex; justify-content: space-between; gap: 6px; }
+        .sk-tier.zero { opacity: .4; }
+        .sk-tier.maxed { border-color: #34d399; }
+        .sk-tier .t-name { color: #e2e8f0; }
+        .sk-tier .t-name i { color: #64748b; font-style: normal; margin-right: 4px; }
+        .sk-tier .t-lv { color: #fbbf24; font-weight: 700; white-space: nowrap; }
+        .sk-tier.maxed .t-lv { color: #34d399; }
+        .sk-tier.ult { border-color: #f59e0b; background: #3b2508; grid-column: 1 / -1; }
         .skill-section { margin-bottom: 12px; }
         .skill-section:last-child { margin-bottom: 0; }
         .skill-section-label {
@@ -3056,28 +3072,43 @@
             const lv = P.skills2 && P.skills2.levels && P.skills2.levels[gid];
             return Array.isArray(lv) ? lv : [];
         };
-        const nameOf = (id) => {
-            if (typeof id === 'string' && id.startsWith('sg:')) {
-                const gid = id.slice(3);
-                const g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null;
-                return (g && g.name) ? g.name : gid;
-            }
-            return id;
-        };
-        const chip = (id, cls, slotLabel) => {
-            const lvs = (typeof id === 'string' && id.startsWith('sg:')) ? lvsOf(id.slice(3)) : [];
-            return `<span class="skill-chip ${cls || ''}">`
-                + (slotLabel ? `<span class="sk-slot">${slotLabel}</span>` : '')
-                + `<span>${nameOf(id)}</span>`
-                + (lvs.length ? `<span class="sk-lv">Lv.${lvs.join('/')}</span>` : '')
-                + `</span>`;
-        };
-
         const groups2 = (P.skills2 && P.skills2.levels) || {};
         const learned = Object.keys(groups2).filter((gid) => lvsOf(gid).some((n) => n > 0));
         const loadout = Array.isArray(P.loadout) ? P.loadout : [];
         const size = (typeof loadoutSize === 'function') ? loadoutSize() : loadout.length;
         const mastery = (typeof ensureSkillMastery === 'function') ? ensureSkillMastery() : (P.skillMastery || { level: 0 });
+        const tierMax = (typeof SG_TIER_MAX_LV !== 'undefined') ? SG_TIER_MAX_LV : 10;
+        const gdef = (gid) => ((typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null);
+
+        /* 每個技能一張卡：中文名、每一階的名稱與等級（沒升的階淡化）、超神進化的選擇與等級。
+           重點是「升到第幾階」，所以七階全列出來，不只列學了幾個技能。 */
+        const card = (gid, slotLabel) => {
+            const g = gdef(gid);
+            const lvs = lvsOf(gid);
+            const tiers = (g && g.tiers) ? g.tiers : lvs.map((_, i) => ({ name: '第 ' + (i + 1) + ' 階' }));
+            const reached = lvs.reduce((hi, n, i) => (n > 0 ? i + 1 : hi), 0);
+            const tierHtml = tiers.map((t, i) => {
+                const lv = lvs[i] || 0;
+                return `<div class="sk-tier${lv === 0 ? ' zero' : ''}${lv >= tierMax ? ' maxed' : ''}">`
+                    + `<span class="t-name"><i>${i + 1}階</i>${t.name || ''}</span><span class="t-lv">Lv.${lv}/${tierMax}</span></div>`;
+            }).join('');
+            let ultHtml = '';
+            const defs = (g && g.ult) ? g.ult : null;
+            if (defs && defs.length) {
+                const pick = (typeof sgUltPickOf === 'function') ? sgUltPickOf(P.skills2 && P.skills2.ult, gid) : null;
+                ultHtml = pick
+                    ? `<div class="sk-tier ult${pick.lv >= tierMax ? ' maxed' : ''}"><span class="t-name"><i>超神進化</i>${pick.def.name}</span><span class="t-lv">Lv.${pick.lv}/${tierMax}</span></div>`
+                    : `<div class="sk-tier ult zero"><span class="t-name"><i>超神進化</i>尚未選擇（${defs.map((u) => u.name).join('／')}）</span><span class="t-lv">—</span></div>`;
+            }
+            return `<div class="sk-card${slotLabel ? ' equipped' : ''}">
+                <div class="sk-card-head">
+                    ${slotLabel ? `<span class="sk-slot">${slotLabel}</span>` : ''}
+                    <span class="sk-name">${(g && g.name) || gid}</span>
+                    <span class="sk-sum">已升到第 ${reached} 階 · 各階合計 Lv.${lvs.reduce((s, n) => s + n, 0)}</span>
+                </div>
+                <div class="sk-tiers">${tierHtml}${ultHtml}</div>
+            </div>`;
+        };
 
         let html = `
             <div class="skills-panel-head">
@@ -3088,22 +3119,18 @@
             </div>`;
 
         /* 裝載欄照順序顯示——順序是戰鬥的施放優先序，不是任意排列。 */
-        html += `<div class="skill-section">
-            <div class="skill-section-label">🎯 裝載中（依施放優先序）</div>
-            <div class="skill-chip-row">`;
+        const equippedIds = loadout.map((id) => (typeof id === 'string' && id.startsWith('sg:')) ? id.slice(3) : id);
+        html += `<div class="skill-section"><div class="skill-section-label">🎯 裝載中（依施放優先序）</div>`;
         html += loadout.length
-            ? loadout.map((id, i) => chip(id, 'equipped', '#' + (i + 1))).join('')
+            ? equippedIds.map((gid, i) => card(gid, '#' + (i + 1))).join('')
             : '<span class="skills-empty">裝載欄是空的</span>';
-        html += `</div></div>`;
+        html += `</div>`;
 
-        /* 已學的技能群組全列出來（附各階等級），不只裝載中的那幾個。 */
-        html += `<div class="skill-section">
-            <div class="skill-section-label">📖 已學技能群組（全部）</div>
-            <div class="skill-chip-row">`;
-        html += learned.length
-            ? learned.map((gid) => chip('sg:' + gid, loadout.indexOf('sg:' + gid) >= 0 ? 'equipped' : '', '')).join('')
-            : '<span class="skills-empty">尚未學任何技能</span>';
-        html += `</div></div>`;
+        const others = learned.filter((gid) => equippedIds.indexOf(gid) < 0);
+        if (others.length) {
+            html += `<div class="skill-section"><div class="skill-section-label">📖 其他已學技能</div>`
+                + others.map((gid) => card(gid, '')).join('') + `</div>`;
+        }
 
         box.innerHTML = html;
     }
