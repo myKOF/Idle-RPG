@@ -25,3 +25,11 @@
 素材庫 `codex-authored/boss8-gargoyle-variant2-20261119/` 保存原檔、`exports/boss8_lv2.blend`、五動作 `boss8_lv2.glb`、1080透明頭像及工具／QA／清單。動作與首套時長相同，死亡段逐150FPS幀依第二套表面修正接地，避免長尾在補間幀穿地；第一套素材包及正式輸出保持原樣。製作命令最後加參數 `2`，即可使用第二套輸出檔名；驗證工具接受第二套blend及原檔。
 
 NPC.xlsx第499列 `tower_boss_18` 管理第18／68／118層，名稱「石像鬼」、備註「外觀：石像鬼2｜」，模型為 `images/models/npc3d/boss8_lv2.glb`，頭像為 `sprites/boss/boss8_gargoyle_lv2.png`。技能、屬性、攻速、射程、移速、倍率及其他列保持。`node tools/boss8/export.cjs --apply --variants`／`--check --variants` 處理第二套；實機 `node tools/boss8/verify_ingame.cjs <output> 18`。
+
+## 第三套材質（2026-11-19）
+
+使用者提供的 `BOSS8_3.glb` 採紅黑石膚與翼部符紋，含18,030頂點、10,338三角面及70根骨骼。原始SHA-256為 `5982ebee9e75f866a53e4e16123a56e6b2fd2c141e1f40a0f97cefe40d47fb45`。以核准的第四版動作直接對應第三套的靜止骨架與尾鏈，保留原網格、UV、蒙皮與三張正式貼圖。死亡段逐150FPS幀依第三套表面校正接地。
+
+素材庫 `codex-authored/boss8-gargoyle-variant3-20261119/` 保存原檔、可編輯的 `boss8_lv3.blend`、五動作GLB、1080透明頭像及驗證報告。製作命令的最後參數填 `3`。使用 `node tools/boss8/export.cjs --apply --material3` 匯出，`--check --material3` 驗證雜湊。以 `node tools/boss8/verify_ingame.cjs <output> 28` 驗證遊戲載入。
+
+NPC.xlsx第509列 `tower_boss_28` 管理第28／78／128層，名稱為「石像鬼」，備註為「外觀：石像鬼3｜」。該列綁定 `images/models/npc3d/boss8_lv3.glb`、`sprites/boss/boss8_gargoyle_lv3.png` 與核准的五個動作。

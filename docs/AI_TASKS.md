@@ -16802,3 +16802,14 @@ Worker 存活且頁面正常完成載入。
 - 回歸：`node --test tests/boss8-character-asset.test.cjs tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 59/59通過。`npm.cmd run build` 742檔通過；字串稽核0筆、配置試跑變更0、Git差異檢查通過。
 - 實機：`node tools/boss8/verify_ingame.cjs <temp-output> 18` 在靜音隔離Edge由真正Npc3D.create載入第二套，五動作原時長及三攻擊輪替通過，檢視各動作渲染及死亡尾部。新遊戲（測試略過序章）準備第18層，列表圓形與詳情方框顯示第二套完整面部；實際挑戰確認tower_boss_18、npc3d:true及Attack1施法，頁面例外0。瀏覽器已關閉並清理，沒有跑完整場勝敗。
 - 交接：素材庫Commit `5baa16ce2e5591d2176feec85dabb7d1e575b8be`；專案Commit為本段所在的`[Codex] feat: 接入石像鬼第二套材質與五動作`。獨立素材包`codex-authored/boss8-gargoyle-variant2-20261119/`保存原檔、可編輯blend、GLB、PNG、工具、來源與QA／清單，首套與歷史包保持；臨時工作簿、輸入、畫面與Blender備援已清理。無本輪未完成項目，可交使用者驗收與合併，尚未合併或推送develop。
+
+## TOWER-BOSS8-MATERIAL3-20261119 — 石像鬼第三套材質與五動作
+
+- Codex 已完成。前置為已核准的第四版五動作與首兩套石像鬼配置。以使用者提供的 BOSS8_3.glb 製作第三套模型與頭像，依新尾骨重對應並驗證落地，接入 tower_boss_28（第28／78／128層）。
+- 範圍含第三套素材及素材庫、NPC表格和匯出資料、必要快取、BOSS8匯出／實機驗證工具、回歸及相關文件。技能、戰鬥數值及其他樓層資料不在本次範圍。驗收含原生Excel、蒙皮、實機與建置，完成後交使用者驗收。與 ai/claude 在 index.html 的修改為不同資料快取行，三方試合通過。
+- 動作依第三套70根骨骼、原網格及蒙皮重對應，死亡段逐150FPS幀按第三套表面校正接地。`blender -b --python-exit-code 1 -P tools/boss8/verify_game.py -- <boss8_lv3.blend> <BOSS8_3.glb> <validation.json>` 通過580個取樣時點。靜止骨架誤差0，死亡段最低點約0.025米，五動作時長為1.6／1.7333／2.08／2.4／3.7667秒。三張貼圖比對逐像素一致。
+- NPC.xlsx第509列以原生Excel更新14格，名稱「石像鬼」、外觀備註「石像鬼3」、第三套頭像／模型及動作綁定。重開兩次及前後比對通過，24,535格樣式與393個公式保留。CSV及遊戲資料各只有 tower_boss_28 一列變動，`node tools/config_tables.cjs --apply NPC` 重建差異為0。
+- 修改項目為NPC.xlsx／CSV、data.js、主頁／bridge／Worker快取、第三套GLB與PNG、BOSS8匯出及驗證工具、NPC和BOSS8回歸、資產／功能／樓層名稱文件及本段。唯讀檢查規範、首兩套素材、核准第四版來源、三套輸出雜湊、Blender重對應與Excel原生寫入工具。
+- `node --test tests/boss8-character-asset.test.cjs tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 通過62／62，`npm.cmd run build` 通過742檔。三套 `node tools/boss8/export.cjs --check`（第二套加 `--variants`，第三套加 `--material3`）、字串稽核與Git差異檢查通過。
+- `node tools/boss8/verify_ingame.cjs <output> 28` 以隔離Edge確認五動作與三攻擊輪替，在第28層確認方形頭像、圓形縮圖及實際Attack1出招，頁面例外0。第78／128層由配置回歸確認。實機範圍為進場及出招，未驗證完整勝敗流程。瀏覽器及暫存已清理。
+- 素材庫提交 `cbd2de8c8a79aabe364084fc9c7d3e790ce49264`，保存原檔、可編輯blend、GLB、頭像、工具與驗證。專案提交為本段所在的 `[Codex] feat: 接入石像鬼第三套材質與五動作`。可交使用者驗收與合併，成果目前在 ai/codex。

@@ -8,9 +8,10 @@ const { launchHeadless } = require('../lib/headless-browser.cjs');
 const root = path.resolve(__dirname, '../..');
 const output = path.resolve(process.argv[2] || path.join(root, 'tmp/boss8/game'));
 const floor = Number(process.argv[3] || 8);
-assert.ok([8,18].includes(floor));
+const suffixByFloor = { 8: '', 18: '_lv2', 28: '_lv3' };
+assert.ok(Object.hasOwn(suffixByFloor, floor));
 const npcId = 'tower_boss_'+floor;
-const portrait = 'sprites/boss/boss8_gargoyle'+(floor===18?'_lv2':'')+'.png';
+const portrait = 'sprites/boss/boss8_gargoyle'+suffixByFloor[floor]+'.png';
 const exe = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe'].find(fs.existsSync);
 const mime = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.glb': 'model/gltf-binary', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' };
 const server = http.createServer((req, res) => {

@@ -5,10 +5,11 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { resolveLibraryRoot } = require('../vfx/vfx-library-root.cjs');
 const project = path.resolve(__dirname, '../..');
-const variant = process.argv.includes('--variants');
-const suffix = variant ? '_lv2' : '';
+const material = process.argv.includes('--material3') ? 3 : process.argv.includes('--variants') ? 2 : 1;
+const suffix = material === 1 ? '' : '_lv' + material;
+const packageName = material === 1 ? 'boss8-gargoyle' : 'boss8-gargoyle-variant' + material;
 const library = path.join(resolveLibraryRoot({ libraryId: 'effects-materials' }).root,
-  variant ? 'codex-authored/boss8-gargoyle-variant2-20261119' : 'codex-authored/boss8-gargoyle-20261119');
+  'codex-authored/' + packageName + '-20261119');
 const mode = process.argv[2] || '--check';
 if (!['--check', '--apply'].includes(mode)) throw Error('Use --check or --apply');
 const manifest = JSON.parse(fs.readFileSync(path.join(library, 'manifest.json'), 'utf8'));

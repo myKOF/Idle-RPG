@@ -9,7 +9,9 @@ const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
 const bosses = cfg.evalLiteral(cfg.extractLiteral(source, 'BOSS_LIST').literal);
 
-for(const suffix of ['', '_lv2']) test('formal BOSS8'+suffix+' keeps its normal-mapped material, final tail rig and five approved animation lengths', () => {
+const materials = [[8,1,''],[18,2,'_lv2'],[28,3,'_lv3']];
+
+for(const [, ,suffix] of materials) test('formal BOSS8'+suffix+' keeps its normal-mapped material, final tail rig and five approved animation lengths', () => {
   const bytes = fs.readFileSync(path.join(root, 'images/models/npc3d/boss8'+suffix+'.glb'));
   assert.equal(bytes.readUInt32LE(0), 0x46546c67);
   assert.equal(bytes.readUInt32LE(4), 2);
@@ -48,7 +50,8 @@ for(const suffix of ['', '_lv2']) test('formal BOSS8'+suffix+' keeps its normal-
   }
 });
 
-for(const [id,number,suffix] of [['tower_boss_8',1,''],['tower_boss_18',2,'_lv2']]) test('NPC source and exports bind 石像鬼 material '+number, () => {
+for(const [floor,number,suffix] of materials) test('NPC source and exports bind 石像鬼 material '+number, () => {
+  const id='tower_boss_'+floor;
   const rows = cfg.csvParse(fs.readFileSync(path.join(root,'config/CSV/NPC.csv'),'utf8')).filter(r=>r.length>1);
   assert.deepEqual(cfg.readXlsxRows(path.join(root,'config/Excel/NPC.xlsx')),rows);
   const h=rows[0], row=rows.find(r=>r[0]===id);
@@ -68,7 +71,7 @@ for(const [id,number,suffix] of [['tower_boss_8',1,''],['tower_boss_18',2,'_lv2'
   assert.deepEqual(boss.skills,{ex:['e_fireball','e_heal'],rnd:[4,6]});
 });
 
-for(const [baseFloor,suffix] of [[8,''],[18,'_lv2']]) test('gargoyle '+baseFloor+' repeats on its own tower row', () => {
+for(const [baseFloor,,suffix] of materials) test('gargoyle '+baseFloor+' repeats on its own tower row', () => {
   const context={ BOSS_LIST:bosses,STR:(_id,floor,name)=>floor+' '+name,
     bossStatsFor:()=>({level:5,hp:100,atk:10,def:5,mdef:5,aspd:3,dodge:0,hit:100,xp:5}),
     towerBossDefFor:f=>bosses[(f-1)%bosses.length],npcCombatProfile:b=>({aspd:b.atkSpeed,runSpeed:b.runSpeed,atkRange:b.atkRange,sightRange:b.sightRange}),ELEMENTS:['light'] };
@@ -81,19 +84,19 @@ for(const [baseFloor,suffix] of [[8,''],[18,'_lv2']]) test('gargoyle '+baseFloor
     assert.deepEqual(boss.model3d.clips,{idle:'Walk',walk:'Walk',attack1:'Attack1',attack2:'Attack2',attack3:'Attack3',die:'Die'});
     assert.equal(boss.maxHp,100);
   }
-  for(const i of [27,37,47]) {assert.equal(bosses[i].model3d,undefined);assert.equal(bosses[i].name,'聖焰審判官');}
+  for(const i of [37,47]) {assert.equal(bosses[i].model3d,undefined);assert.equal(bosses[i].name,'聖焰審判官');}
   const png=fs.readFileSync(path.join(root,'images/sprites/boss/boss8_gargoyle'+suffix+'.png'));
   assert.equal(png.readUInt32BE(16),1080);assert.equal(png.readUInt32BE(20),1080);assert.equal(png[25],6);
 });
 
-test('the two gargoyle materials retain distinct supplied base-color textures', () => {
+test('the three gargoyle materials retain distinct supplied base-color textures', () => {
   const crypto=require('node:crypto');
-  const hashes=['','_lv2'].map(suffix=>{
+  const hashes=materials.map(([, ,suffix])=>{
     const b=fs.readFileSync(path.join(root,'images/models/npc3d/boss8'+suffix+'.glb'));
     const end=20+b.readUInt32LE(12),g=JSON.parse(b.subarray(20,end)),bin=b.subarray(end+8);
     const texture=g.materials[0].pbrMetallicRoughness.baseColorTexture.index;
     const image=g.images[g.textures[texture].source],view=g.bufferViews[image.bufferView];
     return crypto.createHash('sha256').update(bin.subarray(view.byteOffset||0,(view.byteOffset||0)+view.byteLength)).digest('hex');
   });
-  assert.equal(new Set(hashes).size,2);
+  assert.equal(new Set(hashes).size,materials.length);
 });
