@@ -16771,7 +16771,9 @@ Worker 存活且頁面正常完成載入。
 
 ## SYNC-BOSS7-AI-20261119 — 整合三套岩石怪並同步全部可整合AI成果
 
-- Owner：Codex；In Progress。使用者明確授權將所有可同步AI成果整合develop、包含BOSS7三套材質，再讓三個固定AI工作區對齊，並依既有同步流程推送遠端；不發布main。前置：各參與工作區及素材庫乾淨，BOSS7來源與回歸已完成。
+- Owner：Codex；Done。使用者明確授權將所有可同步AI成果整合develop、包含BOSS7三套材質，再讓三個固定AI工作區對齊，並依既有同步流程推送遠端；不發布main。前置：各參與工作區及素材庫乾淨，BOSS7來源與回歸已完成。
 - 已fetch並盤點全部本地／遠端分支及worktree；除BOSS7的 `2a7c452c33870e6222bdae8005cd60fe119287f0`、`2fbcae5e4735846ef1653a4bcacf59e84762e21c` 外，其他可同步AI來源皆在develop歷史。`git merge-tree --write-tree develop ai/codex`乾淨。保留明確隔離 `codex/background-catchup`：`08013b4db0e3f03f336810a128cd801547f89f6d`；不擴張至其他Codex來源。
 - 範圍：主整合工作區develop合併、必要整合紀錄與驗證、素材庫與遠端AI／develop同步及三個固定工作區快轉；禁止改玩法、覆寫未提交內容、解除隔離或發布main。驗收包含來源祖先關係、三套模型／五動作／NPC資料、Excel來源雜湊、相關回歸與build、素材雙庫雜湊、遠端與固定工作區一致及乾淨狀態。
 - 合併驗證：在 `D:/MyGame/Idle-RPG/develop` 以 `--no-ff --no-commit ai/codex` 合併，父來源為 `27fe5b3f` 與 `291fbcba`，沒有文字或二進位衝突，合併內容與已驗收ai/codex完全一致。52項相關回歸（同BOSS7材質任務指令）及 `npm.cmd run build`（741檔）通過，`git diff HEAD --check`、字串稽核0筆及BOSS7兩組匯出雜湊檢查通過。NPC.xlsx SHA-256 `14db272524b7e82be5e648fba29b6962a4c575a5da4dca4213530c99d0dccf9b` 與原生Excel驗證來源逐位元一致，未重新改寫工作簿。主工作區缺少忽略版控的素材庫設定，已沿用既有本機設定後完成核對。舊指定來源 `977e4254` 已在整合歷史。
+- 完成：合併Commit `7835f27299b131bbf1df2a2be38214dcfc02e4d7`。執行 `powershell -NoProfile -ExecutionPolicy Bypass -File tools/invoke-sync-with-report.ps1 -SyncRemoteFirst -NoAutoResolve` 成功（報告 `logs/sync-ai-worktrees/sync-20261119-112559-fea971de.md`），develop與三個固定AI工作區及四個遠端全部對齊；額外Claude雲端、brass-and-slate、game-help、lava-terrain、npc-black-outlines等來源SHA均已在主線歷史，沒有其他待整合AI來源。素材庫原始BOSS7兩筆Commit `06600ae`／`ea8d6c3` 已推送至origin/master，HEAD／遠端均為 `ea8d6c358defbc7941254d18a36bcb1572c8d2c3` 且乾淨。僅本段完成紀錄另以docs提交快轉並同步，不改已驗證程式或素材。
+- 交接：唯一未同步保留 `codex/background-catchup`：`08013b4db0e3f03f336810a128cd801547f89f6d`，原hold及工作區完整保留。main／production未更新。沒有功能未完成項目；素材庫GitHub對51.27MB首套blend提出建議大小警告但推送成功。修改僅必要合併與任務紀錄；唯讀檢查完整分支／來源歷史、工作區、BOSS7配置／素材及同步腳本與報告。建議重新載入遊戲驗收三套外觀；沿用前項實機驗證，未重跑完整場勝敗。
