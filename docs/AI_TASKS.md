@@ -1,3 +1,8 @@
+## SCREEN-CAPTURE-CLEANUP-RULE-20261119 — 補上螢幕擷取工作階段清理規範
+
+- Owner：Codex，Done。依使用者指示在 `AI_RULES.md` 第 19 節補上擷取清理規範，涵蓋正常結束、失敗、逾時、中止及交回操作時的資源釋放，工具重設、殘留 helper 精確清理，以及黃色外框消失的驗證。
+- 修改 `AI_RULES.md` 與本段。唯讀檢查 Workflow、Codex 規範、既有任務及 Computer Use 文件。逐檔預檢、文件審閱、章節一致性與 `git diff --check` 通過，無素材交付。可供使用者驗收及合併，本項完成。Commit 為本段所在的 `[Codex] docs: 規範測試後釋放螢幕擷取工作階段`。
+
 ## DESKTOP-MINI-LIVE-DRAG-20261119 — 迷你視窗拖曳即時跟隨滑鼠
 
 - Owner：Codex，Done。迷你標題列捕捉指標，即時移動完整視窗。按下位置隨事件傳入，修正快速拖曳時 IPC 抵達晚於滑鼠的偏移；原生 DIP 與內容區縮放共用座標，固定要求尺寸避免小數 DPI 多次拖曳累加增大。放開、取消、失去捕捉、失焦與最小化皆結束拖曳，最後位置沿用既有保存。原生最小化／方框／關閉與 Enter／Esc 保留，Windows 使用 pop-up-menu 置頂層級避免被排到工作列後方。
