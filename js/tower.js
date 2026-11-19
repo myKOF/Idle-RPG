@@ -61,7 +61,7 @@ function makeBoss(floor) {
     aspd: prof.aspd, dodge: bs.dodge, hit: bs.hit, // 命中率 = 基礎值 + 樓層×每層值 → formula.js §4
     runSpeed: prof.runSpeed, atkRange: prof.atkRange, // 座標單位；0＝用戰場預設 → js/battlefield.js
     atkCd: 1.5, effects: {}, ctrlRes: bs.ctrlRes,
-    sightRange: prof.sightRange,
+    sightRange: typeof bfMeterPx === 'function' ? bfMeterPx(BF_TOWER_SEARCH_RANGE_M) : prof.sightRange,
     _alerted: false,
     elite: false, isBoss: true, towerBoss: true, xp: bs.xp,
     /* 浮字／特效定址沿用塔戰原有的 tb-float（我方是 tp-float）；
@@ -110,8 +110,8 @@ function startTowerFight(floor) {
   TOWER.boss = makeBoss(floor);
   TOWER.boss._spawnAt = GT;
   TOWER.player = newPlayerEntity(st);
-  if (typeof eliteReset === 'function') eliteReset();
   placeTowerCombatants(TOWER.boss);
+  if (typeof eliteReset === 'function') eliteReset();
   // 塔戰玩家實體全新建立＝新一場戰鬥，清空技能執行期狀態（比照 skillCds 全新重置）
   if (typeof resetSkillRT === 'function') resetSkillRT();
   TOWER.player.atkCd = 0.3;
@@ -149,24 +149,15 @@ function placeTowerCombatants(boss) {
     TOWER.arena = bfTowerArenaGeometry((home.x + boss.pos.x) / 2, (home.y + boss.pos.y) / 2);
     /* 相隔一個基準畫寬，BOSS 仍從玩家畫面右側之外跑入。
        雙方先按原速互相接近；遠程首領停步後，由玩家補至普攻距離。
-       首招提早施法也會停步，取既有技能引擎判定與本場已抽出的冷卻限制跑入距離。
-       反推首領起點，使首次近身時的雙方中點對齊法陣中心，不改移速、射程或技能時序。 */
+       首次出手前必須先進入攻擊射程（eliteTickOne），不再以遠處施法的冷卻補償出生位置。
+       反推首領起點，使首次近身時的雙方中點落在中央附近，整組站位再共同向右平移。 */
     var gap = TOWER.arena.viewWidth;
     var playerSpeed = bfPlayerSpeed() * bfPlayerSpeedFactor(TOWER.player);
     var bossSpeed = bfEnemyRunSpeed(boss) * bfEnemySpeedFactor(boss);
     var contact = bfMeleeRange() + bfEntityRadius(boss);
     var approach = Math.max(0, gap - Math.max(contact, bfStopDistance(boss)));
     var bossTravel = approach * bossSpeed / (playerSpeed + bossSpeed);
-    boss.pos.x = home.x + gap;
-    if (boss._el && boss._el.cd && typeof eliteDef === 'function' && typeof eliteCanCast === 'function') {
-      (boss.affixes || []).forEach(function (id) {
-        var def = eliteDef(id), cd = Number(boss._el.cd[id]);
-        if (def && def.kind === 'active' && !def.repo && isFinite(cd) && cd >= 0 && eliteCanCast(boss, def)) {
-          bossTravel = Math.min(bossTravel, bossSpeed * cd);
-        }
-      });
-    }
-    boss.pos.x = TOWER.arena.cx + contact / 2 + bossTravel;
+    boss.pos.x = TOWER.arena.cx + contact / 2 + bossTravel + bfMeterPx(5);
     home.x = boss.pos.x - gap;
     // 挑戰首領從遠端直接追向玩家，不受野外索敵視野限制而停住／遊走。
     boss._alerted = true;

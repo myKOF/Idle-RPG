@@ -1,3 +1,22 @@
+## TOWER-OPENING-APPROACH-20261120 — 首領先主動靠近並共同右移出生點
+
+- Owner：Codex；Done，單人實作。使用者實測首領仍在遠處停住，要求雙方出生點共同右移5米並在黑幕消失後互相靠近，追加塔戰雙方搜敵200米；本輪修正首招過早施法造成停步，不再只用出生點預估掩蓋。
+- 前置：468676b1及既有開場／法陣流程完成，規範／Workflow／Agent與任務已讀。逐檔預檢塔戰／elite／測試無外部來源；首頁與Worker不同快取行分段試合，共用版本沿用本聊天授權。同副本升級回饋／NPC／Task／data／BOSS9進行中內容保留。
+- 允許：js/tower.js出生點、js/elite.js首招施法資格、js/battlefield.js塔戰搜尋、主頁／Worker／bridge快取、tests/tower-opening-approach.test.cjs及相關塔戰回歸、LV_upgrade_system.md及本段。禁止更改表格／模型／素材／原移速攻速射程／技能效果／解鎖／存檔，不合併推送develop或main。追加檔案預檢無外部來源；升級提示已提交，保留其變更。
+- 驗收：黑幕後雙方首步實際互相靠近，BOSS首次出手前在射程外不被技能硬直截停，但冷卻照常推進；進射程後正常施法／出招，野外不受影響。依使用者追加指示雙方塔戰搜敵200米。中央接戰基準共同右移5米，保持固定法陣與原速；第3／4層正式內測桌面冷載入驗證，不在產品或測試腳本先預熱模型；相關回歸／Build／差異檢查後提交，交使用者驗收。
+
+- 完成：BOSS首次出手前未進原攻擊射程時，主動技只推進冷卻、不啟動施法硬直，進射程後正常出招；野外仍沿用原技能規則。塔戰玩家搜尋上限200米、BOSS實體視野200米（已索敵後繼續追擊），不更動NPC表或原攻擊射程。以原速／停步距離配置中央接戰，整組出生點共同右移bfMeterPx(5)，法陣固定；移除出生位置的首招冷卻補償並還原無此補償時的初始化清理順序。主頁／Worker相關快取及共用Worker版本同步。
+- 修改11檔：js/tower.js、js/elite.js、js/battlefield.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/tower-opening-approach.test.cjs、tests/tower-battlefield.test.cjs、tests/npc-vision.test.cjs、LV_upgrade_system.md與本段。唯讀檢查battle-renderer.js、npc3d.js、hero3d.js、ui.js、ui-sound.js、game-clock.js、game-visibility.js、原生Electron入口／轉場／商人及desktop.log；預載試作已完整移除，這些渲染與UI檔案相對HEAD無本項修改。NPC／Task／data與其他聊天進行中內容保留；無模型、素材或配置交付變更，不建立素材庫空提交。
+- 回歸：node --test tests/tower-opening-approach.test.cjs tests/tower-battlefield.test.cjs tests/tower-action-motion.test.cjs tests/tower-scene-intro.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-auto-result.test.cjs tests/tower-auto-advance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，85/85通過；node --test tests/player-search-rings.test.cjs tests/npc-vision.test.cjs tests/npc-damage-aggro.test.cjs，34/34通過。舊塔戰視野回歸依本輪使用者200米要求更新，保留200米外不發現、發現後仍須進原攻擊射程與野外配置回歸；新增首招CD全ready仍首步移動、冷卻繼續與首次ACT距離驗證。補跑battlefield／locomotion／連挑／zone-music共81項80通過，唯一仍為既有Zones曲目斷言期待空白、實際black-crust-breaks.mp3，以HEAD原測試唯讀Module重跑同名測試確認相同失敗，未改其斷言或曲目。
+- 實機：IAB無可用連線後，以真正Electron內測app://localhost、靜音隔離新存檔，透過正式UI挑戰第3／4層，冷載入且不預熱模型。最終版雙方黑幕後首步互相靠近、首領在原射程外持續移動、首次ACT均在射程內，3D Walk分別62／92畫格，速度為正且動畫秒數前進；戰後返回field:desert且場景ready。頁面錯誤0，僅Electron既有開發版CSP警告。原隱藏測試視窗更新頻率過低造成Walk取樣僅2幀，正常顯示後未加預載也通過；因此撤回對模型冷載入的初步判斷並移除預載試作，而非放寬動畫斷言。診斷／對照／最終逐幀JSON、battle原生Canvas PNG與返回場景截圖留本聊天visualizations/tower-opening-approach-20261120，測試視窗及隔離profile已清理。
+- 交接：npm.cmd run build通過755檔，本項Git差異與自我Review通過。本項無未完成工作，可供使用者驗收合併，未合併／推送develop或main；黑畫面另段維持根因未定，不能宣稱本項修復。限制為未跑全庫／所有樓層實機，實機使用當時工作區NPC未提交配置（非本項修改）；共用出生點與搜敵套用所有塔層。與Claude重疊的共用bridge版本沿用本聊天授權，其他首頁／Worker快取行獨立分段三方試合為0；保留其他聊天未提交變更。Commit為本段所在「[Codex] fix: 修正塔戰開場追擊與兩百米搜敵」，SHA見交付；下一步重開內測桌面載入新快取後驗收。
+
+## TOWER-SCENE-BLACK-DIAG-20261120 — 內測桌面場景黑畫面唯讀追查
+
+- Owner：Codex；Review（尚未再現，根因待證據）。使用者回報進塔黑畫面但倒數／技能仍走，失敗返回練功也黑；追加重開內測桌面版後恢復正常。已讀原生desktop.log，未記錄頁面錯誤；對照本聊天提交，修改為塔戰站位／清理順序及快取，未改戰鬥渲染器或技能CD。
+- 已用真正Electron內測app://localhost、隔離且靜音profile，先新遊戲、再以原內測autosave的唯讀副本測試，原存檔未寫入。測冷載入第1層、退出確認回荒漠、商人開關、原生背景／前景通知；兩輪場景均回正確key、有玩家／敵人／場地且無頁面錯誤，僅Electron既有開發版CSP警告。不能據此宣稱黑畫面已修復或確定與商人／出生點無關。原生擷取在隱藏視窗下可能落後一個合成畫格，已同時保存renderer／Worker／visibility／場景JSON供核對。
+- 診斷程式／六階段PNG與JSON留本聊天visualizations/tower-black-desktop-20261120，背景Electron與隔離profile已清理。待同一異常再次出現時保留畫面狀態取得即時資料；本項沒有推測性修改渲染器、存檔、商人或CD規則。
+
 ## TOWER-BOSS-CENTER-CONTACT-20261120 — 依追擊及停步距離對齊中央接戰
 
 - Owner：Codex；Done，單人實作。使用者確認上一輪仍偏右，要求繼續調整雙方出生點，讓雙方在法陣中央附近接戰並交實機截圖。本輪以結果為準，取代前輪固定左移米數。

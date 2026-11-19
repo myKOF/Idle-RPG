@@ -591,6 +591,9 @@ function eliteTickOne(m, dt) {
   if (rt.atkUntil && rt.atkUntil <= GT) { rt.sacMult = 1; rt.atkUntil = 0; }
   if (!eliteReady(m)) return;
   var acting = !ccActionLocked(m);
+  // 塔戰首招前先主動靠近，不能在玩家畫面外提早站定施法；冷卻仍在下面照常推進。
+  var openingApproach = m.towerBoss && !m._towerHasActed &&
+    typeof bfInAttackRange === 'function' && !bfInAttackRange(m);
   if (acting && !eliteLocked(m)) eliteRepoTick(m);
   // 跑位中的上一招結束後，先實際恢復一步；多個ready技能不能把移動永遠餓住。
   if (m.towerBoss && typeof towerBossNeedsMoveStep === 'function' && towerBossNeedsMoveStep(m)) return;
@@ -616,7 +619,7 @@ function eliteTickOne(m, dt) {
     if (rt.pend && rt.pend.id === id) continue;
     rt.cd[id] = (rt.cd[id] || 0) - dt;
     if (rt.cd[id] > 0 || !acting) continue;
-    if (rt.busyUntil > GT || (m.towerBoss && eliteLocked(m)) || ELITE_RT.budget <= 0 || !elitePlayerAlive()) continue;
+    if (openingApproach || rt.busyUntil > GT || (m.towerBoss && eliteLocked(m)) || ELITE_RT.budget <= 0 || !elitePlayerAlive()) continue;
     if (!eliteCanCast(m, d)) { rt.cd[id] = 0.6; continue; }
     if (eliteKeepAway(m, d, id)) continue;
     if (d.repo && !rt.pend && !m._rp) {

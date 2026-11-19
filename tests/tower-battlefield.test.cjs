@@ -73,32 +73,24 @@ test('不同移速／射程／體型的首領依原生追擊實際走到中央�
     { runSpeed: 120, atkRange: 320, _bodyR: 52, playerSpeed: 300 },
     { runSpeed: 210, atkRange: 50, _bodyR: 75, playerSpeed: 300 },
     { runSpeed: 80, atkRange: 500, _bodyR: 90, playerSpeed: 450 },
-    { runSpeed: 300, atkRange: 60, _bodyR: 35, playerSpeed: 180 },
-    { runSpeed: 210, atkRange: 50, _bodyR: 75, playerSpeed: 300, castAt: .8 }
+    { runSpeed: 300, atkRange: 60, _bodyR: 35, playerSpeed: 180 }
   ]) {
     const { c } = setup();
     c.BF_PLAYER_SPEED = cfg.playerSpeed;
     c.G.tower.active = true;
     c.bfPlayerPos().x = 1234; c.bfPlayerPos().y = -56;
     const boss = { ...cfg, hp: 1000, isBoss: true, towerBoss: true };
-    if (cfg.castAt) {
-      boss.affixes = ['opening']; boss._el = { cd: { opening: cfg.castAt } };
-      c.eliteDef = () => ({ kind: 'active' }); c.eliteCanCast = () => true;
-    }
     c.TOWER.boss = boss; c.TOWER.player = c.FIELD.player;
-    const cooldowns = JSON.stringify(boss._el && boss._el.cd);
     c.placeTowerCombatants(boss);
-    assert.equal(JSON.stringify(boss._el && boss._el.cd), cooldowns, '出生點計算不消耗首招冷卻');
     const arena = { ...c.TOWER.arena };
     assert.equal(arena.cx, 1364);
     for (let i = 0; i < 600 && !c.bfPlayerCanReach(boss); i++) {
       c.GT += .01;
-      if (cfg.castAt && c.GT >= cfg.castAt) boss._towerActionUntil = Infinity;
       c.bfTickPlayer([boss], .01, boss, c.TOWER.player);
       c.bfTickApproach([boss], .01);
     }
     assert.ok(c.bfPlayerCanReach(boss), JSON.stringify(cfg));
-    assert.ok(Math.abs((c.TOWER.playerPos.x + boss.pos.x) / 2 - arena.cx) <= 10, '首次交手中點距中央不超過一米：' + JSON.stringify(cfg));
+    assert.ok(Math.abs((c.TOWER.playerPos.x + boss.pos.x) / 2 - (arena.cx + c.bfMeterPx(5))) <= 10, '整組站位右移五米後仍對齊接戰基準：' + JSON.stringify(cfg));
     assert.equal(c.TOWER.playerPos.y, arena.cy);
     assert.equal(boss.pos.y, arena.cy);
     assert.deepStrictEqual({ ...c.TOWER.arena }, arena);
@@ -200,7 +192,7 @@ test('150 層：黑幕消失後首步雙方即依原速移動，入場不偷跑�
     assert.ok(Math.abs(c.TOWER.playerPos.x - playerStart - c.bfPlayerSpeed() * .1) < 1e-7);
     for (let i = 0; i < 40 && !c.bfPlayerCanReach(b); i++) s.tick(.1);
     assert.ok(c.bfPlayerCanReach(b), 'floor ' + floor + ' 雙方主動接近後相遇');
-    assert.ok(Math.abs((c.TOWER.playerPos.x + b.pos.x) / 2 - c.TOWER.arena.cx) <= c.bfMeterPx(5), 'floor ' + floor + ' 首次交手位於中央附近');
+    assert.ok(Math.abs((c.TOWER.playerPos.x + b.pos.x) / 2 - (c.TOWER.arena.cx + c.bfMeterPx(5))) <= c.bfMeterPx(5), 'floor ' + floor + ' 首次交手位於右移後的中央附近');
     assert.ok(c.TOWER.playerPos.x > playerStart && c.TOWER.playerPos.x < bossStart);
     assert.ok(b.pos.x < bossStart && b.pos.x > playerStart);
     assert.equal(JSON.stringify(c.TOWER.arena), arena);
