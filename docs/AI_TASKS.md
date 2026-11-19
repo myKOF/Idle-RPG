@@ -1,3 +1,16 @@
+## TOWER-BOSS-CENTER-CONTACT-20261120 — 依追擊及停步距離對齊中央接戰
+
+- Owner：Codex；Done，單人實作。使用者確認上一輪仍偏右，要求繼續調整雙方出生點，讓雙方在法陣中央附近接戰並交實機截圖。本輪以結果為準，取代前輪固定左移米數。
+- 前置：3084d004及原入場流程已完成，規範／Workflow／Agent與任務已讀。fetch／逐檔預檢完成，Claude首頁／Worker為不同快取行，任務差異試合乾淨；共用Worker版本沿用本聊天已核准更新。保留NPC／Task／data／BOSS9及本檔其他進行中內容。
+- 允許：js/tower.js出生站位、tests/tower-battlefield.test.cjs必要回歸、index.html／js/bridge.js／js/worker/sim.worker.js快取、LV_upgrade_system.md與本段。禁止改表格／素材／移速攻速射程／技能行為／解鎖／存檔，不合併推送develop或main。
+- 驗收：法陣不跟出生點漂移；依雙方原移速與首領停步距離配置出生點，首次近身交手的雙方中點落中央附近；保留黑幕消失後雙方主動接近、實際位移Walk及場界。涵蓋不同移速／射程／體型與150層回歸、正式Worker實機第3／4層接戰截圖、Build及差異檢查後提交，交使用者驗收。
+
+- 完成：以原野外位置先錨定法陣中心，雙方起始相隔法陣基準畫寬；用原移速、玩家近戰觸及距離及BOSS停步距離反推起點。再以本場已抽出的主動技冷卻及既有eliteCanCast判定限制首領跑入距離，涵蓋近戰首領途中提早站定施法；不消耗或改寫冷卻，不改技能／射程／移速。既有eliteReset提前到站位前清空上一場技能名額／場域，使判定只取新場狀態。黑幕後雙方主動接近、實際位移Walk及固定場界保持，快取主頁／Worker／bridge同步tower-entry-v3，無新協議／存檔欄位。
+- 修改7檔：js/tower.js、tests/tower-battlefield.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、LV_upgrade_system.md與本段。唯讀檢查js/battlefield.js、elite.js、elite_data.js、battle-renderer.js、npc3d.js／hero3d.js、既有模擬宿主與相關回歸／背景瀏覽器工具。未改任何表格、NPC／data、技能引擎、渲染器、模型或素材，本項素材庫無交付變更；同副本其他聊天表格／data／BOSS9及文件段落完整保留。
+- 回歸：node --test tests/tower-battlefield.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-action-motion.test.cjs tests/tower-scene-intro.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-auto-advance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，46/46通過。新增五組不同原速／射程／體型及0.8秒提早施法，真正推進原生追擊後量首次近戰中點，誤差不超過一米且冷卻不變；150層一般追擊皆在中央五米內，黑幕等待／首步原速／退場／連挑／動作鎖定／場界及快取原回歸通過。最後補防空資料與冷卻不變斷言後單跑tower-battlefield 8/8通過。npm.cmd run build通過753檔，本項差異檢查與自我Review通過。
+- 實機：IAB無可用連線，依browser技能嘗試後沿用看門狗管理、隔離且全靜音Edge／正式Worker。預載相同正式模型以穩定擷取，首次渲染兩腳點距離不超過130世界單位且黑幕結束時暫停畫格／Worker，擷取全頁與原生戰鬥區，再恢復確認正常出招。第3層遠攻、第4層近戰的顯示中點相對固定法陣中心分別為-0.4093米／-0.3977米；黑幕座標不動，其後雙向接近、實際Walk非still且秒數前進（64／88畫格）、頁面例外／警告0。PNG逐張檢視，雙方確在中央附近。首輪第3層已置中，但第4層因途中首招施法仍偏12.55米；因此加入本場首招冷卻限制後重跑，保留中央五米驗收，沒有放寬斷言。
+- 交接：本項無未完成工作或已知新增風險；驗收針對首次正常近身，接戰後仍沿用技能、擊退與跑位規則。未跑全庫／行動真機／桌面包；實機截圖反映當時工作區NPC資料，其他聊天未提交資料未納入本項。腳本／逐幀JSON／接戰座標／全頁及戰鬥區PNG留本聊天visualizations/tower-center-contact-20261120。瀏覽器／伺服器已關閉，無桌面擷取工作階段；清理工具確認無測試瀏覽器殘留。Commit為本段所在「[Codex] fix: 對齊封魔塔中央接戰出生點」，SHA見交付；可供驗收合併，未合併或推送develop／main。下一步重載遊戲驗收中央接戰截圖效果。
+
 ## TOWER-BOSS-SPAWN-SHIFT-20261120 — 雙方出生點左移以靠近法陣接戰
 
 - Owner：Codex；Done，單人修改。使用者看實機截圖後要求玩家再向左移5米（相對最初共左移10米）、BOSS相對上一版向左移10米；法陣中心保持，沿用黑幕完全消失後雙方主動互相接近。

@@ -23,7 +23,7 @@ var TOWER = {
 var TOWER_AUTO_DELAY = 1.0;   // 連續挑戰場與場之間的間隔（秒）
 var TOWER_AUTO_RESULT_DELAY = 3.0; // 連續挑戰結果畫面停留秒數
 var TOWER_AUTO_MAX = 999;     // 連續挑戰次數上限
-/* 原接戰站位用來錨定法陣中心；BOSS 從固定戰場右側向內跑入。
+/* 原接戰站位用來錨定法陣中心；雙方出生點另依追擊與停步距離對齊中央接戰。
    未載入戰場幾何的環境仍以此作為相對我方的生成距離。 */
 var TOWER_BOSS_SPAWN_DIST = 260;
 /* 野外 ⇄ 魔王戰的轉場（js/battle-renderer.js 的黑圈收合：收 1.0 秒、全黑 0.35 秒、展開 1.05 秒）。
@@ -110,8 +110,8 @@ function startTowerFight(floor) {
   TOWER.boss = makeBoss(floor);
   TOWER.boss._spawnAt = GT;
   TOWER.player = newPlayerEntity(st);
-  placeTowerCombatants(TOWER.boss);
   if (typeof eliteReset === 'function') eliteReset();
+  placeTowerCombatants(TOWER.boss);
   // 塔戰玩家實體全新建立＝新一場戰鬥，清空技能執行期狀態（比照 skillCds 全新重置）
   if (typeof resetSkillRT === 'function') resetSkillRT();
   TOWER.player.atkCd = 0.3;
@@ -134,8 +134,8 @@ function startTowerFight(floor) {
 
 /* ---- 戰場站位 ----
    塔戰與野外共用同一個戰場座標系（js/battlefield.js）：我方就是 BF_PLAYER 本人，
-   BOSS 放在我方正前方。我方不歸零——野外在塔戰期間是凍結的，結束時整批清怪重來
-   （finishTowerFight），沿用當下位置可以讓鏡頭不跳。
+   以野外當下位置錨定法陣，黑幕換場時再將雙方放到中央接戰所需的起點，不歸零世界座標。
+   野外在塔戰期間凍結，結束時整批清怪重來（finishTowerFight）。
    TOWER.playerPos 與 FIELD.playerPos 同一個參照，面板序列化時自然帶到最新值。
    沒載入 battlefield.js 的環境（部分單元測試）維持舊的無座標行為：
    bfPos 回 null ⇒ 射程判定一律放行、技能幾何退化成單體。 */
@@ -147,11 +147,30 @@ function placeTowerCombatants(boss) {
   if (boss) boss.pos = { x: home.x + TOWER_BOSS_SPAWN_DIST, y: home.y };
   if (boss && typeof bfTowerArenaGeometry === 'function') {
     TOWER.arena = bfTowerArenaGeometry((home.x + boss.pos.x) / 2, (home.y + boss.pos.y) / 2);
-    boss.pos.x = TOWER.arena.cx + TOWER.arena.halfWidth - bfEntityRadius(boss) - bfMeterPx(10);
+    /* 相隔一個基準畫寬，BOSS 仍從玩家畫面右側之外跑入。
+       雙方先按原速互相接近；遠程首領停步後，由玩家補至普攻距離。
+       首招提早施法也會停步，取既有技能引擎判定與本場已抽出的冷卻限制跑入距離。
+       反推首領起點，使首次近身時的雙方中點對齊法陣中心，不改移速、射程或技能時序。 */
+    var gap = TOWER.arena.viewWidth;
+    var playerSpeed = bfPlayerSpeed() * bfPlayerSpeedFactor(TOWER.player);
+    var bossSpeed = bfEnemyRunSpeed(boss) * bfEnemySpeedFactor(boss);
+    var contact = bfMeleeRange() + bfEntityRadius(boss);
+    var approach = Math.max(0, gap - Math.max(contact, bfStopDistance(boss)));
+    var bossTravel = approach * bossSpeed / (playerSpeed + bossSpeed);
+    boss.pos.x = home.x + gap;
+    if (boss._el && boss._el.cd && typeof eliteDef === 'function' && typeof eliteCanCast === 'function') {
+      (boss.affixes || []).forEach(function (id) {
+        var def = eliteDef(id), cd = Number(boss._el.cd[id]);
+        if (def && def.kind === 'active' && !def.repo && isFinite(cd) && cd >= 0 && eliteCanCast(boss, def)) {
+          bossTravel = Math.min(bossTravel, bossSpeed * cd);
+        }
+      });
+    }
+    boss.pos.x = TOWER.arena.cx + contact / 2 + bossTravel;
+    home.x = boss.pos.x - gap;
     // 挑戰首領從遠端直接追向玩家，不受野外索敵視野限制而停住／遊走。
     boss._alerted = true;
   }
-  home.x -= bfMeterPx(10);
 }
 
 /* ---- 連續挑戰 ----
