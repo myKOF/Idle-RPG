@@ -16929,6 +16929,18 @@ Worker 存活且頁面正常完成載入。
 - 實機：全靜音隔離Edge／新遊戲／正式Worker，1920及1366寬度的升級、全買、刷新底座標完全相等，支柄伸至原商品框上緣，四欄與5:2比例保持。三鈕無img／費用；升級tips實際為金幣圖＋4,100,000，全買一圖＋完整總額，刷新精確顯示指定文字。實際購買後總額降低，升級至Lv.2後費用45,354,833，刷新扣券通過，頁面例外0。預覽／report.json在本聊天merchant-sign目錄；瀏覽器／伺服器關閉，不使用Windows螢幕擷取。
 - 交接：無本項未完成／已知新增風險，限Edge兩種寬度及相關回歸，未跑全庫／真機。可供驗收合併，不合併推送；Commit為本段所在`[Codex] feat: 調整神祕商人招牌與費用提示`。下一步接續使用者新增的會話保留／倒計時需求，獨立實作驗證。編輯器因共用String快取更新，先保留未存內容再重載。
 
+## MYSTERY-MERCHANT-GIFT-20261120 — 饋贈文字連結與好感提示
+
+- Owner：Codex，Done，單人實作。使用者要求升級按鈕改為「饋贈」，去除邊框／底色，只留底線文字；店名及等級稍下移以協調置中。tips改為贈與金幣圖示＋完整金額博取商人好感的指定說明。
+- 允許：商人DOM／UI／CSS／快取、String原生Excel及CSV／衍生字串與編輯器共用快取、既有UI回歸、LV／商人說明及本段；不改價格／升級交易／會話／Worker／素材／存檔，不合併推送。逐檔預檢乾淨；同工作區BOSS9任務僅共用AI_TASKS不同區段，三方試合後分段暫存。
+- 驗收：文字／圖示／完整金額及升級後更新、缺金與滿級保護、原生Excel正常重開及資料格式保留、兩種畫寬正常／懸停／停用無框無底、店名／等級下移、原木牌／外框不變、相關回歸／Build。
+- 完成：商人專用按鈕移除通用`.btn`外觀，保留原生button、交易指令／pending鎖及點擊區，只顯示暖金底線文字；懸停／鍵盤焦點加亮並加粗底線，缺金沿用停用且不恢復底框。店名／等級下移6px，1100px內下移4px，木牌原圖與支柄位置保持。tips為「贈與〔金幣圖示＋完整金額〕博取商人的好感，由此提升商店等級」，滿級沿用「已滿級」並移除費用。
+- String：獨占確認後透過Excel原生COM追加第2557／2558列，編號2572「饋贈」、2573說明樣板（HTML金幣價格為替代字符）；正常模式重開兩次，比對全部原值、繪圖及H4檢視保持。唯讀封裝驗證既有字型／填色／框線／儲存格樣式／公式／欄寬／檢視／篩選／驗證／繪圖不變。匯出2558列CSV、生成2557條字串，主頁及編輯器String快取同步653f0f3d，UI／CSS快取同步。
+- 修改11檔：`js/ui.js`、`css/style.css`、`index.html`、`config/Excel/String.xlsx`、`config/CSV/String.csv`、`js/strings_data.js`、`tools/vfx/editor/index.html`、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`與本段。檢查未修改`js/item.js`／data／Worker、String讀取與原生Excel工具、tooltip／pending邏輯、三張商人圖與新木牌；本項沒有新素材，素材庫無本項交付變更。
+- 回歸：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`44/44通過。沿用既有UI回歸補強指定文案／標題／HTML金幣／完整金額及升級後更新、滿級清費；字串稽核仍寫死0條。`node tools/build_check.cjs`752檔通過；`node tools/assets/export-mystery-merchant.cjs --check`全部商人圖雜湊通過；分段Git差異檢查通過。
+- 實機：隔離且靜音Edge／正式Worker／新遊戲，1920與1366寬度下正常／懸停／缺金狀態皆0px框線、透明底、無陰影及underline，按鈕置中誤差小於0.001px，商品框5:2。滑鼠懸停實際顯示1個金幣圖示與4,100,000；點擊後Lv.2、扣4,100,000、tips更新45,354,833，邀請券與商人期限不變。缺金停用、滿級清費，頁面例外0，測試瀏覽器關閉。首輪QA在模型快照先抵達、DOM尚未重繪時讀到舊費用；改等實際提示重繪後再次完整通過，未改產品或放寬金額斷言。截圖／report.json及Excel驗證來源留本聊天visualizations的`merchant-gift-20261120`。
+- 交接：本項無未完成／已知新增風險，限兩種桌面寬度與相關回歸，未跑全庫及行動真機。Commit為本段所在`[Codex] feat: 將神祕商店升級改為饋贈文字操作`，可供驗收及合併，未合併／推送develop或main；BOSS9進行中內容完整保留。下一步重載遊戲驗收；編輯器若開啟，先保留未存內容再重載共用String。
+
 ## MYSTERY-MERCHANT-SESSION-20261119 — 保留跨功能商人會話與邀請券重置倒計時
 
 - Owner：Codex，Done，單人實作。使用者要求切換其他功能再回封魔塔仍保留商人、商品與已購狀態，手動退出或期限結束才回塔頁；返回鈕左方顯示剩餘時間。Store新增存在時間，預設600秒；每次成功耗券（召喚／刷新）重置完整設定時間，購買／金幣升級／失敗操作不延長。前置既有商人／招牌／tips／外框完成，預檢無實質衝突。

@@ -10594,7 +10594,7 @@ function renderGemShop(merchant, player) {
   var upgradeBtn = $id('shop-upgrade');
   if (upgradeBtn) {
     upgradeBtn.setAttribute('data-ui-pending-key', shopPendingKey);
-    setAttrIfChanged(upgradeBtn, 'data-tt-title', STR(166));
+    setAttrIfChanged(upgradeBtn, 'data-tt-title', STR(2572));
     if (s.level >= GEM_SHOP_MAX_LEVEL) {
       upgradeBtn.textContent = STR(2504);
       setAttrIfChanged(upgradeBtn, 'data-tt-desc', STR(2504));
@@ -10602,8 +10602,8 @@ function renderGemShop(merchant, player) {
       upgradeBtn.removeAttribute('data-tip');
     } else {
       var upgradeCost = gemShopUpgradeCost(s.level);
-      upgradeBtn.textContent = STR(166);
-      setAttrIfChanged(upgradeBtn, 'data-tt-desc', merchantGoldPriceHTML(upgradeCost, true));
+      upgradeBtn.textContent = STR(2572);
+      setAttrIfChanged(upgradeBtn, 'data-tt-desc', STR(2573, merchantGoldPriceHTML(upgradeCost, true)));
       upgradeBtn.toggleAttribute('data-merchant-unavailable', player.gold < upgradeCost);
     }
   }

@@ -12855,6 +12855,7 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   background:url('../images/ui/mystery-merchant-sign.webp') center / contain no-repeat;
 }
 .merchant-level-plaque .shop-level-label {
+  margin-top:6px;
   color:#f1d194;
   font-size:18px;
   font-weight:bold;
@@ -12863,7 +12864,27 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   letter-spacing:1px;
   text-shadow:0 2px 3px #000;
 }
-.merchant-level-plaque #shop-upgrade { position:absolute; left:calc(50% - 44px); bottom:32px; width:88px; min-width:88px; height:30px; padding:3px 16px; font-size:13px; }
+.merchant-level-plaque #shop-upgrade {
+  position:absolute;
+  left:calc(50% - 44px);
+  bottom:32px;
+  width:88px;
+  height:30px;
+  padding:3px 16px;
+  appearance:none;
+  border:0;
+  background:none;
+  box-shadow:none;
+  color:#f1d194;
+  font:inherit;
+  font-size:14px;
+  text-decoration:underline;
+  text-underline-offset:4px;
+  text-shadow:0 1px 3px #000;
+  cursor:pointer;
+}
+.merchant-level-plaque #shop-upgrade:is(:hover, :focus-visible):not(:disabled) { color:#fff0c9; text-decoration-thickness:2px; }
+.merchant-level-plaque #shop-upgrade:disabled { cursor:default; }
 .merchant-shop-controls .gx-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:12px; margin:0; }
 .merchant-shop-controls .gx-actions .btn { min-width:100px; min-height:38px; padding:6px 18px; }
 .merchant-shop-controls .btn { max-width:100%; }
@@ -12964,7 +12985,7 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 @media(max-width:1100px) {
   .merchant-shop-controls { gap:10px; padding-right:12px; }
   .merchant-level-plaque { width:180px; padding:18px 18px 32px; transform:translate(-36px, 32px); }
-  .merchant-level-plaque .shop-level-label { font-size:16px; line-height:1.2; }
+  .merchant-level-plaque .shop-level-label { margin-top:4px; font-size:16px; line-height:1.2; }
   .merchant-shop-controls .gx-actions { gap:8px; }
   .merchant-shop-controls .gx-actions .btn { min-width:82px; padding:6px 10px; }
   #mystery-merchant-panel .shop-card { grid-template-columns:38px minmax(0, 1fr); padding:6px; column-gap:5px; }

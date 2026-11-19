@@ -72,11 +72,14 @@ test('一鍵購買僅顯示文字，tips總額隨售出變動並保留缺金與�
   assert.match(nodes['shop-buy-all'].attrs['data-tt-desc'], />0<\/span>/);
 });
 
-test('升級鈕純文字，費用tips以金幣圖示及完整數字顯示，滿級清除費用', () => {
+test('饋贈以指定說明及金幣完整數字提示，等級變動更新費用，滿級清除費用', () => {
   const { ctx, nodes, render } = renderer();
   render([]);
   const button = nodes['shop-upgrade'];
-  assert.equal(button.textContent, ctx.STR(166));
+  assert.equal(button.textContent, '饋贈');
+  assert.equal(button.attrs['data-tt-title'], '饋贈');
+  assert.equal(button.attrs['data-tt-desc'], ctx.STR(2573, ctx.merchantGoldPriceHTML(4100000, true)));
+  assert.match(button.attrs['data-tt-desc'], /^贈與<img .*博取商人的好感，由此提升商店等級$/);
   assert.match(button.attrs['data-tt-desc'], /<img src="images\/icon_gold.png"/);
   assert.match(button.attrs['data-tt-desc'], />4,100,000<\/span>/);
   render([], 1e12, 1, 2);
