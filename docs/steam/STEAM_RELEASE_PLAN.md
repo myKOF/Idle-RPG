@@ -330,6 +330,18 @@ Steam 用 `electron/steam-config.json` 的 `demoAppId`（Steam 上的 Demo／Pla
 
 本機設定（`steampipe.local.json` 的 SDK 路徑與帳號）和正式版共用。
 
+### 4.8 安裝包（Steam 以外的測試散佈，2026-11-19）
+
+`npm.cmd run desktop:installer:demo`（正式版：`desktop:installer`）會打出 `dist/installer/<版本>/IdleRPG[-Demo]-Setup-<版號>.exe`（NSIS）。
+
+- **不接 Steam**：暫存區拿掉 steamworks.js，打包版的 `steam-config.json` 換成 AppID 全 0。原因是接了 Steam 的版本如果不是從 Steam 啟動，會交給 Steam 重開、自己結束；AppID 填上之後，裝在 Steam 以外就打不開。
+- **與上傳用的資料夾分開**：不會覆蓋 SteamPipe 上傳用的 `dist/win-unpacked`、`dist/demo/win-unpacked`。這份安裝包不能拿去上傳 Steam。
+- **安裝方式**：裝在使用者資料夾（`%LOCALAPPDATA%\Programs\…`），不需要系統管理員權限；可以改安裝位置；會建立桌面與開始功能表捷徑。
+- **兩個版本互不覆蓋**：demo 的 appId 是 `com.idlerpg.desktop.demo`，和正式版不同，兩個版本可以同時安裝。
+- **存檔保留**：解除安裝不刪存檔。存檔位置和其他打包版相同：demo 在 `%APPDATA%\idle-rpg-demo`，正式版在 `%APPDATA%\idle-rpg`。
+- **未簽章**：第一次執行時 Windows SmartScreen 會跳出警告，要按「其他資訊 → 仍要執行」。
+- 測試：`tests/desktop-installer.test.cjs`。
+
 ## 5. 明確不做
 
 - `electron-updater` 或任何自行下載更新的機制（Steam 規範禁止，與原規範一致）。
