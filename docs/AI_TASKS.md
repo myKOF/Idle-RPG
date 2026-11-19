@@ -228,6 +228,13 @@
 - 修改 `js/ui.js`、`index.html` 快取、`tests/equip-socket-ui.test.cjs`、`LV_upgrade_system.md` 及本段。唯讀核對 `js/data.js`、`system_unlock.csv`、String 表與停用樣式。與任務導引、遺物介面的共用檔案為不同區段，三方試合通過並分段暫存。
 - 靜音隔離 Edge 實測滑鼠懸停及移出、鎖定時點擊、升級與轉生兩條解鎖路徑及解鎖後進入。頁面警告與例外 0。`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs` 通過 42 項，`npm.cmd run build` 通過 739 檔。可供整合。
 
+## INVENTORY-DIM-HIDE-FRAMES-20261119 — 隱藏非同部位置灰裝備的品質框
+
+- Owner：Codex，Done。選取裝備時，背包非同部位置灰格隱藏品質色框、光暈與高階角飾。改選或取消後恢復品質框。
+- 修改 `css/brass-and-slate.css`、主頁樣式快取、`LV_upgrade_system.md` 及本段。唯讀核對 `js/ui.js` 的選取流程、`js/ui-inventory-skin.js` 的神話快取與一般／混沌品質樣式。與商人任務共用主頁及文件，雙方區段獨立、三方試合通過並分段提交。素材庫無變更。
+- 隔離靜音 Edge 使用測試裝備驗證全部 12 品質。裝備欄及背包點選、切換部位、取消、神鑄共用背包與格子尺寸均通過。全部格子置灰時生成的神話快取與原版逐字一致，恢復後品質框完整。頁面錯誤與警告 0。
+- `node --test tests/equipment-selection-border.test.cjs tests/equipment-slot-selection.test.cjs tests/equip-selection-outline-instant.test.cjs tests/equipment-selection-memory.test.cjs tests/inventory-keyword-filter.test.cjs tests/inventory-mythic-skin.test.cjs` 36/36 通過，`npm.cmd run build` 通過 752 檔，Git 差異檢查通過。本項無待辦，可供使用者驗收與合併。Commit 為本段所在 `[Codex] fix: 隱藏背包非同部位置灰裝備的品質框`。
+
 ## INVENTORY-SLOT-DIM-20261118 — 加深背包非同部位裝備
 
 - Owner：Codex，Done。背包非同部位的內容遮蔽量由 56% 乘以 1.3 調至 72.8%。品質框維持清楚，同部位維持原亮度。
