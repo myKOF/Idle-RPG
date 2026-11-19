@@ -1,3 +1,16 @@
+## TASK-SKILL-EVOLUTION-20261120 — 補齊飛刀進化任務與邀請券獎勵
+
+- Owner：Codex；Done，單人實作。使用者確認Task順序5「強化飛刀」獎勵碎片250、10「彈射飛刀」獎勵金幣250000、27「暴雨梨花」獎勵神祕商人邀請券5張，要求補齊參數。保留使用者已插入及重排的43項任務與其他既有數值。
+- 前置：規範／Workflow／Agent與任務已讀，fetch及逐檔預檢無外部衝突；來源Task獨占存取成功。其他聊天BOSS9第二版僅共用本檔不同區段，分段提交，不納入其進行中內容。
+- 允許：Task原生Excel及CSV／參數說明、js/tasks.js判定與發獎、js/data.js生成資料、既有save-schema版本遷移、任務導航及必要主頁／Worker快取、相關回歸、LV／遷移文件及本段。禁止更動技能／戰鬥公式、其他表格數值、素材或其他功能，不合併／推送develop或main。
+- 驗收：三項進化的達成／未達成及錯誤終極選項、重置／未裝配、實際領獎及防重複、邀請券既有庫存累加與存讀、插入點前後及全部完成舊檔的單次進度平移、新局不平移、Excel正常模式重開／原資料格式保留、Excel→CSV→TASKS逐格一致、導航、相關回歸與Build。完成後交使用者驗收及整合。
+- 完成：順序5／10的目標類型skillTier、參數knife、數量2／3，順序27為skillUlt、參數knife:petalStorm、數量1；第5項實發碎片改250。邀請券獎勵類型merchantInvitation、參數空白、數量5，沿用既有庫存API與商人投影更新。導航展開飛刀對應階／終極；格式2登錄taskInsertSkillEvolutionV1，舊檔依三個插入點平移，新局及反覆讀檔不平移，無協議形狀變更。
+- 原生Excel：獨占確認後於暫存副本修改12個Task儲存格、追加4條參數說明，正常模式重開兩次並驗值後寫回。唯讀封裝比對原資料／公式、字型／填色／框線／數值格式、欄寬、視窗、篩選／驗證、繪圖及封裝項目均保留；僅D28／F28換行並自動調整該列高度，完整顯示長參數。前後兩區預覽已檢視，44列×11欄CSV及43項TASKS逐欄一致，重建試跑語意變更0。原生COM試作遇PowerShell型別快取與CutCopyMode轉型問題，皆在未寫回來源前中止，修正後雙重重開及完整差異檢核通過。
+- 修改18檔：Task.xlsx／CSV、tools/config_tables.cjs、js/data.js／tasks.js／save-schema.js／quest-guide.js／bridge.js、js/worker/sim.worker.js、index.html、tests/task-evolution.test.cjs及既有task-skills／task-chest-relic／save-schema／gm-task回歸、LV_upgrade_system.md、ONE_TIME_MIGRATIONS.md及本段。檢查未修改js/skills2.js／item.js／player.js／save.js／achievements.js、String及其他配置表；本項無素材交付，不建立素材庫空提交。
+- 驗證：`node --test tests/task-evolution.test.cjs tests/task-skills.test.cjs tests/task-system.test.cjs tests/task-chest-relic.test.cjs tests/save-schema.test.cjs tests/mystery-merchant.test.cjs tests/quest-guide-input.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/gm-task.test.cjs`81/81通過。正式Worker原碼經既有模擬宿主驗證三項實領、防重領、7→12券及存讀；版本0／1全部41種合法舊索引、插入點與最舊遷移串接通過。`node tools/build_check.cjs`753檔通過，`node tools/config_tables.cjs --apply Task`變更0，自我Review及本項差異檢查通過。
+- 已知限制：補跑legacy-skill-removal-migration的12項中11通過，唯一失敗仍期待新局空技能欄，現況預裝sg:knife；唯讀載入起始HEAD程式重跑逐項重現，未修改其斷言。沒有本項未完成工作；未跑全庫或瀏覽器實機，導航以DOM替身、遊戲邏輯以正式Worker宿主驗證。報告／原表備份／來源與前後預覽保存在本聊天visualizations的task-evolution-20261120。
+- 交接：可供使用者驗收及合併，未合併／推送develop或main。與同副本BOSS9／護盾／商人樣式工作共用文件與首頁不同段，三方試合後分段暫存；保留其他聊天所有未提交內容。Commit為本段所在`[Codex] feat: 補齊飛刀進化任務與商人邀請券獎勵`，SHA見交付；下一步重新載入遊戲驗收。
+
 ## TOWER-RETURN-BGM-20261120 — 封魔塔返回場景的配樂過渡
 
 - Owner：Codex；Done，單人實作。使用者要求離開封魔塔回原場景時，塔戰 BGM 先漸弱至完全無聲，再播放原場景 BGM；全程約6秒，其中靜音約4秒，採2秒漸弱＋4秒靜音。

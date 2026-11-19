@@ -1089,14 +1089,19 @@ const TASK_GLOSSARY_ROWS = [
   ['4. 品質/等級門檻是「以上皆可」：稀有任務穿史詩也算。'],
   ['5. 改完別忘了同步「獎勵顯示」欄的文字。'],
   ['6. 2026-09-29 移除舊版技能系統：原「學習治療技能『再生術』」與「升級防禦技能『魔法屏障』至 5 級」兩個任務已刪除，skillLevel 目標類型不再存在；玩家存檔的領取進度已由存檔遷移（legacySkillRemovalV1）平移。'],
-  ['7. 2026-11-12 在原第 16、31 個任務之後插入「開啟10個寶箱」與「獲得3件遺物」：已領取進度由存檔遷移（taskInsertChestRelicV1）平移，已經走過插入點的舊玩家視同略過新任務。']
+  ['7. 2026-11-12 在原第 16、31 個任務之後插入「開啟10個寶箱」與「獲得3件遺物」：已領取進度由存檔遷移（taskInsertChestRelicV1）平移，已經走過插入點的舊玩家視同略過新任務。'],
+  ['skillTier＝指定技能目前已學會的最高普通階數（不要求裝配）。目標參數＝Skills2群組ID；目標數量＝階數（1起）。例：knife搭配2＝強化飛刀、搭配3＝彈射飛刀；更高階亦符合。'],
+  ['skillUlt＝指定終極進化目前生效的等級（不要求裝配）。目標參數＝群組ID:超神ID；目標數量＝最低等級。例：knife:petalStorm搭配1＝暴雨梨花；只解鎖、未學會或選擇其他進化不算。'],
+  ['merchantInvitation＝神祕商人邀請券：獎勵參數留空；獎勵數量＝張數，累加至既有邀請券庫存。'],
+  ['8. 2026-11-20 插入強化飛刀、彈射飛刀及暴雨梨花任務（順序5、10、27）：存檔格式2的taskInsertSkillEvolutionV1依序平移已領進度，已越過插入點者略過新任務；新局照表順序完成。']
 ];
 
 /* ---- Task ← TASKS（js/data.js）主線任務表（2026-08-05 任務系統） ----
    目標類型：equipSlots（參數=最低品質|最低等級）/ upgradeCount / rerollCount /
    enchantCount / composeCount / chestOpenCount / relicCount / socketCount / forgeParts / forgePartLevel /
-   skillEquipCount / skillUpgradeCount / ancientCount / maxHp / stageClear（參數=地圖識別碼）/ towerFloor。
-   獎勵類型：gold / scrap / essence / skillXp / gem（參數=寶石等級）/
+   skillEquipCount / skillUpgradeCount / skillTier（參數=群組ID、數量=普通階數）/
+   skillUlt（參數=群組ID:超神ID、數量=最低等級）/ ancientCount / maxHp / stageClear（參數=地圖識別碼）/ towerFloor。
+   獎勵類型：gold / scrap / essence / skillXp / merchantInvitation（參數留空、數量=張數）/ gem（參數=寶石等級）/
    book（參數=附魔書id）/ equip（參數=品質|等級|太古數；等級 0=依當前關卡、太古空白=自然擲骰）。
    「備註」欄為純說明欄，不寫回 JS（同 Skills 表的「完整描述」欄）。
    第二頁「參數定義」＝ TASK_GLOSSARY_ROWS（說明頁，程式不讀取）。 */

@@ -143,6 +143,16 @@ function taskProgressFor(def) {
       return equipped;
     }
     case 'skillUpgradeCount': return (typeof skills2UpgradeCount === 'function') ? skills2UpgradeCount() : 0;
+    case 'skillTier': {
+      var levels = (typeof skills2Levels === 'function' && skills2Levels(String(def.param || ''))) || [];
+      for (var tier = levels.length - 1; tier >= 0; tier--) if (levels[tier] > 0) return tier + 1;
+      return 0;
+    }
+    case 'skillUlt': {
+      parts = String(def.param || '').split(':');
+      var evolution = (typeof skills2Ult === 'function') ? skills2Ult(parts[0]) : null;
+      return evolution && evolution.id === parts[1] ? evolution.lv : 0;
+    }
     case 'socketCount': return taskCountSocketedGems();
     case 'forgeParts': return taskCountForgeParts();
     case 'forgeFineAuto': return stats.forgeFineClicked ? 1 : 0;   // 熔爐拆解品質列點過「精良」標籤（newforge.setQuality 記旗標）
@@ -202,6 +212,7 @@ function taskGrantReward(def) {
     case 'gold': p.gold += qty; if (typeof achAddGold === 'function') achAddGold(qty); break;
     case 'scrap': p.scrap += qty; break;
     case 'essence': p.essence += qty; break;
+    case 'merchantInvitation': addMerchantInvitations(qty); break;
     case 'skillXp':
       if (typeof gainSkillMasteryXp === 'function') gainSkillMasteryXp(qty);
       UI.dirty.skills = true;

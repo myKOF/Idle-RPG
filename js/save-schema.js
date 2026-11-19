@@ -23,13 +23,24 @@
 
    本檔三種環境都會載入：主執行緒 <script>、Worker importScripts、Node vm 測試。 */
 
-var SAVE_SCHEMA_VERSION = 1;
+var SAVE_SCHEMA_VERSION = 2;
 
 /* 上市後的遷移登錄，依 to 由小到大。每筆：
      { to: 2, name: 'xxxV1', date: 'YYYY-MM-DD', migrate: function (data) { ... } }
    migrate 直接修改 data；必須是純資料轉換（不讀 G、不碰 UI），丟出例外會讓這次讀檔失敗。
    範本與測試寫法見 tests/save-schema.test.cjs 的「遷移範本」。 */
-var SAVE_SCHEMA_MIGRATIONS = [];
+var SAVE_SCHEMA_MIGRATIONS = [{
+  to: 2, name: 'taskInsertSkillEvolutionV1', date: '2026-11-20',
+  migrate: function (data) {
+    if (!data.taskState || typeof data.taskState !== 'object') data.taskState = { idx: 0 };
+    var idx = Math.max(0, Math.min(40, Math.floor(Number(data.taskState.idx) || 0)));
+    // 依插入後索引逐一平移；尚未越過插入點者，接著完成該新任務。
+    if (idx > 4) idx++;
+    if (idx > 9) idx++;
+    if (idx > 26) idx++;
+    data.taskState.idx = idx;
+  }
+}];
 
 function saveSchemaOf(data) {
   var v = data && data.saveSchema;
