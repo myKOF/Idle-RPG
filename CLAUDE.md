@@ -410,3 +410,10 @@ Claude 應始終遵守：
 所有模塊都已改為讀表（`STR(編號, 參數…)`，用法見 `docs/STRING_TABLE.md`）：新文字一律先登記進表再用 `STR()` 讀取；`node tools/string-table/build_string_csv.cjs --check` 必須回報「仍寫死 0 條」，測試會擋。
 
 完整規則見 `AI_RULES.md` 第 8.10 節。
+
+---
+
+# 16. 遊戲正式名稱（必要）
+
+中文「**神力之巔**」，英文「**Idle: Divine Apex**」（大小寫與冒號後的空格照寫）。唯一來源是 String 表第 2569 條，
+打包的應用程式名稱由 `tools/desktop/build_desktop.cjs` 依 `--lang` 讀取，不得另外寫死。完整規則見 `AI_RULES.md` 第 8.11 節。

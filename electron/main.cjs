@@ -225,8 +225,19 @@ function serveFileImpl(request) {
   if (!file) return Promise.resolve(notFound());
   return fs.promises.stat(file).then(function (st) {
     if (!st.isFile()) return notFound();
+    // 打包版的 .png 可能是 WebP 內容（tools/desktop/webp_images.py）：看檔頭回報正確的 MIME
+    if (!AppProtocol.needsSniff(file) || st.size < 12) return { st: st, mime: AppProtocol.mimeFor(file) };
+    return fs.promises.open(file, 'r').then(function (fh) {
+      var head = Buffer.alloc(12);
+      return fh.read(head, 0, 12, 0).then(function () {
+        return { st: st, mime: AppProtocol.sniffImageMime(head) || AppProtocol.mimeFor(file) };
+      }).finally(function () { return fh.close(); });
+    });
+  }).then(function (info) {
+    if (!info.st) return info;   // notFound() 的 Response
+    var st = info.st;
     var headers = {
-      'Content-Type': AppProtocol.mimeFor(file),
+      'Content-Type': info.mime,
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'no-cache'
     };
@@ -338,6 +349,8 @@ function createWindow() {
     show: false,
     backgroundColor: '#000000',
     autoHideMenuBar: true,
+    // 視窗與工作列圖示：打包版的 exe 本身已帶圖示；從原始碼執行（electron.exe）時靠這一行（tools/desktop/make_app_icon.py 產生）
+    icon: path.join(__dirname, 'icons', 'app.ico'),
     // 視窗標題跟隨頁面 <title>（String 表 48），不在外殼另寫一份
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

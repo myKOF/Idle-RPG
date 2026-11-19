@@ -74,6 +74,18 @@ function mimeFor(filePath) {
   return MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
 }
 
+/* 打包時 .png 會被換成 WebP 內容、檔名不變（tools/desktop/webp_images.py：程式、配置表、Preset 裡的
+   路徑全都寫 .png，改檔名牽動太大）。這類檔案要回報 image/webp，所以 .png 先看檔頭再決定。
+   head：檔案前 12 個位元組。回傳要覆寫的 MIME，或 null（照副檔名）。 */
+function needsSniff(filePath) {
+  return path.extname(filePath).toLowerCase() === '.png';
+}
+function sniffImageMime(head) {
+  if (!head || head.length < 12) return null;
+  if (head.toString('latin1', 0, 4) === 'RIFF' && head.toString('latin1', 8, 12) === 'WEBP') return 'image/webp';
+  return null;
+}
+
 /* 請求網址 → 磁碟上的絕對路徑。不合法一律回 null（呼叫端回 404）：
    - 不是 app://<host>（host 預設 game；內測模式傳 INTERNAL_HOST）
    - 解碼失敗、含 NUL
@@ -131,6 +143,8 @@ module.exports = {
   ORIGIN: ORIGIN,
   originFor: originFor,
   mimeFor: mimeFor,
+  needsSniff: needsSniff,
+  sniffImageMime: sniffImageMime,
   resolveRequestPath: resolveRequestPath,
   parseRange: parseRange
 };

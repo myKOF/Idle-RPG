@@ -141,7 +141,7 @@ dist/win-unpacked/IdleRPG.exe --smoke=tmp/smoke-packaged   # 對打包版跑冒�
 - **只留繁中與英文的 Chromium 語系檔**；打包後刪除 Electron 的 `default_app.asar`。
 
 待確認（目前用暫定值，不影響開發）：
-- 產品名稱 `神力之巔：放置暗黑`、exe 檔名 `IdleRPG.exe`（刻意用 ASCII）、appId `com.idlerpg.desktop`——見 `tools/desktop/build_desktop.cjs` 開頭。
+- 產品名稱＝遊戲正式名稱，讀 String 表 2569（AI_RULES 8.11）：中文版「神力之巔」、英文版「Idle: Divine Apex」（`--lang=en`）。可打包 12 種語言（`--lang=zh-TW|zh-CN|en|ru|es|pt-BR|ja|ko|de|fr|pl|tr`），語言欄沒填時退回英文名稱，安裝程式介面跟著換語言。exe 檔名 `IdleRPG.exe`（刻意用 ASCII）、appId `com.idlerpg.desktop`——見 `tools/desktop/build_desktop.cjs` 開頭。
 - **應用程式圖示**：目前是 Electron 預設圖示；需要一張 256×256 以上的正式圖（`images/icon_avatar.png` 其實是 JPEG，不能直接用）。
 - `npm audit` 回報 electron-builder 相依的 minimatch 有 6 個中度 ReDoS，只在開發機打包時執行，不進遊戲。
 
@@ -341,6 +341,61 @@ Steam 用 `electron/steam-config.json` 的 `demoAppId`（Steam 上的 Demo／Pla
 - **存檔保留**：解除安裝不刪存檔。存檔位置和其他打包版相同：demo 在 `%APPDATA%\idle-rpg-demo`，正式版在 `%APPDATA%\idle-rpg`。
 - **未簽章**：第一次執行時 Windows SmartScreen 會跳出警告，要按「其他資訊 → 仍要執行」。
 - 測試：`tests/desktop-installer.test.cjs`。
+
+**打包時縮模型貼圖**（2026-11-19）：
+
+- **做什麼**：`build_desktop.cjs` 預設會在暫存區把 `images/models/` 的貼圖縮到最長邊 1024。工具是 `tools/desktop/shrink_models.cjs`，以 Electron 執行，不需要另外安裝套件。
+  - `.glb` 內嵌貼圖：改存 JPEG（法線貼圖品質 95、其餘 90）。半透明材質的底色貼圖維持 PNG。
+  - 外部貼圖（主角 role5～7）：只縮尺寸，格式不變。
+- **效果**：模型 367 → 111 MB。原版與壓縮版用遊戲本身的繪製流程對照，PSNR 50 dB 以上，放大 3 倍也看不出差別。
+- **原始檔不動**：專案裡的 2048 原檔保留，給 Meshy／Blender 流程使用。
+- **快取**：結果存在 `build/desktop/model-cache/`，第二次打包直接取用。
+- **要出原尺寸**：打包時加 `--full-textures`。
+- 測試：`tests/desktop-shrink-models.test.cjs`。
+
+**打包時 PNG 換成 WebP**（2026-11-19）：
+
+- **做什麼**：`build_desktop.cjs` 預設在暫存區把 PNG 換成 WebP 內容，**檔名不變**。工具是 `tools/desktop/webp_images.py`，需要 Python 與 Pillow。
+  - 角色序列幀（`images/sprites/`，以最近鄰放大）和長邊 256 以下的小圖：用**無損**，逐像素和原圖相同。
+  - 其他圖：有損品質 90；透明度一律無損，透明區底下的顏色也保留。
+  - 不處理 `electron/`（exe 圖示）與 `images/models/`（另由縮模型貼圖的工具處理）。
+- **為什麼檔名不變**：程式、配置表、Preset 裡的路徑都寫 `.png`，而且 `images/vfx/assets` 會被 VFX 編輯器整棵換新，改副檔名不可行。改由 app:// 協議看檔頭回報 `image/webp`（`electron/app-protocol.cjs` 的 `sniffImageMime`），網頁版完全不受影響。
+- **效果**：PNG 309 → 83 MB（1437 個轉換；省不到 10% 或 2 KB 的保留原檔）。
+- **驗證**：
+  - 無損的 1087 個逐像素相同；有損的 350 個透明度不變，PSNR 中位數 42 dB、最差 32.8 dB。
+  - 在打包版裡 1550 張逐一以 fetch、createImageBitmap、`<img>`、Pixi 載入都正常。
+- **快取**：`build/desktop/webp-cache/`。
+- **要出原本的 PNG**：打包時加 `--keep-png`。
+- 測試：`tests/desktop-webp-images.test.cjs`。
+- **注意**：打包版資料夾裡的 `.png` 其實是 WebP。要從打包版取圖，請回專案取原檔。
+
+**打包時重新編碼序章影片**（2026-11-19）：
+
+- **做什麼**：`build_desktop.cjs` 預設在暫存區重壓 `.mp4`。工具是 `tools/desktop/reencode_video.cjs`，需要 ffmpeg（`winget install Gyan.FFmpeg`）。
+- **編碼設定**：x264 slow、CRF 24、H.264 High、yuv420p、每 2 秒一個關鍵幀、faststart、不帶音軌。原檔本來就沒有音軌，有音軌的影片一律保留原檔。
+- **為什麼維持 H.264**：所有顯示卡都有硬體解碼。AV1 更小，但不少電腦只能靠 CPU 解碼，序章又和遊戲載入同時進行，低階機可能卡頓。
+- **試壓結果**（VMAF 對照原檔）：
+
+  | CRF | 大小 | VMAF |
+  |---|---|---|
+  | 原檔 | 96 MB | — |
+  | 20 | 77 MB | 95.1 |
+  | 22 | 60 MB | 93.6 |
+  | 24（採用） | 46 MB | 91.8 |
+
+  採用 CRF 24：抽最暗的兩幀與差異最大的一幀局部放大 2 倍比對，看不出差別。
+- **輸出驗證**：幀數、時長、解析度、幀率必須和原檔相同，否則保留原檔。序章的字幕與動畫依時間對齊，所以這幾項不能變。
+- **快取**：`build/desktop/video-cache/`。
+- **要出原檔**：打包時加 `--keep-video`。
+- 測試：`tests/desktop-reencode-video.test.cjs`。
+
+**應用程式圖示**（2026-11-19）：`electron/icons/app.ico`（16～256）與 `app.png`（1024 母圖）。
+
+- **來源**：遊戲 logo 中間的劍，斜 45 度擺放，背景透明。
+- **產生工具**：`python -I tools/desktop/make_app_icon.py [--preview]`，需要 Pillow。logo 改版後要重跑；如果摘出來的劍不對，先檢查工具檔頭的實測座標。
+- **套用範圍**：exe、捷徑、工作列（`win.icon`），以及安裝包、解除安裝程式、安裝畫面（`nsis.*Icon`）都用它。
+- **從原始碼執行時**：由 `electron/main.cjs` 的 BrowserWindow `icon` 帶上同一個圖示。
+- **Steam 後台**：Steamworks 的應用程式圖示是另外上傳的，尺寸規格不同。
 
 ## 5. 明確不做
 

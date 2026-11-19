@@ -9,6 +9,12 @@
      --stage-only   只做到第 2 步（檢查清單用，不呼叫 electron-builder）
      --edition=demo Steam 封測 demo：暫存區多寫一份 electron/edition.json（外殼據此把 GAME_EDITION 改成 'demo'），
                     輸出到 dist/demo/win-unpacked/，與正式版的 dist/win-unpacked/ 分開
+     --lang=en      打包語言（預設 zh-TW；另有 zh-CN、en、ru、es、pt-BR、ja、ko、de、fr、pl、tr，見 LANGS）：
+                    應用程式名稱讀 String 表 2569 的對應語言欄（中文「神力之巔」、英文「Idle: Divine Apex」，沒填退回英文），
+                    安裝程式介面跟著換語言；非預設語言輸出到 <輸出資料夾>/<語言>/
+     --full-textures 不縮模型貼圖（預設會縮，見下方「為什麼縮模型貼圖」）
+     --keep-png     PNG 不換成 WebP（預設會換，見下方「為什麼 PNG 換成 WebP」；需要 Python 與 Pillow）
+     --keep-video   影片不重新編碼（預設會重壓序章影片，tools/desktop/reencode_video.cjs；需要 ffmpeg）
      --installer    另外打一份 Windows 安裝包（NSIS），給 Steam 以外的測試散佈用，輸出到 dist/installer/<版本>/。
                     安裝包版一律不接 Steam：不放 steamworks.js、打包版的 steam-config.json 的 AppID 全部歸 0。
                     （接了 Steam 的版本若不是從 Steam 啟動會交給 Steam 重開、自己結束，裝在 Steam 以外就打不開。）
@@ -18,6 +24,21 @@
    SteamPipe 以 1 MB 區塊比對新舊版本。asar 是一個巨大的單檔，裡面任何檔案變長或變短，
    後面所有區塊都會位移，一次小更新可能讓玩家重新下載整包；散檔則只會傳有變動的檔案。
    asar 也不提供保護（任何人都能解開），所以沒有理由用它。
+
+   ---- 為什麼縮模型貼圖 ----
+   專案裡的 .glb 帶 2048 貼圖（Meshy／Blender 流程的原檔，保留不動），但角色畫在 512／1024 的畫布上、畫面上只有幾百像素高。
+   打包時由 tools/desktop/shrink_models.cjs（以 Electron 執行）把暫存區那一份縮到 1024、轉 JPEG：模型 367 → 111 MB，
+   畫面對照 PSNR 50 dB 以上（2026-11-19）。原始檔不動；結果快取在 build/desktop/model-cache/。
+
+   ---- 為什麼 PNG 換成 WebP ----
+   PNG 是包體最大的一塊（約 309 MB）。tools/desktop/webp_images.py 把暫存區的 PNG 換成 WebP 內容、檔名不變
+   （程式、配置表、Preset 都寫 .png；images/vfx/assets 還會被 VFX 編輯器整棵換新，改檔名不可行）：
+   序列幀與 256 以下的小圖用無損（逐像素相同），其他用有損品質 90、透明度無損。309 → 83 MB（2026-11-19）。
+   app:// 協議看檔頭回報 image/webp（electron/app-protocol.cjs sniffImageMime）。
+
+   ---- 為什麼重新編碼序章影片 ----
+   序章 mp4 是 1080p30、7 Mbps（96 MB）。tools/desktop/reencode_video.cjs 以 x264 CRF 24 重壓成約 46 MB
+   （VMAF 91.8，暗部放大比對看不出差別），維持 H.264、解析度、幀率與總幀數。需要 ffmpeg。
 
    ---- 為什麼要暫存目錄 ----
    electron-builder 的 files 只吃 glob，表達不了「git 追蹤 ∩ 白名單 − 排除」；
@@ -37,11 +58,64 @@ var OUT = INSTALLER ? path.join(REPO, 'dist', 'installer', EDITION)
   : (EDITION === 'demo' ? path.join(REPO, 'dist', 'demo') : path.join(REPO, 'dist'));
 var ROOT_PKG = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
 
-/* 玩家看得到的名稱。exe 檔名刻意用 ASCII：Steam 的啟動選項、防毒白名單、命令列都比較不會出事。
-   上市前請確認正式名稱（見 docs/steam/STEAM_RELEASE_PLAN.md 任務 B 的待確認事項）。 */
-var PRODUCT_NAME = '神力之巔：放置暗黑';
+/* 打包語言（--lang=，預設 zh-TW）：決定應用程式名稱與安裝程式語言。非預設語言另放一層資料夾，不蓋掉預設版。
+   column＝String 表的語言欄名；nsis＝electron-builder 的安裝程式語言（app-builder-lib/out/util/langs.js 的 bundledLanguages，
+   語言碼 lcid 由它對照）。葡萄牙文用巴西（pt-BR）、西班牙文用西班牙（es）——Steam 也把兩者各分兩種，要另一種時在這裡加一筆。 */
+var LANGS = {
+  'zh-TW': { column: '繁體中文', nsis: 'zh_TW' },
+  'zh-CN': { column: '簡體中文', nsis: 'zh_CN' },
+  en: { column: '英文', nsis: 'en_US' },
+  ru: { column: '俄文', nsis: 'ru_RU' },
+  es: { column: '西班牙文', nsis: 'es_ES' },
+  'pt-BR': { column: '葡萄牙文', nsis: 'pt_BR' },
+  ja: { column: '日文', nsis: 'ja_JP' },
+  ko: { column: '韓文', nsis: 'ko_KR' },
+  de: { column: '德文', nsis: 'de_DE' },
+  fr: { column: '法文', nsis: 'fr_FR' },
+  pl: { column: '波蘭文', nsis: 'pl_PL' },
+  tr: { column: '土耳其文', nsis: 'tr_TR' }
+};
+function nsisLanguageId(lang) {
+  var id = require('app-builder-lib/out/util/langs.js').lcid[LANGS[lang].nsis];
+  if (!id) throw new Error('electron-builder 沒有 ' + LANGS[lang].nsis + ' 的安裝程式語言');
+  return String(id);
+}
+var LANG = (process.argv.filter(function (a) { return a.indexOf('--lang=') === 0; })[0] || '--lang=zh-TW').slice(7);
+if (!LANGS[LANG]) { console.error('❌ --lang 只能是 ' + Object.keys(LANGS).join('／') + '：' + LANG); process.exit(1); }
+if (LANG !== 'zh-TW') OUT = path.join(OUT, LANG);
+
+/* 玩家看得到的名稱＝遊戲正式名稱，唯一來源是 String 表 2569（AI_RULES 8.11）：
+   繁體中文「神力之巔」、英文「Idle: Divine Apex」，依打包語言取欄位。該語言欄沒填（或 CSV 還沒有這一欄）時：
+   簡體中文退回繁體中文（與遊戲內 STR() 相同）；其他語言退回英文正式名稱（品牌名稱沒有在地化時就用英文）。英文欄本身不能空。
+   exe 檔名刻意用 ASCII：Steam 的啟動選項、防毒白名單、命令列都比較不會出事。 */
+var GAME_NAME_STR_ID = 2569;
+function gameNameFor(header, row, lang) {
+  var cell = function (col) { var i = header.indexOf(col); return i >= 0 ? String(row[i] || '').trim() : ''; };
+  var own = cell(LANGS[lang].column);
+  if (own) return { name: own, source: LANGS[lang].column, columnMissing: false };
+  var columnMissing = header.indexOf(LANGS[lang].column) < 0;
+  var fallback = lang === 'zh-CN' ? '繁體中文' : '英文';
+  if (lang === 'en' || !cell(fallback)) throw new Error('String 表 ' + GAME_NAME_STR_ID + ' 的「' + (lang === 'en' ? '英文' : fallback) + '」是空的，不能打包 ' + lang + ' 版');
+  return { name: cell(fallback), source: fallback, columnMissing: columnMissing };
+}
+function gameNameFromStringTable(lang) {
+  var csvParse = require('../string-table/apply_strings.cjs').csvParse;
+  var rows = csvParse(fs.readFileSync(path.join(REPO, 'config', 'CSV', 'String.csv'), 'utf8'));
+  var row = rows.filter(function (r) { return Number(r[0]) === GAME_NAME_STR_ID; })[0];
+  if (!row) throw new Error('String 表找不到 ' + GAME_NAME_STR_ID + '（遊戲正式名稱）');
+  var r = gameNameFor(rows[0], row, lang);
+  if (r.source !== LANGS[lang].column && require.main === module) {
+    console.warn('⚠️ String 表 ' + GAME_NAME_STR_ID + ' 的「' + LANGS[lang].column + '」' + (r.columnMissing ? '欄不在 String.csv（Excel 新增的欄要先跑「套用參數.bat」轉出 CSV）' : '沒填') +
+      '，應用程式名稱沿用' + r.source + '「' + r.name + '」');
+  }
+  return r.name;
+}
+var PRODUCT_NAME = gameNameFromStringTable(LANG);
+function fileSafeName(name) { return String(name).replace(/[<>:"\/\\|?*\x00-\x1f]/g, '').replace(/\s+/g, ' ').trim(); }
 var EXECUTABLE_NAME = 'IdleRPG';
 var APP_ID = 'com.idlerpg.desktop';
+/* 應用程式圖示（exe、捷徑、工作列、安裝包）：由 tools/desktop/make_app_icon.py 從 logo 的劍產生 */
+var APP_ICON = path.join(REPO, 'electron', 'icons', 'app.ico');
 
 function mb(n) { return Math.round(n / 1048576 * 10) / 10; }
 
@@ -110,6 +184,52 @@ function stage(list) {
   return { linked: linked, copied: copied };
 }
 
+/* 縮模型貼圖：在 Electron 裡跑 tools/desktop/shrink_models.cjs（nativeImage 不需要額外套件）。
+   回傳 { 相對路徑: 新大小 }，用來更新出貨清單的大小統計。 */
+var MODEL_CACHE = path.join(REPO, 'build', 'desktop', 'model-cache');
+function shrinkModels() {
+  var reportFile = path.join(REPO, 'build', 'desktop', 'shrink-models-report.json');
+  var r = childProcess.spawnSync(path.join(REPO, 'node_modules', 'electron', 'dist', 'electron.exe'),
+    [path.join(__dirname, 'shrink_models.cjs'), STAGE, MODEL_CACHE, reportFile],
+    { cwd: REPO, stdio: 'inherit', windowsHide: true, timeout: 15 * 60 * 1000 });
+  if (r.error || r.status !== 0) throw new Error('縮模型貼圖失敗（' + (r.error ? r.error.message : '結束碼 ' + r.status) + '）；要出原尺寸可加 --full-textures');
+  var report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+  var sizes = {};
+  report.files.forEach(function (f) { sizes[f.file] = f.after; });
+  return { sizes: sizes, beforeMB: mb(report.beforeBytes), afterMB: mb(report.afterBytes) };
+}
+
+/* PNG 換成 WebP 內容（檔名不變）：tools/desktop/webp_images.py（Pillow）。回傳 { 相對路徑: 新大小 }。 */
+var WEBP_CACHE = path.join(REPO, 'build', 'desktop', 'webp-cache');
+function webpImages() {
+  var reportFile = path.join(REPO, 'build', 'desktop', 'webp-images-report.json');
+  var r = childProcess.spawnSync(process.env.PYTHON || 'python', ['-I', path.join(__dirname, 'webp_images.py'), STAGE, WEBP_CACHE, reportFile],
+    { cwd: REPO, stdio: 'inherit', windowsHide: true, timeout: 30 * 60 * 1000, env: Object.assign({}, process.env, { PYTHONIOENCODING: 'utf-8' }) });
+  if (r.error || r.status !== 0) {
+    throw new Error('PNG 換 WebP 失敗（' + (r.error ? r.error.message : '結束碼 ' + r.status) + '）。需要 Python 與 Pillow（pip install pillow），' +
+      '或加 --keep-png 出原本的 PNG');
+  }
+  var report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+  var sizes = {};
+  report.files.forEach(function (f) { sizes[f.file] = f.after; });
+  return { sizes: sizes, beforeMB: mb(report.beforeBytes), afterMB: mb(report.afterBytes), converted: report.converted };
+}
+
+/* 重新編碼影片（序章）：tools/desktop/reencode_video.cjs（ffmpeg）。回傳 { 相對路徑: 新大小 }。 */
+var VIDEO_CACHE = path.join(REPO, 'build', 'desktop', 'video-cache');
+function reencodeVideos() {
+  var reportFile = path.join(REPO, 'build', 'desktop', 'reencode-video-report.json');
+  var r = childProcess.spawnSync(process.execPath, [path.join(__dirname, 'reencode_video.cjs'), STAGE, VIDEO_CACHE, reportFile],
+    { cwd: REPO, stdio: 'inherit', windowsHide: true, timeout: 30 * 60 * 1000 });
+  if (r.error || r.status !== 0) {
+    throw new Error('影片重新編碼失敗（' + (r.error ? r.error.message : '結束碼 ' + r.status) + '）。需要 ffmpeg（winget install Gyan.FFmpeg），或加 --keep-video 出原檔');
+  }
+  var report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+  var sizes = {};
+  report.files.forEach(function (f) { sizes[f.file] = f.after; });
+  return { sizes: sizes, beforeMB: mb(report.beforeBytes), afterMB: mb(report.afterBytes) };
+}
+
 /* 安裝包版不接 Steam：拿掉 steamworks.js，暫存區的 steam-config.json 換成 AppID 全 0 的新檔。
    暫存區的檔案是原始碼的硬連結，直接寫會改到原始碼——一定要先 unlink 再寫。 */
 function detachSteam() {
@@ -128,19 +248,23 @@ function detachSteam() {
 function installerConfig() {
   var c = builderConfig();
   c.appId = APP_ID + (EDITION === 'demo' ? '.demo' : '');
-  c.win = { target: [{ target: 'nsis', arch: ['x64'] }] };
+  c.win = { target: [{ target: 'nsis', arch: ['x64'] }], icon: APP_ICON };
   c.nsis = {
+    installerIcon: APP_ICON,
+    uninstallerIcon: APP_ICON,
+    installerHeaderIcon: APP_ICON,
     oneClick: false,
     perMachine: false,
     allowToChangeInstallationDirectory: true,
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
-    shortcutName: c.productName,
+    // 捷徑是檔案：英文名的「:」等 Windows 檔名不允許的字元要拿掉（Idle: Divine Apex → Idle Divine Apex）；標題與解除安裝清單保留原名
+    shortcutName: fileSafeName(c.productName),
     uninstallDisplayName: c.productName,
     deleteAppDataOnUninstall: false,
     differentialPackage: false,
-    installerLanguages: ['zh_TW'],
-    language: '1028',
+    installerLanguages: [LANGS[LANG].nsis],
+    language: nsisLanguageId(LANG),
     // 檔名用 ASCII：瀏覽器下載、雲端硬碟、命令列都比較不會出事
     artifactName: EXECUTABLE_NAME + (EDITION === 'demo' ? '-Demo' : '') + '-Setup-${version}.${ext}'
   };
@@ -206,7 +330,7 @@ function builderConfig() {
     buildDependenciesFromSource: false,
     directories: { output: OUT },
     files: ['**/*'],
-    win: { target: [{ target: 'dir', arch: ['x64'] }] }
+    win: { target: [{ target: 'dir', arch: ['x64'] }], icon: APP_ICON }
   };
 }
 
@@ -241,6 +365,24 @@ function main() {
     console.log('安裝包版：不接 Steam（已移除 steamworks.js、AppID 歸 0）');
   }
   console.log('暫存：' + list.ship.length + ' 個檔案（硬連結 ' + st.linked + '、複製 ' + st.copied + '）→ ' + path.relative(REPO, STAGE));
+  var modelTextures = null;
+  if (!stageOnly && process.argv.indexOf('--full-textures') < 0) {
+    var shrunk = shrinkModels();
+    list.ship.forEach(function (f) { if (shrunk.sizes[f.path] != null) f.size = shrunk.sizes[f.path]; });
+    modelTextures = { beforeMB: shrunk.beforeMB, afterMB: shrunk.afterMB };
+  }
+  var pngToWebp = null;
+  if (!stageOnly && process.argv.indexOf('--keep-png') < 0) {
+    var webp = webpImages();
+    list.ship.forEach(function (f) { if (webp.sizes[f.path] != null) f.size = webp.sizes[f.path]; });
+    pngToWebp = { beforeMB: webp.beforeMB, afterMB: webp.afterMB, converted: webp.converted };
+  }
+  var videos = null;
+  if (!stageOnly && process.argv.indexOf('--keep-video') < 0) {
+    var vid = reencodeVideos();
+    list.ship.forEach(function (f) { if (vid.sizes[f.path] != null) f.size = vid.sizes[f.path]; });
+    videos = { beforeMB: vid.beforeMB, afterMB: vid.afterMB };
+  }
   fs.mkdirSync(OUT, { recursive: true });
   var reportFile = path.join(OUT, 'ship-report.json');
   if (stageOnly) {
@@ -264,6 +406,9 @@ function main() {
       output: path.relative(REPO, unpacked),
       executable: EXECUTABLE_NAME + '.exe',
       outputMB: mb(dirSize(unpacked)),
+      modelTextures: modelTextures || 'full（--full-textures）',
+      pngToWebp: pngToWebp || 'png（--keep-png）',
+      videos: videos || 'original（--keep-video）',
       seconds: Math.round((Date.now() - t0) / 1000)
     });
     fs.writeFileSync(reportFile, JSON.stringify(r, null, 2));
@@ -293,4 +438,5 @@ if (require.main === module) {
   main().catch(function (e) { console.error(e && e.stack || e); process.exit(1); });
 }
 
-module.exports = { collect: collect, builderConfig: builderConfig, installerConfig: installerConfig };
+module.exports = { collect: collect, builderConfig: builderConfig, installerConfig: installerConfig, fileSafeName: fileSafeName, GAME_NAME_STR_ID: GAME_NAME_STR_ID,
+  LANGS: LANGS, gameNameFor: gameNameFor, nsisLanguageId: nsisLanguageId };
