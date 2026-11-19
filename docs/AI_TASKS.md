@@ -16743,3 +16743,15 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex，Done。將設置頁籤改為「遊戲說明」，移除裝備欄位、裝備方案、比較裝備／自動穿裝的說明，新增太古詞條的「✡」標記、現有 35% 倍率及洗煉保留強度。說明頁概述、標題與內容字級各加 1px。
 - 修改 `index.html`、`css/ashen-forge.css`、`js/game-menu.js`、String 工作簿／CSV／遊戲資料、編輯器快取及功能文件。唯讀核對 `js/item.js`、`js/data.js`、`js/formula.js`、洗煉測試與配置工具。預檢發現固定 Codex 工作區已有遺物預覽及其他提交，所以從 `develop` 開獨立工作區。逐列確認既有說明的來源文字一致。
 - 原生 Excel 兩次重開及表格格式比對通過，全部匯出資料一致。Edge 實際開設置並切換遊戲說明，兩種視窗尺寸的文字、字級與捲動檢查通過。46 項相關回歸通過 44 項，太古精華掉落及將旁白檔名誤判為顯示文字的兩項失敗均在未修改的 `develop` 重現。`npm.cmd run build` 通過 738 檔。可獨立交使用者驗收及整合。
+
+## TOWER-BOSS7-ROCK-20261119 — 岩石怪第一套材質與五動作接入
+
+- Owner：Codex；Done。使用者提供 BOSS7 的 Walk、Attack1～3、Die，要求接入遊戲，NPC 名稱與備註標示岩石怪。前置依賴：既有 NPC 3D 載入及封魔塔配置已完成。
+- 允許：BOSS7 模型、頭像、Blender 製作與匯出工具、素材庫來源與清單、NPC.xlsx／CSV、配置產生器、衍生 data.js、必要快取、資產／功能文件與相關測試。本次僅第一材質 tower_boss_7（第7／57／107層）。禁止：其他材質列、戰鬥數值／技能、存檔／協議與解鎖變更。
+- 驗收：Excel 獨占存取、原生正常重開與格式保存；五動作／素材雜湊及來源；遊戲載入、動畫、頭像兩種尺寸；相關回歸、建置及差異檢查。單人完成並自檢，交使用者驗收與整合。
+- 實作：Blender 4.5.10 LTS 合併58關節、五動作，保留原始時長及貼圖；新增模型與1080透明上半身頭像。NPC原生寫入14格並正常重開兩次，另透過Excel還原AB:AH七格原數字格式；唯讀核對所有工作表的有效儲存格樣式、公式、列欄尺寸、視窗、驗證、條件格式、繪圖與表格引用均保持。來源五檔、可編輯blend、製作腳本及匯出清單存於素材庫 `codex-authored/boss7-rock-20261119/`。
+- 修改：NPC.xlsx／CSV、data.js、配置產生器、主頁／Worker快取、BOSS7製作／匯出工具、三份資產／功能說明與兩份名稱文件、相關測試及本段。唯讀核對 `js/npc3d.js`、`js/hero3d.js`、`js/tower.js`、`js/formula.js`、`js/battle-renderer.js`、`js/ui.js`、`css/ashen-forge.css`、既有匯出／頭像工具及測試。所有預檢乾淨。
+- 測試：`node --test tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 49/49通過；格式還原後BOSS7三項重跑通過。`npm.cmd run build` 741檔通過；`node tools/boss7/export.cjs --check`、`node tools/string-table/build_string_csv.cjs --check`（0筆寫死文字）及差異檢查通過。
+- 實機：靜音隔離瀏覽器由實際遊戲 `Npc3D.create` 渲染五動作並驗證三攻擊輪替；進入真正新遊戲（測試略過序章）、用GM準備第7層並挑戰。核對詳情140方框、樓層34圓形縮圖、岩石怪名牌及 `tower_boss_7` 的 `npc3d:true`／Attack3，頁面無新增錯誤／警告。瀏覽器已關閉並執行孤兒清理。未跑完整場勝敗；既有冰屬性、魔法遠攻及攻速保持，動畫依既有出手間隔調速。無待辦，可供使用者驗收與合併，未合併或推送develop。
+- 素材庫 Commit：`06600ae646a69f7211c731abe75b57a12343f547`；遊戲 Commit 為本段所在的 `[Codex] feat: 接入岩石怪首套材質與五動作`。兩倉庫素材引用與雜湊已核對，沒有提交其他任務修改。
+- 環境限制：自動審核以 `blocked by policy` 拒絕刪除已檢查的 `tmp/boss7` 驗證暫存目錄（包含僅指向內建依賴的node_modules Junction），未提供進一步原因。暫存保留於本機忽略目錄，未納入提交；沒有測試瀏覽器殘留。
