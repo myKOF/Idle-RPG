@@ -1,3 +1,16 @@
+## TOWER-BOSS-SPAWN-SHIFT-20261120 — 雙方出生點左移以靠近法陣接戰
+
+- Owner：Codex；Done，單人修改。使用者看實機截圖後要求玩家再向左移5米（相對最初共左移10米）、BOSS相對上一版向左移10米；法陣中心保持，沿用黑幕完全消失後雙方主動互相接近。
+- 前置：9006e2cd入場流程完成；fetch及逐檔預檢完成。Claude已提交的首頁／Worker載入為其他快取行，任務差異三方試合乾淨；共用Worker版本同行沿用使用者本聊天已核准的更新授權。保留同副本NPC／Task／data／BOSS9及文件進行中修改。
+- 允許：js/tower.js、tests/tower-battlefield.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js快取、LV_upgrade_system.md與本段。禁止改表格／模型／素材／攻速移速射程／技能／解鎖／存檔，不合併或推送develop／main。
+- 驗收：玩家相對原位置左10米、BOSS相對上一版左10米且法陣不漂移；黑幕後雙方立即互相接近、原速與場界不變、接戰位置／動畫實機截圖，既有相關回歸及Build、差異檢查後提交，交使用者驗收。
+
+- 完成：玩家相對最初共左移bfMeterPx(10)，BOSS從上一版右邊界內側再左移bfMeterPx(10)；先建立固定法陣中心再改雙方座標，沒有帶動法陣。保留黑幕結束後兩邊依原速度主動追擊、實際位移驅動Walk及射程停步。主頁／Worker載入及共用Worker快取升至tower-entry-v2；未改協議形狀。
+- 修改7檔：js/tower.js、tests/tower-battlefield.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、LV_upgrade_system.md與本段。唯讀檢查js/battlefield.js的單位／幾何／原速、battle-renderer.js／npc3d.js／hero3d.js的座標與動畫、既有入場／動作／連挑回歸及背景瀏覽器工具；未改NPC／Task表格、data、模型或素材，本項素材庫無交付變更。
+- 驗證：node --test tests/tower-battlefield.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-action-motion.test.cjs tests/tower-scene-intro.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-auto-advance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，45/45通過（含150層黑幕等待、首步原速／相遇／固定中心）。npm.cmd run build通過753檔。本項Git差異與自我Review通過；未重跑先前已有失敗的TBMA-5或全庫。
+- 實機：IAB無可用連線，依browser技能嘗試後改用看門狗管理、隔離且靜音的Edge／正式Worker，新遊戲略過序章。預先載入相同正式3D模型以穩定擷取首次接近的畫格，沒有改模型／移速／戰鬥；等渲染雙方中心相距不超過130世界單位時暫停畫格與Worker擷取全頁及原生戰鬥區，再恢復正常出招。第3／4層黑幕期間座標不變、其後雙方向彼此移動及3D Walk非still且秒數前進皆通過，移動畫格86／120，頁面例外／警告0；接近畫格距原法陣中心分別為玩家+400／BOSS+507及玩家+222／BOSS+345世界單位（對應當次工作區NPC配置），仍有各BOSS射程／原速造成的差異，沒有額外偏移強迫置中。
+- 交接：本項無未完成工作；限制為未跑全庫／行動真機／桌面包，截圖使用工作區當時的NPC未提交資料，這些表格／data不是本項修改且完整保留。驗證腳本／逐幀與接近座標JSON／全頁及戰鬥區PNG留本聊天visualizations/tower-entry-shift-20261120。瀏覽器／伺服器已關閉，無桌面擷取工作階段。Commit為本段所在「[Codex] fix: 左移封魔塔雙方出生點」，SHA見交付；可供使用者驗收及合併，未合併／推送develop或main，下一步重新載入遊戲驗收。其他NPC／Task／data／BOSS9進行中修改與文件段落保留，同檔分段暫存。
+
 ## TOWER-BOSS-RUN-IN-20261120 — 封魔塔首領由右側邊界跑入
 
 - Owner：Codex；Done，單人實作。使用者要求 BOSS 從更右側邊界出現；最新補充玩家出生點向左移 5 米，雙方等入場黑幕完全消失後立即互相靠近，避免 BOSS 在原位等玩家。

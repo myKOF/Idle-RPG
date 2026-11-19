@@ -23,7 +23,7 @@ var TOWER = {
 var TOWER_AUTO_DELAY = 1.0;   // 連續挑戰場與場之間的間隔（秒）
 var TOWER_AUTO_RESULT_DELAY = 3.0; // 連續挑戰結果畫面停留秒數
 var TOWER_AUTO_MAX = 999;     // 連續挑戰次數上限
-/* 原接戰站位用來錨定法陣中心；BOSS 改從該固定戰場的右邊界跑入。
+/* 原接戰站位用來錨定法陣中心；BOSS 從固定戰場右側向內跑入。
    未載入戰場幾何的環境仍以此作為相對我方的生成距離。 */
 var TOWER_BOSS_SPAWN_DIST = 260;
 /* 野外 ⇄ 魔王戰的轉場（js/battle-renderer.js 的黑圈收合：收 1.0 秒、全黑 0.35 秒、展開 1.05 秒）。
@@ -147,11 +147,11 @@ function placeTowerCombatants(boss) {
   if (boss) boss.pos = { x: home.x + TOWER_BOSS_SPAWN_DIST, y: home.y };
   if (boss && typeof bfTowerArenaGeometry === 'function') {
     TOWER.arena = bfTowerArenaGeometry((home.x + boss.pos.x) / 2, (home.y + boss.pos.y) / 2);
-    boss.pos.x = TOWER.arena.cx + TOWER.arena.halfWidth - bfEntityRadius(boss);
+    boss.pos.x = TOWER.arena.cx + TOWER.arena.halfWidth - bfEntityRadius(boss) - bfMeterPx(10);
     // 挑戰首領從遠端直接追向玩家，不受野外索敵視野限制而停住／遊走。
     boss._alerted = true;
   }
-  home.x -= bfMeterPx(5);
+  home.x -= bfMeterPx(10);
 }
 
 /* ---- 連續挑戰 ----

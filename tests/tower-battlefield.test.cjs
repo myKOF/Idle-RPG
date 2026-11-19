@@ -47,7 +47,7 @@ function setup() {
   } };
 }
 
-test('開場：BOSS 在固定戰場右邊界生成、帶 tb-float 定址，玩家沿用野外座標參照', () => {
+test('開場：玩家再左移五米、BOSS 從原右邊界出生點左移十米，法陣保持原位', () => {
   const { c } = setup();
   const home = c.bfPlayerPos();
   home.x = 1234; home.y = -56;     // 野外走到一半才進塔：沿用當下位置，鏡頭不跳
@@ -56,11 +56,11 @@ test('開場：BOSS 在固定戰場右邊界生成、帶 tb-float 定址，玩�
   const b = c.TOWER.boss;
   assert.equal(b.floatSel, 'tb-float');
   assert.equal(c.TOWER.playerPos, c.bfPlayerPos());
-  assert.equal(home.x, 1234 - c.bfMeterPx(5), '玩家出生點向左移五米');
+  assert.equal(home.x, 1234 - c.bfMeterPx(10), '玩家相對最初出生點共向左移十米');
   const arena = c.TOWER.arena;
   assert.equal(arena.cx, 1234 + c.TOWER_BOSS_SPAWN_DIST / 2, '法陣不隨玩家左移或遠端生成點偏移');
   assert.equal(arena.cy, home.y);
-  assert.deepStrictEqual({ x: b.pos.x, y: b.pos.y }, { x: arena.cx + arena.halfWidth - c.bfEntityRadius(b), y: -56 });
+  assert.deepStrictEqual({ x: b.pos.x, y: b.pos.y }, { x: arena.cx + arena.halfWidth - c.bfEntityRadius(b) - c.bfMeterPx(10), y: -56 });
   assert.ok(b.pos.x > home.x + arena.viewWidth / 2, '從基準畫面右方之外跑入');
   assert.equal(b._alerted, true, '超出野外視野仍直接追向挑戰者');
 });

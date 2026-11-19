@@ -24,7 +24,7 @@ importScripts(
   '../item.js?v=20261119-merchant-session-v3', '../gem_resonance.js?v=20261030-unlock-god-zone-merge','../runeword.js?v=20261109-relics',
   '../skills.js?v=20261106-skill-sfx', '../skills2.js?v=20261119-aoe-damage-v1', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
   '../save-schema.js?v=20261120-task-evolution-v1', '../player.js?v=20261118-demo-edition', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261119-develop-merge-1', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261120-tower-entry-v1',
+  '../combat.js?v=20261119-develop-merge-1', '../elite.js?v=20261109-treant-audio-sync-a54d6904', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261120-tower-entry-v2',
   '../factory.js?v=20261112-chest-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261119-develop-merge-1',
   '../tasks.js?v=20261120-task-evolution-v1', '../achievements.js?v=20261103-equipment-rarity-v3'
 );
