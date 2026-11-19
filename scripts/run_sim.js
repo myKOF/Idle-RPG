@@ -28,6 +28,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { createEngine } = require('./sim/engine');
 const { createPolicy } = require('./sim/policy');
+const { createPanelSupplier } = require('./sim/lazy_panels');
 const { createTraceSource } = require('./sim/trace');
 const { stateHash } = require('./sim/hash');
 
@@ -53,6 +54,9 @@ const IGNORE_SCHEDULE = !!arg('ignore-schedule', false);
    的舊行為，用來比對這項改動造成的差異。 */
 const OBSERVE_EVERY = process.argv.some((a) => a.startsWith('--observe-every='))
   ? Number(arg('observe-every')) : null;
+/* 決策點一次把宣告的面板全部建好（面板按需建立之前的做法，見 scripts/sim/lazy_panels.js）。
+   兩種跑法的決策逐位相同；這個旗標只用來量測差異與反證等價。 */
+const EAGER_PANELS = !!arg('eager-panels', false);
 
 if (TRACE_PATH && process.argv.some((a) => a.startsWith('--policy='))) {
   console.error('--trace 與 --policy 互斥：一場模擬只能有一個決策來源。');
@@ -567,6 +571,11 @@ function panelParamsFor(name) {
   return (policy.panelParams && policy.panelParams[name]) || undefined;
 }
 
+/* 軌跡重播（--trace）的決策來源沒有 decideLazy，維持全建。 */
+const panelSupplier = (!EAGER_PANELS && typeof policy.decideLazy === 'function')
+  ? createPanelSupplier({ names: policy.needPanels, build: (n, p) => engine.panel(n, p), paramsFor: panelParamsFor })
+  : null;
+
 /* 邊際效益評估器的參數（要評估哪些詞條、每個部位精算幾個候選）。
    由策略宣告、引擎執行——策略拿不到遊戲函式，算不了 ROI；引擎不該決定要算什麼。
    沒宣告就是空的，panels.eval 仍然會建，只是 affixRoi 是空表。 */
@@ -650,10 +659,15 @@ try {
 
       /* 決策點：策略只拿到 view / panels 的深拷貝（policy.decide 內再 round-trip 一次）。
          它沒有 G、沒有 FIELD、沒有任何遊戲函式，改不了狀態也讀不到內部值。
-         面板只建策略宣告要的那幾個——背包面板很大，每次都建會白付序列化成本。 */
-      const panels = {};
-      for (const p of policy.needPanels) panels[p] = engine.panel(p, panelParamsFor(p));
-      dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec(), seed: SEED }));
+         面板只建這一輪真的會讀的那幾個（scripts/sim/lazy_panels.js）。 */
+      if (panelSupplier) {
+        dispatch(panelSupplier.decide(policy, (panels) =>
+          ({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec(), seed: SEED })));
+      } else {
+        const panels = {};
+        for (const p of policy.needPanels) panels[p] = engine.panel(p, panelParamsFor(p));
+        dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec(), seed: SEED }));
+      }
       decisions++;
 
       if (engine.gameTimeSec() >= nextSnapAt) {
@@ -874,6 +888,9 @@ const summary = {
     stepsPerSec: Math.round(stepsDone / elapsedSec),
     /* 縮時倍率照牆鐘算：使用者關心的是「一場 100 小時的日子要跑多久」。 */
     speedupX: Math.round((HOURS * 3600) / elapsedSec),
+    /* 面板按需建立的統計（--eager-panels 時為 null）。eagerEquivalentBuilds 是全建的話會建幾次，
+       與 fullBuilds＋liteBuilds 對照就是省下多少；retries 是策略讀到沒建的面板而重跑的次數。 */
+    panels: panelSupplier ? Object.assign({ mode: 'lazy' }, panelSupplier.stats) : { mode: 'eager' },
     projected100hSec: +(360000 / ((HOURS * 3600) / elapsedSec)).toFixed(1)
   },
   events: { counts: eventCounts, kept: eventsKept, dropped: eventsDropped, keptKinds: KEEP_KINDS ? Object.keys(KEEP_KINDS) : 'all' },

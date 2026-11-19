@@ -15,9 +15,39 @@
    遊戲改版時這是最容易發生、也最難察覺的一種失真，所以要主動記錄。 */
 var BAD_PATHS = {};
 
+/* ============ 面板按需建立（決策點） ============
+
+   決策點原本每 5 遊戲秒把策略宣告的 18 個面板全建一遍（後期約 18ms，
+   同一段時間遊戲本體只跑 84ms），但大多數規則 15~7200 秒才到期一次，
+   那些面板在大部分決策點根本沒人讀。
+
+   做法：驅動端先只建「預期會讀」的面板，其餘標成 LAZY。
+   本檔任何一個讀路徑的函式一碰到 LAZY 面板就丟 NeedPanel，decideLazy 把
+   memo 與 BAD_PATHS 還原成這一輪開始前的樣子，回報要哪個面板；驅動端建好再重跑。
+   重跑看到的資料與「一開始就全建」完全相同，所以決策逐位相同——
+   tests/sim-lazy-panels.test.cjs 以最終存檔雜湊反證這一點。
+
+   LAZY.skip[name]：這個面板還沒有完整版——null＝完全沒建；陣列＝只建了便宜的 lite 版，
+   陣列是 lite 版裡正確的欄位。LAZY.part[name]：已建完整版，但這些欄位 lite 版也有。
+   讀「整個面板物件」或讀不在陣列裡的欄位都算要用完整版。
+   LAZY_USED 記下這一輪真的用到完整版的面板，驅動端據此預測下一輪先建哪些。
+   只在 root 是這一輪的 state 時檢查——讀面板內子物件（pathVal(P, ...)）不受影響。 */
+var LAZY = null, LAZY_ROOT = null, LAZY_USED = null;
+function NeedPanel(name) { this.needPanel = name; }
+function lazyCheck(root, parts) {
+  if (root !== LAZY_ROOT || parts[0] !== 'panels' || parts.length < 2) return;
+  var name = parts[1];
+  var skip = LAZY.skip ? LAZY.skip[name] : undefined;
+  var cheap = (skip !== undefined) ? skip : (LAZY.part ? LAZY.part[name] : undefined);
+  if (cheap && parts.length >= 3 && cheap.indexOf(parts[2]) >= 0) return;   // lite 版就夠
+  if (skip !== undefined) throw new NeedPanel(name);
+  LAZY_USED[name] = 1;
+}
+
 function pathVal(root, path) {
   var cur = root;
   var parts = String(path).split('.');
+  if (LAZY) lazyCheck(root, parts);
   for (var i = 0; i < parts.length; i++) {
     if (cur === null || cur === undefined) { BAD_PATHS[path] = (BAD_PATHS[path] || 0) + 1; return undefined; }
     cur = cur[parts[i]];
@@ -38,6 +68,7 @@ function firstPathVal(root, paths) {
   var list = Array.isArray(paths) ? paths : [paths];
   for (var i = 0; i < list.length; i++) {
     var cur = root, parts = String(list[i]).split('.'), ok = true;
+    if (LAZY) lazyCheck(root, parts);
     for (var j = 0; j < parts.length; j++) {
       if (cur === null || cur === undefined) { ok = false; break; }
       cur = cur[parts[j]];
@@ -51,6 +82,7 @@ function firstPathVal(root, paths) {
 function peekPath(root, path) {
   var cur = root;
   var parts = String(path).split('.');
+  if (LAZY) lazyCheck(root, parts);
   for (var i = 0; i < parts.length; i++) {
     if (cur === null || cur === undefined) return undefined;
     cur = cur[parts[i]];
@@ -1191,10 +1223,14 @@ function updateSkillContext(state, policy, memo) {
   var cfg = policy.skills;
   if (!cfg) return;
   if (!state.ctx) state.ctx = {};
-  var P = pathVal(state, cfg.panel || 'panels.skill');
-  if (P && P.groups && !memo.skill) {
-    memo.skill = buildSkillComposition(P, cfg, Number(state.seed) || 0);
-    memo.skill.lastUltSwitchAt = -1e12;
+  /* 面板只在組合還沒決定時才讀：決定之後這裡用不到它，而技能面板每建一次約 1.7ms。
+     先前每個決策點都讀，面板按需建立就被迫每 5 秒建一次。 */
+  if (!memo.skill) {
+    var P = pathVal(state, cfg.panel || 'panels.skill');
+    if (P && P.groups) {
+      memo.skill = buildSkillComposition(P, cfg, Number(state.seed) || 0);
+      memo.skill.lastUltSwitchAt = -1e12;
+    }
   }
   var S = memo.skill;
   if (!S) return;
@@ -1212,7 +1248,11 @@ function updateSkillContext(state, policy, memo) {
 function updateSetContext(state, policy, memo) {
   var sets = policy.equipSets || {};
   if (!state.ctx) state.ctx = {};
-  var P = peekPath(state, sets.panel || 'panels.equipSets');       // 沒有這個面板的策略也會走到這裡，缺值是正常的
+  /* 只讀 active 一個欄位，不讀整個面板物件：完整的 equipSets 要評估三套裝備（後期約 8.7ms），
+     而這裡每個決策點都會走到。面板按需建立時，active 由便宜的 lite 版提供。
+     沒有這個面板的策略也會走到這裡，缺值是正常的（P 為 null 時 active 為 undefined，行為同前）。 */
+  var activeNow = peekPath(state, (sets.panel || 'panels.equipSets') + '.active');
+  var P = (activeNow === undefined) ? null : { active: activeNow };
   state.ctx.setAway = !!(policy.equipSets && P && P.active !== undefined && P.active !== (sets.home || 0));
   /* awayNow：面板上使用中的真的是第 2／3 套。與 setAway 不同：setAway 在「這一輪剛下了切換指令」時
      也會被設成 true（為了擋住針對舊面板的規則），而 awayNow 只反映面板當下的事實。
@@ -1629,6 +1669,39 @@ function planEquipSetSwitch(state, cfg, ruleId, memo, policy) {
 }
 
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
+/* memo 的深拷貝。不用 JSON round-trip：memo 裡有 -1e12、Infinity 這類值（Infinity 會被 JSON 變成 null），
+   還原時必須逐位相同，否則「重跑一次」就不再等於「一開始就全建」。 */
+function cloneMemoValue(v) {
+  if (v === null || typeof v !== 'object') return v;
+  if (Array.isArray(v)) { var a = new Array(v.length); for (var i = 0; i < v.length; i++) a[i] = cloneMemoValue(v[i]); return a; }
+  var o = {};
+  for (var k in v) if (Object.prototype.hasOwnProperty.call(v, k)) o[k] = cloneMemoValue(v[k]);
+  return o;
+}
+function restoreInPlace(target, saved) {
+  /* memo 物件本身的識別要保留（context 全域 __memo 指著它），只換內容。 */
+  for (var k in target) if (Object.prototype.hasOwnProperty.call(target, k)) delete target[k];
+  for (var s in saved) if (Object.prototype.hasOwnProperty.call(saved, s)) target[s] = saved[s];
+}
+
+/* 面板按需建立的決策入口（見檔頭 LAZY 的說明）。
+   回傳 { cmds, used } 或 { needPanel: 名稱 }；後者時 memo 與 BAD_PATHS 已還原成呼叫前的樣子。 */
+function decideLazy(state, policy, memo, lazy) {
+  var memoBak = cloneMemoValue(memo), badBak = cloneMemoValue(BAD_PATHS);
+  LAZY = lazy || {}; LAZY_ROOT = state; LAZY_USED = {};
+  try {
+    var cmds = decide(state, policy, memo);
+    return { cmds: cmds, used: Object.keys(LAZY_USED) };
+  } catch (e) {
+    if (!(e instanceof NeedPanel)) throw e;
+    restoreInPlace(memo, memoBak);
+    restoreInPlace(BAD_PATHS, badBak);
+    return { needPanel: e.needPanel };
+  } finally {
+    LAZY = null; LAZY_ROOT = null; LAZY_USED = null;
+  }
+}
+
 function decide(state, policy, memo) {
   updateContext(state, policy, memo);
   updateStageMax(state);

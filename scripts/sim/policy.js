@@ -178,6 +178,17 @@ function createPolicy(policy) {
       return JSON.parse(JSON.stringify(cmds));
     },
 
+    /* 面板按需建立版的 decide（見 policy_interpreter.js 的 LAZY 與 scripts/sim/lazy_panels.js）。
+       lazy：{ 面板名: null（沒建）| [已有欄位] }。回傳 { cmds } 或 { needPanel }；
+       後者時 context 內的 memo 已還原，驅動端補建面板後用同一份 state 重呼叫即可。
+       隔離不變：進出一律 JSON round-trip，context 裡仍然沒有任何宿主函式。 */
+    decideLazy(state, lazy) {
+      ctx.__state = JSON.parse(JSON.stringify(state));
+      ctx.__lazy = JSON.parse(JSON.stringify(lazy || {}));
+      const r = vm.runInContext('decideLazy(__state, __policy, __memo, __lazy)', ctx);
+      return JSON.parse(JSON.stringify(r));
+    },
+
     /* 高頻觀測。不回傳指令——觀測不是操作，玩家看戰鬥不算按按鈕。
        隔離方式與 decide 完全相同：策略拿到的仍然只是深拷貝，碰不到遊戲狀態。 */
     observe(state) {

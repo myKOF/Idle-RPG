@@ -1604,6 +1604,14 @@ function buildEquipSetsPanel(params) {
   var profiles = params.profiles || {};
   var topN = Math.max(1, Math.floor(Number(params.topN) || 3));
   var count = (typeof EQUIP_SET_COUNT === 'number') ? EQUIP_SET_COUNT : 3;
+  /* lite：只回「目前穿哪一套、共幾套、哪幾套已解鎖」，不評估任何裝備。
+     給面板按需建立用（scripts/sim/lazy_panels.js）：每個決策點的 updateSetContext 只要 active，
+     完整版要對三套與整個背包算 itemScore，後期約 8.7ms。三個欄位與完整版逐位相同。 */
+  if (params.lite) {
+    var liteUnlocked = [];
+    for (var li = 0; li < count; li++) liteUnlocked.push(!!equipmentSetUnlocked(li));
+    return { active: G.equipActive || 0, count: count, unlocked: liteUnlocked };
+  }
 
   function ancientOf(it) {
     var n = 0;
