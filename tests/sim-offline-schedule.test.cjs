@@ -47,7 +47,7 @@ test('四份強度策略都宣告了 dailyActiveHours，且值互不相同', () 
 
 /* ---- 引擎：離線一定要走遊戲自己的結算 ---- */
 
-test('offlineFor 推進牆鐘但不推進 gt，收益由遊戲的 applyOfflineProgress 給', () => {
+test('offlineFor 推進含離線的遊戲時間但不推進 gt，收益由遊戲的 applyOfflineProgress 給', () => {
   const eng = createEngine({ seed: 777 }).boot(null);
   eng.stepSeconds(120);
 
@@ -58,9 +58,9 @@ test('offlineFor 推進牆鐘但不推進 gt，收益由遊戲的 applyOfflinePr
 
   /* 離線期間遊戲根本沒在跑，gt（戰鬥時鐘）不該前進 */
   assert.equal(after.gt, before.gt, '離線時 gt 不該前進');
-  /* 牆鐘要走完整段離線時間，下一次離線的 elapsed 才會正確 */
+  /* 含離線的遊戲時間要走完整段離線時間，下一次離線的 elapsed 才會正確 */
   assert.ok(Math.abs((eng.gameTimeSec() - wallBefore) - 8 * 3600) < 1,
-    `牆鐘應前進 8 小時，實際 ${eng.gameTimeSec() - wallBefore} 秒`);
+    `含離線的遊戲時間應前進 8 小時，實際 ${eng.gameTimeSec() - wallBefore} 秒`);
 
   /* 摘要是遊戲原生的物件，欄位名不由 harness 決定 */
   assert.ok(sum, '8 小時離線應該要有結算結果');
