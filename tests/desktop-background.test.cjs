@@ -81,6 +81,6 @@ test('桌面正式模式停用背景節流，活動 API 受既有來源守門且
   const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   assert.ok(html.indexOf('js/game-visibility.js?') < html.indexOf('js/battle-renderer.js?'));
   for (const name of ['bridge', 'ui', 'battle-renderer', 'vfx', 'vfx-tower', 'sfx', 'start-menu-background']) {
-    assert.match(html, new RegExp('js/' + name + '\\.js\\?v=20261119-background(?:-mini)?-v1'));
+    assert.match(html, new RegExp('js/' + name + '\\.js\\?v=20261119-background(?:-mini)?-v[1-9]\\d*'));
   }
 });

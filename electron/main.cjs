@@ -176,6 +176,7 @@ if (Steam.shouldQuitForRestart()) {
   app.on('second-instance', function () {
     var win = mainWindow;
     if (!win) return;
+    if (win.miniMonitor) win.miniMonitor.restore();
     if (win.isMinimized()) win.restore();
     win.show();
     win.focus();
@@ -366,6 +367,7 @@ function createWindow() {
     }
   });
   mainWindow = win;
+  win.miniMonitor = require('./mini-window.cjs').create({ owner: win, BrowserWindow: BrowserWindow });
   win.activity = WindowActivity.bindWindowActivity(win, { alwaysActive: OPTS.smoke && !OPTS.smokeOnScreen });
   var url = startUrl();
   var wc = win.webContents;
@@ -481,7 +483,10 @@ function createWindow() {
   });
 
   wc.on('did-start-navigation', function (details) {
-    if (details.isMainFrame && !details.isSameDocument) navigating = true;
+    if (details.isMainFrame && !details.isSameDocument) {
+      navigating = true;
+      win.miniMonitor.restore();
+    }
   });
   wc.on('did-finish-load', function () {
     navigating = false;
@@ -525,12 +530,16 @@ function createWindow() {
     event.preventDefault();
     if (closing.started) return;
     closing.started = true;
+    win.miniMonitor.dispose();
     flushSave(win).then(function () {
       closing.done = true;
       if (!win.isDestroyed()) win.destroy();
     });
   });
-  win.on('closed', function () { if (mainWindow === win) mainWindow = null; });
+  win.on('closed', function () {
+    win.miniMonitor.dispose();
+    if (mainWindow === win) mainWindow = null;
+  });
 
   win.loadURL(url);
   return win;
@@ -594,6 +603,30 @@ function setupDisplayIpc() {
   });
 }
 
+function setupMiniIpc() {
+  function mainSender(event) {
+    return trustedSender(event) && event.senderFrame === mainWindow.webContents.mainFrame;
+  }
+  ipcMain.handle('mini:open', function (event, initial) {
+    if (!mainSender(event)) throw new Error('Untrusted mini monitor sender');
+    return mainWindow.miniMonitor.open(initial);
+  });
+  ipcMain.on('mini:update', function (event, snapshot) {
+    if (mainSender(event)) mainWindow.miniMonitor.update(snapshot);
+  });
+  ipcMain.handle('mini:initial', function (event) {
+    if (!mainWindow || !mainWindow.miniMonitor.accepts(event)) throw new Error('Untrusted mini monitor sender');
+    return mainWindow.miniMonitor.initial();
+  });
+  ipcMain.handle('mini:ready', function (event) {
+    if (!mainWindow || !mainWindow.miniMonitor.accepts(event)) throw new Error('Untrusted mini monitor sender');
+    mainWindow.miniMonitor.ready();
+  });
+  ipcMain.on('mini:restore', function (event) {
+    if (mainWindow && mainWindow.miniMonitor.accepts(event)) mainWindow.miniMonitor.restore();
+  });
+}
+
 function onReady() {
   Menu.setApplicationMenu(null);
   protocol.handle(AppProtocol.SCHEME, serveFile);
@@ -605,6 +638,7 @@ function onReady() {
   });
   setupSaveIpc();
   setupDisplayIpc();
+  setupMiniIpc();
 
   var win = createWindow();
   if (OPTS.smoke) {

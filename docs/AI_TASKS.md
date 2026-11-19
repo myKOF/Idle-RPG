@@ -1,3 +1,16 @@
+## DESKTOP-MINI-WINDOW-20261119 — 修復桌面迷你視窗與主視窗往返
+
+- Owner：Codex；Done，單人實作。使用者要求桌面版迷你視窗恢復作用，進入時隱藏原遊戲視窗，按迷你視窗還原回正常遊戲。前置為既有迷你戰況快照及 Electron 外殼，逐檔衝突預檢乾淨。
+- 允許：Electron 主行程／preload、迷你視窗控制器／頁面與專用 preload、共享迷你渲染、`js/ui.js` 迷你區塊、主頁載入／快取、相關回歸與實機驗證工具、LV 功能說明及本段。禁止：戰鬥規則、Worker 協議、存檔格式、解鎖、素材及其他功能；不合併或推送。
+- 驗收：實際桌面入口、置頂／即時戰況、主窗隱藏、還原按鈕／Esc／關閉迷你恢復、三種顯示模式及尺寸保持、重複開啟／失敗復原／結束清理／IPC來源限制、相關回歸與 Build。完成後交使用者驗收及整合。
+- 使用者追加：外部正式／Demo 版本在遊戲或迷你視窗有焦點時按 Enter 往返，Tips 標題加 (Enter)；內測保留 GM Enter。新增允許 String.xlsx／CSV／衍生字串、快捷回歸。使用者已明確同意與同工作區背景掛機任務分段共存，保留雙方並統一 UI 快取。
+- 完成：桌面入口優先呼叫原生迷你視窗，不再依賴 Chromium PiP；沿用主遊戲的 miniSnapshot／樣式／模板，獨立 sandbox 頁面共用 MiniMonitor 渲染，不啟動第二份遊戲或 Worker。renderer 初始化成功才隱藏主窗；迷你永遠置頂，還原鈕、Esc、視窗關閉或 renderer 異常帶回主窗，保留顯示模式／尺寸，載入失敗保留主窗。關閉遊戲、重新載入、第二次啟動會清理迷你及更新計時器。IPC 分別限定遊戲／迷你主框架，迷你頁不暴露存檔或顯示設定 API。
+- 快捷：外部 full／demo 可在主窗與迷你窗使用 Enter，逐窗檢查 document.hasFocus；失焦、內測／GM、文字輸入、組字、長按、修飾鍵、選單／對話框／序章不攔截。Tips 按版本取 String 2570「迷你視窗 (Enter)」；內測保持原標題與 GM 行為。String.xlsx 獨占確認、原生 Excel 寫入新列4格並正常重開兩次，原40,864格值／樣式／格式、欄寬／視窗／驗證／篩選保持，無繪圖物件；匯出CSV與strings_data、主頁及編輯器共用字串快取一致。
+- 修改：`electron/main.cjs`／`preload.cjs`、新增`mini-window.cjs`／`mini-preload.cjs`／`mini.html`、`js/ui.js`迷你與快捷區塊、新增`js/mini-monitor.js`、主頁載入／快取、String.xlsx／CSV／strings_data、`tools/vfx/editor/index.html`僅字串快取、兩份desktop-mini回歸、背景快取回歸支援遞增版號、`tools/desktop/verify-mini-window.cjs`、LV及本段。唯讀核對規範／Workflow／Agent、Electron smoke／出貨／存檔／顯示切換、bridge／Worker、GameVisibility／GameClock、GM、字串讀取與Excel工具；沒有素材改動，素材庫無交付變更。
+- 回歸：`node --test tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs tests/fullscreen-toggle.test.cjs tests/desktop-app-protocol.test.cjs tests/desktop-ship-rules.test.cjs tests/string-table.test.cjs tests/background-idle.test.cjs tests/desktop-background.test.cjs tests/desktop-saves.test.cjs tests/desktop-steam.test.cjs tests/game-menu.test.cjs tests/gm-command.test.cjs tests/vfx-editor-cache-versions.test.cjs`：119/119通過。`npm.cmd run build`750檔及Electron四支`node --check`通過，字串同步與Git差異檢查通過。曾發現編輯器字串快取落後，已同步並重跑通過。
+- 實測：`node tools/desktop/verify-mini-window.cjs <output> full|demo|internal` 三次均通過，Electron 44.10.1、隔離profile／新遊戲／靜音，略過序章後正常揭幕。三版本各驗windowed／borderless／fullscreen九組往返：實際入口、置頂、主窗隱藏、最新戰況推送、Worker時間／tick繼續、隱藏主窗降載、主／迷你窗失焦Enter不觸發、還原按鈕／Enter或Esc／X、原尺寸與HTML全螢幕保持、重複開啟。內測Enter真正開GM且迷你Enter不還原。頁面錯誤0，保存成功，所有測試視窗／profile與本次暫存均清理。
+- 交接：自我Review完成，可交使用者驗收與合併；Commit為本段所在的`[Codex] fix: 恢復桌面迷你視窗並加入 Enter 切換`。保留背景掛機已完成提交與其他進行中範圍傷害任務，僅分段提交本項。無本項功能待辦，不合併或推送develop。驗證Windows原始碼桌面版，未重製安裝檔；更新後重啟桌面版，安裝包需另行重打包。編輯器只更新共用字串快取，已開啟者先保留未存內容再重載。
+
 ## DESKTOP-BACKGROUND-IDLE-20261119 — 桌面背景持續掛機與顯示降載
 
 - Owner：Codex；Done，單一開發者。使用者授權直接修正、實測並提交。前置為現有 Electron 外殼及 Worker 背景在線／欠帳補算；fetch 與逐檔衝突預檢乾淨。
