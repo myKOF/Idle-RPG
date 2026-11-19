@@ -19,7 +19,7 @@ test('護手洗出命中率無金鑰本機解析，舊版hitFlat快取失效', a
   env.ai.rememberNaturalCommand(text, ['modequip gloves hitFlat 1']);
   const old = JSON.parse(env.storage[CACHE]);
   old.version = 4;
-  old.entries.forEach(entry => { entry.signature = entry.signature.replace(/^5:/, '4:'); });
+  old.entries.forEach(entry => { entry.signature = entry.signature.replace(/^6:/, '4:'); });
   env.storage[CACHE] = JSON.stringify(old);
   assert.equal(env.ai.getCachedNaturalCommand(text), null);
   delete env.storage.idle_rpg_gemini_api_key;
@@ -71,7 +71,7 @@ test('雲端使用品質條件與具名替換時才送Worker，成功後保留�
   assert.equal(env.sent.length, 1);
   assert.match(env.sent[0].line, /^modequip worn:ring:chaos replace 物理攻擊 cdr ancient/);
   const cache = JSON.parse(env.storage[CACHE]);
-  assert.equal(cache.version, 5);
+  assert.equal(cache.version, 6);
   assert.equal(cache.entries[0].commands[0], 'modequip worn:ring:chaos replace 物理攻擊 cdr ancient');
 });
 
@@ -322,7 +322,7 @@ test('詞條規則升版後，舊版追加語意的翻譯快取失效', () => {
   const env = setup();
   env.ai.rememberNaturalCommand(prompt, ['modequip weapon lifesteal 100']);
   const data = JSON.parse(env.storage[CACHE]);
-  assert.equal(data.version, 5);
+  assert.equal(data.version, 6);
   data.version = 1;
   env.storage[CACHE] = JSON.stringify(data);
   assert.equal(env.ai.getCachedNaturalCommand(prompt), null);

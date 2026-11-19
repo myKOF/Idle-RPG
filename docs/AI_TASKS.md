@@ -1,3 +1,14 @@
+## GM-PANEL-ENTER-20261119 — 指令送出後保留面板與 Enter 取回焦點
+
+- Owner：Codex；Done，單一開發者。使用者要求 GM 指令送出後保留結果，面板失焦時 Enter 重新取得輸入焦點。前置為既有 GM 面板；fetch 與逐檔衝突預檢乾淨。
+- 允許修改 `js/gm.js`、`index.html` 對應快取、GM 鍵盤與解析逾時回歸、`GM_command.md`、`LV_upgrade_system.md` 及本段。禁止變更指令語意、Worker、存檔、解鎖條件與素材；不合併或推送。
+- 驗收同步／非同步結果持續顯示、空白 Enter 不關閉、失焦 Enter 僅取回焦點且保留草稿與結果、Esc 關閉取消解析、Shift+Enter 換行及中文輸入法保護；執行 GM 相關回歸、Build、隔離瀏覽器鍵盤驗證與差異檢查。完成後交使用者驗收及整合。
+- 使用者追加神祕商人邀請券 GM 指令：底層既有 `invite 正整數`，補齊 GM 文件、白話本機解析與雲端契約、翻譯快取版本及對應回歸。新增允許 `js/ai-key-setting.js`、商人與翻譯快取測試，其餘禁止範圍保持；新增檔案範圍預檢乾淨。
+- 完成 10 檔：GM 面板、白話解析、主頁兩份快取、四份既有回歸、GM 文件、LV 及本段。文件獨立列出神祕商人（神秘商人）邀請券、格式、數量限制、注釋、成功訊息與白話範例；四種神祕／神秘名稱通用且不需金鑰。唯讀核對 `js/gm_exec.js`、`js/item.js`、`js/bridge.js`、`js/start-menu.js`、`js/intro-player.js`、模擬引擎與既有商人／快取處理；未修改執行層、配置表或素材，素材庫無交付變更。
+- `node --test --test-reporter=tap tests/gm-command.test.cjs tests/gm-natural-timeout.test.cjs tests/gm-translation-cache.test.cjs tests/gm-fastpath.test.cjs tests/gm-perf-command.test.cjs tests/gm-intro-command.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs`：106/106 通過。擴大至全部 `tests/gm-*.test.cjs` 的檢查有 6 項既有失敗：gm-modequip 2 項（45.3／43.3）、gm-skill-unlock 1 項（舊門檻）、gm-test-map 3 項（31／10 及缺 requestNpc3d）；用 HEAD 原始 GM／白話程式重跑這三份測試，逐項重現相同失敗，未修改不相關斷言。
+- `npm.cmd run build` 通過 745 檔；字串稽核為寫死 0 條，`node tools/string-table/apply_strings.cjs --check` 同步，差異檢查與自我 Review 通過。隔離靜音 Edge 正式主頁／Worker 發放 100 與 25 張券，確認成功與失敗可見、失焦 Enter 不啟動焦點按鈕或執行草稿、Esc／重新開啟正常；正式 GM 程式的隔離瀏覽器補驗原生 Shift+Enter 換行與空白 Enter。測試腳本初輪等待空 G 與 CDP 換行注入已修正；沒有產品異常，所有測試瀏覽器均關閉。
+- 無本次未完成項目，可供使用者驗收與合併；未合併或推送 develop／main。下一步重新載入 Codex 測試頁，使用 `invite 100` 或「加神祕／神秘商人邀請券100張」驗收。Commit 為本段所在 `[Codex] fix: 保留 GM 指令結果並補齊邀請券白話操作`，SHA 見聊天回報。
+
 ## SYNC-DEVELOP-20261119-012000 — 整合遊戲說明與太古詞條介紹
 
 - Codex，完成。續接 `26bc2939` 與 `ca57429b` 的待完成合併。保留新手導引、離線逐波、遺物、背包與 Esc 選單更新，納入遊戲說明頁籤、太古詞條說明及字級調整。核對兩側任務紀錄完整。

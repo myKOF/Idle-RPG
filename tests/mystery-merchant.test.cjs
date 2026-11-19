@@ -15,6 +15,25 @@ function success(e,name,args) {
   assert.equal(r.result,null,JSON.stringify(r));
 }
 
+test('GM invite 累加邀請券並刷新商人投影，無效數量與外部環境不發放', () => {
+  const e = game(), c = e.ctx, p = e.state().player;
+  for (const count of [100, 25]) {
+    const result = e.cmd('gm.exec', { line: 'invite ' + count }).result;
+    assert.equal(result.ok, true);
+    assert.match(result.message, /神祕邀請券/);
+  }
+  assert.equal(p.consumables.mystery_invitation, 125);
+  assert.equal(e.panel('tower').merchant.tickets, 125);
+  assert.equal(c.MYSTERY_MERCHANT_OPEN, false, '發券不召喚商人');
+  for (const line of ['invite', 'invite 0', 'invite -1', 'invite 1.5', 'invite NaN', 'invite Infinity', 'invite 9007199254740992', 'invite 1 extra']) {
+    assert.equal(c.executeGMCommand(line).ok, false, line);
+    assert.equal(p.consumables.mystery_invitation, 125);
+  }
+  c.location.hostname = 'game.example.com';
+  assert.equal(c.executeGMCommand('invite 1').ok, false);
+  assert.equal(p.consumables.mystery_invitation, 125);
+});
+
 test('無券與未召喚拒絕，末張券只扣一次；關閉後必須重新消耗',()=>{
   const e=game(), c=e.ctx, p=e.state().player;
   assert.match(e.cmd('merchant.open').result,/邀請券/);
