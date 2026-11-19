@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = '653f0f3d';
+var STRING_DATA_VERSION = '37211a4b';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -2560,5 +2560,6 @@ var STRING_DATA = {
   "2570": ["迷你視窗 (Enter)"],
   "2571": ["剩餘時間 {0}"],
   "2572": ["饋贈"],
-  "2573": ["贈與{0}博取商人的好感，由此提升商店等級"]
+  "2573": ["贈與{0}<br>博取商人的好感，由此提升商店等級"],
+  "2574": ["神祕邀請券剩餘：{0}"]
 };

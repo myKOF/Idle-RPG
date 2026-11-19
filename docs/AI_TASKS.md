@@ -16965,6 +16965,19 @@ Worker 存活且頁面正常完成載入。
 - 實機：全靜音隔離Edge／新遊戲／正式Worker，1920及1366寬度的升級、全買、刷新底座標完全相等，支柄伸至原商品框上緣，四欄與5:2比例保持。三鈕無img／費用；升級tips實際為金幣圖＋4,100,000，全買一圖＋完整總額，刷新精確顯示指定文字。實際購買後總額降低，升級至Lv.2後費用45,354,833，刷新扣券通過，頁面例外0。預覽／report.json在本聊天merchant-sign目錄；瀏覽器／伺服器關閉，不使用Windows螢幕擷取。
 - 交接：無本項未完成／已知新增風險，限Edge兩種寬度及相關回歸，未跑全庫／真機。可供驗收合併，不合併推送；Commit為本段所在`[Codex] feat: 調整神祕商人招牌與費用提示`。下一步接續使用者新增的會話保留／倒計時需求，獨立實作驗證。編輯器因共用String快取更新，先保留未存內容再重載。
 
+## MYSTERY-MERCHANT-FEEDBACK-20261120 — 滿包浮字與商人費用／券量提示
+
+- Owner：Codex，Done，單人實作。使用者要求商店購買裝備遇到滿包時在該購買鈕上方上浮「背包已滿」；追加饋贈tips的金幣費用與好感說明分兩行，以及刷新tips第二行黃色顯示「神祕邀請券剩餘：999」。允許商人UI／CSS／快取、既有浮字與錯誤回報接線、String原生Excel及匯出／共用快取、相關回歸與LV／商人說明／本段，不改交易／容量／價格／Worker／素材。
+- 前置：已有商人滿包權威拒絕、共用按鈕上浮文字及String1172／2442／2573，沿用而不新增第二套浮字。預檢無外部來源；BOSS9只共用AI_TASKS不同區段，三方試合乾淨後分段提交。驗收滿包浮字／按鈕定位／動畫清理／不扣款、成功及缺金不誤報、隱藏按鈕晚到回覆、金幣圖示／完整數字與兩行tips、原生Excel保留與重開、相關回歸／Build／兩種畫寬實機。
+- 完成：`sendGemUiCommand`新增可選失敗回呼，單件購買收到正式滿包拒絕才對原按鈕呼叫既有`showFloatingText`，顯示String1172「背包已滿」並保留原失敗日誌／重新請求面板。先收起裝備tips避免遮擋；原按鈕已隱藏／移除則不在其他頁浮字。成功、缺金或連線錯誤不冒出滿包提示，後端扣款／售出／背包與全買略過規則保持。
+- 文案：String2573費用後加`<br>`，金幣圖示＋完整金額與好感說明固定分兩行。刷新以原2446說明＋換行＋新2574「神祕邀請券剩餘：{0}」組成，第二行CSS為`#ffd700`；每次商人投影刷新都讀取當前券量，包含0張。金幣圖示與價格仍用原共用HTML。
+- Excel：獨占確認後透過原生COM只改C2558／E2558，追加第2559列編號2574；原生正常重開各兩次、全原值／繪圖／H4檢視驗證通過。唯讀封裝比對既有字型／填色／框線／儲存格樣式／公式／欄寬／檢視／篩選／驗證／繪圖保持，資料差異只有授權兩格及新列。Excel匯出2559列CSV、生成2558條String，主頁／編輯器String快取同步37211a4b；UI及CSS快取同步更新。
+- 修改11檔：`js/ui.js`、`css/style.css`、`index.html`、`config/Excel/String.xlsx`、`config/CSV/String.csv`、`js/strings_data.js`、`tools/vfx/editor/index.html`、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`及本段。唯讀檢查`js/item.js`供應器／滿包與交易、Worker錯誤／背包投影／GM、共用浮字與縮放／tooltip／pending／String機制、原生Excel工具及既有QA；未改上述模擬模組與素材，素材庫無本項交付變更。
+- 回歸：`node --test --test-reporter=tap tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/gem-convert-shift.test.cjs tests/gem-workshop.test.cjs tests/ui-worker-panels.test.cjs tests/inventory-command-pending.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`75項，73通過／2既有失敗。用唯讀fs覆蓋起始`89485c2a`的UI及String載入同一ui-worker-panels檔，原兩項（舊gem.socket原始碼比對、item.upgrade fixture缺UI）逐項重現6通過／2失敗，沒有新增失敗或修改原斷言。新增正式購買結果到按鈕浮字、解除滿包後成功、缺金不誤報、晚到／連線錯誤、999→998→0券量更新回歸；商人UI專項8項全過。
+- 檢查：`node tools/build_check.cjs`753檔通過；字串稽核0筆，Git差異檢查通過。完整TAP／起始版本比較與Excel驗證來源保存在本聊天visualizations的`merchant-feedback-20261120`。
+- 實機：隔離靜音Edge／新遊戲／正式Worker，GM備金幣／邀請券並填滿背包。測試暫停戰鬥、停止除錯用Pixi ticker以隔離軟體GPU渲染搶佔，不更動正式浮字程式；一般動態設定下以頁內MutationObserver及原生rAF採樣。1920／1366寬度實際點買，浮字中心對齊按鈕誤差<0.01px、起點在按鈕上方，約120ms後分別上移12.8／7.0畫面px並淡出，0.8秒流程後節點清除；金幣及未售出旗標不變。tips實際一個金幣圖、費用／說明兩行，刷新黃色第二行券量9→8，開著的tips同步更新，頁面例外0。截圖目視驗收並保存，瀏覽器關閉、無孤兒殘留。早期QA跨程序截圖耗時超過浮字生命期及軟體GPU使CSS動畫等待提交，改用上述隔離／頁內採樣後完整通過，沒有降低位移或淡出斷言。
+- 交接：無本項未完成／已知新增風險，可供驗收及合併；限制為兩項既有UI測試失敗，未跑全庫／行動真機／其他瀏覽器。Commit為本段所在`[Codex] feat: 完善神祕商店滿包與費用提示`，未合併／推送develop或main。BOSS9已獨立提交89485c2a，完整保留；下一步重載遊戲驗收三項提示。編輯器若開啟，先下載或另存未存內容再重載共用String，不以舊分頁覆寫新版。
+
 ## MYSTERY-MERCHANT-CONTRAST-20261120 — 神話商品文字對比與金黃饋贈
 
 - Owner：Codex，Done，單人修正。使用者指出神話裝備商品名稱紅字在明亮底紋上難讀，允許為可讀性調整顯示色；追加饋贈文字改金黃色。僅修改商人CSS、CSS快取、LV／商人說明與本段，不改其他介面、品質資料／價格／交易／素材／String。

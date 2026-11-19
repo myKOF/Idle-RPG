@@ -12888,6 +12888,7 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
 .merchant-shop-controls .gx-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:12px; margin:0; }
 .merchant-shop-controls .gx-actions .btn { min-width:100px; min-height:38px; padding:6px 18px; }
 .merchant-shop-controls .btn { max-width:100%; }
+.merchant-ticket-remaining { color:#ffd700; }
 .merchant-gold-icon {
   display:inline-block;
   width:14px;

@@ -8296,7 +8296,7 @@ function reportUiCommandFailure(prefix, error, panels) {
   requestUiPanels(panels);
 }
 
-function sendGemUiCommand(commandName, args, pendingRef, panels, onSuccess) {
+function sendGemUiCommand(commandName, args, pendingRef, panels, onSuccess, onFailure) {
   panels = panels || ['gems', 'header'];
   var failureTitle = commandName.indexOf('merchant.') === 0 || commandName.indexOf('gem.shop') === 0 ? STR(2435) : STR(1593);
   return sendUiCommand(commandName, args, {
@@ -8306,12 +8306,14 @@ function sendGemUiCommand(commandName, args, pendingRef, panels, onSuccess) {
   }).then(function (result) {
     var error = uiCommandResultError(result);
     if (error) {
+      if (onFailure) onFailure(error);
       reportUiCommandFailure(failureTitle, error, panels);
       return null;
     }
     if (onSuccess) onSuccess(result);
     return result;
   }, function (error) {
+    if (onFailure) onFailure(error);
     reportUiCommandFailure(failureTitle, error, panels);
     return null;
   });
@@ -10584,6 +10586,12 @@ var GEM_TIER_COLORS = {
 function merchantGoldPriceHTML(price, full) {
   return '<img src="images/icon_gold.png" class="merchant-gold-icon" alt=""> <span>' + (full ? fmtFull(price) : fmt(price)) + '</span>';
 }
+function showMerchantPurchaseError(button, error) {
+  var message = error && error.message ? error.message : error;
+  if (message !== STR(2442) || !button || !button.isConnected || !button.getClientRects().length) return;
+  hideTooltip();
+  showFloatingText(button, STR(1172), '#fca5a5');
+}
 function renderGemShop(merchant, player) {
   var grid = $id('gem-shop-grid');
   if (!grid || !merchant.shop || !player) return;
@@ -10654,6 +10662,7 @@ function renderGemShop(merchant, player) {
   if (buyAllBtn) buyAllBtn.toggleAttribute('data-merchant-unavailable',
     !s.items.some(function (it) { return !it.sold && player.gold >= merchantItemPrice(it); }));
   var refBtn = $id('shop-refresh');
+  if (refBtn) setAttrIfChanged(refBtn, 'data-tt-desc', STR(2446) + '<br><span class="merchant-ticket-remaining">' + esc(STR(2574, merchant.tickets)) + '</span>');
   if (refBtn) refBtn.toggleAttribute('data-merchant-unavailable', merchant.tickets < 1);
   if (refBtn) refBtn.setAttribute('data-ui-pending-key', shopPendingKey);
   syncUiPendingControls(shopPendingKey);
@@ -12761,7 +12770,9 @@ function initUI() {
         'gem.shopBuy',
         { index: shopIndex },
         'gem-shop',
-        ['tower', 'gems', 'header', 'inv']
+        ['tower', 'gems', 'header', 'inv'],
+        null,
+        function (error) { showMerchantPurchaseError(sb, error); }
       );
       return;
     }
