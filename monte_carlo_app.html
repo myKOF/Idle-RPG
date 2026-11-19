@@ -16,6 +16,7 @@
     <script src="js/stats.js"></script>
     <script src="js/item.js"></script>
     <script src="js/skills.js"></script>
+    <script src="js/skills2.js"></script>
     <script src="js/talents.js"></script>
     <script src="js/player.js"></script>
     <script src="js/special_rules.js"></script>
@@ -26,6 +27,9 @@
     <script src="js/newforge.js"></script>
     <script src="js/forge.js"></script>
     <script src="js/save.js"></script>
+    <script src="js/relic_data.js"></script>
+    <script src="js/relic.js"></script>
+    <script src="js/chest_data.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         /* 🛡️ 官方裝備卡片元件專屬樣式 (防污染主儀表板全域排版) */
@@ -604,6 +608,21 @@
         .skills-panel-meta { font-size: 12px; color: #94a3b8; }
         .skills-panel-meta b { color: #e2e8f0; }
 
+        .sk-card { background: #111827; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+        .sk-card.equipped { border-color: #a78bfa; }
+        .sk-card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 8px; }
+        .sk-card-head .sk-name { font-size: 15px; font-weight: 700; color: #e2e8f0; }
+        .sk-card-head .sk-slot { color: #a78bfa; font-size: 12px; font-weight: 700; }
+        .sk-card-head .sk-sum { color: #94a3b8; font-size: 12px; }
+        .sk-tiers { display: flex; flex-direction: column; gap: 4px; max-width: 460px; }
+        .sk-tier { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 5px 8px; font-size: 12px; display: flex; justify-content: space-between; gap: 6px; }
+        .sk-tier.zero { opacity: .4; }
+        .sk-tier.maxed { border-color: #34d399; }
+        .sk-tier .t-name { color: #e2e8f0; }
+        .sk-tier .t-name i { color: #64748b; font-style: normal; margin-right: 4px; }
+        .sk-tier .t-lv { color: #fbbf24; font-weight: 700; white-space: nowrap; min-width: 52px; text-align: right; }
+        .sk-tier.maxed .t-lv { color: #34d399; }
+        .sk-tier.ult { border-color: #f59e0b; background: #3b2508; }
         .skill-section { margin-bottom: 12px; }
         .skill-section:last-child { margin-bottom: 0; }
         .skill-section-label {
@@ -785,6 +804,21 @@
         #itemDetailPanel .gem-ico.gi-inline { display: inline-block; width: 1.6em; height: 1.6em; vertical-align: -0.5em; }
         #itemDetailPanel .rune-stone { display: block; flex: 0 0 auto; width: 32px; height: 32px; }
 
+        .snap-tabs { display: flex; gap: 6px; margin: -8px 0 16px; border-bottom: 1px solid #374151; }
+        .snap-tabs .snap-tab {
+            background: transparent; border: none; border-bottom: 3px solid transparent; color: #94a3b8;
+            padding: 8px 18px; cursor: pointer; font-size: 14px; font-family: inherit; margin-bottom: -1px;
+        }
+        .snap-tabs .snap-tab:hover { color: #e2e8f0; }
+        .snap-tabs .snap-tab.active { color: #fff; font-weight: 700; border-bottom-color: #818cf8; }
+        .relic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+        .relic-card { background: #111827; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; font-size: 12px; }
+        .relic-card.locked { opacity: .45; }
+        .relic-card .rc-name { font-weight: 700; color: #e2e8f0; display: flex; justify-content: space-between; gap: 8px; }
+        .relic-card .rc-lv { color: #fbbf24; font-weight: 700; white-space: nowrap; }
+        .relic-card .rc-lv.maxed { color: #34d399; }
+        .relic-card .rc-desc { color: #94a3b8; margin-top: 3px; line-height: 1.5; }
+        .relic-card .rc-n { color: #64748b; margin-top: 3px; }
         .equip-set-tabs { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: -6px 0 14px; }
         .equip-set-tabs .set-tab {
             background: #0f172a; border: 1px solid #334155; color: #cbd5e1; border-radius: 8px;
@@ -1202,7 +1236,7 @@
                 <button class="log-filter-btn" id="filter-gem" onclick="setLogFilter('gem')">💎 寶石合成</button>
                 <button class="log-filter-btn" id="filter-skill" onclick="setLogFilter('skill')">⭐ 升級與技能</button>
                 <button class="log-filter-btn" id="filter-reinc" onclick="setLogFilter('reinc')">🌀 轉生機制</button>
-                <button class="btn-download-log" style="background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);" onclick="openEquipmentSnapshotModal()">🛡️ 裝備快照 (500h)</button>
+                <button class="btn-download-log" style="background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);" onclick="openEquipmentSnapshotModal()">🎮 遊戲快照 (500h)</button>
                 <button class="btn-download-log" onclick="downloadTopRunLogs()">📥 下載完整日誌 (.txt)</button>
             </div>
         </div>
@@ -1238,29 +1272,46 @@
 <div class="modal-overlay" id="equipModalOverlay" onclick="closeEquipmentModalOnBackdrop(event)">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title">🛡️ 角色全身裝備與屬性快照 (Character Paperdoll & Stats Snapshot)</div>
+            <div class="modal-title">🎮 遊戲快照 (Game Snapshot)</div>
             <button type="button" class="btn-close-modal" onclick="closeEquipmentModal()">&times;</button>
         </div>
-        <div class="equip-set-tabs" id="equipSetTabs"></div>
-        <div class="paperdoll-layout">
-            <!-- 👈 左側：玩家全屬性快照面板 (對齊遊戲內側欄屬性面板) -->
-            <div class="player-stats-panel" id="playerStatsPanel">
-                <!-- 動態注入玩家全屬性面板 -->
-            </div>
-            <!-- 中間：經典 13 部位紙娃娃 -->
-            <div class="paperdoll-grid" id="paperdollGrid">
-                <!-- 13 個部位按經典紙娃娃座標動態生成 -->
-            </div>
-            <!-- 右側：官方裝備詳細卡片 -->
-            <div class="item-detail-card" id="itemDetailPanel">
-                <div style="color: var(--text-muted); text-align: center; padding: 40px 0;">
-                    👈 點擊紙娃娃上的裝備部位，查看裝備的詳細太古詞條、寶石鑲嵌與數值
+        <!-- 上方切頁：裝備／技能／威能／遺物 -->
+        <div class="snap-tabs" id="snapTabs"></div>
+
+        <!-- 裝備：三套頁籤＋紙娃娃＋屬性＋詳情 -->
+        <div class="snap-pane" id="snapPane-equip">
+            <div class="equip-set-tabs" id="equipSetTabs"></div>
+            <div class="paperdoll-layout">
+                <!-- 👈 左側：玩家全屬性快照面板 (對齊遊戲內側欄屬性面板) -->
+                <div class="player-stats-panel" id="playerStatsPanel">
+                    <!-- 動態注入玩家全屬性面板 -->
+                </div>
+                <!-- 中間：經典 13 部位紙娃娃 -->
+                <div class="paperdoll-grid" id="paperdollGrid">
+                    <!-- 13 個部位按經典紙娃娃座標動態生成 -->
+                </div>
+                <!-- 右側：官方裝備詳細卡片 -->
+                <div class="item-detail-card" id="itemDetailPanel">
+                    <div style="color: var(--text-muted); text-align: center; padding: 40px 0;">
+                        👈 點擊紙娃娃上的裝備部位，查看裝備的詳細太古詞條、寶石鑲嵌與數值
+                    </div>
                 </div>
             </div>
-            <!-- 🧠 技能快照：裝載欄、已學技能、融合技、天賦 -->
-            <div class="skills-panel" id="skillsSnapshotPanel">
-                <!-- 動態注入 -->
-            </div>
+        </div>
+
+        <!-- 技能 -->
+        <div class="snap-pane" id="snapPane-skill" style="display:none;">
+            <div class="skills-panel" id="skillsSnapshotPanel"></div>
+        </div>
+
+        <!-- 威能 -->
+        <div class="snap-pane" id="snapPane-talent" style="display:none;">
+            <div class="skills-panel" id="talentSnapshotPanel"></div>
+        </div>
+
+        <!-- 遺物（含熔爐寶箱） -->
+        <div class="snap-pane" id="snapPane-relic" style="display:none;">
+            <div class="skills-panel" id="relicSnapshotPanel"></div>
         </div>
     </div>
 </div>
@@ -2888,11 +2939,14 @@
         };
 
         const steps = [
+            ['snapTabs', '快照切頁', renderSnapTabs],
             ['equipSetTabs', '裝備組頁籤', renderEquipSetTabs],
             ['playerStatsPanel', '玩家屬性面板', renderPlayerStatsPanel],
             ['paperdollGrid', '紙娃娃', renderPaperdollGrid],
             ['itemDetailPanel', '裝備詳情', () => selectPaperdollSlot('chest')],
-            ['skillsSnapshotPanel', '技能快照', renderSkillSnapshotPanel]
+            ['skillsSnapshotPanel', '技能快照', renderSkillSnapshotPanel],
+            ['talentSnapshotPanel', '威能快照', renderTalentSnapshotPanel],
+            ['relicSnapshotPanel', '遺物快照', renderRelicSnapshotPanel]
         ];
         for (const [containerId, label, fn] of steps) {
             try { fn(); } catch (e) { panelFail(containerId, label, e); }
@@ -3018,28 +3072,43 @@
             const lv = P.skills2 && P.skills2.levels && P.skills2.levels[gid];
             return Array.isArray(lv) ? lv : [];
         };
-        const nameOf = (id) => {
-            if (typeof id === 'string' && id.startsWith('sg:')) {
-                const gid = id.slice(3);
-                const g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null;
-                return (g && g.name) ? g.name : gid;
-            }
-            return id;
-        };
-        const chip = (id, cls, slotLabel) => {
-            const lvs = (typeof id === 'string' && id.startsWith('sg:')) ? lvsOf(id.slice(3)) : [];
-            return `<span class="skill-chip ${cls || ''}">`
-                + (slotLabel ? `<span class="sk-slot">${slotLabel}</span>` : '')
-                + `<span>${nameOf(id)}</span>`
-                + (lvs.length ? `<span class="sk-lv">Lv.${lvs.join('/')}</span>` : '')
-                + `</span>`;
-        };
-
         const groups2 = (P.skills2 && P.skills2.levels) || {};
         const learned = Object.keys(groups2).filter((gid) => lvsOf(gid).some((n) => n > 0));
         const loadout = Array.isArray(P.loadout) ? P.loadout : [];
         const size = (typeof loadoutSize === 'function') ? loadoutSize() : loadout.length;
         const mastery = (typeof ensureSkillMastery === 'function') ? ensureSkillMastery() : (P.skillMastery || { level: 0 });
+        const tierMax = (typeof SG_TIER_MAX_LV !== 'undefined') ? SG_TIER_MAX_LV : 10;
+        const gdef = (gid) => ((typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null);
+
+        /* 每個技能一張卡：中文名、每一階的名稱與等級（沒升的階淡化）、超神進化的選擇與等級。
+           重點是「升到第幾階」，所以七階全列出來，不只列學了幾個技能。 */
+        const card = (gid, slotLabel) => {
+            const g = gdef(gid);
+            const lvs = lvsOf(gid);
+            const tiers = (g && g.tiers) ? g.tiers : lvs.map((_, i) => ({ name: '第 ' + (i + 1) + ' 階' }));
+            const reached = lvs.reduce((hi, n, i) => (n > 0 ? i + 1 : hi), 0);
+            const tierHtml = tiers.map((t, i) => {
+                const lv = lvs[i] || 0;
+                return `<div class="sk-tier${lv === 0 ? ' zero' : ''}${lv >= tierMax ? ' maxed' : ''}">`
+                    + `<span class="t-name">${(g && g.name) || gid}${i + 1}階-${t.name || ''}</span><span class="t-lv">Lv.${lv}</span></div>`;
+            }).join('');
+            let ultHtml = '';
+            const defs = (g && g.ult) ? g.ult : null;
+            if (defs && defs.length) {
+                const pick = (typeof sgUltPickOf === 'function') ? sgUltPickOf(P.skills2 && P.skills2.ult, gid) : null;
+                ultHtml = pick
+                    ? `<div class="sk-tier ult${pick.lv >= tierMax ? ' maxed' : ''}"><span class="t-name">${(g && g.name) || gid}超神進化-${pick.def.name}</span><span class="t-lv">Lv.${pick.lv}</span></div>`
+                    : `<div class="sk-tier ult zero"><span class="t-name">${(g && g.name) || gid}超神進化-尚未選擇（${defs.map((u) => u.name).join('／')}）</span><span class="t-lv">—</span></div>`;
+            }
+            return `<div class="sk-card${slotLabel ? ' equipped' : ''}">
+                <div class="sk-card-head">
+                    ${slotLabel ? `<span class="sk-slot">${slotLabel}</span>` : ''}
+                    <span class="sk-name">${(g && g.name) || gid}</span>
+                    <span class="sk-sum">已升到第 ${reached} 階 · 各階合計 Lv.${lvs.reduce((s, n) => s + n, 0)}</span>
+                </div>
+                <div class="sk-tiers">${tierHtml}${ultHtml}</div>
+            </div>`;
+        };
 
         let html = `
             <div class="skills-panel-head">
@@ -3050,31 +3119,102 @@
             </div>`;
 
         /* 裝載欄照順序顯示——順序是戰鬥的施放優先序，不是任意排列。 */
-        html += `<div class="skill-section">
-            <div class="skill-section-label">🎯 裝載中（依施放優先序）</div>
-            <div class="skill-chip-row">`;
+        const equippedIds = loadout.map((id) => (typeof id === 'string' && id.startsWith('sg:')) ? id.slice(3) : id);
+        html += `<div class="skill-section"><div class="skill-section-label">🎯 裝載中（依施放優先序）</div>`;
         html += loadout.length
-            ? loadout.map((id, i) => chip(id, 'equipped', '#' + (i + 1))).join('')
+            ? equippedIds.map((gid, i) => card(gid, '#' + (i + 1))).join('')
             : '<span class="skills-empty">裝載欄是空的</span>';
-        html += `</div></div>`;
+        html += `</div>`;
 
-        /* 天賦只顯示真的點了的——全部列出來會是幾十個 0，把有用的資訊淹掉。 */
-        const tal = (P.talents && P.talents.levels) || {};
-        const talRows = Object.keys(tal).filter((k) => (tal[k] || 0) > 0);
-        const talName = (k) => (typeof TALENTS !== 'undefined' && TALENTS[k] && TALENTS[k].name) ? TALENTS[k].name : k;
-        html += `<div class="skill-section">
-            <div class="skill-section-label">🌟 轉生威能（只列已點的）</div>
-            <div class="skill-chip-row">`;
-        if (!talRows.length) {
-            html += `<span class="skills-empty">未點任何威能`
-                + `（轉生 ${(P.reincarnations || 0)} 轉；天賦點需要轉生才會產生）</span>`;
-        } else {
-            html += talRows.map((k) => `<span class="skill-chip"><span>${talName(k)}</span><span class="sk-lv">Lv.${tal[k]}</span></span>`).join('');
+        const others = learned.filter((gid) => equippedIds.indexOf(gid) < 0);
+        if (others.length) {
+            html += `<div class="skill-section"><div class="skill-section-label">📖 其他已學技能</div>`
+                + others.map((gid) => card(gid, '')).join('') + `</div>`;
         }
-        html += `</div></div>`;
 
         box.innerHTML = html;
     }
+
+    /* 威能：只顯示真的點了的——全部列出來會是幾十個 0，把有用的資訊淹掉。 */
+    function renderTalentSnapshotPanel() {
+        const box = document.getElementById('talentSnapshotPanel');
+        if (!box) return;
+        const P = (window.G && window.G.player) || null;
+        if (!P) { box.innerHTML = '<div class="skills-empty">請載入 save_final.json 存檔資料以顯示威能快照。</div>'; return; }
+        const tal = (P.talents && P.talents.levels) || {};
+        const rows = Object.keys(tal).filter((k) => (tal[k] || 0) > 0);
+        const talName = (k) => (typeof TALENTS !== 'undefined' && TALENTS[k] && TALENTS[k].name) ? TALENTS[k].name : k;
+        const total = rows.reduce((s, k) => s + (tal[k] || 0), 0);
+        let html = `<div class="skills-panel-head">
+            <div class="skills-panel-title">🌟 威能快照 (Talent Snapshot)</div>
+            <div class="skills-panel-meta">🌀 轉生 <b>${P.reincarnations || 0}</b> 轉</div>
+            <div class="skills-panel-meta">已點 <b>${rows.length}</b> 項，合計 <b>${total}</b> 級</div>
+        </div><div class="skill-chip-row">`;
+        html += rows.length
+            ? rows.map((k) => `<span class="skill-chip"><span>${talName(k)}</span><span class="sk-lv">Lv.${tal[k]}</span></span>`).join('')
+            : `<span class="skills-empty">未點任何威能（轉生 ${P.reincarnations || 0} 轉；威能要轉生後才開放）</span>`;
+        box.innerHTML = html + '</div>';
+    }
+
+    /* 遺物：永久生效的被動，只能從熔爐寶箱或神祕商人取得。附帶顯示五種熔爐寶箱的等級與持有數。 */
+    function renderRelicSnapshotPanel() {
+        const box = document.getElementById('relicSnapshotPanel');
+        if (!box) return;
+        const P = (window.G && window.G.player) || null;
+        if (!P) { box.innerHTML = '<div class="skills-empty">請載入 save_final.json 存檔資料以顯示遺物快照。</div>'; return; }
+        const store = (P.relics && typeof P.relics === 'object') ? P.relics : {};
+        const defs = (typeof RELICS !== 'undefined') ? RELICS : [];
+        const owned = defs.filter((r) => store[r.id] && store[r.id].lv > 0);
+        const spare = defs.reduce((s, r) => s + ((store[r.id] && store[r.id].n) || 0), 0);
+        const maxLv = (r) => (r.levels ? r.levels.length : 0);
+        const card = (r) => {
+            const e = store[r.id] || { lv: 0, n: 0 };
+            const locked = !(e.lv > 0);
+            const desc = (!locked && typeof relicDescAt === 'function') ? relicDescAt(r, e.lv) : '';
+            const next = (!locked && e.lv < maxLv(r) && r.levels[e.lv]) ? r.levels[e.lv].cost : null;
+            return `<div class="relic-card${locked ? ' locked' : ''}">
+                <div class="rc-name"><span>${r.name}</span><span class="rc-lv${e.lv >= maxLv(r) ? ' maxed' : ''}">${locked ? '未取得' : 'Lv.' + e.lv + '/' + maxLv(r)}</span></div>
+                ${desc ? `<div class="rc-desc">${desc}</div>` : `<div class="rc-desc">${r.cat || ''}</div>`}
+                ${(e.n || next) ? `<div class="rc-n">持有 ${e.n || 0} 件${next ? '（升級需 ' + next + '）' : ''}</div>` : ''}
+            </div>`;
+        };
+        let html = `<div class="skills-panel-head">
+            <div class="skills-panel-title">🏺 遺物快照 (Relic Snapshot)</div>
+            <div class="skills-panel-meta">已取得 <b>${owned.length}</b> / ${defs.length} 種</div>
+            <div class="skills-panel-meta">未用掉的重複件 <b>${spare}</b></div>
+        </div>`;
+        html += `<div class="relic-grid">${owned.map(card).join('') || '<span class="skills-empty">還沒有任何遺物（遺物只由寶箱或神祕商人取得）</span>'}</div>`;
+        const locked = defs.filter((r) => !(store[r.id] && store[r.id].lv > 0));
+        if (locked.length) {
+            html += `<details style="margin-top:12px;"><summary class="skill-section-label" style="cursor:pointer;">未取得的遺物（${locked.length}）</summary>
+                <div class="relic-grid" style="margin-top:8px;">${locked.map(card).join('')}</div></details>`;
+        }
+        /* 熔爐寶箱 */
+        const chests = (P.chests && typeof P.chests === 'object') ? P.chests : {};
+        const cdefs = (typeof CHESTS !== 'undefined') ? CHESTS : [];
+        html += `<div class="skill-section" style="margin-top:16px;"><div class="skill-section-label">🎁 熔爐寶箱</div><div class="skill-chip-row">`;
+        html += cdefs.map((c) => {
+            const e = chests[c.id] || { lv: 1, n: 0, on: !!c.init };
+            const max = c.levels ? c.levels.length : 0;
+            return `<span class="skill-chip${e.on ? '' : ''}" style="${e.on ? '' : 'opacity:.45;'}"><span>${c.name}</span><span class="sk-lv">Lv.${e.lv || 1}/${max}｜持有 ${e.n || 0}${e.on ? '' : '｜未解鎖'}</span></span>`;
+        }).join('');
+        box.innerHTML = html + '</div></div>';
+    }
+
+    /* 上方切頁：裝備／技能／威能／遺物。 */
+    const SNAP_TABS = [['equip', '🛡️ 裝備'], ['skill', '🧠 技能'], ['talent', '🌟 威能'], ['relic', '🏺 遺物']];
+    let selectedSnapTab = 'equip';
+    function renderSnapTabs() {
+        const box = document.getElementById('snapTabs');
+        if (!box) return;
+        box.innerHTML = SNAP_TABS.map(([k, label]) =>
+            `<button type="button" class="snap-tab${k === selectedSnapTab ? ' active' : ''}" onclick="switchSnapTab('${k}')">${label}</button>`).join('');
+        for (const [k] of SNAP_TABS) {
+            const pane = document.getElementById('snapPane-' + k);
+            if (pane) pane.style.display = (k === selectedSnapTab) ? '' : 'none';
+        }
+    }
+    function switchSnapTab(k) { selectedSnapTab = k; renderSnapTabs(); }
 
     function closeEquipmentModal() {
         document.getElementById('equipModalOverlay').style.display = 'none';

@@ -1986,3 +1986,21 @@ upgradeSuccessBase：+5 以內必成，之後每級 −6 點，下限 30%
 
 ⚠️ 這批的絕對數字（物攻中位 ~9M）與更早的神鑄批次（~50M）**不可比**：
 中間使用者調過敵人強度與掉落物。跨批次只能比同批的兩組。
+
+## player_strategy.md §1.1／§1.2／§8 的模擬器對應（2026-11-19）
+
+| 策略 | 實作 |
+|---|---|
+| §1.1 詞條洗煉 | `reroll-off-target` 的三組保留清單（武器／飾品／防具）。階段門檻用 `ctx.stageMax`；飾品必帶強化成功率、經驗、掉寶各 1 條與防具吸血 ≥ 1 條由 `targets`（`affixCount`）驅動 `reroll-for-deficit` |
+| §1.2 寶石鑲嵌 | `socket-gems`／`unsocket-off-priority`／`gem-convert` 共用同一份 `preferByLevel`（以 `ctx.stageMax` 分段，`when` 可以是條件陣列）；吸血、吸魔用配額保障、不會被換掉 |
+| §8 寶箱 | `chest-open-all`（`chestOpenAll`）：每 10~30 分鐘對所有持有的寶箱全開 |
+| §8 遺物 | `relic-upgrade`（`relicUpgrade`）：重複件夠就升；取得純運氣，沒有策略 |
+| §8 神祕商人 | `merchant-open`（有券、封魔塔沒在打、每 2~4 小時）＋ `merchant-shop`（開著時依序買遺物 → 高階符文 → 高階寶石、買完關閉）。售價與買不買得了由 `panels.merchantPlan` 問遊戲 |
+
+**`ctx.stageMax`**：文檔裡的「50／100／200／300 級關卡」是進度門檻。每張地圖的關卡各自從 1 重數，換地圖就會讓已過 50 級的角色回到「50 級前」；
+所以用「各地圖最高紀錄與當前關卡的最大值」，只升不降。
+
+**harness 專用面板**（遊戲沒有這種彙整，由遊戲函式現算，策略不抄公式）：`relicPlan`（遺物等級、件數、下一級所需件數）、
+`merchantPlan`（商人開著與否、券數、每件實際售價與可否購買）。
+
+**未涵蓋**：寶箱升級（花金幣）、商店刷新與商店升級、神祕商人的裝備貨架、遺物取得——文檔沒有寫規則，登記在 `scripts/sim/command_coverage.json`。

@@ -765,3 +765,33 @@ test('第 2、3 套維護：這一輪剛下了切換指令時不跑（面板還�
   assert.ok(cmds.some((c) => c.name === 'player.switchEquipSet'), '應該切回主力');
   assert.equal(byRule(cmds, 'away-up').length, 0, '切換後面板已過期，不能再對第 3 套的物件送強化');
 });
+
+/* ---- 遺物與神祕商人面板：與遊戲一致 ---- */
+
+test('遺物面板與遊戲一致：等級、件數、升級所需件數、能不能升', () => {
+  const e = createEngine({ seed: 3 });
+  e.boot(null); e.step(20);
+  const c = e.ctx, vm = require('node:vm');
+  vm.runInContext('relicGrant(1, 1); relicGrant(2, 40)', c);          // 1 號只有第一件（解鎖 Lv.1、剩 0）；2 號 40 件
+  const P = e.panel('relicPlan').relics;
+  const need2 = vm.runInContext('RELIC_BY_ID[2].levels[1].cost', c);
+  assert.equal(P[1].lv, 1); assert.equal(P[1].n, 0); assert.equal(P[1].upgradable, false, '沒有重複件不能升');
+  assert.equal(P[2].cost, need2, '下一級所需件數要等於遊戲表上的');
+  assert.equal(P[2].upgradable, P[2].n >= need2);
+  assert.equal(P[3].lv, 0); assert.equal(P[3].upgradable, false, '沒取得的不能升');
+  /* 照面板指示的升了之後，遊戲要接受。 */
+  if (P[2].upgradable) assert.equal(vm.runInContext('relicUpgrade(2)', c), null);
+});
+
+test('神祕商人面板與遊戲一致：開著狀態、券數、實際售價、買不買得了', () => {
+  const e = createEngine({ seed: 3 });
+  e.boot(null); e.step(20);
+  const c = e.ctx, vm = require('node:vm');
+  assert.deepEqual(JSON.parse(JSON.stringify(e.panel('merchantPlan'))), { active: false, tickets: 0, items: [] });
+  vm.runInContext('MYSTERY_MERCHANT_OPEN = true; rollGemShop(1)', c);
+  const P = e.panel('merchantPlan');
+  assert.equal(P.active, true);
+  assert.ok(P.items.length > 0, '貨架應該有東西');
+  const raw = vm.runInContext('gemShop().items.map(function (it) { return merchantItemPrice(it); })', c);
+  P.items.forEach((it, i) => assert.equal(it.price, raw[i], '第 ' + i + ' 件的售價要等於遊戲的 merchantItemPrice'));
+});

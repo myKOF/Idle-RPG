@@ -1143,3 +1143,144 @@ test('逃生口只鬆綁品質門檻，不碰產出門檻', () => {
   const gate = cmds.find((c) => c.name === 'stage.setAutoAdvance');
   assert.equal(gate.args.on, true, 'coverage 檢查的是「有裝備的部位」，全身 R1 對 minRarity 0 本來就達標');
 });
+
+/* ============ player_strategy.md §8：寶箱、遺物、神祕商人 ============ */
+
+test('寶箱：對所有「持有 > 0」的寶箱各送一次全開，數量＝持有數', () => {
+  const p = makePolicy([{ id: 'co', cmd: 'chest.open', chestOpenAll: { chests: 'panels.newforge.chests' } }]);
+  const cmds = p.decide({ gameTimeSec: 100, panels: { newforge: { chests: {
+    1: { lv: 3, n: 12, on: true }, 2: { lv: 1, n: 0, on: true }, 3: { lv: 1, n: 5, on: false }, 4: { lv: 1, n: 20000, on: true }
+  } } } });
+  assert.deepEqual(cmds.map((c) => [c.name, c.args.chestId, c.args.count]),
+    [['chest.open', 1, 12], ['chest.open', 3, 5], ['chest.open', 4, 9999]],
+    '沒有的不送；持有數超過協議上限 9999 時夾住');
+});
+
+test('遺物：只升「件數夠」的，且每輪有上限', () => {
+  const mk = (n) => ({ lv: 1, n, max: 10, cost: 3, upgradable: n >= 3 });
+  const p = makePolicy([{ id: 'ru', cmd: 'relic.upgrade', relicUpgrade: { relics: 'panels.relicPlan.relics', maxPerDecision: 2 } }]);
+  const cmds = p.decide({ gameTimeSec: 100, panels: { relicPlan: { relics: { 1: mk(5), 2: mk(1), 3: mk(3), 4: mk(9) } } } });
+  assert.deepEqual(cmds.map((c) => c.args.relicId), [1, 3], '件數不夠的 2 不升；每輪最多 2 件');
+});
+
+const merchantState = (over) => Object.assign({
+  gameTimeSec: 100, view: { gold: 1000 },
+  panels: { merchantPlan: { active: false, tickets: 1, items: [] }, tower: { tower: { active: false } } }
+}, over || {});
+
+test('神祕商人：有券、沒開、封魔塔沒在打才召喚', () => {
+  const p = makePolicy([{ id: 'mo', cmd: 'merchant.open', merchantOpen: { merchant: 'panels.merchantPlan', towerActive: 'panels.tower.tower.active' } }]);
+  assert.equal(p.decide(merchantState()).length, 1);
+  const noTicket = merchantState(); noTicket.panels.merchantPlan.tickets = 0;
+  assert.equal(p.decide(noTicket).length, 0, '沒有券不召喚');
+  const open = merchantState(); open.panels.merchantPlan.active = true;
+  assert.equal(p.decide(open).length, 0, '已經開著不重複召喚');
+  const tower = merchantState(); tower.panels.tower.tower.active = true;
+  assert.equal(p.decide(tower).length, 0, '封魔塔進行中遊戲會拒絕');
+});
+
+test('神祕商人：遺物必買 → 高階符文 → 高階寶石，錢不夠的跳過，買完關閉', () => {
+  const p = makePolicy([{ id: 'ms', cmd: 'gem.shopBuy', merchantShop: {
+    merchant: 'panels.merchantPlan', gold: 'view.gold', closeCmd: 'merchant.close', minRuneTier: 12, minGemLevel: 5, goldRatio: 0.5, relicGoldRatio: 1
+  } }]);
+  const it = (index, kind, o) => Object.assign({ index, kind, sold: false, price: 100, canBuy: true }, o);
+  const st = merchantState({ view: { gold: 1000 } });
+  st.panels.merchantPlan = { active: true, tickets: 0, items: [
+    it(0, 'gem', { gemLevel: 3 }),                       // 低階：不買
+    it(1, 'gem', { gemLevel: 6, price: 300 }),           // 高階寶石，300 ≤ 500
+    it(2, 'rune', { runeTier: 15, price: 400 }),         // 高階符文
+    it(3, 'rune', { runeTier: 5 }),                      // 低階符文：不買
+    it(4, 'equipment', { rarity: 8, price: 100 }),       // 裝備不在規則內
+    it(5, 'relic', { price: 900 }),                      // 遺物：只要付得起（900 ≤ 1000）
+    it(6, 'gem', { gemLevel: 9, price: 5000 }),          // 買不起
+    it(7, 'gem', { gemLevel: 8, sold: true })            // 已賣掉
+  ] };
+  const cmds = p.decide(st);
+  assert.deepEqual(cmds.map((c) => c.name === 'gem.shopBuy' ? c.args.index : c.name), [5, 'merchant.close'],
+    '遺物 900 先買，剩 100 金幣，後面的符文／寶石都買不起（單件超過剩餘的一半）');
+  st.view.gold = 100000;
+  const rich = p.decide(st).map((c) => c.name === 'gem.shopBuy' ? c.args.index : c.name);
+  assert.deepEqual(rich, [5, 2, 6, 1, 'merchant.close'], '遺物 → 符文 → 寶石；同類先買高階（9 級排在 6 級前面）');
+  assert.deepEqual(rich.slice(0, 2), [5, 2], '遺物第一、高階符文第二');
+  assert.ok(rich.indexOf(6) < rich.indexOf(1), '同類先買高階');
+  assert.ok(!rich.includes(0) && !rich.includes(3) && !rich.includes(4) && !rich.includes(7));
+});
+
+test('神祕商人：沒開著就什麼都不送（不會憑空關閉）', () => {
+  const p = makePolicy([{ id: 'ms', cmd: 'gem.shopBuy', merchantShop: { merchant: 'panels.merchantPlan', gold: 'view.gold', closeCmd: 'merchant.close' } }]);
+  assert.deepEqual(p.decide(merchantState()), []);
+});
+
+/* ============ 進度門檻用「到過的最高關卡」（ctx.stageMax）：player_strategy.md §1.1／§1.2 ============ */
+
+const MP_HALF = { $mul: [{ $path: 'view.mpMax' }, 0.5] };
+const GEM_BANDS = [
+  { when: [['ctx.skillMode', '==', 'phys'], ['ctx.stageMax', '>=', 100], ['panels.header.stats.critRate', '>=', 50], ['view.mp', '>=', MP_HALF], ['ctx.desperate', 'falsy']],
+    mix: [['ruby'], ['garnet']] },
+  { when: [['ctx.skillMode', '==', 'phys'], ['ctx.stageMax', '>=', 50], ['panels.header.stats.critRate', '>=', 50], ['view.mp', '>=', MP_HALF], ['ctx.desperate', 'falsy']],
+    mix: [['ruby'], ['garnet'], ['amethyst']] },
+  { mix: [['ruby'], ['ruby'], ['onyx'], ['amethyst']] }
+];
+function gemPickState(stage, zones, crit, mp) {
+  const sockets = () => [null];
+  return {
+    gameTimeSec: 100, view: { stage, mp, mpMax: 100 },
+    ctx: { skillMode: 'phys', desperate: false },
+    panels: {
+      battle: { zones },
+      header: { stats: { critRate: crit } },
+      inv: { equipment: { helmet: { id: 'h', sockets: sockets() }, chest: { id: 'c', sockets: sockets() }, boots: { id: 'b', sockets: sockets() }, belt: { id: 'be', sockets: sockets() } } },
+      gems: { gems: { ruby: { 1: 9 }, garnet: { 1: 9 }, amethyst: { 1: 9 }, onyx: { 1: 9 } } }
+    }
+  };
+}
+const gemPolicy = () => makePolicy([{ id: 'sg', cmd: 'gem.socket', socketEmpty: {
+  equipment: 'panels.inv.equipment', gems: 'panels.gems.gems', levelPath: 'ctx.stageMax', preferByLevel: GEM_BANDS } }]);
+const picked = (cmds) => cmds.map((c) => c.args.type);
+
+test('寶石分段：50 級關卡前鑲物攻／吸血／暴率，不鑲暴傷', () => {
+  const t = picked(gemPolicy().decide(gemPickState(10, [{ best: 10 }], 80, 100)));
+  assert.ok(t.length > 0 && !t.includes('garnet'), '50 級前不該鑲暴傷：' + t.join(','));
+  assert.ok(t.includes('ruby'));
+});
+
+test('寶石分段：到過 100 關、爆率過 50% 且回魔足夠，改鑲暴傷', () => {
+  const t = picked(gemPolicy().decide(gemPickState(10, [{ best: 120 }], 80, 100)));
+  assert.ok(t.includes('garnet'), '用「到過的最高關卡」120（換到新地圖當前關卡只有 10）：' + t.join(','));
+  assert.ok(!t.includes('amethyst') && !t.includes('onyx'), '暴率／吸血不再是這一段的偏好：' + t.join(','));
+});
+
+test('寶石分段：爆率不到 50% 或缺魔時不進暴傷段（先保障基本）', () => {
+  assert.ok(!picked(gemPolicy().decide(gemPickState(10, [{ best: 120 }], 30, 100))).includes('garnet'), '爆率不足');
+  assert.ok(!picked(gemPolicy().decide(gemPickState(10, [{ best: 120 }], 80, 10))).includes('garnet'), '缺魔');
+});
+
+test('條件陣列：全部成立才算；ctx.stageMax 取各地圖最高紀錄、只升不降', () => {
+  const p = makePolicy([{ id: 'x', cmd: 'noop', args: {}, if: [[['ctx.stageMax', '>=', 100], ['view.level', '>=', 5]]] }]);
+  const st = (level, zones, stage) => ({ gameTimeSec: 100, view: { level, stage }, panels: { battle: { zones } } });
+  assert.equal(p.decide(st(9, [{ best: 150 }, { best: 20 }], 3)).length, 1, '最高 150 ≥ 100 且等級 9 ≥ 5');
+  assert.equal(p.decide(st(1, [{ best: 150 }], 3)).length, 0, '兩個條件要同時成立');
+  assert.equal(p.decide(st(9, [{ best: 60 }], 3)).length, 0, '最高 60 < 100');
+});
+
+test('詞條洗煉分段（extreme 策略實檔）：武器 50 級關卡前不留爆擊、之後留；200 級後才留穿透', () => {
+  const fs = require('node:fs'), path = require('node:path');
+  const policy = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'scripts', 'sim', 'policy.extreme.json'), 'utf8'));
+  delete policy.track; delete policy.skills;      // 單看詞條規則：不要讓戰鬥追蹤整包重建 ctx、也不要技能面板
+  const rerolled = (stageBest) => {
+    const p = createPolicy(policy);
+    const cmds = p.decide({
+      gameTimeSec: 1000, seed: 1, view: { stage: stageBest, essence: 1e6, level: 100, gold: 1e9, mp: 100, mpMax: 100 },
+      ctx: { skillMode: 'phys', desperate: false, mode: 'normal' },
+      panels: {
+        battle: { zones: [{ best: stageBest }] }, header: { stats: { critRate: 80 } },
+        inv: { equipment: { weapon: { id: 'w', rarity: 4, affixes: [
+          { key: 'atkPct' }, { key: 'critRate' }, { key: 'pPen' }, { key: 'hpPct' }] } }, equipmentRarities: { weapon: 4 } }
+      }
+    });
+    return cmds.filter((c) => c.ruleId === 'reroll-off-target' && c.args.itemId === 'w').map((c) => c.args.affixKey).sort();
+  };
+  assert.deepEqual(rerolled(10), ['critRate', 'hpPct', 'pPen'], '10 關：只留攻擊主屬性／物攻系；爆率、穿透還不要，防禦詞條不要');
+  assert.deepEqual(rerolled(60), ['hpPct', 'pPen'], '到過 60 關：爆率留下；穿透要 200 關');
+  assert.deepEqual(rerolled(250), ['hpPct'], '到過 250 關：穿透也留；武器上的防禦詞條一律洗掉');
+});

@@ -505,10 +505,24 @@ test('保留清單的詞條，在它每一個合法部位上都要受保護', ()
       }
       for (const s of ITEM_TYPES) if (!keepBySlot[s]) keepBySlot[s] = fallback || [];
 
+      /* 例外：防具專屬的防禦詞條。player_strategy.md §1.1 明講武器與項鏈戒指「剩餘詞條全部洗攻擊相關」、
+         防具才「防禦平均分配」——所以生命、體質、抗性、護盾這類詞條出在武器／飾品上是**刻意**洗掉的。
+         判準是「只出現在防具清單（名字含 Armor 或以 Red 結尾＝抗性／減傷的清單）、不出現在任何其他清單」；
+         攻擊類詞條（pPen、aspd、bossDmg……）仍然必須在每個合法部位受保護。 */
+      const armorOnly = new Set();
+      const nonArmor = new Set();
+      for (const g of cfg.targetGroups) {
+        for (const l of g.lists || []) {
+          for (const k of (p.lists[l.list] || [])) (/Armor|Red$/.test(l.list) ? armorOnly : nonArmor).add(k);
+        }
+      }
+      for (const k of nonArmor) armorOnly.delete(k);
+
       const holes = [];
       for (const key of new Set(Object.values(keepBySlot).flat())) {
         const def = AFFIX_POOL[key];
         if (!def) continue;                       // 鍵是否存在由另一支測試把關
+        if (armorOnly.has(key)) continue;         // 防具專屬的防禦詞條：見上
         const legal = (def.slots && def.slots.length) ? def.slots : ITEM_TYPES;
         const missing = legal.filter((s) => !(keepBySlot[s] || []).includes(key));
         if (missing.length) holes.push(`${key} 在 ${missing.join('/')} 上沒受保護`);
