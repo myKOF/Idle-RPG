@@ -9,6 +9,8 @@
      --stage-only   只做到第 2 步（檢查清單用，不呼叫 electron-builder）
      --edition=demo Steam 封測 demo：暫存區多寫一份 electron/edition.json（外殼據此把 GAME_EDITION 改成 'demo'），
                     輸出到 dist/demo/win-unpacked/，與正式版的 dist/win-unpacked/ 分開
+     --lang=en      打包語言（預設 zh-TW）：應用程式名稱讀 String 表 2569 的對應語言欄（中文「神力之巔」、英文「Idle: Divine Apex」），
+                    安裝程式介面跟著換語言；非預設語言輸出到 <輸出資料夾>/<語言>/
      --full-textures 不縮模型貼圖（預設會縮，見下方「為什麼縮模型貼圖」）
      --keep-png     PNG 不換成 WebP（預設會換，見下方「為什麼 PNG 換成 WebP」；需要 Python 與 Pillow）
      --keep-video   影片不重新編碼（預設會重壓序章影片，tools/desktop/reencode_video.cjs；需要 ffmpeg）
@@ -55,9 +57,33 @@ var OUT = INSTALLER ? path.join(REPO, 'dist', 'installer', EDITION)
   : (EDITION === 'demo' ? path.join(REPO, 'dist', 'demo') : path.join(REPO, 'dist'));
 var ROOT_PKG = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
 
-/* 玩家看得到的名稱。exe 檔名刻意用 ASCII：Steam 的啟動選項、防毒白名單、命令列都比較不會出事。
-   上市前請確認正式名稱（見 docs/steam/STEAM_RELEASE_PLAN.md 任務 B 的待確認事項）。 */
-var PRODUCT_NAME = '神力之巔：放置暗黑';
+/* 打包語言（--lang=zh-TW 預設｜en｜zh-CN）：決定應用程式名稱與安裝程式語言。非預設語言另放一層資料夾，不蓋掉預設版。 */
+var LANGS = {
+  'zh-TW': { column: '繁體中文', nsisLanguage: '1028', installerLanguages: ['zh_TW'] },
+  'zh-CN': { column: '簡體中文', nsisLanguage: '2052', installerLanguages: ['zh_CN'] },
+  en: { column: '英文', nsisLanguage: '1033', installerLanguages: ['en_US'] }
+};
+var LANG = (process.argv.filter(function (a) { return a.indexOf('--lang=') === 0; })[0] || '--lang=zh-TW').slice(7);
+if (!LANGS[LANG]) { console.error('❌ --lang 只能是 ' + Object.keys(LANGS).join('／') + '：' + LANG); process.exit(1); }
+if (LANG !== 'zh-TW') OUT = path.join(OUT, LANG);
+
+/* 玩家看得到的名稱＝遊戲正式名稱，唯一來源是 String 表 2569（AI_RULES 8.11）：
+   繁體中文「神力之巔」、英文「Idle: Divine Apex」，依打包語言取欄位；簡體中文空白時退回繁體中文（與遊戲內 STR() 相同）。
+   exe 檔名刻意用 ASCII：Steam 的啟動選項、防毒白名單、命令列都比較不會出事。 */
+var GAME_NAME_STR_ID = 2569;
+function gameNameFromStringTable(lang) {
+  var csvParse = require('../string-table/apply_strings.cjs').csvParse;
+  var rows = csvParse(fs.readFileSync(path.join(REPO, 'config', 'CSV', 'String.csv'), 'utf8'));
+  var header = rows[0];
+  var row = rows.filter(function (r) { return Number(r[0]) === GAME_NAME_STR_ID; })[0];
+  if (!row) throw new Error('String 表找不到 ' + GAME_NAME_STR_ID + '（遊戲正式名稱）');
+  var zh = row[header.indexOf('繁體中文')];
+  var name = row[header.indexOf(LANGS[lang].column)] || (lang === 'zh-CN' ? zh : '');
+  if (!name) throw new Error('String 表 ' + GAME_NAME_STR_ID + ' 的「' + LANGS[lang].column + '」是空的，不能打包 ' + lang + ' 版');
+  return name;
+}
+var PRODUCT_NAME = gameNameFromStringTable(LANG);
+function fileSafeName(name) { return String(name).replace(/[<>:"\/\\|?*\x00-\x1f]/g, '').replace(/\s+/g, ' ').trim(); }
 var EXECUTABLE_NAME = 'IdleRPG';
 var APP_ID = 'com.idlerpg.desktop';
 /* 應用程式圖示（exe、捷徑、工作列、安裝包）：由 tools/desktop/make_app_icon.py 從 logo 的劍產生 */
@@ -204,12 +230,13 @@ function installerConfig() {
     allowToChangeInstallationDirectory: true,
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
-    shortcutName: c.productName,
+    // 捷徑是檔案：英文名的「:」等 Windows 檔名不允許的字元要拿掉（Idle: Divine Apex → Idle Divine Apex）；標題與解除安裝清單保留原名
+    shortcutName: fileSafeName(c.productName),
     uninstallDisplayName: c.productName,
     deleteAppDataOnUninstall: false,
     differentialPackage: false,
-    installerLanguages: ['zh_TW'],
-    language: '1028',
+    installerLanguages: LANGS[LANG].installerLanguages,
+    language: LANGS[LANG].nsisLanguage,
     // 檔名用 ASCII：瀏覽器下載、雲端硬碟、命令列都比較不會出事
     artifactName: EXECUTABLE_NAME + (EDITION === 'demo' ? '-Demo' : '') + '-Setup-${version}.${ext}'
   };
@@ -383,4 +410,4 @@ if (require.main === module) {
   main().catch(function (e) { console.error(e && e.stack || e); process.exit(1); });
 }
 
-module.exports = { collect: collect, builderConfig: builderConfig, installerConfig: installerConfig };
+module.exports = { collect: collect, builderConfig: builderConfig, installerConfig: installerConfig, fileSafeName: fileSafeName, GAME_NAME_STR_ID: GAME_NAME_STR_ID };

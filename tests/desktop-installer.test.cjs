@@ -53,6 +53,28 @@ test('demo 與正式版安裝包的 appId、檔名不同；裝在使用者資料
   assert.match(pkg['desktop:installer:demo'], /--edition=demo --installer/);
 });
 
+test('應用程式名稱讀 String 表 2569：中文「神力之巔」、英文「Idle: Divine Apex」；捷徑名拿掉檔名不允許的字元', () => {
+  const { csvParse } = require('../tools/string-table/apply_strings.cjs');
+  const rows = csvParse(fs.readFileSync(path.join(root, 'config', 'CSV', 'String.csv'), 'utf8'));
+  const h = rows[0];
+  const row = rows.find((r) => r[0] === '2569');
+  assert.ok(row, 'String 表要有 2569（遊戲正式名稱）');
+  assert.equal(row[h.indexOf('繁體中文')], '神力之巔');
+  assert.equal(row[h.indexOf('英文')], 'Idle: Divine Apex');
+  const zh = configFor(['--installer']);
+  const demo = configFor(['--edition=demo', '--installer']);
+  const en = configFor(['--lang=en', '--edition=demo', '--installer']);
+  assert.equal(zh.productName, '神力之巔');
+  assert.equal(demo.productName, '神力之巔 Demo');
+  assert.equal(en.productName, 'Idle: Divine Apex Demo');
+  assert.equal(en.nsis.shortcutName, 'Idle Divine Apex Demo', '捷徑是檔案，不能有冒號');
+  assert.equal(en.nsis.uninstallDisplayName, 'Idle: Divine Apex Demo', '顯示用的地方保留完整名稱');
+  assert.equal(en.nsis.language, '1033');
+  assert.match(en.directories.output.replace(/\\/g, '/'), /dist\/installer\/demo\/en$/, '英文版不能蓋掉預設的中文版');
+  // 名稱只能從表讀：打包設定裡不得寫死
+  assert.doesNotMatch(source, /'神力之巔|Divine Apex'/);
+});
+
 test('應用程式圖示：exe、安裝包、解除安裝程式與視窗都用 electron/icons/app.ico，且 ico 含 16～256 各尺寸', () => {
   const ico = path.join(root, 'electron', 'icons', 'app.ico');
   const demo = configFor(['--edition=demo', '--installer']);

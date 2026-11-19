@@ -141,7 +141,7 @@ dist/win-unpacked/IdleRPG.exe --smoke=tmp/smoke-packaged   # 對打包版跑冒�
 - **只留繁中與英文的 Chromium 語系檔**；打包後刪除 Electron 的 `default_app.asar`。
 
 待確認（目前用暫定值，不影響開發）：
-- 產品名稱 `神力之巔：放置暗黑`、exe 檔名 `IdleRPG.exe`（刻意用 ASCII）、appId `com.idlerpg.desktop`——見 `tools/desktop/build_desktop.cjs` 開頭。
+- 產品名稱＝遊戲正式名稱，讀 String 表 2569（AI_RULES 8.11）：中文版「神力之巔」、英文版「Idle: Divine Apex」（`--lang=en`）。exe 檔名 `IdleRPG.exe`（刻意用 ASCII）、appId `com.idlerpg.desktop`——見 `tools/desktop/build_desktop.cjs` 開頭。
 - **應用程式圖示**：目前是 Electron 預設圖示；需要一張 256×256 以上的正式圖（`images/icon_avatar.png` 其實是 JPEG，不能直接用）。
 - `npm audit` 回報 electron-builder 相依的 minimatch 有 6 個中度 ReDoS，只在開發機打包時執行，不進遊戲。
 

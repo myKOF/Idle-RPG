@@ -615,6 +615,25 @@ VFX Editor 的 Preset 下拉依這兩個來源，在每份特效後面標出被�
 
 ---
 
+## 8.11 遊戲正式名稱（必要）
+
+使用者指定（2026-11-19）：
+
+| 語言 | 正式名稱 |
+|---|---|
+| 中文 | **神力之巔** |
+| 英文 | **Idle: Divine Apex** |
+
+- 唯一來源是 `config/Excel/String.xlsx` 第 **2569** 條（功能模塊「通用」）：繁體中文欄「神力之巔」、英文欄「Idle: Divine Apex」。日後其他語言的名稱填在同一條的對應語言欄。
+- **打包**的應用程式名稱讀這一條：中文版用「神力之巔」，英文版用「Idle: Divine Apex」。打包工具是 `tools/desktop/build_desktop.cjs`，以 `--lang` 指定語言，預設 zh-TW。
+  - 用到的地方：捷徑、開始功能表、安裝程式標題、解除安裝清單、exe 的產品名稱；demo 版另加「 Demo」。
+  - 不得在打包設定或程式裡另外寫死遊戲名稱。
+- **英文名稱的冒號**：要當成檔名用的地方（捷徑），拿掉 Windows 不允許的字元，變成「Idle Divine Apex」。顯示用的地方一律寫完整的「Idle: Divine Apex」，包括大小寫與冒號後的空格。
+- **ASCII 識別字不改**：exe 檔名 `IdleRPG.exe`、安裝檔名 `IdleRPG[-Demo]-Setup-*.exe`、存檔資料夾 `idle-rpg`、`appId` 都不是顯示名稱，不跟著改。存檔資料夾與 Steam Cloud 綁定，上市後不能再搬。
+- **副標「放置暗黑」**：遊戲內標題與開場畫面另有「放置暗黑」副標（String 48、51、2412）。它屬於標題設計，不是正式名稱的一部分；應用程式名稱不帶副標。
+
+---
+
 # 9. Coding Style
 
 遵循專案既有 Coding Style。
