@@ -614,15 +614,15 @@
         .sk-card-head .sk-name { font-size: 15px; font-weight: 700; color: #e2e8f0; }
         .sk-card-head .sk-slot { color: #a78bfa; font-size: 12px; font-weight: 700; }
         .sk-card-head .sk-sum { color: #94a3b8; font-size: 12px; }
-        .sk-tiers { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 6px; }
+        .sk-tiers { display: flex; flex-direction: column; gap: 4px; max-width: 460px; }
         .sk-tier { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 5px 8px; font-size: 12px; display: flex; justify-content: space-between; gap: 6px; }
         .sk-tier.zero { opacity: .4; }
         .sk-tier.maxed { border-color: #34d399; }
         .sk-tier .t-name { color: #e2e8f0; }
         .sk-tier .t-name i { color: #64748b; font-style: normal; margin-right: 4px; }
-        .sk-tier .t-lv { color: #fbbf24; font-weight: 700; white-space: nowrap; }
+        .sk-tier .t-lv { color: #fbbf24; font-weight: 700; white-space: nowrap; min-width: 52px; text-align: right; }
         .sk-tier.maxed .t-lv { color: #34d399; }
-        .sk-tier.ult { border-color: #f59e0b; background: #3b2508; grid-column: 1 / -1; }
+        .sk-tier.ult { border-color: #f59e0b; background: #3b2508; }
         .skill-section { margin-bottom: 12px; }
         .skill-section:last-child { margin-bottom: 0; }
         .skill-section-label {
@@ -3090,15 +3090,15 @@
             const tierHtml = tiers.map((t, i) => {
                 const lv = lvs[i] || 0;
                 return `<div class="sk-tier${lv === 0 ? ' zero' : ''}${lv >= tierMax ? ' maxed' : ''}">`
-                    + `<span class="t-name"><i>${i + 1}階</i>${t.name || ''}</span><span class="t-lv">Lv.${lv}/${tierMax}</span></div>`;
+                    + `<span class="t-name">${(g && g.name) || gid}${i + 1}階-${t.name || ''}</span><span class="t-lv">Lv.${lv}</span></div>`;
             }).join('');
             let ultHtml = '';
             const defs = (g && g.ult) ? g.ult : null;
             if (defs && defs.length) {
                 const pick = (typeof sgUltPickOf === 'function') ? sgUltPickOf(P.skills2 && P.skills2.ult, gid) : null;
                 ultHtml = pick
-                    ? `<div class="sk-tier ult${pick.lv >= tierMax ? ' maxed' : ''}"><span class="t-name"><i>超神進化</i>${pick.def.name}</span><span class="t-lv">Lv.${pick.lv}/${tierMax}</span></div>`
-                    : `<div class="sk-tier ult zero"><span class="t-name"><i>超神進化</i>尚未選擇（${defs.map((u) => u.name).join('／')}）</span><span class="t-lv">—</span></div>`;
+                    ? `<div class="sk-tier ult${pick.lv >= tierMax ? ' maxed' : ''}"><span class="t-name">${(g && g.name) || gid}超神進化-${pick.def.name}</span><span class="t-lv">Lv.${pick.lv}</span></div>`
+                    : `<div class="sk-tier ult zero"><span class="t-name">${(g && g.name) || gid}超神進化-尚未選擇（${defs.map((u) => u.name).join('／')}）</span><span class="t-lv">—</span></div>`;
             }
             return `<div class="sk-card${slotLabel ? ' equipped' : ''}">
                 <div class="sk-card-head">
