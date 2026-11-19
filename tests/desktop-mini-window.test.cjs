@@ -5,13 +5,15 @@ const { EventEmitter } = require('node:events');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const os = require('node:os');
 const { create } = require('../electron/mini-window.cjs');
 
-function setup(throttling = true) {
+function setup(throttling = true, options = {}) {
   const windows = [], calls = [];
   class Window extends EventEmitter {
     constructor(options) {
       super(); this.options = options; this.destroyed = false; this.visible = false;
+      this.bounds = { x: 50, y: 50, width: options.width || 1000, height: options.height || 700 };
       this.webContents = new EventEmitter();
       Object.assign(this.webContents, {
         mainFrame: {}, send: (...args) => calls.push(args),
@@ -22,10 +24,18 @@ function setup(throttling = true) {
       windows.push(this);
     }
     isDestroyed() { return this.destroyed; }
-    isMinimized() { return false; }
+    isMinimized() { return !!this.minimized; }
+    isMaximized() { return !!this.maximized; }
+    getNormalBounds() { return { ...this.bounds }; }
+    maximize() { this.maximized = true; this.emit('maximize'); }
+    minimize() { this.minimized = true; this.hide(); this.emit('minimize'); }
+    close() { this.emit('close'); this.destroy(); }
     show() { this.visible = true; }
     hide() { this.visible = false; }
     focus() { this.focused = true; }
+    setAlwaysOnTop(value) { this.alwaysOnTop = value; }
+    getBounds() { return { ...this.bounds }; }
+    setPosition(x, y) { Object.assign(this.bounds, { x, y }); this.emit('moved'); }
     loadFile() { return new Promise((resolve, reject) => {
       this.loadedOnly = resolve;
       this.loaded = () => { this.miniReady(); resolve(); }; this.failed = reject;
@@ -33,7 +43,8 @@ function setup(throttling = true) {
     destroy() { this.destroyed = true; this.emit('closed'); }
   }
   const owner = new Window({}); owner.show();
-  const monitor = create({ owner, BrowserWindow: Window });
+  const screen = options.screen || { getDisplayMatching: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1040 } }) };
+  const monitor = create({ owner, BrowserWindow: Window, screen, ...options });
   return { owner, windows, calls, monitor, throttling: () => throttling };
 }
 
@@ -157,4 +168,105 @@ test('共用渲染更新血魔量與戰況，日誌以文字顯示避免 HTML �
   assert.equal(nodes['m-pmp'].style.width, '50%');
   assert.equal(nodes['m-ehp'].style.width, '75%');
   assert.deepEqual(nodes['m-log'].children, [{ text: '<img onerror=bad()>' }, { tag: 'br' }, { text: 'next' }]);
+});
+
+function positionFile(t) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mini-position-test-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  return path.join(dir, 'mini-window-position.json');
+}
+async function open(env) {
+  const opening = env.monitor.open({}), mini = env.windows.at(-1);
+  mini.loaded(); await opening; return mini;
+}
+
+test('首次依主遊戲所在螢幕的可用區域置中，包含負座標螢幕', async () => {
+  let target;
+  const env = setup(true, { screen: { getDisplayMatching: bounds => {
+    target = bounds; return { workArea: { x: -1920, y: 40, width: 1920, height: 1040 } };
+  } } });
+  env.owner.bounds.x = -1500;
+  const mini = await open(env);
+  assert.equal(target.x, -1500);
+  assert.deepEqual([mini.bounds.x, mini.bounds.y], [-1095, 435]);
+  env.monitor.restore();
+});
+
+test('移動立即記錄，還原與重建控制器後從磁碟恢復上次位置', async t => {
+  const file = positionFile(t), env = setup(true, { positionFile: file });
+  const mini = await open(env);
+  mini.setPosition(145, 236);
+  assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { x: 145, y: 236 });
+  env.monitor.restore();
+  const again = await open(env);
+  assert.deepEqual([again.bounds.x, again.bounds.y], [145, 236]);
+  // 最後拖曳位置即使尚未送出 moved，關閉仍須補保存。
+  Object.assign(again.bounds, { x: 349, y: 456 });
+  env.monitor.dispose();
+  const restarted = setup(true, { positionFile: file });
+  const restored = await open(restarted);
+  assert.deepEqual([restored.bounds.x, restored.bounds.y], [349, 456]);
+  restarted.monitor.restore();
+});
+
+test('－只最小化迷你；□回主窗，兩者均保存普通位置而不記錄最大化／最小化座標', async t => {
+  const file = positionFile(t), env = setup(true, { positionFile: file });
+  const mini = await open(env);
+  assert.equal(mini.options.minimizable, true);
+  assert.equal(mini.options.maximizable, true);
+  mini.setPosition(200, 300);
+  const normal = mini.getBounds();
+  mini.getBounds = () => mini.minimized ? { x: -32000, y: -32000, width: 270, height: 250 } :
+    mini.maximized ? { x: 0, y: 0, width: 1920, height: 1040 } : normal;
+  mini.minimize();
+  assert.equal(env.owner.visible, false);
+  assert.equal(mini.destroyed, false);
+  assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { x: 200, y: 300 });
+  mini.minimized = false; mini.maximize();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(mini.destroyed, true);
+  assert.equal(env.owner.visible, true);
+  const again = await open(env);
+  assert.deepEqual([again.bounds.x, again.bounds.y], [200, 300]);
+  Object.assign(again.bounds, { x: 310, y: 420 }); again.close();
+  assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { x: 310, y: 420 });
+});
+
+test('螢幕拔除／工作區縮小時限制在畫面內，既有負座標位置可以保留', async t => {
+  const file = positionFile(t);
+  fs.writeFileSync(file, JSON.stringify({ x: -900, y: 300 }));
+  const negative = setup(true, { positionFile: file, screen: {
+    getDisplayMatching: () => ({ workArea: { x: -1920, y: 0, width: 1920, height: 1040 } })
+  } });
+  const first = await open(negative);
+  assert.deepEqual([first.bounds.x, first.bounds.y], [-900, 300]); negative.monitor.restore();
+  const removed = setup(true, { positionFile: file });
+  const second = await open(removed);
+  assert.deepEqual([second.bounds.x, second.bounds.y], [0, 300]); removed.monitor.restore();
+  fs.writeFileSync(file, JSON.stringify({ x: 1800, y: 1000 }));
+  const smaller = setup(true, { positionFile: file, screen: {
+    getDisplayMatching: () => ({ workArea: { x: 0, y: 24, width: 1280, height: 696 } })
+  } });
+  const third = await open(smaller);
+  assert.deepEqual([third.bounds.x, third.bounds.y], [1010, 470]); smaller.monitor.restore();
+});
+
+test('位置偏好損壞或格式不合法時首次置中，不影響主窗切換', async t => {
+  const file = positionFile(t);
+  for (const invalid of ['broken json', 'null', '{"x":"12","y":30}', '{"x":12.5,"y":30}', '{"x":9007199254740991,"y":30}']) {
+    fs.writeFileSync(file, invalid);
+    const env = setup(true, { positionFile: file });
+    const mini = await open(env);
+    assert.deepEqual([mini.bounds.x, mini.bounds.y], [825, 395]);
+    env.monitor.restore(); assert.equal(env.owner.visible, true);
+  }
+});
+
+test('偏好寫入失敗仍在本次執行記住位置並保持可還原', async t => {
+  const file = positionFile(t); fs.writeFileSync(file, 'not a directory');
+  const errors = [], env = setup(true, { positionFile: path.join(file, 'position.json'), log: (...args) => errors.push(args) });
+  const mini = await open(env); mini.setPosition(234, 345); env.monitor.restore();
+  assert.equal(env.owner.visible, true); assert.ok(errors.length > 0);
+  const again = await open(env); assert.deepEqual([again.bounds.x, again.bounds.y], [234, 345]);
+  env.monitor.restore();
 });

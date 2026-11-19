@@ -24,7 +24,8 @@ if (process.type !== 'browser') {
     if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(child.pid), '/t', '/f'], { windowsHide: true });
     else child.kill('SIGKILL');
   }, 180000);
-  child.on('exit', code => {
+  child.on('exit', (code, signal) => {
+    console.log('[mini] Electron exit', code, signal);
     clearTimeout(deadline);
     if (path.dirname(profile) === path.resolve(os.tmpdir()) && path.basename(profile).startsWith('idle-mini-')) {
       fs.rmSync(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 300 });
@@ -59,9 +60,12 @@ if (process.type !== 'browser') {
     if (useKey) key(win); else await page("document.getElementById('btn-pip').click()");
     await until(() => miniWindow() && miniWindow().isVisible() && !win.isVisible(), 'mini visible and main hidden');
     const mini = miniWindow();
+    await until(() => mini.isAlwaysOnTop(), 'mini always on top', 5000);
     mini.webContents.on('console-message', event => { if (event.level === 'error') report.errors.push(event.message); });
     assert.equal(mini.isAlwaysOnTop(), true);
-    assert.equal(await mini.webContents.executeJavaScript("document.getElementById('m-restore').textContent"), '還原');
+    assert.equal(await mini.webContents.executeJavaScript("document.querySelector('button') === null"), true, '內容區不再有還原鈕');
+    assert.equal(mini.isMaximizable(), true);
+    assert.equal(mini.isMinimizable(), true);
     await focus(mini);
     return mini;
   }
@@ -93,6 +97,7 @@ if (process.type !== 'browser') {
       assert.equal(report.tip, internal ? '迷你視窗' : '迷你視窗 (Enter)');
       other = new BrowserWindow({ show: false, width: 300, height: 140, webPreferences: { sandbox: true } });
       await other.loadURL('data:text/html,<title>Mini focus verification</title>Focus test');
+      let previousPosition = null;
       for (const mode of ['windowed', 'borderless', 'fullscreen']) {
         await win.displaySettings.setMode(mode); await focus(win); await wait(300);
         const bounds = win.getBounds(), state = win.displaySettings.get();
@@ -105,6 +110,22 @@ if (process.type !== 'browser') {
           key(win, 'Escape');
         }
         const mini = await open(!internal);
+        console.log('[mini]', mode, 'opened');
+        const area = require('electron').screen.getDisplayMatching(bounds).workArea;
+        if (!previousPosition) {
+          const size = mini.getSize();
+          assert.deepEqual(mini.getPosition(), [Math.round(area.x + (area.width - size[0]) / 2),
+            Math.round(area.y + (area.height - size[1]) / 2)], '首次依主窗所在螢幕置中');
+        } else assert.deepEqual(mini.getPosition(), previousPosition, '重開不得重設位置');
+        mini.setPosition(area.x + 80 + report.modes.length * 35, area.y + 100 + report.modes.length * 25);
+        previousPosition = mini.getPosition();
+        mini.minimize();
+        console.log('[mini]', mode, 'minimize requested');
+        await until(() => mini.isMinimized(), 'mini minimized', 5000);
+        assert.equal(win.isVisible(), false, '－不得重新顯示主遊戲');
+        mini.restore(); await focus(mini);
+        console.log('[mini]', mode, 'minimize restored');
+        assert.deepEqual(mini.getPosition(), previousPosition, '最小化還原保留位置');
         const before = await page('({ticks:WorkerBridge.status().ticks,gt:viewState().gt})');
         const stage = await mini.webContents.executeJavaScript("document.getElementById('m-stage').textContent");
         assert.ok(stage.length > 0);
@@ -120,18 +141,27 @@ if (process.type !== 'browser') {
         other.hide(); await focus(mini);
         fs.writeFileSync(path.join(out, mode + '-mini.png'), (await mini.webContents.capturePage()).toPNG());
         if (internal) { key(mini); await wait(150); assert.equal(mini.isDestroyed(), false); }
-        if (mode === 'windowed') await mini.webContents.executeJavaScript("document.getElementById('m-restore').click()");
+        if (mode === 'windowed') mini.maximize();
         else if (mode === 'borderless') key(mini, internal ? 'Escape' : 'Enter');
         else mini.close();
         await restored();
         assert.deepEqual(win.displaySettings.get(), state);
         assert.deepEqual(win.getBounds(), bounds);
         assert.equal(await page('!!document.fullscreenElement'), mode === 'fullscreen');
-        report.modes.push({ mode, stage, before, after, restoredBounds: win.getBounds() });
+        report.modes.push({ mode, stage, before, after, miniPosition: previousPosition, restoredBounds: win.getBounds() });
         console.log('[mini]', report.edition, mode, 'PASS');
       }
       await win.displaySettings.setMode('windowed');
-      await open(false);
+      win.miniMonitor.dispose();
+      win.miniMonitor = require('../../electron/mini-window.cjs').create({
+        owner: win, BrowserWindow, screen: require('electron').screen,
+        positionFile: path.join(app.getPath('userData'), 'mini-window-position.json')
+      });
+      const reloaded = await open(false);
+      assert.deepEqual(reloaded.getPosition(), previousPosition, '重建原生控制器後讀回磁碟位置');
+      assert.deepEqual(JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'mini-window-position.json'), 'utf8')),
+        { x: previousPosition[0], y: previousPosition[1] });
+      report.positionReloaded = true;
       win.miniMonitor.restore(); await restored();
       const first = await open(false);
       await page('openMiniWindow();openMiniWindow()');
@@ -144,7 +174,8 @@ if (process.type !== 'browser') {
       report.passed = false; report.error = error.stack; console.error(error);
       if (win && !win.isDestroyed()) {
         report.diagnostic = await page("({body:document.body.className,loading:document.getElementById('loading-screen').className,worker:typeof WorkerBridge!=='undefined'?WorkerBridge.status():null,focus:document.hasFocus(),menu:StartMenu.isActive(),intro:IntroPlayer.isPlaying(),hidden:GameVisibility.isHidden(),paused:GameClock.isPaused(),renderer:BattleRenderer.status(),dirty:UI.dirty,panels:Object.keys(UI_WORKER_STATE.panels)})").catch(() => null);
-        fs.writeFileSync(path.join(out, 'failure.png'), (await win.webContents.capturePage()).toPNG());
+        const failureImage = await Promise.race([win.webContents.capturePage(), wait(2000).then(() => null)]);
+        if (failureImage) fs.writeFileSync(path.join(out, 'failure.png'), failureImage.toPNG());
       }
     }
     finally {

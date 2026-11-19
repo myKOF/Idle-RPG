@@ -367,7 +367,10 @@ function createWindow() {
     }
   });
   mainWindow = win;
-  win.miniMonitor = require('./mini-window.cjs').create({ owner: win, BrowserWindow: BrowserWindow });
+  win.miniMonitor = require('./mini-window.cjs').create({
+    owner: win, BrowserWindow: BrowserWindow, screen: screen, log: log,
+    positionFile: path.join(app.getPath('userData'), 'mini-window-position.json')
+  });
   win.activity = WindowActivity.bindWindowActivity(win, { alwaysActive: OPTS.smoke && !OPTS.smokeOnScreen });
   var url = startUrl();
   var wc = win.webContents;
