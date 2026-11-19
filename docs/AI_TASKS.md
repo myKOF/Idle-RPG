@@ -1,3 +1,15 @@
+## TOWER-RETURN-BGM-20261120 — 封魔塔返回場景的配樂過渡
+
+- Owner：Codex；Done，單人實作。使用者要求離開封魔塔回原場景時，塔戰 BGM 先漸弱至完全無聲，再播放原場景 BGM；全程約6秒，其中靜音約4秒，採2秒漸弱＋4秒靜音。
+- 前置：既有塔戰／野外音樂切換及權威場景快照已完成；起始 ai/codex 乾淨、fetch 與逐檔衝突預檢通過。沿用 UISound，不新增音檔、配置、API 或存檔欄位。
+- 允許：`js/ui-sound.js`、`index.html` 對應快取、`tests/zone-music.test.cjs`、`LV_upgrade_system.md` 與本段。禁止改戰鬥／Worker／解鎖／表格／素材／其他功能，不合併或推送 develop／main。
+- 驗收：塔戰返回時音量單調漸弱、2秒完全停止、後續4秒無場景 BGM、6秒起播原場景首曲；快照／手勢／設定不得跳過或重置過渡。重入塔戰或換場取消舊排程，靜音／音量／Loading／序章／開始選單／離頁保持既有保護，拒絕挑戰仍立即回復權威場景。相關回歸、Build、實際瀏覽器音訊時序驗證及 Git 差異檢查後提交，交使用者驗收及整合。
+- 完成：UISound 保存離場播放器，以現有 AudioContext 的原生 GainNode 排程2秒線性漸弱，避免退場建圖佔用主執行緒而延後收音；不支援或尚未解鎖 Web Audio 時以計時器漸弱。共6秒後從目的場景首曲起播，音量／靜音不重新抬高或補播塔戰尾音。換圖／重新挑戰／序章／開始選單取消舊排程並回收媒體節點；舊曲尾與舊計時回呼不影響新場景。
+- 修改5檔：`js/ui-sound.js`、`index.html`（音樂腳本快取）、`tests/zone-music.test.cjs`、`LV_upgrade_system.md`及本段。唯讀檢查規範／Workflow／`prompts/codex.md`、`js/ui.js`挑戰與快照入口、`js/tower.js`撤退／確認結算、`js/worker/{protocol.js,sim.worker.js}`、`js/{main.js,start-menu.js,intro-audio.js,game-clock.js,game-visibility.js}`、現有音訊回歸與背景瀏覽器工具。未改表格、音檔、素材或存檔；素材庫無本項交付變更。
+- 回歸：`node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/intro-game-audio.test.cjs tests/intro-audio.test.cjs tests/vfx-editor-cache-versions.test.cjs`共57項，56通過、1項既有失敗。失敗為Zones曲目測試仍預期空欄，實際已有`audio/zones/black-crust-breaks.mp3`；以起始提交`e1423aee`原始測試經唯讀Module覆蓋重跑相同名稱，同一斷言失敗，不修改配置或降低斷言。本次新增／調整時序、設定保護、原生音量排程與回收、重入／換圖／過期事件等回歸全部通過。`npm.cmd run build`752檔及`git diff --check`通過，自我Review完成。
+- 實機：內建IAB無可用連線，依browser技能嘗試後改用受看門狗管理的隔離Edge；正式遊戲／Worker、新遊戲略過序章，正常開戰、撤退並確認結算返回荒漠。使用真實HTMLAudio與原生音訊排程，量得漸弱歸零2000.5ms、野外起播6188.1ms、靜音4187.6ms；漸弱單調、無曲目重疊，頁面例外／警告／媒體錯誤皆0。測完恢復全靜音，瀏覽器及伺服器關閉；無桌面螢幕擷取工作階段。來源腳本與完整時序JSON留本聊天visualizations的`tower-return-bgm-20261120`。
+- 交接：本項無未完成工作，已知限制為上述1項既有曲目斷言失敗、未測行動真機／原生桌面包；缺少Web Audio時漸弱精度受主執行緒計時器影響。可供驗收合併，未合併或推送develop／main。Commit為本段所在`[Codex] feat: 加入封魔塔離場配樂漸弱與靜音過渡`；下一步重新載入遊戲驗收。結束前清理工具確認沒有測試用無畫面瀏覽器殘留；工作期間另出現外部`config/Excel/Task.xlsx`修改，原樣保留，不納入本項提交。
+
 ## SCREEN-CAPTURE-CLEANUP-RULE-20261119 — 補上螢幕擷取工作階段清理規範
 
 - Owner：Codex，Done。依使用者指示在 `AI_RULES.md` 第 19 節補上擷取清理規範，涵蓋正常結束、失敗、逾時、中止及交回操作時的資源釋放，工具重設、殘留 helper 精確清理，以及黃色外框消失的驗證。
