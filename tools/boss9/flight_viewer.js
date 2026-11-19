@@ -28,7 +28,7 @@ const mixer=new THREE.AnimationMixer(gltf.scene),action=mixer.clipAction(clip);a
 function pose(t){action.reset().play();mixer.setTime(t%profile.period);gltf.scene.updateMatrixWorld(true);}
 pose(0);
 const root=gltf.scene.getObjectByName('Bone_000').getWorldPosition(new THREE.Vector3());
-const az=profile.camera.azimuth*Math.PI/180,el=profile.camera.elevation*Math.PI/180;
+const az=Number(params.get('azimuth')??profile.camera.azimuth)*Math.PI/180,el=profile.camera.elevation*Math.PI/180;
 const direction=new THREE.Vector3(-Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el));
 const right=new THREE.Vector3(Math.cos(az),0,Math.sin(az));
 const up=new THREE.Vector3().crossVectors(direction,right).normalize();

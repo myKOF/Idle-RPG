@@ -26,6 +26,9 @@ for i in range(60):
  draw.text((12,3),'Reference (user GIF)',font=font,fill='white');draw.text((652,3),'BOSS9 - authored 3D flight',font=font,fill='white')
  canvas.paste(refs[i//3],(0,24));canvas.paste(close[i],(640,24));comparison.append(canvas)
 report=[encode(full,out/'Walk.gif'),encode(comparison,out/'Reference-comparison.gif')]
+if (base/'front'/'0059.png').exists():
+ front=[Image.open(base/'front'/('%04d.png'%i)).convert('RGB') for i in range(60)]
+ report.append(encode(front,out/'Front.gif'))
 contact=Image.new('RGB',(1280,384*7),'#151d23')
 for j,i in enumerate([0,9,18,27,36,45,54]):contact.paste(comparison[i],(0,j*384))
 contact.save(out/'Reference-contact.jpg',quality=92)

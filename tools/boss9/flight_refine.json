@@ -1,0 +1,18 @@
+{
+  "package": "boss9-flight-limbs-20261120",
+  "sourcePackage": "boss9-flight-reference-20261120",
+  "period": 2,
+  "tailLengthRatio": 0.6,
+  "tailLiftDegrees": [18,12,6,1,-5,-10,-14],
+  "tailWaveDegrees": [4,6,8,10,12,14,16],
+  "tailWaveLagPerJoint": 0.12,
+  "tailYawDegrees": [-9,-14,-22,-26,-26,-22,-16],
+  "foreWristForward": 0.05,
+  "foreWristDrop": 0.35,
+  "foreWristOutward": 0.015,
+  "foreWristBob": 0.018,
+  "hindAnkleLateral": 0.25,
+  "hindAnkleBackward": 0.09,
+  "hindAnkleDrop": 0.34,
+  "hindAnkleBob": 0.025
+}
