@@ -12875,7 +12875,7 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   border:0;
   background:none;
   box-shadow:none;
-  color:#f1d194;
+  color:#ffd700;
   font:inherit;
   font-size:14px;
   text-decoration:underline;
@@ -12883,7 +12883,7 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   text-shadow:0 1px 3px #000;
   cursor:pointer;
 }
-.merchant-level-plaque #shop-upgrade:is(:hover, :focus-visible):not(:disabled) { color:#fff0c9; text-decoration-thickness:2px; }
+.merchant-level-plaque #shop-upgrade:is(:hover, :focus-visible):not(:disabled) { color:#ffeb8a; text-decoration-thickness:2px; }
 .merchant-level-plaque #shop-upgrade:disabled { cursor:default; }
 .merchant-shop-controls .gx-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:12px; margin:0; }
 .merchant-shop-controls .gx-actions .btn { min-width:100px; min-height:38px; padding:6px 18px; }
@@ -12948,6 +12948,14 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   border-color:rgba(184,135,81,.28);
   background:rgba(18,10,7,.48);
 }
+#mystery-merchant-panel .shop-card.eff-mythic {
+  --mythic-surface-tint:linear-gradient(rgb(24 18 13 / .9), rgb(24 18 13 / .88));
+}
+#mystery-merchant-panel .shop-card.eff-mythic .shop-name {
+  color:#e7bd94 !important;
+  text-shadow:0 1px 2px #000;
+}
+#mystery-merchant-panel .shop-card.eff-mythic .shop-stat { color:#d9c3a6; }
 #mystery-merchant-panel .shop-emoji {
   display:flex;
   align-items:center;
