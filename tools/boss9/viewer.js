@@ -47,24 +47,28 @@ function mouthAt(t){const f=THREE.MathUtils.clamp(t*120,0,360),a=Math.floor(f),b
 const fire=new DragonFire(scene,config,mouthAt);
 // A world-space ruler is visible in the fire review; it uses the particle config's meters.
 const ruler=new THREE.Group();scene.add(ruler);
+ruler.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-1.7,0,0),new THREE.Vector3(-1.7,0,config.range)]),new THREE.LineBasicMaterial({color:0x9e8159})));
 for(let z=0;z<=config.range;z+=5){
  const points=[new THREE.Vector3(-1.2,.015,z),new THREE.Vector3(-2,.015,z)];
  ruler.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0x9e8159})));
  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=96;const ctx=canvas.getContext('2d');ctx.font='40px Segoe UI';ctx.textAlign='center';ctx.fillStyle='#c9b495';ctx.fillText(z+' m',128,55);
  const label=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas),transparent:true,depthTest:false}));label.position.set(-2.4,.15,z);label.scale.set(2,.75,1);ruler.add(label);
 }
-const labels={Walk:['飛行移動','1.60 秒 · 循環飛行'],Attack1:['攻擊 1 · 前伸咬擊','1.50 秒 · 後仰蓄勢 → 張嘴前咬 → 回復'],Attack2:['攻擊 2 · 右爪橫掃','1.20 秒 · 轉體蓄勢 → 弧線揮爪 → 回復'],Attack3:['攻擊 3 · 烈焰吐息','3.00 秒 · 粒子火芯／火團／火星／煙霧 · 射程 30 米'],Die:['死亡 · 掙扎墜地','2.50 秒 · 後仰振翼 → 失速落地 → 側躺停止']};
+const labels={Walk:['飛行移動 · 第二版','1.60 秒 · 上拍展翼抬平／下拍收回 · 頭部俯角 30°'],Attack1:['攻擊 1 · 前伸咬擊','1.50 秒 · 加大後仰前傾 → 前衝 5 米 → 回位'],Attack2:['攻擊 2 · 轉體斜劈','1.20 秒 · 向右蓄轉 90° → 右後上舉爪 → 右上往左下揮'],Attack3:['攻擊 3 · 烈焰吐息','3.00 秒 · 全身後仰蓄勢 → 猛然前傾噴火 · 射程 '+config.range+' 米'],Die:['死亡 · 仰天長嘯','2.50 秒 · 高舉雙翼 → 仰天長嘯 → 墜地側躺']};
 function select(name){clip=name;elapsed=0;document.querySelectorAll('[data-clip]').forEach(b=>b.classList.toggle('active',b.dataset.clip===name));
  document.getElementById('title').textContent=labels[name][0];document.getElementById('subtitle').textContent=labels[name][1];
  detailLabel.style.display=name==='Attack3'?'':'none';
- if(name==='Attack3') {camera.position.set(-43,12,13);camera.lookAt(0,4.5,13);ruler.visible=true;}
+ if(name==='Attack3') {camera.position.set(-42,15,9);camera.lookAt(0,3.8,9);ruler.visible=true;}
  else if(q.get('view')==='side') {camera.position.set(19,8,8);camera.lookAt(0,3.8,0);ruler.visible=false;}
- else {camera.position.set(-10,7,14);camera.lookAt(0,3.7,0);ruler.visible=false;}
+ else {camera.position.set(-18,10,14);camera.lookAt(0,3.7,-1);ruler.visible=false;}
 }
 for(const name of Object.keys(labels)){const button=document.createElement('button');button.textContent=labels[name][0];button.dataset.clip=name;button.onclick=()=>select(name);document.getElementById('bar').append(button);}
 const pause=document.createElement('button');pause.textContent='暫停';pause.onclick=()=>{playing=!playing;pause.textContent=playing?'暫停':'播放';};document.getElementById('bar').append(pause);
 const timeLabel=document.createElement('span');timeLabel.id='time';document.getElementById('bar').append(timeLabel);
-function render(t){pose(clip,t);if(clip==='Attack3')fire.update(t);else fire.clear();
+function render(t){pose(clip,t);if(clip==='Attack3'){
+ fire.update(t);const mouth=mouthAt(t);ruler.position.copy(mouth.position).add(new THREE.Vector3(0,-.85,0));
+ ruler.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),mouth.direction);
+ }else fire.clear();
  const hip=gltf.scene.getObjectByName('Bone_000').getWorldPosition(new THREE.Vector3());shadow.position.set(hip.x,.005,hip.z);
  shadow.material.opacity=clip==='Die'?.85:.58;
  renderer.setViewport(0,0,W,H);renderer.setScissorTest(false);renderer.render(scene,camera);

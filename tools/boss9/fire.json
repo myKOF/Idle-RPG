@@ -5,15 +5,15 @@
   "duration": 3,
   "socket": "MouthSocket",
   "socketForward": [0, 1, 0],
-  "emitStart": 0.88,
+  "emitStart": 0.82,
   "emitEnd": 2.16,
-  "range": 30,
+  "range": 20,
   "speed": 40,
   "seed": 9009,
   "layers": [
-    { "kind": "flame", "rate": 230, "life": 0.75, "radius": 0.33, "growth": 1.7, "opacity": 0.85 },
+    { "kind": "flame", "rate": 230, "life": 0.5, "radius": 0.33, "growth": 1.7, "opacity": 0.85 },
     { "kind": "core", "rate": 180, "life": 0.16, "radius": 0.22, "growth": 0.38, "opacity": 0.08 },
-    { "kind": "smoke", "rate": 100, "life": 0.75, "radius": 0.48, "growth": 1.5, "opacity": 0.025 },
-    { "kind": "ember", "rate": 180, "life": 0.75, "radius": 0.023, "growth": 0.014, "opacity": 0.92 }
+    { "kind": "smoke", "rate": 100, "life": 0.5, "radius": 0.48, "growth": 1.5, "opacity": 0.025 },
+    { "kind": "ember", "rate": 180, "life": 0.5, "radius": 0.023, "growth": 0.014, "opacity": 0.92 }
   ]
 }
