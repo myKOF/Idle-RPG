@@ -1,3 +1,11 @@
+## DESKTOP-MINI-LIVE-DRAG-20261119 — 迷你視窗拖曳即時跟隨滑鼠
+
+- Owner：Codex，Done。迷你標題列捕捉指標，即時移動完整視窗。按下位置隨事件傳入，修正快速拖曳時 IPC 抵達晚於滑鼠的偏移；原生 DIP 與內容區縮放共用座標，固定要求尺寸避免小數 DPI 多次拖曳累加增大。放開、取消、失去捕捉、失焦與最小化皆結束拖曳，最後位置沿用既有保存。原生最小化／方框／關閉與 Enter／Esc 保留，Windows 使用 pop-up-menu 置頂層級避免被排到工作列後方。
+- 修改 Electron 主行程、mini-window／mini-preload／mini.html、既有 desktop-mini-window 回歸、原生驗證工具、LV 及本段，共 8 檔。唯讀核對共用 mini-monitor、UI 快照與樣式、快捷、出貨及原生 Electron 行為。逐檔預檢通過；同工作區其他進行中的 UI／商人任務保留，文件分段暫存。素材庫無交付變更。
+- Windows 125% 縮放、全靜音與隔離 profile 實測，在 SPI_GETDRAGFULLWINDOWS=false 下用真實滑鼠連續拖曳兩次，原生位置由 (30,60) 經 (190,163) 到 (350,265)，兩次皆在 pointerup 前移動。跟隨誤差在 3 DIP 內，放開 500ms 後定位與保存座標相同，多次拖曳無尺寸累加，頁面錯誤 0；實際點標題列方框成功回主遊戲。
+- `node --test tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs tests/fullscreen-toggle.test.cjs tests/desktop-app-protocol.test.cjs tests/desktop-ship-rules.test.cjs tests/game-menu.test.cjs tests/vfx-editor-cache-versions.test.cjs` 55/55 通過。`node tools/desktop/verify-mini-window.cjs tmp/mini-live-drag-qa/full full` 通過 windowed／borderless／fullscreen 三組往返、最小化、置頂、位置重建與即時戰況；原生置中檢查計入小數 DPI 的 1 DIP 取整差，重開座標仍須一致。`npm.cmd run build` 752 檔、修改程式語法與 Git 差異檢查通過。
+- 可交使用者驗收及合併。原始碼桌面版需重啟，安裝版需重新打包；多螢幕與取消由回歸驗證，本輪原生實測為單螢幕 full 版。測試視窗與臨時 profile 關閉，暫存清理。Commit 為本段所在的 `[Codex] fix: 讓迷你視窗拖曳即時跟隨滑鼠`。
+
 ## DESKTOP-MINI-POSITION-20261119 — 迷你視窗置中、位置記憶與標題列控制
 
 - Owner：Codex；Done，單人實作。使用者要求首次開啟在畫面中央，其後記住最後位置而不重置。前置：迷你視窗及還原／Enter功能已完成，工作區乾淨、逐檔衝突預檢通過。

@@ -628,6 +628,9 @@ function setupMiniIpc() {
   ipcMain.on('mini:restore', function (event) {
     if (mainWindow && mainWindow.miniMonitor.accepts(event)) mainWindow.miniMonitor.restore();
   });
+  ipcMain.on('mini:drag', function (event, phase, point) {
+    if (mainWindow && mainWindow.miniMonitor.accepts(event)) mainWindow.miniMonitor.drag(phase, point);
+  });
 }
 
 function onReady() {

@@ -114,8 +114,11 @@ if (process.type !== 'browser') {
         const area = require('electron').screen.getDisplayMatching(bounds).workArea;
         if (!previousPosition) {
           const size = mini.getSize();
-          assert.deepEqual(mini.getPosition(), [Math.round(area.x + (area.width - size[0]) / 2),
-            Math.round(area.y + (area.height - size[1]) / 2)], '首次依主窗所在螢幕置中');
+          const center = [Math.round(area.x + (area.width - size[0]) / 2),
+            Math.round(area.y + (area.height - size[1]) / 2)];
+          const position = mini.getPosition();
+          // 原生外框在小數 DPI 轉換時可能差 1 DIP，重開位置仍須逐點相同。
+          assert.ok(position.every((value, index) => Math.abs(value - center[index]) <= 1), '首次依主窗所在螢幕置中');
         } else assert.deepEqual(mini.getPosition(), previousPosition, '重開不得重設位置');
         mini.setPosition(area.x + 80 + report.modes.length * 35, area.y + 100 + report.modes.length * 25);
         previousPosition = mini.getPosition();

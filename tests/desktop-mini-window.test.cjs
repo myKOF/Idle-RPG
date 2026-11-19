@@ -19,6 +19,7 @@ function setup(throttling = true, options = {}) {
         mainFrame: {}, send: (...args) => calls.push(args),
         setWindowOpenHandler(fn) { this.openHandler = fn; },
         getBackgroundThrottling: () => throttling,
+        getZoomFactor: () => 1,
         setBackgroundThrottling: value => { throttling = value; }
       });
       windows.push(this);
@@ -26,6 +27,7 @@ function setup(throttling = true, options = {}) {
     isDestroyed() { return this.destroyed; }
     isMinimized() { return !!this.minimized; }
     isMaximized() { return !!this.maximized; }
+    isFocused() { return !!this.focused; }
     getNormalBounds() { return { ...this.bounds }; }
     maximize() { this.maximized = true; this.emit('maximize'); }
     minimize() { this.minimized = true; this.hide(); this.emit('minimize'); }
@@ -35,7 +37,9 @@ function setup(throttling = true, options = {}) {
     focus() { this.focused = true; }
     setAlwaysOnTop(value) { this.alwaysOnTop = value; }
     getBounds() { return { ...this.bounds }; }
+    getContentBounds() { return { ...this.bounds }; }
     setPosition(x, y) { Object.assign(this.bounds, { x, y }); this.emit('moved'); }
+    setBounds(bounds) { Object.assign(this.bounds, bounds); this.emit('moved'); }
     loadFile() { return new Promise((resolve, reject) => {
       this.loadedOnly = resolve;
       this.loaded = () => { this.miniReady(); resolve(); }; this.failed = reject;
@@ -269,4 +273,133 @@ test('偏好寫入失敗仍在本次執行記住位置並保持可還原', async
   assert.equal(env.owner.visible, true); assert.ok(errors.length > 0);
   const again = await open(env); assert.deepEqual([again.bounds.x, again.bounds.y], [234, 345]);
   env.monitor.restore();
+});
+
+test('按住期間即時跟隨游標，放開後停止並只保存最後位置，重開保持位置', async t => {
+  const file = positionFile(t);
+  let cursor = { x: 845, y: 410 };
+  const env = setup(true, { positionFile: file, screen: {
+    getDisplayMatching: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1040 } }),
+    getCursorScreenPoint: () => ({ ...cursor })
+  } });
+  const mini = await open(env);
+  const size = [mini.bounds.width, mini.bounds.height];
+  env.monitor.drag('start', { x: 20, y: 15 });
+  cursor = { x: 945, y: 470 }; env.monitor.drag('move');
+  assert.deepEqual([mini.bounds.x, mini.bounds.y], [925, 455]);
+  assert.equal(fs.existsSync(file), false, '每次移動不寫磁碟');
+  env.monitor.drag('start', { x: 20, y: 15 });
+  cursor = { x: 845, y: 420 }; env.monitor.drag('move');
+  assert.deepEqual([mini.bounds.x, mini.bounds.y], [825, 405], '重複 start 不重設滑鼠偏移');
+  cursor = { x: 800, y: 400 }; env.monitor.drag('end');
+  assert.deepEqual([mini.bounds.x, mini.bounds.y], [780, 385], '放開包含最後一筆游標位置');
+  assert.deepEqual([mini.bounds.width, mini.bounds.height], size, '連續移動使用起始尺寸');
+  assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { x: 780, y: 385 });
+  cursor = { x: 900, y: 500 }; env.monitor.drag('move');
+  assert.deepEqual([mini.bounds.x, mini.bounds.y], [780, 385]);
+  env.monitor.restore();
+  const again = await open(env);
+  assert.deepEqual([again.bounds.x, again.bounds.y], [780, 385]);
+  env.monitor.restore();
+});
+
+test('跨負座標螢幕使用原生 DIP；失焦、最小化或關閉中止拖曳', async () => {
+  for (const action of ['blur', 'minimize', 'restore']) {
+    let cursor = { x: 845, y: 410 };
+    const env = setup(true, { screen: {
+      getDisplayMatching: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1040 } }),
+      getCursorScreenPoint: () => ({ ...cursor })
+    } });
+    const mini = await open(env);
+    env.monitor.drag('move');
+    assert.deepEqual([mini.bounds.x, mini.bounds.y], [825, 395], '未按住不移動');
+    env.monitor.drag('start', { x: 20, y: 15 });
+    cursor = { x: -955, y: 210 }; env.monitor.drag('move');
+    assert.deepEqual([mini.bounds.x, mini.bounds.y], [-975, 195]);
+    if (action === 'blur') mini.emit('blur');
+    else if (action === 'minimize') mini.minimize();
+    else env.monitor.restore();
+    cursor = { x: -850, y: 300 }; env.monitor.drag('move');
+    assert.deepEqual([mini.bounds.x, mini.bounds.y], [-975, 195], action);
+    env.monitor.dispose();
+  }
+});
+
+test('快速拖曳保留按下位置並換算內容邊框及縮放，多次拖曳不累加原生取整尺寸', async () => {
+  let cursor = { x: 1100, y: 700 };
+  const env = setup(true, { screen: {
+    getDisplayMatching: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1040 } }),
+    getCursorScreenPoint: () => cursor
+  } });
+  const mini = await open(env), requested = [];
+  mini.getContentBounds = () => ({ ...mini.bounds, x: mini.bounds.x + 1, y: mini.bounds.y + 2 });
+  mini.webContents.getZoomFactor = () => 1.5;
+  mini.setBounds = bounds => {
+    requested.push(bounds);
+    Object.assign(mini.bounds, bounds, { width: bounds.width + 1, height: bounds.height + 2 });
+  };
+  for (let i = 0; i < 3; i++) {
+    env.monitor.drag('start', { x: 20, y: 10 });
+    env.monitor.drag('move');
+    assert.deepEqual([mini.bounds.x, mini.bounds.y], [cursor.x - 31, cursor.y - 17]);
+    env.monitor.drag('end');
+    cursor = { x: cursor.x + 100, y: cursor.y + 50 };
+  }
+  assert.deepEqual(requested.map(bounds => [bounds.width, bounds.height]), [[270, 250], [270, 250], [270, 250]]);
+  Object.assign(mini.bounds, { width: 400, height: 300 }); mini.emit('resized');
+  env.monitor.drag('start', { x: 20, y: 10 }); env.monitor.drag('move'); env.monitor.drag('end');
+  assert.deepEqual([requested.at(-1).width, requested.at(-1).height], [400, 300]);
+  env.monitor.restore();
+});
+
+function titleBarPreload(platform = 'win32') {
+  const sends = [], nodes = {}, handlers = {};
+  let api;
+  function node() {
+    return {
+      style: {}, children: [], handlers: {}, captured: null,
+      append(...children) { this.children.push(...children); },
+      appendChild(child) { this.append(child); },
+      prepend(child) { this.children.unshift(child); nodes[child.id] = child; },
+      addEventListener(name, fn) { this.handlers[name] = fn; },
+      setPointerCapture(id) { this.captured = id; },
+      hasPointerCapture(id) { return this.captured === id; },
+      releasePointerCapture() { this.captured = null; }
+    };
+  }
+  const document = { title: 'title from String table', body: node(), createElement: node, getElementById: id => nodes[id] };
+  const context = vm.createContext({ document, process: { platform },
+    window: { addEventListener: (name, fn) => { handlers[name] = fn; } },
+    require: () => ({ ipcRenderer: { invoke() {}, send: (...args) => sends.push(JSON.parse(JSON.stringify(args))) },
+      contextBridge: { exposeInMainWorld: (_name, value) => { api = value; } } })
+  });
+  vm.runInContext(fs.readFileSync(require.resolve('../electron/mini-preload.cjs'), 'utf8'), context);
+  api.ready(); api.ready();
+  return { sends, nodes, handlers, document, api };
+}
+
+test('專用標題列捕捉左鍵拖曳，放開／取消／失去捕捉／失焦清理且不暴露拖曳 API', () => {
+  for (const finish of ['pointerup', 'pointercancel', 'lostpointercapture', 'blur']) {
+    const env = titleBarPreload(), bar = env.nodes['mini-titlebar'];
+    const event = { button: 0, buttons: 1, pointerId: 7, isPrimary: true, clientX: 20, clientY: 15, preventDefault() {} };
+    assert.equal(env.document.body.children.length, 1, '重複 ready 不重建標題列');
+    assert.equal(bar.children[0].children[1].textContent, env.document.title);
+    assert.equal(env.api.drag, undefined);
+    bar.handlers.pointerdown({ ...event, button: 2 });
+    bar.handlers.pointerdown({ ...event, isPrimary: false });
+    assert.deepEqual(env.sends, []);
+    bar.handlers.pointerdown(event);
+    assert.equal(bar.captured, 7);
+    bar.handlers.pointermove({ ...event, pointerId: 8 });
+    bar.handlers.pointerup({ ...event, pointerId: 8 });
+    bar.handlers.pointermove(event);
+    if (finish === 'blur') env.handlers.blur({});
+    else bar.handlers[finish](event);
+    bar.handlers.pointermove(event);
+    assert.deepEqual(env.sends, [['mini:drag', 'start', { x: 20, y: 15 }], ['mini:drag', 'move'], ['mini:drag', 'end']], finish);
+    assert.equal(bar.captured, null);
+  }
+  assert.equal(titleBarPreload('linux').nodes['mini-titlebar'], undefined);
+  const env = titleBarPreload(); env.nodes['mini-titlebar'].handlers.dblclick({});
+  assert.deepEqual(env.sends, [['mini:restore']]);
 });
