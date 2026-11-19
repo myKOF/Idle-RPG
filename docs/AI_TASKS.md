@@ -10,6 +10,17 @@
 - 實機：內建IAB無可用連線，依browser技能嘗試後改用受看門狗管理的隔離Edge；正式遊戲／Worker、新遊戲略過序章，正常開戰、撤退並確認結算返回荒漠。使用真實HTMLAudio與原生音訊排程，量得漸弱歸零2000.5ms、野外起播6188.1ms、靜音4187.6ms；漸弱單調、無曲目重疊，頁面例外／警告／媒體錯誤皆0。測完恢復全靜音，瀏覽器及伺服器關閉；無桌面螢幕擷取工作階段。來源腳本與完整時序JSON留本聊天visualizations的`tower-return-bgm-20261120`。
 - 交接：本項無未完成工作，已知限制為上述1項既有曲目斷言失敗、未測行動真機／原生桌面包；缺少Web Audio時漸弱精度受主執行緒計時器影響。可供驗收合併，未合併或推送develop／main。Commit為本段所在`[Codex] feat: 加入封魔塔離場配樂漸弱與靜音過渡`；下一步重新載入遊戲驗收。結束前清理工具確認沒有測試用無畫面瀏覽器殘留；工作期間另出現外部`config/Excel/Task.xlsx`修改，原樣保留，不納入本項提交。
 
+## NPC-SHIELD-EXACT-FIT-20261120 — 護罩實際外殼貼合一倍可見輪廓
+
+- Owner：Codex；Done，單人修正。使用者明確要求護盾實際寬高等於生成當下模型可見輪廓一倍，生成後固定尺寸。前置為既有2D／3D剪影量測與生成時定型；不修改免疫／持續／解鎖或輪廓定義。
+- 允許：en-gold-dome Preset與素材庫對應來源／說明、Runtime資料快取與主頁／編輯器引用快取、既有貼合回歸、LV與VFX控制說明及本段。禁止修改其他特效／模型／Excel／Worker／存檔，不合併或推送。fetch及逐檔預檢乾淨；保留同副本Task.xlsx與飛龍v2進行中任務，任務紀錄分區提交。
+- 驗收：正式SVG外殼經Core／Runtime後寬高為模型輪廓一倍、中心一致，姿勢／狀態半徑改變時維持初始尺寸，重新生成重新量測，備援與透視保持；相關回歸、隔離靜音瀏覽器實際素材渲染、舊編輯器存檔保護、Build與差異／雙庫雜湊，先素材庫再遊戲提交。
+- 完成8檔：en-gold-dome校正authored寬高為SVG圓直徑乘既有圖層縮放，各層中心改為製作高度負一半，fitPadding明設1；Runtime只更新DATA_VERSION與主頁／編輯器快取。既有固定尺寸與剪影量測程式未改；SVG／貼圖、圖層縮放、光暈／粒子與色彩保持。同步貼合回歸、LV、控制說明與本段。唯讀核對battle-renderer／hero3d／npc3d、Status／Skills2／NPC配置、Core／Pixi後端、layout與編輯器存檔保護，未改上述模組或表格。
+- 驗證：`node --test --test-reporter=tap tests/status-aura-fit-body.test.cjs tests/vfx-runtime.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-size.test.cjs tests/elite-data.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs`202項196通過／6項既有失敗。唯讀載入HEAD的Preset／Runtime／快取重跑同批，原6項逐項重現，新增正式外殼測試另失敗（195／202），修正版貼合專項7／7。既有失敗為elite-data舊冷卻、THUNDERFALL斜落、FIELD分層、CATALOG根群組、CHAIN雷鏈、STARFALL拖尾；不改斷言配合現況。新增測試使用正式SVG幾何與實際Core／Runtime圖層變換，驗證三種場景倍率、中心、定型與再生成，保留原備援／2D／3D透視回歸。
+- 實際渲染：IAB嘗試無可用連線後，以專案launchHeadless隔離靜音Edge載入正式第6層boss6.glb、Npc3D／Hero3D、Pixi與Core／Runtime，以及原剪影量測函式。首次117.18×142.29與外殼精確相等，攻擊／移動及狀態半徑加倍後維持初始尺寸、量測仍一次；重生取攻擊輪廓184.14×121.365，SVG光柵外緣184×121，中心一致，例外／警告0。正式Preset舊版本基準遭存檔保護拒寫、新基準通過；既有編輯備份保護回歸通過。QA初輪修正驗證伺服器Windows路徑與一次跨過光環0.6秒保活期限的取樣方式，不修改產品邏輯或放寬尺寸斷言。報告／兩張預覽／腳本與TAP保存在本聊天visualizations的npc-shield-exact-fit-20261120。
+- Build：`npm.cmd run build`752檔通過，自我Review及本項分段暫存差異檢查通過。與同副本任務進化共用LV／任務檔不同段，三方試合乾淨後只提交本項；飛龍v2與其他任務進行中內容保留。素材來源JSON同步至既有npc-vfx-adjustments套件，雙庫SHA-256相同13237e6916e5e5a93d678c302dbeb8f24ca6eee58072abd5ed52bf587abb30e9，素材庫先提交`84f0334e`；遊戲Commit為本段所在`[Codex] fix: 讓金色護盾貼合一倍模型輪廓`。
+- 交接：本項無未完成實作，可供驗收與合併，未合併或推送develop／main。限制為上述6項既有回歸失敗，瀏覽器為正式模型與渲染模組隔離驗證，未重跑完整塔戰／跨瀏覽器／行動真機；光暈與星芒保持原動畫，不作碰撞範圍。下一步重新載入遊戲驗收；編輯器先下載未存內容備份再重載，舊Preset基準不可覆寫新版。
+
 ## SCREEN-CAPTURE-CLEANUP-RULE-20261119 — 補上螢幕擷取工作階段清理規範
 
 - Owner：Codex，Done。依使用者指示在 `AI_RULES.md` 第 19 節補上擷取清理規範，涵蓋正常結束、失敗、逾時、中止及交回操作時的資源釋放，工具重設、殘留 helper 精確清理，以及黃色外框消失的驗證。
