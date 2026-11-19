@@ -16755,3 +16755,16 @@ Worker 存活且頁面正常完成載入。
 - 實機：靜音隔離瀏覽器由實際遊戲 `Npc3D.create` 渲染五動作並驗證三攻擊輪替；進入真正新遊戲（測試略過序章）、用GM準備第7層並挑戰。核對詳情140方框、樓層34圓形縮圖、岩石怪名牌及 `tower_boss_7` 的 `npc3d:true`／Attack3，頁面無新增錯誤／警告。瀏覽器已關閉並執行孤兒清理。未跑完整場勝敗；既有冰屬性、魔法遠攻及攻速保持，動畫依既有出手間隔調速。無待辦，可供使用者驗收與合併，未合併或推送develop。
 - 素材庫 Commit：`06600ae646a69f7211c731abe75b57a12343f547`；遊戲 Commit 為本段所在的 `[Codex] feat: 接入岩石怪首套材質與五動作`。兩倉庫素材引用與雜湊已核對，沒有提交其他任務修改。
 - 環境限制：自動審核以 `blocked by policy` 拒絕刪除已檢查的 `tmp/boss7` 驗證暫存目錄（包含僅指向內建依賴的node_modules Junction），未提供進一步原因。暫存保留於本機忽略目錄，未納入提交；沒有測試瀏覽器殘留。
+
+## TOWER-BOSS7-VARIANTS-20261119 — 岩石怪第二與第三套貼圖
+
+- Owner：Codex；Done。依使用者提供的BOSS7_2／BOSS7_3，套用已完成第一套的Walk／Attack1～3／Die並接入遊戲。前置依賴：首套模型、五動作、頭像與NPC管線已完成。
+- 允許：BOSS7新材質模型／頭像、Blender製作及素材匯出工具、素材庫來源／可編輯blend／清單、NPC.xlsx與衍生CSV／data.js、必要主頁與Worker快取、相關測試、資產／功能／名稱文件及本段。禁止改首套素材、其他BOSS、戰鬥數值／技能／屬性、解鎖與存檔協議。範圍tower_boss_17與27（第17／67／117及27／77／127層）。
+- 驗收：同網格／UV對應、五動作一致及貼圖區別；Excel獨占存取、原生正常重開與格式保存；三套遊戲載入／動畫／頭像、相關回歸、建置與雙庫雜湊。單人完成後交使用者驗收與整合。
+- 完成：Blender核對13739頂點／9998三角面及UV一致，表面最大差異約0.0000011米；兩份新檔骨長略異且第三套多8根食指骨，因此保留首套核准網格／蒙皮／58骨架與五動作，移植供應材質。兩套各保存可編輯blend、GLB、1080透明上半身頭像及QA，來源與腳本歸檔至素材庫 `codex-authored/boss7-rock-variants-20261119/`；首套素材未動。
+- NPC.xlsx原生API只寫第498／508列28格，名稱「岩石怪」、備註「外觀：岩石怪2／3」、頭像及模型五動作。來源獨占存取、兩次正常重開逐格比對531×34通過，7個繪圖物件保留；唯讀核對全部工作表樣式、公式、列欄尺寸、視窗、驗證、條件格式、繪圖與表格引用保持。CSV及data.js只有兩列改動。同步主頁與Worker資料快取、資產／命名／技能名稱及LV文件。修改範圍與預檢一致；工具新增 `prepare_variant.py` 並擴充既有export的 `--variants` 模式。
+- 唯讀檢查：`AI_RULES.md`、`AGENTS.md`、Workflow／Agent規範、NPC產生器、原生Excel工具、首套Blender／GLB與素材清單、`js/npc3d.js`／`js/hero3d.js`／`js/tower.js`／`js/battle-renderer.js`／`js/ui.js`、既有材質轉移與實機驗證工具；沒有變更戰鬥邏輯或其他BOSS。
+- 測試：`node --test tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 52/52通過；包含三套貼圖不同、五動作每軌取樣一致、NPC往返與九個對應樓層。`npm.cmd run build` 741檔通過；`node tools/boss7/export.cjs --check` 與 `--check --variants`、字串稽核0筆及差異檢查通過。
+- 實機：靜音隔離瀏覽器以遊戲Npc3D載入三套模型，逐一渲染五動作並驗證三攻擊輪替；真正新遊戲（略過序章）經GM準備，實際挑戰17與27層，詳情方框與樓層圓形縮圖構圖通過；分別確認 `tower_boss_17` 的Attack1及 `tower_boss_27` 的Attack2／Walk、npc3d均true，頁面無新增錯誤／警告。瀏覽器已關閉並執行孤兒清理。未測完整場勝敗，原冰屬性、魔法遠攻、攻速及其他戰鬥數值保持。無功能待辦，可供使用者驗收與合併；未合併或推送develop。
+- 環境限制：自動審核以 `blocked by policy` 拒絕刪除本次已檢查的 `tmp/boss7-variants` 驗證暫存及 `tmp/boss7/render-variants.mjs`，未提供進一步原因。檔案保留於本機忽略目錄，未納入提交。
+- 素材庫Commit：`ea8d6c358defbc7941254d18a36bcb1572c8d2c3`；遊戲Commit為本段所在的 `[Codex] feat: 接入岩石怪第二與第三套貼圖`。正式模型、頭像、原始供應檔及素材庫清單雜湊一致，沒有提交其他任務修改。
