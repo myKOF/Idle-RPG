@@ -16965,6 +16965,17 @@ Worker 存活且頁面正常完成載入。
 - 實機：全靜音隔離Edge／新遊戲／正式Worker，1920及1366寬度的升級、全買、刷新底座標完全相等，支柄伸至原商品框上緣，四欄與5:2比例保持。三鈕無img／費用；升級tips實際為金幣圖＋4,100,000，全買一圖＋完整總額，刷新精確顯示指定文字。實際購買後總額降低，升級至Lv.2後費用45,354,833，刷新扣券通過，頁面例外0。預覽／report.json在本聊天merchant-sign目錄；瀏覽器／伺服器關閉，不使用Windows螢幕擷取。
 - 交接：無本項未完成／已知新增風險，限Edge兩種寬度及相關回歸，未跑全庫／真機。可供驗收合併，不合併推送；Commit為本段所在`[Codex] feat: 調整神祕商人招牌與費用提示`。下一步接續使用者新增的會話保留／倒計時需求，獨立實作驗證。編輯器因共用String快取更新，先保留未存內容再重載。
 
+## MYSTERY-MERCHANT-STABILITY-20261120 — 單件購買不閃爍其他商品
+
+- Owner：Codex，Done，單人修正。使用者指出購買時所有商品按鈕一起閃爍，要求確認原因與消除不必要更新。確認現況共用gem-shop等待鍵導致全體商品暫時停用，且整格innerHTML替換放大閃爍；商品本身未重新抽取。
+- 允許：商人UI等待鍵／局部DOM更新、UI快取、既有商人UI回歸與LV／商人說明及本段；不改交易／價格／供貨／Worker／協議／配置／字串／素材。前置既有滿包提示完成，逐檔預檢無外部來源；BOSS9飛行工作僅AI_TASKS不同區段，三方試合乾淨後分段提交。驗收只停用所點商品、全域防重複仍有效、滿包不重建DOM且浮字保留、成功只更新售出卡、同名不同實體刷新、相關回歸與Build及真正Worker／DOM實測。
+- 完成：單件購買同時持有商店共用鎖與該商品獨立等待鍵；商品按鈕只綁自己的鍵，全買／刷新／饋贈沿用共用鍵，等待中額外購買直接忽略。`sendGemUiCommand`兼容單一及多個等待鍵，不改既有單鍵呼叫語意。商品卡HTML逐卡快取／比對，只替換內容改變的卡片；等待／金幣可買狀態從結構HTML移出，直接更新按鈕屬性，因此滿包拒絕、單純重繪或金幣變化不重建商品卡。裝備加入實體ID作卡片更新依據，避免刷新後同名同價但新詞條的裝備沿用舊tips錨點。
+- 修改6檔：`js/ui.js`、`index.html`僅UI快取、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`及本段。唯讀檢查`js/item.js`交易與售出／滿包、`js/worker/protocol.js`與pending面板確認／放鎖流程、既有UI回歸及上輪實機工具；未改模擬、參數表、String、樣式與素材，素材庫無本項交付變更。
+- 回歸：`node --test --test-reporter=tap tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/gem-convert-shift.test.cjs tests/gem-workshop.test.cjs tests/ui-worker-panels.test.cjs tests/inventory-command-pending.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`77項，75通過／2既有失敗。唯讀fs覆蓋起始3144c672的UI及String後，ui-worker-panels原兩項逐一重現6過／2敗（舊gem.socket原始碼比對、item.upgrade fixture缺UI），新增失敗0。商人UI專項10/10，驗證等待／解除／售出／金幣不足與回復時的節點身份、獨立等待鍵及共用防重複鎖、同名新裝備替換、原滿包浮字。首輪新增裝備fixture漏載品質helper，改載實際helper後通過，未降低斷言。
+- Build：`node tools/build_check.cjs`753檔通過；本項分段Git差異檢查通過。沒有新增靜態樣式鏡像測試；DOM shim只提供現有renderer測試所需的卡片／按鈕介面，另以實際瀏覽器身份／MutationObserver驗證。
+- 實機：隔離靜音Edge／新遊戲／正式Worker，暫停戰鬥與除錯用Pixi ticker隔離軟體GPU；只在QA將正式`gem.shopBuy`回覆延遲200ms，不更動交易結果。1920及1366寬度下，等待中僅所點商品停用，其餘商品按鈕維持；全買／刷新／饋贈均停用且全域鎖保持，連點其他商品只送出1筆正式指令。強制重繪時全卡身份不變。滿包回覆後全卡及全按鈕身份保持，其他按鈕停用紀錄0、移除節點0、金幣／庫存不變且浮字正常。擴背包後成功只替換售出卡、其他卡與按鈕仍是同一節點，正確扣75,000；再以UI金幣0／還原驗所有可買狀態同步而卡片身份完全不變。頁面例外0，PNG／report.json、TAP／基線報告保留本聊天visualizations的`merchant-stability-20261120`，測試瀏覽器關閉。
+- 交接：無本項未完成／已知新增風險，可供驗收與合併；限制為上述2項既有UI測試失敗，未跑全庫／行動真機／其他瀏覽器。Commit為本段所在`[Codex] fix: 避免神祕商店購買時其他商品閃爍`，未合併／推送develop或main。與同副本BOSS9飛行工作僅AI_TASKS不同段；後續塔首領入場工作共用index不同快取行及LV／AI_TASKS不同段，最新三方試合0後只提交本項；其NPC.xlsx、tower／bridge與其他快取、製作工具／紀錄保留未納入。下一步重載遊戲驗收單件購買與滿包提示。
+
 ## MYSTERY-MERCHANT-FEEDBACK-20261120 — 滿包浮字與商人費用／券量提示
 
 - Owner：Codex，Done，單人實作。使用者要求商店購買裝備遇到滿包時在該購買鈕上方上浮「背包已滿」；追加饋贈tips的金幣費用與好感說明分兩行，以及刷新tips第二行黃色顯示「神祕邀請券剩餘：999」。允許商人UI／CSS／快取、既有浮字與錯誤回報接線、String原生Excel及匯出／共用快取、相關回歸與LV／商人說明／本段，不改交易／容量／價格／Worker／素材。
