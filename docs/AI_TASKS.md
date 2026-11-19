@@ -1,3 +1,16 @@
+## TOWER-BOSS-RUN-IN-20261120 — 封魔塔首領由右側邊界跑入
+
+- Owner：Codex；Done，單人實作。使用者要求 BOSS 從更右側邊界出現；最新補充玩家出生點向左移 5 米，雙方等入場黑幕完全消失後立即互相靠近，避免 BOSS 在原位等玩家。
+- 前置：既有塔戰／固定戰場／NPC 3D 與位移驅動動畫已完成。逐檔衝突預檢：塔戰及測試無外部來源；Claude 的首頁／Worker 載入更新為不同區段，三方試合後分段；bridge 快取同行已由使用者明確同意共用新版本。保留同副本商人／NPC／BOSS9 進行中修改。
+- 允許：js/tower.js、必要 battle-renderer 與回歸、index.html／bridge.js／worker 載入快取、tests/tower-battlefield.test.cjs、LV_upgrade_system.md 及本段。禁止更動 NPC 表／模型／攻擊或技能數值／解鎖／存檔，不合併或推送 develop／main。
+- 驗收：右邊界生成、玩家左移 5 米、黑幕消失後雙方立即主動靠近與 Walk 實播、沿用原移速、固定戰場中心及體型邊界、轉場不移動／不計時／不攻擊／不扣冷卻、正常接戰與連挑／退場，相關回歸、Build、隔離靜音瀏覽器及差異檢查。完成後交使用者驗收與整合。
+
+- 完成：保留原法陣中心，把 BOSS 設在右邊界內側（扣體型半徑），玩家單獨左移 bfMeterPx(5)。首領直接標記已索敵，黑幕結束後即與玩家按既有 bfTickPlayer／bfTickApproach 移速互相接近；沿用實際位移驅動 Walk，沒有新增站姿或假位移。保留原轉場暫停計時／冷卻／攻擊與場內邊界，未改戰鬥數值／存檔／解鎖，無協議形狀變更。主頁、Worker tower 載入及共用 Worker 快取同步。
+- 修改7檔：js/tower.js、js/bridge.js、js/worker/sim.worker.js、index.html、tests/tower-battlefield.test.cjs、LV_upgrade_system.md 與本段。唯讀檢查 AI 規範／Workflow／prompts/codex.md、js/battlefield.js／battle-renderer.js／npc3d.js／hero3d.js、Worker 投影／協議、NPC 生成資料、塔戰與3D動畫既有回歸、背景瀏覽器工具；未改 NPC.xlsx、任何表格或模型／素材，本項素材庫無交付變更。
+- 回歸：node --test tests/tower-battlefield.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-scene-intro.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-move-attack.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-auto-advance.test.cjs tests/tower-auto-result.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，共58項、57通過。唯一 TBMA-5 失敗仍期待 game_parameters 的「4-高塔BOSS／控制抵抗」舊分類；該測試及 CSV／formula／data／config_tables 依賴與 HEAD 逐檔差異為0，單跑同名測試重現相同失敗，未改斷言或權威配置。新增150層逐步驗證黑幕不偷跑、消失後首步雙方原速、途中相遇及固定中心，原退場／連挑／動作鎖定／射程回歸通過。npm.cmd run build 通過753檔；自我Review與本項暫存差異檢查通過。
+- 實機：IAB 無可用連線，依 browser 技能嘗試後使用受看門狗管理、隔離且全靜音的 Edge／正式 Worker。第3、4層均驗黑幕期間雙方座標不變、結束後兩邊主動靠近；實際3D Walk 分別36／98個移動畫格，非 still、速度為正、動畫秒數持續前進，後續正常出招；頁面例外／警告0。初輪軟體GPU在模型冷載入時主執行緒嚴重停頓，觀測不足；改用原生D3D11後兩輪通過，第二輪補實體可見條件與正確確認退場，沒有放寬移動或動畫斷言。驗證腳本、逐幀JSON與截圖留本聊天 visualizations/tower-entry-20261120。瀏覽器／伺服器已關閉，無桌面擷取工作階段。
+- 交接：無本項未完成工作或已知新增風險；限制為上述1項既有參數表測試失敗，未跑全庫／行動真機／桌面包。Commit 為本段所在「[Codex] fix: 調整封魔塔雙方出生與接近流程」，SHA 見交付。可供使用者驗收及合併，未合併／推送 develop 或 main；其他聊天 NPC／BOSS9 未提交內容及其文件段落完整保留，同檔分段暫存。下一步重新載入遊戲驗收。
+
 ## TASK-SKILL-EVOLUTION-20261120 — 補齊飛刀進化任務與邀請券獎勵
 
 - Owner：Codex；Done，單人實作。使用者確認Task順序5「強化飛刀」獎勵碎片250、10「彈射飛刀」獎勵金幣250000、27「暴雨梨花」獎勵神祕商人邀請券5張，要求補齊參數。保留使用者已插入及重排的43項任務與其他既有數值。

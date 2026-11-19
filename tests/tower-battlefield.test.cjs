@@ -47,7 +47,7 @@ function setup() {
   } };
 }
 
-test('開場：BOSS 站在我方正前方、帶 tb-float 定址，塔戰站位與野外共用同一個 bfPlayerPos 參照', () => {
+test('開場：BOSS 在固定戰場右邊界生成、帶 tb-float 定址，玩家沿用野外座標參照', () => {
   const { c } = setup();
   const home = c.bfPlayerPos();
   home.x = 1234; home.y = -56;     // 野外走到一半才進塔：沿用當下位置，鏡頭不跳
@@ -56,10 +56,16 @@ test('開場：BOSS 站在我方正前方、帶 tb-float 定址，塔戰站位�
   const b = c.TOWER.boss;
   assert.equal(b.floatSel, 'tb-float');
   assert.equal(c.TOWER.playerPos, c.bfPlayerPos());
-  assert.deepStrictEqual({ x: b.pos.x, y: b.pos.y }, { x: 1234 + c.TOWER_BOSS_SPAWN_DIST, y: -56 });
+  assert.equal(home.x, 1234 - c.bfMeterPx(5), '玩家出生點向左移五米');
+  const arena = c.TOWER.arena;
+  assert.equal(arena.cx, 1234 + c.TOWER_BOSS_SPAWN_DIST / 2, '法陣不隨玩家左移或遠端生成點偏移');
+  assert.equal(arena.cy, home.y);
+  assert.deepStrictEqual({ x: b.pos.x, y: b.pos.y }, { x: arena.cx + arena.halfWidth - c.bfEntityRadius(b), y: -56 });
+  assert.ok(b.pos.x > home.x + arena.viewWidth / 2, '從基準畫面右方之外跑入');
+  assert.equal(b._alerted, true, '超出野外視野仍直接追向挑戰者');
 });
 
-test('交戰：雙方對衝後才出手，普攻一律在近戰距離內、BOSS 攻擊一律在射程內，限時燒掉不到一秒', () => {
+test('交戰：遠端生成後雙方依原速對衝，兩秒內接戰，普攻與 BOSS 攻擊都在各自射程內', () => {
   const s = setup();
   s.c.startTowerFight(4);                     // 第 4 層：鋼鐵魔像（無元素＝近戰）
   assert.equal(s.c.TOWER.boss.magic, false);
@@ -70,7 +76,7 @@ test('交戰：雙方對衝後才出手，普攻一律在近戰距離內、BOSS 
   /* 距離要是有限值：沒有座標時 bfPlayerCanReach／bfInAttackRange 一律放行，光看布林值證明不了有在走位 */
   assert.ok(s.log.player.every(h => h.reach && h.gap <= s.c.bfMeleeRange()), '普攻不隔空');
   assert.ok(s.log.boss.every(h => h.inRange && h.gap <= s.c.bfEnemyAttackRange(s.c.TOWER.boss)), 'BOSS 不隔空');
-  assert.ok(s.log.player[0].t <= intro + 1, '登場結束後一秒內接戰（實際 ' + s.log.player[0].t + ' 秒）');
+  assert.ok(s.log.player[0].t <= intro + 2, '右邊界跑入後兩秒內接戰（實際 ' + s.log.player[0].t + ' 秒）');
   assert.ok(s.log.boss.every(h => h.sel === 'tp-float'), 'BOSS 打我方仍走塔戰定址');
   assert.ok(s.c.bfPlayerCanReach(s.c.TOWER.boss));
 });
@@ -108,20 +114,71 @@ test('結束：清掉塔戰站位參照，畫面據此回到野外', () => {
   assert.equal(s.c.TOWER.boss, null);
 });
 
-test('登場：轉場期間限時不走、雙方不動也不出手，結束後才開打；回野外時出怪延後同樣長度', () => {
+test('登場：等黑幕消失後雙方立即互相靠近；黑幕中不移動、計時、扣冷卻或出手', () => {
   const s = setup();
   s.c.startTowerFight(4);
   const intro = s.c.TOWER_INTRO_SEC;
   assert.ok(intro >= 2 && intro <= 3, '轉場約 2～3 秒（使用者要求）');
   const b = s.c.TOWER.boss;
   const start = { x: b.pos.x, y: b.pos.y };
-  s.tick(intro - 0.2);
+  const home = { ...s.c.TOWER.playerPos }, cooldowns = [b.atkCd, s.c.TOWER.player.atkCd, s.c.TOWER.specialCd];
+  s.tick(intro);
   assert.equal(s.c.TOWER.elapsed, 0);
-  assert.deepStrictEqual({ x: b.pos.x, y: b.pos.y }, start);
+  assert.equal(b.pos.x, start.x);
+  assert.equal(b.pos.y, start.y);
+  assert.equal(s.c.TOWER.playerPos.x, home.x);
+  assert.equal(s.c.TOWER.playerPos.y, home.y);
+  assert.deepStrictEqual([b.atkCd, s.c.TOWER.player.atkCd, s.c.TOWER.specialCd], cooldowns);
   assert.equal(s.log.player.length + s.log.boss.length, 0);
+  s.tick(.1);
+  assert.ok(Math.abs(b.pos.x - (start.x - b.runSpeed * .1)) < 1e-7);
+  assert.ok(Math.abs(s.c.TOWER.playerPos.x - (home.x + s.c.bfPlayerSpeed() * .1)) < 1e-7);
   s.tick(1.2);
   assert.ok(s.c.TOWER.elapsed > 0.5, '登場結束後限時開始走');
   s.c.fleeTower();
   s.c.finishTowerFight();
   assert.equal(s.c.FIELD.spawnCd, s.c.TOWER_EXIT_SPAWN_HOLD_SEC);
+});
+
+test('150 層：黑幕消失後首步雙方即依原速移動，入場不偷跑且在途中相遇', () => {
+  const s = setup(), c = s.c;
+  c.G.tower.highest = 150;
+  for (let floor = 1; floor <= 150; floor++) {
+    c.startTowerFight(floor);
+    const b = c.TOWER.boss, arena = JSON.stringify(c.TOWER.arena);
+    const bossStart = b.pos.x, playerStart = c.TOWER.playerPos.x;
+    for (let i = 0; i < 24; i++) {
+      s.tick(.1);
+      assert.equal(b.pos.x, bossStart);
+      assert.equal(c.TOWER.playerPos.x, playerStart);
+      assert.equal(c.TOWER.elapsed, 0);
+      assert.equal(JSON.stringify(c.TOWER.arena), arena);
+    }
+    assert.equal(s.log.player.length + s.log.boss.length, 0);
+    s.tick(.1);
+    assert.ok(Math.abs(bossStart - b.pos.x - b.runSpeed * .1) < 1e-7, 'floor ' + floor + ' first step');
+    assert.ok(Math.abs(c.TOWER.playerPos.x - playerStart - c.bfPlayerSpeed() * .1) < 1e-7);
+    for (let i = 0; i < 40 && !c.bfPlayerCanReach(b); i++) s.tick(.1);
+    assert.ok(c.bfPlayerCanReach(b), 'floor ' + floor + ' 雙方主動接近後相遇');
+    assert.ok(c.TOWER.playerPos.x > playerStart && c.TOWER.playerPos.x < bossStart);
+    assert.ok(b.pos.x < bossStart && b.pos.x > playerStart);
+    assert.equal(JSON.stringify(c.TOWER.arena), arena);
+    assert.ok(b.pos.x <= c.TOWER.arena.cx + c.TOWER.arena.halfWidth - c.bfEntityRadius(b));
+    s.log.player.length = s.log.boss.length = 0;
+    c.fleeTower(); c.finishTowerFight();
+  }
+});
+
+test('較長模擬步跨越入場結束時不提前移動或攻擊，下一步才正常戰鬥', () => {
+  const { c, log } = setup();
+  c.startTowerFight(3);
+  const b = c.TOWER.boss, start = b.pos.x;
+  c.TOWER.introCd = .05;
+  c.towerTick(.2);
+  assert.equal(b.pos.x, start);
+  assert.equal(c.TOWER.introCd, 0);
+  assert.equal(c.TOWER.elapsed, 0);
+  assert.equal(log.player.length + log.boss.length, 0);
+  c.towerTick(.2);
+  assert.equal(c.TOWER.elapsed, .2);
 });
