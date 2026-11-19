@@ -5,8 +5,10 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { resolveLibraryRoot } = require('../vfx/vfx-library-root.cjs');
 const project = path.resolve(__dirname, '../..');
+const variant = process.argv.includes('--variants');
+const suffix = variant ? '_lv2' : '';
 const library = path.join(resolveLibraryRoot({ libraryId: 'effects-materials' }).root,
-  'codex-authored/boss8-gargoyle-20261119');
+  variant ? 'codex-authored/boss8-gargoyle-variant2-20261119' : 'codex-authored/boss8-gargoyle-20261119');
 const mode = process.argv[2] || '--check';
 if (!['--check', '--apply'].includes(mode)) throw Error('Use --check or --apply');
 const manifest = JSON.parse(fs.readFileSync(path.join(library, 'manifest.json'), 'utf8'));
@@ -19,7 +21,7 @@ for (const entry of manifest.files) {
   if (sha(bytes, entry.source) !== entry.sha256) throw Error('Library source changed: ' + entry.source);
   if (!entry.project) continue;
   const target = path.resolve(project, entry.project);
-  if (!['images/models/npc3d/boss8.glb', 'images/sprites/boss/boss8_gargoyle.png'].includes(entry.project)) throw Error('Unexpected runtime export');
+  if (!['images/models/npc3d/boss8'+suffix+'.glb', 'images/sprites/boss/boss8_gargoyle'+suffix+'.png'].includes(entry.project)) throw Error('Unexpected runtime export');
   if (mode === '--apply') {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, bytes);

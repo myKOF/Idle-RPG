@@ -1,5 +1,5 @@
 'use strict';
-// Isolated, muted browser: real Npc3D loading, tower portraits and live floor 8.
+// Isolated browser: node verify_ingame.cjs OUTPUT_DIR [FLOOR=8].
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
@@ -7,6 +7,10 @@ const assert = require('node:assert/strict');
 const { launchHeadless } = require('../lib/headless-browser.cjs');
 const root = path.resolve(__dirname, '../..');
 const output = path.resolve(process.argv[2] || path.join(root, 'tmp/boss8/game'));
+const floor = Number(process.argv[3] || 8);
+assert.ok([8,18].includes(floor));
+const npcId = 'tower_boss_'+floor;
+const portrait = 'sprites/boss/boss8_gargoyle'+(floor===18?'_lv2':'')+'.png';
 const exe = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe'].find(fs.existsSync);
 const mime = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.glb': 'model/gltf-binary', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' };
 const server = http.createServer((req, res) => {
@@ -50,7 +54,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await send('Page.navigate', { url:'http://127.0.0.1:'+server.address().port+'/index.html' });
     await until('!!(window.Npc3D && window.Hero3D && window.BOSS_LIST && window.PIXI)', 'game scripts');
     const model = await ev(`(async () => {
-      const definition=Npc3D.definition(BOSS_LIST.find(b=>b.id==='tower_boss_8'));
+      const definition=Npc3D.definition(BOSS_LIST.find(b=>b.id==='${npcId}'));
       const body=await Npc3D.create(definition), ctrl=body.npc3d.controller;
       const result={file:definition.file,clips:ctrl.clips.slice(),durations:{},frames:[],attackCycle:[]};
       for(const name of ['Walk','Attack1','Attack2','Attack3','Die']) result.durations[name]=ctrl.duration(name);
@@ -68,23 +72,23 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await until(`!![...document.querySelectorAll('button')].find(b=>b.offsetParent!==null && /^新遊戲$/.test(b.innerText.trim()))`, 'new game');
     await ev(`(()=>{if(window.IntroPlayer) IntroPlayer.play=()=>false; [...document.querySelectorAll('button')].find(b=>b.offsetParent!==null && /^新遊戲$/.test(b.innerText.trim())).click(); return true;})()`);
     await sleep(2000);
-    for(const command of ['level 300','gold 100000000000','god 1','tower_jump 8']) {
+    for(const command of ['level 300','gold 100000000000','god 1','tower_jump '+floor]) {
       const response=await ev(`WorkerBridge.send('gm.exec',{line:${JSON.stringify(command)}})`);
       if(response?.error) throw Error(JSON.stringify(response));
     }
     await ev(`document.querySelector('button[data-tab="tower"]').click()`);
-    await until(`!!document.querySelector('[data-tower-pick="8"]')`, 'tower floor row');
-    await ev(`document.querySelector('[data-tower-pick="8"]').click()`);
-    await until(`(()=>{const images=[...document.querySelectorAll('[data-tower-boss-image="sprites/boss/boss8_gargoyle.png"]')];return images.length>=2 && images.every(i=>i.complete && i.naturalWidth===1080);})()`, 'tower portraits');
-    const portraits=await ev(`(()=>{return [...document.querySelectorAll('[data-tower-boss-image="sprites/boss/boss8_gargoyle.png"]')].map(i=>{const r=i.getBoundingClientRect(),p=i.parentElement.getBoundingClientRect();return {className:i.className,width:r.width,height:r.height,parentWidth:p.width,parentHeight:p.height,visible:i.offsetParent!==null};});})()`);
+    await until(`!!document.querySelector('[data-tower-pick="${floor}"]')`, 'tower floor row');
+    await ev(`document.querySelector('[data-tower-pick="${floor}"]').click()`);
+    await until(`(()=>{const images=[...document.querySelectorAll('[data-tower-boss-image="${portrait}"]')];return images.length>=2 && images.every(i=>i.complete && i.naturalWidth===1080);})()`, 'tower portraits');
+    const portraits=await ev(`(()=>{return [...document.querySelectorAll('[data-tower-boss-image="${portrait}"]')].map(i=>{const r=i.getBoundingClientRect(),p=i.parentElement.getBoundingClientRect();return {className:i.className,width:r.width,height:r.height,parentWidth:p.width,parentHeight:p.height,visible:i.offsetParent!==null};});})()`);
     assert.ok(await ev(`document.getElementById('tower-detail').innerText.includes('石像鬼')`));
     await screenshot('tower');
-    await ev(`(()=>{const b=document.querySelector('[data-tower-floor="8"]');if(!b || b.disabled) throw Error('Floor 8 unavailable');b.click();return true;})()`);
-    const entity=await until(`(()=>{const e=window.BattleRenderer && BattleRenderer._debug().entities.find(e=>e.npc==='tower_boss_8' && e.npc3d);return e||false;})()`, 'live 3D gargoyle');
-    const liveAttack=await until(`(()=>{const e=BattleRenderer._debug().entities.find(e=>e.npc==='tower_boss_8' && e.npc3d && /^Attack[123]$/.test(e.clip));return e||false;})()`, 'live attack animation');
+    await ev(`(()=>{const b=document.querySelector('[data-tower-floor="${floor}"]');if(!b || b.disabled) throw Error('Floor ${floor} unavailable');b.click();return true;})()`);
+    const entity=await until(`(()=>{const e=window.BattleRenderer && BattleRenderer._debug().entities.find(e=>e.npc==='${npcId}' && e.npc3d);return e||false;})()`, 'live 3D gargoyle');
+    const liveAttack=await until(`(()=>{const e=BattleRenderer._debug().entities.find(e=>e.npc==='${npcId}' && e.npc3d && /^Attack[123]$/.test(e.clip));return e||false;})()`, 'live attack animation');
     await screenshot('battle');
     assert.equal(errors.length,0,errors.join('\n'));
-    const report={model,portraits,liveEntity:entity,liveAttack,exceptions:errors,cinematicSkippedForTest:true};
+    const report={floor,model,portraits,liveEntity:entity,liveAttack,exceptions:errors,cinematicSkippedForTest:true};
     fs.writeFileSync(path.join(output,'game-qa.json'),JSON.stringify(report,null,2)+'\n');
     console.log('BOSS8_TOWER_GAME_PASS',JSON.stringify(report));
   } finally {

@@ -1,6 +1,6 @@
 """Retarget the approved five actions to the supplied final gargoyle rig.
 
-blender -b --python-exit-code 1 -P prepare_game.py -- APPROVED.blend FINAL.glb OUTPUT_DIR
+blender -b --python-exit-code 1 -P prepare_game.py -- APPROVED.blend FINAL.glb OUTPUT_DIR [MATERIAL=1]
 """
 import bpy
 import hashlib
@@ -10,7 +10,11 @@ import sys
 from pathlib import Path
 from mathutils import Matrix, Vector
 
-approved, source, output = map(Path, sys.argv[sys.argv.index('--') + 1:])
+args = sys.argv[sys.argv.index('--') + 1:]
+approved, source, output = map(Path, args[:3])
+material = int(args[3]) if len(args)>3 else 1
+assert material in (1,2,3)
+suffix = '' if material==1 else '_lv'+str(material)
 output.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=str(approved))
 scene = bpy.context.scene
@@ -27,8 +31,11 @@ for name in speeds:
     original.animation_data.action = action
     original.animation_data.action_slot = action.slots[0]
     samples[name] = []
-    for index in range(ends[name] + 1):
-        frame = index * 5 / speeds[name]
+    # Tail proportions can change the lowest surface between old 30 FPS keys.
+    # Bake every export frame for death so floor contact is solved on that surface.
+    indices = range(ends[name]*5+1) if name=='Die' else range(ends[name]+1)
+    for index in indices:
+        frame = index if name=='Die' else index * 5 / speeds[name]
         integer = math.floor(frame)
         scene.frame_set(integer, subframe=frame-integer)
         bpy.context.view_layer.update()
@@ -117,7 +124,7 @@ bpy.ops.object.select_all(action='DESELECT')
 arm.select_set(True)
 body.select_set(True)
 bpy.context.view_layer.objects.active = arm
-bpy.ops.export_scene.gltf(filepath=str(output / 'boss8.glb'), export_format='GLB', use_selection=True,
+bpy.ops.export_scene.gltf(filepath=str(output / ('boss8'+suffix+'.glb')), export_format='GLB', use_selection=True,
     export_animations=True, export_animation_mode='ACTIONS', export_anim_single_armature=True,
     export_force_sampling=True, export_frame_step=1, export_reset_pose_bones=True,
     export_skins=True, export_image_format='AUTO')
@@ -151,10 +158,10 @@ scene.eevee.taa_render_samples = 32
 scene.render.film_transparent = True
 scene.render.image_settings.file_format = 'PNG'
 scene.render.image_settings.color_mode = 'RGBA'
-scene.render.filepath = str(output / 'boss8_gargoyle.png')
+scene.render.filepath = str(output / ('boss8_gargoyle'+suffix+'.png'))
 bpy.data.orphans_purge(do_recursive=True)
 bpy.ops.file.pack_all()
-bpy.ops.wm.save_as_mainfile(filepath=str(output / 'boss8.blend'), compress=True)
+bpy.ops.wm.save_as_mainfile(filepath=str(output / ('boss8'+suffix+'.blend')), compress=True)
 bpy.ops.render.render(write_still=True)
 report = {'blender': bpy.app.version_string, 'sourceSha256': hashlib.sha256(source.read_bytes()).hexdigest(),
           'approvedBlendSha256': hashlib.sha256(approved.read_bytes()).hexdigest(),
@@ -163,6 +170,6 @@ report = {'blender': bpy.app.version_string, 'sourceSha256': hashlib.sha256(sour
           'deathFloorCorrectionRange': [min(floor_adjustments), max(floor_adjustments)],
           'clips': {name: ends[name]/30/speeds[name] for name in speeds},
           'retarget': 'World rest-space rotation deltas; final hierarchy, joint positions, mesh and weights retained',
-          'portrait': [1080, 1080]}
+          'material': material, 'portrait': [1080, 1080]}
 (output / 'model-qa.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
 print('BOSS8_GAME_PREPARED', json.dumps({k:v for k,v in report.items() if k!='restDifferences'}), flush=True)

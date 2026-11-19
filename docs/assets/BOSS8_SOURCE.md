@@ -17,3 +17,11 @@
 正式接線：`images/models/npc3d/boss8.glb`、`images/sprites/boss/boss8_gargoyle.png`。NPC.xlsx的NPC第489列 `tower_boss_8` 管理名稱「石像鬼」、備註「外觀：石像鬼1｜」、頭像及Walk／Attack1～3／Die。對應封魔塔第8／58／108層；其他材質與獨立列保持原樣。既有光屬性、火球／治癒技能、出手頻率、射程、移速及倍率不變，遊戲沿用既有NPC 3D流程按戰鬥出手間隔調速，死亡原速播放。
 
 重製：`blender -b --python-exit-code 1 -P tools/boss8/prepare_game.py -- <approved-v4.blend> <formal-BOSS8.glb> <exports>`；驗證：`blender -b --python-exit-code 1 -P tools/boss8/verify_game.py -- <boss8.blend> <formal-BOSS8.glb> <validation.json>`；匯出及雜湊：`node tools/boss8/export.cjs --apply`／`--check`。
+
+## 第二套材質（2026-11-19）
+
+使用者提供 `BOSS8_2.glb`，SHA-256 `8f026595ce2dca45026633922ce00a79b56a5160a73719bd891d44d44f14d714`。第二套為青綠石膚、紫色角與翼緣，18,030頂點／10,338三角面／70骨骼；尾骨的長度及方向和第一套不同。沿用核准v4動作來源，直接對應到第二套自己的靜止骨架，保留第二套網格、UV、蒙皮、尾鏈及三張正式貼圖，沒有將第二套材質套回首套網格。
+
+素材庫 `codex-authored/boss8-gargoyle-variant2-20261119/` 保存原檔、`exports/boss8_lv2.blend`、五動作 `boss8_lv2.glb`、1080透明頭像及工具／QA／清單。動作與首套時長相同，死亡段逐150FPS幀依第二套表面修正接地，避免長尾在補間幀穿地；第一套素材包及正式輸出保持原樣。製作命令最後加參數 `2`，即可使用第二套輸出檔名；驗證工具接受第二套blend及原檔。
+
+NPC.xlsx第499列 `tower_boss_18` 管理第18／68／118層，名稱「石像鬼」、備註「外觀：石像鬼2｜」，模型為 `images/models/npc3d/boss8_lv2.glb`，頭像為 `sprites/boss/boss8_gargoyle_lv2.png`。技能、屬性、攻速、射程、移速、倍率及其他列保持。`node tools/boss8/export.cjs --apply --variants`／`--check --variants` 處理第二套；實機 `node tools/boss8/verify_ingame.cjs <output> 18`。

@@ -50,7 +50,7 @@ for name, seconds in durations.items():
         lows.append(min(p.z for p in points))
         spans.append(max(max(p[i] for p in points)-min(p[i] for p in points) for i in range(3)))
         tips.append(arm.pose.bones['Bone_015'].head.copy())
-    assert min(lows) > .005, (name, 'ground penetration', min(lows))
+    assert min(lows) > .005, (name, 'ground penetration', frames[lows.index(min(lows))], min(lows))
     assert max(spans) < 4, (name, 'exploding mesh')
     start, final = surface(name, 0), surface(name, end)
     error = max((p-q).length for p,q in zip(start,final))
@@ -74,7 +74,7 @@ bpy.ops.import_scene.gltf(filepath=str(source))
 added = set(bpy.data.objects)-existing
 donor_arm = next(o for o in added if o.type=='ARMATURE')
 donor = next(o for o in added if o.type=='MESH' and o.vertex_groups)
-assert len(body.data.vertices)==len(donor.data.vertices)==18029
+assert len(body.data.vertices)==len(donor.data.vertices)>18000
 assert [tuple(p.vertices) for p in body.data.polygons]==[tuple(p.vertices) for p in donor.data.polygons]
 assert max((a.co-b.co).length for a,b in zip(body.data.vertices,donor.data.vertices))<.00001
 assert max((a.uv-b.uv).length for a,b in zip(body.data.uv_layers.active.data,donor.data.uv_layers.active.data))<.000001
