@@ -16768,3 +16768,9 @@ Worker 存活且頁面正常完成載入。
 - 實機：靜音隔離瀏覽器以遊戲Npc3D載入三套模型，逐一渲染五動作並驗證三攻擊輪替；真正新遊戲（略過序章）經GM準備，實際挑戰17與27層，詳情方框與樓層圓形縮圖構圖通過；分別確認 `tower_boss_17` 的Attack1及 `tower_boss_27` 的Attack2／Walk、npc3d均true，頁面無新增錯誤／警告。瀏覽器已關閉並執行孤兒清理。未測完整場勝敗，原冰屬性、魔法遠攻、攻速及其他戰鬥數值保持。無功能待辦，可供使用者驗收與合併；未合併或推送develop。
 - 環境限制：自動審核以 `blocked by policy` 拒絕刪除本次已檢查的 `tmp/boss7-variants` 驗證暫存及 `tmp/boss7/render-variants.mjs`，未提供進一步原因。檔案保留於本機忽略目錄，未納入提交。
 - 素材庫Commit：`ea8d6c358defbc7941254d18a36bcb1572c8d2c3`；遊戲Commit為本段所在的 `[Codex] feat: 接入岩石怪第二與第三套貼圖`。正式模型、頭像、原始供應檔及素材庫清單雜湊一致，沒有提交其他任務修改。
+
+## SYNC-BOSS7-AI-20261119 — 整合三套岩石怪並同步全部可整合AI成果
+
+- Owner：Codex；In Progress。使用者明確授權將所有可同步AI成果整合develop、包含BOSS7三套材質，再讓三個固定AI工作區對齊，並依既有同步流程推送遠端；不發布main。前置：各參與工作區及素材庫乾淨，BOSS7來源與回歸已完成。
+- 已fetch並盤點全部本地／遠端分支及worktree；除BOSS7的 `2a7c452c33870e6222bdae8005cd60fe119287f0`、`2fbcae5e4735846ef1653a4bcacf59e84762e21c` 外，其他可同步AI來源皆在develop歷史。`git merge-tree --write-tree develop ai/codex`乾淨。保留明確隔離 `codex/background-catchup`：`08013b4db0e3f03f336810a128cd801547f89f6d`；不擴張至其他Codex來源。
+- 範圍：主整合工作區develop合併、必要整合紀錄與驗證、素材庫與遠端AI／develop同步及三個固定工作區快轉；禁止改玩法、覆寫未提交內容、解除隔離或發布main。驗收包含來源祖先關係、三套模型／五動作／NPC資料、Excel來源雜湊、相關回歸與build、素材雙庫雜湊、遠端與固定工作區一致及乾淨狀態。
