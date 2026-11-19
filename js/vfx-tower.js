@@ -177,6 +177,7 @@ var VFXTower = (function () {
               adapter.registerPresets(presets);
               S.app = app;
               S.adapter = adapter;
+              if (typeof GameVisibility !== 'undefined') GameVisibility.trackTicker(app.ticker);
               if (typeof GameClock !== 'undefined') {
                 GameClock.trackTicker(app.ticker);
                 GameClock.trackCanvas(app.canvas, function () { app.render(); });

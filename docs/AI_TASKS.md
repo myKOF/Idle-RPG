@@ -1,3 +1,16 @@
+## DESKTOP-BACKGROUND-IDLE-20261119 — 桌面背景持續掛機與顯示降載
+
+- Owner：Codex；Done，單一開發者。使用者授權直接修正、實測並提交。前置為現有 Electron 外殼及 Worker 背景在線／欠帳補算；fetch 與逐檔衝突預檢乾淨。
+- 允許修改 Electron 主行程／preload／視窗活動模組、共用顯示狀態模組、bridge／UI／戰鬥畫布／DOM與塔特效／開始選單背景／戰鬥音效、主頁快取、背景回歸及桌面實測工具、LV與本段。禁止改動戰鬥公式、Worker協議／存檔格式、配置表及素材，不合併或推送。
+- 驗收正式執行模式下失焦與最小化持續模擬／收益／自動存檔、主要繪圖停止／背景特效不補播、還原刷新最新狀態、選單暫停相容、網頁顯示相容與IPC守門。使用隔離資料夾與靜音，不碰使用者存檔；相關回歸、Build、Electron實測後提交，交使用者驗收與整合。
+
+- 完成：正式與一般開發桌面視窗統一關閉背景節流；原生 focus／blur／minimize／restore／show／hide 經受守門 IPC 與 preload 合併到 GameVisibility。只暫停戰鬥、共享與塔 Pixi ticker／開始選單背景，UI／Worker 背景視覺分流略過過期特效與音效，切走清除既有特效、浮字與延遲佇列，回前景刷新資料。先包活動狀態、後包 GameClock，保留選單暫停與手動 ticker stop 意圖。原有欠帳補算、戰鬥公式、協議與存檔格式不變。
+- 修改：electron/main.cjs／preload.cjs／window-activity.cjs、js/game-visibility.js／bridge.js／ui.js／battle-renderer.js／vfx.js／vfx-tower.js／start-menu-background.js／sfx.js、主頁快取、tests/desktop-background.test.cjs、tools/desktop/verify_background.cjs、LV及本段。唯讀核對 game-clock、sim.worker、shim、Electron 存檔／出貨及冒煙路徑、背景／Loading／音樂回歸。無素材修改或素材庫交付。
+- 同工作區迷你視窗任務與本次共用 main／preload／ui／主頁／LV／任務紀錄：保留雙方不同區段，UI 快取統一 background-mini-v1；按各自內容分段提交，不納入對方 String 或迷你視窗未完成內容。UI 三方試合乾淨；其他共享檔案的試合標出鄰接插入（活動／迷你 API 與各自任務段落），按迷你任務已記錄的使用者同意保留兩邊，人工核對組合與各自候選內容。沒有協議／戰鬥公式語意相依。
+- 回歸：本次獨立候選內容的14份相關回歸105/105通過，含新增5項原生狀態、查詢競態、網頁visibility、ticker與選單交錯、IPC／快取。擴大原工作區154項135通過，19項失敗（Loading缺QuestGuide 16項、UI舊斷言2項、Zones音樂配置1項）逐項在HEAD重現。另一任務更新String時一度造成編輯器字串快取落後；本次獨立候選無此差異，沒有修改String或編輯器。npm.cmd run build通過750檔，Electron三支另跑node --check通過，Git差異檢查通過。
+- 實測：node tools/desktop/verify_background.cjs 使用真正Electron 44.10.1與app://game，一般模式（無--smoke／無--internal）、獨立臨時profile及靜音。失焦18秒GT增加17.990秒、金幣52808→56774、ticker幀92→92、自動存檔1→2；最小化18秒GT增加17.890秒、金幣58682→61762、幀153→153、自動存檔3→4。背景fx／浮字／延遲佇列皆0；還原恢復繪圖與最新介面，選單暫停GT保持44.603秒、解除後繼續。頁面錯誤／Worker錯誤／存檔錯誤／重啟皆0，磁碟產生IC_autosave_app-game.json，立即存檔Promise落地成功，查看還原畫面正常。腳本初輪路徑／回傳序列化／取樣欄位／Promise等待問題均已修正後重跑，實測也修正停止ticker時舊浮字殘留，未放寬斷言。測試視窗與profile已關閉清除。
+- 交接：Commit 為本段所在的 [Codex] fix: 修正桌面背景掛機並降低繪圖負載；無本次未完成項目，可供使用者驗收及合併。未合併／推送develop或main；執行中的舊桌面程式需退出再啟動，既有安裝包需重新打包才含修正。未驗證OS睡眠／休眠持續運算（沿用恢復後補算）。
+
 ## GM-PANEL-ENTER-20261119 — 指令送出後保留面板與 Enter 取回焦點
 
 - Owner：Codex；Done，單一開發者。使用者要求 GM 指令送出後保留結果，面板失焦時 Enter 重新取得輸入焦點。前置為既有 GM 面板；fetch 與逐檔衝突預檢乾淨。

@@ -52,6 +52,7 @@ var Menu = electron.Menu;
 var ipcMain = electron.ipcMain;
 var AppProtocol = require('./app-protocol.cjs');
 var SaveFiles = require('./save-files.cjs');
+var WindowActivity = require('./window-activity.cjs');
 
 /* ---- 啟動參數 ---- */
 function argValue(name) {
@@ -360,11 +361,12 @@ function createWindow() {
       spellcheck: false,
       // 由下面的 HTML 全螢幕事件統一切換原生視窗。
       disableHtmlFullscreenWindowResize: true,
-      // 背景冒煙測試的視窗從不顯示：不關節流的話頁面會被判成隱藏、畫格停止，Loading 永遠不揭幕
-      backgroundThrottling: !(OPTS.smoke && !OPTS.smokeOnScreen)
+      // 背景仍為在線掛機；繪圖由原生視窗活動狀態獨立降載。
+      backgroundThrottling: false
     }
   });
   mainWindow = win;
+  win.activity = WindowActivity.bindWindowActivity(win, { alwaysActive: OPTS.smoke && !OPTS.smokeOnScreen });
   var url = startUrl();
   var wc = win.webContents;
   log('[desktop] 啟動', app.getVersion(), 'electron', process.versions.electron, '→', url, EDITION === 'demo' ? '（demo 版）' : '');
@@ -580,6 +582,10 @@ function setupSaveIpc() {
 }
 
 function setupDisplayIpc() {
+  ipcMain.handle('activity:get', function (event) {
+    if (!trustedSender(event)) throw new Error('Untrusted activity sender');
+    return mainWindow.activity.get();
+  });
   ['get', 'setMode', 'toggle', 'setResolution', 'setVsync'].forEach(function (action) {
     ipcMain.handle('display:' + action, function (event, ...args) {
       if (!trustedSender(event)) throw new Error('Untrusted display settings sender');

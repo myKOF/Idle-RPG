@@ -2013,7 +2013,7 @@ function resetPerfHint() {
 }
 function perfHintTick() {
   var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-  if (document.hidden) {
+  if (uiRenderingSuspended()) {
     perfHintSamples.length = 0;
     perfHintFrames = 0;
     perfHintLast = 0;
@@ -7017,7 +7017,7 @@ function bindForgeStoneControls(send) {
       function repeat() {
         if (hold.pointerId === null) return;
         var current = forgeViewState(uiForgePanelSnapshot()), p = (uiHeaderPanelSnapshot() || {}).player;
-        if (!current || !p || current.crafting || !UI.forgeStoneOpen || UI.tab !== 'forge' || document.hidden || isUiCommandPending(nodePendingKey('forge'))) {
+        if (!current || !p || current.crafting || !UI.forgeStoneOpen || UI.tab !== 'forge' || uiRenderingSuspended() || isUiCommandPending(nodePendingKey('forge'))) {
           finishForgeStoneHold(true);
           return;
         }
@@ -7039,7 +7039,7 @@ function bindForgeStoneControls(send) {
   });
   document.addEventListener('pointerup', function (event) { if (event.pointerId === hold.pointerId) finishForgeStoneHold(); }, true);
   document.addEventListener('pointercancel', function (event) { if (event.pointerId === hold.pointerId) finishForgeStoneHold(); }, true);
-  document.addEventListener('visibilitychange', function () { if (document.hidden) finishForgeStoneHold(); });
+  document.addEventListener('visibilitychange', function () { if (uiRenderingSuspended()) finishForgeStoneHold(); });
   window.addEventListener('blur', function () { finishForgeStoneHold(); });
 }
 function forgeInventoryTab(forge) { return forge && forge.operation === 'gem' ? 'gems' : 'items'; }
@@ -7646,7 +7646,7 @@ function renderTowerFight() {
 }
 
 function uiRenderingSuspended() {
-  return typeof document !== 'undefined' && document.hidden;
+  return typeof document !== 'undefined' && (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden);
 }
 
 var UI_BATTLE_RENDER_IDLE_MS = 400;
@@ -7679,6 +7679,7 @@ function handleVisibilityChange() {
     // 背景分頁會暫停 CSS animation 與 timer；保留這些節點會讓過期的
     // 領域／光束／粒子在回到前景時一起恢復，形成特效堆積。
     if (typeof vfxSetEnabled === 'function') vfxSetEnabled(false);
+    if (typeof VFXTower !== 'undefined') VFXTower.stop();
     clearBackgroundEnemyFloats();
     return;
   }
@@ -11421,6 +11422,7 @@ function initUI() {
     document.addEventListener('fullscreenchange', syncPageFullscreenKeyboard);
     syncPageFullscreenKeyboard();
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('gamevisibilitychange', handleVisibilityChange);
     document.addEventListener('pointerdown', noteUiInteraction, true);
     document.addEventListener('keydown', noteUiInteraction, true);
 

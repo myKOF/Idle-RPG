@@ -24,6 +24,14 @@ electron.contextBridge.exposeInMainWorld('ApexHost', {
   quit: function () { ipc.send('apexhost:quit'); },
   // 用檔案總管打開存檔資料夾（userData/saves，固定位置、不可自選）
   openSaveFolder: function () { return ipc.invoke('saves:open-folder'); },
+  activity: {
+    get: function () { return ipc.invoke('activity:get'); },
+    onChange: function (fn) {
+      var listener = function (_event, state) { fn(state); };
+      ipc.on('activity:change', listener);
+      return function () { ipc.removeListener('activity:change', listener); };
+    }
+  },
   display: {
     get: function () { return ipc.invoke('display:get'); },
     setMode: function (mode) { return ipc.invoke('display:setMode', mode); },

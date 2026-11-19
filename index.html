@@ -1249,6 +1249,7 @@
          save                   SaveStorage 重用其 I/O 與存檔索引
        已移除（主執行緒零呼叫，只在 Worker 內跑）：
          special_rules / legendary / factory / newforge / forge / gm_exec -->
+  <script src="js/game-visibility.js?v=20261119-background-v1"></script>
   <script src="js/util.js?v=1.0.4"></script>
   <script src="js/strings_data.js?v=2ed01140"></script>
   <script src="js/strings.js?v=1.0.1"></script>
@@ -1267,7 +1268,7 @@
   <script src="js/battle-terrain.js?v=1.0.6"></script>
   <script src="js/battlefield.js?v=20261109-treant-audio-sync-a54d6904"></script>
   <script src="js/game-clock.js?v=1.0.1"></script>
-  <script src="js/vfx.js?v=1.0.83"></script>
+  <script src="js/vfx.js?v=20261119-background-v1"></script>
   <!-- PixiJS（本地 vendor，零建置專案不用 CDN）＋ Canvas 戰鬥渲染器。
        渲染器只在主執行緒跑，模擬層與 Worker 完全不知道它存在。 -->
   <script src="js/vendor/pixi.min.js"></script>
@@ -1285,7 +1286,7 @@
   <script src="js/vfx-pixi-backend.js?v=20261105-celebration-v1"></script>
   <script src="js/vfx-runtime.js?v=20261119-develop-merge-1"></script>
   <!-- 高塔的第二個 Pixi 疊層：卡片版面沒有座標，尺寸規則也另立一組（見檔頭）。 -->
-  <script src="js/vfx-tower.js?v=1.0.3"></script>
+  <script src="js/vfx-tower.js?v=20261119-background-v1"></script>
   <!-- 戰場地形裝飾（地面色塊／擺件／天氣）：battle-renderer 的 init() 會建立它。
        decor-sculpt 是它的程序化浮雕繪圖（塑形＋打光），必須先載入。 -->
   <script src="js/decor-sculpt.js?v=1.0.0"></script>
@@ -1295,9 +1296,9 @@
   <script src="js/battle-arena.js?v=20261108-tower-bounds-gait"></script>
   <script src="js/battle-elite.js?v=20261102-black-outlines"></script>
   <script src="js/boss-oni-fx.js?v=20261114-oni-relic-sync-v1"></script>
-  <script src="js/battle-renderer.js?v=20261118-battle-npc-attribute"></script>
+  <script src="js/battle-renderer.js?v=20261119-background-v1"></script>
   <script src="js/sfx-synth.js?v=20261116-vacuum-twin"></script>
-  <script src="js/sfx.js?v=20261118-levelup-audio"></script>
+  <script src="js/sfx.js?v=20261119-background-v1"></script>
   <script src="js/stats.js?v=20261109-mystery-merchant"></script>
   <script src="js/item.js?v=20261119-develop-merge-1"></script>
   <script src="js/gem_resonance.js?v=1.0.10"></script>
@@ -1318,7 +1319,7 @@
   <script src="js/save.js?v=20261119-develop-merge-1"></script>
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261118-opening-music-handoff"></script>
-  <script src="js/ui.js?v=20261119-develop-merge-1"></script>
+  <script src="js/ui.js?v=20261119-background-mini-v1"></script>
   <script src="js/ui-unlock-notices.js?v=20261103-unlock-any-action"></script>
   <script src="js/ui-world-map.js?v=20261118-quest-guide"></script>
   <script src="js/quest-guide.js?v=20261119-develop-merge-1"></script>
@@ -1346,7 +1347,7 @@
   <script src="js/intro-scene.js?v=20261117-fixed-canvas-v1"></script>
   <script src="js/intro-audio.js?v=20261118-finale-fade"></script>
   <script src="js/intro-player.js?v=20261118-intro-width"></script>
-  <script src="js/bridge.js?v=20261119-boss8-material3-v1"></script>
+  <script src="js/bridge.js?v=20261119-background-v1"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->
@@ -1357,7 +1358,7 @@
   <script src="js/lagprobe.js?v=20261111-merchant-layout"></script>
   <script src="js/display-settings-ui.js?v=20261118-topbar-restore"></script>
   <script src="js/game-menu.js?v=20261119-game-help-merge"></script>
-  <script src="js/start-menu-background.js?v=1.0.13"></script>
+  <script src="js/start-menu-background.js?v=20261119-background-v1"></script>
   <script src="js/start-menu.js?v=20261118-opening-animation"></script>
   <script src="js/ai-key-setting.js?v=20261119-invite-v1"></script>
   <!-- 桌面版 Steam 成就轉發（網頁版為空操作）；main.js 的 enterGame 會用到 -->

@@ -947,7 +947,7 @@ var StartMenuBackground = (function () {
 
     function tick(now) {
       frame = null;
-      if (disposed || !inView || document.hidden || !root.isConnected) {
+      if (disposed || !inView || (typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden) || !root.isConnected) {
         previous = null;
         return;
       }
@@ -962,7 +962,7 @@ var StartMenuBackground = (function () {
     }
 
     function syncPlayback() {
-      const play = ctx && inView && !disposed && !document.hidden && root.isConnected;
+      const play = ctx && inView && !disposed && !(typeof GameVisibility !== 'undefined' ? GameVisibility.isHidden() : document.hidden) && root.isConnected;
       if (play && frame === null) frame = requestAnimationFrame(tick);
       if (!play && frame !== null) {
         cancelAnimationFrame(frame);
@@ -996,6 +996,7 @@ var StartMenuBackground = (function () {
     resize.observe(root);
     visibility.observe(root);
     document.addEventListener('visibilitychange', syncPlayback);
+    document.addEventListener('gamevisibilitychange', syncPlayback);
 
     const atlas = new Image();
     if (ctx) atlas.src = new URL('cloth-atlas.webp', ASSETS);
@@ -1038,6 +1039,7 @@ var StartMenuBackground = (function () {
         resize.disconnect();
         visibility.disconnect();
         document.removeEventListener('visibilitychange', syncPlayback);
+        document.removeEventListener('gamevisibilitychange', syncPlayback);
         surface.width = surface.height = 0;
         gateSurface.width = gateSurface.height = 0;
         sprites = null;
