@@ -174,8 +174,9 @@ naive 版本 20 分鐘內就少了 7% 金幣、少一級。**用它跑出來的�
 
 倍率是**量測值**，每次 `run_sim.js` 都會把實測寫進 `run_summary.json`，不是設定值。
 
-⚠️ 上面那組數字是**沒有策略**的純模擬吞吐（`bench_sim.js`）。開了 ROI 策略之後
-主導成本完全不同——見下一節。
+⚠️ 上面那組數字是**沒有策略**的純模擬吞吐（`bench_sim.js`），而且是很早期、系統還少的時候量的。
+開了 ROI 策略之後主導成本完全不同——見下一節。2026-11-20 的現況（後期存檔，含策略約 300x、
+純遊戲約 700x）與造成十倍差距的 vm 攔截器，見下方 ⑦。
 
 已做的優化（全部經雜湊驗證等價）：
 
@@ -343,6 +344,48 @@ ROI 每輪都讀 `eval.affixRoi`（`roi` 排序）與 `eval.resources`（`stopLo
 ⚠️ 前提是**建面板不改遊戲狀態**。已知唯一的例外在休眠：④ 提到的 `itemEnchants` 就地正規化，
 現在 `ENCHANT_ENABLED=false` 時不會發生。重開附魔後等價測試會因為正規化時機不同而紅燈——
 遊戲行為不受影響，正解是讓 `itemEnchants` 不改物件，不是回頭全建面板。
+
+### ⑦ vm 全域攔截器：遊戲本體九成的時間不在遊戲裡（2026-11-20）
+
+**發現**：拿掉 AI 層之後，遊戲本體在 headless 只有 53x（後期）。剖析的熱點全是極小的函式
+（`bfPos`、`bfNum`、`skills2Levels`），一行程式卻佔 5~8%。原因是引擎把沙盒物件交給
+`vm.createContext` contextify：那種 context 的全域物件前面有一層攔截器，**每一次讀全域變數**——
+`G`、`FIELD`、跨檔呼叫的每一支函式——都要先過一趟 C++ 回呼。
+
+| 同一個迴圈讀全域 1e7 次 | 動態（`self[name]`） | 直接（識別字） |
+| :--- | ---: | ---: |
+| 一般 context | 10 ms | 48 ms |
+| contextify 的 vm context | 3,020 ms | 2,578 ms |
+| `vm.constants.DONT_CONTEXTIFY` | 7 ms | 40 ms |
+
+**修正**：`engine.js` 與 `policy.js` 改用 `DONT_CONTEXTIFY`（Node 22.8+，沒有就退回舊做法）。
+新的全域是普通物件，替身照舊一個個掛上去；`createEngine({ contextify: true })` 保留舊做法供對照。
+策略 context 的 `this.constructor.constructor` 拿到的是 context 自己的 `Function`，
+`scripts/test_policy_isolation.js` 的 12 項逃逸反證全部仍然擋住。
+
+**同一輪的其他四項**（都是「算一次就好、卻每次重算」，結果逐位相同）：
+
+| 項目 | 改法 |
+| :--- | :--- |
+| 觀測每秒深拷貝整個 `battle` 面板（後期 36KB，其中 `field.monsters` 29KB，沒有任何策略讀） | 策略宣告 `panelParams.battle["field.monsters"] = false`，`engine.panel` 淺拷貝時略過；鍵名寫成路徑，`assertPanelParams` 會擋下任何指到它的規則 |
+| 面板按需建立重跑時整份 state 重新序列化（背包完整版 91KB） | `policy.js stateJson`：同一輪內逐面板快取 JSON 字串，輸出與 `JSON.stringify` 逐字相同（有測試） |
+| 成就檢查每條寶石成就各掃一次背包所有寶石孔（約 5%） | `achGemTopByType` 比照 `achOwnedItems` 在同一趟檢查內共用 |
+| 技能施放閘門對整群敵人逐隻重算技能等級與施法距離（約 6%） | `skills2ReachTester`：同一個群組只算一次，判定與 `skills2CanReach` 相同 |
+
+**收益**（雜湊全部與改動前相同）：
+
+| 跑法 | 改動前 | 改動後 | 倍數 |
+| :--- | ---: | ---: | ---: |
+| 遊戲本體，Lv.237 存檔 0.5h | 33.9 s（53x） | 2.5 s（730x） | 13.6 |
+| 遊戲本體，場上 100 隻的存檔 0.5h | 48.9 s（37x） | 4.3 s（417x） | 11.4 |
+| extreme 完整模擬，Lv.237 存檔 0.5h | 44.8 s（40x） | 5.5 s（327x） | 8.1 |
+| extreme 完整模擬，新開局 2h | 86.9 s（83x） | 15.6 s（463x） | 5.6 |
+
+7 份策略新開局 1 小時的存檔雜湊與改動前逐一相同。`tests/sim-engine-context.test.cjs` 盯著新舊 context 的等價。
+
+⚠️ 教訓：之前幾輪的熱點優化（`bfNum` 快速路徑、`skills2Levels` 快取…）都是對著
+**被攔截器放大過的**剖析圖做的——它們是真的熱點，但真正的成本在每一次全域讀取上，
+不在那幾支函式裡。剖析結果全是「一行程式卻很貴」時，先懷疑執行環境。
 
 ### 還沒做的：`computeStats` 的逐件貢獻拆分
 

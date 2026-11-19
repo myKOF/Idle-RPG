@@ -25,6 +25,7 @@
     "merchantPlan"
   ],
   "panelParams": {
+    "battle": { "field.monsters": false, "依據": "場上每隻怪的完整物件（後期 100 隻約 29KB），沒有任何規則讀它（讀的是單數的 field.monster）。觀測每遊戲秒深拷貝一次，佔整場約 14%（docs/SIM_HARNESS.md ⑦）" },
     "inv": {
       "items": false,
       "items_依據": "本策略從不讀 panels.inv.items——換裝走 panels.eval.slotUpgrades（問遊戲『穿上去戰力升不升』），不是背包清單的字典序，所以沒有 bestPerSlot 規則。而那份清單要對每一件跑一次 itemScore：深局背包 300 件時單次 4.4 ms、每 5 遊戲秒一次，實測佔 headless 總 CPU 的 16%，外加 129KB 的序列化與深拷貝。其餘欄位（count / cap / equipmentScores / equipmentRarities / books / expandCost / equipmentEnchantInfo）全部照建，所以背包壓力閥與換裝門檻都不受影響。宣告錯了由 scripts/sim/policy.js 的 assertPanelParams 在載入時擋下，不會靜靜失效"

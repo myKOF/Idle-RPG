@@ -70,11 +70,40 @@ function assertPanelParams(policy) {
   walk(policy);
 }
 
+/* 與 JSON.stringify(state) 逐字相同的序列化，但 state 的頂層欄位與 state.panels 的每個面板
+   各自查快取。頂層與 panels 都是一般物件，鍵順序就是 Object.keys 的順序，與 stringify 一致；
+   值為 undefined／函式的鍵照 stringify 的規則省略。 */
+function stateJson(state, cache) {
+  const one = (v) => {
+    if (v === null || typeof v !== 'object') return JSON.stringify(v);
+    let s = cache.get(v);
+    if (s === undefined) { s = JSON.stringify(v); cache.set(v, s); }
+    return s;
+  };
+  const obj = (o, inner) => {
+    const parts = [];
+    for (const k of Object.keys(o)) {
+      const s = inner ? inner(k, o[k]) : one(o[k]);
+      if (s !== undefined) parts.push(JSON.stringify(k) + ':' + s);
+    }
+    return '{' + parts.join(',') + '}';
+  };
+  return obj(state, (k, v) => (k === 'panels' && v && typeof v === 'object' && !Array.isArray(v)) ? obj(v) : one(v));
+}
+
 function createPolicy(policy) {
   assertPanelParams(policy);
   /* 空 context：沒有 require / process / console / G / FIELD。
-     連 Math.random 都沒有——策略不該有隨機性，否則決定論就斷了。 */
-  const ctx = vm.createContext(Object.create(null));
+     連 Math.random 都沒有——策略不該有隨機性，否則決定論就斷了。
+
+     用 DONT_CONTEXTIFY 建：contextify 的 context 每讀一次全域（直譯器的每一支函式呼叫）
+     都要過攔截器，慢 60~300 倍（見 engine.js 同名說明）。新的全域是 context 自己的普通物件，
+     `this.constructor.constructor` 拿到的是 **context 自己的** Function——在裡面執行
+     仍然看不到 process／require／G（scripts/test_policy_isolation.js 逐項反證）。
+     Node 太舊時退回舊做法。 */
+  const ctx = (vm.constants && vm.constants.DONT_CONTEXTIFY)
+    ? vm.createContext(vm.constants.DONT_CONTEXTIFY)
+    : vm.createContext(Object.create(null));
   /* vm context 一定會帶進 ECMAScript 內建物件，其中兩個必須拔掉：
        Math.random  策略若自己擲骰，同 seed 就不再重現，所有比對失效
        Date.now     策略若讀真實時間，行為會隨執行時刻改變
@@ -182,8 +211,11 @@ function createPolicy(policy) {
        lazy：{ 面板名: null（沒建）| [已有欄位] }。回傳 { cmds } 或 { needPanel }；
        後者時 context 內的 memo 已還原，驅動端補建面板後用同一份 state 重呼叫即可。
        隔離不變：進出一律 JSON round-trip，context 裡仍然沒有任何宿主函式。 */
-    decideLazy(state, lazy) {
-      ctx.__state = JSON.parse(JSON.stringify(state));
+    decideLazy(state, lazy, jsonCache) {
+      /* jsonCache（WeakMap：物件 → JSON 字串）：同一個決策點的重跑之間共用。
+         重跑時 state 裡只有新補建的那個面板不一樣，其餘面板（背包完整版約 91KB）
+         不必每次重新序列化。只快取「物件 → 字串」，內容與直接 JSON.stringify(state) 逐字相同。 */
+      ctx.__state = JSON.parse(jsonCache ? stateJson(state, jsonCache) : JSON.stringify(state));
       ctx.__lazy = JSON.parse(JSON.stringify(lazy || {}));
       const r = vm.runInContext('decideLazy(__state, __policy, __memo, __lazy)', ctx);
       return JSON.parse(JSON.stringify(r));
@@ -205,4 +237,4 @@ function createPolicy(policy) {
   };
 }
 
-module.exports = { createPolicy };
+module.exports = { createPolicy, stateJson };

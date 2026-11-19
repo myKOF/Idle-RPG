@@ -93,6 +93,21 @@ test('連續兩輪都讀的面板，第三輪起預先建好、不再重跑', ()
   assert.equal(sup.stats.retries, before, 'c 應已預先建好');
 });
 
+test('重跑用的分段序列化與 JSON.stringify 逐字相同（含 undefined／函式／NaN／日期／陣列）', () => {
+  const { stateJson } = require(path.join(ROOT, 'scripts/sim/policy.js'));
+  const shared = { deep: { a: [1, { b: null }], c: 'x' } };
+  const state = {
+    view: { stage: 3, nan: NaN, inf: Infinity, d: new Date(0), u: undefined },
+    panels: { a: shared, b: [1, 2, { z: undefined }], c: null, gone: undefined, fn() {} },
+    gameTimeSec: 12.5, seed: undefined, f: function () {}, arr: [undefined, () => 1, 3],
+    ctx: { '鍵': '中文' }
+  };
+  const cache = new WeakMap();
+  assert.equal(stateJson(state, cache), JSON.stringify(state));
+  assert.equal(stateJson(state, cache), JSON.stringify(state), '第二次走快取仍須相同');
+  assert.equal(stateJson({ view: 1, panels: [1, 2] }, cache), JSON.stringify({ view: 1, panels: [1, 2] }));
+});
+
 /* ---- 真的遊戲引擎：兩種跑法並排推進 ---- */
 function lockstep(policyFile, seed, minutes) {
   const { createEngine } = require(path.join(ROOT, 'scripts/sim/engine.js'));

@@ -2805,6 +2805,7 @@
     ]
   },
   "panelParams": {
+    "battle": { "field.monsters": false, "依據": "場上每隻怪的完整物件（後期 100 隻約 29KB），沒有任何規則讀它（讀的是單數的 field.monster）。觀測每遊戲秒深拷貝一次，佔整場約 14%（docs/SIM_HARNESS.md ⑦）" },
     "equipSets": {
       "topN": 3,
       "profiles": {

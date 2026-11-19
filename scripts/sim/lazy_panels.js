@@ -77,10 +77,14 @@ function createPanelSupplier(opts) {
       }
     }
     const state = makeState(panels);
+    /* 這一輪的序列化快取：重跑之間只有新補建的面板要重新序列化（見 policy.js stateJson）。
+       面板物件在這一輪內不會被改動（建好就只讀），所以以物件識別當鍵是安全的；
+       下一輪的面板都是新建的物件，快取自然作廢。 */
+    const jsonCache = new WeakMap();
     let r;
     for (let guard = 0; ; guard++) {
       if (guard > names.length + 1) throw new Error('面板按需建立：重跑次數超過面板數，直譯器的 LAZY 判斷可能有誤');
-      r = policy.decideLazy(state, { skip, part });
+      r = policy.decideLazy(state, { skip, part }, jsonCache);
       if (!r.needPanel) break;
       const n = r.needPanel;
       if (!(n in skip)) throw new Error('面板按需建立：策略要求的面板「' + n + '」不在待建清單裡');

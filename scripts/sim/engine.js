@@ -77,7 +77,7 @@ function createEngine(opts) {
   Object.getOwnPropertyNames(Math).forEach((k) => { MathCopy[k] = Math[k]; });
   MathCopy.random = rng;
 
-  const ctx = {
+  const env = {
     console,
     JSON,
     Math: MathCopy,
@@ -110,9 +110,32 @@ function createEngine(opts) {
       }
     }
   };
-  ctx.self = ctx;
-  ctx.globalThis = ctx;
-  vm.createContext(ctx);
+  /* ---- 為什麼用 DONT_CONTEXTIFY ----
+
+     舊做法是把 env 這個沙盒物件交給 vm.createContext「contextify」。那樣建出來的 context，
+     全域物件前面掛著一層攔截器：遊戲裡每一次讀全域變數——G、FIELD、跨檔呼叫的每一支函式、
+     bfNum 的 self[name]——都要先過一趟 C++ 回呼。實測同一個迴圈讀全域 1e7 次：
+       一般 context 10~48 ms、contextify 的 vm context 2,578~3,020 ms（慢 60~300 倍）。
+     模擬層每一步讀全域數千次，這是 headless 模擬最大的單一成本，比任何遊戲函式都大。
+
+     DONT_CONTEXTIFY（Node 22.8+）建出的是普通的全域物件，沒有攔截器；
+     宿主照樣用 ctx.X 讀寫，vm.runInContext 照樣能用。內建物件仍是 context 自己的一份
+     （與 contextify 時相同），替身（Math／Date／importScripts…）照舊一個個掛上去。
+     與舊做法的最終存檔雜湊逐位相同（tests/sim-engine-context.test.cjs）。
+
+     opts.contextify=true 或 Node 太舊時退回舊做法，供 A/B 量測與相容。 */
+  const useContextify = !!opts.contextify || !(vm.constants && vm.constants.DONT_CONTEXTIFY);
+  let ctx;
+  if (useContextify) {
+    ctx = env;
+    ctx.self = ctx;
+    ctx.globalThis = ctx;
+    vm.createContext(ctx);
+  } else {
+    ctx = vm.createContext(vm.constants.DONT_CONTEXTIFY);
+    for (const k of Object.keys(env)) ctx[k] = env[k];
+    ctx.self = ctx;
+  }
 
   /* 唯一的載入動作：跑真正的 Worker 進入點。它自己會 importScripts 那 20 支模擬層檔案，
      順序與線上完全一致——不在這裡自己列清單，列了就會有第二份載入順序要維護。 */
@@ -274,7 +297,22 @@ function createEngine(opts) {
       if (name === 'gemRules') return ctx.buildGemRulesPanel();       // 寶石比例與停用種類（harness 專用，見 evaluator.js）
       if (name === 'equipSets') return ctx.buildEquipSetsPanel(params); // 三套裝備（harness 專用，見 evaluator.js）
       if (name === 'eval') return ctx.buildEvalPanel(params || evalParams);
-      return ctx.buildPanel(name, params);
+      const out = ctx.buildPanel(name, params);
+      /* battle 面板的 field 就是遊戲活生生的 FIELD，其中 monsters 是場上每一隻怪的完整物件——
+         後期 100 隻時約 29KB，而觀測每遊戲秒都要把整份 state 深拷貝進策略 context。
+         實測那次拷貝每次約 0.6ms，比直譯器本身（約 0.02ms）貴 30 倍，佔整場時間 14%。
+         七份策略沒有任何一份讀 field.monsters（它們讀的是單數的 field.monster：目前鎖定的那一隻）。
+
+         策略以 panelParams.battle["field.monsters"] = false 宣告不需要它。鍵名刻意寫成路徑：
+         policy.js 的 assertPanelParams 會據此禁止任何規則指到 panels.battle.field.monsters，
+         宣告錯了在載入時就擋下，不會變成「規則永遠取不到值」的靜默失效。
+         只在 harness 這裡做淺拷貝，不動出貨給玩家的 sim.worker.js（UI 要畫怪就需要它）。 */
+      if (name === 'battle' && out && out.field && params && params['field.monsters'] === false) {
+        const field = {};
+        for (const k of Object.keys(out.field)) if (k !== 'monsters') field[k] = out.field[k];
+        return Object.assign({}, out, { field });
+      }
+      return out;
     },
 
     /* 策略以 policy.evalConfig 宣告要評估哪些詞條、每個部位精算幾個候選。
