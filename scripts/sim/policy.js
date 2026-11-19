@@ -188,6 +188,10 @@ function createPolicy(policy) {
         const v = pf[key];
         add(Array.isArray(v) ? v[0] : v);
       }
+      /* 生存瓶頸的死亡計數器要在 1Hz 觀測上取：死亡那一刻遊戲已經退關，
+         只在決策點取樣的話，「上一次觀測到的關卡」會是 5 秒前的，死在哪一關就記錯了。 */
+      const ss = policy.survivalStall || {};
+      for (const key of ['counter', 'stage', 'zone']) add(ss[key]);
       return out;
     })(),
     /* 評估器參數（要評估哪些詞條、每個部位精算幾個候選）。

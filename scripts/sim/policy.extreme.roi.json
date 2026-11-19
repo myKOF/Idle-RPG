@@ -25,7 +25,10 @@
     "merchantPlan"
   ],
   "panelParams": {
-    "battle": { "field.monsters": false, "依據": "場上每隻怪的完整物件（後期 100 隻約 29KB），沒有任何規則讀它（讀的是單數的 field.monster）。觀測每遊戲秒深拷貝一次，佔整場約 14%（docs/SIM_HARNESS.md ⑦）" },
+    "battle": {
+      "field.monsters": false,
+      "依據": "場上每隻怪的完整物件（後期 100 隻約 29KB），沒有任何規則讀它（讀的是單數的 field.monster）。觀測每遊戲秒深拷貝一次，佔整場約 14%（docs/SIM_HARNESS.md ⑦）"
+    },
     "inv": {
       "items": false,
       "items_依據": "本策略從不讀 panels.inv.items——換裝走 panels.eval.slotUpgrades（問遊戲『穿上去戰力升不升』），不是背包清單的字典序，所以沒有 bestPerSlot 規則。而那份清單要對每一件跑一次 itemScore：深局背包 300 件時單次 4.4 ms、每 5 遊戲秒一次，實測佔 headless 總 CPU 的 16%，外加 129KB 的序列化與深拷貝。其餘欄位（count / cap / equipmentScores / equipmentRarities / books / expandCost / equipmentEnchantInfo）全部照建，所以背包壓力閥與換裝門檻都不受影響。宣告錯了由 scripts/sim/policy.js 的 assertPanelParams 在載入時擋下，不會靜靜失效"
@@ -813,6 +816,136 @@
           {
             "when": [
               [
+                "ctx.survivalTier",
+                ">=",
+                2
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "topaz"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "diamond",
+                "lapis"
+              ]
+            ],
+            "依據": "生存瓶頸第 2 階（逐步加強，每階多換一格）：再換一格攻擊為物防／魔防。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                2
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "topaz"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "diamond",
+                "lapis"
+              ]
+            ],
+            "依據": "生存瓶頸第 2 階（逐步加強，每階多換一格）：再換一格攻擊為物防／魔防。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                1
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "ruby"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "topaz"
+              ]
+            ],
+            "依據": "生存瓶頸第 1 階（逐步加強，每階多換一格）：暴擊（紫水晶）換生命（黃玉）。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                1
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "sapphire"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "topaz"
+              ]
+            ],
+            "依據": "生存瓶頸第 1 階（逐步加強，每階多換一格）：暴擊（紫水晶）換生命（黃玉）。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
                 "ctx.skillMode",
                 "==",
                 "phys"
@@ -1166,6 +1299,136 @@
           {
             "when": [
               [
+                "ctx.survivalTier",
+                ">=",
+                2
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "topaz"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "diamond",
+                "lapis"
+              ]
+            ],
+            "依據": "生存瓶頸第 2 階（逐步加強，每階多換一格）：再換一格攻擊為物防／魔防。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                2
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "topaz"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "diamond",
+                "lapis"
+              ]
+            ],
+            "依據": "生存瓶頸第 2 階（逐步加強，每階多換一格）：再換一格攻擊為物防／魔防。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                1
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "ruby"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "topaz"
+              ]
+            ],
+            "依據": "生存瓶頸第 1 階（逐步加強，每階多換一格）：暴擊（紫水晶）換生命（黃玉）。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                1
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "sapphire"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "topaz"
+              ]
+            ],
+            "依據": "生存瓶頸第 1 階（逐步加強，每階多換一格）：暴擊（紫水晶）換生命（黃玉）。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
                 "ctx.skillMode",
                 "==",
                 "phys"
@@ -1514,6 +1777,136 @@
         "gems": "panels.gems.gems",
         "levelPath": "ctx.stageMax",
         "preferByLevel": [
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                2
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "topaz"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "diamond",
+                "lapis"
+              ]
+            ],
+            "依據": "生存瓶頸第 2 階（逐步加強，每階多換一格）：再換一格攻擊為物防／魔防。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                2
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "topaz"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "diamond",
+                "lapis"
+              ]
+            ],
+            "依據": "生存瓶頸第 2 階（逐步加強，每階多換一格）：再換一格攻擊為物防／魔防。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                1
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "ruby"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "topaz"
+              ]
+            ],
+            "依據": "生存瓶頸第 1 階（逐步加強，每階多換一格）：暴擊（紫水晶）換生命（黃玉）。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
+          {
+            "when": [
+              [
+                "ctx.survivalTier",
+                ">=",
+                1
+              ],
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "sapphire"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "topaz"
+              ]
+            ],
+            "依據": "生存瓶頸第 1 階（逐步加強，每階多換一格）：暴擊（紫水晶）換生命（黃玉）。黃玉＝生命、鑽石／青金石＝物防／魔防、黑曜石＝吸血、孔雀石／螢石＝物抗／魔抗；格擋寶石目前停用"
+          },
           {
             "when": [
               [
@@ -2060,6 +2453,36 @@
             ],
             "lists": [
               {
+                "list": "affixArmorPhys",
+                "when": [
+                  [
+                    "ctx.survivalTier",
+                    ">=",
+                    1
+                  ],
+                  [
+                    "ctx.skillMode",
+                    "==",
+                    "phys"
+                  ]
+                ]
+              },
+              {
+                "list": "affixArmorMagic",
+                "when": [
+                  [
+                    "ctx.survivalTier",
+                    ">=",
+                    1
+                  ],
+                  [
+                    "ctx.skillMode",
+                    "==",
+                    "magic"
+                  ]
+                ]
+              },
+              {
                 "list": "affixJewelCore",
                 "依據": "§1.1-2：項鏈、戒指必帶強化成功率、經驗加成、掉寶率各 1 條，材料足夠時三個部位都優先洗寶石鑲嵌率"
               },
@@ -2230,6 +2653,16 @@
           {
             "lists": [
               {
+                "list": "affixVsNormalRed",
+                "when": [
+                  [
+                    "ctx.survivalTier",
+                    ">=",
+                    1
+                  ]
+                ]
+              },
+              {
                 "list": "affixArmorPhys",
                 "when": [
                   "ctx.skillMode",
@@ -2289,6 +2722,11 @@
                     "ctx.stageMax",
                     ">=",
                     50
+                  ],
+                  [
+                    "ctx.survivalTier",
+                    "<",
+                    2
                   ]
                 ],
                 "依據": "§1.1-1：50 級關卡後開始加入爆率、爆傷"
@@ -2300,6 +2738,11 @@
                     "ctx.stageMax",
                     ">=",
                     50
+                  ],
+                  [
+                    "ctx.survivalTier",
+                    "<",
+                    2
                   ]
                 ]
               },
@@ -3139,5 +3582,19 @@
     "investAllow": [
       "upgrade-by-rarity-cap"
     ]
+  },
+  "survivalStall": {
+    "counter": "panels.battle.lootStats.sources.field.deaths",
+    "best": "panels.battle.stage.best",
+    "zone": "panels.battle.stage.zone",
+    "deathsAtStage": 10,
+    "stepDeaths": 5,
+    "stepMinSec": 600,
+    "maxTier": 2,
+    "skillTier": 2,
+    "farmExtraDeaths": 10,
+    "farmSec": 1800,
+    "farmBack": 10,
+    "依據": "player_strategy.md §2 敗因表「同關卡死亡次數過多→生存瓶頸」。使用者補充：10 次只是觸發線，觸發後逐步加強生存屬性，不是一次全換；逐步替換中只要過一次就算成功。最高關卡停在同一關期間累計死 deathsAtStage 次觸發第 1 階（寶石的暴擊格換生命、首飾生存詞條列為可保留、ROI 敗因改判 EHP），再多死 stepDeaths 次且距上次升階至少 stepMinSec 秒升第 2 階（再換一格攻擊為物防／魔防、防具放掉暴擊／爆傷、技能末格換生存類——學得起才換）。最高關卡一前進＝成功：歸零回到輸出配置。第 2 階後再死 farmExtraDeaths 次仍無效：退 farmBack 關掛 farmSec 秒再試。只改鑲嵌、不轉換寶石庫存（轉換是兩顆換一顆，來回切換會把紅寶石耗光）。實測 24h × 15 seed（docs/SIM_HARNESS.md ⑧）：最多 2 階時過 50 關 11→13 個、死亡中位 577→360；開到 4 階時 0 個——換掉主攻擊寶石就推不動了"
   }
 }

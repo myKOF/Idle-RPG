@@ -410,6 +410,103 @@ function hasAffixKey(item, key) {
 }
 
 /* 高頻觀測。只做戰鬥取樣與交戰結束的記帳，不碰背包。 */
+/* ============ 生存瓶頸：卡在同一關死太多次（player_strategy.md §2 敗因表最後一列） ============
+
+   「同關卡死亡超過 10 次以上時，以生存相關屬性為優先（生命／護盾／防禦／吸血／抗性／減傷／格擋），
+    亦可切換防禦性技能（技能點與金幣足夠時），若仍無效則回退至高 Efficiency 關卡掛機」
+
+   使用者補充（2026-11-20）：這不是硬指標。10 次是**觸發線**，觸發之後**逐步**加強生存屬性，
+   不是一次把全身換成生存；逐步替換的過程中只要有一次過得去，這個策略就成功了。
+
+   ---- 「同一關」是什麼 ----
+
+   這張地圖的最高關卡（單向棘輪）停在同一關、沒有往前推＝卡在同一關。數的是「最高關卡上一次前進之後」
+   累計的野外死亡。不用「死在哪一關」逐關數：實測卡在荒漠 41~49 的那幾場是在一整段牆裡來回
+   （過 41、死 45、退回 35、再過 41、死 44），逐關數的話單一關卡最多只到 7 次，觸發線永遠到不了。
+   最高關卡一往前推就是「過了一次」，與使用者說的成功條件同一件事。
+
+   ---- 逐步加強（survivalTier 1 → maxTier） ----
+
+   觸發後每再死 stepDeaths 次升一階。每一階換掉多少由策略資料決定（寶石分段、洗煉清單的 when 條件看
+   ctx.survivalTier），直譯器只負責數與升階。實測一次全換：物攻掉 70%，連第 30 關都打不動，牆反而往下移。
+
+   ---- 成功、回到正常、退回掛機 ----
+
+   成功     最高關卡往前推：死亡數與階段都歸零，配置回到輸出。又卡住就從第 1 階重新開始。
+   升階節奏 每多死 stepDeaths 次、且距上次升階至少 stepMinSec 秒，才升一階（一次最多升一階）。
+   退回掛機 已在最高階、又死了 farmExtraDeaths 次：退 farmBack 關、關掉自動推關掛 farmSec 秒；
+            時間到回去再試，要再死 farmExtraDeaths 次才會再退。
+   全部以計時器或次數為界，沒有「條件不滿足就一直改變行為」的路徑（docs/SIM_HARNESS.md 的死鎖教訓）。 */
+function survivalCfgNum(cfg, key, dflt) { return (typeof cfg[key] === 'number') ? cfg[key] : dflt; }
+
+function observeStageDeaths(state, policy, memo) {
+  var cfg = policy.survivalStall;
+  if (!cfg) return;
+  /* peekPath：開局第一場野外戰鬥之前 lootStats.sources.field 還不存在，那是正常的，不記成失效路徑。
+     路徑寫錯的話會變成永遠不觸發——tests/sim-survival-stall.test.cjs 用真引擎反證打過之後一定解得出數字。 */
+  var deaths = Number(peekPath(state, cfg.counter));
+  var best = Number(peekPath(state, cfg.best));
+  var zone = cfg.zone ? peekPath(state, cfg.zone) : undefined;
+  if (!memo.sst || memo.sst.zone !== zone) {
+    /* 換地圖：關卡編號從 1 重數，牆與階段全部作廢。 */
+    memo.sst = { zone: zone, last: memo.sst ? memo.sst.last : null, best: isFinite(best) ? best : 0,
+      since: 0, tier: 0, wall: 0, farm: null, farmBase: null };
+  }
+  var S = memo.sst;
+  if (isFinite(deaths)) {
+    /* 計數器只增不減；變小代表遊戲重建了統計，重新起算，不算成負的死亡數。 */
+    if (S.last !== null && deaths > S.last) S.since += deaths - S.last;
+    S.last = deaths;
+  }
+  if (isFinite(best) && best > S.best) {
+    /* 過了一次＝這個策略成功了：回到輸出配置。之後又卡住，就從第 1 階重新開始。
+       ⚠️ 曾經做成「階段保留，高過牆 clearMargin 關才歸零」。實測 24h × 15 seed 過 50 關的 seed
+       從 11 個掉到 2 個：前期本來就常死，第 2 小時就升到最高階、紅寶石全換黃玉（物攻 784 → 296），
+       之後推進慢到永遠走不到「高過牆 10 關」，整場卡在生存配置。 */
+    S.best = best;
+    S.since = 0; S.tier = 0; S.wall = 0; S.tierAt = null;
+    S.farm = null; S.farmBase = null;
+  }
+}
+
+/* 決策點：升階、退回掛機的計時，並把狀態寫進 ctx。要在 state.ctx 建好之後呼叫。 */
+function updateSurvivalContext(state, policy, memo) {
+  var cfg = policy.survivalStall;
+  if (!cfg) return;
+  observeStageDeaths(state, policy, memo);
+  var S = memo.sst, now = Number(state.gameTimeSec) || 0;
+  var need = survivalCfgNum(cfg, 'deathsAtStage', 10);
+  var step = Math.max(1, survivalCfgNum(cfg, 'stepDeaths', 5));
+  var maxTier = Math.max(1, survivalCfgNum(cfg, 'maxTier', 4));
+  var farmExtra = survivalCfgNum(cfg, 'farmExtraDeaths', 10);
+
+  /* 升階要同時滿足：多死了 step 次、而且距離上一次升階至少 stepMinSec。
+     換寶石、洗詞條都要好幾個決策點才落地，死亡又來得很快（前期約 30 次／小時）——
+     只看次數的話不到一小時就從第 1 階升到最高階，等於一次全換。 */
+  var stepMin = survivalCfgNum(cfg, 'stepMinSec', 600);
+  if (S.since >= need) {
+    var want = Math.min(maxTier, 1 + Math.floor((S.since - need) / step));
+    if (S.tier === 0 && want >= 1) { S.tier = 1; S.wall = S.best; S.tierAt = now; }
+    else if (want > S.tier && (S.tierAt === null || S.tierAt === undefined || now - S.tierAt >= stepMin)) {
+      S.tier++; S.tierAt = now;
+    }
+  }
+  /* 退回掛機只在最高階之後：逐步加強都試過了仍然過不去，才承認「現在打不動」。 */
+  if (S.farm && now >= S.farm.until) { S.farmBase = S.since; S.farm = null; }
+  var farmFrom = (S.farmBase !== null) ? S.farmBase : (need + (maxTier - 1) * step);
+  if (!S.farm && S.tier >= maxTier && S.since >= farmFrom + farmExtra) {
+    S.farm = { stage: Math.max(1, S.best - survivalCfgNum(cfg, 'farmBack', 10)),
+      until: now + survivalCfgNum(cfg, 'farmSec', 1800) };
+  }
+  if (!state.ctx) state.ctx = {};
+  state.ctx.survival = S.tier > 0;
+  state.ctx.survivalTier = S.tier;
+  state.ctx.survivalDeaths = S.since;
+  state.ctx.survivalStage = S.wall;
+  state.ctx.survivalFarm = !!S.farm;
+  state.ctx.survivalFarmStage = S.farm ? S.farm.stage : 0;
+}
+
 function observeCombat(state, policy, memo) {
   if (!policy.track) return null;
   var t = policy.track;
@@ -542,6 +639,7 @@ function updateContext(state, policy, memo) {
        塞了 ctx 進來，整包換掉會把它們默默清空。 */
     if (!state.ctx) state.ctx = {};
     updateStageMax(state);                     // 目標的 when 條件可能用到 ctx.stageMax
+    updateSurvivalContext(state, policy, memo);
     state.ctx.deficit = evalTargets(state, policy, memo);
     /* ⚠️ 邊際效益與止損跟 track 無關，兩條路徑都要算。
        漏了這一行的話，沒宣告 track 的策略會拿到 ctx.roi === undefined，
@@ -620,6 +718,11 @@ function updateContext(state, policy, memo) {
   /* 目標缺口。要在 state.ctx 建好之後才算——度量路徑可以指向 ctx.*
      （例如有效命中率要用 ctx.enemyDodge）。 */
   updateStageMax(state);                       // ctx 剛整包重建，目標的 when 條件可能用到 ctx.stageMax
+  updateSurvivalContext(state, policy, memo);
+  /* 生存瓶頸蓋過評估器的敗因：同一關死了 deathsAtStage 次以上，不管單場交戰看起來是
+     「打不完」還是「撐不住」，結論都是撐不住（player_strategy.md：以生存相關屬性為優先）。
+     ROI 規則據此把權重轉向 EHP。 */
+  if (state.ctx.survival) state.ctx.cause = 'EHP_TOO_LOW';
   state.ctx.deficit = evalTargets(state, policy, memo);
 
   /* 邊際效益排序與止損水位。放在最後：它們要讀 panels.eval，而那個面板
@@ -812,7 +915,7 @@ function sampleRates(state, policy, memo) {
 
     /* 取樣中斷過就重新起算。
 
-       ⚠️ 這一條是離線期間的必要防護。state.gameTimeSec 是含離線的牆鐘
+       ⚠️ 這一條是離線期間的必要防護。state.gameTimeSec 是含離線的遊戲時間
        （scripts/sim/engine.js 的 gameTimeSec 讀 vNowMs，而 offlineFor 會把它往前推），
        但離線收益不寫 LOOT_STATS。所以離線 16 小時之後那一拍是「時間過了 57,600 秒、
        擊殺 0 隻」——速率被算成 0 隻/分，閘門會在每天上線的頭五分鐘誤判成打不動並退關。
@@ -993,6 +1096,7 @@ function evalTargets(state, policy, memo) {
 function observe(state, policy, memo) {
   sampleRates(state, policy, memo);
   observeCombat(state, policy, memo);
+  observeStageDeaths(state, policy, memo);
 }
 
 /* ============ 符文計畫（player_strategy.md §5 最佳符文策略） ============
@@ -1357,12 +1461,27 @@ function planSkills(state, policy, memo, ruleId) {
   var ordered = mainOk.filter(isOn).concat(mainOk.filter(function (g) { return !isOn(g); }),
                                           backOk.filter(isOn), backOk.filter(function (g) { return !isOn(g); }));
   var desired = ordered.slice(0, size);
-  if (ctx.desperate && cfg.survival) {
+  /* 生存瓶頸（卡在同一關死太多次）升到 survivalStall.skillTier 階時也走同一條：player_strategy.md
+     「亦可切換防禦性技能，如果技能點足夠且金幣足夠切換的話」——點數與金幣在下面的學習段本來就會檢查，
+     付不起就不學。不在第 1 階就換：逐步加強，先動寶石與詞條，技能是後面幾階的手段。 */
+  var stallCfg = policy.survivalStall || {};
+  var stallSkill = (ctx.survivalTier || 0) >= ((typeof stallCfg.skillTier === 'number') ? stallCfg.skillTier : 2);
+  if ((ctx.desperate || stallSkill) && cfg.survival) {
     var k = Math.min(cfg.survivalSlots || 2, size);
     var surv = [];
     for (var si = 0; si < cfg.survival.length && surv.length < k; si++) {
       var sg = cfg.survival[si];
-      if (P.groups[sg] && desired.indexOf(sg) < 0) surv.push(sg);
+      /* 只換進「已學會，或現在就學得起（等級開放＋點數＋金幣）」的生存群組。
+         ☠️ 先前只檢查群組存在：生存群組第 1 階要 10 萬金幣、而且多半還沒開放，
+         換進 desired 之後學習段永遠學不起它們，**主力群組也因為被擠出 desired 而不再升級**。
+         實測 24h × 15 seed：飛刀停在第 1 階（對照組練到第 4 階），過 50 關的 seed 從 11 個掉到 1 個。
+         player_strategy.md 的原文是「如果技能點足夠且金幣足夠切換的話」——付不起就不換。 */
+      var sgx = P.groups[sg];
+      if (!sgx || desired.indexOf(sg) >= 0) continue;
+      var t0s = sgx.tiers && sgx.tiers[0];
+      var affordable = sgx.castable || (t0s && t0s.unlocked && t0s.prevOk && t0s.cost !== null &&
+        t0s.cost <= gold && points >= 1);
+      if (affordable) surv.push(sg);
     }
     desired = ordered.slice(0, Math.max(0, size - surv.length)).concat(surv);
   }
@@ -2522,6 +2641,13 @@ function decide(state, policy, memo) {
         }
         if (targetBlocked) passGate = false;
 
+        /* 生存瓶頸的退回掛機期（updateSurvivalContext）：同一關死了 farmAtDeaths 次，
+           player_strategy.md「若仍無效則回退至高 Efficiency 關卡掛機」。
+           期間蓋過其餘所有往前推的路徑（品質放行、安全區間下緣、ROI 的刷推輪替、產出閘門退關），
+           只做一件事：退到掛機關卡、關掉自動推關。計時器到期就自己解除（有界）。 */
+        var survHold = !!(state.ctx && state.ctx.survivalFarm);
+        if (survHold) passGate = false;
+
         /* ============ 裝等斷點優先（Dynamic Farming Stage Selector） ============
 
            ---- 舊行為做錯了什麼 ----
@@ -2623,7 +2749,7 @@ function decide(state, policy, memo) {
         }
 
         var inPark = !!(park && park.length === 2);
-        var parkRetreat = (!passGate && inPark && gStage > park[1] && gCfg.retreatCmd);
+        var parkRetreat = (!survHold && !passGate && inPark && gStage > park[1] && gCfg.retreatCmd);
         if (parkRetreat) {
           out.push({ name: gCfg.retreatCmd, args: { delta: park[1] - gStage }, ruleId: r.id });
         }
@@ -2697,7 +2823,10 @@ function decide(state, policy, memo) {
            （100→150 只有 1.496 倍），策略遲早會把 tierPush 拿掉，
            那時 farmPark 不該跟著一起失效。 */
         var fpTier = (fpk && fpk.source) ? pathVal(state, fpk.source) : tier;
-        if (fpk && !inPark && !parkRetreat && gCfg.retreatCmd
+        if (survHold && gCfg.retreatCmd && gStage > state.ctx.survivalFarmStage) {
+          out.push({ name: gCfg.retreatCmd, args: { delta: state.ctx.survivalFarmStage - gStage }, ruleId: r.id });
+        }
+        if (fpk && !survHold && !inPark && !parkRetreat && gCfg.retreatCmd
           && fpTier && typeof fpTier.farmFloorStage === 'number') {
           if (!memo.gate) memo.gate = {};
           var fgm = memo.gate[r.id] || (memo.gate[r.id] = {});
@@ -2792,7 +2921,7 @@ function decide(state, policy, memo) {
            不見得真的打得動；一旦記錯就成了永遠退不下去的地板，閘門關著、退關被擋，
            整場卡死。改成無條件相信當下的量測：退錯了下一個視窗會把它推回去。 */
         var rtc = gCfg.targetRetreat;
-        if (targetBlocked && rtc && gCfg.retreatCmd && !parkRetreat && !farmParked) {
+        if (targetBlocked && rtc && gCfg.retreatCmd && !parkRetreat && !farmParked && !survHold) {
           if (!memo.gate) memo.gate = {};
           var gm = memo.gate[r.id] || (memo.gate[r.id] = {});
           var cool = (typeof rtc.everySec === 'number') ? rtc.everySec : 300;
@@ -2915,7 +3044,7 @@ function decide(state, policy, memo) {
         /* advanceOk 見上方——它同時管住「放行推關」與「分段內往前走」兩條路徑。
            ⚠️ tierPush 沒設定時 advanceOk 恆為 true，既有策略的行為不變。 */
         /* ⚠️ park 可能是 null（見上方警告），所有取值都要在 inPark 之內做。 */
-        var advanceOn = inPark && gStage < (tierBand ? park[1] : park[0]) && !targetBlocked && advanceOk;
+        var advanceOn = inPark && gStage < (tierBand ? park[1] : park[0]) && !targetBlocked && advanceOk && !survHold;
         /* farmAuto 非 null＝farmPark 接管了這一段（!inPark 時才會發生）。
            它已經把「該待在哪一格」算完了，自動推關只是「還沒走到就繼續走」。 */
         gArgs[gCfg.argKey || 'on'] = (farmAuto !== null) ? !!farmAuto : !!(passGate || advanceOn);
