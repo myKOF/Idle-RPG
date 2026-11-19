@@ -16876,3 +16876,16 @@ Worker 存活且頁面正常完成載入。
 - `node --test tests/boss8-character-asset.test.cjs tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 通過62／62，`npm.cmd run build` 通過742檔。三套 `node tools/boss8/export.cjs --check`（第二套加 `--variants`，第三套加 `--material3`）、字串稽核與Git差異檢查通過。
 - `node tools/boss8/verify_ingame.cjs <output> 28` 以隔離Edge確認五動作與三攻擊輪替，在第28層確認方形頭像、圓形縮圖及實際Attack1出招，頁面例外0。第78／128層由配置回歸確認。實機範圍為進場及出招，未驗證完整勝敗流程。瀏覽器及暫存已清理。
 - 素材庫提交 `cbd2de8c8a79aabe364084fc9c7d3e790ce49264`，保存原檔、可編輯blend、GLB、頭像、工具與驗證。專案提交為本段所在的 `[Codex] feat: 接入石像鬼第三套材質與五動作`。可交使用者驗收與合併，成果目前在 ai/codex。
+
+## MYSTERY-MERCHANT-CARDS-20261119 — 四欄橫向商品卡與木質等級牌
+
+- Owner：Codex，Done，單人實作。依使用者三張示意圖，商品區每列四張卡片填滿原有寬度，左圖右文僅顯示名稱／品質／等級及價格購買鈕，移除寶石屬性數值。等級改木質牌匾，升級保留，右下角一鍵全購買／刷新移除圖標與內嵌消耗，沿用tips顯示即時費用。前置既有商人／邀請券／Worker已完成。
+- 允許：js/ui.js商人渲染、css/style.css商人區、index.html商人DOM與必要快取、String原生Excel及CSV／生成資料／共用快取、相關回歸、LV與商人說明及本段。禁止改玩法／價格／機率／解鎖／存檔／Worker／素材，不合併或推送。已fetch及逐檔預檢無外部來源；同副本迷你拖曳任務改LV檔首及任務檔首，本項獨立商人段與檔尾，無語意相依，三方試跑後分段提交。
+- 驗收：正式頁隔離靜音Edge確認四欄／不同寬度、完整名稱／圖示／價格、購買與售罄／金幣不足／無券／滿級、懸停費用隨庫存變動、相關回歸與Build、字串及差異檢查。內建IAB連線失敗後改既有headless入口。無新素材。
+
+- 完成：四欄等寬橫向卡、左圖右文、寶石品質／等級與符文階級、保留裝備品質框及懸停詳情；牌匾與右下角純文字按鈕、即時全買金幣tips及刷新券tips。String 1619改牌匾換行，1624改純文字刷新，沿用既有1514／858／2446。修改11檔：js/ui.js、css/style.css、index.html、config/Excel/String.xlsx、config/CSV/String.csv、js/strings_data.js、tools/vfx/editor/index.html（共用字串快取）、tests/merchant-cards-ui.test.cjs、LV_upgrade_system.md、docs/MYSTERY_MERCHANT.md與本紀錄。素材庫無交付變更，不建空Commit。
+- 唯讀檢查：AI規範／AGENTS／Workflow／prompts/codex、既有任務、商人item／寶石／符文資料與價格及Worker指令、ui pending／tooltip、相關CSS與商人素材、Excel原生更新器／CSV與字串產生器、隔離瀏覽器入口及既有BOSS實機工具。未改Store／玩法／Worker／存檔／素材。
+- 回歸：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 37/37通過；新增兩項用正式模擬資料驗證寶石／符文等級、40格、售出更新總額、缺金／無券／滿級保護。首輪新測試fixture漏載UI色表，已修正載入範圍後完整通過，未降低產品斷言。`npm.cmd run build`752檔、字串稽核仍寫死0條、Git差異檢查通過。
+- 原生Excel：來源確認獨占，只改D1756／E1756／E1761三格，正常模式重開兩次。唯讀封裝比對所有儲存格／公式、樣式、繪圖／表格、視窗／篩選／驗證等設定保持。Excel本機字型度量重新正規化預設行高15.75→15、七個自動行高按相同比例變化、dyDescent .25→.3及欄寬不到.05字元；按相對行數核對一致，未手改XML或任意重排格式。CSV只有兩列語意變更，主頁與編輯器字串快取一致。
+- 實機：既有launchHeadless建立全靜音隔離Edge／新遊戲／正式Worker，只在測試略過序章並用本機GM備資源。1920×1080、1366×768、1100×900、900×900均四欄等寬、同列對齊、無橫向溢出、圖示載入完整。單買後tips總價即時降低；實際懸停全買／刷新顯示金幣或一券，刷新實際扣券、全買及售罄通過。頁面例外0，瀏覽器與伺服器關閉，孤兒清理無殘留。首輪QA誤用tooltip DOM id，修正為實際sk-tooltip後重跑通過。預覽與report.json保留本聊天merchant-cards目錄供驗收。
+- 交接：無本輪未完成項目或已知新增功能風險，驗證限Edge與上述相關回歸，未跑全庫／行動真機／長時間遊玩。可供Review及使用者合併，未合併或推送develop／main。與同副本迷你拖曳任務僅LV／本紀錄同檔不同區段，三方試跑退出0，分段stage本次商人內容，對方修改保留。Commit為本段所在的`[Codex] feat: 調整神祕商人四欄商品卡與操作區`，SHA見交付。下一步重載遊戲驗收；已開啟VFX編輯器因共用字串快取更新，先保留未存內容再重載。

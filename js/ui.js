@@ -10570,7 +10570,7 @@ function renderGemShop(merchant, player) {
   if (!grid || !merchant.shop || !player) return;
   var s = merchant.shop;
   var levelEl = $id('gem-shop-level');
-  if (levelEl) levelEl.textContent = STR(1619, s.level);
+  if (levelEl) levelEl.innerHTML = STR(1619, s.level);
   var shopPendingKey = nodePendingKey('gem-shop');
   var upgradeBtn = $id('shop-upgrade');
   if (upgradeBtn) {
@@ -10593,7 +10593,7 @@ function renderGemShop(merchant, player) {
       var gt = GEM_TYPES[item.type];
       name = GEM_NAMES[item.lv] + gt.name; c = GEM_TIER_COLORS[item.lv];
       icon = gemIconHTML(item.type, item.lv, 'gi-shop');
-      stat = esc(gt.statName.replace('%', '')) + ' +' + (gt.pct ? pctStr(gemStatValue(item.type, item.lv)) : fmt(gemStatValue(item.type, item.lv)));
+      stat = esc(GEM_NAMES[item.lv]) + ' · ' + esc(STR(1563, item.lv));
     } else if (item.kind === 'equipment' && item.equipment) {
       var eq = item.equipment;
       name = eq.name; c = RARITIES[eq.rarity].color;
@@ -10603,6 +10603,7 @@ function renderGemShop(merchant, player) {
       stat = esc(RARITIES[eq.rarity].name) + ' ' + esc(STR(1563, eq.level));
     } else if (item.kind === 'rune' && RUNE_BY_ID[item.runeId]) {
       name = runeLabel(item.runeId); icon = runeStoneHTML(item.runeId, 'rs-icon');
+      stat = esc(STR(1563, RUNE_BY_ID[item.runeId].tier));
     } else return emptySlot;
     var price = merchantItemPrice(item);
     var unavailable = item.kind === 'gem' && !isGemEnabled(item.type);
@@ -10621,7 +10622,11 @@ function renderGemShop(merchant, player) {
   s.items.forEach(function (it) { if (!it.sold) total += merchantItemPrice(it); });
   var buyAllBtn = $id('shop-buy-all');
   if (buyAllBtn) buyAllBtn.setAttribute('data-ui-pending-key', shopPendingKey);
-  if (buyAllBtn) buyAllBtn.innerHTML = STR(1623) + merchantGoldPriceHTML(total) + '）';
+  if (buyAllBtn) {
+    buyAllBtn.textContent = STR(1514);
+    setAttrIfChanged(buyAllBtn, 'data-tt-title', STR(1514));
+    setAttrIfChanged(buyAllBtn, 'data-tt-desc', STR(858, fmtFull(total)));
+  }
   if (buyAllBtn) buyAllBtn.toggleAttribute('data-merchant-unavailable',
     !s.items.some(function (it) { return !it.sold && player.gold >= merchantItemPrice(it); }));
   var refBtn = $id('shop-refresh');
