@@ -121,8 +121,10 @@ function bindRelicUi() {
       var id = Number(up.getAttribute('data-relic-up')), relic = RELIC_BY_ID[id];
       if (!relic || up.disabled || relicUiPending(id)) return;
       var p = relicUiPlayer(), before = relicLevel(id, (p && p.relics) || {});
+      var upgradeFeedback = makeUpgradeSuccessFeedback(up, 'relic.upgrade');
       _relicUiBusy[id] = true;
-      var action = sendGemUiCommand('relic.upgrade', { relicId: id }, 'relic:' + id, ['header', 'inv', 'tower'], function () {
+      var action = sendGemUiCommand('relic.upgrade', { relicId: id }, 'relic:' + id, ['header', 'inv', 'tower'], function (result) {
+        upgradeFeedback(result);
         if (typeof UISound !== 'undefined') UISound.relicUpgraded();
         relicCelebrate(relic, before);
       });

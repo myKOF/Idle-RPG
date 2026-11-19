@@ -6359,7 +6359,7 @@ function showFloatingText(btn, text, color, point) {
   el.style.textShadow = '0 0 4px #000';
   el.style.pointerEvents = 'none';
   el.style.zIndex = '9999';
-  el.style.transition = 'all 0.8s ease-out';
+  el.style.transition = 'top 0.8s ease-out, opacity 0.8s ease-out';
   $id('ui-shell').appendChild(el);
 
   el.offsetHeight; // force reflow
@@ -6370,6 +6370,43 @@ function showFloatingText(btn, text, color, point) {
   UI_GAME_TIMING.setTimeout(function () {
     if (el.parentNode) el.parentNode.removeChild(el);
   }, 800);
+  return el;
+}
+
+function isSuccessfulUpgradeResult(commandName, result) {
+  // 升級指令的成功契約不同；不能把未回覆或錯誤處理後的空值一律當成功。
+  if (result && (result.err || result.ok === false)) return false;
+  var value = result && Object.prototype.hasOwnProperty.call(result, 'result') ? result.result : result;
+  if (commandName === 'item.upgrade') return value === 'ok';
+  if (commandName === 'skill2.max') return value === true;
+  if (commandName === 'player.buyInvUpgrade') {
+    return !!value && Number.isFinite(value.cap) && value.cap > 0 && Number.isFinite(value.cost) && value.cost >= 0;
+  }
+  return value === null && [
+    'chest.upgrade', 'gem.shopUpgrade', 'newforge.upgradePart', 'gem.resonanceUpgrade',
+    'relic.upgrade', 'talent.upgrade', 'talent.max', 'skill2.learn', 'skill2.ultPick', 'newforge.unlockPartSlot'
+  ].indexOf(commandName) >= 0;
+}
+
+function makeUpgradeSuccessFeedback(button, commandName) {
+  // 等待 ACK 時面板可能重建按鈕，先保留點擊當下的畫布座標與所在面板。
+  var tab = UI.tab, shown = false, point = null;
+  var panel = button && button.closest ? button.closest('.tab, [role="dialog"], .modal-overlay, .system-overlay') : null;
+  if (button && button.getClientRects && button.getClientRects().length &&
+      typeof window !== 'undefined' && window.UiCanvas) {
+    var rect = window.UiCanvas.rect(button);
+    if (rect.width > 0 && rect.height > 0) point = { x: rect.left + rect.width / 2, y: rect.top };
+  }
+  return function (result) {
+    if (shown || !isSuccessfulUpgradeResult(commandName, result)) return;
+    shown = true;
+    if (!point || UI.tab !== tab || (typeof document !== 'undefined' && document.hidden) ||
+        (typeof GameClock !== 'undefined' && GameClock.isPaused()) ||
+        (panel && (!panel.isConnected || !panel.getClientRects().length))) return;
+    hideTooltip();
+    var floating = showFloatingText(button, STR(152), '#7dd3fc', point);
+    if (floating && floating.style) floating.style.zIndex = '16001';
+  };
 }
 
 /* ---- 生產線與合成 ---- */
@@ -6436,6 +6473,7 @@ function detailAction(act, actBtn) {
     panels = ['inv', 'equip'];
   }
   if (!commandName) return;
+  var upgradeFeedback = act === 'upgrade' ? makeUpgradeSuccessFeedback(actBtn, commandName) : null;
   sendUiCommand(commandName, args, {
     silentResultError: true,  // 下方 .then 自行回報（含材料不足的浮動提示）
     keys: [itemPendingKey(it.id)],
@@ -6466,7 +6504,7 @@ function detailAction(act, actBtn) {
     if (act === 'upgrade' && actBtn) {
       var upgradeResult = result && hasOwnUiState(result, 'result') ? result.result : result;
       if (upgradeResult === 'ok') {
-        showFloatingText(actBtn, STR(152), '#7dd3fc');
+        upgradeFeedback(result);
         triggerUpgradeNumberAnimation(it.id);
       }
       else if (upgradeResult === 'fail') showFloatingText(actBtn, STR(153), '#fca5a5');
@@ -6813,10 +6851,11 @@ function bindNewForgeEvents() {
     if (upgrade) {
       var upgradeKey = upgrade.getAttribute('data-nf-partupgrade');
       if (isUiCommandPending(nodePendingKey('newforge-part-upgrade-' + upgradeKey))) return;
+      var partUpgradeFeedback = makeUpgradeSuccessFeedback(upgrade, 'newforge.upgradePart');
       sendUiCommand('newforge.upgradePart', { partKey: upgradeKey }, {
         keys: [nodePendingKey('newforge-part-upgrade-' + upgradeKey)],
         panels: ['newforge', 'factory', 'header']
-      }).catch(function (error) {
+      }).then(partUpgradeFeedback).catch(function (error) {
         reportUiCommandFailure(STR(1449), error, ['newforge', 'factory', 'header']);
       });
       return;
@@ -6876,6 +6915,7 @@ function bindNewForgeEvents() {
     if (!fu) return;
     if (el.hasAttribute('data-nf-unlockslot')) {
       {
+        var slotUpgradeFeedback = makeUpgradeSuccessFeedback(el, 'newforge.unlockPartSlot');
         sendUiCommand('newforge.unlockPartSlot', { furnaceId: fu.id }, {
           silentResultError: true,
           keys: [furnacePendingKey(fu.id)],
@@ -6883,7 +6923,7 @@ function bindNewForgeEvents() {
         }).then(function (result) {
           var resultError = typeof uiCommandResultError === 'function'
             ? uiCommandResultError(result, 'newforge.unlockPartSlot') : null;
-          if (!resultError) return;
+          if (!resultError) { slotUpgradeFeedback(result); return; }
           if (String(resultError).indexOf('金幣不足') >= 0) {
             showFloatingText(el, STR(91), '#fca5a5');
           } else {
@@ -8319,7 +8359,7 @@ function sendGemUiCommand(commandName, args, pendingRef, panels, onSuccess, onFa
   });
 }
 
-function runTalentUiAction(commandName, id, legacyAction) {
+function runTalentUiAction(commandName, id, legacyAction, button) {
   if (false) {
     var legacyError = legacyAction(id);
     if (legacyError) blog('⚠️ ' + legacyError, 'warn');
@@ -8328,6 +8368,7 @@ function runTalentUiAction(commandName, id, legacyAction) {
   }
 
   var panels = ['talents', 'header'];
+  var upgradeFeedback = button ? makeUpgradeSuccessFeedback(button, commandName) : null;
   var action = sendUiCommand(commandName, { id: id }, {
     silentResultError: true,  // 下方 .then 自行回報
     keys: nodePendingKey('talent:' + id),
@@ -8335,6 +8376,7 @@ function runTalentUiAction(commandName, id, legacyAction) {
   }).then(function (result) {
     var error = uiCommandResultError(result);
     if (error) reportUiCommandFailure(STR(851), error, panels);
+    else if (upgradeFeedback) upgradeFeedback(result);
     renderTalents();
   }, function (error) {
     reportUiCommandFailure(STR(851), error, panels);
@@ -8600,8 +8642,15 @@ function skillViewLoadout(snapshot) {
 }
 
 /* 新版技能群組指令（skill2.learn／skill2.downgrade：參數是 group+tier，不是 id）。 */
-function runSkill2UiAction(commandName, group, tier) {
+function runSkill2UiAction(commandName, group, tier, button) {
   var panels = ['skills', 'header'];
+  var canIncrease = true;
+  if (button && commandName === 'skill2.max') {
+    var snapshot = uiSkillsPanelSnapshot(), pick = sgUiUltPick(snapshot, group);
+    var level = sgUiIsUltSlot(group, tier) ? (pick && pick.lv || 0) : (sgUiLevels(snapshot, group)[tier] || 0);
+    canIncrease = level < SG_TIER_MAX_LV;
+  }
+  var upgradeFeedback = button && canIncrease ? makeUpgradeSuccessFeedback(button, commandName) : null;
   return sendUiCommand(commandName, { group: group, tier: tier }, {
     silentResultError: true,
     keys: nodePendingKey('sg:' + group),
@@ -8612,6 +8661,7 @@ function runSkill2UiAction(commandName, group, tier) {
       reportUiCommandFailure(STR(745), error, panels);
       return false;
     }
+    if (upgradeFeedback) upgradeFeedback(result);
     return true;
   }, function (error) {
     reportUiCommandFailure(STR(745), error, panels);
@@ -8620,8 +8670,9 @@ function runSkill2UiAction(commandName, group, tier) {
 }
 
 /* 終極進化三選一：與 runSkill2UiAction 同一條錯誤處理路徑，只是參數名不同（opt 不是 tier）。 */
-function runSkill2UltPick(group, opt) {
+function runSkill2UltPick(group, opt, button) {
   var panels = ['skills', 'header'];
+  var upgradeFeedback = button ? makeUpgradeSuccessFeedback(button, 'skill2.ultPick') : null;
   return sendUiCommand('skill2.ultPick', { group: group, opt: opt }, {
     silentResultError: true,
     keys: nodePendingKey('sg:' + group),
@@ -8632,6 +8683,7 @@ function runSkill2UltPick(group, opt) {
       reportUiCommandFailure(STR(746), error, panels);
       return false;
     }
+    if (upgradeFeedback) upgradeFeedback(result);
     return true;
   }, function (error) {
     reportUiCommandFailure(STR(746), error, panels);
@@ -8663,8 +8715,8 @@ function runSkill2UltSwitch(group, opt) {
     }, { title: STR(750), okText: STR(751), highlightText: costText, danger: true });
 }
 
-function runSkill2MaxAction(group, tier) {
-  runSkill2UiAction('skill2.max', group, tier);
+function runSkill2MaxAction(group, tier, button) {
+  return runSkill2UiAction('skill2.max', group, tier, button);
 }
 
 function runSkill2DeleteAction(group, tier) {
@@ -11684,7 +11736,7 @@ function initUI() {
     }
     var talentUp = e.target.closest('[data-talent-up]');
     if (talentUp && !talentUp.disabled) {
-      runTalentUiAction('talent.upgrade', talentUp.getAttribute('data-talent-up'), talentUpgrade);
+      runTalentUiAction('talent.upgrade', talentUp.getAttribute('data-talent-up'), talentUpgrade, talentUp);
       return;
     }
     var talentDown = e.target.closest('[data-talent-down]');
@@ -11810,21 +11862,23 @@ function initUI() {
     if (s2up) {
       if (!s2up.disabled) {
         var s2upRef = String(s2up.getAttribute('data-skill2-ultpick')).split(':');
-        runSkill2UltPick(s2upRef[0], Math.floor(Number(s2upRef[1]) || 0));
+        runSkill2UltPick(s2upRef[0], Math.floor(Number(s2upRef[1]) || 0), s2up);
       }
       return;
     }
     // 新版技能群組：各階升級／一鍵滿級／降級／重置刪除（屬性值格式 "群組id:階索引"）
     var s2l = e.target.closest('[data-skill2-learn]');
     if (s2l) {
+      if (s2l.disabled) return;
       var s2lRef = String(s2l.getAttribute('data-skill2-learn')).split(':');
-      runSkill2UiAction('skill2.learn', s2lRef[0], Math.floor(Number(s2lRef[1]) || 0));
+      runSkill2UiAction('skill2.learn', s2lRef[0], Math.floor(Number(s2lRef[1]) || 0), s2l);
       return;
     }
     var s2m = e.target.closest('[data-skill2-max]');
     if (s2m) {
+      if (s2m.disabled) return;
       var s2mRef = String(s2m.getAttribute('data-skill2-max')).split(':');
-      runSkill2MaxAction(s2mRef[0], Math.floor(Number(s2mRef[1]) || 0));
+      runSkill2MaxAction(s2mRef[0], Math.floor(Number(s2mRef[1]) || 0), s2m);
       return;
     }
     var s2d = e.target.closest('[data-skill2-downgrade]');
@@ -12456,13 +12510,14 @@ function initUI() {
     var upgradeBtn = $id('shop-upgrade');
     if (upgradeBtn) {
       upgradeBtn.addEventListener('click', function () {
-
+        var upgradeFeedback = makeUpgradeSuccessFeedback(this, 'gem.shopUpgrade');
         sendGemUiCommand(
           'gem.shopUpgrade',
           {},
           'gem-shop',
           ['tower', 'gems', 'header', 'inv'],
-          function () {
+          function (result) {
+            upgradeFeedback(result);
             blog(STR(840), 'good', 'factory');
           }
         );
@@ -13013,10 +13068,11 @@ function initUI() {
   var invExpand = $id('inv-expand');
   bindUiPendingControl(invExpand, nodePendingKey('inv-expand'));
   if (invExpand) invExpand.addEventListener('click', function () {
+    var invUpgradeFeedback = makeUpgradeSuccessFeedback(this, 'player.buyInvUpgrade');
     sendUiCommand('player.buyInvUpgrade', {}, {
       keys: [nodePendingKey('inv-expand')],
       panels: ['inv', 'header']
-    }).catch(function (error) {
+    }).then(invUpgradeFeedback).catch(function (error) {
       reportUiCommandFailure(STR(1216), error, ['inv', 'header']);
     });
   });

@@ -17004,6 +17004,18 @@ Worker 存活且頁面正常完成載入。
 - 實機：全靜音隔離Edge／新遊戲／正式Worker，1920及1366寬度的升級、全買、刷新底座標完全相等，支柄伸至原商品框上緣，四欄與5:2比例保持。三鈕無img／費用；升級tips實際為金幣圖＋4,100,000，全買一圖＋完整總額，刷新精確顯示指定文字。實際購買後總額降低，升級至Lv.2後費用45,354,833，刷新扣券通過，頁面例外0。預覽／report.json在本聊天merchant-sign目錄；瀏覽器／伺服器關閉，不使用Windows螢幕擷取。
 - 交接：無本項未完成／已知新增風險，限Edge兩種寬度及相關回歸，未跑全庫／真機。可供驗收合併，不合併推送；Commit為本段所在`[Codex] feat: 調整神祕商人招牌與費用提示`。下一步接續使用者新增的會話保留／倒計時需求，獨立實作驗證。編輯器因共用String快取更新，先保留未存內容再重載。
 
+## UPGRADE-SUCCESS-FEEDBACK-20261120 — 各類升級成功的按鈕浮字
+
+- Owner：Codex，Done，單人實作。使用者要求寶箱、神祕商店饋贈、零件工坊等各類升級按鈕在真正成功後於按鈕上方上浮「升級成功」，並盤點其他按鈕一起補齊。沿用String152與既有浮字，不修改模型／費用／升級條件／Worker／協議／存檔／素材。
+- 盤點：裝備強化已有成功／失敗回饋；需補寶箱、商店、零件、寶石共鳴、遺物、威能、技能單升／一鍵滿級／首次終極學習、背包及熔爐零件槽擴充。開箱／合成／製造、選擇或重選技能、降級／刪除及內測設定不當成升級。允許四支UI、快取、相關UI回歸與新成功回饋測試、LV及本段；先驗證正式回覆才顯示，失敗／缺資源／滿級不誤報，重繪後仍用點擊時錨點，切頁後不顯示。
+- 衝突：預檢四支UI及測試乾淨。index對Claude abd51894的skills／skills2／bridge快取與本項四支UI快取是不同列，針對本項patch做三方試合0；同副本未提交index及AI_TASKS不同段亦三方試合0，保留塔戰／NPC／BOSS9／Task等其他工作，分段提交。
+- 完成：共用回饋依各指令正式契約驗證（null／裝備ok／技能批次true／背包容量與費用物件），不把未回覆或失敗處理後的空值當成功。送指令前捕捉按鈕在UiCanvas中的座標，重建按鈕仍於原位上浮；切頁、隱藏、遊戲暫停或關閉面板時抑制晚到提示。成功只浮一次；技能已滿級的true空操作不提示。遺物保留原有升級演出與音效，浮字置於其上層；共用transition只作用於位置／透明度，避免z-index在動畫期間漸變而被遮住。
+- 修改11檔：js/ui.js、js/ui-chest.js、js/ui-relic.js、js/ui-gem-resonance.js、index.html四支UI快取、tests/upgrade-feedback.test.cjs（新增10項）、tests/relic-ui.test.cjs、tests/gem-resonance-ui.test.cjs、tests/ui-sound.test.cjs、LV_upgrade_system.md與本段。唯讀檢查規範／Workflow／Agent、Worker指令／protocol、寶箱／零件／商人／共鳴／遺物／威能／技能／背包模型、GameClock／UiCanvas、String152及相關回歸與隔離瀏覽器工具；素材庫無變更。
+- 測試指令：`node --test tests/upgrade-feedback.test.cjs tests/relic-ui.test.cjs tests/gem-resonance-ui.test.cjs tests/ui-sound.test.cjs tests/merchant-cards-ui.test.cjs tests/chest.test.cjs tests/part-upgrade.test.cjs tests/sim-forge-parts.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/skill2-ui.test.cjs tests/talent-page-dev.test.cjs tests/inventory-command-pending.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`，187/187通過。覆蓋真實Worker模型、成功前不提示、缺金／滿級／拒絕／斷線、成功去重、按鈕重建、切頁／關閉／暫停、共鳴與遺物既有演出。
+- 其他驗證：`npm.cmd run build`754檔通過、`node tools/string-table/build_string_csv.cjs --check`仍寫死0條、`git diff --check`通過。擴查`tests/skill2-points.test.cjs tests/skill2-ult-evolution.test.cjs tests/talents.test.cjs`為122項中79通過／43失敗；以HEAD的原js/ui.js唯讀覆蓋載入重跑，43個失敗名稱逐一相同（舊技能傳奇／點數與威能數值預期），不調低既有測試、不混入本項修正。
+- 實機：全靜音隔離Edge、新遊戲與正式Worker，1920×1080實際點擊商人饋贈、寶箱、零件、熔爐零件槽、技能單升／批次、威能、遺物、背包、共鳴共10條路徑，全部捕獲「升級成功」且橫向對齊原按鈕中心、起點為其上緣，800ms／向上40px／淡出及移除正確，遺物上層16001立即生效。截圖已重開目視；本聊天upgrade-feedback-20261120的summary.json／兩份browser報告保存座標、動畫keyframes、截圖及0頁面例外。測試環境暫停戰鬥／停止渲染ticker後檢查UI；未宣稱完整戰鬥或全平台驗證。瀏覽器與伺服器均關閉，孤兒清理保留其他任務仍在使用的瀏覽器。
+- 交接：本項無未完成／已知新增風險；既有43項失敗如上，未跑全庫。Commit為本段所在`[Codex] feat: 補齊各類升級成功浮字提示`；可供驗收合併，不合併或推送。建議保存其他編輯內容後重載遊戲，以載入四支UI新快取。其他聊天NPC／Task／BOSS9修改保持，未納入本項提交。
+
 ## MYSTERY-MERCHANT-STABILITY-20261120 — 單件購買不閃爍其他商品
 
 - Owner：Codex，Done，單人修正。使用者指出購買時所有商品按鈕一起閃爍，要求確認原因與消除不必要更新。確認現況共用gem-shop等待鍵導致全體商品暫時停用，且整格innerHTML替換放大閃爍；商品本身未重新抽取。

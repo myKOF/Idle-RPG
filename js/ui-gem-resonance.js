@@ -426,7 +426,10 @@ function initGemResonanceUi() {
         sendGemUiCommand('gem.resonanceUnsocket', { region: base.region, hole: base.hole, index: parseInt(take.getAttribute('data-gres-take'), 10) }, 'gem-resonance');
         return;
       }
-      if (t.closest('[data-gres-upgrade]') && resonanceRegionUnlocked(gresSnapshotState(uiGemsPanelSnapshot()), sel[0])) sendGemUiCommand('gem.resonanceUpgrade', base, 'gem-resonance');
+      var upgrade = t.closest('[data-gres-upgrade]');
+      if (upgrade && !upgrade.disabled && resonanceRegionUnlocked(gresSnapshotState(uiGemsPanelSnapshot()), sel[0])) {
+        sendGemUiCommand('gem.resonanceUpgrade', base, 'gem-resonance', ['gems', 'header'], makeUpgradeSuccessFeedback(upgrade, 'gem.resonanceUpgrade'));
+      }
     });
   }
 }

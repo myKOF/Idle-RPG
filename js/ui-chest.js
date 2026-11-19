@@ -359,9 +359,10 @@ function chestUiBind(box) {
     if (up) {
       var uid2 = parseInt(up.getAttribute('data-chest-upgrade'), 10);
       if (chestUiPending(uid2)) return;
+      var chestUpgradeFeedback = makeUpgradeSuccessFeedback(up, 'chest.upgrade');
       sendUiCommand('chest.upgrade', { chestId: uid2 }, {
         keys: [chestUiPendingKey(uid2)], panels: ['newforge', 'header']
-      }).catch(function (error) { reportUiCommandFailure(STR(2520), error, ['newforge', 'header']); });
+      }).then(chestUpgradeFeedback).catch(function (error) { reportUiCommandFailure(STR(2520), error, ['newforge', 'header']); });
     }
   });
 }
