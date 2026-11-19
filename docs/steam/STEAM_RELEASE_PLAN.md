@@ -342,6 +342,17 @@ Steam 用 `electron/steam-config.json` 的 `demoAppId`（Steam 上的 Demo／Pla
 - **未簽章**：第一次執行時 Windows SmartScreen 會跳出警告，要按「其他資訊 → 仍要執行」。
 - 測試：`tests/desktop-installer.test.cjs`。
 
+**打包時縮模型貼圖**（2026-11-19）：
+
+- **做什麼**：`build_desktop.cjs` 預設會在暫存區把 `images/models/` 的貼圖縮到最長邊 1024。工具是 `tools/desktop/shrink_models.cjs`，以 Electron 執行，不需要另外安裝套件。
+  - `.glb` 內嵌貼圖：改存 JPEG（法線貼圖品質 95、其餘 90）。半透明材質的底色貼圖維持 PNG。
+  - 外部貼圖（主角 role5～7）：只縮尺寸，格式不變。
+- **效果**：模型 367 → 111 MB。原版與壓縮版用遊戲本身的繪製流程對照，PSNR 50 dB 以上，放大 3 倍也看不出差別。
+- **原始檔不動**：專案裡的 2048 原檔保留，給 Meshy／Blender 流程使用。
+- **快取**：結果存在 `build/desktop/model-cache/`，第二次打包直接取用。
+- **要出原尺寸**：打包時加 `--full-textures`。
+- 測試：`tests/desktop-shrink-models.test.cjs`。
+
 **應用程式圖示**（2026-11-19）：`electron/icons/app.ico`（16～256）與 `app.png`（1024 母圖）。
 
 - **來源**：遊戲 logo 中間的劍，斜 45 度擺放，背景透明。
