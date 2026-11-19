@@ -16968,3 +16968,13 @@ Worker 存活且頁面正常完成載入。
 - 修改：`js/ui.js`、`css/style.css`、`index.html`快取、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`與本段；預檢無實質衝突，與本次會話需求由同開發者分段整合。檢查未修改商品框原圖、數量配置／交易與價格。
 - 驗證：UI回歸5/5（含實際商品數12／13門檻）；1920／1366寬度實際瀏覽器驗證6／12件無捲軸且12格，13件16格／40件40格皆有捲軸且末列可見，框比例2.5，頁面例外0。接入後相關39項、Build752檔與Git差異檢查通過，截圖及JSON保留於visualizations的`merchant-final`目錄。
 - 交接：無未完成或已知新增風險，未測行動真機；Commit為本段所在`[Codex] feat: 完成神祕商人限時會話與木牌介面`，可供驗收與合併，未合併／推送；下一步重載遊戲確認無捲軸畫面。
+## BOSS9-DRAGON-ANIMATION-20261119 — 飛龍單尾修復與五動作製作
+
+- Owner：Codex；Review（素材與五個GIF已完成，待使用者審閱），單人製作。使用者提供桌面 BOSS9.glb，明確要求移除右側較細的多餘尾部，製作飛行移動、1.5秒咬擊、1.2秒右爪橫掃、3秒30米粒子噴火及2.5秒掙扎墜地側躺，注重全身連動；追加「動作做完先給GIF檔預覽」。
+- 前置：共通規範／Workflow／Agent與現有任務已讀、ai/codex乾淨，逐檔預檢無外部衝突。沿用使用者提供模型的本次修改授權，非人形依Blender流程製作。
+- 允許：新增tools/boss9製作／驗證／預覽與匯出工具、docs/assets/BOSS9_SOURCE.md、本段；素材庫獨立boss9飛龍包內原檔、可編輯blend、含五動作GLB、粒子來源、預覽、QA及SHA清單。交付為素材製作階段，不修改NPC／玩法／Excel／字串／其他模型或執行期，不合併推送develop或main。
+- 完成：原模型73骨改為65骨，移除右細尾1660個含接縫頂點及Bone_024～030，修補尾根；重做頸／頭／下顎與嘴部掛點、切開口部接縫並補內面。保留原三張2048 JPEG內嵌資料逐位相同，UV與其餘外形沿用。自行製作Walk 1.6／Attack1 1.5／Attack2 1.2／Attack3 3／Die 2.5秒，飛行及攻擊全身連動、攻擊回復同一姿態；死亡後仰高速振翼、失速翻側、腿翼收攏及末姿停止。
+- 粒子：新增自製fire.js／fire.json，火團／近端亮芯／火星／煙霧與嘴部暖光，隨發射時刻掛點離嘴後獨立運動；1世界單位1米、名義30米，實際逐幀中心最大29.9976米，3秒末0顆。標準GLB不包含即時粒子，伴隨模組在預覽同步播放；尚未製作正式遊戲VFX接線或傷害設定。噴火GIF含全射程標尺及動作近景。
+- 修改：tools/boss9/製作、原生驗證、成品擷取、粒子、GIF編碼與素材檢核工具，docs/assets/BOSS9_SOURCE.md與本段。唯讀檢查規範／Workflow／Agent、BOSS8與BOSS5製作／預覽工具、three.js／GLTFLoader、素材根解析與背景瀏覽器清理；未改NPC、Excel、遊戲程式、LV、其他模型。工作區中其他聊天的商人UI／字串修改保留，不納入本項提交。
+- 驗證：Blender -b --python-exit-code 1 -P tools/boss9/verify.py重開原生Blend，120FPS共1181個實際蒙皮時點，有限值、骨長、離地、起始／攻擊回復、死亡接地與末姿通過。死亡最低0.02474米，末姿軀幹辨識區最低0.312米、頭0.120米，上方向近水平；不是僅把翼尖接地便讓身體懸空。node tools/boss9/capture.cjs實際載入GLB，五招299幀、頁面例外／警告0；Python encode.py精確GIF時長1.6／1.5／1.2／3／3.3秒（死亡含0.8秒供審閱停留），逐檔原生重開、循環與關鍵畫面讀回。node tools/boss9/export.cjs核對雙庫SHA、65骨／五招、有限通道與粒子距離；Python AST、Node語法、npm.cmd run build 752檔與本項Git差異檢查通過。
+- 交接：原檔、可編輯Blend、GLB、工具、五個GIF及QA／SHA清單保存於素材庫codex-authored/boss9-dragon-20261119；素材庫Commit `5c4f0d36e3bc52e7236bdde237c7fca609a9828b`，遊戲Commit為本段所在「[Codex] feat: 製作飛龍單尾模型與五動作預覽」。下一步由使用者看GIF提出調整；本次素材預覽可審閱，尚未接入遊戲，不宣稱全甲片／翼膜／尾巴所有自身接觸均已排除。未合併／推送develop或main；沒有本項實作阻塞，待審閱與後續接入指示。
