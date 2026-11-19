@@ -10562,8 +10562,8 @@ var GEM_TIER_COLORS = {
   // 6~10 階：神鑄寶石（僅能由神鑄法陣合成）
   6: '#fb923c', 7: '#f87171', 8: '#b8860b', 9: '#f5c542', 10: '#7df9ff'
 };
-function merchantGoldPriceHTML(price) {
-  return '<img src="images/icon_gold.png" class="merchant-gold-icon" alt=""> <span>' + fmt(price) + '</span>';
+function merchantGoldPriceHTML(price, full) {
+  return '<img src="images/icon_gold.png" class="merchant-gold-icon" alt=""> <span>' + (full ? fmtFull(price) : fmt(price)) + '</span>';
 }
 function renderGemShop(merchant, player) {
   var grid = $id('gem-shop-grid');
@@ -10575,13 +10575,16 @@ function renderGemShop(merchant, player) {
   var upgradeBtn = $id('shop-upgrade');
   if (upgradeBtn) {
     upgradeBtn.setAttribute('data-ui-pending-key', shopPendingKey);
+    setAttrIfChanged(upgradeBtn, 'data-tt-title', STR(166));
     if (s.level >= GEM_SHOP_MAX_LEVEL) {
-      upgradeBtn.textContent = STR(1620);
+      upgradeBtn.textContent = STR(2504);
+      setAttrIfChanged(upgradeBtn, 'data-tt-desc', STR(2504));
       upgradeBtn.toggleAttribute('data-merchant-unavailable', true);
       upgradeBtn.removeAttribute('data-tip');
     } else {
       var upgradeCost = gemShopUpgradeCost(s.level);
-      upgradeBtn.innerHTML = STR(1621) + merchantGoldPriceHTML(upgradeCost) + '）';
+      upgradeBtn.textContent = STR(166);
+      setAttrIfChanged(upgradeBtn, 'data-tt-desc', merchantGoldPriceHTML(upgradeCost, true));
       upgradeBtn.toggleAttribute('data-merchant-unavailable', player.gold < upgradeCost);
     }
   }
@@ -10625,7 +10628,7 @@ function renderGemShop(merchant, player) {
   if (buyAllBtn) {
     buyAllBtn.textContent = STR(1514);
     setAttrIfChanged(buyAllBtn, 'data-tt-title', STR(1514));
-    setAttrIfChanged(buyAllBtn, 'data-tt-desc', STR(858, fmtFull(total)));
+    setAttrIfChanged(buyAllBtn, 'data-tt-desc', merchantGoldPriceHTML(total, true));
   }
   if (buyAllBtn) buyAllBtn.toggleAttribute('data-merchant-unavailable',
     !s.items.some(function (it) { return !it.sold && player.gold >= merchantItemPrice(it); }));

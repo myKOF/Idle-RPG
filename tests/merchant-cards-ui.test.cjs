@@ -46,15 +46,33 @@ test('一鍵購買僅顯示文字，tips總額隨售出變動並保留缺金與�
   const items = [{kind:'rune', runeId:'r01', price:123, sold:false}, {kind:'rune', runeId:'r02', price:456, sold:false}];
   render(items);
   assert.equal(nodes['shop-buy-all'].textContent, ctx.STR(1514));
-  assert.equal(nodes['shop-buy-all'].attrs['data-tt-desc'], ctx.STR(858, ctx.fmtFull(579)));
+  assert.match(nodes['shop-buy-all'].attrs['data-tt-desc'], /<img src="images\/icon_gold.png"/);
+  assert.match(nodes['shop-buy-all'].attrs['data-tt-desc'], />579<\/span>/);
+  assert.doesNotMatch(nodes['shop-buy-all'].attrs['data-tt-desc'], /消耗|金幣/);
   items[0].sold = true;
   render(items, 0, 0, ctx.GEM_SHOP_MAX_LEVEL);
-  assert.equal(nodes['shop-buy-all'].attrs['data-tt-desc'], ctx.STR(858, ctx.fmtFull(456)));
+  assert.match(nodes['shop-buy-all'].attrs['data-tt-desc'], />456<\/span>/);
   for (const id of ['shop-buy-all', 'shop-refresh', 'shop-upgrade']) assert.ok('data-merchant-unavailable' in nodes[id].attrs);
   assert.match(nodes['gem-shop-grid'].innerHTML, /sold/);
   assert.match(nodes['gem-shop-grid'].innerHTML, /data-merchant-unavailable disabled/);
   assert.match(nodes['gem-shop-level'].innerHTML, /<br>/);
   items[1].sold = true;
   render(items);
-  assert.equal(nodes['shop-buy-all'].attrs['data-tt-desc'], ctx.STR(858, ctx.fmtFull(0)));
+  assert.match(nodes['shop-buy-all'].attrs['data-tt-desc'], />0<\/span>/);
+});
+
+test('升級鈕純文字，費用tips以金幣圖示及完整數字顯示，滿級清除費用', () => {
+  const { ctx, nodes, render } = renderer();
+  render([]);
+  const button = nodes['shop-upgrade'];
+  assert.equal(button.textContent, ctx.STR(166));
+  assert.match(button.attrs['data-tt-desc'], /<img src="images\/icon_gold.png"/);
+  assert.match(button.attrs['data-tt-desc'], />4,100,000<\/span>/);
+  render([], 1e12, 1, 2);
+  assert.ok(button.attrs['data-tt-desc'].includes('>'+ctx.fmtFull(ctx.gemShopUpgradeCost(2))+'</span>'));
+  render([], 1e12, 1, ctx.GEM_SHOP_MAX_LEVEL);
+  assert.equal(button.textContent, ctx.STR(2504));
+  assert.equal(button.attrs['data-tt-desc'], ctx.STR(2504));
+  assert.doesNotMatch(button.attrs['data-tt-desc'], /<img/);
+  assert.ok('data-merchant-unavailable' in button.attrs);
 });

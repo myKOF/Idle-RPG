@@ -16911,3 +16911,13 @@ Worker 存活且頁面正常完成載入。
 - 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs` 20/20通過；`npm.cmd run build`752檔通過；`git diff --check`通過。此為局部CSS修正，沿用既有測試並以真正瀏覽器檢查幾何與捲動，不新增鏡像CSS斷言。
 - 實機：靜音隔離Edge／新遊戲／正式Worker，1920×1080及1366×768確認四欄、無橫向溢出，外框分別為1014×405.59375及721.4187×288.5631，比例均約2.50004。暫顯示4格與恢復40格時外框高度完全一致；內容高度1012、可視高度308，捲動704到底可見末格。實際單件購買、全買消耗tips通過，頁面例外0，目視框圖恢復原本雕花與寶石比例。預覽／report.json留本聊天merchant-frame目錄。測試瀏覽器／伺服器已關閉，孤兒清理無殘留；使用Chromium頁面截圖，沒有建立Windows螢幕擷取工作階段。
 - 交接：本項無未完成或已知新增風險，驗證限Edge兩種寬度與相關回歸，未測全庫／行動真機。可供驗收及合併；不合併或推送develop／main。任務檔與同副本螢幕擷取規範工作不同區段，起始三方試跑0，對方已獨立提交d711c0d5，保留其全部成果。Commit為本段所在`[Codex] fix: 保留神祕商人商品木框原始比例`。下一步重載遊戲驗收外框。
+
+## MYSTERY-MERCHANT-SIGN-20261119 — 木柄招牌與金幣圖示提示
+
+- Owner：Codex，Done，單人實作。使用者指定牌匾左下移、升級鈕底對齊全買／刷新，外觀改為兩根短木柄撐在商品框上的招牌；升級鈕純文字，升級及全買tips僅金幣圖示＋數字，刷新tips改「消耗1張邀請券刷新商品」。前置為已完成四欄與外框5:2修正；外框及商品排版保持。
+- 允許：商人CSS／UI／DOM與快取、String原生Excel／CSV／衍生資料與共用快取、既有商人UI回歸、LV／商人說明及本段。禁止改素材／交易價格／規則／Worker／存檔／其他功能，不合併或推送。開始時工作區乾淨，fetch及逐檔預檢通過。驗收兩種寬度牌匾／升級與操作鈕對齊、木柄接木框、費用tips圖示及正確數字／動態更新／滿級、精確刷新文案、原外框比例與捲動、原生Excel、相關回歸與Build。
+- 完成：招牌左移36／下移15 CSS px，156×111px木板配兩根10×22px短木柄，升級鈕底對齊全買／刷新；以CSS製作，原商人／店景與5:2商品框圖片未改。三鈕純文字，升級／全買tips僅原金幣圖示＋完整數字，升級／售出即時更新；滿級純文字且清除舊費用。String2446改指定刷新tips，原生Excel只改C2436／E2436，獨占確認及兩次正常重開，格式與繪圖保留，CSV／字串與主頁／編輯器共用快取同步。
+- 修改11檔：js/ui.js、css/style.css、index.html、String.xlsx／CSV／strings_data.js、tools/vfx/editor/index.html、tests/merchant-cards-ui.test.cjs、LV_upgrade_system.md、docs/MYSTERY_MERCHANT.md與本段。唯讀檢查規範／Workflow／Agent、舊商人渲染與tooltip／pending、寶石與符文／Store參數、既有原生Excel與隔離Edge工具。素材庫無交付變更。
+- 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 38/38通過；`npm.cmd run build`752檔、字串稽核仍寫死0條、Git差異檢查通過。新增升級tips／滿級清費回歸，更新全買tips驗證圖示與完整金額／售出更新。
+- 實機：全靜音隔離Edge／新遊戲／正式Worker，1920及1366寬度的升級、全買、刷新底座標完全相等，支柄伸至原商品框上緣，四欄與5:2比例保持。三鈕無img／費用；升級tips實際為金幣圖＋4,100,000，全買一圖＋完整總額，刷新精確顯示指定文字。實際購買後總額降低，升級至Lv.2後費用45,354,833，刷新扣券通過，頁面例外0。預覽／report.json在本聊天merchant-sign目錄；瀏覽器／伺服器關閉，不使用Windows螢幕擷取。
+- 交接：無本項未完成／已知新增風險，限Edge兩種寬度及相關回歸，未跑全庫／真機。可供驗收合併，不合併推送；Commit為本段所在`[Codex] feat: 調整神祕商人招牌與費用提示`。下一步接續使用者新增的會話保留／倒計時需求，獨立實作驗證。編輯器因共用String快取更新，先保留未存內容再重載。
