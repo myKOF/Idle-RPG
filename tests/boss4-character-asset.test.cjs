@@ -50,7 +50,7 @@ for (const file of ['boss4', 'boss4_lv2', 'boss4_lv3']) test(file + ': textured 
 test('NPC table: tower_boss_4 / 14 / 24 use the centaur looks and every new-model boss names its look in 備註', () => {
   const rows = cfg.csvParse(fs.readFileSync(path.join(root, 'config/CSV/NPC.csv'), 'utf8')).filter(r => r.length > 1);
   const h = rows[0], ix = n => h.indexOf(n);
-  const look = { boss1: '骷髏王', boss2: '樹人', boss3: '雷霆巨獸', boss4: '半人馬', boss5: '鬼面', boss6: '深淵領主', boss7: '岩石怪' };
+  const look = { boss1: '骷髏王', boss2: '樹人', boss3: '雷霆巨獸', boss4: '半人馬', boss5: '鬼面', boss6: '深淵領主', boss7: '岩石怪', boss8: '石像鬼' };
   let named = 0;
   for (const r of rows.slice(1)) {
     const m = /npc3d\/(boss\d)(?:_lv(\d))?\.glb$/.exec(r[ix('3D模型')] || '');
