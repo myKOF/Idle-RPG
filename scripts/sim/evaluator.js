@@ -1721,3 +1721,43 @@ function buildFieldLoadPanel() {
   var live = liveFieldEnemies().length, cap = fieldMaxLiveEnemiesFor();
   return { live: live, cap: cap, ratio: cap > 0 ? live / cap : 0 };
 }
+
+/* ============ 遺物面板（harness 專用） ============
+
+   遺物只由寶箱或神祕商人取得，升級消耗的是「重複件」。每件的目前等級、持有件數、下一級要幾件、
+   現在升不升得動，都由遊戲函式回答（relicEntry／relicMaxLevel，等級資料在 RELICS 表）。唯讀。 */
+function buildRelicPlanPanel() {
+  if (typeof RELICS === 'undefined' || typeof relicEntry !== 'function') return null;
+  var out = {};
+  for (var i = 0; i < RELICS.length; i++) {
+    var r = RELICS[i], e = relicEntry(r.id), max = relicMaxLevel(r);
+    var cost = (e.lv >= 1 && e.lv < max && r.levels[e.lv]) ? r.levels[e.lv].cost : null;
+    out[r.id] = { lv: e.lv, n: e.n, max: max, cost: cost, upgradable: cost !== null && e.n >= cost };
+  }
+  return { relics: out };
+}
+
+/* ============ 神祕商人面板（harness 專用） ============
+
+   商人是否開著、有幾張邀請券，以及貨架上每一件的「實際售價」（含遺物折扣）與「買不買得了」，
+   都由遊戲函式回答（merchantItemPrice、供應器的 canBuy）；高階的門檻用遊戲自己的常數。
+   策略只負責依規則決定要買哪一件，不自己算價格。唯讀。 */
+function buildMerchantPlanPanel() {
+  if (typeof merchantPanelView !== 'function') return null;
+  var v = merchantPanelView(), items = [];
+  var list = (v.shop && v.shop.items) || [];
+  for (var i = 0; i < list.length; i++) {
+    var it = list[i], kind = it.kind || 'gem';
+    var provider = (typeof MYSTERY_MERCHANT_PROVIDERS !== 'undefined') ? MYSTERY_MERCHANT_PROVIDERS[kind] : null;
+    var rune = (kind === 'rune' && typeof RUNE_BY_ID !== 'undefined') ? RUNE_BY_ID[it.runeId] : null;
+    items.push({
+      index: i, kind: kind, sold: !!it.sold,
+      price: merchantItemPrice(it),
+      canBuy: !!provider && provider.canBuy(it) === null,
+      gemLevel: kind === 'gem' ? it.lv : null,
+      runeTier: rune ? rune.tier : null,
+      rarity: (kind === 'equipment' && it.equipment) ? it.equipment.rarity : null
+    });
+  }
+  return { active: !!v.active, tickets: Number(v.tickets) || 0, items: items };
+}

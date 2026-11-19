@@ -59,6 +59,12 @@ function peekPath(root, path) {
 }
 
 function testCond(root, cond) {
+  /* 條件也可以是「條件陣列」：全部成立才算（[[路徑,運算子,值], [路徑,運算子,值]]）。
+     用在寶石／詞條的分段條件，例如「關卡 ≥ 50 且爆率 ≥ 50% 且回魔足夠」。 */
+  if (Array.isArray(cond[0])) {
+    for (var ci = 0; ci < cond.length; ci++) if (!testCond(root, cond[ci])) return false;
+    return true;
+  }
   var v = pathVal(root, cond[0]);
   var op = cond[1];
   /* 右邊也可以是 {$path:...}，才寫得出「金幣夠不夠付這次擴充」這種兩個狀態值的比較。
@@ -480,6 +486,18 @@ function observeCombat(state, policy, memo) {
 }
 
 /* 每個決策點更新一次，結果掛在 state.ctx 供規則以 ctx.* 路徑取用。 */
+/* 到過的最高關卡（跨地圖，只升不降）。player_strategy.md 的「50／100／200／300 級關卡」是進度門檻：
+   換到新地圖關卡會從 1 重數，用當前關卡會讓已經過了 50 級的角色又回到「50 級前」的打法。
+   取各地圖最高紀錄與當前關卡的最大值；面板沒有（舊存檔、測試）時退回當前關卡。
+   ⚠️ 要在 updateContext 之後算：updateContext 會整包重建 state.ctx。 */
+function updateStageMax(state) {
+  if (!state.ctx) state.ctx = {};
+  var zones = peekPath(state, 'panels.battle.zones');
+  var mx = Number(peekPath(state, 'view.stage')) || 0;
+  if (Array.isArray(zones)) for (var i = 0; i < zones.length; i++) mx = Math.max(mx, Number(zones[i] && zones[i].best) || 0);
+  state.ctx.stageMax = mx;
+}
+
 function updateContext(state, policy, memo) {
   /* 速率型目標的取樣。放在最前面而且與 track 無關：決策點本身也是一個觀測時刻，
      而沒宣告 track 的策略一樣可以宣告速率目標。 */
@@ -491,6 +509,7 @@ function updateContext(state, policy, memo) {
        ⚠️ 只補 deficit，不覆寫整個 ctx：呼叫端（測試、或日後別的驅動）可能自己
        塞了 ctx 進來，整包換掉會把它們默默清空。 */
     if (!state.ctx) state.ctx = {};
+    updateStageMax(state);                     // 目標的 when 條件可能用到 ctx.stageMax
     state.ctx.deficit = evalTargets(state, policy, memo);
     /* ⚠️ 邊際效益與止損跟 track 無關，兩條路徑都要算。
        漏了這一行的話，沒宣告 track 的策略會拿到 ctx.roi === undefined，
@@ -568,6 +587,7 @@ function updateContext(state, policy, memo) {
 
   /* 目標缺口。要在 state.ctx 建好之後才算——度量路徑可以指向 ctx.*
      （例如有效命中率要用 ctx.enemyDodge）。 */
+  updateStageMax(state);                       // ctx 剛整包重建，目標的 when 條件可能用到 ctx.stageMax
   state.ctx.deficit = evalTargets(state, policy, memo);
 
   /* 邊際效益排序與止損水位。放在最後：它們要讀 panels.eval，而那個面板
@@ -1611,6 +1631,7 @@ function planEquipSetSwitch(state, cfg, ruleId, memo, policy) {
 /* 回傳這個決策點要送出的指令陣列。純函式：同樣的輸入必定得到同樣的輸出。 */
 function decide(state, policy, memo) {
   updateContext(state, policy, memo);
+  updateStageMax(state);
   updateSkillContext(state, policy, memo);
   updateSetContext(state, policy, memo);
   var out = [];
@@ -1752,6 +1773,64 @@ function decide(state, policy, memo) {
           used[best.id] = true;
           out.push({ name: r.cmd, args: { itemId: best.id, slotKey: slotKey }, ruleId: r.id });
         }
+      }
+    } else if (r.chestOpenAll) {
+      /* 熔爐寶箱：每隔一陣子對所有寶箱全開一次（player_strategy.md §8：約每 10~30 分鐘）。
+         持有數與編號由面板給；只送持有 > 0 的，count＝持有數（上限由協議夾在 9999）。
+         開箱的獎勵（金幣、碎片、寶石、符文、裝備、遺物）由遊戲處理，策略不看也不算機率。 */
+      var coChests = pathVal(state, r.chestOpenAll.chests || 'panels.newforge.chests') || {};
+      var coIds = Object.keys(coChests).sort(function (a, c) { return Number(a) - Number(c); });
+      for (var coi = 0; coi < coIds.length; coi++) {
+        var coc = coChests[coIds[coi]];
+        if (!coc || !(coc.n > 0)) continue;
+        out.push({ name: r.cmd, args: { chestId: Number(coIds[coi]), count: Math.min(9999, Math.floor(coc.n)) }, ruleId: r.id });
+      }
+    } else if (r.relicUpgrade) {
+      /* 遺物升級：消耗的是重複件，沒有別的成本，件數夠就升（player_strategy.md §8 說取得純運氣沒有策略；
+         升級沒有取捨可言——重複件放著不會有別的用途）。能不能升、要幾件由遊戲算好放在 panels.relicPlan。 */
+      var ruPlan = pathVal(state, r.relicUpgrade.relics || 'panels.relicPlan.relics') || {};
+      var ruIds = Object.keys(ruPlan).sort(function (a, c) { return Number(a) - Number(c); });
+      var ruBudget = (typeof r.relicUpgrade.maxPerDecision === 'number') ? r.relicUpgrade.maxPerDecision : 20;
+      for (var rui = 0; rui < ruIds.length && ruBudget > 0; rui++) {
+        if (ruPlan[ruIds[rui]] && ruPlan[ruIds[rui]].upgradable) {
+          out.push({ name: r.cmd, args: { relicId: Number(ruIds[rui]) }, ruleId: r.id });
+          ruBudget--;
+        }
+      }
+    } else if (r.merchantOpen) {
+      /* 神祕商人：有邀請券才召喚（券由封魔塔 BOSS 掉落）。召喚會消耗 1 張券；封魔塔進行中遊戲會拒絕。
+         已經開著就不再送（開著的那一次由 merchantShop 處理完會關掉）。 */
+      var moM = pathVal(state, r.merchantOpen.merchant || 'panels.merchantPlan');
+      var moTower = !!pathVal(state, r.merchantOpen.towerActive || 'panels.tower.tower.active');
+      if (moM && !moM.active && moM.tickets > 0 && !moTower) out.push({ name: r.cmd, args: baseArgs, ruleId: r.id });
+    } else if (r.merchantShop) {
+      /* 逛商人：開著的時候依規則買，買完關閉（player_strategy.md §8）。
+         遺物必買；高階符文與寶石值得買；裝備不在規則內。前提是錢夠：
+         每件的實際售價（含遺物折扣）與能不能買由遊戲算好放在 panels.merchantPlan，
+         同一輪要扣掉已經花掉的，不然後面的會被回「金幣不足」。
+         優先序：遺物 → 符文 → 寶石，同類先買高階的。 */
+      var msCfg = r.merchantShop;
+      var msM = pathVal(state, msCfg.merchant || 'panels.merchantPlan');
+      var msGold = Number(pathVal(state, msCfg.gold || 'view.gold')) || 0;
+      if (msM && msM.active) {
+        var msRatio = (typeof msCfg.goldRatio === 'number') ? msCfg.goldRatio : 0.5;
+        var msRelicRatio = (typeof msCfg.relicGoldRatio === 'number') ? msCfg.relicGoldRatio : 1;
+        var msWant = [];
+        for (var mi = 0; mi < (msM.items || []).length; mi++) {
+          var mit = msM.items[mi];
+          if (!mit || mit.sold || !mit.canBuy || !(mit.price >= 0)) continue;
+          if (mit.kind === 'relic') msWant.push({ it: mit, rank: 0, tier: 0, ratio: msRelicRatio });
+          else if (mit.kind === 'rune' && mit.runeTier >= (msCfg.minRuneTier || 1)) msWant.push({ it: mit, rank: 1, tier: mit.runeTier, ratio: msRatio });
+          else if (mit.kind === 'gem' && mit.gemLevel >= (msCfg.minGemLevel || 1)) msWant.push({ it: mit, rank: 2, tier: mit.gemLevel, ratio: msRatio });
+        }
+        msWant.sort(function (a, c) { return (a.rank - c.rank) || (c.tier - a.tier) || (a.it.index - c.it.index); });
+        for (var wi = 0; wi < msWant.length; wi++) {
+          var wp = msWant[wi].it.price;
+          if (wp > msGold * msWant[wi].ratio) continue;
+          msGold -= wp;
+          out.push({ name: r.cmd, args: { index: msWant[wi].it.index }, ruleId: r.id });
+        }
+        if (msCfg.closeCmd) out.push({ name: msCfg.closeCmd, args: {}, ruleId: r.id });
       }
     } else if (r.socketEmpty) {
       /* 把寶石鑲進身上裝備的空插槽。

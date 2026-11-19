@@ -17,78 +17,11 @@
     "taskGoal",
     "equipRules",
     "equipSets",
-    "gemRules"
+    "gemRules",
+    "relicPlan",
+    "merchantPlan"
   ],
   "lists": {
-    "affixWeapon": [
-      "atkPct",
-      "critRate",
-      "aspd",
-      "pPen",
-      "eliteDmg",
-      "bossDmg",
-      "aoeDmg",
-      "atkFlat",
-      "blockRate"
-    ],
-    "affixArmor": [
-      "hpPct",
-      "hpFlat",
-      "defPct",
-      "mdefPct",
-      "globalDmgRed",
-      "resAll",
-      "pRes",
-      "mRes",
-      "shieldEff",
-      "blockRate",
-      "blockDmgRed",
-      "tenacity",
-      "eliteDmgRed",
-      "bossDmgRed",
-      "hit",
-      "lifesteal",
-      "atkFlat",
-      "defFlat",
-      "mdefFlat",
-      "atkPct",
-      "critRate",
-      "aspd",
-      "pPen",
-      "eliteDmg",
-      "bossDmg"
-    ],
-    "affixJewel": [
-      "gemEff",
-      "loot",
-      "xpBonus",
-      "atkPct",
-      "critRate",
-      "pPen",
-      "aspd",
-      "eliteDmg",
-      "bossDmg",
-      "hit",
-      "hpPct",
-      "globalDmgRed",
-      "resAll",
-      "eliteDmgRed",
-      "bossDmgRed",
-      "shieldEff",
-      "lifesteal",
-      "atkFlat",
-      "aoeDmg",
-      "hpFlat",
-      "defPct",
-      "mdefPct",
-      "pRes",
-      "mRes",
-      "blockRate",
-      "blockDmgRed",
-      "tenacity",
-      "defFlat",
-      "mdefFlat"
-    ],
     "affixCritDmg": [
       "critDmg"
     ],
@@ -98,18 +31,9 @@
     "affixVsNormalRed": [
       "normalDmgRed"
     ],
-    "affixWeaponMagic": [
-      "matkPct",
-      "critRate",
-      "aspd",
-      "mPen",
-      "eliteDmg",
-      "bossDmg",
-      "aoeDmg",
-      "matkFlat",
-      "blockRate"
-    ],
     "affixArmorMagic": [
+      "int",
+      "vit",
       "hpPct",
       "hpFlat",
       "defPct",
@@ -119,53 +43,11 @@
       "pRes",
       "mRes",
       "shieldEff",
-      "blockRate",
-      "blockDmgRed",
       "tenacity",
       "eliteDmgRed",
       "bossDmgRed",
-      "hit",
       "lifesteal",
-      "matkFlat",
-      "defFlat",
-      "mdefFlat",
-      "matkPct",
-      "critRate",
-      "aspd",
-      "mPen",
-      "eliteDmg",
-      "bossDmg"
-    ],
-    "affixJewelMagic": [
-      "gemEff",
-      "loot",
-      "xpBonus",
-      "matkPct",
-      "critRate",
-      "mPen",
-      "aspd",
-      "eliteDmg",
-      "bossDmg",
-      "hit",
-      "hpPct",
-      "globalDmgRed",
-      "resAll",
-      "eliteDmgRed",
-      "bossDmgRed",
-      "shieldEff",
-      "lifesteal",
-      "matkFlat",
-      "aoeDmg",
-      "hpFlat",
-      "defPct",
-      "mdefPct",
-      "pRes",
-      "mRes",
-      "blockRate",
-      "blockDmgRed",
-      "tenacity",
-      "defFlat",
-      "mdefFlat"
+      "manaSteal"
     ],
     "affixElem_fire": [
       "elemDmgFire"
@@ -181,6 +63,61 @@
     ],
     "affixElem_earth": [
       "elemDmgEarth"
+    ],
+    "wBasePhys": [
+      "str",
+      "atkPct",
+      "atkFlat",
+      "aspd",
+      "cdr"
+    ],
+    "wBaseMagic": [
+      "int",
+      "matkPct",
+      "matkFlat",
+      "aspd",
+      "cdr"
+    ],
+    "affixVsEnemy": [
+      "eliteDmg",
+      "bossDmg"
+    ],
+    "affixCrit": [
+      "critRate"
+    ],
+    "affixPenPhys": [
+      "pPen"
+    ],
+    "affixPenMagic": [
+      "mPen"
+    ],
+    "affixJewelCore": [
+      "gemEff",
+      "enhanceSuccess",
+      "xpBonus",
+      "loot"
+    ],
+    "affixSpecial": [
+      "luck",
+      "affixCap"
+    ],
+    "affixArmorPhys": [
+      "str",
+      "vit",
+      "hpPct",
+      "hpFlat",
+      "defPct",
+      "mdefPct",
+      "globalDmgRed",
+      "resAll",
+      "pRes",
+      "mRes",
+      "shieldEff",
+      "tenacity",
+      "eliteDmgRed",
+      "bossDmgRed",
+      "lifesteal",
+      "manaSteal"
     ]
   },
   "rules": [
@@ -427,56 +364,58 @@
       "cmd": "gem.convert",
       "convertToPreferred": {
         "gems": "panels.gems.gems",
-        "levelPath": "view.level",
+        "levelPath": "ctx.stageMax",
         "preferByLevel": [
           {
-            "maxLevel": 50,
-            "types": [
-              "amethyst",
-              "garnet",
-              "topaz",
-              "ruby",
-              "sapphire"
-            ],
-            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
-          },
-          {
-            "maxLevel": 100,
-            "types": [
-              "amethyst",
-              "garnet"
-            ],
-            "依據": "51~100級：暴擊率、爆擊傷害"
-          },
-          {
-            "maxLevel": 200,
             "when": [
-              "panels.header.stats.critRate",
-              ">=",
-              100
-            ],
-            "types": [
-              "garnet"
-            ],
-            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
-          },
-          {
-            "maxLevel": 200,
-            "types": [
-              "amethyst",
-              "garnet"
-            ],
-            "依據": "101以後但爆率未達100%：先把爆率補上來"
-          },
-          {
-            "when": [
-              "panels.header.stats.critRate",
-              ">=",
-              100
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                100
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
             ],
             "mix": [
               [
+                "ruby"
+              ],
+              [
                 "garnet"
+              ],
+              [
+                "spinel",
+                "aquamarine",
+                "amazonite",
+                "peridot",
+                "citrine",
+                "tourmaline",
+                "tigerEye",
+                "moldavite"
               ],
               [
                 "coreFire",
@@ -484,23 +423,245 @@
                 "coreLightning",
                 "corePoison",
                 "coreLight",
-                "coreDark"
+                "coreDark",
+                "coreEarth",
+                "coreWind"
               ]
             ],
-            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
+            "依據": "player_strategy.md §1.2-3：100 級關卡以後加上敵種增傷與屬性增傷寶石（爆率過 50%、回魔與生存足夠才換）"
           },
           {
-            "types": [
-              "amethyst",
-              "garnet"
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                100
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
             ],
-            "依據": "收尾段：爆率未達100%時繼續補爆擊"
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "spinel",
+                "aquamarine",
+                "amazonite",
+                "peridot",
+                "citrine",
+                "tourmaline",
+                "tigerEye",
+                "moldavite"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark",
+                "coreEarth",
+                "coreWind"
+              ]
+            ],
+            "依據": "player_strategy.md §1.2-3：100 級關卡以後加上敵種增傷與屬性增傷寶石（爆率過 50%、回魔與生存足夠才換）"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                50
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-2：50 級關卡後、爆率 50% 以上且回魔及生存足夠，開始替換部分為暴傷寶石"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                50
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-2：50 級關卡後、爆率 50% 以上且回魔及生存足夠，開始替換部分為暴傷寶石"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "sapphire"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-1：50 級關卡前以魔攻、吸魔、吸血為主，暴率為次要（攻擊占 2 份、其餘各 1 份）"
+          },
+          {
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "ruby"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-1：50 級關卡前以物攻、吸魔、吸血為主，暴率為次要；這一段同時是所有條件不成立時的收尾段"
           }
         ],
         "maxSlots": 9,
         "maxPerSlot": 1000,
         "maxCommands": 4,
         "quota": [
+          {
+            "type": "onyx",
+            "count": 2,
+            "依據": "§1.2-4：基本吸血必須保障；有這筆配額，吸血寶石也不會被換掉"
+          },
+          {
+            "type": "manastone",
+            "count": 1,
+            "when": [
+              "view.mp",
+              "<",
+              {
+                "$mul": [
+                  {
+                    "$path": "view.mpMax"
+                  },
+                  0.5
+                ]
+              }
+            ],
+            "依據": "§1.2-4：缺魔時保障基本吸魔"
+          },
           {
             "type": "malachite",
             "count": 1,
@@ -539,27 +700,6 @@
             "依據": "法力恢復不夠者補法力恢復寶石至夠用"
           }
         ],
-        "rebalance": [
-          {
-            "from": "garnet",
-            "to": [
-              "coreFire",
-              "coreIce",
-              "coreLightning",
-              "corePoison",
-              "coreLight",
-              "coreDark"
-            ],
-            "when": [
-              "view.level",
-              ">=",
-              201
-            ],
-            "toShare": 0.5,
-            "minLevel": 6,
-            "依據": "201以後把一半的爆傷寶石轉成元素屬性傷害加成寶石；只轉六級以上，低階的加成比爆傷還低"
-          }
-        ],
         "rules": "panels.gemRules.convertInput"
       },
       "why": "把不在當前偏好段的寶石同階轉成偏好種類。偏好種類只佔 40 種寶石裡的 5~7 種、掉落又隨機，光靠「挑有貨的鑲」永遠補不滿（實測 3 小時偏好種類只有 5/20 顆）。轉換在遊戲裡同階 1:1、數量不變、不花金幣（convertGems），是既有庫存的重新分配。排在 gem-compose 之前：先把同種類集中起來，合成才有 3 顆可併，鑲上去的階級才會跟著上去。配額種類（抗性、法力恢復）不轉走；目標在偏好種類間輪流分配，否則 101 段的「一半爆傷、一半屬性」會被轉成清一色爆傷。maxSlots/maxPerSlot 對應遊戲的 GEM_CONVERT_SLOTS/GEM_CONVERT_STACK，超過會整批被回絕。轉換已改為同階任意兩顆換一顆（數量減半，不再 1:1），輸出與重新平衡的預算都照比例算"
@@ -581,56 +721,58 @@
       "unsocketOffPriority": {
         "equipment": "panels.inv.equipment",
         "gems": "panels.gems.gems",
-        "levelPath": "view.level",
+        "levelPath": "ctx.stageMax",
         "preferByLevel": [
           {
-            "maxLevel": 50,
-            "types": [
-              "amethyst",
-              "garnet",
-              "topaz",
-              "ruby",
-              "sapphire"
-            ],
-            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
-          },
-          {
-            "maxLevel": 100,
-            "types": [
-              "amethyst",
-              "garnet"
-            ],
-            "依據": "51~100級：暴擊率、爆擊傷害"
-          },
-          {
-            "maxLevel": 200,
             "when": [
-              "panels.header.stats.critRate",
-              ">=",
-              100
-            ],
-            "types": [
-              "garnet"
-            ],
-            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
-          },
-          {
-            "maxLevel": 200,
-            "types": [
-              "amethyst",
-              "garnet"
-            ],
-            "依據": "101以後但爆率未達100%：先把爆率補上來"
-          },
-          {
-            "when": [
-              "panels.header.stats.critRate",
-              ">=",
-              100
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                100
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
             ],
             "mix": [
               [
+                "ruby"
+              ],
+              [
                 "garnet"
+              ],
+              [
+                "spinel",
+                "aquamarine",
+                "amazonite",
+                "peridot",
+                "citrine",
+                "tourmaline",
+                "tigerEye",
+                "moldavite"
               ],
               [
                 "coreFire",
@@ -638,25 +780,222 @@
                 "coreLightning",
                 "corePoison",
                 "coreLight",
-                "coreDark"
+                "coreDark",
+                "coreEarth",
+                "coreWind"
               ]
             ],
-            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
+            "依據": "player_strategy.md §1.2-3：100 級關卡以後加上敵種增傷與屬性增傷寶石（爆率過 50%、回魔與生存足夠才換）"
           },
           {
-            "types": [
-              "amethyst",
-              "garnet"
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                100
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
             ],
-            "依據": "收尾段：爆率未達100%時繼續補爆擊"
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "spinel",
+                "aquamarine",
+                "amazonite",
+                "peridot",
+                "citrine",
+                "tourmaline",
+                "tigerEye",
+                "moldavite"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark",
+                "coreEarth",
+                "coreWind"
+              ]
+            ],
+            "依據": "player_strategy.md §1.2-3：100 級關卡以後加上敵種增傷與屬性增傷寶石（爆率過 50%、回魔與生存足夠才換）"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                50
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-2：50 級關卡後、爆率 50% 以上且回魔及生存足夠，開始替換部分為暴傷寶石"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                50
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-2：50 級關卡後、爆率 50% 以上且回魔及生存足夠，開始替換部分為暴傷寶石"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "sapphire"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-1：50 級關卡前以魔攻、吸魔、吸血為主，暴率為次要（攻擊占 2 份、其餘各 1 份）"
+          },
+          {
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "ruby"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-1：50 級關卡前以物攻、吸魔、吸血為主，暴率為次要；這一段同時是所有條件不成立時的收尾段"
           }
         ],
         "maxPerDecision": 2,
         "replaceWith": "gem.socket",
         "minLevelByType": {
-          "topaz": 3,
-          "ruby": 3,
-          "sapphire": 3,
           "coreFire": 6,
           "coreIce": 6,
           "coreLightning": 6,
@@ -665,6 +1004,28 @@
           "coreDark": 6
         },
         "quota": [
+          {
+            "type": "onyx",
+            "count": 2,
+            "依據": "§1.2-4：基本吸血必須保障；有這筆配額，吸血寶石也不會被換掉"
+          },
+          {
+            "type": "manastone",
+            "count": 1,
+            "when": [
+              "view.mp",
+              "<",
+              {
+                "$mul": [
+                  {
+                    "$path": "view.mpMax"
+                  },
+                  0.5
+                ]
+              }
+            ],
+            "依據": "§1.2-4：缺魔時保障基本吸魔"
+          },
           {
             "type": "malachite",
             "count": 1,
@@ -713,56 +1074,58 @@
       "socketEmpty": {
         "equipment": "panels.inv.equipment",
         "gems": "panels.gems.gems",
-        "levelPath": "view.level",
+        "levelPath": "ctx.stageMax",
         "preferByLevel": [
           {
-            "maxLevel": 50,
-            "types": [
-              "amethyst",
-              "garnet",
-              "topaz",
-              "ruby",
-              "sapphire"
-            ],
-            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
-          },
-          {
-            "maxLevel": 100,
-            "types": [
-              "amethyst",
-              "garnet"
-            ],
-            "依據": "51~100級：暴擊率、爆擊傷害"
-          },
-          {
-            "maxLevel": 200,
             "when": [
-              "panels.header.stats.critRate",
-              ">=",
-              100
-            ],
-            "types": [
-              "garnet"
-            ],
-            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
-          },
-          {
-            "maxLevel": 200,
-            "types": [
-              "amethyst",
-              "garnet"
-            ],
-            "依據": "101以後但爆率未達100%：先把爆率補上來"
-          },
-          {
-            "when": [
-              "panels.header.stats.critRate",
-              ">=",
-              100
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                100
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
             ],
             "mix": [
               [
+                "ruby"
+              ],
+              [
                 "garnet"
+              ],
+              [
+                "spinel",
+                "aquamarine",
+                "amazonite",
+                "peridot",
+                "citrine",
+                "tourmaline",
+                "tigerEye",
+                "moldavite"
               ],
               [
                 "coreFire",
@@ -770,23 +1133,220 @@
                 "coreLightning",
                 "corePoison",
                 "coreLight",
-                "coreDark"
+                "coreDark",
+                "coreEarth",
+                "coreWind"
               ]
             ],
-            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
+            "依據": "player_strategy.md §1.2-3：100 級關卡以後加上敵種增傷與屬性增傷寶石（爆率過 50%、回魔與生存足夠才換）"
           },
           {
-            "types": [
-              "amethyst",
-              "garnet"
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                100
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
             ],
-            "依據": "收尾段：爆率未達100%時繼續補爆擊"
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "spinel",
+                "aquamarine",
+                "amazonite",
+                "peridot",
+                "citrine",
+                "tourmaline",
+                "tigerEye",
+                "moldavite"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark",
+                "coreEarth",
+                "coreWind"
+              ]
+            ],
+            "依據": "player_strategy.md §1.2-3：100 級關卡以後加上敵種增傷與屬性增傷寶石（爆率過 50%、回魔與生存足夠才換）"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                50
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-2：50 級關卡後、爆率 50% 以上且回魔及生存足夠，開始替換部分為暴傷寶石"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                50
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-2：50 級關卡後、爆率 50% 以上且回魔及生存足夠，開始替換部分為暴傷寶石"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "sapphire"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-1：50 級關卡前以魔攻、吸魔、吸血為主，暴率為次要（攻擊占 2 份、其餘各 1 份）"
+          },
+          {
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "ruby"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-1：50 級關卡前以物攻、吸魔、吸血為主，暴率為次要；這一段同時是所有條件不成立時的收尾段"
           }
         ],
         "minLevelByType": {
-          "topaz": 3,
-          "ruby": 3,
-          "sapphire": 3,
           "coreFire": 6,
           "coreIce": 6,
           "coreLightning": 6,
@@ -795,6 +1355,28 @@
           "coreDark": 6
         },
         "quota": [
+          {
+            "type": "onyx",
+            "count": 2,
+            "依據": "§1.2-4：基本吸血必須保障；有這筆配額，吸血寶石也不會被換掉"
+          },
+          {
+            "type": "manastone",
+            "count": 1,
+            "when": [
+              "view.mp",
+              "<",
+              {
+                "$mul": [
+                  {
+                    "$path": "view.mpMax"
+                  },
+                  0.5
+                ]
+              }
+            ],
+            "依據": "§1.2-4：缺魔時保障基本吸魔"
+          },
           {
             "type": "malachite",
             "count": 1,
@@ -843,56 +1425,58 @@
       "socketEmpty": {
         "equipment": "panels.inv.equipment",
         "gems": "panels.gems.gems",
-        "levelPath": "view.level",
+        "levelPath": "ctx.stageMax",
         "preferByLevel": [
           {
-            "maxLevel": 50,
-            "types": [
-              "amethyst",
-              "garnet",
-              "topaz",
-              "ruby",
-              "sapphire"
-            ],
-            "依據": "前50級：爆擊率、爆擊傷害、生命、物理攻擊、魔法攻擊"
-          },
-          {
-            "maxLevel": 100,
-            "types": [
-              "amethyst",
-              "garnet"
-            ],
-            "依據": "51~100級：暴擊率、爆擊傷害"
-          },
-          {
-            "maxLevel": 200,
             "when": [
-              "panels.header.stats.critRate",
-              ">=",
-              100
-            ],
-            "types": [
-              "garnet"
-            ],
-            "依據": "101以後：全鑲孔基本全用爆擊傷害，前提爆率達100%"
-          },
-          {
-            "maxLevel": 200,
-            "types": [
-              "amethyst",
-              "garnet"
-            ],
-            "依據": "101以後但爆率未達100%：先把爆率補上來"
-          },
-          {
-            "when": [
-              "panels.header.stats.critRate",
-              ">=",
-              100
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                100
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
             ],
             "mix": [
               [
+                "ruby"
+              ],
+              [
                 "garnet"
+              ],
+              [
+                "spinel",
+                "aquamarine",
+                "amazonite",
+                "peridot",
+                "citrine",
+                "tourmaline",
+                "tigerEye",
+                "moldavite"
               ],
               [
                 "coreFire",
@@ -900,23 +1484,220 @@
                 "coreLightning",
                 "corePoison",
                 "coreLight",
-                "coreDark"
+                "coreDark",
+                "coreEarth",
+                "coreWind"
               ]
             ],
-            "依據": "201以後：爆傷邊際效益出現，一半換成元素屬性傷害加成寶石"
+            "依據": "player_strategy.md §1.2-3：100 級關卡以後加上敵種增傷與屬性增傷寶石（爆率過 50%、回魔與生存足夠才換）"
           },
           {
-            "types": [
-              "amethyst",
-              "garnet"
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                100
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
             ],
-            "依據": "收尾段：爆率未達100%時繼續補爆擊"
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "spinel",
+                "aquamarine",
+                "amazonite",
+                "peridot",
+                "citrine",
+                "tourmaline",
+                "tigerEye",
+                "moldavite"
+              ],
+              [
+                "coreFire",
+                "coreIce",
+                "coreLightning",
+                "corePoison",
+                "coreLight",
+                "coreDark",
+                "coreEarth",
+                "coreWind"
+              ]
+            ],
+            "依據": "player_strategy.md §1.2-3：100 級關卡以後加上敵種增傷與屬性增傷寶石（爆率過 50%、回魔與生存足夠才換）"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "phys"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                50
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
+            ],
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-2：50 級關卡後、爆率 50% 以上且回魔及生存足夠，開始替換部分為暴傷寶石"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ],
+              [
+                "ctx.stageMax",
+                ">=",
+                50
+              ],
+              [
+                "panels.header.stats.critRate",
+                ">=",
+                50
+              ],
+              [
+                "view.mp",
+                ">=",
+                {
+                  "$mul": [
+                    {
+                      "$path": "view.mpMax"
+                    },
+                    0.5
+                  ]
+                }
+              ],
+              [
+                "ctx.desperate",
+                "falsy"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "garnet"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-2：50 級關卡後、爆率 50% 以上且回魔及生存足夠，開始替換部分為暴傷寶石"
+          },
+          {
+            "when": [
+              [
+                "ctx.skillMode",
+                "==",
+                "magic"
+              ]
+            ],
+            "mix": [
+              [
+                "sapphire"
+              ],
+              [
+                "sapphire"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-1：50 級關卡前以魔攻、吸魔、吸血為主，暴率為次要（攻擊占 2 份、其餘各 1 份）"
+          },
+          {
+            "mix": [
+              [
+                "ruby"
+              ],
+              [
+                "ruby"
+              ],
+              [
+                "onyx"
+              ],
+              [
+                "manastone"
+              ],
+              [
+                "amethyst"
+              ]
+            ],
+            "依據": "§1.2-1：50 級關卡前以物攻、吸魔、吸血為主，暴率為次要；這一段同時是所有條件不成立時的收尾段"
           }
         ],
         "minLevelByType": {
-          "topaz": 3,
-          "ruby": 3,
-          "sapphire": 3,
           "coreFire": 6,
           "coreIce": 6,
           "coreLightning": 6,
@@ -924,7 +1705,8 @@
           "coreLight": 6,
           "coreDark": 6
         },
-        "maxGemLevel": 3
+        "maxGemLevel": 3,
+        "quota": []
       },
       "why": "第 2、3 套的便宜維護：趁它們被穿著時（野外幾乎隨時有菁英，第 3 套常常穿很久）把低階寶石（3 階以下）鑲進空插槽。高階留給第 1 套；低階寶石合成後每種每階最多剩 2 顆，本來就沒人要。",
       "awayOnly": true
@@ -988,15 +1770,16 @@
             ],
             "lists": [
               {
-                "list": "affixWeapon",
+                "list": "wBasePhys",
                 "when": [
                   "ctx.skillMode",
                   "==",
                   "phys"
-                ]
+                ],
+                "依據": "§1.1-1：50 級關卡前以攻擊主屬性、物攻、攻速、冷卻縮減、敵種增傷為主"
               },
               {
-                "list": "affixWeaponMagic",
+                "list": "wBaseMagic",
                 "when": [
                   "ctx.skillMode",
                   "==",
@@ -1004,12 +1787,7 @@
                 ]
               },
               {
-                "list": "affixCritDmg",
-                "when": [
-                  "panels.header.stats.critRate",
-                  ">",
-                  50
-                ]
+                "list": "affixVsEnemy"
               },
               {
                 "list": "affixVsNormal",
@@ -1017,45 +1795,132 @@
                   "ctx.desperate",
                   "falsy"
                 ],
-                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+                "依據": "生存率不足時把對普通敵人的加成從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              },
+              {
+                "list": "affixCrit",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    50
+                  ]
+                ],
+                "依據": "§1.1-1：50 級關卡後開始加入爆率、爆傷"
+              },
+              {
+                "list": "affixCritDmg",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    50
+                  ]
+                ]
+              },
+              {
+                "list": "affixPenPhys",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.skillMode",
+                    "==",
+                    "phys"
+                  ]
+                ],
+                "依據": "§1.1-1：200 級關卡以上加入各類屬性傷害增幅、物理及魔法穿透"
+              },
+              {
+                "list": "affixPenMagic",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.skillMode",
+                    "==",
+                    "magic"
+                  ]
+                ]
               },
               {
                 "list": "affixElem_fire",
                 "when": [
-                  "ctx.elem_fire",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_fire",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_lightning",
                 "when": [
-                  "ctx.elem_lightning",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_lightning",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_ice",
                 "when": [
-                  "ctx.elem_ice",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_ice",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_wind",
                 "when": [
-                  "ctx.elem_wind",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_wind",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_earth",
                 "when": [
-                  "ctx.elem_earth",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_earth",
+                    "truthy"
+                  ]
                 ]
               }
             ],
-            "依據": "主副手：全洗傷害類，百分比>定值；爆傷只在爆率高於50%後才洗"
+            "依據": "§1.1-1：武器兩個部位全部洗攻擊相關詞條，依關卡分段加入爆擊、屬性增幅與穿透"
           },
           {
             "slots": [
@@ -1065,15 +1930,20 @@
             ],
             "lists": [
               {
-                "list": "affixJewel",
+                "list": "affixJewelCore",
+                "依據": "§1.1-2：項鏈、戒指必帶強化成功率、經驗加成、掉寶率各 1 條，材料足夠時三個部位都優先洗寶石鑲嵌率"
+              },
+              {
+                "list": "wBasePhys",
                 "when": [
                   "ctx.skillMode",
                   "==",
                   "phys"
-                ]
+                ],
+                "依據": "§1.1-1：50 級關卡前以攻擊主屬性、物攻、攻速、冷卻縮減、敵種增傷為主"
               },
               {
-                "list": "affixJewelMagic",
+                "list": "wBaseMagic",
                 "when": [
                   "ctx.skillMode",
                   "==",
@@ -1081,12 +1951,7 @@
                 ]
               },
               {
-                "list": "affixCritDmg",
-                "when": [
-                  "panels.header.stats.critRate",
-                  ">",
-                  50
-                ]
+                "list": "affixVsEnemy"
               },
               {
                 "list": "affixVsNormal",
@@ -1094,63 +1959,154 @@
                   "ctx.desperate",
                   "falsy"
                 ],
-                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+                "依據": "生存率不足時把對普通敵人的加成從保留清單移除，讓它們被洗成對菁英/BOSS的"
               },
               {
-                "list": "affixVsNormalRed",
+                "list": "affixCrit",
                 "when": [
-                  "ctx.desperate",
-                  "falsy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    50
+                  ]
                 ],
-                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+                "依據": "§1.1-1：50 級關卡後開始加入爆率、爆傷"
+              },
+              {
+                "list": "affixCritDmg",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    50
+                  ]
+                ]
+              },
+              {
+                "list": "affixPenPhys",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.skillMode",
+                    "==",
+                    "phys"
+                  ]
+                ],
+                "依據": "§1.1-1：200 級關卡以上加入各類屬性傷害增幅、物理及魔法穿透"
+              },
+              {
+                "list": "affixPenMagic",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.skillMode",
+                    "==",
+                    "magic"
+                  ]
+                ]
               },
               {
                 "list": "affixElem_fire",
                 "when": [
-                  "ctx.elem_fire",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_fire",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_lightning",
                 "when": [
-                  "ctx.elem_lightning",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_lightning",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_ice",
                 "when": [
-                  "ctx.elem_ice",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_ice",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_wind",
                 "when": [
-                  "ctx.elem_wind",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_wind",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_earth",
                 "when": [
-                  "ctx.elem_earth",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_earth",
+                    "truthy"
+                  ]
                 ]
+              },
+              {
+                "list": "affixSpecial",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ]
+                ],
+                "依據": "§1.1-4：幸運值、詞條上限率 200 級關卡起洗到就留（300 級關卡以上必出 1 條）"
               }
             ],
-            "依據": "項鏈戒指：寶石鑲嵌效率最關鍵，其次掉寶率與經驗加成"
+            "依據": "§1.1-2：項鏈與戒指，剩餘詞條與武器相同的攻擊策略"
           },
           {
             "lists": [
               {
-                "list": "affixArmor",
+                "list": "affixArmorPhys",
                 "when": [
                   "ctx.skillMode",
                   "==",
                   "phys"
-                ]
+                ],
+                "依據": "§1.1-3：防具每件必出 1 條攻擊主屬性；可出攻擊詞條的部位優先出攻擊詞條；吸血吸魔優先；其餘防禦以生命、體質、護盾、抗性減傷平均分配"
               },
               {
                 "list": "affixArmorMagic",
@@ -1166,15 +2122,27 @@
                   "ctx.desperate",
                   "falsy"
                 ],
-                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+                "依據": "生存率不足時把對普通敵人的抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
               },
               {
-                "list": "affixCritDmg",
+                "list": "wBasePhys",
                 "when": [
-                  "panels.header.stats.critRate",
-                  ">",
-                  50
+                  "ctx.skillMode",
+                  "==",
+                  "phys"
+                ],
+                "依據": "§1.1-1：50 級關卡前以攻擊主屬性、物攻、攻速、冷卻縮減、敵種增傷為主"
+              },
+              {
+                "list": "wBaseMagic",
+                "when": [
+                  "ctx.skillMode",
+                  "==",
+                  "magic"
                 ]
+              },
+              {
+                "list": "affixVsEnemy"
               },
               {
                 "list": "affixVsNormal",
@@ -1182,49 +2150,146 @@
                   "ctx.desperate",
                   "falsy"
                 ],
-                "依據": "生存率不足時把對普通敵人的加成／抗性從保留清單移除，讓它們被洗成對菁英/BOSS的"
+                "依據": "生存率不足時把對普通敵人的加成從保留清單移除，讓它們被洗成對菁英/BOSS的"
+              },
+              {
+                "list": "affixCrit",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    50
+                  ]
+                ],
+                "依據": "§1.1-1：50 級關卡後開始加入爆率、爆傷"
+              },
+              {
+                "list": "affixCritDmg",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    50
+                  ]
+                ]
+              },
+              {
+                "list": "affixPenPhys",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.skillMode",
+                    "==",
+                    "phys"
+                  ]
+                ],
+                "依據": "§1.1-1：200 級關卡以上加入各類屬性傷害增幅、物理及魔法穿透"
+              },
+              {
+                "list": "affixPenMagic",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.skillMode",
+                    "==",
+                    "magic"
+                  ]
+                ]
               },
               {
                 "list": "affixElem_fire",
                 "when": [
-                  "ctx.elem_fire",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_fire",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_lightning",
                 "when": [
-                  "ctx.elem_lightning",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_lightning",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_ice",
                 "when": [
-                  "ctx.elem_ice",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_ice",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_wind",
                 "when": [
-                  "ctx.elem_wind",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_wind",
+                    "truthy"
+                  ]
                 ]
               },
               {
                 "list": "affixElem_earth",
                 "when": [
-                  "ctx.elem_earth",
-                  "truthy"
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ],
+                  [
+                    "ctx.elem_earth",
+                    "truthy"
+                  ]
+                ]
+              },
+              {
+                "list": "affixSpecial",
+                "when": [
+                  [
+                    "ctx.stageMax",
+                    ">=",
+                    200
+                  ]
                 ]
               }
             ],
-            "依據": "防具：以防禦性詞條為主，保留一條物攻；不留單一元素抗性（怪物屬性隨機），改留全抗性與全局減傷"
+            "依據": "§1.1-3：防具所有部位（收尾組）"
           }
         ]
       },
-      "why": "依 player_strategy.md 裝備詞條洗煉策略分三組：主副手全傷害、防具以防禦為主、項鏈戒指以寶石鑲嵌效率/掉寶率/經驗加成為關鍵。用同一份清單套 13 個部位不可能對——武器洗不出防禦詞條，而 gemEff/loot/xpBonus 只有戒指項鏈出得來。爆傷要爆率破 50% 才留；閃避 300 級前不留；單一元素抗性不留（怪物屬性隨機，改留全抗性）。連續 5 次打不過菁英/BOSS（ctx.desperate）時改打針對性：對普通敵人的傷害加成與抗性不再保留。詞條目標依 seed 決定的技能類別切換：物理組留 atk 系、魔法組留 matk 系（matkPct/matkFlat/mPen），並額外保留主打元素的屬性傷害提升（elemDmgX）。技能吃魔攻、裝備卻堆物攻等於白洗",
+      "why": "依 player_strategy.md §1.1 裝備詞條洗煉策略：武器全洗攻擊詞條（50 級關卡後加爆擊、200 級後加屬性增幅與穿透）；項鏈戒指必帶強化成功率／經驗／掉寶各 1 條並優先寶石鑲嵌率；防具每件必出攻擊主屬性、吸血吸魔優先、其餘防禦平均；不留控制時間縮減等無用詞條。階段門檻用「到過的最高關卡」（ctx.stageMax，跨地圖只升不降）",
       "if": [
         [
           "view.essence",
@@ -1292,34 +2357,49 @@
       "why": "背包壓力閥：使用率達 90% 時，把低於身上最高品質的庫存一次清掉。背包滿了不只是挑不到東西，而是整條掉落管線停擺——熔爐佇列推不進背包就回堵，新裝備直接丟棄，角色會停在原地打幾十小時而畫面完全正常"
     },
     {
-      "id": "gem-shop-buy-1",
+      "id": "chest-open-all",
       "everySec": 1200,
-      "cmd": "gem.shopBuyAll",
-      "why": "每20分鐘買光所有商店寶石"
+      "cmd": "chest.open",
+      "chestOpenAll": {
+        "chests": "panels.newforge.chests"
+      },
+      "why": "player_strategy.md §8【寶箱】：拆解裝備累積鍛造經驗得寶箱，大約每 10~30 分鐘對所有寶箱全開一次。持有數由面板給，只送持有 > 0 的。獎勵（金幣、碎片、寶石、符文、裝備、遺物）由遊戲處理，策略不算機率；寶箱升級規則文檔沒有寫，不接"
     },
     {
-      "id": "gem-shop-refresh-1",
-      "everySec": 1200,
-      "cmd": "gem.shopRefresh",
-      "why": "重置寶石商店第1次"
+      "id": "relic-upgrade",
+      "everySec": 300,
+      "cmd": "relic.upgrade",
+      "relicUpgrade": {
+        "relics": "panels.relicPlan.relics",
+        "maxPerDecision": 20
+      },
+      "why": "player_strategy.md §8【遺物】只能由寶箱或神祕商人取得、純運氣沒有取得策略；升級只消耗重複件、沒有其他用途，件數夠（遊戲算好放在 panels.relicPlan）就升"
     },
     {
-      "id": "gem-shop-refresh-2",
-      "everySec": 1200,
-      "cmd": "gem.shopRefresh",
-      "why": "重置寶石商店第2次"
+      "id": "merchant-open",
+      "everySec": 10800,
+      "cmd": "merchant.open",
+      "merchantOpen": {
+        "merchant": "panels.merchantPlan",
+        "towerActive": "panels.tower.tower.active"
+      },
+      "why": "player_strategy.md §8【神祕商人】：召喚券由封魔塔 BOSS 掉落，原則上每 2~4 小時看一次，有券就召喚進去看。封魔塔進行中遊戲會拒絕，所以先檢查塔沒在打"
     },
     {
-      "id": "gem-shop-buy-2",
-      "everySec": 1200,
-      "cmd": "gem.shopBuyAll",
-      "why": "重置後再次買光寶石商店"
-    },
-    {
-      "id": "gem-shop-upgrade",
-      "everySec": 1800,
-      "cmd": "gem.shopUpgrade",
-      "why": "剩餘金幣嘗試升級寶石商店"
+      "id": "merchant-shop",
+      "everySec": 5,
+      "cmd": "gem.shopBuy",
+      "merchantShop": {
+        "merchant": "panels.merchantPlan",
+        "gold": "view.gold",
+        "closeCmd": "merchant.close",
+        "minRuneTier": 12,
+        "minGemLevel": 5,
+        "goldRatio": 0.5,
+        "relicGoldRatio": 1,
+        "門檻_依據": "文檔只寫「高階符文或寶石值得買、遺物必買、前提是金錢足夠」，沒有數字。符文共 20 階（商人賣 1~20 階、價格 2 萬×階^2.5）取 12 階以上；寶石取 5 級以上（6 級起才有光暈、屬高階）；單件不超過持有金幣的一半，遺物則只要付得起就買（目前商人還沒有上架遺物的供應器，規則先備著）"
+      },
+      "why": "商人開著時依序買：遺物 → 符文 → 寶石（同類先買高階），裝備不在規則內；實際售價（含遺物折扣）與能不能買由遊戲算好放在 panels.merchantPlan，同一輪扣掉已花的錢；買完關閉"
     },
     {
       "id": "tower-auto",
