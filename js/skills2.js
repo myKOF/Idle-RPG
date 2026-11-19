@@ -2189,7 +2189,7 @@ function sgDisintegrate(ent, sid, spec, dur, ult, ctx) {
     fxKind: 'burst', variant: 'blood-explosion', elem: poison ? 'poison' : null,
     vfxRoles: roles, preserveDeadTargets: true, area: sgAreaAround(ent, radius)
   });
-  var boom = total * sgUltVal(ult, 'pct') / 100;
+  var boom = total * sgUltVal(ult, 'pct') / 100 * areaDamageMultiplier(getStats().aoeDmg);
   var enemies = (ctx && ctx.enemies) || null;
   if (!(boom > 0) || !enemies || !enemies.length) return;
   var victims = bfNearestOthers(ent, enemies, enemies.length, radius);
@@ -2261,7 +2261,7 @@ function sgSpreadBloodbladeDots(source, enemies, st, lvs, tiers) {
    神鑄被動與敵種加成；另計本系統的狂暴爆擊增益與虛弱增傷）。
    傷害類型與屬性由群組決定：魔法群組走魔攻／魔穿，並把整段本體傷害歸屬該屬性
    （skillElem：技能屬性化）。 */
-function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride) {
+function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride, isArea) {
   var g = SKILLS2[gid];
   var magic = sgIsMagic(g);
   var aCfg = {
@@ -2283,6 +2283,7 @@ function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride) {
        普攻端（combat.js playerAtkCfg）讀同一支，兩邊必須一致。 */
     totalDmgPct: (st.totalDmgPct || 0) + skills2AllDamageUpPct(pEnt) + (bonusTotalPct || 0),
     dmgVsElem: st.dmgVsElem,
+    aoeDmg: st.aoeDmg, isArea: !!isArea,
     isPlayer: true, isSkill: true, skillGid: gid   // skillGid：傳奇特效（飛刀增傷、天譴之誓等）用來辨識是哪個技能的命中
   };
   /* 擊中回復觸發系數（配置表 Skills2「擊中回復觸發系數」）：吸血／吸魔各擲一次的觸發機率%，未設＝必定觸發 */
@@ -2299,10 +2300,10 @@ function sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride) {
 
 /* 一次獨立命中（走完整 resolveHit 傷害管線：防禦、爆擊、格擋、護盾、敵種倍率）。
    回傳 resolveHit 結果；同時記錄浮字／DPS／輸出統計並更新 out。 */
-function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTotalPct, elemOverride, guaranteedHit, subType) {
+function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTotalPct, elemOverride, guaranteedHit, subType, isArea) {
   if (!target || target.hp <= 0 || !(dmgVal > 0)) return null;
   var g = SKILLS2[gid];
-  var atkCfg = sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride), defCfg = monsterDefCfg(target);
+  var atkCfg = sgAtkCfg(pEnt, st, dmgVal, target, bonusTotalPct, gid, elemOverride, isArea), defCfg = monsterDefCfg(target);
   if (guaranteedHit) { atkCfg.hit = 100; defCfg.dodge = 0; defCfg.absDodge = 0; }
   var res = resolveHit(pEnt, target, atkCfg, defCfg);
   if (!res.miss) {
@@ -2332,6 +2333,13 @@ function sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTo
   // Skills2「敵方狀態」的附加條目：本技能每次命中都附加（登記位置的條目由各技能自己的施加點處理）
   if (!res.miss) sgApplyHitStatuses(target, gid, dmgVal, st);
   return res;
+}
+
+/* 範圍語意由本次傷害段決定；即使只命中一隻也保留，不用命中數或群組名稱推測。
+   與單體共用完整結算、浮字與統計；衍生已造成傷害不再呼叫此入口。 */
+function sgAreaHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs, bonusTotalPct, elemOverride, guaranteedHit, subType) {
+  return sgHitOne(pEnt, st, target, dmgVal, gid, floatSel, out, delayMs,
+    bonusTotalPct, elemOverride, guaranteedHit, subType, true);
 }
 
 /* ---- 超神「每造成 1 次傷害就把自己的冷卻往回扣」的共用掛點 ----
@@ -2462,6 +2470,7 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
     startAt: begin, lastAt: begin, lastDistance: 0, endAt: begin + travel,
     fallbackTargets: fallbackTargets || [], floatSel: floatSel,
     out: out, states: [], started: false,
+    isArea: !!(extra && extra.isArea),
     hitFn: extra && typeof extra.hitFn === 'function' ? extra.hitFn : null,
     radialCurve: extra && extra.radialCurve || null,
     onStart: extra && extra.onStart || null,
@@ -2480,6 +2489,7 @@ function sgQueueFlyingProjectile(pEnt, st, gid, dmgVal, origin, angle, length, f
        貫穿段的每一次命中都要拿得到，因此掛在飛行物上而不是每次重算。 */
     iceSpec: extra && extra.iceSpec || null,
     victims: extra && extra.victims || null,
+    blastRadius: Math.max(0, Number(extra && extra.blastRadius) || 0),
     splitSpec: extra && extra.splitSpec || null,
     fireballSplitLanding: extra && extra.fireballSplitLanding || null,
     splitDmgVal: extra && Number(extra.splitDmgVal) > 0 ? Number(extra.splitDmgVal) : 0,
@@ -2546,7 +2556,7 @@ function sgProjectileHit(projectile, target, ctx) {
     projectile.hitFn(projectile, target, ctx);
     return;
   }
-  var res = sgHitOne(projectile.pEnt, projectile.st, target, projectile.dmgVal,
+  var res = (projectile.isArea ? sgAreaHitOne : sgHitOne)(projectile.pEnt, projectile.st, target, projectile.dmgVal,
     projectile.gid, projectile.floatSel, projectile.out, 0,
     projectile.bonusPctFn ? projectile.bonusPctFn(target) : 0);
   if (!res || res.miss) return;
@@ -2627,7 +2637,7 @@ function sgProjectilePulse(projectile, now, distance, enemies, ctx) {
     var before = projectile.out.dmg;
     var struck=[];
     for (var i = 0; i < victims.length; i++) {
-      var res=sgHitOne(projectile.pEnt, projectile.st, victims[i], projectile.pulseDmg,
+      var res=sgAreaHitOne(projectile.pEnt, projectile.st, victims[i], projectile.pulseDmg,
         projectile.gid, projectile.floatSel, projectile.out, sgStaggerMs(i));
       if(res&&!res.miss)struck.push(victims[i]);
     }
@@ -3096,7 +3106,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         var plan = plans[pi];
         sgQueueFlyingProjectile(pEnt, st, 'thrust', dmgVal,
           plan.origin, plan.angle, lineLen, floatSel, plan.targets,
-          { spreadPct: spreadPct, spreadCount: spreadCount, halfWidthPx: plan.halfWidth,
+          { isArea: true, spreadPct: spreadPct, spreadCount: spreadCount, halfWidthPx: plan.halfWidth,
             beginSec: pr * thrustWaveGap, speed: sgConfiguredFlightSpeed('thrust', 1, SG_THRUST_PROJECTILE_SPEED),
             onHit: onThrustHit }, out);
       }
@@ -3109,7 +3119,7 @@ function sgCastThrust(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     for (var pi2 = 0; pi2 < plans.length; pi2++) {
       var hitTargets = plans[pi2].targets;
       for (var ti = 0; ti < hitTargets.length; ti++) {
-        var res = sgHitOne(pEnt, st, hitTargets[ti], dmgVal, 'thrust', floatSel, out, Math.round(r * thrustWaveGap * 1000));
+        var res = sgAreaHitOne(pEnt, st, hitTargets[ti], dmgVal, 'thrust', floatSel, out, Math.round(r * thrustWaveGap * 1000));
         if (res && !res.miss && lvs[4] > 0) {
           var spreadPct2 = sgVal(t[4].fx, 'pct', lvs[4]);
           // 「擴散至周圍的 N 個敵人」沒有指定最近＝隨機（候選同原本＝整個戰場）
@@ -3271,7 +3281,7 @@ function sgCastCleave(pEnt, st, g, lvs, pool, primary, floatSel, out) {
     if (wave === 0) emitWave(origin);
     (function(delayed) {
       sgQueueFlyingProjectile(pEnt,st,'cleave',dmgVal,hasGeometry ? origin : null,0,radius,floatSel,targets,{
-        radialCurve:curve, travelMs:travel*1000, singleHit:true, beginSec:delay,
+        isArea:true, radialCurve:curve, travelMs:travel*1000, singleHit:true, beginSec:delay,
         stunChance:lvs[4]>0 ? sgSlotChance('cleave','5','enemy',0,sgVal(t[4].fx,'chance',lvs[4])) : 0,
         stunSec:lvs[4]>0 ? sgVal(t[4].fx,'sec',lvs[4]) : 0, stunSlot:{gid:'cleave',tier:'5'},
         onHit:onHit, bonusPctFn:bonusFor,
@@ -3305,9 +3315,9 @@ var SG_KNIFE_WALTZ_RPS = 1;     // 傳奇【輪舞刃】刀環每秒轉幾圈
 /* 飛刀的一次命中（含命中後的所有觸發）。
    derived＝路徑貫穿／分裂刃造成的命中：仍計入死亡收割的擊殺，但不再往下分裂，
    否則「分裂刃殺人再分裂」會無限展開。 */
-function sgKnifeHit(cfg, target, dmgVal, delayMs, bonusPct, derived) {
+function sgKnifeHit(cfg, target, dmgVal, delayMs, bonusPct, derived, isArea) {
   if (!target || target.hp <= 0 || !(dmgVal > 0)) return null;
-  var res = sgHitOne(cfg.pEnt, cfg.st, target, dmgVal, 'knife', cfg.floatSel, cfg.out, delayMs, bonusPct || 0);
+  var res = (isArea ? sgAreaHitOne : sgHitOne)(cfg.pEnt, cfg.st, target, dmgVal, 'knife', cfg.floatSel, cfg.out, delayMs, bonusPct || 0);
   if (!res || res.miss) return res;
   if (res.crit && cfg.onCrit) cfg.onCrit();
   if (!res.killed) return res;
@@ -3412,8 +3422,8 @@ function sgKnifeFlightPoint(p,to,k) {
   var u=1-k,c=p.control;
   return {x:u*u*p.origin.x+2*u*k*c.x+k*k*to.x,y:u*u*p.origin.y+2*u*k*c.y+k*k*to.y};
 }
-function sgKnifeFlightHit(p,target,damage,derived,ctx,bonus) {
-  var res=sgKnifeHit(p.cfg,target,damage,0,bonus===undefined?p.bonus:bonus,derived);
+function sgKnifeFlightHit(p,target,damage,derived,ctx,bonus,isArea) {
+  var res=sgKnifeHit(p.cfg,target,damage,0,bonus===undefined?p.bonus:bonus,derived,isArea);
   if (res && !res.miss) {
     var pos=bfPos(target);
     // 彈射命中改用第 3 階的觸發命中音效（外觀照舊）；第一次命中、迴旋返回與追魂刃沿用受擊音效
@@ -3445,7 +3455,7 @@ function sgTickKnifeFlight(p,now,ctx) {
         var e=targets[i];
         if(e===p.target||e===p.from||p.seen.indexOf(e)>=0)continue;
         p.seen.push(e);
-        var hit=sgKnifeFlightHit(p,e,p.cfg.dmgVal*p.cfg.pathPct/100,true,ctx,0);
+        var hit=sgKnifeFlightHit(p,e,p.cfg.dmgVal*p.cfg.pathPct/100,true,ctx,0,true);
         if(hit&&hit.killed)killed=true;
       }
       p.lastPoint=point;
@@ -3692,7 +3702,7 @@ function sgGaleVacuumSlash(cfg, target) {
   });
   var dmg = cfg.dmgVal * (Number(spec.pct) || 0) / 100;
   for (var i = 0; i < victims.length; i++) {
-    sgHitOne(cfg.pEnt, cfg.st, victims[i], dmg, 'gale', cfg.floatSel, cfg.out, sgStaggerMs(i), 0, 'wind');
+    sgAreaHitOne(cfg.pEnt, cfg.st, victims[i], dmg, 'gale', cfg.floatSel, cfg.out, sgStaggerMs(i), 0, 'wind');
   }
 }
 
@@ -3709,7 +3719,7 @@ function sgGaleThunderBolt(cfg, target) {
   });
   var dmg = cfg.dmgVal * (Number(cfg.bolt.pct) || 0) / 100;
   for (var i = 0; i < victims.length; i++) {
-    sgHitOne(cfg.pEnt, cfg.st, victims[i], dmg, 'gale', cfg.floatSel, cfg.out, 0, 0, 'lightning');
+    sgAreaHitOne(cfg.pEnt, cfg.st, victims[i], dmg, 'gale', cfg.floatSel, cfg.out, 0, 0, 'lightning');
   }
 }
 
@@ -3804,7 +3814,7 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       var chidoriHitDamage = dmgVal * chidoriDamageFactor *
         (shareMode ? 1 + sgVal(t[6].fx, 'pct', lvs[6]) / 100 : 1);
       for (var ci = 0; ci < picked.length; ci++) {
-        var cres = sgHitOne(pEnt, st, picked[ci], chidoriHitDamage, 'gale', floatSel, out, 0);
+        var cres = sgAreaHitOne(pEnt, st, picked[ci], chidoriHitDamage, 'gale', floatSel, out, 0);
         sgGaleOnHit(cfg, picked[ci], cres);
       }
       return;
@@ -3830,13 +3840,13 @@ function sgCastGale(pEnt, st, g, lvs, pool, primary, floatSel, out) {
       var alive = shareTargets.filter(function (e) { return e && e.hp > 0; });
       var share = alive.length ? total / alive.length : 0;
       for (var si = 0; si < alive.length; si++) {
-        var sres = sgHitOne(pEnt, st, alive[si], share, 'gale', floatSel, out, 0);
+        var sres = sgAreaHitOne(pEnt, st, alive[si], share, 'gale', floatSel, out, 0);
         sgGaleOnHit(cfg, alive[si], sres);
       }
     } else {
       for (var bi = 0; bi < shareTargets.length; bi++) {
         if (!shareTargets[bi] || shareTargets[bi].hp <= 0) continue;
-        var pres = sgHitOne(pEnt, st, shareTargets[bi], dmgVal, 'gale', floatSel, out, 0);
+        var pres = sgAreaHitOne(pEnt, st, shareTargets[bi], dmgVal, 'gale', floatSel, out, 0);
         sgGaleOnHit(cfg, shareTargets[bi], pres);
       }
     }
@@ -3943,7 +3953,7 @@ function sgGaleThunderFlash(cfg, ult, sequence, ctx) {
       singleHit: true, rectangularBeam: true,
       hitFn: function (projectile, enemy, hitCtx) {
         var before = cfg.out.dmg;
-        var res = sgHitOne(cfg.pEnt, cfg.st, enemy, projectile.dmgVal, 'gale', cfg.floatSel, cfg.out, 0, 0, 'lightning');
+        var res = sgAreaHitOne(cfg.pEnt, cfg.st, enemy, projectile.dmgVal, 'gale', cfg.floatSel, cfg.out, 0, 0, 'lightning');
         sgGaleOnHit(cfg, enemy, res);
         if (hitCtx.onDamage && cfg.out.dmg > before) hitCtx.onDamage(cfg.out.dmg - before);
         if (res && res.killed && hitCtx.onDeaths) hitCtx.onDeaths();
@@ -4389,7 +4399,7 @@ function sgBurnBlast(ent, enemies, ctx) {
   var victims = sgRandomEnemiesNearPlayer(enemies, bfMeterPx(sgGeometryNumber(fx, 'm') || 12), ent, count);
   if (!victims.length) return;
   var out = { killed: false, dmg: 0, crit: false };
-  var per = amount * sgVal(fx, 'pct', lvs[4]) / 100;
+  var per = amount * sgVal(fx, 'pct', lvs[4]) / 100 * areaDamageMultiplier(getStats().aoeDmg);
   sgEmitVfx('fireball', victims, (ctx && ctx.floatSel) || 'mv-float', {
     fxKind: 'burst', variant: 'fire-blast', elem: 'fire',
     vfxTier: 5
@@ -4542,7 +4552,7 @@ function sgTickMeteors(ctx) {
       var bonusPct = m.bonusPctFn ? m.bonusPctFn(target) : 0;
       // 傳奇【神落天殞】：隕石（殞石）落地的傷害提高
       if (m.variant === 'meteor-impact' && typeof legendaryMeteorDamagePct === 'function') bonusPct += legendaryMeteorDamagePct();
-      var res = sgHitOne(m.pEnt, m.st, target, m.dmgVal, m.gid, m.floatSel, m.out, 0, bonusPct, m.elem);
+      var res = (m.radius > 0 ? sgAreaHitOne : sgHitOne)(m.pEnt, m.st, target, m.dmgVal, m.gid, m.floatSel, m.out, 0, bonusPct, m.elem);
       if (hitVictims && res && !res.miss && !res.invuln) hitVictims.push(target);
       if (res && !res.miss && m.burnSpec) sgApplyBurn(target, m.burnSpec);
       if (res && res.killed) killed = true;
@@ -4724,7 +4734,7 @@ function sgFireballProjectileHit(projectile, target, ctx) {
   for (var i = 0; i < victims.length; i++) {
     var victim = victims[i];
     if (!victim || victim.hp <= 0) continue;
-    var res = sgHitOne(projectile.pEnt, projectile.st, victim, projectile.dmgVal,
+    var res = (projectile.blastRadius > 0 ? sgAreaHitOne : sgHitOne)(projectile.pEnt, projectile.st, victim, projectile.dmgVal,
       'fireball', projectile.floatSel, projectile.out, 0, sgFireballBurnBonus(projectile, victim));
     if (res && !res.miss && projectile.burnSpec) sgApplyBurn(victim, projectile.burnSpec);
   }
@@ -5040,7 +5050,7 @@ function sgResolveInfernoTempest(shot, ctx) {
   sgEmitVfx('firepillar',shot.area?[]:victims,shot.floatSel,{fxKind:'burst',variant:'inferno-tempest-impact',
     area:shot.area,hit:false,vfxRoles:{attack:shot.roles.attack}});
   var out={killed:false,dmg:0,crit:false};
-  victims.forEach(function(e){sgHitOne(shot.pEnt,shot.st,e,shot.dmgVal,'firepillar',shot.floatSel,out,0,0,'fire',e===shot.target);});
+  victims.forEach(function(e){sgAreaHitOne(shot.pEnt,shot.st,e,shot.dmgVal,'firepillar',shot.floatSel,out,0,0,'fire',e===shot.target);});
   if(out.dmg>0&&ctx.onDamage)ctx.onDamage(out.dmg);
   if(out.killed&&ctx.onDeaths)ctx.onDeaths();
 }
@@ -5122,7 +5132,7 @@ function sgDevourDamage(f, enemies, ctx) {
       area: sgGroundArea(f), vfxRoles: { attack: f.devourRoles.attack }, hit: false });
   }
   for (var i = 0; i < victims.length; i++) {
-    sgHitOne(f.pEnt, f.st, victims[i], f.dmgVal, 'firepillar', f.floatSel, out, 0, 0, 'fire');
+    sgAreaHitOne(f.pEnt, f.st, victims[i], f.dmgVal, 'firepillar', f.floatSel, out, 0, 0, 'fire');
   }
   if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
@@ -5669,7 +5679,7 @@ function sgGroundHitSubType(f) {
       (f.frostLayerPct > 0 ? f.frostLayerPct * sgFrostStacks(victims[i]) : 0);
     var iceFrostBefore = f.kind === 'icearrow' && sgFrostOn(victims[i]);
     var groundSubType = sgGroundHitSubType(f);
-    var res = sgHitOne(f.pEnt, f.st, victims[i], f.dmgVal, f.gid, f.floatSel, out,
+    var res = sgAreaHitOne(f.pEnt, f.st, victims[i], f.dmgVal, f.gid, f.floatSel, out,
       sgStaggerMs(i), bonusPct, f.hitElem, false, groundSubType);
     if (!res || res.miss) continue;
     if (f.kind === 'icearrow') sgIcearrowHitBlast(f.pEnt, victims[i], enemies, f.floatSel, out);
@@ -5868,7 +5878,7 @@ function sgGroundExpire(f, enemies, ctx) {
       vfxTier: 5
     });
     for (var ii = 0; ii < impactVictims.length; ii++) {
-      sgHitOne(f.pEnt, f.st, impactVictims[ii], impactDmg, f.gid, f.floatSel,
+      sgAreaHitOne(f.pEnt, f.st, impactVictims[ii], impactDmg, f.gid, f.floatSel,
         impactOut, sgStaggerMs(ii));
     }
     if (ctx && ctx.onDamage && impactOut.dmg > 0) ctx.onDamage(impactOut.dmg);
@@ -5916,7 +5926,7 @@ function sgGroundPulse(f, enemies, ctx) {
     if (!victims.length) continue;
     var out = { killed: false, dmg: 0, crit: false },struck=[];
     for (var i = 0; i < victims.length; i++) {
-      var res=sgHitOne(f.pEnt, f.st, victims[i], f.pulseDmg, f.gid, f.floatSel, out, sgStaggerMs(i));
+      var res=sgAreaHitOne(f.pEnt, f.st, victims[i], f.pulseDmg, f.gid, f.floatSel, out, sgStaggerMs(i));
       if(res&&!res.miss)struck.push(victims[i]);
     }
     if(struck.length)sgEmitVfx(f.gid,struck,f.floatSel,{fxKind:'impact',variant:'wind-burst-hit',
@@ -6316,7 +6326,7 @@ function sgOrbitStep(f, enemies, dt, ctx) {
       if (solo && fresh.indexOf(solo) < 0) fresh.push(solo);
     }
     for (var h = 0; h < fresh.length; h++) {
-      var res = sgHitOne(f.pEnt, f.st, fresh[h], f.dmgVal, f.gid, f.floatSel, out, sgStaggerMs(struck.length));
+      var res = sgAreaHitOne(f.pEnt, f.st, fresh[h], f.dmgVal, f.gid, f.floatSel, out, sgStaggerMs(struck.length));
       if (!res || res.miss) continue;
       if (f.burnSpec) sgApplyBurn(fresh[h], f.burnSpec);
       struck.push(fresh[h]);
@@ -6464,7 +6474,7 @@ function sgFirehuntDetonate(f, victim, live, out) {
     vfxTier: 1
   });
   for (var v = 0; v < victims.length; v++) {
-    sgHitOne(f.pEnt, f.st, victims[v], spec.dmgVal, 'firehunt', f.floatSel, out, sgStaggerMs(v));
+    sgAreaHitOne(f.pEnt, f.st, victims[v], spec.dmgVal, 'firehunt', f.floatSel, out, sgStaggerMs(v));
   }
 }
 
@@ -6601,7 +6611,7 @@ function sgFirehuntLaunch(ctx, spec) {
   });
   var out = { killed: false, dmg: 0, crit: false };
   for (var v = 0; v < victims.length; v++) {
-    sgHitOne(ctx.pEnt, st, victims[v], dmgVal, 'firehunt', ctx.floatSel, out, travelMs + sgStaggerMs(v));
+    sgAreaHitOne(ctx.pEnt, st, victims[v], dmgVal, 'firehunt', ctx.floatSel, out, travelMs + sgStaggerMs(v));
   }
   if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx.onDeaths) ctx.onDeaths();
@@ -6641,7 +6651,7 @@ function sgTickFireGod(ctx, dt) {
   if (!victims.length) return;
   var out = { killed: false, dmg: 0, crit: false };
   for (var v = 0; v < victims.length; v++) {
-    sgHitOne(ctx.pEnt, st, victims[v], dmgVal, 'firehunt', ctx.floatSel, out, sgStaggerMs(v));
+    sgAreaHitOne(ctx.pEnt, st, victims[v], dmgVal, 'firehunt', ctx.floatSel, out, sgStaggerMs(v));
   }
   if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx.onDeaths) ctx.onDeaths();
@@ -6691,7 +6701,7 @@ function skills2OnBasicAttack(pEnt, target, floatSel, st) {
       phase: -Math.PI / 2 + i * Math.PI * 2 / orbs, spin: (Number(u.def.fx.rps) || 1.5) * Math.PI * 2 };
     sgQueueFlyingProjectile(pEnt, st, 'firehunt', dmgVal, origin, angle, flyPx, floatSel, [target], {
       /* 無座標（高塔）時退化成「時間到打當初的目標」——與其他飛行物的既有退化規則一致。 */
-      singleHit: true, waitForEnd: !geomOk, targetOnly: !geomOk,
+      isArea: true, singleHit: true, waitForEnd: !geomOk, targetOnly: !geomOk,
       speed: speed, travelMs: travelMs, beginSec: beginSec,
       halfWidthPx: SG_FLYING_PROJECTILE_HALF_WIDTH, flightOrbit: flightOrbit,
       onHit: function (enemy) {
@@ -7312,17 +7322,18 @@ function sgMireGroundTick(f, victims, ctx) {
     sourceLevel: (typeof skills2Levels === 'function' && typeof sgTotalLevel === 'function')
       ? sgTotalLevel(skills2Levels('mire')) : undefined
   };
+  var areaMult = areaDamageMultiplier(f.st && f.st.aoeDmg);
   for (var i = 0; i < victims.length; i++) {
     var e = victims[i];
     if (!e || e.hp <= 0) continue;
     // 泥沼術第 1／3／7 階與超神【惡疫魔沼】的「敵方狀態」：緩速／毒性／岩漿／瘟疫各一格
     sgApplySlot(e, 'mire', '1', 'enemy', 0, { val: m.aspd || 0, dur: hold });
-    if (m.poisonDps > 0) sgApplySlot(e, 'mire', '3', 'enemy', 0, { dps: m.poisonDps, dur: hold, interval: m.poisonGap, source: mireSource });
-    if (m.lavaDps > 0) sgApplySlot(e, 'mire', '7', 'enemy', 0, { dps: m.lavaDps, dur: hold, interval: m.lavaGap, source: mireSource });
+    if (m.poisonDps > 0) sgApplySlot(e, 'mire', '3', 'enemy', 0, { dps: m.poisonDps * areaMult, dur: hold, interval: m.poisonGap, source: mireSource });
+    if (m.lavaDps > 0) sgApplySlot(e, 'mire', '7', 'enemy', 0, { dps: m.lavaDps * areaMult, dur: hold, interval: m.lavaGap, source: mireSource });
     /* 傳奇【侵蝕】與超神【惡疫魔沼】：兩者都是「離開沼澤後仍走完自己的持續時間」，
        因此持續時間用各自的規格，而不是上面那個只給兩跳的 hold。 */
-    if (m.bleed) applyStatus(e, 'sgMireBleed', { dps: m.bleed.dps, dur: m.bleed.dur, interval: m.bleed.interval, source: mireSource });
-    if (m.plague) sgApplySlot(e, 'mire', 'plagueMire', 'enemy', 0, { dps: m.plague.dps, dur: m.plague.dur, interval: m.plague.interval, source: mireSource });
+    if (m.bleed) applyStatus(e, 'sgMireBleed', { dps: m.bleed.dps * areaMult, dur: m.bleed.dur, interval: m.bleed.interval, source: mireSource });
+    if (m.plague) sgApplySlot(e, 'mire', 'plagueMire', 'enemy', 0, { dps: m.plague.dps * areaMult, dur: m.plague.dur, interval: m.plague.interval, source: mireSource });
   }
 }
 
@@ -7362,7 +7373,7 @@ function sgMireFireballBlast(f, enemies, ctx) {
     sgSpawnFirePool(f.pEnt, f.st, 'mire', f.mirePool, f.floatSel, f.tgt, f.pos);
   }
   var out = { killed: false, dmg: 0, crit: false };
-  victims.forEach(function (e) { sgHitOne(f.pEnt, f.st, e, f.dmgVal, 'mire', f.floatSel, out, 0, 0, 'fire'); });
+  victims.forEach(function (e) { sgAreaHitOne(f.pEnt, f.st, e, f.dmgVal, 'mire', f.floatSel, out, 0, 0, 'fire'); });
   if (ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
 }
@@ -8140,8 +8151,9 @@ function sgChainOverload(cfg, target, pool, delayMs) {
     fxKind: 'impact', variant: 'thunder-burst', elem: 'lightning', delayMs: delayMs, dur: 0.4,
     vfxTier: 5
   });
+  var damage = cfg.overloadDmg * areaDamageMultiplier(cfg.st && cfg.st.aoeDmg);
   for (var i = 0; i < victims.length; i++) {
-    sgDerivedHit(victims[i], cfg.overloadDmg, 'chainlightning', cfg.floatSel, cfg.out, '⚡',
+    sgDerivedHit(victims[i], damage, 'chainlightning', cfg.floatSel, cfg.out, '⚡',
       delayMs + sgStaggerMs(i));
   }
 }
@@ -8299,7 +8311,7 @@ function sgTickFlyingThunder(ctx, dt) {
       var victims = beam.spatial ? bfLineTargets(beam.angle,beam.length,pool,beam.width/2,beam.origin)
         : pool.filter(function(e){return e===beam.target;});
       var out = {killed:false,dmg:0,crit:false};
-      victims.forEach(function(e){sgHitOne(ctx.pEnt,beam.st,e,beam.dmgVal,'chainlightning',ctx.floatSel,out,0,0,'lightning');});
+      victims.forEach(function(e){sgAreaHitOne(ctx.pEnt,beam.st,e,beam.dmgVal,'chainlightning',ctx.floatSel,out,0,0,'lightning');});
       if (out.dmg>0 && ctx.onDamage) ctx.onDamage(out.dmg);
       if (out.killed && ctx.onDeaths) ctx.onDeaths();
       if (SKILL2_RT.flyThunder !== ft) return;
@@ -8605,7 +8617,7 @@ function sgThunderMatrixNoField(pEnt, st, pool, floatSel, out, dmgVal, lines) {
     : (pool || []).filter(function (e) { return e && e.hp > 0; });
   for (var i = 0; i < lines * 2; i++) {
     for (var v = 0; v < live.length; v++) {
-      sgHitOne(pEnt, st, live[v], dmgVal, 'thunderstrike', floatSel, out, sgStaggerMs(i));
+      sgAreaHitOne(pEnt, st, live[v], dmgVal, 'thunderstrike', floatSel, out, sgStaggerMs(i));
     }
   }
 }
@@ -8652,7 +8664,7 @@ function sgTickHeavenTribulation(ctx, dt) {
       preserveDeadTargets: true, vfxUlt: 'heavenTribulation'
     });
     for (var vi = 0; vi < strike.victims.length; vi++) {
-      if (strike.victims[vi].hp > 0) sgHitOne(ctx.pEnt, st, strike.victims[vi], damage,
+      if (strike.victims[vi].hp > 0) sgAreaHitOne(ctx.pEnt, st, strike.victims[vi], damage,
         'thunderstrike', ctx.floatSel, out, 0);
     }
   }
@@ -9468,7 +9480,7 @@ function sgIceBlast(ent, enemies, ctx, hitOut) {
   if (!victims.length) return;
   var out = hitOut || { killed: false, dmg: 0, crit: false };
   for (var i = 0; i < victims.length; i++) {
-    sgHitOne(pEnt, st, victims[i], dmgVal, 'icearrow', floatSel, out, sgStaggerMs(i));
+    sgAreaHitOne(pEnt, st, victims[i], dmgVal, 'icearrow', floatSel, out, sgStaggerMs(i));
   }
   if (!hitOut && ctx && ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
   if (!hitOut && out.killed && ctx && ctx.onDeaths) ctx.onDeaths();
@@ -9607,7 +9619,7 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
           vfxTier: 4
         });
         sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, origin, laneAngle, lineLen,
-          floatSel, path, { halfWidthPx: halfWidth, hitFn: sgIcearrowProjectileHit,
+          floatSel, path, { halfWidthPx: halfWidth, isArea: true, hitFn: sgIcearrowProjectileHit,
             frostSpec: frost, iceSpec: iceSpec, speed: sgIcearrowSpeed(), beginSec: waveDelay }, out);
         // 這支箭飛完直線之後，就地從終點轉入追擊模式（同一個飛行物換飛法）
         if (homingFx) {
@@ -9639,7 +9651,7 @@ function sgCastIcearrow(pEnt, st, g, lvs, pool, primary, floatSel, out) {
         });
         sgQueueFlyingProjectile(pEnt, st, 'icearrow', dmgVal, null, shotAngle,
           Math.max(1, lineLength), floatSel, [arrows[i]], {
-            hitFn: sgIcearrowProjectileHit, singleHit: true, targetOnly: true,
+            hitFn: sgIcearrowProjectileHit, isArea: lvs[3] > 0, singleHit: true, targetOnly: true,
             waitForEnd: true, travelMs: travelMs, beginSec: wvDelayMs / 1000,
             frostSpec: frost, iceSpec: iceSpec, speed: sgIcearrowSpeed()
           }, out);
@@ -9854,12 +9866,12 @@ function sgSpawnIcearrowHoming(pEnt, st, hfx, target, dmgVal, frost, floatSel, o
    否則本次自己塗上的寒霜會讓第 6 階每一箭都必定觸發。
    iceSpec＝這一次施放的傳奇附加規格（【深度凍結】的增傷在命中前套、
    【冰裂箭】的分裂箭在命中後放），沒裝那兩個特效時為 null。 */
-function sgIcearrowHit(pEnt, st, target, dmgVal, frost, lvs, floatSel, out, delayMs, ctx, iceSpec, pool) {
+function sgIcearrowHit(pEnt, st, target, dmgVal, frost, lvs, floatSel, out, delayMs, ctx, iceSpec, pool, isArea) {
   if (!target || target.hp <= 0) return null;
   var hadFrost = sgFrostOn(target);
   // 傳奇【深度凍結】：擊中暈眩或凍結中的敵人時增傷（走 sgHitOne 的總傷加成，仍過防禦與爆擊）
   var bonusPct = (iceSpec && iceSpec.ctrlPct > 0 && sgIceControlled(target)) ? iceSpec.ctrlPct : 0;
-  var res = sgHitOne(pEnt, st, target, dmgVal, 'icearrow', floatSel, out, delayMs, bonusPct);
+  var res = (isArea ? sgAreaHitOne : sgHitOne)(pEnt, st, target, dmgVal, 'icearrow', floatSel, out, delayMs, bonusPct);
   if (!res || res.miss) return res;
   sgIcearrowHitBlast(pEnt, target, pool || (ctx && ctx.getEnemies ? ctx.getEnemies() : null), floatSel, out);
   if (hadFrost && lvs[5] > 0) sgFrostShatter(target, lvs, floatSel, out, ctx);
@@ -9898,7 +9910,7 @@ function sgIcearrowProjectileHit(projectile, target, ctx) {
   var before = projectile.out.dmg;
   sgIcearrowHit(projectile.pEnt, projectile.st, target, projectile.dmgVal,
     projectile.frostSpec, skills2Levels('icearrow'), projectile.floatSel, projectile.out, 0, ctx,
-    projectile.iceSpec, ctx && ctx.getEnemies ? ctx.getEnemies() : null);
+    projectile.iceSpec, ctx && ctx.getEnemies ? ctx.getEnemies() : null, projectile.isArea);
   if (ctx && ctx.onDamage && projectile.out.dmg > before) ctx.onDamage(projectile.out.dmg - before);
   if ((target.hp <= 0 || projectile.out.killed) && ctx && ctx.onDeaths) ctx.onDeaths();
 }
@@ -10069,7 +10081,7 @@ function sgTickWaterballs(ctx) {
    （與落雷術「暈眩塗在傷害之後、後落的雷才吃到增傷」同一個處理原則）。 */
 function sgWaterballHit(pEnt, st, target, cfg, floatSel, out, delayMs) {
   if (!target || target.hp <= 0) return null;
-  var res = sgHitOne(pEnt, st, target, cfg.dmgVal, 'waterball', floatSel, out, delayMs, 0, null, false, '水流彈');
+  var res = sgAreaHitOne(pEnt, st, target, cfg.dmgVal, 'waterball', floatSel, out, delayMs, 0, null, false, '水流彈');
   if (!res || res.miss || target.hp <= 0) return res;
   if (cfg.revertSec > 0) {
     sgApplySlot(target, 'waterball', '2', 'enemy', 0, { val: cfg.revertPct, dur: cfg.revertSec });
@@ -10441,7 +10453,7 @@ function sgFrostnovaHit(pEnt, st, target, dmgVal, frost, floatSel, out, delayMs,
   if (!target || target.hp <= 0) return null;
   var hadFrost = sgFrostOn(target);
   var wasFrozen = sgFrozenOn(target);
-  var res = sgHitOne(pEnt, st, target, dmgVal, 'frostnova', floatSel, out, delayMs);
+  var res = sgAreaHitOne(pEnt, st, target, dmgVal, 'frostnova', floatSel, out, delayMs);
   if (!res || res.miss) return res;
   if (target.hp <= 0) {
     // 傳奇【寒冰衝擊】：新星殺死凍結中的敵人時，在屍體位置昇起一根冰錐
@@ -10608,7 +10620,7 @@ function sgTickCrystalResonance(ctx, dt) {
       area: sgAreaAround(source, radius), hit: false, vfxUlt: 'crystalResonance'
     });
     for (var k = 0; k < victims.length; k++) {
-      if (victims[k].hp > 0) sgHitOne(ctx.pEnt, st, victims[k], dmgVal, 'frostnova', ctx.floatSel, out, 0);
+      if (victims[k].hp > 0) sgAreaHitOne(ctx.pEnt, st, victims[k], dmgVal, 'frostnova', ctx.floatSel, out, 0);
     }
   }
   if (ctx.onDamage && out.dmg > 0) ctx.onDamage(out.dmg);
@@ -10980,7 +10992,7 @@ function sgLaunchWindBlade(pEnt, st, gid, cfg, floatSel, out) {
   });
   sgQueueFlyingProjectile(pEnt, st, gid, cfg.dmgVal, geomOk ? origin : null, cfg.angle,
     geom.lenPx, floatSel, cfg.fallback || [], {
-      halfWidthPx: halfPx, speed: geom.speedPx, beginSec: cfg.beginSec || 0,
+      isArea: true, halfWidthPx: halfPx, speed: geom.speedPx, beginSec: cfg.beginSec || 0,
       slowSlot: slowPct > 0 ? SG_WINDBLADE_SLOW_SLOT : null, slowPct: slowPct,
       /* 傳奇【裂風】的加成在命中前讀、【風蝕】與累加在命中後做。 */
       bonusPctFn: cfg.ramp ? function () { return sgRampPct(cfg.ramp); } : null,
@@ -11264,7 +11276,7 @@ function sgResolveVacuumWave(wave,pool) {
   for(var i=0;i<victims.length;i++){
     var landed=false;
     for(var h=0;h<wave.hits;h++){
-      var res=sgHitOne(wave.pEnt,wave.st,victims[i],wave.dmgVal,'vacuumslash',wave.floatSel,wave.out,sgStaggerMs(i+h));
+      var res=sgAreaHitOne(wave.pEnt,wave.st,victims[i],wave.dmgVal,'vacuumslash',wave.floatSel,wave.out,sgStaggerMs(i+h));
       if(res&&!res.miss)landed=true;
     }
     if(landed&&wave.rend&&victims[i].hp>0)sgApplyWindRend(victims[i],wave.rend);
@@ -11538,6 +11550,7 @@ function sgSpawnVoidFlights(pEnt, st, g, lvs, floatSel, spec) {
       dur: travelMs / 1000, area: area, hit: false, vfxRoles: { projectile: roles.projectile }
     });
     sgQueueFlyingProjectile(pEnt, st, 'vacuumslash', dmgVal, origin, angle, spec.length, floatSel, [], {
+      isArea: true,
       speed: spec.speed, halfWidthPx: radius, singleHit: true, cancelOnPlayerDown: true,
       onHit: function (target, res) {
         if (!res || res.miss || res.invuln) return;
@@ -11714,7 +11727,7 @@ function sgStormBarrierPulse(rt, lvs, ctx) {
     if (dmgVal > 0 && victims.length) {
       var out = { killed: false, dmg: 0, crit: false },struck=[];
       for (var i = 0; i < victims.length; i++) {
-        var res=sgHitOne(rt.pEnt, st, victims[i], dmgVal, 'stormbarrier', floatSel, out, sgStaggerMs(i));
+        var res=sgAreaHitOne(rt.pEnt, st, victims[i], dmgVal, 'stormbarrier', floatSel, out, sgStaggerMs(i));
         if(res&&!res.miss)struck.push(victims[i]);
       }
       if(struck.length)sgEmitVfx('stormbarrier',struck,floatSel,{fxKind:'impact',variant:'storm-rip-hit',vfxRoles:{hit:ripRoles.hit},preserveDeadTargets:true});
@@ -12214,7 +12227,7 @@ function sgResolveCounterHolyOrb(shot, ctx) {
     vfxRoles: { attack: shot.roles.attack }
   });
   for (var i = 0; i < victims.length; i++) {
-    sgHitOne(shot.pEnt, shot.st, victims[i], shot.dmgVal, 'counter', shot.floatSel, out, 0, 0, 'light');
+    sgAreaHitOne(shot.pEnt, shot.st, victims[i], shot.dmgVal, 'counter', shot.floatSel, out, 0, 0, 'light');
   }
   if (out.dmg && ctx.onDamage) ctx.onDamage(out.dmg);
   if (out.killed && ctx.onDeaths) ctx.onDeaths();
@@ -12957,7 +12970,7 @@ function sgDeathBoom(deadEnt, enemies) {
   });
   for (var i = 0; i < victims.length; i++) {
     var victim = victims[i];
-    sgHitOne(pEnt, st, victim, boomVal, 'bloodblade', 'mv-float', out, sgStaggerMs(i));
+    sgAreaHitOne(pEnt, st, victim, boomVal, 'bloodblade', 'mv-float', out, sgStaggerMs(i));
     if (victim.hp > 0) {
       // 屍爆固定傳染中毒；若死者本身帶毒則保留其剩餘強度與時間，否則用技能規格補上。
       sgApplyBloodbladeDot(victim, 'poison', deadPoison || poisonSpec,
