@@ -11,6 +11,7 @@
                     輸出到 dist/demo/win-unpacked/，與正式版的 dist/win-unpacked/ 分開
      --full-textures 不縮模型貼圖（預設會縮，見下方「為什麼縮模型貼圖」）
      --keep-png     PNG 不換成 WebP（預設會換，見下方「為什麼 PNG 換成 WebP」；需要 Python 與 Pillow）
+     --keep-video   影片不重新編碼（預設會重壓序章影片，tools/desktop/reencode_video.cjs；需要 ffmpeg）
      --installer    另外打一份 Windows 安裝包（NSIS），給 Steam 以外的測試散佈用，輸出到 dist/installer/<版本>/。
                     安裝包版一律不接 Steam：不放 steamworks.js、打包版的 steam-config.json 的 AppID 全部歸 0。
                     （接了 Steam 的版本若不是從 Steam 啟動會交給 Steam 重開、自己結束，裝在 Steam 以外就打不開。）
@@ -31,6 +32,10 @@
    （程式、配置表、Preset 都寫 .png；images/vfx/assets 還會被 VFX 編輯器整棵換新，改檔名不可行）：
    序列幀與 256 以下的小圖用無損（逐像素相同），其他用有損品質 90、透明度無損。309 → 83 MB（2026-11-19）。
    app:// 協議看檔頭回報 image/webp（electron/app-protocol.cjs sniffImageMime）。
+
+   ---- 為什麼重新編碼序章影片 ----
+   序章 mp4 是 1080p30、7 Mbps（96 MB）。tools/desktop/reencode_video.cjs 以 x264 CRF 24 重壓成約 46 MB
+   （VMAF 91.8，暗部放大比對看不出差別），維持 H.264、解析度、幀率與總幀數。需要 ffmpeg。
 
    ---- 為什麼要暫存目錄 ----
    electron-builder 的 files 只吃 glob，表達不了「git 追蹤 ∩ 白名單 − 排除」；
@@ -154,6 +159,21 @@ function webpImages() {
   var sizes = {};
   report.files.forEach(function (f) { sizes[f.file] = f.after; });
   return { sizes: sizes, beforeMB: mb(report.beforeBytes), afterMB: mb(report.afterBytes), converted: report.converted };
+}
+
+/* 重新編碼影片（序章）：tools/desktop/reencode_video.cjs（ffmpeg）。回傳 { 相對路徑: 新大小 }。 */
+var VIDEO_CACHE = path.join(REPO, 'build', 'desktop', 'video-cache');
+function reencodeVideos() {
+  var reportFile = path.join(REPO, 'build', 'desktop', 'reencode-video-report.json');
+  var r = childProcess.spawnSync(process.execPath, [path.join(__dirname, 'reencode_video.cjs'), STAGE, VIDEO_CACHE, reportFile],
+    { cwd: REPO, stdio: 'inherit', windowsHide: true, timeout: 30 * 60 * 1000 });
+  if (r.error || r.status !== 0) {
+    throw new Error('影片重新編碼失敗（' + (r.error ? r.error.message : '結束碼 ' + r.status) + '）。需要 ffmpeg（winget install Gyan.FFmpeg），或加 --keep-video 出原檔');
+  }
+  var report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+  var sizes = {};
+  report.files.forEach(function (f) { sizes[f.file] = f.after; });
+  return { sizes: sizes, beforeMB: mb(report.beforeBytes), afterMB: mb(report.afterBytes) };
 }
 
 /* 安裝包版不接 Steam：拿掉 steamworks.js，暫存區的 steam-config.json 換成 AppID 全 0 的新檔。
@@ -302,6 +322,12 @@ function main() {
     list.ship.forEach(function (f) { if (webp.sizes[f.path] != null) f.size = webp.sizes[f.path]; });
     pngToWebp = { beforeMB: webp.beforeMB, afterMB: webp.afterMB, converted: webp.converted };
   }
+  var videos = null;
+  if (!stageOnly && process.argv.indexOf('--keep-video') < 0) {
+    var vid = reencodeVideos();
+    list.ship.forEach(function (f) { if (vid.sizes[f.path] != null) f.size = vid.sizes[f.path]; });
+    videos = { beforeMB: vid.beforeMB, afterMB: vid.afterMB };
+  }
   fs.mkdirSync(OUT, { recursive: true });
   var reportFile = path.join(OUT, 'ship-report.json');
   if (stageOnly) {
@@ -327,6 +353,7 @@ function main() {
       outputMB: mb(dirSize(unpacked)),
       modelTextures: modelTextures || 'full（--full-textures）',
       pngToWebp: pngToWebp || 'png（--keep-png）',
+      videos: videos || 'original（--keep-video）',
       seconds: Math.round((Date.now() - t0) / 1000)
     });
     fs.writeFileSync(reportFile, JSON.stringify(r, null, 2));

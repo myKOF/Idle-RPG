@@ -369,6 +369,26 @@ Steam 用 `electron/steam-config.json` 的 `demoAppId`（Steam 上的 Demo／Pla
 - 測試：`tests/desktop-webp-images.test.cjs`。
 - **注意**：打包版資料夾裡的 `.png` 其實是 WebP。要從打包版取圖，請回專案取原檔。
 
+**打包時重新編碼序章影片**（2026-11-19）：
+
+- **做什麼**：`build_desktop.cjs` 預設在暫存區重壓 `.mp4`。工具是 `tools/desktop/reencode_video.cjs`，需要 ffmpeg（`winget install Gyan.FFmpeg`）。
+- **編碼設定**：x264 slow、CRF 24、H.264 High、yuv420p、每 2 秒一個關鍵幀、faststart、不帶音軌。原檔本來就沒有音軌，有音軌的影片一律保留原檔。
+- **為什麼維持 H.264**：所有顯示卡都有硬體解碼。AV1 更小，但不少電腦只能靠 CPU 解碼，序章又和遊戲載入同時進行，低階機可能卡頓。
+- **試壓結果**（VMAF 對照原檔）：
+
+  | CRF | 大小 | VMAF |
+  |---|---|---|
+  | 原檔 | 96 MB | — |
+  | 20 | 77 MB | 95.1 |
+  | 22 | 60 MB | 93.6 |
+  | 24（採用） | 46 MB | 91.8 |
+
+  採用 CRF 24：抽最暗的兩幀與差異最大的一幀局部放大 2 倍比對，看不出差別。
+- **輸出驗證**：幀數、時長、解析度、幀率必須和原檔相同，否則保留原檔。序章的字幕與動畫依時間對齊，所以這幾項不能變。
+- **快取**：`build/desktop/video-cache/`。
+- **要出原檔**：打包時加 `--keep-video`。
+- 測試：`tests/desktop-reencode-video.test.cjs`。
+
 **應用程式圖示**（2026-11-19）：`electron/icons/app.ico`（16～256）與 `app.png`（1024 母圖）。
 
 - **來源**：遊戲 logo 中間的劍，斜 45 度擺放，背景透明。
