@@ -42,6 +42,8 @@ var ROOT_PKG = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8
 var PRODUCT_NAME = '神力之巔：放置暗黑';
 var EXECUTABLE_NAME = 'IdleRPG';
 var APP_ID = 'com.idlerpg.desktop';
+/* 應用程式圖示（exe、捷徑、工作列、安裝包）：由 tools/desktop/make_app_icon.py 從 logo 的劍產生 */
+var APP_ICON = path.join(REPO, 'electron', 'icons', 'app.ico');
 
 function mb(n) { return Math.round(n / 1048576 * 10) / 10; }
 
@@ -128,8 +130,11 @@ function detachSteam() {
 function installerConfig() {
   var c = builderConfig();
   c.appId = APP_ID + (EDITION === 'demo' ? '.demo' : '');
-  c.win = { target: [{ target: 'nsis', arch: ['x64'] }] };
+  c.win = { target: [{ target: 'nsis', arch: ['x64'] }], icon: APP_ICON };
   c.nsis = {
+    installerIcon: APP_ICON,
+    uninstallerIcon: APP_ICON,
+    installerHeaderIcon: APP_ICON,
     oneClick: false,
     perMachine: false,
     allowToChangeInstallationDirectory: true,
@@ -206,7 +211,7 @@ function builderConfig() {
     buildDependenciesFromSource: false,
     directories: { output: OUT },
     files: ['**/*'],
-    win: { target: [{ target: 'dir', arch: ['x64'] }] }
+    win: { target: [{ target: 'dir', arch: ['x64'] }], icon: APP_ICON }
   };
 }
 

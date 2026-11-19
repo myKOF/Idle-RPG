@@ -338,6 +338,8 @@ function createWindow() {
     show: false,
     backgroundColor: '#000000',
     autoHideMenuBar: true,
+    // 視窗與工作列圖示：打包版的 exe 本身已帶圖示；從原始碼執行（electron.exe）時靠這一行（tools/desktop/make_app_icon.py 產生）
+    icon: path.join(__dirname, 'icons', 'app.ico'),
     // 視窗標題跟隨頁面 <title>（String 表 48），不在外殼另寫一份
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

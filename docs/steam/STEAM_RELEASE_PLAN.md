@@ -342,6 +342,14 @@ Steam 用 `electron/steam-config.json` 的 `demoAppId`（Steam 上的 Demo／Pla
 - **未簽章**：第一次執行時 Windows SmartScreen 會跳出警告，要按「其他資訊 → 仍要執行」。
 - 測試：`tests/desktop-installer.test.cjs`。
 
+**應用程式圖示**（2026-11-19）：`electron/icons/app.ico`（16～256）與 `app.png`（1024 母圖）。
+
+- **來源**：遊戲 logo 中間的劍，斜 45 度擺放，背景透明。
+- **產生工具**：`python -I tools/desktop/make_app_icon.py [--preview]`，需要 Pillow。logo 改版後要重跑；如果摘出來的劍不對，先檢查工具檔頭的實測座標。
+- **套用範圍**：exe、捷徑、工作列（`win.icon`），以及安裝包、解除安裝程式、安裝畫面（`nsis.*Icon`）都用它。
+- **從原始碼執行時**：由 `electron/main.cjs` 的 BrowserWindow `icon` 帶上同一個圖示。
+- **Steam 後台**：Steamworks 的應用程式圖示是另外上傳的，尺寸規格不同。
+
 ## 5. 明確不做
 
 - `electron-updater` 或任何自行下載更新的機制（Steam 規範禁止，與原規範一致）。

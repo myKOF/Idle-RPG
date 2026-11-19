@@ -52,3 +52,24 @@ test('demo 與正式版安裝包的 appId、檔名不同；裝在使用者資料
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).scripts;
   assert.match(pkg['desktop:installer:demo'], /--edition=demo --installer/);
 });
+
+test('應用程式圖示：exe、安裝包、解除安裝程式與視窗都用 electron/icons/app.ico，且 ico 含 16～256 各尺寸', () => {
+  const ico = path.join(root, 'electron', 'icons', 'app.ico');
+  const demo = configFor(['--edition=demo', '--installer']);
+  for (const v of [demo.win.icon, demo.nsis.installerIcon, demo.nsis.uninstallerIcon, demo.nsis.installerHeaderIcon]) {
+    assert.equal(path.resolve(v), ico);
+  }
+  const dir = JSON.parse(execFileSync(process.execPath, ['-e',
+    'console.log(JSON.stringify(require("./tools/desktop/build_desktop.cjs").builderConfig()))'], { cwd: root }).toString());
+  assert.equal(path.resolve(dir.win.icon), ico, 'Steam 上傳用的資料夾版也要帶圖示');
+  // ICO 檔頭：保留 0、類型 1、張數；每張 16 bytes 的目錄，寬高 0 代表 256
+  const buf = fs.readFileSync(ico);
+  assert.equal(buf.readUInt16LE(0), 0);
+  assert.equal(buf.readUInt16LE(2), 1);
+  const sizes = [];
+  for (let i = 0; i < buf.readUInt16LE(4); i++) sizes.push(buf[6 + i * 16] || 256);
+  assert.deepEqual(sizes.sort((a, b) => a - b), [16, 24, 32, 48, 64, 128, 256]);
+  const main = fs.readFileSync(path.join(root, 'electron', 'main.cjs'), 'utf8');
+  assert.match(main, /icon: path\.join\(__dirname, 'icons', 'app\.ico'\)/);
+  assert.equal(require('../tools/desktop/ship-rules.cjs').classify('electron/icons/app.ico').ship, true, '視窗圖示要出貨');
+});
