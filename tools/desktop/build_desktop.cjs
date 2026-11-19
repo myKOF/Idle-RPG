@@ -10,6 +10,7 @@
      --edition=demo Steam 封測 demo：暫存區多寫一份 electron/edition.json（外殼據此把 GAME_EDITION 改成 'demo'），
                     輸出到 dist/demo/win-unpacked/，與正式版的 dist/win-unpacked/ 分開
      --full-textures 不縮模型貼圖（預設會縮，見下方「為什麼縮模型貼圖」）
+     --keep-png     PNG 不換成 WebP（預設會換，見下方「為什麼 PNG 換成 WebP」；需要 Python 與 Pillow）
      --installer    另外打一份 Windows 安裝包（NSIS），給 Steam 以外的測試散佈用，輸出到 dist/installer/<版本>/。
                     安裝包版一律不接 Steam：不放 steamworks.js、打包版的 steam-config.json 的 AppID 全部歸 0。
                     （接了 Steam 的版本若不是從 Steam 啟動會交給 Steam 重開、自己結束，裝在 Steam 以外就打不開。）
@@ -24,6 +25,12 @@
    專案裡的 .glb 帶 2048 貼圖（Meshy／Blender 流程的原檔，保留不動），但角色畫在 512／1024 的畫布上、畫面上只有幾百像素高。
    打包時由 tools/desktop/shrink_models.cjs（以 Electron 執行）把暫存區那一份縮到 1024、轉 JPEG：模型 367 → 111 MB，
    畫面對照 PSNR 50 dB 以上（2026-11-19）。原始檔不動；結果快取在 build/desktop/model-cache/。
+
+   ---- 為什麼 PNG 換成 WebP ----
+   PNG 是包體最大的一塊（約 309 MB）。tools/desktop/webp_images.py 把暫存區的 PNG 換成 WebP 內容、檔名不變
+   （程式、配置表、Preset 都寫 .png；images/vfx/assets 還會被 VFX 編輯器整棵換新，改檔名不可行）：
+   序列幀與 256 以下的小圖用無損（逐像素相同），其他用有損品質 90、透明度無損。309 → 83 MB（2026-11-19）。
+   app:// 協議看檔頭回報 image/webp（electron/app-protocol.cjs sniffImageMime）。
 
    ---- 為什麼要暫存目錄 ----
    electron-builder 的 files 只吃 glob，表達不了「git 追蹤 ∩ 白名單 − 排除」；
@@ -131,6 +138,22 @@ function shrinkModels() {
   var sizes = {};
   report.files.forEach(function (f) { sizes[f.file] = f.after; });
   return { sizes: sizes, beforeMB: mb(report.beforeBytes), afterMB: mb(report.afterBytes) };
+}
+
+/* PNG 換成 WebP 內容（檔名不變）：tools/desktop/webp_images.py（Pillow）。回傳 { 相對路徑: 新大小 }。 */
+var WEBP_CACHE = path.join(REPO, 'build', 'desktop', 'webp-cache');
+function webpImages() {
+  var reportFile = path.join(REPO, 'build', 'desktop', 'webp-images-report.json');
+  var r = childProcess.spawnSync(process.env.PYTHON || 'python', ['-I', path.join(__dirname, 'webp_images.py'), STAGE, WEBP_CACHE, reportFile],
+    { cwd: REPO, stdio: 'inherit', windowsHide: true, timeout: 30 * 60 * 1000, env: Object.assign({}, process.env, { PYTHONIOENCODING: 'utf-8' }) });
+  if (r.error || r.status !== 0) {
+    throw new Error('PNG 換 WebP 失敗（' + (r.error ? r.error.message : '結束碼 ' + r.status) + '）。需要 Python 與 Pillow（pip install pillow），' +
+      '或加 --keep-png 出原本的 PNG');
+  }
+  var report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+  var sizes = {};
+  report.files.forEach(function (f) { sizes[f.file] = f.after; });
+  return { sizes: sizes, beforeMB: mb(report.beforeBytes), afterMB: mb(report.afterBytes), converted: report.converted };
 }
 
 /* 安裝包版不接 Steam：拿掉 steamworks.js，暫存區的 steam-config.json 換成 AppID 全 0 的新檔。
@@ -273,6 +296,12 @@ function main() {
     list.ship.forEach(function (f) { if (shrunk.sizes[f.path] != null) f.size = shrunk.sizes[f.path]; });
     modelTextures = { beforeMB: shrunk.beforeMB, afterMB: shrunk.afterMB };
   }
+  var pngToWebp = null;
+  if (!stageOnly && process.argv.indexOf('--keep-png') < 0) {
+    var webp = webpImages();
+    list.ship.forEach(function (f) { if (webp.sizes[f.path] != null) f.size = webp.sizes[f.path]; });
+    pngToWebp = { beforeMB: webp.beforeMB, afterMB: webp.afterMB, converted: webp.converted };
+  }
   fs.mkdirSync(OUT, { recursive: true });
   var reportFile = path.join(OUT, 'ship-report.json');
   if (stageOnly) {
@@ -297,6 +326,7 @@ function main() {
       executable: EXECUTABLE_NAME + '.exe',
       outputMB: mb(dirSize(unpacked)),
       modelTextures: modelTextures || 'full（--full-textures）',
+      pngToWebp: pngToWebp || 'png（--keep-png）',
       seconds: Math.round((Date.now() - t0) / 1000)
     });
     fs.writeFileSync(reportFile, JSON.stringify(r, null, 2));

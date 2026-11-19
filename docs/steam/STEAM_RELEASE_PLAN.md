@@ -353,6 +353,22 @@ Steam 用 `electron/steam-config.json` 的 `demoAppId`（Steam 上的 Demo／Pla
 - **要出原尺寸**：打包時加 `--full-textures`。
 - 測試：`tests/desktop-shrink-models.test.cjs`。
 
+**打包時 PNG 換成 WebP**（2026-11-19）：
+
+- **做什麼**：`build_desktop.cjs` 預設在暫存區把 PNG 換成 WebP 內容，**檔名不變**。工具是 `tools/desktop/webp_images.py`，需要 Python 與 Pillow。
+  - 角色序列幀（`images/sprites/`，以最近鄰放大）和長邊 256 以下的小圖：用**無損**，逐像素和原圖相同。
+  - 其他圖：有損品質 90；透明度一律無損，透明區底下的顏色也保留。
+  - 不處理 `electron/`（exe 圖示）與 `images/models/`（另由縮模型貼圖的工具處理）。
+- **為什麼檔名不變**：程式、配置表、Preset 裡的路徑都寫 `.png`，而且 `images/vfx/assets` 會被 VFX 編輯器整棵換新，改副檔名不可行。改由 app:// 協議看檔頭回報 `image/webp`（`electron/app-protocol.cjs` 的 `sniffImageMime`），網頁版完全不受影響。
+- **效果**：PNG 309 → 83 MB（1437 個轉換；省不到 10% 或 2 KB 的保留原檔）。
+- **驗證**：
+  - 無損的 1087 個逐像素相同；有損的 350 個透明度不變，PSNR 中位數 42 dB、最差 32.8 dB。
+  - 在打包版裡 1550 張逐一以 fetch、createImageBitmap、`<img>`、Pixi 載入都正常。
+- **快取**：`build/desktop/webp-cache/`。
+- **要出原本的 PNG**：打包時加 `--keep-png`。
+- 測試：`tests/desktop-webp-images.test.cjs`。
+- **注意**：打包版資料夾裡的 `.png` 其實是 WebP。要從打包版取圖，請回專案取原檔。
+
 **應用程式圖示**（2026-11-19）：`electron/icons/app.ico`（16～256）與 `app.png`（1024 母圖）。
 
 - **來源**：遊戲 logo 中間的劍，斜 45 度擺放，背景透明。
