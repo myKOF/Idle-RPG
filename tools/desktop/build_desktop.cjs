@@ -9,7 +9,8 @@
      --stage-only   只做到第 2 步（檢查清單用，不呼叫 electron-builder）
      --edition=demo Steam 封測 demo：暫存區多寫一份 electron/edition.json（外殼據此把 GAME_EDITION 改成 'demo'），
                     輸出到 dist/demo/win-unpacked/，與正式版的 dist/win-unpacked/ 分開
-     --lang=en      打包語言（預設 zh-TW）：應用程式名稱讀 String 表 2569 的對應語言欄（中文「神力之巔」、英文「Idle: Divine Apex」），
+     --lang=en      打包語言（預設 zh-TW；另有 zh-CN、en、ru、es、pt-BR、ja、ko、de、fr、pl、tr，見 LANGS）：
+                    應用程式名稱讀 String 表 2569 的對應語言欄（中文「神力之巔」、英文「Idle: Divine Apex」，沒填退回英文），
                     安裝程式介面跟著換語言；非預設語言輸出到 <輸出資料夾>/<語言>/
      --full-textures 不縮模型貼圖（預設會縮，見下方「為什麼縮模型貼圖」）
      --keep-png     PNG 不換成 WebP（預設會換，見下方「為什麼 PNG 換成 WebP」；需要 Python 與 Pillow）
@@ -57,30 +58,57 @@ var OUT = INSTALLER ? path.join(REPO, 'dist', 'installer', EDITION)
   : (EDITION === 'demo' ? path.join(REPO, 'dist', 'demo') : path.join(REPO, 'dist'));
 var ROOT_PKG = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
 
-/* 打包語言（--lang=zh-TW 預設｜en｜zh-CN）：決定應用程式名稱與安裝程式語言。非預設語言另放一層資料夾，不蓋掉預設版。 */
+/* 打包語言（--lang=，預設 zh-TW）：決定應用程式名稱與安裝程式語言。非預設語言另放一層資料夾，不蓋掉預設版。
+   column＝String 表的語言欄名；nsis＝electron-builder 的安裝程式語言（app-builder-lib/out/util/langs.js 的 bundledLanguages，
+   語言碼 lcid 由它對照）。葡萄牙文用巴西（pt-BR）、西班牙文用西班牙（es）——Steam 也把兩者各分兩種，要另一種時在這裡加一筆。 */
 var LANGS = {
-  'zh-TW': { column: '繁體中文', nsisLanguage: '1028', installerLanguages: ['zh_TW'] },
-  'zh-CN': { column: '簡體中文', nsisLanguage: '2052', installerLanguages: ['zh_CN'] },
-  en: { column: '英文', nsisLanguage: '1033', installerLanguages: ['en_US'] }
+  'zh-TW': { column: '繁體中文', nsis: 'zh_TW' },
+  'zh-CN': { column: '簡體中文', nsis: 'zh_CN' },
+  en: { column: '英文', nsis: 'en_US' },
+  ru: { column: '俄文', nsis: 'ru_RU' },
+  es: { column: '西班牙文', nsis: 'es_ES' },
+  'pt-BR': { column: '葡萄牙文', nsis: 'pt_BR' },
+  ja: { column: '日文', nsis: 'ja_JP' },
+  ko: { column: '韓文', nsis: 'ko_KR' },
+  de: { column: '德文', nsis: 'de_DE' },
+  fr: { column: '法文', nsis: 'fr_FR' },
+  pl: { column: '波蘭文', nsis: 'pl_PL' },
+  tr: { column: '土耳其文', nsis: 'tr_TR' }
 };
+function nsisLanguageId(lang) {
+  var id = require('app-builder-lib/out/util/langs.js').lcid[LANGS[lang].nsis];
+  if (!id) throw new Error('electron-builder 沒有 ' + LANGS[lang].nsis + ' 的安裝程式語言');
+  return String(id);
+}
 var LANG = (process.argv.filter(function (a) { return a.indexOf('--lang=') === 0; })[0] || '--lang=zh-TW').slice(7);
 if (!LANGS[LANG]) { console.error('❌ --lang 只能是 ' + Object.keys(LANGS).join('／') + '：' + LANG); process.exit(1); }
 if (LANG !== 'zh-TW') OUT = path.join(OUT, LANG);
 
 /* 玩家看得到的名稱＝遊戲正式名稱，唯一來源是 String 表 2569（AI_RULES 8.11）：
-   繁體中文「神力之巔」、英文「Idle: Divine Apex」，依打包語言取欄位；簡體中文空白時退回繁體中文（與遊戲內 STR() 相同）。
+   繁體中文「神力之巔」、英文「Idle: Divine Apex」，依打包語言取欄位。該語言欄沒填（或 CSV 還沒有這一欄）時：
+   簡體中文退回繁體中文（與遊戲內 STR() 相同）；其他語言退回英文正式名稱（品牌名稱沒有在地化時就用英文）。英文欄本身不能空。
    exe 檔名刻意用 ASCII：Steam 的啟動選項、防毒白名單、命令列都比較不會出事。 */
 var GAME_NAME_STR_ID = 2569;
+function gameNameFor(header, row, lang) {
+  var cell = function (col) { var i = header.indexOf(col); return i >= 0 ? String(row[i] || '').trim() : ''; };
+  var own = cell(LANGS[lang].column);
+  if (own) return { name: own, source: LANGS[lang].column, columnMissing: false };
+  var columnMissing = header.indexOf(LANGS[lang].column) < 0;
+  var fallback = lang === 'zh-CN' ? '繁體中文' : '英文';
+  if (lang === 'en' || !cell(fallback)) throw new Error('String 表 ' + GAME_NAME_STR_ID + ' 的「' + (lang === 'en' ? '英文' : fallback) + '」是空的，不能打包 ' + lang + ' 版');
+  return { name: cell(fallback), source: fallback, columnMissing: columnMissing };
+}
 function gameNameFromStringTable(lang) {
   var csvParse = require('../string-table/apply_strings.cjs').csvParse;
   var rows = csvParse(fs.readFileSync(path.join(REPO, 'config', 'CSV', 'String.csv'), 'utf8'));
-  var header = rows[0];
   var row = rows.filter(function (r) { return Number(r[0]) === GAME_NAME_STR_ID; })[0];
   if (!row) throw new Error('String 表找不到 ' + GAME_NAME_STR_ID + '（遊戲正式名稱）');
-  var zh = row[header.indexOf('繁體中文')];
-  var name = row[header.indexOf(LANGS[lang].column)] || (lang === 'zh-CN' ? zh : '');
-  if (!name) throw new Error('String 表 ' + GAME_NAME_STR_ID + ' 的「' + LANGS[lang].column + '」是空的，不能打包 ' + lang + ' 版');
-  return name;
+  var r = gameNameFor(rows[0], row, lang);
+  if (r.source !== LANGS[lang].column && require.main === module) {
+    console.warn('⚠️ String 表 ' + GAME_NAME_STR_ID + ' 的「' + LANGS[lang].column + '」' + (r.columnMissing ? '欄不在 String.csv（Excel 新增的欄要先跑「套用參數.bat」轉出 CSV）' : '沒填') +
+      '，應用程式名稱沿用' + r.source + '「' + r.name + '」');
+  }
+  return r.name;
 }
 var PRODUCT_NAME = gameNameFromStringTable(LANG);
 function fileSafeName(name) { return String(name).replace(/[<>:"\/\\|?*\x00-\x1f]/g, '').replace(/\s+/g, ' ').trim(); }
@@ -235,8 +263,8 @@ function installerConfig() {
     uninstallDisplayName: c.productName,
     deleteAppDataOnUninstall: false,
     differentialPackage: false,
-    installerLanguages: LANGS[LANG].installerLanguages,
-    language: LANGS[LANG].nsisLanguage,
+    installerLanguages: [LANGS[LANG].nsis],
+    language: nsisLanguageId(LANG),
     // 檔名用 ASCII：瀏覽器下載、雲端硬碟、命令列都比較不會出事
     artifactName: EXECUTABLE_NAME + (EDITION === 'demo' ? '-Demo' : '') + '-Setup-${version}.${ext}'
   };
@@ -410,4 +438,5 @@ if (require.main === module) {
   main().catch(function (e) { console.error(e && e.stack || e); process.exit(1); });
 }
 
-module.exports = { collect: collect, builderConfig: builderConfig, installerConfig: installerConfig, fileSafeName: fileSafeName, GAME_NAME_STR_ID: GAME_NAME_STR_ID };
+module.exports = { collect: collect, builderConfig: builderConfig, installerConfig: installerConfig, fileSafeName: fileSafeName, GAME_NAME_STR_ID: GAME_NAME_STR_ID,
+  LANGS: LANGS, gameNameFor: gameNameFor, nsisLanguageId: nsisLanguageId };

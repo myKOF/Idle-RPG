@@ -75,6 +75,31 @@ test('應用程式名稱讀 String 表 2569：中文「神力之巔」、英文�
   assert.doesNotMatch(source, /'神力之巔|Divine Apex'/);
 });
 
+test('12 種打包語言：每種都對到 String 表的語言欄與 electron-builder 內建的安裝程式翻譯', () => {
+  const B = require('../tools/desktop/build_desktop.cjs');
+  const bundled = require('app-builder-lib/out/util/langs.js').bundledLanguages;
+  const expected = { 'zh-TW': '繁體中文', 'zh-CN': '簡體中文', en: '英文', ru: '俄文', es: '西班牙文', 'pt-BR': '葡萄牙文',
+    ja: '日文', ko: '韓文', de: '德文', fr: '法文', pl: '波蘭文', tr: '土耳其文' };
+  assert.deepEqual(Object.fromEntries(Object.entries(B.LANGS).map(([k, v]) => [k, v.column])), expected);
+  for (const k of Object.keys(B.LANGS)) {
+    assert.ok(bundled.includes(B.LANGS[k].nsis), k + '：安裝程式沒有 ' + B.LANGS[k].nsis + ' 的翻譯');
+    assert.match(B.nsisLanguageId(k), /^\d+$/);
+  }
+});
+
+test('各語言的名稱：有填用自己的；沒填（或 CSV 還沒有這欄）簡中退繁中、其他退英文；英文不能空', () => {
+  const B = require('../tools/desktop/build_desktop.cjs');
+  const header = ['編號', '功能模塊', '用途說明', '替代字符參數說明', '繁體中文', '簡體中文', '英文', '日文'];
+  const row = ['2569', '通用', '', '', '神力之巔', '', 'Idle: Divine Apex', 'アイドル：ディバインエイペックス'];
+  assert.equal(B.gameNameFor(header, row, 'ja').name, 'アイドル：ディバインエイペックス');
+  assert.equal(B.gameNameFor(header, row, 'zh-CN').name, '神力之巔');
+  const ko = B.gameNameFor(header, row, 'ko');
+  assert.equal(ko.name, 'Idle: Divine Apex');
+  assert.equal(ko.columnMissing, true, 'CSV 沒有韓文欄要標出來（提醒先跑套用參數.bat）');
+  assert.throws(() => B.gameNameFor(header, ['2569', '', '', '', '神力之巔', '', '', ''], 'en'), /英文/);
+  assert.throws(() => B.gameNameFor(header, ['2569', '', '', '', '神力之巔', '', '', ''], 'de'), /英文/);
+});
+
 test('應用程式圖示：exe、安裝包、解除安裝程式與視窗都用 electron/icons/app.ico，且 ico 含 16～256 各尺寸', () => {
   const ico = path.join(root, 'electron', 'icons', 'app.ico');
   const demo = configFor(['--edition=demo', '--installer']);

@@ -628,6 +628,10 @@ VFX Editor 的 Preset 下拉依這兩個來源，在每份特效後面標出被�
 - **打包**的應用程式名稱讀這一條：中文版用「神力之巔」，英文版用「Idle: Divine Apex」。打包工具是 `tools/desktop/build_desktop.cjs`，以 `--lang` 指定語言，預設 zh-TW。
   - 用到的地方：捷徑、開始功能表、安裝程式標題、解除安裝清單、exe 的產品名稱；demo 版另加「 Demo」。
   - 不得在打包設定或程式裡另外寫死遊戲名稱。
+  - 可打包的語言共 12 種，見 `build_desktop.cjs` 的 `LANGS`：zh-TW、zh-CN、en、ru、es、pt-BR、ja、ko、de、fr、pl、tr，對應 String 表各語言欄。安裝程式介面會跟著換語言。
+  - 語言欄沒填時的退回順序：簡體中文退回繁體中文，其他語言退回英文正式名稱。英文欄不能空。
+  - 在 Excel 新增語言欄後，要先跑「套用參數.bat」轉出 CSV，打包才讀得到。
+  - 新增其他語言時，在 `LANGS` 補上欄名與 electron-builder 的語言代碼。
 - **英文名稱的冒號**：要當成檔名用的地方（捷徑），拿掉 Windows 不允許的字元，變成「Idle Divine Apex」。顯示用的地方一律寫完整的「Idle: Divine Apex」，包括大小寫與冒號後的空格。
 - **ASCII 識別字不改**：exe 檔名 `IdleRPG.exe`、安裝檔名 `IdleRPG[-Demo]-Setup-*.exe`、存檔資料夾 `idle-rpg`、`appId` 都不是顯示名稱，不跟著改。存檔資料夾與 Steam Cloud 綁定，上市後不能再搬。
 - **副標「放置暗黑」**：遊戲內標題與開場畫面另有「放置暗黑」副標（String 48、51、2412）。它屬於標題設計，不是正式名稱的一部分；應用程式名稱不帶副標。
