@@ -51,13 +51,13 @@ test('桌面入口先選原生視窗並停止更新計時器，不呼叫瀏覽�
   });
   vm.runInContext(fn, context); context.openMiniWindow(); context.openMiniWindow();
   await new Promise(resolve => setImmediate(resolve));
-  assert.equal(calls.length, 1); assert.equal(calls[0].restoreLabel, '#2072');
+  assert.equal(calls.length, 1); assert.equal(calls[0].title, '#2066');
   assert.equal(calls[0].enterShortcut, true); assert.equal(context.MINI.desktop, true);
   closed(); assert.equal(context.MINI.desktop, false); assert.equal(context.MINI.timer, null);
   assert.deepEqual(calls[1], ['clear', 9]);
 });
 
-test('迷你視窗 Enter 只在已允許版本且有焦點時還原，Esc 與按鈕仍可用', async () => {
+test('迷你視窗 Enter 只在已允許版本且有焦點時還原，Esc 仍可用且不建立還原按鈕', async () => {
   const view = fs.readFileSync(require.resolve('../js/mini-monitor.js'), 'utf8');
   for (const enterShortcut of [true, false]) {
     let keydown, focused = true, restores = 0;
@@ -73,6 +73,7 @@ test('迷你視窗 Enter 只在已允許版本且有焦點時還原，Esc 與按
       restore: () => restores++, onUpdate() {}, ready() {}
     } } });
     vm.runInContext(view, context); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(nodes['m-restore'], undefined);
     const key = name => keydown({ key: name, preventDefault() {} });
     focused = false; key('Enter'); key('Escape'); assert.equal(restores, 0);
     focused = true; key('Enter'); assert.equal(restores, enterShortcut ? 1 : 0);

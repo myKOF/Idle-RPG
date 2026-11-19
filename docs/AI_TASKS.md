@@ -1,3 +1,17 @@
+## DESKTOP-MINI-POSITION-20261119 — 迷你視窗置中、位置記憶與標題列控制
+
+- Owner：Codex；Done，單人實作。使用者要求首次開啟在畫面中央，其後記住最後位置而不重置。前置：迷你視窗及還原／Enter功能已完成，工作區乾淨、逐檔衝突預檢通過。
+- 範圍：electron/mini-window.cjs／main.cjs、本機userData位置偏好、js/mini-monitor.js與ui.js、迷你頁／主頁快取、既有迷你回歸與實機驗證工具、LV及本段。禁止改戰鬥／存檔／解鎖／字串／素材／其他功能，不合併或推送。
+- 使用者追加：刪除內容區還原鈕，改由原生標題列□回主遊戲、－最小化迷你；保留Enter／Esc，位置不可受最大化／最小化重置。
+- 驗收：主遊戲所在螢幕首次置中；移動後按還原／Enter／Esc／X或結束遊戲再開保持位置；重建控制器（重啟）讀回位置；多螢幕負座標／螢幕移除或解析度改變時保持可見；偏好損壞／寫入失敗不阻斷切換；相關回歸、Build與隔離Electron實測。完成後交使用者驗收與整合。
+- 完成：以原生外框尺寸在主窗所在螢幕workArea置中；移動完成、原生關閉、還原或結束時保存普通視窗座標至userData/mini-window-position.json（暫存寫入後rename）。重建時驗證整數座標並讀回，工作區改變時限制在可見範圍，正常負座標保留；損壞偏好退回置中，寫入失敗仍保留本次執行記憶並可還原，不更動遊戲存檔或協議。
+- 標題列：啟用原生最小化與方框鈕；方框的maximize事件延至原生事件返回後關閉迷你並恢復主遊戲，避免在Windows原生maximize回呼內同步destroy造成程序退出。最小化保留迷你且主遊戲保持隱藏，從工作列還原仍置頂；儲存時對最大化／最小化讀getNormalBounds，避免寫入原點或-32000座標。先隱藏全螢幕主窗再顯示迷你，並在原生事件完成後補設置頂，解決Windows重排Z-order。移除內容區還原鈕及無用標籤傳遞，沿用Enter／Esc及內測GM限制。
+- 修改11檔：electron/main.cjs、mini-window.cjs、mini.html、js/mini-monitor.js、ui.js、index.html（兩個JS與迷你頁快取同步）、tests/desktop-mini-window.test.cjs、desktop-mini-shortcut.test.cjs、tools/desktop/verify-mini-window.cjs、LV_upgrade_system.md及本段。唯讀檢查規範／Workflow／Agent、既有迷你生命週期／preload／IPC、顯示切換／screen API、背景／GM／出貨／快取測試與既有測試工具。無字串、Excel或素材變更，素材庫無交付變更。
+- 回歸：`node --test tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs tests/fullscreen-toggle.test.cjs tests/desktop-app-protocol.test.cjs tests/desktop-ship-rules.test.cjs tests/game-menu.test.cjs tests/gm-command.test.cjs tests/vfx-editor-cache-versions.test.cjs` 71/71通過（迷你專項19項）。新增驗證置中、跨控制器磁碟讀回、負座標、拔除／縮小螢幕、非法偏好、寫入失敗、原生方框／最小化普通座標及移除內容鈕。`npm.cmd run build`751檔、main及mini-window的`node --check`、Git差異檢查通過。
+- 既有失敗：加入desktop-background.test.cjs的76項為75通過／1失敗，背景快取測試仍只接受background／background-mini前綴，而前輪範圍傷害任務已將bridge升為background-mini-aoe-v1。本次無改此測試或bridge；用HEAD原始index.html唯讀替換重跑該檔，同一斷言重現（4/5），不是此次UI快取v3造成。保留原斷言，不修改不相關功能來湊全綠。
+- 實測：`node tools/desktop/verify-mini-window.cjs <output> full|demo|internal`三次通過，隔離profile／新遊戲／全靜音。三版本各驗windowed／borderless／fullscreen，共九組：首次真實外框置中，移動到(80,100)／(115,125)／(150,150)（依螢幕原點），每次重開維持上次位置，原生最小化與還原不重設、□／Enter或Esc／X回主窗；原模式與尺寸保持、戰況即時推送、背景模擬持續、焦點限制與內測GM維持。每次另重建真正原生控制器並從磁碟讀回最後位置，三份報告positionReloaded均true，頁面錯誤0。首輪發現的Windows原生回呼生命週期與全螢幕Z-order問題已修正並重跑，沒有放寬置頂或位置斷言。
+- 交接：自我Review完成，本項可供驗收與合併，無功能待辦。Commit為本段所在的`[Codex] fix: 記住迷你視窗位置並改用標題列控制`，未合併或推送。測試視窗／profile與本項暫存清理；Windows單螢幕做原生實測，多螢幕負座標與拔除／改解析度以注入screen的回歸驗證，未實際拔除硬體。原始碼桌面版重啟生效，既有安裝包需另行重打包。
+
 ## DESKTOP-MINI-WINDOW-20261119 — 修復桌面迷你視窗與主視窗往返
 
 - Owner：Codex；Done，單人實作。使用者要求桌面版迷你視窗恢復作用，進入時隱藏原遊戲視窗，按迷你視窗還原回正常遊戲。前置為既有迷你戰況快照及 Electron 外殼，逐檔衝突預檢乾淨。

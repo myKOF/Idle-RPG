@@ -20,20 +20,10 @@ var MiniMonitor = {
 if (window.ApexMini) {
   window.ApexMini.initial().then(function (data) {
     var style = document.createElement('style');
-    style.textContent = data.css +
-      'button{background:#24463c;color:#e1e9df;border:1px solid #9b7953;padding:3px 10px;cursor:pointer}' +
-      '.m-toolbar{display:flex;justify-content:flex-end;margin-bottom:4px}';
+    style.textContent = data.css;
     document.head.appendChild(style);
     document.title = data.title;
     document.body.innerHTML = data.html;
-    var toolbar = document.createElement('div'), restore = document.createElement('button');
-    toolbar.className = 'm-toolbar';
-    restore.id = 'm-restore';
-    restore.textContent = data.restoreLabel;
-    restore.title = data.restoreTip;
-    restore.onclick = window.ApexMini.restore;
-    toolbar.appendChild(restore);
-    document.body.prepend(toolbar);
     document.addEventListener('keydown', function (event) {
       if (event.defaultPrevented || event.repeat || event.isComposing || event.keyCode === 229 ||
           event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !document.hasFocus()) return;

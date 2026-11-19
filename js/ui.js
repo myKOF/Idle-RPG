@@ -10723,7 +10723,7 @@ function openMiniWindow() {
     MINI.desktop = true;
     MINI.timer = setInterval(renderMiniWindow, 300);
     window.ApexHost.mini.open({ css: MINI_CSS, html: MINI_HTML, title: STR(2066),
-      restoreLabel: STR(2072), restoreTip: STR(2073), enterShortcut: miniShortcutEnabled(), snapshot: miniSnapshot() }).then(function () {
+      enterShortcut: miniShortcutEnabled(), snapshot: miniSnapshot() }).then(function () {
       if (MINI.desktop) blog(STR(2067), 'good');
     }).catch(function (error) {
       stopped();
