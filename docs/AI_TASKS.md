@@ -17116,3 +17116,13 @@ Worker 存活且頁面正常完成載入。
 - 範圍核對：此飛龍未接入遊戲，包外沒有執行期或素材引用，BOSS9通用欄位保留供新模型接替，其他飛龍NPC保持。唯讀檢查共通規範／Workflow／Agent、任務、Git追蹤與引用、素材解析、素材庫／預覽清單、NPC／Task／data現況。原進行中config/CSV/NPC.csv、config/CSV/Task.csv、config/Excel/NPC.xlsx、js/data.js四檔SHA逐一保持；未修改遊戲玩法／表格／執行期，不需更新LV或快取。
 - 驗證：36個專用檔及任務檔衝突預檢無外部來源；所有遞迴刪除先核對已解析絕對路徑、指定父目錄及無重新解析連結。rg --files含隱藏／忽略檔盤點未見殘留boss9檔案，git grep -i boss9在專案除本任務稽核檔外及素材庫皆無引用；既有任務的其他聊天歷史註記保留。npm.cmd run build通過755檔，雙庫git diff --check與刪除範圍檢查通過；node tools/kill-test-browsers.cjs確認無測試瀏覽器。
 - 交接：素材庫刪除Commit `453b5999f4e857aa4059b45bbfd12cd3f7124019`；專案Commit為本段所在「[Codex] chore: 移除廢棄飛龍與專用製作資料」。本輪清除無未完成項目，可供使用者合併；新BOSS9待使用者另行提供。檔案已從目前專案／素材庫／預覽移除，Git既有歷史保留、沒有重寫歷史，未合併或推送develop／main。
+
+## BOSS9-LIZARD-RUN-20261120 — 新蜥蜴人奔跑朝向與手指動畫修正
+
+- Owner：Codex；Review，單人製作。使用者提供新同名BOSS9.glb（SHA256 1f3f5daad3100305fd51c5fd070cf53a2d5a6b3c59394be3db94500ce68ffa0d），要求保留低身後腿奔跑，修正頭身側偏及手指跟腳的動作，先交GIF。暫代材質保持；桌面原檔、舊飛龍撤銷紀錄及其他聊天NPC／Task／data保持，不接入、合併或推送。
+- 完成：從腰部spine_02去除上身約8～13度側傾，保留原俯角／起伏，以雙後腳平均方向對齊軀幹；實際頭部spine_16穩定朝前、保留俯角。自動骨架把手掌chest下面的部分指節命名為frontLwr／frontToe或head並套用錯誤腳部／頭頸動畫，並非頂點黏到後腿；其12支指節恢復原本自然彎曲關係、隨手掌擺動，未切網格或重綁權重。
+- 保留：73骨、原0.666667秒步態、後腿／骨盆／根部／尾部原曲線；原網格／面／法線／UV／蒙皮／rest／節點／兩張PNG及暫代材質二進位資料逐位保持。只替換腰、頭與12指骨共42動畫通道，其餘177通道的原始時間及輸出保持；成品單招命名Walk。Blender保存可編輯來源，透過原節點基準輸出GLB。
+- 修改10檔：新增tools/boss9-lizard/{inspect.py,prepare.py,verify.py,viewer.html,viewer.js,capture.cjs,encode.py,export.cjs}、docs/assets/BOSS9_LIZARD_RUN.md及本段。唯讀檢查共通規範／Workflow／Agent、原GLB及原生匯入、BOSS5擷取／預覽、既有qa_clips／素材同步與背景瀏覽器工具。逐檔預檢無外部來源；其他聊天四個未提交檔案保持，本檔只追加本任務。
+- 原生驗證：verify.py對原生Blend及實際GLB重開後各取161點，含120FPS與錯相補間；後腿／骨盆／根部矩陣及純後腿影響頂點差均0。GLB軀幹對雙腳方向誤差不超過0.0264度，側傾小於0.00053度；頭部對正前方誤差小於0.00005度。原前肢對後腿錯誤權重0；純指骨影響頂點對手掌局部形狀誤差小於0.0000005模型單位，指定指部／腳部三角形穿插0，最近頂點約0.1674模型單位。循環頂點差小於0.000002，骨長／有限通道／四元數及GLB首尾檢查通過。
+- 預覽／測試：側面及正面實際GLB各擷取20張，例外／警告0、完整入鏡、GLB SHA與驗證及編碼報告相符。兩GIF皆900×600／60張／2秒、原步態連播3次，逐張重開解碼並目視審閱完整聯絡圖。Python AST、Node CJS／ESM語法、npm.cmd run build 755檔、export.cjs雙庫SHA及Git本項差異檢查通過；原桌面GLB雜湊保持，測試瀏覽器已清理。
+- 交接：新包codex-authored/boss9-lizard-run-20261120保存原GLB／原生匯入、修正Blend／GLB、兩GIF、工具與QA／SHA清單，素材庫Commit `f6ae266955792a25505fb39b59bc0f437cb5a6f2`；專案Commit為本段所在「[Codex] fix: 修正新BOSS9奔跑朝向與手指動畫」。本輪兩項修正完成，可供GIF審閱；未宣稱整模型所有甲片／肩髖或雙手間接觸均消失，材質依使用者說明仍為暫代，正式接入待審閱另行授權。沒有本輪未完成工作，下一步等使用者看GIF；未合併／推送develop或main。
