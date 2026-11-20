@@ -17108,50 +17108,11 @@ Worker 存活且頁面正常完成載入。
 - 修改：`js/ui.js`、`css/style.css`、`index.html`快取、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`與本段；預檢無實質衝突，與本次會話需求由同開發者分段整合。檢查未修改商品框原圖、數量配置／交易與價格。
 - 驗證：UI回歸5/5（含實際商品數12／13門檻）；1920／1366寬度實際瀏覽器驗證6／12件無捲軸且12格，13件16格／40件40格皆有捲軸且末列可見，框比例2.5，頁面例外0。接入後相關39項、Build752檔與Git差異檢查通過，截圖及JSON保留於visualizations的`merchant-final`目錄。
 - 交接：無未完成或已知新增風險，未測行動真機；Commit為本段所在`[Codex] feat: 完成神祕商人限時會話與木牌介面`，可供驗收與合併，未合併／推送；下一步重載遊戲確認無捲軸畫面。
-## BOSS9-DRAGON-ANIMATION-20261119 — 飛龍單尾修復與五動作製作
 
-- Owner：Codex；Review（素材與五個GIF已完成，待使用者審閱），單人製作。使用者提供桌面 BOSS9.glb，明確要求移除右側較細的多餘尾部，製作飛行移動、1.5秒咬擊、1.2秒右爪橫掃、3秒30米粒子噴火及2.5秒掙扎墜地側躺，注重全身連動；追加「動作做完先給GIF檔預覽」。
-- 前置：共通規範／Workflow／Agent與現有任務已讀、ai/codex乾淨，逐檔預檢無外部衝突。沿用使用者提供模型的本次修改授權，非人形依Blender流程製作。
-- 允許：新增tools/boss9製作／驗證／預覽與匯出工具、docs/assets/BOSS9_SOURCE.md、本段；素材庫獨立boss9飛龍包內原檔、可編輯blend、含五動作GLB、粒子來源、預覽、QA及SHA清單。交付為素材製作階段，不修改NPC／玩法／Excel／字串／其他模型或執行期，不合併推送develop或main。
-- 完成：原模型73骨改為65骨，移除右細尾1660個含接縫頂點及Bone_024～030，修補尾根；重做頸／頭／下顎與嘴部掛點、切開口部接縫並補內面。保留原三張2048 JPEG內嵌資料逐位相同，UV與其餘外形沿用。自行製作Walk 1.6／Attack1 1.5／Attack2 1.2／Attack3 3／Die 2.5秒，飛行及攻擊全身連動、攻擊回復同一姿態；死亡後仰高速振翼、失速翻側、腿翼收攏及末姿停止。
-- 粒子：新增自製fire.js／fire.json，火團／近端亮芯／火星／煙霧與嘴部暖光，隨發射時刻掛點離嘴後獨立運動；1世界單位1米、名義30米，實際逐幀中心最大29.9976米，3秒末0顆。標準GLB不包含即時粒子，伴隨模組在預覽同步播放；尚未製作正式遊戲VFX接線或傷害設定。噴火GIF含全射程標尺及動作近景。
-- 修改：tools/boss9/製作、原生驗證、成品擷取、粒子、GIF編碼與素材檢核工具，docs/assets/BOSS9_SOURCE.md與本段。唯讀檢查規範／Workflow／Agent、BOSS8與BOSS5製作／預覽工具、three.js／GLTFLoader、素材根解析與背景瀏覽器清理；未改NPC、Excel、遊戲程式、LV、其他模型。工作區中其他聊天的商人UI／字串修改保留，不納入本項提交。
-- 驗證：Blender -b --python-exit-code 1 -P tools/boss9/verify.py重開原生Blend，120FPS共1181個實際蒙皮時點，有限值、骨長、離地、起始／攻擊回復、死亡接地與末姿通過。死亡最低0.02474米，末姿軀幹辨識區最低0.312米、頭0.120米，上方向近水平；不是僅把翼尖接地便讓身體懸空。node tools/boss9/capture.cjs實際載入GLB，五招299幀、頁面例外／警告0；Python encode.py精確GIF時長1.6／1.5／1.2／3／3.3秒（死亡含0.8秒供審閱停留），逐檔原生重開、循環與關鍵畫面讀回。node tools/boss9/export.cjs核對雙庫SHA、65骨／五招、有限通道與粒子距離；Python AST、Node語法、npm.cmd run build 752檔與本項Git差異檢查通過。
-- 交接：原檔、可編輯Blend、GLB、工具、五個GIF及QA／SHA清單保存於素材庫codex-authored/boss9-dragon-20261119；素材庫Commit `5c4f0d36e3bc52e7236bdde237c7fca609a9828b`，遊戲Commit為本段所在「[Codex] feat: 製作飛龍單尾模型與五動作預覽」。下一步由使用者看GIF提出調整；本次素材預覽可審閱，尚未接入遊戲，不宣稱全甲片／翼膜／尾巴所有自身接觸均已排除。未合併／推送develop或main；沒有本項實作阻塞，待審閱與後續接入指示。
-## BOSS9-DRAGON-ANIMATION-V2-20261120 — 飛龍頭向、展翼與攻擊連動第二版
+## BOSS9-DRAGON-REMOVE-20261120 — 撤銷飛龍並清除相關資料
 
-- Owner：Codex；Review（第二版素材與五個GIF完成，待使用者審閱），單人製作。使用者要求頭回正俯30度、上拍翼展抬平、5米咬擊回位、右轉90度帶動右爪右上至左下斜劈、全身後仰蓄勢再猛前傾噴火20米；追加死亡取消振翼改高舉雙翼仰天長嘯、所有動作尾巴自然後伸；最後裁定以正面視圖切左留右，取代第一版錯側。延續先交GIF、不接入遊戲。
-- 前置：第一版來源／動作／雙庫提交及GIF已保存，逐檔預檢無外部衝突。保留其他聊天Task.xlsx未提交修改。允許tools/boss9製作／預覽／驗證／粒子工具、素材文件與本段，素材庫獨立v2套件保存可編輯來源／成品／GIF／QA；不改NPC／Excel／遊戲程式／戰鬥數值、其他BOSS，不合併或推送。
-- 完成：從原檔重做，刪除正面左側Bone_016～023及2404個含接縫頂點，保留右側Bone_030～024七骨尾鏈並拉順至約6.805米；一致截面方向與雙四元數蒙皮維持尾部體積，逐節擺動、死亡放鬆。先把來源頭部約44.62度側轉回正再設俯角；肘／腕／翼指共同展翼；兩骨IK配合全身轉體製作爪擊。五招時長仍為1.6／1.5／1.2／3／2.5秒，三原圖JPEG內嵌資料逐位保持，本體4800編輯頂點／9333面、最終64骨。
-- 修改8檔：tools/boss9/{build.py,capture.cjs,export.cjs,fire.json,verify.py,viewer.js}、docs/assets/BOSS9_SOURCE.md與本段。唯讀檢查既有製作／粒子／GIF／頭像工具、原模型／第一版Blend與SHA、three.js／GLTFLoader及背景瀏覽器包裝器；未改NPC／Excel／遊戲／其他BOSS／LV，未加入外部素材。
-- 驗證：Blender verify.py原生重開，以120FPS共1181點驗實際蒙皮、有限值／骨長、循環回復、尾鏈後伸及接地。飛行頭30度／朝向偏差小於0.001度；上拍左右翼膜平面離地角約3.44／3.46度；咬擊根位移4.994米回原點；蓄轉右90度，爪端向左跨5.15米並下降3.39米。尾鏈後向點積至少0.990、伸展比例至少0.998；死亡最低0.02486米、末姿軀幹辨識區0.388米／頭0.077米，末段完全停止。
-- 實際成品：node tools/boss9/capture.cjs擷取299幀，GLB頭向／30度與4.994米位移再驗通過，頁面例外／警告0；粒子中心最遠19.999米，3秒末0顆，標尺沿實際嘴部方向20米。Python encode.py產出五GIF並重開核對時長／循環（死亡另停0.8秒），讀回多個姿勢、正面頭向與整段抽幀；node tools/boss9/export.cjs核對雙庫SHA、64骨／保留右尾、有限動畫與各姿態數值。npm.cmd run build 753檔、Node／Python語法及本項Git差異檢查通過，測試瀏覽器已關閉。
-- 交接：獨立素材包codex-authored/boss9-dragon-v2-20261120保存原檔、可編輯Blend、GLB、工具、五GIF及QA／SHA清單；第一版保留供對照，不代表目前交付。素材庫提交 `9f509a7784fe6a2bb5be9898ca1a97f4f78eb6af`；專案Commit為本段所在「[Codex] fix: 修正飛龍尾側與全身動作第二版」。可交使用者看GIF審閱，尚未接入遊戲，未合併／推送；不宣稱所有甲片／翼膜自身接觸均已排除，無本項實作阻塞。
-## BOSS9-FLIGHT-GIF-REFERENCE-20261120 — 依提供GIF單獨重做飛行移動
-
-- Owner：Codex；Review，單人製作。使用者提供飛龍GIF.gif，要求先依參考重做移動、經同意後才改其他動作；後續指出翼膜拉伸，明確授權自行判斷增加骨骼。本輪只交飛行預覽，原v1／v2與Attack1～3／Die來源保持，不接入遊戲，不合併／推送。
-- 完成：另建展翼基準形態與70骨飛行審閱模型，左右各增Root／Middle／Tip三支撐骨；依實際翼展方向拍翼，分段轉角／翼尖小幅落後，骨節保持長度。新展翼表面重綁平滑四權重、排除翼根誤受前肢041／046拉動，並把自訂法線同步到展翼姿態。身體前傾／起伏、頭頸穩定、腿爪收放與後伸尾鏈共同連動。
-- 交付：新Blend／GLB只含Walk 2秒，60FPS製作、30FPS共60張GIF；800×600完整翼展，另有標示來源的同時並排對照。參考30張GIF只作動態分析，原圖像素沒有進遊戲或自製素材包；雲層自製。原v2四招完整留在原套件，尚未適配新展翼基準，必須等使用者同意才處理。
-- 修改11檔：新增tools/boss9/flight_{reference.py,rig.py,profile.json,preview.html,viewer.js,capture.cjs,encode.py,verify.py,export.cjs}、docs/assets/BOSS9_FLIGHT_REFERENCE.md及本段。唯讀檢查共通規範／Workflow／Agent、v2原生來源與既有BOSS9工具、Three.js／GLTFLoader、素材解析及背景瀏覽器工具。其他聊天Tower站位、NPC／Task／data／Worker與Excel修改保留；本檔與其不同段落，三方試合乾淨後僅暫存本段。
-- 驗證：flight_verify.py重開原生Blend，以120FPS共241點檢查實際蒙皮；70骨／單尾、原64骨rest、2954個非翼影響頂點、全部UV及面索引、三原JPEG資料保持，支撐骨無動畫縮放。新展翼基準的4483條翼邊，最差95百分位伸長比1.294、99百分位1.499、單邊最大1.933；骨長誤差小於0.000001來源單位。GLB首尾通道差小於0.000001、四元數正規化且有限，v2原檔SHA及四招資料雜湊核對保持。
-- 實際成品：兩視角各擷取60幀，頁面例外／警告0，報告與最終GLB SHA相符；完整翼展逐頂點投影無裁切。兩GIF均重開逐張解碼核對2秒循環，抽幀及並排目視審閱。Node／Python AST語法、npm.cmd run build 753檔、flight_export.cjs雙庫來源及成品SHA、Git本項差異檢查通過，測試瀏覽器已清理。
-- 交接：codex-authored/boss9-flight-reference-20261120保存可編輯來源、獨立GLB、原生QA、實際擷取報告、自製GIF及SHA清單，依賴已提交的v2 Blend；素材庫Commit `f31aaed5ec569f361ef58df54aecc10845bcc7ec`，專案Commit為本段所在「[Codex] fix: 依飛龍參考重整展翼與移動動作」。本輪可交使用者審閱；不宣稱逐像素／逐關節完全一致或所有翼膜自身接觸／彈性均消失。來源翼膜摺痕、雙翼遮擋、四肢比例與回收輪廓仍有差異，待GIF回饋及核准後再處理其他動作，未接入或合併／推送。
-
-## BOSS9-FLIGHT-LIMBS-20261120 — 飛行尾長、腿部穿模與胸前垂手修正
-
-- Owner：Codex；Review，單人製作。使用者認可上版飛行方向，要求尾長約原60%並隨振翅上下律動、排除腿部伸縮穿模、雙手依圈圖自然垂於胸前並輕微起伏。只改Walk，原拍翼／身體／頭頸通道保持，其他招式仍待同意，不接入遊戲或合併／推送。
-- 完成：基於已提交70骨飛行Blend另建修正版；尾鏈與602個尾部影響頂點沿縱向縮短至0.60000007，約6.805→4.083米，截面半徑比0.99876～1.00083。尾尖相對尾根上下起伏1.084米，與翼部週期相關0.991、落後約0.208秒；尾部自訂法線同步，無動畫縮放尾鏈。
-- 四肢：依低處網格連通區與表面距離分開前後肢，清理1058個頂點的交叉權重；腹部／胸部中央連接區由軀幹承接，避免跟雙腳拉開。腳踝保持腹部下方，小幅收放；雙手以肩部為依據垂在胸前，輕微擺動，掌爪保持原有相對形狀。仍保留單尾與70骨、原面索引／UV／三張JPEG、所有非尾頂點座標及尾鏈以外rest。
-- 修改9檔：新增tools/boss9/flight_refine.py／json、flight_refine_verify.py、flight_refine_export.cjs與docs/assets/BOSS9_FLIGHT_LIMBS.md；flight_capture.cjs增加素材版本與視角參數，flight_viewer.js支援視角，flight_encode.py支援正面GIF，及本段。唯讀檢查共通規範／Workflow／Agent、上版原生模型與既有製作／檢核／輸出、Three.js／GLTFLoader、素材解析與背景瀏覽器工具。其他聊天UI、Tower入場追擊、NPC／Task／data及Excel修改保留；本檔不同段落三方試合乾淨，僅暫存本段。
-- 原生驗證：flight_refine_verify.py以120FPS共241時點檢查實際線性蒙皮；原翼部／軀幹／頭頸通道SHA保持，未改骨骼姿態矩陣最大差0.00000024、循環頂點差0.00000048、骨長誤差小於0.000001。雙手、腳掌與小腿下段六區均未進入軀幹保守凸包，最小間距約0.468米；手腳互相及遠端肢體對翼膜三角形穿插0。檢核範圍不包括需自然相接的肩髖部，不宣稱整個模型所有甲片／連接區自身接觸都已排除。
-- 實際成品：GLB只有Walk 2秒／70骨，動畫通道有限、四元數正規化、首尾連續且原貼圖位元組保持。側面完整、近景、正面各60幀，共180幀，頁面例外／警告0、三份擷取與最終GLB SHA一致，完整兩視角均未裁切。Walk／Front兩GIF皆800×600、60張、2秒循環，逐張重開解碼與多階段目視審閱；標示來源的參考並排僅留私人審閱，不入素材庫。Node／Python AST、npm.cmd run build 755檔、雙庫SHA與本項Git差異檢查通過；測試瀏覽器清理。
-- 交接：新包codex-authored/boss9-flight-limbs-20261120保存原生Blend／GLB、工具、兩GIF、QA與SHA清單，依賴上版已提交飛行Blend，舊包均保持。素材庫Commit `64d273d846a89debf8361558b1d180ee2ba576c5`；專案Commit為本段所在「[Codex] fix: 調整飛龍尾長與飛行四肢姿勢」。可交GIF審閱，原翼膜摺痕與既有外形保留；下一步等使用者確認飛行再處理其他招式及正式接入，未合併／推送。
-
-## BOSS9-COMBAT-APPROVED-20261120 — 依核准飛行模型重製三攻擊與死亡
-
-- Owner：Codex；Review，單人製作。使用者確認移動可用，授權沿用本版模型、尾長與手腳形態重製其餘四招，完成先交GIF。核准Walk 2秒原生FCurve及GLB語意通道保持，70骨、4.083米短尾、所有網格／法線／面／UV／權重／rest／材質及三張JPEG保持，不接入遊戲或合併／推送。
-- 完成：Attack1 1.5秒，頭頸／軀幹後仰後張嘴前衝咬合，最大前移4.9957米再回位；Attack2 1.2秒，向解剖右側轉體90度、右後上舉爪，從身體外側高處向前左下斜劈，爪重心向左2.761／向下3.813／向前4.957米，翼、胸腰與尾巴共同帶動後回復。Attack3 3秒，頭身後仰蓄勢後前傾噴20米火焰；沿用既有fire.js／json的四層程序粒子與嘴部發光，唯讀未修改。Die 2.5秒，雙翼高舉仰天張嘴長嘯後墜地側躺，收翼放平，末姿保持；無振翼、無新增音效，GIF額外停留0.8秒。
-- 修改10檔：新增tools/boss9/combat.json、combat_author.py、combat_verify.py、combat_preview.html、combat_viewer.js、combat_capture.cjs、combat_encode.py、combat_export.cjs、docs/assets/BOSS9_COMBAT.md及本段。唯讀檢查共通規範／Workflow／Agent、核准原生模型與先前製作／檢核／輸出工具、Three.js／GLTFLoader、火焰設定及素材解析／背景瀏覽器工具。其他聊天的NPC／Task表與data修改保留；本檔不同段落三方試合乾淨，僅暫存本段。
-- 原生驗證：combat_verify.py重開來源與成品，以120FPS共988時點量測實際蒙皮；模型和Walk雜湊保持，骨長最大誤差小於0.0000004來源單位，動畫縮放保持核准版。三攻擊的雙手、腳掌及小腿下段共六區對軀幹凸包穿入0，彼此及與翼膜的三角形穿插0。死亡高舉翼的局部矩陣差小於0.000001、末姿頂點差小於0.000002，軀幹／頭最低約0.190／0.276米，所有網格最小離地約0.025米。5招時長、三攻擊回位與GLB有限值／四元數／原圖／材質／核准Walk通道核對通過。
-- 實際成品：最終GLB完整擷取250張，頁面例外／警告0，逐頂點完整入鏡，GLB SHA與原生驗證及GIF報告一致。粒子最遠19.9991米，3秒末全部清除。四GIF均900×600／30FPS、45／36／90／76張，重開逐張解碼核對循環及1.5／1.2／3.0／3.3秒總時長，已目視審閱聯絡圖與關鍵幀。Python AST、Node CJS／ESM語法、npm.cmd run build 755檔、combat_export.cjs雙庫SHA及Git本項差異檢查通過，測試瀏覽器清理。
-- 交接：獨立包codex-authored/boss9-combat-approved-20261120保存可編輯Blend、5招GLB、四招GIF及位元組相同的核准Walk GIF、工具／QA／SHA清單，依賴已提交的boss9-flight-limbs包。素材庫Commit `0fbdf73933d288c2058ad4fda0c0b3c90533efba`；專案Commit為本段所在「[Codex] feat: 製作飛龍三攻擊與死亡動作預覽」。本輪可交GIF審閱；仍保留原甲片／翼膜外形，未模擬布料或排除所有自然連接處的自身接觸。粒子由預覽程式生成、GLB保存動作及MouthSocket，正式遊戲特效接入與是否可合併待使用者審閱核准。
+- Owner：Codex；Done，單人處理。使用者放棄此飛龍，明確要求刪除這隻BOSS全部相關資料，將另換模型擔任BOSS9。本項取代原五筆製作／審閱任務，其技術資料已移除，只保留撤銷交接。
+- 完成：刪除tools/boss9的32個專用製作／檢核／粒子／預覽工具及docs/assets/BOSS9_SOURCE.md、BOSS9_FLIGHT_REFERENCE.md、BOSS9_FLIGHT_LIMBS.md、BOSS9_COMBAT.md，共36檔；素材庫五個版本包共124檔（原檔副本、模型、Blend、全部動畫、粒子、GIF、QA及清單）全部移除。本聊天四個舊預覽資料夾共204檔及已知參考截圖也已刪除；桌面原BOSS9.glb及飛龍GIF.gif在本輪盤點時已不存在。
+- 範圍核對：此飛龍未接入遊戲，包外沒有執行期或素材引用，BOSS9通用欄位保留供新模型接替，其他飛龍NPC保持。唯讀檢查共通規範／Workflow／Agent、任務、Git追蹤與引用、素材解析、素材庫／預覽清單、NPC／Task／data現況。原進行中config/CSV/NPC.csv、config/CSV/Task.csv、config/Excel/NPC.xlsx、js/data.js四檔SHA逐一保持；未修改遊戲玩法／表格／執行期，不需更新LV或快取。
+- 驗證：36個專用檔及任務檔衝突預檢無外部來源；所有遞迴刪除先核對已解析絕對路徑、指定父目錄及無重新解析連結。rg --files含隱藏／忽略檔盤點未見殘留boss9檔案，git grep -i boss9在專案除本任務稽核檔外及素材庫皆無引用；既有任務的其他聊天歷史註記保留。npm.cmd run build通過755檔，雙庫git diff --check與刪除範圍檢查通過；node tools/kill-test-browsers.cjs確認無測試瀏覽器。
+- 交接：素材庫刪除Commit `453b5999f4e857aa4059b45bbfd12cd3f7124019`；專案Commit為本段所在「[Codex] chore: 移除廢棄飛龍與專用製作資料」。本輪清除無未完成項目，可供使用者合併；新BOSS9待使用者另行提供。檔案已從目前專案／素材庫／預覽移除，Git既有歷史保留、沒有重寫歷史，未合併或推送develop／main。
