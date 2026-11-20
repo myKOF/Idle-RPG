@@ -94,11 +94,16 @@ test('ROI 策略確實宣告了不建 inv.items，而且真的沒有規則在讀
   assert.ok(policy.needPanels.indexOf('inv') >= 0, 'inv 面板本身仍然要建（其餘欄位還在用）');
 });
 
+/* 每份策略都宣告不建的欄位（docs/SIM_HARNESS.md ⑦）。battle.field.monsters 是場上每隻怪的
+   完整物件，觀測每秒深拷貝一次；七份策略都只讀單數的 field.monster。 */
+const OMITTED_BY_ALL = ['battle.field.monsters'];
+
 test('其餘策略沒有宣告，行為不變', () => {
   for (const f of fs.readdirSync(SIM_DIR).filter((x) => /^policy\..+\.json$/.test(x))) {
     if (f === 'policy.extreme.roi.json') continue;
     const p = createPolicy(JSON.parse(fs.readFileSync(path.join(SIM_DIR, f), 'utf8')));
-    /* 這條要守的是「只有 ROI 策略宣告了『不建某欄位』」，也就是沒有任何欄位被設成 false。
+    /* 這條要守的是「只有 ROI 策略宣告了不建 inv.items 這類欄位」：其餘策略的規則還在讀它們。
+       OMITTED_BY_ALL 是刻意對全部策略宣告的，另外由下一支測試把關。
        panelParams 也被拿來傳參數給 harness 專用面板（例如 equipSets 的詞條權重），
        那不是省略欄位，不能因此被擋。 */
     const omitted = [];
@@ -106,6 +111,18 @@ test('其餘策略沒有宣告，行為不變', () => {
       const cfg = p.panelParams[panel];
       if (cfg && typeof cfg === 'object') for (const k of Object.keys(cfg)) if (cfg[k] === false) omitted.push(panel + '.' + k);
     }
-    assert.deepEqual(omitted, [], `${f} 不應該宣告不建任何面板欄位`);
+    assert.deepEqual(omitted.filter((x) => OMITTED_BY_ALL.indexOf(x) < 0), [], `${f} 不應該宣告不建其他面板欄位`);
+  }
+});
+
+test('每份策略都宣告不建 battle.field.monsters，而且讀它的規則會在載入時被擋下', () => {
+  for (const f of fs.readdirSync(SIM_DIR).filter((x) => /^policy\..+\.json$/.test(x))) {
+    const raw = JSON.parse(fs.readFileSync(path.join(SIM_DIR, f), 'utf8'));
+    assert.equal(raw.panelParams && raw.panelParams.battle && raw.panelParams.battle['field.monsters'], false,
+      `${f} 應宣告 panelParams.battle["field.monsters"] = false`);
+    assert.doesNotThrow(() => createPolicy(raw), `${f} 宣告後仍須能載入（沒有規則在讀 field.monsters）`);
+    const bad = JSON.parse(JSON.stringify(raw));
+    bad.rules = (bad.rules || []).concat([{ id: 'reads-monsters', cmd: 'x.y', args: { m: { $path: 'panels.battle.field.monsters' } } }]);
+    assert.throws(() => createPolicy(bad), /field\.monsters/, `${f}：有規則讀 field.monsters 時必須拒絕載入`);
   }
 });

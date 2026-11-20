@@ -1710,7 +1710,7 @@
             document.getElementById('sumSeed').innerText = summary.seed || '-';
             document.getElementById('sumHours').innerText = (summary.gameHours || '-') + ' 小時';
             document.getElementById('sumPolicy').innerText = (summary.policy && summary.policy.file) || '-';
-            /* 整場模擬從開始到結束實際花的牆鐘時間（finishedAt − startedAt，含開機與收尾），
+            /* 整場模擬從開始到結束實際花的現實時間（finishedAt − startedAt，含開機與收尾），
                不是遊戲時間；舊資料沒有時間戳時退回 performance.elapsedSec（只算推進的部分）。 */
             let elapsedSec = (Date.parse(summary.finishedAt) - Date.parse(summary.startedAt)) / 1000;
             if (!(elapsedSec >= 0)) elapsedSec = summary.performance && summary.performance.elapsedSec;
@@ -1955,7 +1955,7 @@
        run_summary.json 的 schedule 為準（下面的對照表就是讀它）。 */
     const PROFILE_DAILY_HOURS = { LIGHT: 2, MODERATE: 4, HEAVY: 8, EXTREME: 24, EXTREME_ROI: 24 };
 
-    /* 「模擬總時長」對有作息的型態是牆鐘時間（含離線），不是玩的時數。
+    /* 「模擬總時長」對有作息的型態是遊戲時間（含離線），不是玩的時數。
        不講清楚的話，使用者會把輕度玩家 100 小時讀成「玩了 100 小時」，
        然後覺得等級低得莫名其妙。 */
     function updateHoursHint() {

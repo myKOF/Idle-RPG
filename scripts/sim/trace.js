@@ -10,7 +10,7 @@
 
    ---- 對齊用的時鐘是 view.simT，不是 gt，也不是 harness 的模擬秒 ----
 
-   harness 的 gameTimeSec 是虛擬牆鐘，兩邊不同步，不能用。
+   harness 的 gameTimeSec 是含離線的遊戲時間（虛擬時鐘），兩邊不同步，不能用。
 
    gt（js/util.js:4 的 GT）曾經是這裡的對齊軸，但它**在戰鬥暫停時停住**
    （js/worker/sim.worker.js 的 `if (!combatPaused)`）。暫停期間 simStep 仍在跑

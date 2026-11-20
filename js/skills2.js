@@ -1356,6 +1356,22 @@ function skills2CanReach(gid, ent, lvs) {
   return bfEntityDistance(ent) <= skills2CastRangePx(gid, lvs || skills2Levels(gid));
 }
 
+/* 同一個群組對一整群敵人逐隻問「打得到嗎」時用這個：等級與施法距離只算一次。
+   判定與 skills2CanReach 逐字相同——距離只跟群組有關、跟哪一隻敵人無關，
+   而逐隻判定之間不會改動任何狀態，所以先算好再比，結果與每隻重算一模一樣。
+   射程在第一隻「有座標的活敵人」出現時才算，與原本「沒有需要就不算」的時機一致。
+   （逐隻重算時這兩支佔 headless 模擬約 6%：施放閘門每個 tick 對整群敵人各問一次。） */
+function skills2ReachTester(gid, lvs) {
+  var range = null;
+  return function (ent) {
+    if (!ent || ent.hp <= 0) return false;
+    if (typeof bfPos !== 'function' || !bfPos(ent)) return true;
+    if (typeof bfEntityDistance !== 'function') return true;
+    if (range === null) range = skills2CastRangePx(gid, lvs || skills2Levels(gid));
+    return bfEntityDistance(ent) <= range;
+  };
+}
+
 /* 火焰增幅（火球術第 6 階）目前的火屬性傷害提升%。
    掛點：js/legendary.js legendaryElementDamageUp——全專案「屬性傷害提升」的唯一收斂點，
    因此普攻的元素附傷與技能一體生效，不必在各傷害端各掛一次。 */
@@ -2816,7 +2832,8 @@ function castSkill2(pEnt, target, gid, floatSel, opts) {
      但 pool 必須保留完整敵群，讓貫穿、範圍擴散與周圍敵人等階段仍能命中射程外的目標。 */
   if (!rawPool.length) return null;
   var defensive = skills2DefensivePrecast(gid);
-  var reachable = defensive ? rawPool : rawPool.filter(function (e) { return skills2CanReach(gid, e, lvs); });
+  var reachTest = defensive ? null : skills2ReachTester(gid, lvs);   // 射程只算一次（見 skills2ReachTester）
+  var reachable = defensive ? rawPool : rawPool.filter(function (e) { return reachTest(e); });
   if (!reachable.length) return null;
   /* 防禦附帶攻擊仍排除進場中的敵人；其他技能保留完整存活敵群供後續幾何選取。 */
   var pool = defensive && typeof fieldCombatReady === 'function'
@@ -4056,7 +4073,8 @@ function sgCastDualdance(pEnt, st, g, lvs, pool, primary, floatSel, out, storm) 
   var kills = 0;
   for (var s = 0; s < strikes; s++) {
     // 每刀獨立抽取當前可及的存活敵人，可重複；不把剩餘斬擊浪費在已死亡目標上。
-    var targets = pool.filter(function (e) { return skills2CanReach('dualdance', e, lvs); });
+    var ddReach = skills2ReachTester('dualdance', lvs);
+    var targets = pool.filter(function (e) { return ddReach(e); });
     if (!targets.length) break;
     var tgt = targets[Math.floor(Math.random() * targets.length)];
     var danceDelayMs = Math.round(s * SG_MULTI_ATTACK_GAP_SEC * 1000);
@@ -8368,7 +8386,8 @@ function sgCastThunderstrike(pEnt, st, g, lvs, pool, primary, floatSel, out) {
 
 /* 每道發動時重新取得射程內存活目標；引雷針保留低生命優先規則。 */
 function sgThunderTargets(primary, pool, lvs, count, lg) {
-  var live = (pool || []).filter(function (e) { return e && e.hp > 0 && skills2CanReach('thunderstrike', e, lvs); });
+  var tsReach = skills2ReachTester('thunderstrike', lvs);
+  var live = (pool || []).filter(function (e) { return e && e.hp > 0 && tsReach(e); });
   var rod = sgThunderRodSpec(lg);
   var priority = rod ? sgThunderRodTargets(live, rod) : [];
   var result = [];

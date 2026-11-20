@@ -9,7 +9,7 @@
      node --max-semi-space-size=64 scripts/run_sim.js --hours=100 --seed=20260730
    選項：
      --hours=N        模擬遊戲小時數（預設 1；--trace 時預設為軌跡長度）
-                      ⚠️ 策略有宣告 dailyActiveHours 時，這是**牆鐘時間（含離線）**
+                      ⚠️ 策略有宣告 dailyActiveHours 時，這是**遊戲時間（含離線）**
      --ignore-schedule 忽略策略的 dailyActiveHours，全程在線（重現班表實作前的行為）
      --seed=N         PRNG 種子（預設 20260730；--trace 時預設為錄製當下的種子）
      --policy=path    策略檔（預設 scripts/sim/policy.default.json）
@@ -28,6 +28,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { createEngine } = require('./sim/engine');
 const { createPolicy } = require('./sim/policy');
+const { createPanelSupplier } = require('./sim/lazy_panels');
 const { createTraceSource } = require('./sim/trace');
 const { stateHash } = require('./sim/hash');
 
@@ -41,8 +42,8 @@ function arg(name, dflt) {
 
 const TRACE_PATH = arg('trace', null);
 const OUT_DIR = path.resolve(ROOT, String(arg('out', 'sim_out')));
-/* 這一次模擬的開機時間（本機牆鐘）。在載入遊戲之前先取，才不會被虛擬時鐘影響——
-   引擎會把 Date 換成虛擬的（js/item.js 的寶石商店與 js/forge.js 都讀牆鐘）。 */
+/* 這一次模擬的開機時間（本機的現實時間）。在載入遊戲之前先取，才不會被虛擬時鐘影響——
+   引擎會把 Date 換成虛擬的（js/item.js 的寶石商店與 js/forge.js 都讀現實時間的 Date）。 */
 const START_WALL_CLOCK = new Date().toISOString();
 const SNAP_MIN = Number(arg('snap-min', 10));
 const KEEP_VISUAL = !!arg('keep-visual', false);
@@ -53,6 +54,9 @@ const IGNORE_SCHEDULE = !!arg('ignore-schedule', false);
    的舊行為，用來比對這項改動造成的差異。 */
 const OBSERVE_EVERY = process.argv.some((a) => a.startsWith('--observe-every='))
   ? Number(arg('observe-every')) : null;
+/* 決策點一次把宣告的面板全部建好（面板按需建立之前的做法，見 scripts/sim/lazy_panels.js）。
+   兩種跑法的決策逐位相同；這個旗標只用來量測差異與反證等價。 */
+const EAGER_PANELS = !!arg('eager-panels', false);
 
 if (TRACE_PATH && process.argv.some((a) => a.startsWith('--policy='))) {
   console.error('--trace 與 --policy 互斥：一場模擬只能有一個決策來源。');
@@ -82,7 +86,7 @@ if (TRACE_PATH && policy.seed === null) {
   console.warn('⚠️ 錄製檔沒有記錄 seed，改用預設值 ' + SEED + '。這場重播不會重現原本那一場。');
 }
 
-/* 軌跡預設跑滿整段錄製。GT 只在戰鬥沒暫停時前進，所以牆鐘時間必定 ≥ GT，
+/* 軌跡預設跑滿整段錄製。GT 只在戰鬥沒暫停時前進，所以遊戲時間（含戰鬥暫停）必定 ≥ GT，
    多給 5% 與 60 秒的餘裕；真的還是沒跑完，摘要的 trace.remaining 會非 0。 */
 const HOURS = process.argv.some((a) => a.startsWith('--hours='))
   ? Number(arg('hours'))
@@ -463,8 +467,8 @@ function snapshot() {
   
   /* 每一「在線小時」檢查擊殺數是否為 0，用來抓「戰鬥根本沒在跑」這種 harness 故障。
 
-     ⚠️ 這裡量的必須是**在線時數**，不是牆鐘。啟用班表後牆鐘的第 24 小時裡有 22 小時
-     是離線的，線上擊殺本來就會是 0——用牆鐘算會讓每一個離線日都噴一次假警報，
+     ⚠️ 這裡量的必須是**在線時數**，不是含離線的遊戲時間。啟用班表後遊戲時間的第 24 小時裡有 22 小時
+     是離線的，線上擊殺本來就會是 0——用含離線的遊戲時間算會讓每一個離線日都噴一次假警報，
      而假警報多了之後真正的故障就不會有人看。離線期間的收益走的是另一套結算，
      由 schedule.offlineSettlements 各自回報，不歸這個檢查管。 */
   const onlineHoursNow = onlineSec / 3600;
@@ -527,7 +531,7 @@ function snapshot() {
    班表的形狀：每個 24 小時週期，先連續在線 dailyActiveHours 小時，其餘時間離線。
    真人可能拆成好幾段。這裡用單一區塊；分段會受不同離線關卡、時間取整及遺物效果影響。
 
-   ⚠️ 啟用班表後 --hours 的語意是**牆鐘時間（含離線）**，不是線上時數。
+   ⚠️ 啟用班表後 --hours 的語意是**遊戲時間（含離線）**，不是線上時數。
    輕度玩家跑 --hours=100 就是「100 小時的日子」，其中約 8.3 小時在線。 */
 const DAILY_HOURS = 24;
 const scheduleDeclared = typeof policy.dailyActiveHours === 'number' &&
@@ -542,7 +546,7 @@ const OFFLINE_BLOCK_SEC = scheduleOn ? (DAILY_HOURS - policy.dailyActiveHours) *
 if (scheduleDeclared && IGNORE_SCHEDULE) {
   console.log(`班表 已宣告 ${policy.dailyActiveHours}h/日，但 --ignore-schedule 要求忽略，本場全程在線。`);
 } else if (scheduleOn) {
-  console.log(`班表 每日在線 ${policy.dailyActiveHours}h、離線 ${DAILY_HOURS - policy.dailyActiveHours}h（--hours 是牆鐘時間，含離線）`);
+  console.log(`班表 每日在線 ${policy.dailyActiveHours}h、離線 ${DAILY_HOURS - policy.dailyActiveHours}h（--hours 是遊戲時間，含離線）`);
 } else if (typeof policy.dailyActiveHours === 'number') {
   console.log(`班表 dailyActiveHours=${policy.dailyActiveHours}，等同全程在線，不做離線結算。`);
 }
@@ -566,6 +570,11 @@ const observePanels = policy.observePanels || [];
 function panelParamsFor(name) {
   return (policy.panelParams && policy.panelParams[name]) || undefined;
 }
+
+/* 軌跡重播（--trace）的決策來源沒有 decideLazy，維持全建。 */
+const panelSupplier = (!EAGER_PANELS && typeof policy.decideLazy === 'function')
+  ? createPanelSupplier({ names: policy.needPanels, build: (n, p) => engine.panel(n, p), paramsFor: panelParamsFor })
+  : null;
 
 /* 邊際效益評估器的參數（要評估哪些詞條、每個部位精算幾個候選）。
    由策略宣告、引擎執行——策略拿不到遊戲函式，算不了 ROI；引擎不該決定要算什麼。
@@ -650,10 +659,15 @@ try {
 
       /* 決策點：策略只拿到 view / panels 的深拷貝（policy.decide 內再 round-trip 一次）。
          它沒有 G、沒有 FIELD、沒有任何遊戲函式，改不了狀態也讀不到內部值。
-         面板只建策略宣告要的那幾個——背包面板很大，每次都建會白付序列化成本。 */
-      const panels = {};
-      for (const p of policy.needPanels) panels[p] = engine.panel(p, panelParamsFor(p));
-      dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec(), seed: SEED }));
+         面板只建這一輪真的會讀的那幾個（scripts/sim/lazy_panels.js）。 */
+      if (panelSupplier) {
+        dispatch(panelSupplier.decide(policy, (panels) =>
+          ({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec(), seed: SEED })));
+      } else {
+        const panels = {};
+        for (const p of policy.needPanels) panels[p] = engine.panel(p, panelParamsFor(p));
+        dispatch(policy.decide({ view: engine.view(), panels, gameTimeSec: engine.gameTimeSec(), seed: SEED }));
+      }
       decisions++;
 
       if (engine.gameTimeSec() >= nextSnapAt) {
@@ -803,7 +817,7 @@ const summary = {
   policy: { file: path.relative(ROOT, POLICY_PATH), name: policy.name, sha256: policyHash },
 
   /* ---- 線上／離線班表 ----
-     gameHours 是牆鐘時間；onlineHours 才是實際跑了模擬的時數。兩者混用會把
+     gameHours 是遊戲時間（含離線）；onlineHours 才是實際跑了模擬的時數。兩者混用會把
      「輕度玩家 100 小時只在線 8.3 小時」讀成「跑了 100 小時的模擬」。
      offlineSettlements 逐筆記錄遊戲原生的離線結算結果，欄位是它自己的，不改名。 */
   schedule: {
@@ -872,8 +886,11 @@ const summary = {
     stepSeconds: engine.dt,
     elapsedSec: +elapsedSec.toFixed(2),
     stepsPerSec: Math.round(stepsDone / elapsedSec),
-    /* 縮時倍率照牆鐘算：使用者關心的是「一場 100 小時的日子要跑多久」。 */
+    /* 縮時倍率照遊戲時間（含離線）算：使用者關心的是「一場 100 小時的日子要跑多久」。 */
     speedupX: Math.round((HOURS * 3600) / elapsedSec),
+    /* 面板按需建立的統計（--eager-panels 時為 null）。eagerEquivalentBuilds 是全建的話會建幾次，
+       與 fullBuilds＋liteBuilds 對照就是省下多少；retries 是策略讀到沒建的面板而重跑的次數。 */
+    panels: panelSupplier ? Object.assign({ mode: 'lazy' }, panelSupplier.stats) : { mode: 'eager' },
     projected100hSec: +(360000 / ((HOURS * 3600) / elapsedSec)).toFixed(1)
   },
   events: { counts: eventCounts, kept: eventsKept, dropped: eventsDropped, keptKinds: KEEP_KINDS ? Object.keys(KEEP_KINDS) : 'all' },
@@ -932,7 +949,7 @@ if (summary.schedule.enabled) {
   const s = summary.schedule;
   const settled = s.offlineSettlements.filter((o) => o.settled);
   const kills = settled.reduce((a, o) => a + o.settled.kills, 0);
-  console.log(`班表        牆鐘 ${s.wallHours}h ＝ 在線 ${s.onlineHours}h ＋ 離線 ${s.offlineHours}h（每日在線 ${s.declaredDailyActiveHours}h）`);
+  console.log(`班表        遊戲時間 ${s.wallHours}h（含離線）＝ 在線 ${s.onlineHours}h ＋ 離線 ${s.offlineHours}h（每日在線 ${s.declaredDailyActiveHours}h）`);
   console.log(`離線結算    ${settled.length}/${s.offlineSettlements.length} 次生效，累計離線擊殺 ${kills.toLocaleString()}（遊戲原生固定費率，與線上 DPS 無關）`);
 } else if (summary.schedule.ignoredByFlag) {
   console.log(`班表        已宣告 ${summary.schedule.declaredDailyActiveHours}h/日但被 --ignore-schedule 忽略，全程在線`);

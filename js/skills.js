@@ -342,7 +342,10 @@ function pickAndCastSkill(pEnt, target, floatSel, opts) {
       /* 施法距離內已有目標時才開始吟唱，否則讓 battlefield.js 繼續驅動玩家追擊，
          避免遠距離先鎖住施法而停在原地。距離由群組自己決定（武技＝普攻近戰距離、
          魔法＝表定射程），判定收斂在 skills2CanReach——這裡不得再有第二套距離規則。 */
+      /* 對整群敵人逐隻判定，等級與射程只算一次（skills2ReachTester，判定與 skills2CanReach 相同）。 */
+      var sgReachTest = (typeof skills2ReachTester === 'function') ? skills2ReachTester(sgId) : null;
       var sgCanReach = function (ent) {
+        if (sgReachTest) return sgReachTest(ent);
         if (typeof skills2CanReach === 'function') return skills2CanReach(sgId, ent);
         return typeof bfPlayerCanReach !== 'function' || bfPlayerCanReach(ent);
       };

@@ -56,8 +56,13 @@ function achOwnedItems() {
   if (_achPass) _achOwnedCache = out;
   return out;
 }
-function achBeginPass() { _achPass = true; _achOwnedCache = null; }
-function achEndPass() { _achPass = false; _achOwnedCache = null; }
+/* 寶石最高階也在一趟內共用：寶石類成就有好幾條，各自呼叫 achGemTopByType 時，
+   每條都把背包 300 多件的寶石孔重掃一次（headless 模擬實測佔全場約 5%）。
+   一趟檢查內寶石不會變（判定只讀，achUnlock 不碰寶石），所以結果與逐條重算相同。
+   呼叫端只讀這個物件、不改它。 */
+var _achGemTopCache = null;
+function achBeginPass() { _achPass = true; _achOwnedCache = null; _achGemTopCache = null; }
+function achEndPass() { _achPass = false; _achOwnedCache = null; _achGemTopCache = null; }
 function achEquippedItems() {
   var eq = (typeof activeEquipment === 'function') ? activeEquipment() : G.equipment;
   var out = [];
@@ -80,6 +85,7 @@ function achCountSlotsAtRank(minRank) {
 }
 // 各寶石種類擁有的最高階 { 種類: 階 }（庫存與鑲嵌中的都算），一趟走完所有裝備
 function achGemTopByType() {
+  if (_achGemTopCache) return _achGemTopCache;
   var top = {}, gems = G.player.gems || {};
   for (var t in gems) {
     for (var lv in gems[t]) if ((gems[t][lv] || 0) > 0 && Number(lv) > (top[t] || 0)) top[t] = Number(lv);
@@ -90,6 +96,7 @@ function achGemTopByType() {
       if (g && !g.fused && g.type && (Number(g.level) || 0) > (top[g.type] || 0)) top[g.type] = Number(g.level) || 0;
     });
   });
+  if (_achPass) _achGemTopCache = top;
   return top;
 }
 function achActiveRunewords() {
