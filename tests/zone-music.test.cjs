@@ -12,10 +12,24 @@ const track = 'audio/zones/desert-ascendant.mp3';
 const track2 = 'audio/zones/desert-ascendant_2.mp3';
 const towerTrack = 'audio/zones/blades-of-the-rising-sun.mp3';
 
-function mount(blocked = false, ready = true) {
+function mount(blocked = false, ready = true, nativeFade = false) {
   const events = {}, music = [], settings = { mute: false, musicVolume: 50, sfxVolume: 50 };
   let changed, allowed = !blocked, clock = 1000, timerId = 0;
   const timers = new Map();
+  const gains = [], mediaSources = [];
+  class AudioContext {
+    constructor() { this.state = 'running'; this.destination = {}; }
+    get currentTime() { return clock / 1000; }
+    createGain() {
+      const node = { gain: { setValueAtTime: (value, at) => node.start = { value, at }, linearRampToValueAtTime: (value, at) => node.end = { value, at } },
+        connect(destination) { this.destination = destination; }, disconnect() { this.disconnected = true; } };
+      gains.push(node); return node;
+    }
+    createMediaElementSource(audio) {
+      const source = { audio, connect(gain) { this.gain = gain; }, disconnect() { this.disconnected = true; } };
+      mediaSources.push(source); return source;
+    }
+  }
   class Audio {
     constructor() { this.paused = true; this.currentTime = 0; this.starts = 0; this.pauses = 0; this.ended = false; music.push(this); }
     get src() { return this._src; }
@@ -34,12 +48,12 @@ function mount(blocked = false, ready = true) {
     clearTimeout(id) { timers.delete(id); },
     ZONES: { desert: { bgm: track, bgm2: track2 }, Icefield: {}, test: { bgm: 'audio/test.mp3' }, secondOnly: { bgm2: track2 } },
     document: { hidden: false, addEventListener: (name, fn) => { events[name] = fn; } },
-    window: { Audio, addEventListener: (name, fn) => { events[name] = fn; } },
+    window: { Audio, AudioContext: nativeFade ? AudioContext : undefined, addEventListener: (name, fn) => { events[name] = fn; } },
     GameSettings: { get: key => settings[key], sfxGain: () => 1, subscribe: fn => { changed = fn; } }
   };
   vm.createContext(c); vm.runInContext(read('js/ui-sound.js'), c);
   if (ready) c.UISound.setSceneReady(true);
-  return { c, music, events,
+  return { c, music, events, gains, mediaSources,
     scene: (zone, towerActive = false) => c.UISound.setScene({ zone, towerActive }),
     setting: (key, value) => { settings[key] = value; changed(key); },
     finish: audio => { audio.ended = true; audio.paused = true; audio.onended(); },
@@ -281,19 +295,202 @@ test('track ends respect mute, start-screen and page-exit pause; resume preserve
   assert.equal(audio.paused, false);
 });
 
-test('tower replaces field music; blank and unknown maps stop it', () => {
+test('tower returns to field music after two seconds of fading and four seconds of silence', () => {
   const m = mount();
   m.scene('desert'); m.scene('desert', true);
   assert.equal(m.music[0].paused, true);
   assert.equal(m.music[1].src, towerTrack);
   assert.equal(m.music[1].paused, false);
-  m.scene('desert'); m.scene('test');
+  m.scene('desert');
+  const boss = m.music[1];
+  assert.equal(boss.paused, false);
+  assert.equal(boss.volume, .5);
+  assert.equal(m.music.length, 2);
+  m.advance(1000);
+  assert.equal(boss.volume, .25);
+  assert.equal(boss.paused, false);
+  m.advance(1000);
+  assert.equal(boss.volume, 0);
+  assert.equal(boss.paused, true);
+  assert.equal(m.music.length, 2);
+  m.advance(3999);
+  assert.equal(m.music.filter(a => !a.paused).length, 0);
+  assert.equal(m.music.length, 2);
+  m.advance(1);
+  assert.equal(m.music[2].src, track);
+  assert.equal(m.music[2].currentTime, 0);
+  assert.equal(m.music[2].paused, false);
+  m.scene('test');
   assert.equal(m.music[1].paused, true);
   assert.equal(m.music[2].paused, true);
   assert.equal(m.music[3].src, 'audio/test.mp3');
   assert.equal(m.music[3].paused, false);
   m.scene('missing');
   assert.equal(m.music[3].paused, true);
+});
+
+test('ticks, gestures and settings preserve the tower return deadline and never increase its fading volume', () => {
+  const m = mount(); m.scene('desert', true);
+  const boss = m.music[0];
+  m.scene('desert'); m.advance(1000);
+  m.setting('musicVolume', 90);
+  assert.equal(boss.volume, .25);
+  m.setting('musicVolume', 10);
+  assert.equal(boss.volume, .1);
+  m.setting('musicVolume', 75);
+  assert.equal(boss.volume, .1);
+  for (let i = 0; i < 100; i++) m.c.UISound.setScene({ zone: 'desert', stage: i, towerActive: false });
+  m.advance(1000);
+  assert.equal(boss.volume, 0);
+  assert.equal(boss.paused, true);
+  m.advance(2000);
+  m.setting('mute', true); m.setting('mute', false);
+  m.events.keydown({ isTrusted: true }); m.events.pageshow();
+  m.c.UISound.setSceneReady(false); m.c.UISound.setSceneReady(true);
+  assert.equal(m.music.length, 1);
+  m.advance(1999);
+  assert.equal(m.music.length, 1);
+  m.advance(1);
+  assert.equal(m.music[1].src, track);
+  assert.equal(m.music[1].volume, .75);
+  assert.equal(m.music[1].paused, false);
+  assert.equal(boss.starts, 1);
+});
+
+test('native audio schedules a two-second fade independently of UI timers and releases the retired media graph', () => {
+  for (const cancelAt of [1000, 3000, 6000]) {
+    const m = mount(false, true, true); m.scene('desert', true);
+    const boss = m.music[0];
+    m.scene('desert');
+    assert.equal(m.gains.length, 1);
+    const gain = m.gains[0], source = m.mediaSources[0];
+    assert.deepEqual(gain.start, { value: 1, at: 1 });
+    assert.deepEqual(gain.end, { value: 0, at: 3 });
+    assert.equal(source.audio, boss);
+    assert.equal(source.gain, gain);
+    m.advance(1000);
+    assert.equal(boss.volume, .5, 'native gain owns the fade envelope, so the media volume must not fade twice');
+    m.setting('musicVolume', 10);
+    assert.equal(boss.volume, .1);
+    m.advance(cancelAt - 1000);
+    if (cancelAt < 6000) m.scene('test');
+    assert.equal(boss.paused, true);
+    assert.equal(boss.volume, 0);
+    assert.equal(source.disconnected, true);
+    assert.equal(gain.disconnected, true);
+    assert.equal(m.pending().length, 0);
+  }
+});
+
+test('reentering tower during fading or silence cancels the old return and ignores stale timers and ended events', () => {
+  for (const elapsed of [1000, 3000]) {
+    const m = mount(); m.scene('desert', true);
+    const old = m.music[0];
+    m.scene('desert'); m.advance(elapsed);
+    const late = m.pending()[0].fn;
+    m.c.UISound.beginTowerChallenge();
+    const boss = m.music[1];
+    assert.equal(old.paused, true);
+    assert.equal(boss.src, towerTrack);
+    assert.equal(boss.paused, false);
+    assert.equal(m.pending().length, 0);
+    late(); m.finish(old);
+    m.c.UISound.finishTowerChallenge(true); m.scene('desert', true);
+    m.advance(10000);
+    assert.equal(m.music.length, 2);
+    assert.equal(boss.starts, 1);
+    assert.equal(boss.paused, false);
+  }
+});
+
+test('changing map during tower return cancels its audio and cannot later replay the old destination', () => {
+  for (const elapsed of [1000, 3000]) {
+    const m = mount(); m.scene('desert', true);
+    m.scene('desert'); m.advance(elapsed);
+    const late = m.pending()[0].fn;
+    m.scene('test');
+    assert.equal(m.music[0].paused, true);
+    assert.equal(m.music[1].src, 'audio/test.mp3');
+    assert.equal(m.music[1].paused, false);
+    assert.equal(m.pending().length, 0);
+    late(); m.advance(10000);
+    assert.equal(m.music.length, 2);
+    assert.equal(m.music[1].starts, 1);
+  }
+});
+
+test('mute, zero volume, loading and page exit silence the tower tail and still gate field playback after the deadline', () => {
+  const gates = [
+    [m => m.setting('mute', true), m => m.setting('mute', false)],
+    [m => m.setting('musicVolume', 0), m => m.setting('musicVolume', 50)],
+    [m => m.c.UISound.setSceneReady(false), m => m.c.UISound.setSceneReady(true)],
+    [m => m.events.pagehide(), m => m.events.pageshow()]
+  ];
+  for (const [disable, enable] of gates) {
+    const m = mount(); m.scene('desert', true);
+    const boss = m.music[0];
+    m.scene('desert'); m.advance(500);
+    disable(m);
+    assert.equal(boss.paused, true);
+    m.advance(5500);
+    assert.equal(m.music.length, 1);
+    enable(m);
+    assert.equal(m.music[1].src, track);
+    assert.equal(m.music[1].paused, false);
+    assert.equal(boss.paused, true);
+    assert.equal(boss.volume, 0);
+    assert.equal(boss.starts, 1);
+  }
+});
+
+test('unmuting within the fade never restarts the tower tail or bypasses the silence', () => {
+  const m = mount(); m.scene('desert', true);
+  m.scene('desert'); m.advance(500);
+  m.setting('mute', true); m.advance(500); m.setting('mute', false);
+  assert.equal(m.music[0].paused, true);
+  assert.equal(m.music[0].starts, 1);
+  m.advance(4999);
+  assert.equal(m.music.length, 1);
+  m.advance(1);
+  assert.equal(m.music[1].paused, false);
+});
+
+test('start screen and intro cancel the tower tail without allowing stale callbacks to start field music', () => {
+  for (const mode of ['menu', 'intro']) {
+    const m = mount(); m.scene('desert', true);
+    m.scene('desert'); m.advance(500);
+    const late = m.pending()[0].fn;
+    if (mode === 'menu') m.c.UISound.setStartScreenActive(true);
+    else m.c.UISound.setIntroActive(true);
+    assert.equal(m.music[0].paused, true);
+    assert.equal(m.pending().length, 0);
+    late(); m.advance(10000);
+    assert.equal(m.music.some(a => a.src === track && !a.paused), false);
+    if (mode === 'menu') m.c.UISound.setStartScreenActive(false);
+    else m.c.UISound.setIntroActive(false);
+    assert.equal(m.music.at(-1).src, track);
+    assert.equal(m.music.at(-1).paused, false);
+  }
+});
+
+test('tower return cancels the track gap and handles a naturally ended tower song or a destination with no music', () => {
+  for (const zone of ['desert', 'Icefield', 'missing']) {
+    const m = mount(); m.scene('desert', true);
+    const boss = m.music[0];
+    m.finish(boss);
+    const late = m.pending()[0].fn;
+    m.scene(zone);
+    late(); m.finish(boss);
+    m.advance(5999);
+    assert.equal(m.music.length, 1);
+    assert.equal(boss.paused, true);
+    m.advance(1);
+    if (zone === 'desert') {
+      assert.equal(m.music[1].src, track);
+      assert.equal(m.music[1].paused, false);
+    } else assert.equal(m.music.length, 1);
+    assert.equal(m.pending().length, 0);
+  }
 });
 
 test('challenge switches immediately during a field gap, ignores pre-ACK field ticks and preserves tower playback', () => {
@@ -310,6 +507,8 @@ test('challenge switches immediately during a field gap, ignores pre-ACK field t
   for (let i = 0; i < 10; i++) m.scene('desert', true);
   assert.equal(boss.currentTime, 12); assert.equal(boss.starts, 1);
   m.scene('desert');
+  assert.equal(boss.paused, false); assert.equal(m.music.length, 2);
+  m.advance(6000);
   assert.equal(boss.paused, true); assert.equal(m.music[2].src, track);
   assert.equal(m.music.filter(a => !a.paused).length, 1);
 });

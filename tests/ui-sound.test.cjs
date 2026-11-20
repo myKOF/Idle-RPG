@@ -338,7 +338,7 @@ test('detailAction waits for accepted Worker results; rejection, missing resourc
     c.findSelItem = () => c.it;
     vm.createContext(c);
     const errorStart = ui.indexOf('function uiCommandResultError('), errorEnd = ui.indexOf('\nfunction requestUiPanels', errorStart);
-    vm.runInContext(ui.slice(errorStart, errorEnd) + '\n' + ui.slice(start, end), c);
+    vm.runInContext(ui.slice(ui.indexOf('function isSuccessfulUpgradeResult('), start) + '\n' + ui.slice(errorStart, errorEnd) + '\n' + ui.slice(start, end), c);
     c.detailAction(act, {}); assert.deepEqual(heard, []);
     resolve(result); await settle(); assert.equal(heard.length, expected, act + ':' + result);
     c.it = null; c.detailAction(act, {}); assert.equal(heard.length, expected);

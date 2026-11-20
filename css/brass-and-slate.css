@@ -299,10 +299,17 @@ body #game-layout #inventory-grid .item-cell.dimmed:not(.item-cell-dimmed) {
   opacity: .57 !important;
   filter: saturate(.48) brightness(.66) !important;
 }
-/* 部位篩選只調暗裝備內容，保留可辨識的品質框。 */
+/* 非同部位的內容置灰並隱藏品質框，保留格子尺寸供選取及捲動。 */
 body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed) {
   opacity: 1 !important;
   filter: none !important;
+  border-color: transparent !important;
+  background: radial-gradient(ellipse at 50% 22%, #332b31, #18141a 72%) !important;
+  box-shadow: none !important;
+}
+body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed)::before,
+body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed)::after {
+  opacity: 0 !important;
 }
 body #game-layout #inventory-grid .item-cell[data-slot].dimmed:not(.item-cell-dimmed) > * {
   opacity: .272;

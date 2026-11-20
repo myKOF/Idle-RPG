@@ -1,3 +1,118 @@
+## SYNC-20261120-133412 — develop 與 f005ed03 衝突整合
+
+- Owner：Codex；整合範圍為快取衝突、配置表衍生資料與驗證，交由同步控制器完成提交。
+- 解決 index.html、bridge.js、sim.worker.js 的載入版本衝突。新版本同步主頁、Worker 與 VFX Editor 的對應載入，保留兩側的縮時模擬改善、塔戰開場、神祕商人逾時及存檔行為。
+- NPC、Task、Store、String 以原生工作簿重新產生 CSV，與索引一致。NPC、Task 的 JS 資料比對無語意變更，String 仍為 37211a4b。素材庫已含本次引用的木牌、護盾及 BOSS9 試作來源。
+- 驗證：Build 759 檔通過，630 個數值與錨點均通過。塔戰、商人、Worker、模擬、任務進化、護盾與快取等重點測試 147/147 通過。來稿改動測試 265/266 通過；Zones 曲目斷言在兩個原始提交均重現。另確認 NPC 3D 塔戰欄位匯出測試的同一失敗已存在於來稿 f005ed03。
+- 全套測試 6,150 項，5,434 通過、713 失敗、3 略過。原 develop 快照重現其中 707 項，餘下 6 項以原來稿快照重現（BOSS7 兩項、NPC 3D 匯出、塔戰 BOSS 外觀、成就音效快取及熔爐浮字）。其中涉及原生 Excel 交接的測試 fixture 受 Windows 登入工作階段限制。完整合併結果的 `git diff HEAD --check` 通過；未變更兩個父提交、索引或素材庫。
+
+## TOWER-OPENING-APPROACH-20261120 — 首領先主動靠近並共同右移出生點
+
+- Owner：Codex；Done，單人實作。使用者實測首領仍在遠處停住，要求雙方出生點共同右移5米並在黑幕消失後互相靠近，追加塔戰雙方搜敵200米；本輪修正首招過早施法造成停步，不再只用出生點預估掩蓋。
+- 前置：468676b1及既有開場／法陣流程完成，規範／Workflow／Agent與任務已讀。逐檔預檢塔戰／elite／測試無外部來源；首頁與Worker不同快取行分段試合，共用版本沿用本聊天授權。同副本升級回饋／NPC／Task／data／BOSS9進行中內容保留。
+- 允許：js/tower.js出生點、js/elite.js首招施法資格、js/battlefield.js塔戰搜尋、主頁／Worker／bridge快取、tests/tower-opening-approach.test.cjs及相關塔戰回歸、LV_upgrade_system.md及本段。禁止更改表格／模型／素材／原移速攻速射程／技能效果／解鎖／存檔，不合併推送develop或main。追加檔案預檢無外部來源；升級提示已提交，保留其變更。
+- 驗收：黑幕後雙方首步實際互相靠近，BOSS首次出手前在射程外不被技能硬直截停，但冷卻照常推進；進射程後正常施法／出招，野外不受影響。依使用者追加指示雙方塔戰搜敵200米。中央接戰基準共同右移5米，保持固定法陣與原速；第3／4層正式內測桌面冷載入驗證，不在產品或測試腳本先預熱模型；相關回歸／Build／差異檢查後提交，交使用者驗收。
+
+- 完成：BOSS首次出手前未進原攻擊射程時，主動技只推進冷卻、不啟動施法硬直，進射程後正常出招；野外仍沿用原技能規則。塔戰玩家搜尋上限200米、BOSS實體視野200米（已索敵後繼續追擊），不更動NPC表或原攻擊射程。以原速／停步距離配置中央接戰，整組出生點共同右移bfMeterPx(5)，法陣固定；移除出生位置的首招冷卻補償並還原無此補償時的初始化清理順序。主頁／Worker相關快取及共用Worker版本同步。
+- 修改11檔：js/tower.js、js/elite.js、js/battlefield.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/tower-opening-approach.test.cjs、tests/tower-battlefield.test.cjs、tests/npc-vision.test.cjs、LV_upgrade_system.md與本段。唯讀檢查battle-renderer.js、npc3d.js、hero3d.js、ui.js、ui-sound.js、game-clock.js、game-visibility.js、原生Electron入口／轉場／商人及desktop.log；預載試作已完整移除，這些渲染與UI檔案相對HEAD無本項修改。NPC／Task／data與其他聊天進行中內容保留；無模型、素材或配置交付變更，不建立素材庫空提交。
+- 回歸：node --test tests/tower-opening-approach.test.cjs tests/tower-battlefield.test.cjs tests/tower-action-motion.test.cjs tests/tower-scene-intro.test.cjs tests/battlefield.test.cjs tests/battlefield-rt.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-auto-result.test.cjs tests/tower-auto-advance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，85/85通過；node --test tests/player-search-rings.test.cjs tests/npc-vision.test.cjs tests/npc-damage-aggro.test.cjs，34/34通過。舊塔戰視野回歸依本輪使用者200米要求更新，保留200米外不發現、發現後仍須進原攻擊射程與野外配置回歸；新增首招CD全ready仍首步移動、冷卻繼續與首次ACT距離驗證。補跑battlefield／locomotion／連挑／zone-music共81項80通過，唯一仍為既有Zones曲目斷言期待空白、實際black-crust-breaks.mp3，以HEAD原測試唯讀Module重跑同名測試確認相同失敗，未改其斷言或曲目。
+- 實機：IAB無可用連線後，以真正Electron內測app://localhost、靜音隔離新存檔，透過正式UI挑戰第3／4層，冷載入且不預熱模型。最終版雙方黑幕後首步互相靠近、首領在原射程外持續移動、首次ACT均在射程內，3D Walk分別62／92畫格，速度為正且動畫秒數前進；戰後返回field:desert且場景ready。頁面錯誤0，僅Electron既有開發版CSP警告。原隱藏測試視窗更新頻率過低造成Walk取樣僅2幀，正常顯示後未加預載也通過；因此撤回對模型冷載入的初步判斷並移除預載試作，而非放寬動畫斷言。診斷／對照／最終逐幀JSON、battle原生Canvas PNG與返回場景截圖留本聊天visualizations/tower-opening-approach-20261120，測試視窗及隔離profile已清理。
+- 交接：npm.cmd run build通過755檔，本項Git差異與自我Review通過。本項無未完成工作，可供使用者驗收合併，未合併／推送develop或main；黑畫面另段維持根因未定，不能宣稱本項修復。限制為未跑全庫／所有樓層實機，實機使用當時工作區NPC未提交配置（非本項修改）；共用出生點與搜敵套用所有塔層。與Claude重疊的共用bridge版本沿用本聊天授權，其他首頁／Worker快取行獨立分段三方試合為0；保留其他聊天未提交變更。Commit為本段所在「[Codex] fix: 修正塔戰開場追擊與兩百米搜敵」，SHA見交付；下一步重開內測桌面載入新快取後驗收。
+
+## TOWER-SCENE-BLACK-DIAG-20261120 — 內測桌面場景黑畫面唯讀追查
+
+- Owner：Codex；Review（尚未再現，根因待證據）。使用者回報進塔黑畫面但倒數／技能仍走，失敗返回練功也黑；追加重開內測桌面版後恢復正常。已讀原生desktop.log，未記錄頁面錯誤；對照本聊天提交，修改為塔戰站位／清理順序及快取，未改戰鬥渲染器或技能CD。
+- 已用真正Electron內測app://localhost、隔離且靜音profile，先新遊戲、再以原內測autosave的唯讀副本測試，原存檔未寫入。測冷載入第1層、退出確認回荒漠、商人開關、原生背景／前景通知；兩輪場景均回正確key、有玩家／敵人／場地且無頁面錯誤，僅Electron既有開發版CSP警告。不能據此宣稱黑畫面已修復或確定與商人／出生點無關。原生擷取在隱藏視窗下可能落後一個合成畫格，已同時保存renderer／Worker／visibility／場景JSON供核對。
+- 診斷程式／六階段PNG與JSON留本聊天visualizations/tower-black-desktop-20261120，背景Electron與隔離profile已清理。待同一異常再次出現時保留畫面狀態取得即時資料；本項沒有推測性修改渲染器、存檔、商人或CD規則。
+
+## TOWER-BOSS-CENTER-CONTACT-20261120 — 依追擊及停步距離對齊中央接戰
+
+- Owner：Codex；Done，單人實作。使用者確認上一輪仍偏右，要求繼續調整雙方出生點，讓雙方在法陣中央附近接戰並交實機截圖。本輪以結果為準，取代前輪固定左移米數。
+- 前置：3084d004及原入場流程已完成，規範／Workflow／Agent與任務已讀。fetch／逐檔預檢完成，Claude首頁／Worker為不同快取行，任務差異試合乾淨；共用Worker版本沿用本聊天已核准更新。保留NPC／Task／data／BOSS9及本檔其他進行中內容。
+- 允許：js/tower.js出生站位、tests/tower-battlefield.test.cjs必要回歸、index.html／js/bridge.js／js/worker/sim.worker.js快取、LV_upgrade_system.md與本段。禁止改表格／素材／移速攻速射程／技能行為／解鎖／存檔，不合併推送develop或main。
+- 驗收：法陣不跟出生點漂移；依雙方原移速與首領停步距離配置出生點，首次近身交手的雙方中點落中央附近；保留黑幕消失後雙方主動接近、實際位移Walk及場界。涵蓋不同移速／射程／體型與150層回歸、正式Worker實機第3／4層接戰截圖、Build及差異檢查後提交，交使用者驗收。
+
+- 完成：以原野外位置先錨定法陣中心，雙方起始相隔法陣基準畫寬；用原移速、玩家近戰觸及距離及BOSS停步距離反推起點。再以本場已抽出的主動技冷卻及既有eliteCanCast判定限制首領跑入距離，涵蓋近戰首領途中提早站定施法；不消耗或改寫冷卻，不改技能／射程／移速。既有eliteReset提前到站位前清空上一場技能名額／場域，使判定只取新場狀態。黑幕後雙方主動接近、實際位移Walk及固定場界保持，快取主頁／Worker／bridge同步tower-entry-v3，無新協議／存檔欄位。
+- 修改7檔：js/tower.js、tests/tower-battlefield.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、LV_upgrade_system.md與本段。唯讀檢查js/battlefield.js、elite.js、elite_data.js、battle-renderer.js、npc3d.js／hero3d.js、既有模擬宿主與相關回歸／背景瀏覽器工具。未改任何表格、NPC／data、技能引擎、渲染器、模型或素材，本項素材庫無交付變更；同副本其他聊天表格／data／BOSS9及文件段落完整保留。
+- 回歸：node --test tests/tower-battlefield.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-action-motion.test.cjs tests/tower-scene-intro.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-auto-advance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，46/46通過。新增五組不同原速／射程／體型及0.8秒提早施法，真正推進原生追擊後量首次近戰中點，誤差不超過一米且冷卻不變；150層一般追擊皆在中央五米內，黑幕等待／首步原速／退場／連挑／動作鎖定／場界及快取原回歸通過。最後補防空資料與冷卻不變斷言後單跑tower-battlefield 8/8通過。npm.cmd run build通過753檔，本項差異檢查與自我Review通過。
+- 實機：IAB無可用連線，依browser技能嘗試後沿用看門狗管理、隔離且全靜音Edge／正式Worker。預載相同正式模型以穩定擷取，首次渲染兩腳點距離不超過130世界單位且黑幕結束時暫停畫格／Worker，擷取全頁與原生戰鬥區，再恢復確認正常出招。第3層遠攻、第4層近戰的顯示中點相對固定法陣中心分別為-0.4093米／-0.3977米；黑幕座標不動，其後雙向接近、實際Walk非still且秒數前進（64／88畫格）、頁面例外／警告0。PNG逐張檢視，雙方確在中央附近。首輪第3層已置中，但第4層因途中首招施法仍偏12.55米；因此加入本場首招冷卻限制後重跑，保留中央五米驗收，沒有放寬斷言。
+- 交接：本項無未完成工作或已知新增風險；驗收針對首次正常近身，接戰後仍沿用技能、擊退與跑位規則。未跑全庫／行動真機／桌面包；實機截圖反映當時工作區NPC資料，其他聊天未提交資料未納入本項。腳本／逐幀JSON／接戰座標／全頁及戰鬥區PNG留本聊天visualizations/tower-center-contact-20261120。瀏覽器／伺服器已關閉，無桌面擷取工作階段；清理工具確認無測試瀏覽器殘留。Commit為本段所在「[Codex] fix: 對齊封魔塔中央接戰出生點」，SHA見交付；可供驗收合併，未合併或推送develop／main。下一步重載遊戲驗收中央接戰截圖效果。
+
+## TOWER-BOSS-SPAWN-SHIFT-20261120 — 雙方出生點左移以靠近法陣接戰
+
+- Owner：Codex；Done，單人修改。使用者看實機截圖後要求玩家再向左移5米（相對最初共左移10米）、BOSS相對上一版向左移10米；法陣中心保持，沿用黑幕完全消失後雙方主動互相接近。
+- 前置：9006e2cd入場流程完成；fetch及逐檔預檢完成。Claude已提交的首頁／Worker載入為其他快取行，任務差異三方試合乾淨；共用Worker版本同行沿用使用者本聊天已核准的更新授權。保留同副本NPC／Task／data／BOSS9及文件進行中修改。
+- 允許：js/tower.js、tests/tower-battlefield.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js快取、LV_upgrade_system.md與本段。禁止改表格／模型／素材／攻速移速射程／技能／解鎖／存檔，不合併或推送develop／main。
+- 驗收：玩家相對原位置左10米、BOSS相對上一版左10米且法陣不漂移；黑幕後雙方立即互相接近、原速與場界不變、接戰位置／動畫實機截圖，既有相關回歸及Build、差異檢查後提交，交使用者驗收。
+
+- 完成：玩家相對最初共左移bfMeterPx(10)，BOSS從上一版右邊界內側再左移bfMeterPx(10)；先建立固定法陣中心再改雙方座標，沒有帶動法陣。保留黑幕結束後兩邊依原速度主動追擊、實際位移驅動Walk及射程停步。主頁／Worker載入及共用Worker快取升至tower-entry-v2；未改協議形狀。
+- 修改7檔：js/tower.js、tests/tower-battlefield.test.cjs、index.html、js/bridge.js、js/worker/sim.worker.js、LV_upgrade_system.md與本段。唯讀檢查js/battlefield.js的單位／幾何／原速、battle-renderer.js／npc3d.js／hero3d.js的座標與動畫、既有入場／動作／連挑回歸及背景瀏覽器工具；未改NPC／Task表格、data、模型或素材，本項素材庫無交付變更。
+- 驗證：node --test tests/tower-battlefield.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-action-motion.test.cjs tests/tower-scene-intro.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-auto-advance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，45/45通過（含150層黑幕等待、首步原速／相遇／固定中心）。npm.cmd run build通過753檔。本項Git差異與自我Review通過；未重跑先前已有失敗的TBMA-5或全庫。
+- 實機：IAB無可用連線，依browser技能嘗試後改用看門狗管理、隔離且靜音的Edge／正式Worker，新遊戲略過序章。預先載入相同正式3D模型以穩定擷取首次接近的畫格，沒有改模型／移速／戰鬥；等渲染雙方中心相距不超過130世界單位時暫停畫格與Worker擷取全頁及原生戰鬥區，再恢復正常出招。第3／4層黑幕期間座標不變、其後雙方向彼此移動及3D Walk非still且秒數前進皆通過，移動畫格86／120，頁面例外／警告0；接近畫格距原法陣中心分別為玩家+400／BOSS+507及玩家+222／BOSS+345世界單位（對應當次工作區NPC配置），仍有各BOSS射程／原速造成的差異，沒有額外偏移強迫置中。
+- 交接：本項無未完成工作；限制為未跑全庫／行動真機／桌面包，截圖使用工作區當時的NPC未提交資料，這些表格／data不是本項修改且完整保留。驗證腳本／逐幀與接近座標JSON／全頁及戰鬥區PNG留本聊天visualizations/tower-entry-shift-20261120。瀏覽器／伺服器已關閉，無桌面擷取工作階段。Commit為本段所在「[Codex] fix: 左移封魔塔雙方出生點」，SHA見交付；可供使用者驗收及合併，未合併／推送develop或main，下一步重新載入遊戲驗收。其他NPC／Task／data／BOSS9進行中修改與文件段落保留，同檔分段暫存。
+
+## TOWER-BOSS-RUN-IN-20261120 — 封魔塔首領由右側邊界跑入
+
+- Owner：Codex；Done，單人實作。使用者要求 BOSS 從更右側邊界出現；最新補充玩家出生點向左移 5 米，雙方等入場黑幕完全消失後立即互相靠近，避免 BOSS 在原位等玩家。
+- 前置：既有塔戰／固定戰場／NPC 3D 與位移驅動動畫已完成。逐檔衝突預檢：塔戰及測試無外部來源；Claude 的首頁／Worker 載入更新為不同區段，三方試合後分段；bridge 快取同行已由使用者明確同意共用新版本。保留同副本商人／NPC／BOSS9 進行中修改。
+- 允許：js/tower.js、必要 battle-renderer 與回歸、index.html／bridge.js／worker 載入快取、tests/tower-battlefield.test.cjs、LV_upgrade_system.md 及本段。禁止更動 NPC 表／模型／攻擊或技能數值／解鎖／存檔，不合併或推送 develop／main。
+- 驗收：右邊界生成、玩家左移 5 米、黑幕消失後雙方立即主動靠近與 Walk 實播、沿用原移速、固定戰場中心及體型邊界、轉場不移動／不計時／不攻擊／不扣冷卻、正常接戰與連挑／退場，相關回歸、Build、隔離靜音瀏覽器及差異檢查。完成後交使用者驗收與整合。
+
+- 完成：保留原法陣中心，把 BOSS 設在右邊界內側（扣體型半徑），玩家單獨左移 bfMeterPx(5)。首領直接標記已索敵，黑幕結束後即與玩家按既有 bfTickPlayer／bfTickApproach 移速互相接近；沿用實際位移驅動 Walk，沒有新增站姿或假位移。保留原轉場暫停計時／冷卻／攻擊與場內邊界，未改戰鬥數值／存檔／解鎖，無協議形狀變更。主頁、Worker tower 載入及共用 Worker 快取同步。
+- 修改7檔：js/tower.js、js/bridge.js、js/worker/sim.worker.js、index.html、tests/tower-battlefield.test.cjs、LV_upgrade_system.md 與本段。唯讀檢查 AI 規範／Workflow／prompts/codex.md、js/battlefield.js／battle-renderer.js／npc3d.js／hero3d.js、Worker 投影／協議、NPC 生成資料、塔戰與3D動畫既有回歸、背景瀏覽器工具；未改 NPC.xlsx、任何表格或模型／素材，本項素材庫無交付變更。
+- 回歸：node --test tests/tower-battlefield.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-scene-intro.test.cjs tests/tower-boss3d.test.cjs tests/tower-boss-move-attack.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-auto-advance.test.cjs tests/tower-auto-result.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs，共58項、57通過。唯一 TBMA-5 失敗仍期待 game_parameters 的「4-高塔BOSS／控制抵抗」舊分類；該測試及 CSV／formula／data／config_tables 依賴與 HEAD 逐檔差異為0，單跑同名測試重現相同失敗，未改斷言或權威配置。新增150層逐步驗證黑幕不偷跑、消失後首步雙方原速、途中相遇及固定中心，原退場／連挑／動作鎖定／射程回歸通過。npm.cmd run build 通過753檔；自我Review與本項暫存差異檢查通過。
+- 實機：IAB 無可用連線，依 browser 技能嘗試後使用受看門狗管理、隔離且全靜音的 Edge／正式 Worker。第3、4層均驗黑幕期間雙方座標不變、結束後兩邊主動靠近；實際3D Walk 分別36／98個移動畫格，非 still、速度為正、動畫秒數持續前進，後續正常出招；頁面例外／警告0。初輪軟體GPU在模型冷載入時主執行緒嚴重停頓，觀測不足；改用原生D3D11後兩輪通過，第二輪補實體可見條件與正確確認退場，沒有放寬移動或動畫斷言。驗證腳本、逐幀JSON與截圖留本聊天 visualizations/tower-entry-20261120。瀏覽器／伺服器已關閉，無桌面擷取工作階段。
+- 交接：無本項未完成工作或已知新增風險；限制為上述1項既有參數表測試失敗，未跑全庫／行動真機／桌面包。Commit 為本段所在「[Codex] fix: 調整封魔塔雙方出生與接近流程」，SHA 見交付。可供使用者驗收及合併，未合併／推送 develop 或 main；其他聊天 NPC／BOSS9 未提交內容及其文件段落完整保留，同檔分段暫存。下一步重新載入遊戲驗收。
+
+## TASK-SKILL-EVOLUTION-20261120 — 補齊飛刀進化任務與邀請券獎勵
+
+- Owner：Codex；Done，單人實作。使用者確認Task順序5「強化飛刀」獎勵碎片250、10「彈射飛刀」獎勵金幣250000、27「暴雨梨花」獎勵神祕商人邀請券5張，要求補齊參數。保留使用者已插入及重排的43項任務與其他既有數值。
+- 前置：規範／Workflow／Agent與任務已讀，fetch及逐檔預檢無外部衝突；來源Task獨占存取成功。其他聊天BOSS9第二版僅共用本檔不同區段，分段提交，不納入其進行中內容。
+- 允許：Task原生Excel及CSV／參數說明、js/tasks.js判定與發獎、js/data.js生成資料、既有save-schema版本遷移、任務導航及必要主頁／Worker快取、相關回歸、LV／遷移文件及本段。禁止更動技能／戰鬥公式、其他表格數值、素材或其他功能，不合併／推送develop或main。
+- 驗收：三項進化的達成／未達成及錯誤終極選項、重置／未裝配、實際領獎及防重複、邀請券既有庫存累加與存讀、插入點前後及全部完成舊檔的單次進度平移、新局不平移、Excel正常模式重開／原資料格式保留、Excel→CSV→TASKS逐格一致、導航、相關回歸與Build。完成後交使用者驗收及整合。
+- 完成：順序5／10的目標類型skillTier、參數knife、數量2／3，順序27為skillUlt、參數knife:petalStorm、數量1；第5項實發碎片改250。邀請券獎勵類型merchantInvitation、參數空白、數量5，沿用既有庫存API與商人投影更新。導航展開飛刀對應階／終極；格式2登錄taskInsertSkillEvolutionV1，舊檔依三個插入點平移，新局及反覆讀檔不平移，無協議形狀變更。
+- 原生Excel：獨占確認後於暫存副本修改12個Task儲存格、追加4條參數說明，正常模式重開兩次並驗值後寫回。唯讀封裝比對原資料／公式、字型／填色／框線／數值格式、欄寬、視窗、篩選／驗證、繪圖及封裝項目均保留；僅D28／F28換行並自動調整該列高度，完整顯示長參數。前後兩區預覽已檢視，44列×11欄CSV及43項TASKS逐欄一致，重建試跑語意變更0。原生COM試作遇PowerShell型別快取與CutCopyMode轉型問題，皆在未寫回來源前中止，修正後雙重重開及完整差異檢核通過。
+- 修改18檔：Task.xlsx／CSV、tools/config_tables.cjs、js/data.js／tasks.js／save-schema.js／quest-guide.js／bridge.js、js/worker/sim.worker.js、index.html、tests/task-evolution.test.cjs及既有task-skills／task-chest-relic／save-schema／gm-task回歸、LV_upgrade_system.md、ONE_TIME_MIGRATIONS.md及本段。檢查未修改js/skills2.js／item.js／player.js／save.js／achievements.js、String及其他配置表；本項無素材交付，不建立素材庫空提交。
+- 驗證：`node --test tests/task-evolution.test.cjs tests/task-skills.test.cjs tests/task-system.test.cjs tests/task-chest-relic.test.cjs tests/save-schema.test.cjs tests/mystery-merchant.test.cjs tests/quest-guide-input.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/worker-protocol.test.cjs tests/gm-task.test.cjs`81/81通過。正式Worker原碼經既有模擬宿主驗證三項實領、防重領、7→12券及存讀；版本0／1全部41種合法舊索引、插入點與最舊遷移串接通過。`node tools/build_check.cjs`753檔通過，`node tools/config_tables.cjs --apply Task`變更0，自我Review及本項差異檢查通過。
+- 已知限制：補跑legacy-skill-removal-migration的12項中11通過，唯一失敗仍期待新局空技能欄，現況預裝sg:knife；唯讀載入起始HEAD程式重跑逐項重現，未修改其斷言。沒有本項未完成工作；未跑全庫或瀏覽器實機，導航以DOM替身、遊戲邏輯以正式Worker宿主驗證。報告／原表備份／來源與前後預覽保存在本聊天visualizations的task-evolution-20261120。
+- 交接：可供使用者驗收及合併，未合併／推送develop或main。與同副本BOSS9／護盾／商人樣式工作共用文件與首頁不同段，三方試合後分段暫存；保留其他聊天所有未提交內容。Commit為本段所在`[Codex] feat: 補齊飛刀進化任務與商人邀請券獎勵`，SHA見交付；下一步重新載入遊戲驗收。
+
+## TOWER-RETURN-BGM-20261120 — 封魔塔返回場景的配樂過渡
+
+- Owner：Codex；Done，單人實作。使用者要求離開封魔塔回原場景時，塔戰 BGM 先漸弱至完全無聲，再播放原場景 BGM；全程約6秒，其中靜音約4秒，採2秒漸弱＋4秒靜音。
+- 前置：既有塔戰／野外音樂切換及權威場景快照已完成；起始 ai/codex 乾淨、fetch 與逐檔衝突預檢通過。沿用 UISound，不新增音檔、配置、API 或存檔欄位。
+- 允許：`js/ui-sound.js`、`index.html` 對應快取、`tests/zone-music.test.cjs`、`LV_upgrade_system.md` 與本段。禁止改戰鬥／Worker／解鎖／表格／素材／其他功能，不合併或推送 develop／main。
+- 驗收：塔戰返回時音量單調漸弱、2秒完全停止、後續4秒無場景 BGM、6秒起播原場景首曲；快照／手勢／設定不得跳過或重置過渡。重入塔戰或換場取消舊排程，靜音／音量／Loading／序章／開始選單／離頁保持既有保護，拒絕挑戰仍立即回復權威場景。相關回歸、Build、實際瀏覽器音訊時序驗證及 Git 差異檢查後提交，交使用者驗收及整合。
+- 完成：UISound 保存離場播放器，以現有 AudioContext 的原生 GainNode 排程2秒線性漸弱，避免退場建圖佔用主執行緒而延後收音；不支援或尚未解鎖 Web Audio 時以計時器漸弱。共6秒後從目的場景首曲起播，音量／靜音不重新抬高或補播塔戰尾音。換圖／重新挑戰／序章／開始選單取消舊排程並回收媒體節點；舊曲尾與舊計時回呼不影響新場景。
+- 修改5檔：`js/ui-sound.js`、`index.html`（音樂腳本快取）、`tests/zone-music.test.cjs`、`LV_upgrade_system.md`及本段。唯讀檢查規範／Workflow／`prompts/codex.md`、`js/ui.js`挑戰與快照入口、`js/tower.js`撤退／確認結算、`js/worker/{protocol.js,sim.worker.js}`、`js/{main.js,start-menu.js,intro-audio.js,game-clock.js,game-visibility.js}`、現有音訊回歸與背景瀏覽器工具。未改表格、音檔、素材或存檔；素材庫無本項交付變更。
+- 回歸：`node --test tests/zone-music.test.cjs tests/ui-sound.test.cjs tests/intro-game-audio.test.cjs tests/intro-audio.test.cjs tests/vfx-editor-cache-versions.test.cjs`共57項，56通過、1項既有失敗。失敗為Zones曲目測試仍預期空欄，實際已有`audio/zones/black-crust-breaks.mp3`；以起始提交`e1423aee`原始測試經唯讀Module覆蓋重跑相同名稱，同一斷言失敗，不修改配置或降低斷言。本次新增／調整時序、設定保護、原生音量排程與回收、重入／換圖／過期事件等回歸全部通過。`npm.cmd run build`752檔及`git diff --check`通過，自我Review完成。
+- 實機：內建IAB無可用連線，依browser技能嘗試後改用受看門狗管理的隔離Edge；正式遊戲／Worker、新遊戲略過序章，正常開戰、撤退並確認結算返回荒漠。使用真實HTMLAudio與原生音訊排程，量得漸弱歸零2000.5ms、野外起播6188.1ms、靜音4187.6ms；漸弱單調、無曲目重疊，頁面例外／警告／媒體錯誤皆0。測完恢復全靜音，瀏覽器及伺服器關閉；無桌面螢幕擷取工作階段。來源腳本與完整時序JSON留本聊天visualizations的`tower-return-bgm-20261120`。
+- 交接：本項無未完成工作，已知限制為上述1項既有曲目斷言失敗、未測行動真機／原生桌面包；缺少Web Audio時漸弱精度受主執行緒計時器影響。可供驗收合併，未合併或推送develop／main。Commit為本段所在`[Codex] feat: 加入封魔塔離場配樂漸弱與靜音過渡`；下一步重新載入遊戲驗收。結束前清理工具確認沒有測試用無畫面瀏覽器殘留；工作期間另出現外部`config/Excel/Task.xlsx`修改，原樣保留，不納入本項提交。
+
+## NPC-SHIELD-EXACT-FIT-20261120 — 護罩實際外殼貼合一倍可見輪廓
+
+- Owner：Codex；Done，單人修正。使用者明確要求護盾實際寬高等於生成當下模型可見輪廓一倍，生成後固定尺寸。前置為既有2D／3D剪影量測與生成時定型；不修改免疫／持續／解鎖或輪廓定義。
+- 允許：en-gold-dome Preset與素材庫對應來源／說明、Runtime資料快取與主頁／編輯器引用快取、既有貼合回歸、LV與VFX控制說明及本段。禁止修改其他特效／模型／Excel／Worker／存檔，不合併或推送。fetch及逐檔預檢乾淨；保留同副本Task.xlsx與飛龍v2進行中任務，任務紀錄分區提交。
+- 驗收：正式SVG外殼經Core／Runtime後寬高為模型輪廓一倍、中心一致，姿勢／狀態半徑改變時維持初始尺寸，重新生成重新量測，備援與透視保持；相關回歸、隔離靜音瀏覽器實際素材渲染、舊編輯器存檔保護、Build與差異／雙庫雜湊，先素材庫再遊戲提交。
+- 完成8檔：en-gold-dome校正authored寬高為SVG圓直徑乘既有圖層縮放，各層中心改為製作高度負一半，fitPadding明設1；Runtime只更新DATA_VERSION與主頁／編輯器快取。既有固定尺寸與剪影量測程式未改；SVG／貼圖、圖層縮放、光暈／粒子與色彩保持。同步貼合回歸、LV、控制說明與本段。唯讀核對battle-renderer／hero3d／npc3d、Status／Skills2／NPC配置、Core／Pixi後端、layout與編輯器存檔保護，未改上述模組或表格。
+- 驗證：`node --test --test-reporter=tap tests/status-aura-fit-body.test.cjs tests/vfx-runtime.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-size.test.cjs tests/elite-data.test.cjs tests/vfx-editor-guard.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-preset-usage.test.cjs`202項196通過／6項既有失敗。唯讀載入HEAD的Preset／Runtime／快取重跑同批，原6項逐項重現，新增正式外殼測試另失敗（195／202），修正版貼合專項7／7。既有失敗為elite-data舊冷卻、THUNDERFALL斜落、FIELD分層、CATALOG根群組、CHAIN雷鏈、STARFALL拖尾；不改斷言配合現況。新增測試使用正式SVG幾何與實際Core／Runtime圖層變換，驗證三種場景倍率、中心、定型與再生成，保留原備援／2D／3D透視回歸。
+- 實際渲染：IAB嘗試無可用連線後，以專案launchHeadless隔離靜音Edge載入正式第6層boss6.glb、Npc3D／Hero3D、Pixi與Core／Runtime，以及原剪影量測函式。首次117.18×142.29與外殼精確相等，攻擊／移動及狀態半徑加倍後維持初始尺寸、量測仍一次；重生取攻擊輪廓184.14×121.365，SVG光柵外緣184×121，中心一致，例外／警告0。正式Preset舊版本基準遭存檔保護拒寫、新基準通過；既有編輯備份保護回歸通過。QA初輪修正驗證伺服器Windows路徑與一次跨過光環0.6秒保活期限的取樣方式，不修改產品邏輯或放寬尺寸斷言。報告／兩張預覽／腳本與TAP保存在本聊天visualizations的npc-shield-exact-fit-20261120。
+- Build：`npm.cmd run build`752檔通過，自我Review及本項分段暫存差異檢查通過。與同副本任務進化共用LV／任務檔不同段，三方試合乾淨後只提交本項；飛龍v2與其他任務進行中內容保留。素材來源JSON同步至既有npc-vfx-adjustments套件，雙庫SHA-256相同13237e6916e5e5a93d678c302dbeb8f24ca6eee58072abd5ed52bf587abb30e9，素材庫先提交`84f0334e`；遊戲Commit為本段所在`[Codex] fix: 讓金色護盾貼合一倍模型輪廓`。
+- 交接：本項無未完成實作，可供驗收與合併，未合併或推送develop／main。限制為上述6項既有回歸失敗，瀏覽器為正式模型與渲染模組隔離驗證，未重跑完整塔戰／跨瀏覽器／行動真機；光暈與星芒保持原動畫，不作碰撞範圍。下一步重新載入遊戲驗收；編輯器先下載未存內容備份再重載，舊Preset基準不可覆寫新版。
+
+## SCREEN-CAPTURE-CLEANUP-RULE-20261119 — 補上螢幕擷取工作階段清理規範
+
+- Owner：Codex，Done。依使用者指示在 `AI_RULES.md` 第 19 節補上擷取清理規範，涵蓋正常結束、失敗、逾時、中止及交回操作時的資源釋放，工具重設、殘留 helper 精確清理，以及黃色外框消失的驗證。
+- 修改 `AI_RULES.md` 與本段。唯讀檢查 Workflow、Codex 規範、既有任務及 Computer Use 文件。逐檔預檢、文件審閱、章節一致性與 `git diff --check` 通過，無素材交付。可供使用者驗收及合併，本項完成。Commit 為本段所在的 `[Codex] docs: 規範測試後釋放螢幕擷取工作階段`。
+
+## DESKTOP-MINI-LIVE-DRAG-20261119 — 迷你視窗拖曳即時跟隨滑鼠
+
+- Owner：Codex，Done。迷你標題列捕捉指標，即時移動完整視窗。按下位置隨事件傳入，修正快速拖曳時 IPC 抵達晚於滑鼠的偏移；原生 DIP 與內容區縮放共用座標，固定要求尺寸避免小數 DPI 多次拖曳累加增大。放開、取消、失去捕捉、失焦與最小化皆結束拖曳，最後位置沿用既有保存。原生最小化／方框／關閉與 Enter／Esc 保留，Windows 使用 pop-up-menu 置頂層級避免被排到工作列後方。
+- 修改 Electron 主行程、mini-window／mini-preload／mini.html、既有 desktop-mini-window 回歸、原生驗證工具、LV 及本段，共 8 檔。唯讀核對共用 mini-monitor、UI 快照與樣式、快捷、出貨及原生 Electron 行為。逐檔預檢通過；同工作區其他進行中的 UI／商人任務保留，文件分段暫存。素材庫無交付變更。
+- Windows 125% 縮放、全靜音與隔離 profile 實測，在 SPI_GETDRAGFULLWINDOWS=false 下用真實滑鼠連續拖曳兩次，原生位置由 (30,60) 經 (190,163) 到 (350,265)，兩次皆在 pointerup 前移動。跟隨誤差在 3 DIP 內，放開 500ms 後定位與保存座標相同，多次拖曳無尺寸累加，頁面錯誤 0；實際點標題列方框成功回主遊戲。
+- `node --test tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs tests/fullscreen-toggle.test.cjs tests/desktop-app-protocol.test.cjs tests/desktop-ship-rules.test.cjs tests/game-menu.test.cjs tests/vfx-editor-cache-versions.test.cjs` 55/55 通過。`node tools/desktop/verify-mini-window.cjs tmp/mini-live-drag-qa/full full` 通過 windowed／borderless／fullscreen 三組往返、最小化、置頂、位置重建與即時戰況；原生置中檢查計入小數 DPI 的 1 DIP 取整差，重開座標仍須一致。`npm.cmd run build` 752 檔、修改程式語法與 Git 差異檢查通過。
+- 可交使用者驗收及合併。原始碼桌面版需重啟，安裝版需重新打包；多螢幕與取消由回歸驗證，本輪原生實測為單螢幕 full 版。測試視窗與臨時 profile 關閉，暫存清理。Commit 為本段所在的 `[Codex] fix: 讓迷你視窗拖曳即時跟隨滑鼠`。
+
 ## DESKTOP-MINI-POSITION-20261119 — 迷你視窗置中、位置記憶與標題列控制
 
 - Owner：Codex；Done，單人實作。使用者要求首次開啟在畫面中央，其後記住最後位置而不重置。前置：迷你視窗及還原／Enter功能已完成，工作區乾淨、逐檔衝突預檢通過。
@@ -214,6 +329,13 @@
 - Owner：Codex，Done。裝備詳情「符文」入口鎖定時懸停顯示門檻。沿用既有停用判斷、共用 Tips 與 String 表詞句，門檻讀同一對設定值。
 - 修改 `js/ui.js`、`index.html` 快取、`tests/equip-socket-ui.test.cjs`、`LV_upgrade_system.md` 及本段。唯讀核對 `js/data.js`、`system_unlock.csv`、String 表與停用樣式。與任務導引、遺物介面的共用檔案為不同區段，三方試合通過並分段暫存。
 - 靜音隔離 Edge 實測滑鼠懸停及移出、鎖定時點擊、升級與轉生兩條解鎖路徑及解鎖後進入。頁面警告與例外 0。`node --test tests/equip-socket-ui.test.cjs tests/equip-reroll-ui.test.cjs tests/equipment-tooltip-compare.test.cjs` 通過 42 項，`npm.cmd run build` 通過 739 檔。可供整合。
+
+## INVENTORY-DIM-HIDE-FRAMES-20261119 — 隱藏非同部位置灰裝備的品質框
+
+- Owner：Codex，Done。選取裝備時，背包非同部位置灰格隱藏品質色框、光暈與高階角飾。改選或取消後恢復品質框。
+- 修改 `css/brass-and-slate.css`、主頁樣式快取、`LV_upgrade_system.md` 及本段。唯讀核對 `js/ui.js` 的選取流程、`js/ui-inventory-skin.js` 的神話快取與一般／混沌品質樣式。與商人任務共用主頁及文件，雙方區段獨立、三方試合通過並分段提交。素材庫無變更。
+- 隔離靜音 Edge 使用測試裝備驗證全部 12 品質。裝備欄及背包點選、切換部位、取消、神鑄共用背包與格子尺寸均通過。全部格子置灰時生成的神話快取與原版逐字一致，恢復後品質框完整。頁面錯誤與警告 0。
+- `node --test tests/equipment-selection-border.test.cjs tests/equipment-slot-selection.test.cjs tests/equip-selection-outline-instant.test.cjs tests/equipment-selection-memory.test.cjs tests/inventory-keyword-filter.test.cjs tests/inventory-mythic-skin.test.cjs` 36/36 通過，`npm.cmd run build` 通過 752 檔，Git 差異檢查通過。本項無待辦，可供使用者驗收與合併。Commit 為本段所在 `[Codex] fix: 隱藏背包非同部位置灰裝備的品質框`。
 
 ## INVENTORY-SLOT-DIM-20261118 — 加深背包非同部位裝備
 
@@ -16876,3 +16998,139 @@ Worker 存活且頁面正常完成載入。
 - `node --test tests/boss8-character-asset.test.cjs tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 通過62／62，`npm.cmd run build` 通過742檔。三套 `node tools/boss8/export.cjs --check`（第二套加 `--variants`，第三套加 `--material3`）、字串稽核與Git差異檢查通過。
 - `node tools/boss8/verify_ingame.cjs <output> 28` 以隔離Edge確認五動作與三攻擊輪替，在第28層確認方形頭像、圓形縮圖及實際Attack1出招，頁面例外0。第78／128層由配置回歸確認。實機範圍為進場及出招，未驗證完整勝敗流程。瀏覽器及暫存已清理。
 - 素材庫提交 `cbd2de8c8a79aabe364084fc9c7d3e790ce49264`，保存原檔、可編輯blend、GLB、頭像、工具與驗證。專案提交為本段所在的 `[Codex] feat: 接入石像鬼第三套材質與五動作`。可交使用者驗收與合併，成果目前在 ai/codex。
+
+## MYSTERY-MERCHANT-CARDS-20261119 — 四欄橫向商品卡與木質等級牌
+
+- Owner：Codex，Done，單人實作。依使用者三張示意圖，商品區每列四張卡片填滿原有寬度，左圖右文僅顯示名稱／品質／等級及價格購買鈕，移除寶石屬性數值。等級改木質牌匾，升級保留，右下角一鍵全購買／刷新移除圖標與內嵌消耗，沿用tips顯示即時費用。前置既有商人／邀請券／Worker已完成。
+- 允許：js/ui.js商人渲染、css/style.css商人區、index.html商人DOM與必要快取、String原生Excel及CSV／生成資料／共用快取、相關回歸、LV與商人說明及本段。禁止改玩法／價格／機率／解鎖／存檔／Worker／素材，不合併或推送。已fetch及逐檔預檢無外部來源；同副本迷你拖曳任務改LV檔首及任務檔首，本項獨立商人段與檔尾，無語意相依，三方試跑後分段提交。
+- 驗收：正式頁隔離靜音Edge確認四欄／不同寬度、完整名稱／圖示／價格、購買與售罄／金幣不足／無券／滿級、懸停費用隨庫存變動、相關回歸與Build、字串及差異檢查。內建IAB連線失敗後改既有headless入口。無新素材。
+
+- 完成：四欄等寬橫向卡、左圖右文、寶石品質／等級與符文階級、保留裝備品質框及懸停詳情；牌匾與右下角純文字按鈕、即時全買金幣tips及刷新券tips。String 1619改牌匾換行，1624改純文字刷新，沿用既有1514／858／2446。修改11檔：js/ui.js、css/style.css、index.html、config/Excel/String.xlsx、config/CSV/String.csv、js/strings_data.js、tools/vfx/editor/index.html（共用字串快取）、tests/merchant-cards-ui.test.cjs、LV_upgrade_system.md、docs/MYSTERY_MERCHANT.md與本紀錄。素材庫無交付變更，不建空Commit。
+- 唯讀檢查：AI規範／AGENTS／Workflow／prompts/codex、既有任務、商人item／寶石／符文資料與價格及Worker指令、ui pending／tooltip、相關CSS與商人素材、Excel原生更新器／CSV與字串產生器、隔離瀏覽器入口及既有BOSS實機工具。未改Store／玩法／Worker／存檔／素材。
+- 回歸：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 37/37通過；新增兩項用正式模擬資料驗證寶石／符文等級、40格、售出更新總額、缺金／無券／滿級保護。首輪新測試fixture漏載UI色表，已修正載入範圍後完整通過，未降低產品斷言。`npm.cmd run build`752檔、字串稽核仍寫死0條、Git差異檢查通過。
+- 原生Excel：來源確認獨占，只改D1756／E1756／E1761三格，正常模式重開兩次。唯讀封裝比對所有儲存格／公式、樣式、繪圖／表格、視窗／篩選／驗證等設定保持。Excel本機字型度量重新正規化預設行高15.75→15、七個自動行高按相同比例變化、dyDescent .25→.3及欄寬不到.05字元；按相對行數核對一致，未手改XML或任意重排格式。CSV只有兩列語意變更，主頁與編輯器字串快取一致。
+- 實機：既有launchHeadless建立全靜音隔離Edge／新遊戲／正式Worker，只在測試略過序章並用本機GM備資源。1920×1080、1366×768、1100×900、900×900均四欄等寬、同列對齊、無橫向溢出、圖示載入完整。單買後tips總價即時降低；實際懸停全買／刷新顯示金幣或一券，刷新實際扣券、全買及售罄通過。頁面例外0，瀏覽器與伺服器關閉，孤兒清理無殘留。首輪QA誤用tooltip DOM id，修正為實際sk-tooltip後重跑通過。預覽與report.json保留本聊天merchant-cards目錄供驗收。
+- 交接：無本輪未完成項目或已知新增功能風險，驗證限Edge與上述相關回歸，未跑全庫／行動真機／長時間遊玩。可供Review及使用者合併，未合併或推送develop／main。與同副本迷你拖曳任務僅LV／本紀錄同檔不同區段，三方試跑退出0，分段stage本次商人內容，對方修改保留。Commit為本段所在的`[Codex] feat: 調整神祕商人四欄商品卡與操作區`，SHA見交付。下一步重載遊戲驗收；已開啟VFX編輯器因共用字串快取更新，先保留未存內容再重載。
+
+## MYSTERY-MERCHANT-FRAME-20261119 — 保留商品外框原始比例
+
+- Owner：Codex，Done，單人修正。使用者指出四欄改版讓十列商品撐長雕花外框，要求不動原外框。前置為72418d60四欄卡片，商品框原圖1820×728。允許css/style.css商人商品框／內部捲動、index.html僅CSS快取、LV與商人說明及本段；禁止改圖檔／其他UI／JS／交易與配置，不合併或推送。採原圖5:2等比外框，四欄商品於框內捲動，內容數量不得改外框高度。驗收正式頁兩種寬度、框圖比例與捲動到底、購買／tips、相關回歸／Build與差異檢查。已fetch及逐檔預檢無外部衝突；同副本規範任務改任務檔首，本項追加檔尾，三方試跑後分段提交。
+- 完成：商品框維持原圖1820×728的5:2比例，用flex／min-height:0將內部捲動區限制在木框內，保留四欄卡片與原有邊距、框圖／雕花／寶石素材。修改css/style.css六行、index.html僅CSS快取、LV_upgrade_system.md、docs/MYSTERY_MERCHANT.md與本段，共5檔。圖片與素材庫無變更。
+- 唯讀檢查：AI規範／AGENTS／Workflow／本Agent與既有任務、改版前後商品框CSS／DOM、原始木框圖片與匯出／資產說明、既有商人及UI回歸、隔離Edge實機工具。未改JS、Store／String、交易／存檔、其他UI或素材。
+- 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs` 20/20通過；`npm.cmd run build`752檔通過；`git diff --check`通過。此為局部CSS修正，沿用既有測試並以真正瀏覽器檢查幾何與捲動，不新增鏡像CSS斷言。
+- 實機：靜音隔離Edge／新遊戲／正式Worker，1920×1080及1366×768確認四欄、無橫向溢出，外框分別為1014×405.59375及721.4187×288.5631，比例均約2.50004。暫顯示4格與恢復40格時外框高度完全一致；內容高度1012、可視高度308，捲動704到底可見末格。實際單件購買、全買消耗tips通過，頁面例外0，目視框圖恢復原本雕花與寶石比例。預覽／report.json留本聊天merchant-frame目錄。測試瀏覽器／伺服器已關閉，孤兒清理無殘留；使用Chromium頁面截圖，沒有建立Windows螢幕擷取工作階段。
+- 交接：本項無未完成或已知新增風險，驗證限Edge兩種寬度與相關回歸，未測全庫／行動真機。可供驗收及合併；不合併或推送develop／main。任務檔與同副本螢幕擷取規範工作不同區段，起始三方試跑0，對方已獨立提交d711c0d5，保留其全部成果。Commit為本段所在`[Codex] fix: 保留神祕商人商品木框原始比例`。下一步重載遊戲驗收外框。
+
+## MYSTERY-MERCHANT-SIGN-20261119 — 木柄招牌與金幣圖示提示
+
+- Owner：Codex，Done，單人實作。使用者指定牌匾左下移、升級鈕底對齊全買／刷新，外觀改為兩根短木柄撐在商品框上的招牌；升級鈕純文字，升級及全買tips僅金幣圖示＋數字，刷新tips改「消耗1張邀請券刷新商品」。前置為已完成四欄與外框5:2修正；外框及商品排版保持。
+- 允許：商人CSS／UI／DOM與快取、String原生Excel／CSV／衍生資料與共用快取、既有商人UI回歸、LV／商人說明及本段。禁止改素材／交易價格／規則／Worker／存檔／其他功能，不合併或推送。開始時工作區乾淨，fetch及逐檔預檢通過。驗收兩種寬度牌匾／升級與操作鈕對齊、木柄接木框、費用tips圖示及正確數字／動態更新／滿級、精確刷新文案、原外框比例與捲動、原生Excel、相關回歸與Build。
+- 完成：招牌左移36／下移15 CSS px，156×111px木板配兩根10×22px短木柄，升級鈕底對齊全買／刷新；以CSS製作，原商人／店景與5:2商品框圖片未改。三鈕純文字，升級／全買tips僅原金幣圖示＋完整數字，升級／售出即時更新；滿級純文字且清除舊費用。String2446改指定刷新tips，原生Excel只改C2436／E2436，獨占確認及兩次正常重開，格式與繪圖保留，CSV／字串與主頁／編輯器共用快取同步。
+- 修改11檔：js/ui.js、css/style.css、index.html、String.xlsx／CSV／strings_data.js、tools/vfx/editor/index.html、tests/merchant-cards-ui.test.cjs、LV_upgrade_system.md、docs/MYSTERY_MERCHANT.md與本段。唯讀檢查規範／Workflow／Agent、舊商人渲染與tooltip／pending、寶石與符文／Store參數、既有原生Excel與隔離Edge工具。素材庫無交付變更。
+- 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 38/38通過；`npm.cmd run build`752檔、字串稽核仍寫死0條、Git差異檢查通過。新增升級tips／滿級清費回歸，更新全買tips驗證圖示與完整金額／售出更新。
+- 實機：全靜音隔離Edge／新遊戲／正式Worker，1920及1366寬度的升級、全買、刷新底座標完全相等，支柄伸至原商品框上緣，四欄與5:2比例保持。三鈕無img／費用；升級tips實際為金幣圖＋4,100,000，全買一圖＋完整總額，刷新精確顯示指定文字。實際購買後總額降低，升級至Lv.2後費用45,354,833，刷新扣券通過，頁面例外0。預覽／report.json在本聊天merchant-sign目錄；瀏覽器／伺服器關閉，不使用Windows螢幕擷取。
+- 交接：無本項未完成／已知新增風險，限Edge兩種寬度及相關回歸，未跑全庫／真機。可供驗收合併，不合併推送；Commit為本段所在`[Codex] feat: 調整神祕商人招牌與費用提示`。下一步接續使用者新增的會話保留／倒計時需求，獨立實作驗證。編輯器因共用String快取更新，先保留未存內容再重載。
+
+## UPGRADE-SUCCESS-FEEDBACK-20261120 — 各類升級成功的按鈕浮字
+
+- Owner：Codex，Done，單人實作。使用者要求寶箱、神祕商店饋贈、零件工坊等各類升級按鈕在真正成功後於按鈕上方上浮「升級成功」，並盤點其他按鈕一起補齊。沿用String152與既有浮字，不修改模型／費用／升級條件／Worker／協議／存檔／素材。
+- 盤點：裝備強化已有成功／失敗回饋；需補寶箱、商店、零件、寶石共鳴、遺物、威能、技能單升／一鍵滿級／首次終極學習、背包及熔爐零件槽擴充。開箱／合成／製造、選擇或重選技能、降級／刪除及內測設定不當成升級。允許四支UI、快取、相關UI回歸與新成功回饋測試、LV及本段；先驗證正式回覆才顯示，失敗／缺資源／滿級不誤報，重繪後仍用點擊時錨點，切頁後不顯示。
+- 衝突：預檢四支UI及測試乾淨。index對Claude abd51894的skills／skills2／bridge快取與本項四支UI快取是不同列，針對本項patch做三方試合0；同副本未提交index及AI_TASKS不同段亦三方試合0，保留塔戰／NPC／BOSS9／Task等其他工作，分段提交。
+- 完成：共用回饋依各指令正式契約驗證（null／裝備ok／技能批次true／背包容量與費用物件），不把未回覆或失敗處理後的空值當成功。送指令前捕捉按鈕在UiCanvas中的座標，重建按鈕仍於原位上浮；切頁、隱藏、遊戲暫停或關閉面板時抑制晚到提示。成功只浮一次；技能已滿級的true空操作不提示。遺物保留原有升級演出與音效，浮字置於其上層；共用transition只作用於位置／透明度，避免z-index在動畫期間漸變而被遮住。
+- 修改11檔：js/ui.js、js/ui-chest.js、js/ui-relic.js、js/ui-gem-resonance.js、index.html四支UI快取、tests/upgrade-feedback.test.cjs（新增10項）、tests/relic-ui.test.cjs、tests/gem-resonance-ui.test.cjs、tests/ui-sound.test.cjs、LV_upgrade_system.md與本段。唯讀檢查規範／Workflow／Agent、Worker指令／protocol、寶箱／零件／商人／共鳴／遺物／威能／技能／背包模型、GameClock／UiCanvas、String152及相關回歸與隔離瀏覽器工具；素材庫無變更。
+- 測試指令：`node --test tests/upgrade-feedback.test.cjs tests/relic-ui.test.cjs tests/gem-resonance-ui.test.cjs tests/ui-sound.test.cjs tests/merchant-cards-ui.test.cjs tests/chest.test.cjs tests/part-upgrade.test.cjs tests/sim-forge-parts.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/skill2-ui.test.cjs tests/talent-page-dev.test.cjs tests/inventory-command-pending.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`，187/187通過。覆蓋真實Worker模型、成功前不提示、缺金／滿級／拒絕／斷線、成功去重、按鈕重建、切頁／關閉／暫停、共鳴與遺物既有演出。
+- 其他驗證：`npm.cmd run build`754檔通過、`node tools/string-table/build_string_csv.cjs --check`仍寫死0條、`git diff --check`通過。擴查`tests/skill2-points.test.cjs tests/skill2-ult-evolution.test.cjs tests/talents.test.cjs`為122項中79通過／43失敗；以HEAD的原js/ui.js唯讀覆蓋載入重跑，43個失敗名稱逐一相同（舊技能傳奇／點數與威能數值預期），不調低既有測試、不混入本項修正。
+- 實機：全靜音隔離Edge、新遊戲與正式Worker，1920×1080實際點擊商人饋贈、寶箱、零件、熔爐零件槽、技能單升／批次、威能、遺物、背包、共鳴共10條路徑，全部捕獲「升級成功」且橫向對齊原按鈕中心、起點為其上緣，800ms／向上40px／淡出及移除正確，遺物上層16001立即生效。截圖已重開目視；本聊天upgrade-feedback-20261120的summary.json／兩份browser報告保存座標、動畫keyframes、截圖及0頁面例外。測試環境暫停戰鬥／停止渲染ticker後檢查UI；未宣稱完整戰鬥或全平台驗證。瀏覽器與伺服器均關閉，孤兒清理保留其他任務仍在使用的瀏覽器。
+- 交接：本項無未完成／已知新增風險；既有43項失敗如上，未跑全庫。Commit為本段所在`[Codex] feat: 補齊各類升級成功浮字提示`；可供驗收合併，不合併或推送。建議保存其他編輯內容後重載遊戲，以載入四支UI新快取。其他聊天NPC／Task／BOSS9修改保持，未納入本項提交。
+
+## MYSTERY-MERCHANT-STABILITY-20261120 — 單件購買不閃爍其他商品
+
+- Owner：Codex，Done，單人修正。使用者指出購買時所有商品按鈕一起閃爍，要求確認原因與消除不必要更新。確認現況共用gem-shop等待鍵導致全體商品暫時停用，且整格innerHTML替換放大閃爍；商品本身未重新抽取。
+- 允許：商人UI等待鍵／局部DOM更新、UI快取、既有商人UI回歸與LV／商人說明及本段；不改交易／價格／供貨／Worker／協議／配置／字串／素材。前置既有滿包提示完成，逐檔預檢無外部來源；BOSS9飛行工作僅AI_TASKS不同區段，三方試合乾淨後分段提交。驗收只停用所點商品、全域防重複仍有效、滿包不重建DOM且浮字保留、成功只更新售出卡、同名不同實體刷新、相關回歸與Build及真正Worker／DOM實測。
+- 完成：單件購買同時持有商店共用鎖與該商品獨立等待鍵；商品按鈕只綁自己的鍵，全買／刷新／饋贈沿用共用鍵，等待中額外購買直接忽略。`sendGemUiCommand`兼容單一及多個等待鍵，不改既有單鍵呼叫語意。商品卡HTML逐卡快取／比對，只替換內容改變的卡片；等待／金幣可買狀態從結構HTML移出，直接更新按鈕屬性，因此滿包拒絕、單純重繪或金幣變化不重建商品卡。裝備加入實體ID作卡片更新依據，避免刷新後同名同價但新詞條的裝備沿用舊tips錨點。
+- 修改6檔：`js/ui.js`、`index.html`僅UI快取、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`及本段。唯讀檢查`js/item.js`交易與售出／滿包、`js/worker/protocol.js`與pending面板確認／放鎖流程、既有UI回歸及上輪實機工具；未改模擬、參數表、String、樣式與素材，素材庫無本項交付變更。
+- 回歸：`node --test --test-reporter=tap tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/gem-convert-shift.test.cjs tests/gem-workshop.test.cjs tests/ui-worker-panels.test.cjs tests/inventory-command-pending.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`77項，75通過／2既有失敗。唯讀fs覆蓋起始3144c672的UI及String後，ui-worker-panels原兩項逐一重現6過／2敗（舊gem.socket原始碼比對、item.upgrade fixture缺UI），新增失敗0。商人UI專項10/10，驗證等待／解除／售出／金幣不足與回復時的節點身份、獨立等待鍵及共用防重複鎖、同名新裝備替換、原滿包浮字。首輪新增裝備fixture漏載品質helper，改載實際helper後通過，未降低斷言。
+- Build：`node tools/build_check.cjs`753檔通過；本項分段Git差異檢查通過。沒有新增靜態樣式鏡像測試；DOM shim只提供現有renderer測試所需的卡片／按鈕介面，另以實際瀏覽器身份／MutationObserver驗證。
+- 實機：隔離靜音Edge／新遊戲／正式Worker，暫停戰鬥與除錯用Pixi ticker隔離軟體GPU；只在QA將正式`gem.shopBuy`回覆延遲200ms，不更動交易結果。1920及1366寬度下，等待中僅所點商品停用，其餘商品按鈕維持；全買／刷新／饋贈均停用且全域鎖保持，連點其他商品只送出1筆正式指令。強制重繪時全卡身份不變。滿包回覆後全卡及全按鈕身份保持，其他按鈕停用紀錄0、移除節點0、金幣／庫存不變且浮字正常。擴背包後成功只替換售出卡、其他卡與按鈕仍是同一節點，正確扣75,000；再以UI金幣0／還原驗所有可買狀態同步而卡片身份完全不變。頁面例外0，PNG／report.json、TAP／基線報告保留本聊天visualizations的`merchant-stability-20261120`，測試瀏覽器關閉。
+- 交接：無本項未完成／已知新增風險，可供驗收與合併；限制為上述2項既有UI測試失敗，未跑全庫／行動真機／其他瀏覽器。Commit為本段所在`[Codex] fix: 避免神祕商店購買時其他商品閃爍`，未合併／推送develop或main。與同副本BOSS9飛行工作僅AI_TASKS不同段；後續塔首領入場工作共用index不同快取行及LV／AI_TASKS不同段，最新三方試合0後只提交本項；其NPC.xlsx、tower／bridge與其他快取、製作工具／紀錄保留未納入。下一步重載遊戲驗收單件購買與滿包提示。
+
+## MYSTERY-MERCHANT-FEEDBACK-20261120 — 滿包浮字與商人費用／券量提示
+
+- Owner：Codex，Done，單人實作。使用者要求商店購買裝備遇到滿包時在該購買鈕上方上浮「背包已滿」；追加饋贈tips的金幣費用與好感說明分兩行，以及刷新tips第二行黃色顯示「神祕邀請券剩餘：999」。允許商人UI／CSS／快取、既有浮字與錯誤回報接線、String原生Excel及匯出／共用快取、相關回歸與LV／商人說明／本段，不改交易／容量／價格／Worker／素材。
+- 前置：已有商人滿包權威拒絕、共用按鈕上浮文字及String1172／2442／2573，沿用而不新增第二套浮字。預檢無外部來源；BOSS9只共用AI_TASKS不同區段，三方試合乾淨後分段提交。驗收滿包浮字／按鈕定位／動畫清理／不扣款、成功及缺金不誤報、隱藏按鈕晚到回覆、金幣圖示／完整數字與兩行tips、原生Excel保留與重開、相關回歸／Build／兩種畫寬實機。
+- 完成：`sendGemUiCommand`新增可選失敗回呼，單件購買收到正式滿包拒絕才對原按鈕呼叫既有`showFloatingText`，顯示String1172「背包已滿」並保留原失敗日誌／重新請求面板。先收起裝備tips避免遮擋；原按鈕已隱藏／移除則不在其他頁浮字。成功、缺金或連線錯誤不冒出滿包提示，後端扣款／售出／背包與全買略過規則保持。
+- 文案：String2573費用後加`<br>`，金幣圖示＋完整金額與好感說明固定分兩行。刷新以原2446說明＋換行＋新2574「神祕邀請券剩餘：{0}」組成，第二行CSS為`#ffd700`；每次商人投影刷新都讀取當前券量，包含0張。金幣圖示與價格仍用原共用HTML。
+- Excel：獨占確認後透過原生COM只改C2558／E2558，追加第2559列編號2574；原生正常重開各兩次、全原值／繪圖／H4檢視驗證通過。唯讀封裝比對既有字型／填色／框線／儲存格樣式／公式／欄寬／檢視／篩選／驗證／繪圖保持，資料差異只有授權兩格及新列。Excel匯出2559列CSV、生成2558條String，主頁／編輯器String快取同步37211a4b；UI及CSS快取同步更新。
+- 修改11檔：`js/ui.js`、`css/style.css`、`index.html`、`config/Excel/String.xlsx`、`config/CSV/String.csv`、`js/strings_data.js`、`tools/vfx/editor/index.html`、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`及本段。唯讀檢查`js/item.js`供應器／滿包與交易、Worker錯誤／背包投影／GM、共用浮字與縮放／tooltip／pending／String機制、原生Excel工具及既有QA；未改上述模擬模組與素材，素材庫無本項交付變更。
+- 回歸：`node --test --test-reporter=tap tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/gem-convert-shift.test.cjs tests/gem-workshop.test.cjs tests/ui-worker-panels.test.cjs tests/inventory-command-pending.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`75項，73通過／2既有失敗。用唯讀fs覆蓋起始`89485c2a`的UI及String載入同一ui-worker-panels檔，原兩項（舊gem.socket原始碼比對、item.upgrade fixture缺UI）逐項重現6通過／2失敗，沒有新增失敗或修改原斷言。新增正式購買結果到按鈕浮字、解除滿包後成功、缺金不誤報、晚到／連線錯誤、999→998→0券量更新回歸；商人UI專項8項全過。
+- 檢查：`node tools/build_check.cjs`753檔通過；字串稽核0筆，Git差異檢查通過。完整TAP／起始版本比較與Excel驗證來源保存在本聊天visualizations的`merchant-feedback-20261120`。
+- 實機：隔離靜音Edge／新遊戲／正式Worker，GM備金幣／邀請券並填滿背包。測試暫停戰鬥、停止除錯用Pixi ticker以隔離軟體GPU渲染搶佔，不更動正式浮字程式；一般動態設定下以頁內MutationObserver及原生rAF採樣。1920／1366寬度實際點買，浮字中心對齊按鈕誤差<0.01px、起點在按鈕上方，約120ms後分別上移12.8／7.0畫面px並淡出，0.8秒流程後節點清除；金幣及未售出旗標不變。tips實際一個金幣圖、費用／說明兩行，刷新黃色第二行券量9→8，開著的tips同步更新，頁面例外0。截圖目視驗收並保存，瀏覽器關閉、無孤兒殘留。早期QA跨程序截圖耗時超過浮字生命期及軟體GPU使CSS動畫等待提交，改用上述隔離／頁內採樣後完整通過，沒有降低位移或淡出斷言。
+- 交接：無本項未完成／已知新增風險，可供驗收及合併；限制為兩項既有UI測試失敗，未跑全庫／行動真機／其他瀏覽器。Commit為本段所在`[Codex] feat: 完善神祕商店滿包與費用提示`，未合併／推送develop或main。BOSS9已獨立提交89485c2a，完整保留；下一步重載遊戲驗收三項提示。編輯器若開啟，先下載或另存未存內容再重載共用String，不以舊分頁覆寫新版。
+
+## MYSTERY-MERCHANT-CONTRAST-20261120 — 神話商品文字對比與金黃饋贈
+
+- Owner：Codex，Done，單人修正。使用者指出神話裝備商品名稱紅字在明亮底紋上難讀，允許為可讀性調整顯示色；追加饋贈文字改金黃色。僅修改商人CSS、CSS快取、LV／商人說明與本段，不改其他介面、品質資料／價格／交易／素材／String。
+- 前置：既有木牌／饋贈完成，逐檔預檢無其他副本來源。同工作區任務進化與護罩工作在index／LV／AI_TASKS不同區段及快取行，三方試合乾淨後分段提交，保留其他進行中內容。驗收同款神話商品與tips名稱色、深底與品質／等級可讀性、神鑄神話及其他品質、金黃饋贈正常／懸停、兩種畫寬與既有外框／互動，相關回歸與Build。
+- 完成：商人`.eff-mythic`卡片內層改深棕遮罩，名稱改為tips相同的淺銅`#e7bd94`並加暗文字陰影，品質／等級改淺色`#d9c3a6`；神鑄神話沿用品質外觀映射，因此一併可讀。金屬品質框／角飾保留，其他品質及共用品質資料未改。饋贈正常文字`#ffd700`、懸停／鍵盤焦點`#ffeb8a`，底線／透明底與無框維持。
+- 修改5檔：`css/style.css`、`index.html`僅CSS快取、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`及本段。唯讀檢查`js/ui.js`商人／tips／神鑄基礎品質映射、`js/data.js`品質表、既有商人回歸及前輪QA。未改JS／配置／字串／素材；素材庫無本項交付變更，不建立空素材Commit。
+- 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/vfx-editor-cache-versions.test.cjs`30/30通過；`node tools/build_check.cjs`753檔通過。局部CSS調整沿用既有回歸，未新增鏡像CSS測試。分段差異檢查通過。
+- 實機：隔離靜音Edge／正式遊戲CSS與Worker，測試用正式`makeEquipment`產生Lv.950神話／神鑄神話／創世／傳說／史詩／獨特卡片，僅放入UI投影fixture。1920及1366寬度下，前兩卡名稱與滑鼠懸停tips均`rgb(231,189,148)`、品質／等級`rgb(217,195,166)`；其他品質保持，饋贈正常／懸停金黃色正確、0px框線／透明底／底線及商品框5:2維持。截圖目視確認名稱清晰，頁面例外0；瀏覽器已關閉，PNG及JSON保存於本聊天visualizations的`merchant-contrast-20261120`。
+- 交接：本項無未完成或已知新增風險，可供驗收與合併；未測全庫、行動真機與其他瀏覽器。Commit為本段所在`[Codex] fix: 提高神祕商店神話文字對比並調整饋贈金色`，未合併／推送develop或main。任務進化／護罩已在過程中獨立提交，保留其內容；BOSS9第二版進行中修改未納入。下一步重載遊戲驗收名稱可讀性。
+
+## MYSTERY-MERCHANT-GIFT-20261120 — 饋贈文字連結與好感提示
+
+- Owner：Codex，Done，單人實作。使用者要求升級按鈕改為「饋贈」，去除邊框／底色，只留底線文字；店名及等級稍下移以協調置中。tips改為贈與金幣圖示＋完整金額博取商人好感的指定說明。
+- 允許：商人DOM／UI／CSS／快取、String原生Excel及CSV／衍生字串與編輯器共用快取、既有UI回歸、LV／商人說明及本段；不改價格／升級交易／會話／Worker／素材／存檔，不合併推送。逐檔預檢乾淨；同工作區BOSS9任務僅共用AI_TASKS不同區段，三方試合後分段暫存。
+- 驗收：文字／圖示／完整金額及升級後更新、缺金與滿級保護、原生Excel正常重開及資料格式保留、兩種畫寬正常／懸停／停用無框無底、店名／等級下移、原木牌／外框不變、相關回歸／Build。
+- 完成：商人專用按鈕移除通用`.btn`外觀，保留原生button、交易指令／pending鎖及點擊區，只顯示暖金底線文字；懸停／鍵盤焦點加亮並加粗底線，缺金沿用停用且不恢復底框。店名／等級下移6px，1100px內下移4px，木牌原圖與支柄位置保持。tips為「贈與〔金幣圖示＋完整金額〕博取商人的好感，由此提升商店等級」，滿級沿用「已滿級」並移除費用。
+- String：獨占確認後透過Excel原生COM追加第2557／2558列，編號2572「饋贈」、2573說明樣板（HTML金幣價格為替代字符）；正常模式重開兩次，比對全部原值、繪圖及H4檢視保持。唯讀封裝驗證既有字型／填色／框線／儲存格樣式／公式／欄寬／檢視／篩選／驗證／繪圖不變。匯出2558列CSV、生成2557條字串，主頁及編輯器String快取同步653f0f3d，UI／CSS快取同步。
+- 修改11檔：`js/ui.js`、`css/style.css`、`index.html`、`config/Excel/String.xlsx`、`config/CSV/String.csv`、`js/strings_data.js`、`tools/vfx/editor/index.html`、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`與本段。檢查未修改`js/item.js`／data／Worker、String讀取與原生Excel工具、tooltip／pending邏輯、三張商人圖與新木牌；本項沒有新素材，素材庫無本項交付變更。
+- 回歸：`node --test tests/merchant-cards-ui.test.cjs tests/gem-shop.test.cjs tests/mystery-merchant.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`44/44通過。沿用既有UI回歸補強指定文案／標題／HTML金幣／完整金額及升級後更新、滿級清費；字串稽核仍寫死0條。`node tools/build_check.cjs`752檔通過；`node tools/assets/export-mystery-merchant.cjs --check`全部商人圖雜湊通過；分段Git差異檢查通過。
+- 實機：隔離且靜音Edge／正式Worker／新遊戲，1920與1366寬度下正常／懸停／缺金狀態皆0px框線、透明底、無陰影及underline，按鈕置中誤差小於0.001px，商品框5:2。滑鼠懸停實際顯示1個金幣圖示與4,100,000；點擊後Lv.2、扣4,100,000、tips更新45,354,833，邀請券與商人期限不變。缺金停用、滿級清費，頁面例外0，測試瀏覽器關閉。首輪QA在模型快照先抵達、DOM尚未重繪時讀到舊費用；改等實際提示重繪後再次完整通過，未改產品或放寬金額斷言。截圖／report.json及Excel驗證來源留本聊天visualizations的`merchant-gift-20261120`。
+- 交接：本項無未完成／已知新增風險，限兩種桌面寬度與相關回歸，未跑全庫及行動真機。Commit為本段所在`[Codex] feat: 將神祕商店升級改為饋贈文字操作`，可供驗收及合併，未合併／推送develop或main；BOSS9進行中內容完整保留。下一步重載遊戲驗收；編輯器若開啟，先保留未存內容再重載共用String。
+
+## MYSTERY-MERCHANT-SESSION-20261119 — 保留跨功能商人會話與邀請券重置倒計時
+
+- Owner：Codex，Done，單人實作。使用者要求切換其他功能再回封魔塔仍保留商人、商品與已購狀態，手動退出或期限結束才回塔頁；返回鈕左方顯示剩餘時間。Store新增存在時間，預設600秒；每次成功耗券（召喚／刷新）重置完整設定時間，購買／金幣升級／失敗操作不延長。前置既有商人／招牌／tips／外框完成，預檢無實質衝突。
+- 實作：Worker保存實際時鐘截止時間，loop在選單暫停檢查前維護到期，所有交易先驗證會話。UI切頁不再關閉，也移除開啟回應晚於切頁時的錯誤關閉；倒計時在暫停中仍更新，到期切回塔列表，但不搶走其他功能。協議82→83新增`expiresAt`，關閉為0，Worker／主頁快取同步。重載與執行中讀檔仍結束暫態會話，不新增存檔欄位。
+- 表格：原生Excel獨占操作，Store第182列編號1139「神祕商人／存在時間(秒)」參數a＝600；String編號2571「剩餘時間 {0}」。各表正常重開兩次，原資料／公式／既有樣式與檢視保留，Store篩選延伸至182列；Excel原生存檔將Store欄寬正規化不足0.05字元。CSV／strings_data同步，參數錨點629→630；正整數驗證含無效0案例。
+- 修改：`js/item.js`、`js/data.js`、`js/ui.js`、`js/bridge.js`、`js/worker/{protocol.js,sim.worker.js}`、`index.html`、`css/style.css`、`config/Excel/{Store.xlsx,String.xlsx}`及對應CSV、`js/strings_data.js`、`tools/apply_params.cjs`、`tools/vfx/editor/index.html`、`tests/{mystery-merchant,merchant-cards-ui,gem-shop,gem-enabled,sim-skill-plan,worker-protocol}.test.cjs`、`LV_upgrade_system.md`、商人／協議文件與本段。同批木牌及捲軸授權另列下方。
+- 檢查未修改：`js/game-clock.js`、`js/strings.js`、原商人三張美術與既有匯出清單、`config/Excel/game_parameters.xlsx`；未改價格／商品機率／券掉率／其他玩法。
+- 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 接入後39/39通過；另已通過gem-shop／gem-enabled／worker-protocol、sim-skill-plan 48項與game-clock／apply-params相關回歸。`node tools/build_check.cjs`752檔通過；`node tools/apply_params.cjs --dry-run`630項一致、0變更／0錨點問題；`--check-anchors`574個擾動數值、630個唯一錨點通過；字串稽核0、Git差異檢查通過。
+- 全庫：`node --test --test-concurrency=8 --test-reporter=tap "tests/*.test.cjs"`6093項，5391通過、699失敗、3略過。將全部失敗名稱在唯讀起始提交`65abc732`檔案覆蓋層重跑，179支檔案的699項均同樣失敗，未重現0項；沒有用修改斷言接受失敗。完整TAP／逐檔基線報告保存在本次visualizations的`merchant-session`目錄，既有全庫失敗尚待其他任務修復。
+- 實機：隔離且靜音的正式瀏覽器／Worker驗證跨頁已購與庫存／券／期限不變、倒數持續、刷新重置10:00、升級不重置、手動返回、快速開啟後切頁競態、選單暫停及離頁期限到達。4秒期限僅測試伺服器fixture，正式Store保持600。1920／1366畫面及頁面例外0，截圖與JSON存於visualizations；測試瀏覽器關閉，驗證暫存移出工作區並保留於同次visualizations的`verification-sources`供追溯。
+- 交接：本項無未完成工作，可供驗收與合併；已知限制為全庫699項既有失敗、未驗行動真機，重載不保留會話為原規則。Commit為本段所在`[Codex] feat: 完成神祕商人限時會話與木牌介面`，素材庫Commit見下段。未合併／推送develop或main；下一步重載遊戲驗收。
+
+## MYSTERY-MERCHANT-SIGN-ART-20261119 — 核准自然斷面木牌接入
+
+- Owner：Codex，Done。先依要求產出透明底候選，使用者追加「像路邊斷掉的木牌」後繪製第二版，去除刻意裝飾框與角釘；使用者明確核准「OK，就這個，接上吧」，因此將原預覽範圍擴充為正式接入。
+- 完成：核准1501×1047原圖等比匯出768×536 lossless WebP，保留alpha、自然破邊與兩根樸素木柄，沒有重畫核准造型。替換CSS矩形邊框／假木紋／偽元素木柄，名稱／等級仍走String／DOM，升級鈕保持可操作並對齊全買／刷新底部；缺金禁用時仍置中。商品區外框不動。
+- 修改：`images/ui/mystery-merchant-sign.webp`、`css/style.css`、`index.html`快取、`tools/assets/export-mystery-merchant.cjs`、`docs/assets/MYSTERY_MERCHANT_PORTRAIT.md`、商人說明／LV／本段。素材包`codex-authored/mystery-merchant-sign-20261119`保存原始PNG、成品、兩階段提示詞、核准／來源紀錄、匯出腳本與SHA-256清單；第一版是淘汰候選，不入正式素材。
+- 來源：RPG Mote Studio經web工具嘗試無法存取，改用內建imagegen原創製作。僅參考既有店景色調及用途，沒有使用外部圖像／第三方素材。原立繪／店景／商品框檢查過且未修改。
+- 驗證：`node tools/assets/export-mystery-merchant.cjs --check`通過全部來源及正式成品雜湊；實際瀏覽器1920／1366寬度驗證新圖載入768×536、三鈕底齊、正常／禁用置中、動態文字可讀、5:2商品框不變，頁面例外0；相關39項與Build通過。素材原圖SHA-256`65c792fad7e64864fcf5346e794349a561ee386fa71ad5297485581f874d0a7c`，成品`f43db598ceffb95c210b7dec3b14716cbea3fe7aa04edf18fa865a49762836f9`。
+- 交接：素材庫先提交`d9262dec3945a2b34e2b70df5f4e064c7bd0c795`，遊戲Commit為本段所在`[Codex] feat: 完成神祕商人限時會話與木牌介面`。無未完成或已知新增風險，可供驗收及合併，未推送／合併；下一步重載遊戲觀看接入效果，換機須同步素材庫與遊戲兩個倉庫。
+
+## MYSTERY-MERCHANT-SCROLL-20261119 — 十二件內不顯示商品捲軸
+
+- Owner：Codex，Done，單人追加。12件內只補滿三列占位，CSS同時隱藏標準與WebKit捲軸；13件起顯示可見捲軸，末列補至四格，不再一律填40個占位。商品數包含已購原位，空白占位不計入。維持四欄、既有5:2外框及內容可捲動。
+- 修改：`js/ui.js`、`css/style.css`、`index.html`快取、`tests/merchant-cards-ui.test.cjs`、`LV_upgrade_system.md`、`docs/MYSTERY_MERCHANT.md`與本段；預檢無實質衝突，與本次會話需求由同開發者分段整合。檢查未修改商品框原圖、數量配置／交易與價格。
+- 驗證：UI回歸5/5（含實際商品數12／13門檻）；1920／1366寬度實際瀏覽器驗證6／12件無捲軸且12格，13件16格／40件40格皆有捲軸且末列可見，框比例2.5，頁面例外0。接入後相關39項、Build752檔與Git差異檢查通過，截圖及JSON保留於visualizations的`merchant-final`目錄。
+- 交接：無未完成或已知新增風險，未測行動真機；Commit為本段所在`[Codex] feat: 完成神祕商人限時會話與木牌介面`，可供驗收與合併，未合併／推送；下一步重載遊戲確認無捲軸畫面。
+
+## BOSS9-DRAGON-REMOVE-20261120 — 撤銷飛龍並清除相關資料
+
+- Owner：Codex；Done，單人處理。使用者放棄此飛龍，明確要求刪除這隻BOSS全部相關資料，將另換模型擔任BOSS9。本項取代原五筆製作／審閱任務，其技術資料已移除，只保留撤銷交接。
+- 完成：刪除tools/boss9的32個專用製作／檢核／粒子／預覽工具及docs/assets/BOSS9_SOURCE.md、BOSS9_FLIGHT_REFERENCE.md、BOSS9_FLIGHT_LIMBS.md、BOSS9_COMBAT.md，共36檔；素材庫五個版本包共124檔（原檔副本、模型、Blend、全部動畫、粒子、GIF、QA及清單）全部移除。本聊天四個舊預覽資料夾共204檔及已知參考截圖也已刪除；桌面原BOSS9.glb及飛龍GIF.gif在本輪盤點時已不存在。
+- 範圍核對：此飛龍未接入遊戲，包外沒有執行期或素材引用，BOSS9通用欄位保留供新模型接替，其他飛龍NPC保持。唯讀檢查共通規範／Workflow／Agent、任務、Git追蹤與引用、素材解析、素材庫／預覽清單、NPC／Task／data現況。原進行中config/CSV/NPC.csv、config/CSV/Task.csv、config/Excel/NPC.xlsx、js/data.js四檔SHA逐一保持；未修改遊戲玩法／表格／執行期，不需更新LV或快取。
+- 驗證：36個專用檔及任務檔衝突預檢無外部來源；所有遞迴刪除先核對已解析絕對路徑、指定父目錄及無重新解析連結。rg --files含隱藏／忽略檔盤點未見殘留boss9檔案，git grep -i boss9在專案除本任務稽核檔外及素材庫皆無引用；既有任務的其他聊天歷史註記保留。npm.cmd run build通過755檔，雙庫git diff --check與刪除範圍檢查通過；node tools/kill-test-browsers.cjs確認無測試瀏覽器。
+- 交接：素材庫刪除Commit `453b5999f4e857aa4059b45bbfd12cd3f7124019`；專案Commit為本段所在「[Codex] chore: 移除廢棄飛龍與專用製作資料」。本輪清除無未完成項目，可供使用者合併；新BOSS9待使用者另行提供。檔案已從目前專案／素材庫／預覽移除，Git既有歷史保留、沒有重寫歷史，未合併或推送develop／main。
+
+## BOSS9-LIZARD-RUN-20261120 — 新蜥蜴人奔跑朝向與手指動畫修正
+
+- Owner：Codex；Review，單人製作。使用者提供新同名BOSS9.glb（SHA256 1f3f5daad3100305fd51c5fd070cf53a2d5a6b3c59394be3db94500ce68ffa0d），要求保留低身後腿奔跑，修正頭身側偏及手指跟腳的動作，先交GIF。暫代材質保持；桌面原檔、舊飛龍撤銷紀錄及其他聊天NPC／Task／data保持，不接入、合併或推送。
+- 完成：從腰部spine_02去除上身約8～13度側傾，保留原俯角／起伏，以雙後腳平均方向對齊軀幹；實際頭部spine_16穩定朝前、保留俯角。自動骨架把手掌chest下面的部分指節命名為frontLwr／frontToe或head並套用錯誤腳部／頭頸動畫，並非頂點黏到後腿；其12支指節恢復原本自然彎曲關係、隨手掌擺動，未切網格或重綁權重。
+- 保留：73骨、原0.666667秒步態、後腿／骨盆／根部／尾部原曲線；原網格／面／法線／UV／蒙皮／rest／節點／兩張PNG及暫代材質二進位資料逐位保持。只替換腰、頭與12指骨共42動畫通道，其餘177通道的原始時間及輸出保持；成品單招命名Walk。Blender保存可編輯來源，透過原節點基準輸出GLB。
+- 修改10檔：新增tools/boss9-lizard/{inspect.py,prepare.py,verify.py,viewer.html,viewer.js,capture.cjs,encode.py,export.cjs}、docs/assets/BOSS9_LIZARD_RUN.md及本段。唯讀檢查共通規範／Workflow／Agent、原GLB及原生匯入、BOSS5擷取／預覽、既有qa_clips／素材同步與背景瀏覽器工具。逐檔預檢無外部來源；其他聊天四個未提交檔案保持，本檔只追加本任務。
+- 原生驗證：verify.py對原生Blend及實際GLB重開後各取161點，含120FPS與錯相補間；後腿／骨盆／根部矩陣及純後腿影響頂點差均0。GLB軀幹對雙腳方向誤差不超過0.0264度，側傾小於0.00053度；頭部對正前方誤差小於0.00005度。原前肢對後腿錯誤權重0；純指骨影響頂點對手掌局部形狀誤差小於0.0000005模型單位，指定指部／腳部三角形穿插0，最近頂點約0.1674模型單位。循環頂點差小於0.000002，骨長／有限通道／四元數及GLB首尾檢查通過。
+- 預覽／測試：側面及正面實際GLB各擷取20張，例外／警告0、完整入鏡、GLB SHA與驗證及編碼報告相符。兩GIF皆900×600／60張／2秒、原步態連播3次，逐張重開解碼並目視審閱完整聯絡圖。Python AST、Node CJS／ESM語法、npm.cmd run build 755檔、export.cjs雙庫SHA及Git本項差異檢查通過；原桌面GLB雜湊保持，測試瀏覽器已清理。
+- 交接：新包codex-authored/boss9-lizard-run-20261120保存原GLB／原生匯入、修正Blend／GLB、兩GIF、工具與QA／SHA清單，素材庫Commit `f6ae266955792a25505fb39b59bc0f437cb5a6f2`；專案Commit為本段所在「[Codex] fix: 修正新BOSS9奔跑朝向與手指動畫」。本輪兩項修正完成，可供GIF審閱；未宣稱整模型所有甲片／肩髖或雙手間接觸均消失，材質依使用者說明仍為暫代，正式接入待審閱另行授權。沒有本輪未完成工作，下一步等使用者看GIF；未合併／推送develop或main。

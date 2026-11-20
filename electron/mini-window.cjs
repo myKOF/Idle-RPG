@@ -7,6 +7,8 @@ exports.create = function (options) {
   var owner = options.owner, mini = null, pending = null, disposed = false;
   var previousThrottling = null;
   var lastPosition = null;
+  var dragOffset = null;
+  var dragSize = null;
   function validPosition(value) {
     return value && Number.isInteger(value.x) && Number.isInteger(value.y) &&
       value.x === (value.x | 0) && value.y === (value.y | 0);
@@ -56,7 +58,22 @@ exports.create = function (options) {
       owner.webContents.send('mini:closed');
     }
   }
+  function moveDrag() {
+    if (!dragOffset || !mini || mini.isDestroyed() || mini.isMinimized() || mini.isMaximized()) return;
+    // Electron screen 與視窗座標同為 DIP，跨螢幕時不混用 renderer 的 CSS／實體像素。
+    var cursor = options.screen.getCursorScreenPoint();
+    var x = cursor.x - dragOffset.x, y = cursor.y - dragOffset.y;
+    var bounds = mini.getBounds();
+    // 固定拖曳起始尺寸，避免 Windows 小數 DPI 每次取整造成視窗逐步變大並失去指標捕捉。
+    if (bounds.x !== x || bounds.y !== y) mini.setBounds({ x: x, y: y, width: dragOffset.width, height: dragOffset.height });
+  }
+  function endDrag() {
+    if (!dragOffset) return;
+    dragOffset = null;
+    if (mini && !mini.isDestroyed()) rememberPosition(mini);
+  }
   function close() {
+    endDrag();
     if (mini && !mini.isDestroyed()) {
       if (mini.positionReady) rememberPosition(mini);
       mini.destroy();
@@ -71,6 +88,8 @@ exports.create = function (options) {
         width: 270, height: 250, minWidth: 238, minHeight: 220, useContentSize: true,
         show: false, alwaysOnTop: true, minimizable: true, maximizable: true,
         autoHideMenuBar: true, backgroundColor: '#0d1017',
+        titleBarStyle: process.platform === 'win32' ? 'hidden' : 'default',
+        titleBarOverlay: process.platform === 'win32' ? { color: '#0d1017', symbolColor: '#d7deed', height: 32 } : false,
         icon: path.join(__dirname, 'icons', 'app.ico'),
         webPreferences: {
           preload: path.join(__dirname, 'mini-preload.cjs'),
@@ -78,6 +97,7 @@ exports.create = function (options) {
         }
       });
       mini = win;
+      dragSize = null;
       win.initialMiniData = initial;
       var timeout, rejectReady;
       var ready = new Promise(function (resolve, reject) {
@@ -91,11 +111,14 @@ exports.create = function (options) {
       var loaded = false;
       // 原生標題列的方框回主遊戲；不要儲存最大化後的螢幕原點。
       win.on('maximize', function () { setImmediate(function () { if (mini === win) close(); }); });
-      win.on('minimize', function () { if (loaded) rememberPosition(win); });
-      win.on('restore', function () { win.setAlwaysOnTop(true); });
-      win.on('moved', function () { if (loaded) rememberPosition(win); });
+      win.on('minimize', function () { endDrag(); if (loaded) rememberPosition(win); });
+      win.on('blur', endDrag);
+      win.on('resized', function () { dragSize = null; });
+      win.on('restore', function () { win.setAlwaysOnTop(true, 'pop-up-menu'); });
+      win.on('moved', function () { if (loaded && !dragOffset) rememberPosition(win); });
       win.on('close', function () { if (loaded) rememberPosition(win); });
       win.on('closed', function () {
+        dragOffset = null;
         rejectReady(new Error('Mini window closed while loading'));
         if (mini !== win) return;
         mini = null;
@@ -112,10 +135,10 @@ exports.create = function (options) {
           loaded = true;
           owner.hide();
           win.show();
-          win.setAlwaysOnTop(true);
+          win.setAlwaysOnTop(true, 'pop-up-menu');
           win.focus();
           // Windows 隱藏全螢幕主窗時會重排 Z-order，待原生事件完成後再確認置頂。
-          setImmediate(function () { if (mini === win && !win.isDestroyed()) win.setAlwaysOnTop(true); });
+          setImmediate(function () { if (mini === win && !win.isDestroyed()) win.setAlwaysOnTop(true, 'pop-up-menu'); });
         } catch (error) {
           close();
           throw error;
@@ -132,6 +155,25 @@ exports.create = function (options) {
     },
     initial: function () { return mini && mini.initialMiniData; },
     ready: function () { if (mini) mini.miniReady(); },
+    drag: function (phase, point) {
+      if (!mini || mini.isDestroyed() || !mini.positionReady || !mini.isFocused() || mini.isMinimized() || mini.isMaximized()) {
+        endDrag();
+        return;
+      }
+      if (phase === 'start' && !dragOffset) {
+        if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+        var bounds = mini.getBounds(), content = mini.getContentBounds();
+        var zoom = mini.webContents.getZoomFactor();
+        // 原生尺寸經 DIP 取整後可能差一個像素，跨次拖曳仍使用同一份要求尺寸。
+        if (!dragSize) dragSize = { width: bounds.width, height: bounds.height };
+        // 按下時的內容區座標隨事件送來，避免 IPC 抵達時滑鼠已移到下一個位置。
+        dragOffset = { x: Math.round(point.x * zoom + content.x - bounds.x),
+          y: Math.round(point.y * zoom + content.y - bounds.y), width: dragSize.width, height: dragSize.height };
+      } else if (phase === 'move' || phase === 'end') {
+        moveDrag();
+        if (phase === 'end') endDrag();
+      }
+    },
     restore: close,
     dispose: function () { disposed = true; close(); }
   };

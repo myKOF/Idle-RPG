@@ -59,6 +59,55 @@ test('FIT-3 未開 fitBody 的光環不受影響；en-gold-dome 已開啟', () =
   assert.equal(Core.validatePreset ? Core.validatePreset(dome).ok : true, true);
 });
 
+test('正式金色護罩：實際 SVG 外殼寬高等於生成輪廓一倍，移動／換姿勢後定型，再生成重測', () => {
+  const preset = JSON.parse(fs.readFileSync(path.join(__dirname, '../vfx/presets/en-gold-dome.json'), 'utf8'));
+  const shell = preset.layers.find(layer => layer.id === 'shell');
+  const svg = fs.readFileSync(path.join(__dirname, '../images/vfx/assets', shell.assetId), 'utf8');
+  const diameter = 2 * Number(/<circle\b[^>]*\br="([\d.]+)"/.exec(svg)[1]);
+  const old = global.statusVfxPreset;
+  global.statusVfxPreset = () => preset.id;
+  try {
+    for (const mult of [.3, 1, 2.5]) {
+      const nodes = [], foot = { x: 180, y: 400 };
+      let reads = 0, box = { w: 80, h: 160, cx: 12, cy: 90 };
+      const backend = {
+        createNode(spec) { const node = { spec }; nodes.push(node); return node; },
+        updateNode(node, transform) { node.t = { ...transform }; },
+        destroyNode(node) { node.t = null; }
+      };
+      const rt = Runtime.create({ core: Core, resolver: { resolve: id => id },
+        zoneBackend: backend, fxBackend: backend, billboardBackend: backend,
+        profile: { scale: mult, areaScale: mult }, ctx: {
+          playerPos: () => foot, posOf: () => foot, footOf: () => foot,
+          bodyScaleOf: () => 2.2, bodyBoxOf: () => { reads++; return box; }
+        } });
+      try {
+        rt.registerPresets([preset]);
+        const sync = radius => rt.syncStatuses([{ key: 'boss', sids: ['eInvuln'], radii: { eInvuln: radius } }]);
+        const assertShell = expected => {
+          const node = nodes.find(node => node.spec.assetUrl === shell.assetId && node.t && node.t.visible);
+          assert.ok(node, '必須實際播放正式外殼圖層');
+          close(diameter * Math.abs(node.t.scaleX), expected.w);
+          close(diameter * Math.abs(node.t.scaleY), expected.h);
+          close(node.t.x, foot.x + expected.cx);
+          close(node.t.y, foot.y - expected.cy);
+        };
+        sync(48); rt.update(.3);
+        assertShell({ w: 80, h: 160, cx: 12, cy: 90 });
+        box = { w: 150, h: 65, cx: -8, cy: 130 };
+        foot.x += 27; foot.y -= 18;
+        sync(96); rt.update(.4);
+        assertShell({ w: 80, h: 160, cx: 12, cy: 90 });
+        assert.equal(reads, 1);
+        rt.syncStatuses([]);
+        sync(96); rt.update(.3);
+        assertShell({ w: 150, h: 65, cx: -8, cy: 130 });
+        assert.equal(reads, 2);
+      } finally { rt.destroy(); }
+    }
+  } finally { global.statusVfxPreset = old; }
+});
+
 test('NPC 護罩生成時貼合，姿勢與狀態半徑更新時維持尺寸和相對位置', () => {
   const c = loadEliteEnv();
   const enemy = makeElite(c, ['e_shield']);

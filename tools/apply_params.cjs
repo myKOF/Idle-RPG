@@ -155,6 +155,7 @@ function storeNumber(name, min, max, integer) {
   return v;
 }
 storeNumber('最高等級', 1, 20, true);
+storeNumber('存在時間(秒)', 1, Math.floor(Number.MAX_SAFE_INTEGER / 1000), true);
 ['寶石權重','裝備權重','符文權重','遺物權重','裝備價格基數','符文價格基數','符文價格指數','遺物價格基數'].forEach(n => storeNumber(n,0,Number.MAX_SAFE_INTEGER));
 storeNumber('裝備等級倍率', Number.MIN_VALUE, Number.MAX_SAFE_INTEGER);
 for (const [lo,hi,min,max] of [['裝備最低品質','裝備最高品質',0,11],['符文最低階級','符文最高階級',1,33],['遺物最低階級','遺物最高階級',1,Number.MAX_SAFE_INTEGER]]) {
@@ -530,6 +531,7 @@ scalar('data', 'GEM_COMPOSE_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 0)
 scalar('data', 'GEM_COMPOSE_HIGH_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 1);
 scalar('data', 'GEM_COMPOSE_TOP_INPUT_COUNT', '8-寶石', '寶石合成(手動)', 2);
 scalar('data', 'GEM_SHOP_MAX_LEVEL', '神祕商人', '最高等級', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'durationSeconds', '神祕商人', '存在時間(秒)', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'gemWeight', '神祕商人', '寶石權重', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'equipmentWeight', '神祕商人', '裝備權重', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runeWeight', '神祕商人', '符文權重', 0);

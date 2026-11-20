@@ -187,10 +187,79 @@ test('重新讀檔保留券、商店等級、已買商品庫存，但不恢復�
   assert.equal(e2.ctx.gemShop().level,4);
   assert.deepEqual(plain(e2.state().player.gems),plain(g.player.gems));
   assert.equal(e2.panel('tower').merchant.active,false);
+  assert.equal(e2.panel('tower').merchant.expiresAt,0);
   assert.match(e2.cmd('gem.shopBuy',{index:1}).result,/召喚/);
   delete saved.player.consumables;
   const legacy=createEngine({seed:19}).boot(saved);
   assert.equal(legacy.ctx.merchantInvitationCount(legacy.state().player),0);
+});
+
+test('商人預設存在600秒，重複open保留商品與期限；只有成功耗券會重置',()=>{
+  const e=game(),c=e.ctx,p=e.state().player;
+  let now=c.Date.now();c.Date.now=()=>now;
+  c.addMerchantInvitations(3);success(e,'merchant.open');
+  const original=plain(c.gemShop().items),first=e.panel('tower').merchant.expiresAt;
+  assert.equal(first,now+600000);
+  now+=60000;success(e,'merchant.open');
+  assert.equal(e.panel('tower').merchant.expiresAt,first);
+  assert.deepEqual(plain(c.gemShop().items),original);
+  assert.equal(c.merchantInvitationCount(p),2);
+  p.gold=1e15;success(e,'gem.shopBuy',{index:0});
+  success(e,'gem.shopUpgrade');
+  assert.equal(e.panel('tower').merchant.expiresAt,first,'購買及金幣升級不重置');
+  success(e,'gem.shopRefresh');
+  const refreshed=e.panel('tower').merchant.expiresAt;
+  assert.equal(refreshed,now+600000);
+  assert.equal(c.merchantInvitationCount(p),1);
+  p.consumables.mystery_invitation=0;now+=1000;
+  assert.match(e.cmd('gem.shopRefresh').result,/邀請券/);
+  assert.equal(e.panel('tower').merchant.expiresAt,refreshed,'失敗不延長');
+});
+
+test('期限前有效，到期由Worker自動結束；到期後不能購買或刷新扣款',()=>{
+  const e=game(),c=e.ctx,p=e.state().player;
+  let now=c.Date.now();c.Date.now=()=>now;
+  c.MYSTERY_MERCHANT_SETTINGS.durationSeconds=2;
+  c.addMerchantInvitations(3);p.gold=1e15;success(e,'merchant.open');
+  const deadline=e.panel('tower').merchant.expiresAt;
+  now=deadline-1;assert.equal(e.panel('tower').merchant.active,true);
+  const gold=p.gold,tickets=c.merchantInvitationCount(p);
+  now=deadline;
+  // loop must expire even while the menu has paused simulation and no panel is requested.
+  c._menuPaused=true;c.loop();
+  assert.equal(c.MYSTERY_MERCHANT_OPEN,false);
+  assert.equal(c.MYSTERY_MERCHANT_EXPIRES_AT,0);
+  c._menuPaused=false;
+  for(const [name,args] of [['gem.shopBuy',{index:0}],['gem.shopBuyAll',{}],['gem.shopUpgrade',{}],['gem.shopRefresh',{}]])
+    assert.match(e.cmd(name,args).result,/召喚/);
+  assert.equal(p.gold,gold);assert.equal(c.merchantInvitationCount(p),tickets);
+  success(e,'merchant.open');
+  assert.equal(e.panel('tower').merchant.expiresAt,now+2000);
+  assert.equal(c.merchantInvitationCount(p),tickets-1);
+  success(e,'merchant.close');
+  assert.equal(e.panel('tower').merchant.expiresAt,0);
+});
+
+test('刷新無可售商品時保留邀請券與期限；過期面板自行清理會話',()=>{
+  const e=game(),c=e.ctx,p=e.state().player;
+  let now=c.Date.now();c.Date.now=()=>now;
+  c.addMerchantInvitations(2);success(e,'merchant.open');
+  const deadline=e.panel('tower').merchant.expiresAt;
+  c.MYSTERY_MERCHANT_SETTINGS.gemWeight=0;c.MYSTERY_MERCHANT_SETTINGS.equipmentWeight=0;
+  c.MYSTERY_MERCHANT_SETTINGS.runeWeight=0;c.MYSTERY_MERCHANT_SETTINGS.relicWeight=0;
+  c.MERCHANT_CATEGORY_TABLE=[];
+  now+=1000;assert.match(e.cmd('gem.shopRefresh').result,/沒有可販售/);
+  assert.equal(c.merchantInvitationCount(p),1);
+  assert.equal(e.panel('tower').merchant.expiresAt,deadline);
+  now=deadline;assert.equal(e.panel('tower').merchant.active,false);
+});
+
+test('執行中讀取其他存檔會清除舊商人與期限',()=>{
+  const e=game(),c=e.ctx;
+  c.addMerchantInvitations(2);success(e,'merchant.open');
+  c.loadIntoRunningSim({save:JSON.parse(e.saveJson())});
+  assert.equal(e.panel('tower').merchant.active,false);
+  assert.equal(e.panel('tower').merchant.expiresAt,0);
 });
 
 test('塔BOSS勝利按表掉券，敗北／撤退及重複結算不產生券',()=>{
@@ -250,6 +319,7 @@ test('Store由原生Excel匯出，商店參數從主表完整搬移且古詞條�
   const file=path.join(temp,'Store.csv');
   try {
     const invalid = [
+      [source.replace(/(神祕商人,存在時間\(秒\),[^\r\n]*?,)600,/, (_match, prefix) => prefix+'0,'),/存在時間/],
       [source.replace('3=20','3=19'),/太古詞條機率/],
       [source.replace('{51,100,10}','{50,100,10}'),/邀請券掉落率樓層區間不得重疊/],
       [source.replace('{1,50,10}','{1,50,101}'),/邀請券掉落率樓層或百分比超出範圍/],

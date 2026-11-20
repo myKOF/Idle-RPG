@@ -116,7 +116,8 @@
 // v79（2026-11-12 熔爐寶箱）：新增 chest.open({chestId,count})／chest.upgrade({chestId})（99→101）；newforge 面板新增 chests＝{ 編號: { lv, xp, n, on } }。
 // v80：chest.open 的 equip 獎勵增加 icons＝{ images/ 下的相對圖檔路徑: 件數 }，供開箱逐件顯示。
 // v81：chest.open 的 equip 獎勵改帶 items＝[{ icon, level, ancientCount, n }]，區分等級與太古星數。
-var WORKER_PROTOCOL_VERSION = 82;
+// v83：tower.merchant.expiresAt 為實際時鐘截止毫秒，成功耗券重置會話時間。
+var WORKER_PROTOCOL_VERSION = 83;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

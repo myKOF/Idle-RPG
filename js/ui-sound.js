@@ -39,8 +39,10 @@ var UISound = (function () {
   var sceneTracks = [], sceneIndex = 0, sceneMusic = null, pageActive = true;
   var sceneReady = false, sceneGapUntil = 0, sceneGapTimer = 0;
   var sceneView = null, towerChallengePending = false;
+  var towerReturn = null;
   var introActive = false;
   var SCENE_TRACK_GAP_MS = 10000;
+  var TOWER_RETURN_FADE_MS = 2000, TOWER_RETURN_SILENCE_MS = 4000;
 
   function now() { return performance.now(); }
   function stop(kind) {
@@ -56,6 +58,7 @@ var UISound = (function () {
     if (introActive === value) return;
     introActive = value;
     if (value) {
+      cancelTowerReturn();
       discardPendingIntroMusic();
       stopAll();
     } else if (introMusic) {
@@ -100,6 +103,7 @@ var UISound = (function () {
     if (startScreenActive === value) return;
     startScreenActive = value;
     if (value) {
+      cancelTowerReturn();
       discardPendingIntroMusic();
       finishTowerChallenge(false);
     }
@@ -126,6 +130,7 @@ var UISound = (function () {
     };
   }
   function resetSceneMusic() {
+    cancelTowerReturn();
     sceneIndex = 0;
     clearTimeout(sceneGapTimer);
     sceneGapTimer = 0;
@@ -134,6 +139,65 @@ var UISound = (function () {
       try { sceneMusic.pause(); sceneMusic.currentTime = 0; } catch (_) {}
       sceneMusic = null;
     }
+  }
+  function cancelTowerReturn() {
+    if (!towerReturn) return;
+    clearTimeout(towerReturn.timer);
+    stopTowerReturnAudio(towerReturn);
+    towerReturn = null;
+  }
+  function stopTowerReturnAudio(transition) {
+    if (transition.audio) {
+      try { transition.audio.volume = 0; transition.audio.pause(); } catch (_) {}
+      transition.audio = null;
+    }
+    if (transition.source) { transition.source.disconnect(); transition.source = null; }
+    if (transition.gain) { transition.gain.disconnect(); transition.gain = null; }
+  }
+  function beginTowerReturn(audio) {
+    var startedAt = Date.now();
+    var transition = { audio: audio, volume: audio ? audio.volume : 0, startedAt: startedAt,
+      resumeAt: startedAt + TOWER_RETURN_FADE_MS + TOWER_RETURN_SILENCE_MS, timer: 0, source: null, gain: null };
+    try {
+      if (audio && !audio.paused) {
+        ensureContext();
+        if (context && context.state === 'running' && typeof context.createMediaElementSource === 'function') {
+          transition.gain = context.createGain();
+          var at = context.currentTime;
+          transition.gain.gain.setValueAtTime(1, at);
+          transition.gain.gain.linearRampToValueAtTime(0, at + TOWER_RETURN_FADE_MS / 1000);
+          transition.source = context.createMediaElementSource(audio);
+          transition.source.connect(transition.gain);
+          transition.gain.connect(context.destination);
+        }
+      }
+    } catch (_) {
+      if (transition.source) transition.source.disconnect();
+      if (transition.gain) transition.gain.disconnect();
+      transition.source = transition.gain = null;
+    }
+    towerReturn = transition;
+    function advance() {
+      // 舊計時或舊音檔事件不得在重新挑戰／換場後恢復配樂。
+      if (towerReturn !== transition) return;
+      if (Date.now() >= transition.resumeAt) cancelTowerReturn();
+      syncSceneMusic();
+      if (towerReturn !== transition) return;
+      var remaining = transition.resumeAt - Date.now();
+      transition.timer = setTimeout(advance, transition.audio ? Math.min(50, remaining) : remaining);
+    }
+    transition.timer = setTimeout(advance, audio ? 50 : TOWER_RETURN_FADE_MS + TOWER_RETURN_SILENCE_MS);
+  }
+  function syncTowerReturn(volume, enabled) {
+    if (!towerReturn || !towerReturn.audio) return;
+    var audio = towerReturn.audio;
+    var remaining = Math.max(0, 1 - (Date.now() - towerReturn.startedAt) / TOWER_RETURN_FADE_MS);
+    // 原生音量排程不受退場建圖阻塞；不支援 Web Audio 時改用計時器漸弱。
+    var envelope = towerReturn.gain ? 1 : remaining;
+    // 音量調整只能進一步壓低漸弱中的聲音；靜音／暫停後不補播塔戰尾音。
+    audio.volume = Math.max(0, Math.min(audio.volume, volume, towerReturn.volume * envelope));
+    if (!enabled || volume <= 0 || remaining <= 0) audio.pause();
+    if (remaining <= 0) stopTowerReturnAudio(towerReturn);
   }
   var pendingIntroMusic = null;
 
@@ -158,9 +222,10 @@ var UISound = (function () {
   function syncSceneMusic() {
     var volume = typeof GameSettings === 'undefined' ? .5 :
       (GameSettings.get('mute') ? 0 : GameSettings.get('musicVolume') / 100);
-    var shouldPlay = !introActive && pageActive && sceneReady && !startScreenActive &&
-      sceneTracks.length > 0 && Date.now() >= sceneGapUntil && volume > 0;
+    var enabled = !introActive && pageActive && sceneReady && !startScreenActive;
+    var shouldPlay = enabled && !towerReturn && sceneTracks.length > 0 && Date.now() >= sceneGapUntil && volume > 0;
     try {
+      syncTowerReturn(volume, enabled);
       if (shouldPlay && !sceneMusic) {
         var audio = new window.Audio();
         audio.preload = 'auto';
@@ -190,14 +255,19 @@ var UISound = (function () {
   }
   function setScene(view) {
     if (!view) return;
+    var returningFromTower = sceneView && sceneView.towerActive && !view.towerActive && !towerChallengePending;
     sceneView = view;
     if (view.towerActive) towerChallengePending = false;
     var zone = typeof ZONES !== 'undefined' && ZONES[view.zone];
     var tracks = view.towerActive || towerChallengePending ? [TOWER_MUSIC] :
       (zone ? [zone.bgm, zone.bgm2].filter(Boolean) : []);
-    if (tracks.length === sceneTracks.length && tracks.every(function (track, i) { return track === sceneTracks[i]; })) return;
+    if (!returningFromTower && tracks.length === sceneTracks.length && tracks.every(function (track, i) { return track === sceneTracks[i]; })) return;
+    var transition = returningFromTower && !startScreenActive && !introActive;
+    var outgoing = transition ? sceneMusic : null;
+    if (transition) sceneMusic = null;
     sceneTracks = tracks;
     resetSceneMusic();
+    if (transition) beginTowerReturn(outgoing);
     syncSceneMusic();
   }
   function beginTowerChallenge() {
@@ -331,6 +401,7 @@ var UISound = (function () {
       stopAll();
       if (menuMusic) menuMusic.pause();
       if (sceneMusic) sceneMusic.pause();
+      if (towerReturn && towerReturn.audio) towerReturn.audio.pause();
       if (pendingIntroMusic && pendingIntroMusic.audio) pendingIntroMusic.audio.pause();
     });
     window.addEventListener('pageshow', function () { pageActive = true; syncMusic(); });

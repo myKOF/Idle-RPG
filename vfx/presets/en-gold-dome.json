@@ -11,7 +11,7 @@
       "zIndex": 0,
       "position": {
         "x": 0,
-        "y": -30
+        "y": -63.5943
       },
       "scale": {
         "x": 0.1889,
@@ -63,7 +63,7 @@
       "zIndex": 1,
       "position": {
         "x": 0,
-        "y": -30
+        "y": -63.5943
       },
       "scale": {
         "x": 0.2107,
@@ -101,7 +101,7 @@
       "zIndex": 2,
       "position": {
         "x": 0,
-        "y": -30
+        "y": -63.5943
       },
       "scale": {
         "x": 0.2195,
@@ -139,7 +139,7 @@
       "zIndex": 3,
       "position": {
         "x": 0,
-        "y": -30
+        "y": -63.5943
       },
       "alpha": 1,
       "tint": "#fff8d0",
@@ -184,12 +184,13 @@
     }
   ],
   "playback": {
-    "fitBody": true
+    "fitBody": true,
+    "fitPadding": 1
   },
   "sizing": {
     "authored": {
-      "height": 60,
-      "width": 60
+      "height": 127.1886,
+      "width": 97.3434
     },
     "heightM": 6,
     "shape": "custom",

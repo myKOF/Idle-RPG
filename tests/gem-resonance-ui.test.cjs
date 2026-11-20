@@ -5,11 +5,14 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
 function ui(gems={diamond:{3:8,4:2,7:1},ruby:{10:3}}){
  const c=vm.createContext({console,Math,Date,JSON,Number,Map,Set});c.window=c;
- c.UI={gemBrowse:{tool:'resonance',filter:'atk',ownedOnly:true,resHole:[1,1],sel:'diamond',fuseLv:4},dirty:{}};
+ c.UI={tab:'gems',gemBrowse:{tool:'resonance',filter:'atk',ownedOnly:true,resHole:[1,1],sel:'diamond',fuseLv:4},dirty:{}};
  for(const p of ['js/util.js', 'js/strings_data.js', 'js/strings.js','js/data.js','js/status.js','js/gem_resonance_data.js','js/formula.js','js/item.js','js/gem_resonance.js'])vm.runInContext(read(p),c,{filename:p});
  c.G={player:{gold:1e12,level:c.GEM_RESONANCE_UNLOCK_LEVEL,reincarnations:c.GEM_RESONANCE_UNLOCK_REINCARNATION,gems,resonance:{holes:{}}}};c.markStatsDirty=()=>{};
  c.esc=String;c.fmt=String;c.fmtFull=String;c.pctStr=String;
  const source=read('js/ui.js');
+ c.UiCanvas={rect:()=>({left:20,top:80,width:100,height:30})};c.hideTooltip=()=>{};c.floats=[];
+ c.showFloatingText=(_button,text)=>{c.floats.push(text);return {style:{}};};
+ vm.runInContext(source.slice(source.indexOf('function isSuccessfulUpgradeResult('),source.indexOf('/* ---- 生產線與合成 ---- */')),c);
  vm.runInContext(source.match(/var GEM_TIER_COLORS = \{[\s\S]*?\n\};/)[0],c);
  for(const name of ['gemsViewCount','gemsViewFused','gemAbilityText']){
   const fn=source.match(new RegExp('function '+name+'\\([^)]*\\) \\{[\\s\\S]*?\\n\\}'));assert.ok(fn,name);vm.runInContext(fn[0],c);
@@ -17,14 +20,14 @@ function ui(gems={diamond:{3:8,4:2,7:1},ruby:{10:3}}){
  // 使用正式 renderGems／類型列／十階列，只有無關的工坊面板採空實作。
  vm.runInContext(source.slice(source.indexOf('var GEM_LIB_FILTERS ='),source.indexOf('function gemAbilityText(')),c);
  for(const name of ['fillGemTypeSelect','renderFuseInfo','renderGemConvert','renderGemDismantle','renderGemFusion','renderGemShop'])c[name]=()=>{};
- const nodes={};function element(attrs={}){return {attrs,innerHTML:'',handlers:{},addEventListener(k,f){this.handlers[k]=f;},getAttribute(k){return this.attrs[k];},setAttribute(k,v){this.attrs[k]=v;},closest(k){const key=k.slice(1,-1);return this.attrs[key]!==undefined?this:null;},classList:{add(){},remove(){}},querySelector(){return null;},querySelectorAll(){return [];},contains(){return true;}};}
+ const nodes={};function element(attrs={}){return {attrs,innerHTML:'',handlers:{},getClientRects:()=>[{}],addEventListener(k,f){this.handlers[k]=f;},getAttribute(k){return this.attrs[k];},setAttribute(k,v){this.attrs[k]=v;},closest(k){const key=k.slice(1,-1);return this.attrs[key]!==undefined?this:null;},classList:{add(){},remove(){}},querySelector(){return null;},querySelectorAll(){return [];},contains(){return true;}};}
  const documentEvents={};c.document={addEventListener(k,f){documentEvents[k]=f;}};
  for(const id of ['gres-board','gres-detail','gres-total','gres-help','gem-table','gres-library-note','gem-focus','gem-filter','gem-owned-only','tab-gems','gem-total','gem-kinds'])nodes[id]=element();
  c.$id=id=>nodes[id]||null;c.uiGemsPanelSnapshot=()=>({gems:c.G.player.gems,resonance:c.G.player.resonance});
  c.resolveGemsPanelSnapshot=s=>s||c.uiGemsPanelSnapshot();c.uiHeaderPanelSnapshot=()=>({player:c.G.player});
  c.setTextIfChanged=(n,t)=>{if(n)n.textContent=t;};
  const render=c.renderGems;c.renders=0;c.renderGems=()=>{c.renders++;render();};
- c.calls=[];c.sendGemUiCommand=(name,args)=>{c.calls.push({name,args});let error;if(name==='gem.resonanceSocket')error=c.socketResonanceGem(args.region,args.hole,args.type,args.level);if(name==='gem.resonanceUnsocket')error=c.unsocketResonanceGem(args.region,args.hole,args.index);if(name==='gem.resonanceUpgrade')error=c.upgradeResonanceHole(args.region,args.hole);assert.equal(error,null);c.renderGems();};
+ c.calls=[];c.sendGemUiCommand=(name,args,_key,_panels,success)=>{c.calls.push({name,args});let error;if(name==='gem.resonanceSocket')error=c.socketResonanceGem(args.region,args.hole,args.type,args.level);if(name==='gem.resonanceUnsocket')error=c.unsocketResonanceGem(args.region,args.hole,args.index);if(name==='gem.resonanceUpgrade')error=c.upgradeResonanceHole(args.region,args.hole);assert.equal(error,null);c.renderGems();if(success)success(error);};
  vm.runInContext(read('js/ui-gem-resonance.js'),c);c.initGemResonanceUi();c.renderGems();return {c,nodes,element,documentEvents};
 }
 function tier(nodes,level){const tag=nodes['gem-focus'].innerHTML.match(new RegExp('<button[^>]*data-gem-lv="'+level+'"[^>]*>'));assert.ok(tag,'tier '+level);return tag[0];}
@@ -259,6 +262,7 @@ test('右側共鳴效果只合計所選孔的額外相鄰能力；空孔／0級�
  check(.03);assert.match(nodes['gres-detail'].innerHTML,/能力\+3%/);
  nodes['gres-detail'].handlers.click({target:element({'data-gres-upgrade':'1'})});
  check(.06);assert.match(nodes['gres-detail'].innerHTML,/能力\+6%/);
+ assert.deepEqual(c.floats,['升級成功']);
  c.gresSelectHole(1,0);assert.equal(nodes['gres-total'].innerHTML,empty); // 有自身寶石但0級
  c.gresSelectHole(5,6);assert.equal(nodes['gres-total'].innerHTML,empty); // 有等級、無鄰珠
  c.gresSelectHole(1,1);check(.06);

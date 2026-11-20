@@ -91,6 +91,7 @@ function bfBossRadius() { return bfNum('BF_BOSS_RADIUS', 52); }
 var BF_PLAYER_SEARCH_MIN_M = 40;
 var BF_PLAYER_SEARCH_STEP_M = 10;
 var BF_PLAYER_SEARCH_MAX_M = 100;
+var BF_TOWER_SEARCH_RANGE_M = 200; // 塔戰雙方提早鎖定彼此，攻擊射程另依原配置。
 var BF_PLAYER = { x: 0, y: 0 };
 var BF_PLAYER_CHASING = false;     // 起步／停步的遲滯狀態（見 bfTickPlayer）
 function bfPlayerPos() { return BF_PLAYER; }
@@ -564,7 +565,8 @@ function bfPickPlayerTarget(enemies, locked) {
     var dx = p.x - home.x, dy = p.y - home.y;
     positioned.push({ ent: ent, d2: dx * dx + dy * dy });
   }
-  for (var m = BF_PLAYER_SEARCH_MIN_M; m <= BF_PLAYER_SEARCH_MAX_M; m += BF_PLAYER_SEARCH_STEP_M) {
+  var searchMax = bfTowerArena() ? BF_TOWER_SEARCH_RANGE_M : BF_PLAYER_SEARCH_MAX_M;
+  for (var m = BF_PLAYER_SEARCH_MIN_M; m <= searchMax; m += BF_PLAYER_SEARCH_STEP_M) {
     var radius = bfMeterPx(m), candidates = [];
     for (var j = 0; j < positioned.length; j++) {
       if (positioned[j].d2 <= radius * radius) candidates.push(positioned[j].ent);

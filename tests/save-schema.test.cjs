@@ -41,10 +41,11 @@ function loadGame() {
 
 /* ---- 1. 登錄表 ---- */
 
-test('上市基準：版本 1、沒有任何上市後遷移，登錄表自我檢查通過', () => {
+test('目前格式2含飛刀任務插入遷移，登錄表自我檢查通過', () => {
   const s = loadSchemaOnly();
-  assert.equal(s.SAVE_SCHEMA_VERSION, 1);
-  assert.equal(s.SAVE_SCHEMA_MIGRATIONS.length, 0);
+  assert.equal(s.SAVE_SCHEMA_VERSION, 2);
+  assert.equal(s.SAVE_SCHEMA_MIGRATIONS.length, 1);
+  assert.equal(s.SAVE_SCHEMA_MIGRATIONS[0].name, 'taskInsertSkillEvolutionV1');
   assert.equal(s.saveSchemaRegistryErrors(s.SAVE_SCHEMA_MIGRATIONS, s.SAVE_SCHEMA_VERSION).length, 0);
 });
 
@@ -136,14 +137,14 @@ test('migrateSave 在 mergeDefaults 之前取得版本：補完預設值的舊�
   const c = loadGame();
   // 模擬上市後升到版本 2：舊存檔（版本 1）必須跑到遷移，不能因為 newGameState 帶著 2 被 merge 成「已是最新」
   vm.runInContext(`
-    SAVE_SCHEMA_VERSION = 2;
-    SAVE_SCHEMA_MIGRATIONS.push({ to: 2, name: 'probeV1', migrate: function (d) { d._probeRan = (d._probeRan || 0) + 1; } });
+    SAVE_SCHEMA_VERSION++;
+    SAVE_SCHEMA_MIGRATIONS.push({ to: SAVE_SCHEMA_VERSION, name: 'probeV1', migrate: function (d) { d._probeRan = (d._probeRan || 0) + 1; } });
   `, c);
   const v1 = JSON.parse(JSON.stringify(c.newGameState()));
   v1.saveSchema = 1;
   const out = c.migrateSave(v1);
   assert.equal(out._probeRan, 1);
-  assert.equal(out.saveSchema, 2);
+  assert.equal(out.saveSchema, c.SAVE_SCHEMA_VERSION);
   c.migrateSave(out);
   assert.equal(out._probeRan, 1, '重複讀檔不再跑');
   const fresh = c.migrateSave(c.newGameState());

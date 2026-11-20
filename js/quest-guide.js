@@ -13,6 +13,8 @@ var QuestGuide = (function () {
     runeSocketCount: { tab: 'equip', target: '[data-act="toggle-rune"]' },
     skillEquipCount: { tab: 'skills', target: '[data-skill-equip]' },
     skillUpgradeCount: { tab: 'skills', target: '[data-skill2-learn]' },
+    skillTier: { tab: 'skills', target: '[data-skill2-learn]' },
+    skillUlt: { tab: 'skills', target: '[data-skill2-ultpick], [data-skill2-ultswitch]' },
     forgeParts: { tab: 'newforge', target: '[data-nf-partsopen]' },
     forgeFineAuto: { tab: 'newforge', target: 'label:has([data-nf-qual="1"]:enabled)' },
     chestOpenCount: { tab: 'newforge', target: '[data-chest-open][data-chest-count="1"]' },
@@ -129,6 +131,16 @@ var QuestGuide = (function () {
     var tabButton = document.querySelector('.tab-btn[data-tab="' + destination.tab + '"]');
     if (!isOperable(tabButton)) { showLocked(trigger, event); return; }
     closeQuestModal();
+    if (def.type === 'skillTier' || def.type === 'skillUlt') {
+      var skillRef = String(def.param || '').split(':');
+      if (SKILLS2[skillRef[0]]) {
+        UI.sgBrowse.filter = 'all';
+        UI.sgBrowse.gid = skillRef[0];
+        UI.sgBrowse.focus = def.type === 'skillUlt' ? 'ult' : 'tier';
+        if (def.type === 'skillTier') UI.sgBrowse.tier = def.count - 1;
+        else UI.sgBrowse.ultFocus = sgUltIndexOfId(skillRef[0], skillRef[1]);
+      }
+    }
     switchTab(destination.tab);
     if (def.type === 'composeCount') setGemTool('compose');
     tabButton.focus({ preventScroll: true });

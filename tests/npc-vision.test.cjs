@@ -125,14 +125,16 @@ test('野外普攻不得繞過視野；發現後依原傷害管線出手',()=>{
   c.BF_PLAYER.x=100;
   c.fieldMonsterAttack(m,c.FIELD.player);assert.equal(attacks,1);
 });
-test('封魔塔 BOSS 使用自己的配置視野、發現前技能與攻擊受同一判定',()=>{
+test('封魔塔 BOSS 使用200米搜敵，保留發現判定與原攻擊射程',()=>{
   const c=loadEliteEnv();c.BOSS_LIST[0].sightRange=12;
-  const b=c.makeBoss(1);b.pos={x:260,y:0};
+  const b=c.makeBoss(1);b.pos={x:2001,y:0};
   c.TOWER.boss=b;c.TOWER.player=c.FIELD.player;c.TOWER.introCd=0;c.G.tower.active=true;
-  assert.equal(b.sightRange,120);assert.equal(b._alerted,false);
+  assert.equal(b.sightRange,2000);assert.equal(b._alerted,false);
+  assert.equal(c.BOSS_LIST[0].sightRange,12,'塔戰覆寫實體，不改NPC配置');
   assert.equal(c.eliteReady(b),false);assert.equal(c.bfInAttackRange(b),false);
-  c.BF_PLAYER.x=140;
+  c.BF_PLAYER.x=1;
   assert.equal(c.eliteReady(b),true);assert.equal(b._alerted,true);
+  assert.equal(c.bfInAttackRange(b),false,'200米搜敵仍不能遠距普攻');
 });
 test('正式 Worker 載入配置並將視野前後的權威位置傳入 battle 面板',()=>{
   const engine=require('../scripts/sim/engine').createEngine({seed:161050}).boot(null),c=engine.ctx;

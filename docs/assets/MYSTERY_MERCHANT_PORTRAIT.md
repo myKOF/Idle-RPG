@@ -9,3 +9,9 @@
 以同一工具另繪商品區底座。深色橫木板襯底，四角用雕花金屬與紅寶石收邊，外緣保留透明度。使用者截圖提供木製商牌的風格參考，完整提示詞與檔案雜湊收錄於同一 manifest。
 
 執行 `node tools/assets/export-mystery-merchant.cjs --apply`，匯出立繪、店內背景與商品區底座，分別位於 `images/ui/mystery-merchant.webp`、`images/ui/mystery-merchant-shop.webp` 及 `images/ui/mystery-merchant-tray.webp`。使用 `--check` 核對來源與遊戲成品。RPG Mote Studio 已確認可連線，主要為像素繪圖工具。商人素材需要手繪質感，本次採 imagegen 製作。
+
+## 2026-11-19 自然斷面木牌
+
+使用者核准第二版不帶裝飾框的自然斷面木牌，完整1501×1047透明PNG保留於素材庫 `codex-authored/mystery-merchant-sign-20261119/source.png`。同包保存兩階段提示詞、來源／核准紀錄、匯出腳本與雜湊清單。僅將核准圖等比縮為768×536 lossless WebP，原始造型與alpha保留；第一版裝飾框為淘汰預覽。
+
+遊戲使用 `images/ui/mystery-merchant-sign.webp` 作為招牌背景，移除CSS矩形框／木紋與假木柄；名稱、等級與按鈕保留String／DOM。既有商人資產匯出工具新增此素材包的同步與SHA256驗證。原立繪、店景與商品木框保持。RPG Mote Studio經工具嘗試無法存取，採內建imagegen作畫；未使用外部素材。

@@ -25,4 +25,17 @@ for (const exportName of ['mystery-merchant.webp', 'mystery-merchant-shop.webp',
     throw Error('Game asset differs from the library export: ' + exportName);
   }
 }
+const signDir = path.join(resolveLibraryRoot().root, 'codex-authored/mystery-merchant-sign-20261119');
+const signManifest = JSON.parse(fs.readFileSync(path.join(signDir, 'manifest.json'), 'utf8'));
+for (const file of signManifest.files) {
+  if (path.basename(file.source) !== file.source || sha(fs.readFileSync(path.join(signDir, file.source))) !== file.sha256) {
+    throw Error('Merchant sign source hash mismatch: ' + file.source);
+  }
+}
+const signName = 'mystery-merchant-sign.webp';
+const signOutput = path.resolve(__dirname, '../../images/ui', signName);
+if (mode === '--apply') fs.copyFileSync(path.join(signDir, signName), signOutput);
+if (sha(fs.readFileSync(signOutput)) !== signManifest.files.find(file => file.source === signName).sha256) {
+  throw Error('Game merchant sign differs from the library export');
+}
 console.log('Mystery merchant assets verified: ' + mode);
