@@ -17117,6 +17117,17 @@ Worker 存活且頁面正常完成載入。
 - 驗證：36個專用檔及任務檔衝突預檢無外部來源；所有遞迴刪除先核對已解析絕對路徑、指定父目錄及無重新解析連結。rg --files含隱藏／忽略檔盤點未見殘留boss9檔案，git grep -i boss9在專案除本任務稽核檔外及素材庫皆無引用；既有任務的其他聊天歷史註記保留。npm.cmd run build通過755檔，雙庫git diff --check與刪除範圍檢查通過；node tools/kill-test-browsers.cjs確認無測試瀏覽器。
 - 交接：素材庫刪除Commit `453b5999f4e857aa4059b45bbfd12cd3f7124019`；專案Commit為本段所在「[Codex] chore: 移除廢棄飛龍與專用製作資料」。本輪清除無未完成項目，可供使用者合併；新BOSS9待使用者另行提供。檔案已從目前專案／素材庫／預覽移除，Git既有歷史保留、沒有重寫歷史，未合併或推送develop／main。
 
+## BOSS9-LIZARD-LEGS-20261120 — 後腿沿正前方直線奔跑
+
+- Owner：Codex；Review，單人完成。使用者明確要求把斜走後腿改成直前箭頭，本輪已調整後腿關節、腳掌朝向與實際擺動路徑，取代上輪不改後腿的限制。保留原前後步幅及抬腳節奏、前版頭身／尾部中線、手指與暫代材質；三視角GIF先供審閱，未接入遊戲、合併或推送。
+- 完成：兩腿各用三段平面IK保持髖膝飛節踝共面、關節間長度不變；實際蒙皮腳掌中心各在身體兩側±0.20單位的平行步線，腳掌以實際後跟到趾端朝直前。保留原腳踝前後與上下曲線，俯仰限制±65度；以480Hz烘焙、補間檢查避免轉直後跳動。原根部／骨盆矩陣保持，頭身尾以表面中心持續對齊。
+- 修改檔案：新增tools/boss9-lizard/legs.py、legs_verify.py、legs_viewer.js／html、legs_capture.cjs、legs_encode.py、legs_export.cjs、docs/assets/BOSS9_LIZARD_LEGS.md及本段，共9檔。素材庫獨立包codex-authored/boss9-lizard-legs-20261120共26檔，含原GLB、可編輯Blend、成品GLB、三GIF及必要來源／驗證。既有axis_*與align.py工具、前版素材包、桌面原檔、NPC／其他BOSS／玩法未修改；未恢復撤銷飛龍資料。
+- 未修改但檢查：AI_RULES.md、AGENTS.md、docs/AI_WORKFLOW.md、prompts/codex.md、原使用者BOSS9.glb、上版工具及幾何／骨架、tools/lib/headless-browser.cjs、tools/vfx/vfx-library-root.cjs、其他工作區／develop任務差異。原檔SHA256 1f3f5daad3100305fd51c5fd070cf53a2d5a6b3c59394be3db94500ce68ffa0d保持；成品GLB SHA256 23319786f8663d55bbde4ee7ae48bd2259e7a493114994cb9407dd2d731dbf5d。模型73骨、Walk 0.666667秒；34骨102通道修正，117通道及原幾何／材質／節點保持；沿用587個尾根頂點修復、其餘權重不變。
+- 測試指令與結果：Blender 4.5.9背景執行legs.py、legs_verify.py均通過；原生Blend和重新匯入GLB各161時點，含120FPS及錯相補間。腳掌步線最大誤差0.00000509單位、朝向0.00281度、髖膝踝平面誤差0.00000519、關節長度誤差0.00000157；原腳踝前後／上下誤差0.0000168、根部骨盆矩陣誤差0。頭身尾中線誤差小於0.00000239、頭朝向小於0.000030度；雙腳彼此及手指對腳的三角形穿插0、最小指腳頂點距離0.304；循環頂點誤差小於0.00000187。腿邊長比P95／P99／最大為1.320／1.787／2.602，尾部1.163／1.390／2.133，均通過既定檢核。
+- GIF與工具驗證：node tools/boss9-lizard/legs_capture.cjs分別--top --guide、--azimuth 0 --guide、側視各20張；Three.js實際腳掌中心與後跟趾端再驗同向平行、最終SHA一致、例外警告0、全身入鏡。legs_encode.py三GIF各900×600、60張、2秒、原循環三次，逐張重開解碼及三視角20張聯絡圖目視通過。俯視金線為頭身中線、綠線為相對身體的實際腳掌路徑、綠箭頭為實際腳掌朝向，藍箭頭為前進方向。Python AST 3檔、Node CJS／ESM語法、npm.cmd run build（755檔）、雙庫git diff --check及legs_export.cjs的26檔SHA／來源／動畫／預覽檢核通過；已保存必要QA後清理本輪臨時預覽、腳本與日誌，kill-test-browsers確認無測試瀏覽器。
+- 衝突處理：新專用檔預檢無外部修改。develop僅任務檔有未納入差異，與本段無語意相依；本段插入既有RUN任務之前，避開develop尚未納入AXIS紀錄的檔尾差異，三方試合乾淨且僅stage本段，不改他人紀錄或前版工具。
+- 交接：素材庫先提交bfb6010f88c9c91697b1f671f1043cb3ce1d7107；專案Commit為本段所在「[Codex] fix: 修正蜥蜴人後腿直線奔跑」。可編輯來源與三視角GIF已交付；技術上可審閱合併工具／紀錄，遊戲接入與動作採用仍待使用者看GIF決定。無本輪未完成製作；已知限制為沿用自動蒙皮，檢核不涵蓋全身所有甲片、肩髖及自接觸，接合處仍可能有局部伸長；下一步依GIF回饋調整。桌面原檔與舊版保留，未推送任何分支。
+
 ## BOSS9-LIZARD-RUN-20261120 — 新蜥蜴人奔跑朝向與手指動畫修正
 
 - Owner：Codex；Review，單人製作。使用者提供新同名BOSS9.glb（SHA256 1f3f5daad3100305fd51c5fd070cf53a2d5a6b3c59394be3db94500ce68ffa0d），要求保留低身後腿奔跑，修正頭身側偏及手指跟腳的動作，先交GIF。暫代材質保持；桌面原檔、舊飛龍撤銷紀錄及其他聊天NPC／Task／data保持，不接入、合併或推送。
