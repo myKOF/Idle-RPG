@@ -448,7 +448,8 @@ const fieldLoadStats = {
     }
     return {
       samples: this.n,
-      live: { p50: q(this.lives, 0.5), p90: q(this.lives, 0.9), p99: q(this.lives, 0.99), max: this.lives.length ? Math.max.apply(null, this.lives) : null },
+      live: { p50: q(this.lives, 0.5), p90: q(this.lives, 0.9), p99: q(this.lives, 0.99), max: this.lives.length ? this.lives.reduce((m, x) => (x > m ? x : m), -Infinity) : null },
+      /* 不用 Math.max.apply：樣本數隨模擬時數成長，48h 會超過參數上限、整場跑完才堆疊溢位（退出碼 1）。 */
       slopePerMin: slope
     };
   }
