@@ -11,6 +11,18 @@
 - 實機：IAB無可用連線後，以真正Electron內測app://localhost、靜音隔離新存檔，透過正式UI挑戰第3／4層，冷載入且不預熱模型。最終版雙方黑幕後首步互相靠近、首領在原射程外持續移動、首次ACT均在射程內，3D Walk分別62／92畫格，速度為正且動畫秒數前進；戰後返回field:desert且場景ready。頁面錯誤0，僅Electron既有開發版CSP警告。原隱藏測試視窗更新頻率過低造成Walk取樣僅2幀，正常顯示後未加預載也通過；因此撤回對模型冷載入的初步判斷並移除預載試作，而非放寬動畫斷言。診斷／對照／最終逐幀JSON、battle原生Canvas PNG與返回場景截圖留本聊天visualizations/tower-opening-approach-20261120，測試視窗及隔離profile已清理。
 - 交接：npm.cmd run build通過755檔，本項Git差異與自我Review通過。本項無未完成工作，可供使用者驗收合併，未合併／推送develop或main；黑畫面另段維持根因未定，不能宣稱本項修復。限制為未跑全庫／所有樓層實機，實機使用當時工作區NPC未提交配置（非本項修改）；共用出生點與搜敵套用所有塔層。與Claude重疊的共用bridge版本沿用本聊天授權，其他首頁／Worker快取行獨立分段三方試合為0；保留其他聊天未提交變更。Commit為本段所在「[Codex] fix: 修正塔戰開場追擊與兩百米搜敵」，SHA見交付；下一步重開內測桌面載入新快取後驗收。
 
+## NPC-SPAWN-SHIELD-SCALE-20261123 — 出生靜止護盾基準與塔王縮放接線
+
+- Owner：Codex；Done，單人處理。使用者要求金色護盾採出生靜止模型決定大小與中心，固定楕圓而不受出招姿勢影響；追加修正 NPC 表縮放比對封魔塔 BOSS 無效。
+- 前置：現有 NPC 2D／3D、護罩貼合與生成定型已完成，規範／Workflow／Agent與相關任務已讀。逐檔預檢並確認 develop 邏輯檔相同，文件不同段；首頁、編輯器與 Worker 共用快取同行已取得本聊天明確同意，保留雙方功能統一新版號。
+- 範圍：允許 battle-renderer／vfx-runtime 的出生輪廓、護盾貼合與載入重試，config_tables 的塔王縮放匯出／套用、data 衍生資料與必要主頁／Worker／預覽／編輯器快取，護盾／縮放及相關回歸、LV、VFX 控制說明及本段。禁止改免疫／傷害／技能數值／解鎖／協議／存檔／模型／Preset 或其他聊天 BOSS9 製作；NPC Excel／CSV 既有使用者修改保留，不回寫來源。
+- 驗收：在出生靜止首幀記錄正式模型輪廓，未載好不鎖替代圖；不同攻擊時機生成／重生護盾均採同基準、中心一致、保留作者楕圓比例、移動與透視正確。NPC 縮放正數檢核／往返及塔王實際 2D／3D 縮放生效，護盾同比；相關測試、隔離靜音瀏覽器／Build／差異自我檢查後提交，交使用者驗收合併，不合併或推送。
+- 完成15檔：js/battle-renderer.js記錄正式本體靜止首幀的局部輪廓、生成前面向玩家，換姿勢／受擊不改基準；模型或序列幀晚載入時等待正式本體，失敗時可採實際備援本體，像素不可讀退到局部邊界。js/vfx-runtime.js以出生基準中心等比包覆、保持作者楕圓比例，狀態晚載入重試；Runtime DATA_VERSION及Preset不變。tools/config_tables.cjs補tower_boss縮放正數驗證與雙向匯出，js/data.js的50列BOSS_LIST補scale，renderer依npcId查本列倍率。主頁／bridge／Worker與編輯器／場景預覽快取同步，新增tests/npc-table-scale.test.cjs並更新兩份既有回歸、LV／VFX說明及本段。未增加模型、素材或玩家文字，不需素材庫提交。
+- 未修改但檢查：AI_RULES／AGENTS／Workflow／prompts/codex、js/hero3d.js、js/npc3d.js、js/tower.js、js/status.js、js/vfx-core.js／vfx-pixi-backend.js、en-gold-dome Preset／layout、NPC Excel及既有CSV、Status資料與既有NPC／塔戰／編輯器保護測試。沿用全部既有自製素材，沒有外部素材參考或引入。
+- 來源與衝突：初始NPC.xlsx／CSV的鬼面縮放0.6為使用者已有內容；工作期間使用者重新儲存Excel回1.2，唯讀核對全部531列×34欄與HEAD值一致，以最新儲存來源重新匯出CSV並產生資料，無回寫來源。最新來源SHA256 68c7da14013e534112fcf258a2551f4f3f24786f0af89c08a1ee590c60004a5f，CSV相對HEAD無語意差異；來源工作簿二進位儲存差異保留未提交，其他聊天BOSS9修正及任務段亦保留。develop僅共用快取版號有同行差異，已獲本聊天兩次明確同意；邏輯／資料／測試及文件與develop不同段，git merge-file -p逐檔試合0，只分段提交本項。
+- 驗證：node --test tests/status-aura-fit-body.test.cjs tests/npc-table-scale.test.cjs tests/npc-complete-actions.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/tower-battlefield.test.cjs tests/vfx-runtime-screen-space.test.cjs tests/vfx-size.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/vfx-editor-guard.test.cjs tests/worker-protocol.test.cjs，72/72通過。node --test tests/vfx-runtime.test.cjs tests/npc3d-config.test.cjs，142項136通過／6項既有失敗：樹人舊名稱斷言、THUNDERFALL、FIELD、CATALOG-3、CHAIN及STARFALL-TAIL；以本輪修改前renderer／Runtime／config_tables／data唯讀overlay重跑，同6項逐項重現，不調低斷言。node tools/config_tables.cjs --apply NPC重建11字面值、語意變更0；npm.cmd run build 756檔及Git差異檢查通過。
+- 畫面與交接：IAB無可用連線後，受看門狗管理的隔離靜音Edge載入正式Hero3D／Npc3D、Pixi、Core／Runtime與實際renderer出生採樣／異步接入函式。骷髏王出生、攻擊中生成及移動後三次重生皆72.54×94.78055世界像素；鬼面0.6／1.2／2.4的本體與罩寬高為精確1／2／4倍，全部23款已配置3D模型可取靜止基準，頁面例外／警告0。測試伺服器與瀏覽器已關閉，清理工具無殘留；未使用桌面擷取。腳本／JSON／預覽／TAP在本聊天visualizations/npc-spawn-shield-scale。自我Review完成，無本項未完工作，可供使用者驗收合併；限制為隔離正式模型／渲染模組驗證，未重跑完整塔戰、所有2D素材或原生桌面包。Commit為本段所在「[Codex] fix: 以出生靜止基準定位護盾並接通塔王縮放」，未合併／推送develop或main。下一步重開遊戲；VFX編輯器若開著，先下載未存內容備份再重載，舊分頁存檔防覆寫既有回歸通過。
+
 ## TOWER-SCENE-BLACK-DIAG-20261120 — 內測桌面場景黑畫面唯讀追查
 
 - Owner：Codex；Review（尚未再現，根因待證據）。使用者回報進塔黑畫面但倒數／技能仍走，失敗返回練功也黑；追加重開內測桌面版後恢復正常。已讀原生desktop.log，未記錄頁面錯誤；對照本聊天提交，修改為塔戰站位／清理順序及快取，未改戰鬥渲染器或技能CD。

@@ -94,7 +94,7 @@ test('既有NPC重排與新生共用表格倍率、本體不隨視窗變大，�
  const {c}=attackDispatch(),P=c.PIXI;c.density=.5;c.cell={w:60,h:50};c.S.layers.entity=new P.Container();
  c.NPC_CONFIG_TABLE={desert_2:{id:'desert_goblin',scale:2}};
  Object.assign(c,{densityScale:()=>c.density,cellSize:()=>c.cell,npcSpriteDef:()=>c.NPC_CONFIG_TABLE.desert_2,
-  posTrack(){},drawHpBar(){},requestNpcSheet(){},requestMobImage(){},requestNpc3d(){},
+  posTrack(){},drawHpBar(){},requestNpcSheet(){},requestMobImage(){},requestNpc3d(){},captureEntityBodyBox(){},
   spriteHitBox:body=>({height:64*body.scale.y,center:32*body.scale.y})});
  c.ELEM_INFO=data().ELEM_INFO;
  vm.runInContext(extractFunction(fs.readFileSync(path.join(root,'js/ui.js'),'utf8'),'enemyNameText'),c);

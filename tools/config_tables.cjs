@@ -540,7 +540,7 @@ SCHEMAS.NPC = {
     bosses.forEach((b, index) => {
       const sk = (b.skills) || null;
       rows.push([b.id || ('tower_boss_' + (index + 1)), b.name, NPC_TOWER_ZONE, 'tower_boss', b.attr || b.elem || '', b.emoji || '',
-        b.img || '', b.img || '', b.img || '', b.img || '', '舊版靜態圖（' + (b.img || '無') + '），尚無序列幀：缺移動／攻擊／死亡動畫', '1',
+        b.img || '', b.img || '', b.img || '', b.img || '', '舊版靜態圖（' + (b.img || '無') + '），尚無序列幀：缺移動／攻擊／死亡動畫', numStr(b.scale > 0 ? b.scale : 1),
         numStr(b.runSpeed == null ? '' : b.runSpeed), numStr(b.atkSpeed == null ? '' : b.atkSpeed),
         numStr(b.atkRange == null ? '' : b.atkRange), numStr(b.sightRange == null ? 50 : b.sightRange), b.elem ? '1' : '0', ''].concat(
         NPC_TOWER_MULT_COLUMNS.map(([, key]) => numStr(b[key] == null ? 1 : b[key])), npcSkillCells(sk), [npcLookNote(b) + npcSkillNote('tower_boss', sk, catalog)], npcModelCells(b)));
@@ -689,6 +689,13 @@ SCHEMAS.NPC = {
       b.elem = toBool(get(t.row, '魔法型（1是／0否）')) ? (b.attr || null) : null;
       const model = npcModelFromRow(t.row, get, 'NPC ' + lineOf(t.index) + '（' + t.id + '）');
       if (model) b.model3d = model; else delete b.model3d;
+      const scaleRaw = get(t.row, '縮放比').trim();
+      if (scaleRaw === '' || Number(scaleRaw) === 1) delete b.scale;
+      else {
+        const scale = Number(scaleRaw);
+        if (!(scale > 0) || !Number.isFinite(scale)) throw new Error('NPC ' + lineOf(t.index) + '「縮放比」必須是大於 0 的數字：' + scaleRaw);
+        b.scale = scale;
+      }
       applyMoveAttack(b, t.row, t.index);   // 移動速度／攻擊速度／攻擊距離：以本列為準（js/tower.js makeBoss）
       NPC_TOWER_MULT_COLUMNS.forEach(([label, key]) => {
         const raw = get(t.row, label).trim();
