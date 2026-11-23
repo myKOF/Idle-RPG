@@ -674,26 +674,32 @@
         "maxCommands": 4,
         "quota": [
           {
-            "type": "onyx",
-            "count": 2,
-            "依據": "§1.2-4：基本吸血必須保障；有這筆配額，吸血寶石也不會被換掉"
+            "type": "manastone",
+            "count": 1,
+            "依據": "吸魔最優先（使用者 2026-11-24）：平時至少一顆吸魔寶石"
           },
           {
             "type": "manastone",
-            "count": 1,
+            "count": 3,
             "when": [
-              "view.mp",
-              "<",
-              {
-                "$mul": [
-                  {
-                    "$path": "view.mpMax"
-                  },
-                  0.5
-                ]
-              }
+              "ctx.deficit.manaIncome.met",
+              "falsy"
             ],
-            "依據": "§1.2-4：缺魔時保障基本吸魔"
+            "依據": "缺魔（manaIncome 不達標）時吸魔寶石補到 3 顆。配額種類不會被換掉，補上之後就留著"
+          },
+          {
+            "type": "iolite",
+            "count": 2,
+            "when": [
+              "ctx.deficit.manaCapacity.met",
+              "falsy"
+            ],
+            "依據": "法力上限存不下 2 次最貴的施法（manaCapacity 不達標）時補法力值寶石"
+          },
+          {
+            "type": "onyx",
+            "count": 2,
+            "依據": "§1.2-4：基本吸血必須保障；有這筆配額，吸血寶石也不會被換掉"
           },
           {
             "type": "malachite",
@@ -714,26 +720,30 @@
               "!=",
               "normal"
             ]
-          },
-          {
-            "type": "kyanite",
-            "count": 2,
-            "when": [
-              "view.mp",
-              "<",
-              {
-                "$mul": [
-                  {
-                    "$path": "view.mpMax"
-                  },
-                  0.3
-                ]
-              }
-            ],
-            "依據": "法力恢復不夠者補法力恢復寶石至夠用"
           }
         ],
-        "rules": "panels.gemRules.convertInput"
+        "rules": "panels.gemRules.convertInput",
+        "boost": [
+          {
+            "type": "manastone",
+            "shares": 2,
+            "when": [
+              "ctx.deficit.manaIncome.met",
+              "falsy"
+            ],
+            "依據": "缺魔時雜牌優先轉成吸魔寶石（吸魔最優先）"
+          },
+          {
+            "type": "iolite",
+            "shares": 1,
+            "when": [
+              "ctx.deficit.manaCapacity.met",
+              "falsy"
+            ],
+            "依據": "法力上限不夠時也轉一些法力值寶石"
+          }
+        ],
+        "quota_依據": "與 socket-gems 同一份配額：配額種類（吸魔、法力值、吸血、抗性）不是雜牌，不會被轉掉"
       },
       "why": "把不在當前偏好段的寶石同階轉成偏好種類。偏好種類只佔 40 種寶石裡的 5~7 種、掉落又隨機，光靠「挑有貨的鑲」永遠補不滿（實測 3 小時偏好種類只有 5/20 顆）。轉換在遊戲裡同階 1:1、數量不變、不花金幣（convertGems），是既有庫存的重新分配。排在 gem-compose 之前：先把同種類集中起來，合成才有 3 顆可併，鑲上去的階級才會跟著上去。配額種類（抗性、法力恢復）不轉走；目標在偏好種類間輪流分配，否則 101 段的「一半爆傷、一半屬性」會被轉成清一色爆傷。maxSlots/maxPerSlot 對應遊戲的 GEM_CONVERT_SLOTS/GEM_CONVERT_STACK，超過會整批被回絕。轉換已改為同階任意兩顆換一顆（數量減半，不再 1:1），輸出與重新平衡的預算都照比例算"
     },
@@ -1168,26 +1178,32 @@
         },
         "quota": [
           {
-            "type": "onyx",
-            "count": 2,
-            "依據": "§1.2-4：基本吸血必須保障；有這筆配額，吸血寶石也不會被換掉"
+            "type": "manastone",
+            "count": 1,
+            "依據": "吸魔最優先（使用者 2026-11-24）：平時至少一顆吸魔寶石"
           },
           {
             "type": "manastone",
-            "count": 1,
+            "count": 3,
             "when": [
-              "view.mp",
-              "<",
-              {
-                "$mul": [
-                  {
-                    "$path": "view.mpMax"
-                  },
-                  0.5
-                ]
-              }
+              "ctx.deficit.manaIncome.met",
+              "falsy"
             ],
-            "依據": "§1.2-4：缺魔時保障基本吸魔"
+            "依據": "缺魔（manaIncome 不達標）時吸魔寶石補到 3 顆。配額種類不會被換掉，補上之後就留著"
+          },
+          {
+            "type": "iolite",
+            "count": 2,
+            "when": [
+              "ctx.deficit.manaCapacity.met",
+              "falsy"
+            ],
+            "依據": "法力上限存不下 2 次最貴的施法（manaCapacity 不達標）時補法力值寶石"
+          },
+          {
+            "type": "onyx",
+            "count": 2,
+            "依據": "§1.2-4：基本吸血必須保障；有這筆配額，吸血寶石也不會被換掉"
           },
           {
             "type": "malachite",
@@ -1208,23 +1224,6 @@
               "!=",
               "normal"
             ]
-          },
-          {
-            "type": "kyanite",
-            "count": 2,
-            "when": [
-              "view.mp",
-              "<",
-              {
-                "$mul": [
-                  {
-                    "$path": "view.mpMax"
-                  },
-                  0.3
-                ]
-              }
-            ],
-            "依據": "法力恢復不夠者補法力恢復寶石至夠用"
           }
         ]
       },
@@ -1649,26 +1648,32 @@
         },
         "quota": [
           {
-            "type": "onyx",
-            "count": 2,
-            "依據": "§1.2-4：基本吸血必須保障；有這筆配額，吸血寶石也不會被換掉"
+            "type": "manastone",
+            "count": 1,
+            "依據": "吸魔最優先（使用者 2026-11-24）：平時至少一顆吸魔寶石"
           },
           {
             "type": "manastone",
-            "count": 1,
+            "count": 3,
             "when": [
-              "view.mp",
-              "<",
-              {
-                "$mul": [
-                  {
-                    "$path": "view.mpMax"
-                  },
-                  0.5
-                ]
-              }
+              "ctx.deficit.manaIncome.met",
+              "falsy"
             ],
-            "依據": "§1.2-4：缺魔時保障基本吸魔"
+            "依據": "缺魔（manaIncome 不達標）時吸魔寶石補到 3 顆。配額種類不會被換掉，補上之後就留著"
+          },
+          {
+            "type": "iolite",
+            "count": 2,
+            "when": [
+              "ctx.deficit.manaCapacity.met",
+              "falsy"
+            ],
+            "依據": "法力上限存不下 2 次最貴的施法（manaCapacity 不達標）時補法力值寶石"
+          },
+          {
+            "type": "onyx",
+            "count": 2,
+            "依據": "§1.2-4：基本吸血必須保障；有這筆配額，吸血寶石也不會被換掉"
           },
           {
             "type": "malachite",
@@ -1689,23 +1694,6 @@
               "!=",
               "normal"
             ]
-          },
-          {
-            "type": "kyanite",
-            "count": 2,
-            "when": [
-              "view.mp",
-              "<",
-              {
-                "$mul": [
-                  {
-                    "$path": "view.mpMax"
-                  },
-                  0.3
-                ]
-              }
-            ],
-            "依據": "法力恢復不夠者補法力恢復寶石至夠用"
           }
         ]
       },
@@ -2955,6 +2943,23 @@
       "依據": "seed 474906691（extreme，48h）在第 38.83 小時剛復活、場上 34 隻、最近 10 秒 17 筆傷害全是 0（命中沒被閃避，是被防禦壓到 0），舊的 harness 不變量因此中止整場模擬。DPS 視窗只在有新傷害記進來時才修剪，死亡、轉場時停在舊值，會是 0 只有「命中全為 0 傷害」一種情況，所以門檻 1 就分得出來。退關即可解決，那一場模擬照樣有效（使用者 2026-11-23）"
     },
     {
+      "id": "manaIncome",
+      "kind": "windowAvg",
+      "path": "panels.fieldLoad.mpShort",
+      "windowSec": 120,
+      "atMost": 0.2,
+      "說明": "最近 2 分鐘「付不起裝配中最貴技能」的時間比例 ≤ 20%。不達標＝缺魔：吸魔寶石補到 3 顆、雜牌優先轉吸魔、洗煉優先找吸魔詞條",
+      "依據": "施法消耗取已學的最高階（飛刀第 6 階 400），用「法力低於一半」看不出缺魔：試驗「進階優先」時法力條中位數是滿的，卻有 89~94% 的時間連最便宜的技能都放不出來（法力上限比施法消耗還低）。所以直接比消耗。吸魔最優先（使用者 2026-11-24）。目前的集中升級規則下技能停在低階，這條很少觸發"
+    },
+    {
+      "id": "manaCapacity",
+      "kind": "value",
+      "path": "panels.fieldLoad.mpCapCasts",
+      "atLeast": 2,
+      "說明": "法力上限能存幾次最貴的施法。不到 2 次＝上限不夠：補法力值寶石、洗煉找智力詞條",
+      "依據": "法力上限低於施法消耗時吸魔再多也放不出來（實測 70 級上限 374~660、飛刀第 6 階 400）。智力每點 +2 法力上限（PRIMARY_STAT_EFFECTS.intMp）"
+    },
+    {
       "id": "hit",
       "說明": "對當前怪物的有效命中率。player_strategy.md：對敵人務必保持 95% 以上命中率，超過 40 級裝備開始至少搭配 1~2 條命中率詞條",
       "為什麼要宣告成目標而不是寫進保留清單": "怪物閃避會隨關卡成長（實測關卡 130 為 86.8%、關卡 150 為 103%），所以命中率詞條的優先序沒有固定答案——關卡 100 不需要、關卡 146 是唯一解。宣告成目標之後，缺口大小自己決定它該排第幾，補滿就自動讓位",
@@ -2983,6 +2988,57 @@
       "maxAffixes": 4,
       "maxTriesPerSlot": 40,
       "上限依據": "拿少數幾個詞條格去換命中率，不是全身都洗成命中率——其餘部位仍照原本的攻防清單洗"
+    },
+    {
+      "id": "manaStealGear",
+      "kind": "affixCount",
+      "affixKey": "manaSteal",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "chest",
+        "wrist",
+        "legs",
+        "ring",
+        "ring2",
+        "amulet"
+      ],
+      "atLeast": 3,
+      "when": [
+        "ctx.deficit.manaIncome.met",
+        "falsy"
+      ],
+      "說明": "缺魔時全身（胸甲、護腕、護腿、戒指、項鍊）合計至少 3 條吸魔。排在詞條目標最前面＝吸魔最優先",
+      "keepOnSwap": false,
+      "keepOnSwap_依據": "智力／吸魔到處都洗得到，不能因此擋住換更高品質的裝備（keepInvested 會讓帶這條詞條的裝備要高 2 階才換得掉）"
+    },
+    {
+      "id": "intGear",
+      "kind": "affixCount",
+      "affixKey": "int",
+      "equipment": "panels.inv.equipment",
+      "slots": [
+        "weapon",
+        "weapon2",
+        "helmet",
+        "shoulder",
+        "chest",
+        "belt",
+        "gloves",
+        "wrist",
+        "legs",
+        "boots",
+        "ring",
+        "ring2",
+        "amulet"
+      ],
+      "atLeast": 2,
+      "when": [
+        "ctx.deficit.manaCapacity.met",
+        "falsy"
+      ],
+      "說明": "法力上限不夠時全身合計至少 2 條智力",
+      "keepOnSwap": false,
+      "keepOnSwap_依據": "智力／吸魔到處都洗得到，不能因此擋住換更高品質的裝備（keepInvested 會讓帶這條詞條的裝備要高 2 階才換得掉）"
     },
     {
       "id": "jewelEnhance",

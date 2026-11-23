@@ -1732,7 +1732,32 @@ function buildFieldLoadPanel() {
      視窗只在有新傷害記進來時才修剪，所以死亡、轉場時它停在舊值；會變成 0 只有一種情況：
      最近 10 秒的命中全部是 0 傷害（怪的防禦把傷害壓到 0、無敵護盾之類）——打不動。 */
   var dps = (typeof currentDps === 'function') ? currentDps() : null;
-  return { live: live, cap: cap, ratio: cap > 0 ? live / cap : 0, dps: dps };
+  /* 法力：裝配中主動技能最貴的施法消耗（skills2ManaCost＝已學最高階的消耗，與施放端同一個函式），
+     以及現在付不付得起它。
+
+     為什麼不用「法力 < 一半」判斷缺魔：技能進階後消耗會跳升（飛刀第 6 階 400），而 70 級的法力上限
+     只有 374～660——法力條是滿的，卻永遠付不起一次施法。比例看不出這種缺魔，要直接比消耗。 */
+  var costMax = 0;
+  if (typeof skills2ManaCost === 'function' && G && G.player) {
+    var pre = (typeof SG_PREFIX === 'string') ? SG_PREFIX : 'sg:';
+    var lo = G.player.loadout || [];
+    for (var li = 0; li < lo.length; li++) {
+      if (typeof lo[li] !== 'string' || lo[li].indexOf(pre) !== 0) continue;
+      var c = Number(skills2ManaCost(lo[li].slice(pre.length))) || 0;
+      if (c > costMax) costMax = c;
+    }
+  }
+  var mp = (FIELD && FIELD.player) ? (Number(FIELD.player.mp) || 0) : 0;
+  var mpMax = (typeof getStats === 'function') ? (Number(getStats().mp) || 0) : 0;
+  return {
+    live: live, cap: cap, ratio: cap > 0 ? live / cap : 0, dps: dps,
+    manaCostMax: costMax,
+    /* 1＝現在付不起最貴的那個技能。沒有主動技能時恆為 0。 */
+    mpShort: (costMax > 0 && mp < costMax) ? 1 : 0,
+    /* 法力上限能存幾次最貴的施法。< 1 代表吸魔再多也放不出來，要的是法力上限。
+       沒有主動技能時給 999 而不是 null：kind "value" 會把 null 當成 0（Number(null)），誤判成缺上限。 */
+    mpCapCasts: costMax > 0 ? mpMax / costMax : 999
+  };
 }
 
 /* ============ 遺物面板（harness 專用） ============
