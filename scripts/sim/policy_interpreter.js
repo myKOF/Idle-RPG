@@ -887,12 +887,13 @@ function sampleRates(state, policy, memo) {
 
   for (var i = 0; i < list.length; i++) {
     var t = list[i];
-    if (!t || (t.kind !== 'ratePerMin' && t.kind !== 'windowAvg' && t.kind !== 'slopePerMin') || !t.id) continue;
+    if (!t || (t.kind !== 'ratePerMin' && t.kind !== 'windowAvg' && t.kind !== 'slopePerMin' && t.kind !== 'windowMin') || !t.id) continue;
+    var isWindowed = (t.kind === 'windowAvg' || t.kind === 'slopePerMin' || t.kind === 'windowMin');
     /* 計數器的「桶」是遊戲第一次發生該事件才建的（例如 lootStats.sources.field 要等第一次
        野外擊殺），所以開局第一拍讀不到是正常的，不能算失效路徑。
        但欄位被改名時會永遠讀不到——所以寬限 counterGraceSec（預設 120 遊戲秒）之後
        仍然讀不到，才交給 pathVal 記成失效。 */
-    var srcPath = (t.kind === 'windowAvg' || t.kind === 'slopePerMin') ? t.path : t.counter;
+    var srcPath = isWindowed ? t.path : t.counter;
     var raw = peekPath(state, srcPath);
     if (raw === undefined && now >= (typeof t.counterGraceSec === 'number' ? t.counterGraceSec : 120)) {
       raw = pathVal(state, srcPath);
@@ -900,6 +901,17 @@ function sampleRates(state, policy, memo) {
     if (raw === null || raw === undefined) continue;   // 這一拍沒送這個面板，跳過不記
     var v = Number(raw);
     if (!isFinite(v)) continue;
+    /* per：取樣值除以另一個即時值（例如 hp / hpMax）。分母是 0 或讀不到就整拍跳過——
+       記成 0 會被當成「血量見底」，一個假訊號就把閘門關上。 */
+    if (t.per) {
+      var den = Number(peekPath(state, t.per));
+      if (!isFinite(den) || den <= 0) continue;
+      v = v / den;
+    }
+    /* skipAtOrBelow：不記錄 ≤ 這個值的樣本。生存壓力用它排除「已經死了」的那幾拍（hp＝0）：
+       死亡本身已經有自己的處理（遊戲退 10 關、survivalFarm 的同關死亡計數），
+       再讓那個 0 留在視窗裡 2 分鐘，等於同一次死亡被罰兩次。要量的是活著時被壓到多低。 */
+    if (typeof t.skipAtOrBelow === 'number' && v <= t.skipAtOrBelow) continue;
 
     var r = memo.rates[t.id] || (memo.rates[t.id] = { pts: [] });
     var pts = r.pts;
@@ -929,7 +941,7 @@ function sampleRates(state, policy, memo) {
        pts[0] 是基準，pts[1] 一旦也出了視窗才丟得掉 pts[0]。 */
     var win = windowSecOf(t);
     /* 平均值不需要「視窗起點之前的基準點」，點一出視窗就丟。 */
-    if (t.kind === 'windowAvg' || t.kind === 'slopePerMin') { while (pts.length > 1 && (now - pts[0].t) > win) pts.shift(); }
+    if (isWindowed) { while (pts.length > 1 && (now - pts[0].t) > win) pts.shift(); }
     else while (pts.length > 2 && (now - pts[1].t) >= win) pts.shift();
   }
 }
@@ -1019,6 +1031,27 @@ function evalTargets(state, policy, memo) {
           var wsum = 0;
           for (var wi = 0; wi < wp.length; wi++) wsum += wp[wi].v;
           value = wsum / wp.length;
+        }
+      }
+    } else if (t.kind === 'windowMin') {
+      /* 某個即時值在最近一段視窗內的最低點。用途是「生存壓力」：hp / hpMax（per）的最低點。
+
+         為什麼量血量而不是場上存活數：場上怪多本身不危險，危險的是它讓你掉血。
+         冰原的小怪每波平均約 5.5 隻、不分關卡，打怪速度在健康狀態下也追不上出怪，
+         場上必然堆滿；第 1 關的怪每下只打 1 點，場上 100 隻也不會死。
+         用存活數（舊的 fieldCap／fieldTrend）當閘門，會在那裡把角色永遠鎖在第 1 關
+         （docs/SIM_HARNESS.md「這個機制自己踩過的三個坑」）。
+         為什麼是最低點而不是平均：危險是那一下掉到多低，平均會被回滿的時間稀釋。
+         視窗沒攢到 minSpanSec（預設一半）就回 null＝unknown。 */
+      var nr = memo.rates && memo.rates[t.id];
+      var np = nr && nr.pts;
+      if (np && np.length >= 2) {
+        var nspan = np[np.length - 1].t - np[0].t;
+        var nmin = (typeof t.minSpanSec === 'number') ? t.minSpanSec : windowSecOf(t) / 2;
+        if (nspan >= nmin) {
+          var nlo = Infinity;
+          for (var ni = 0; ni < np.length; ni++) if (np[ni].v < nlo) nlo = np[ni].v;
+          value = nlo;
         }
       }
     } else if (t.kind === 'slopePerMin') {

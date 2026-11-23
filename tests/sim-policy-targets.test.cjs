@@ -858,3 +858,102 @@ test('剛退到地板、冷卻還沒過：視窗裡還是上一關的取樣，�
   at = floorFeed(p, at, 5, 20, 100, 1);
   assert.equal(autoOn(decideAt(p, at, 100, 1)), true);
 });
+
+/* ============ 生存壓力：視窗內的血量最低點（windowMin ＋ per） ============
+
+   「場上怪太多」本身不危險，危險的是它讓你掉血。冰原第 1 關的怪每下只打 1 點，
+   場上 100 隻也不會死；用存活數擋推關會把角色永遠鎖在那裡。
+   hpFloor 量的是結果：hp / hpMax 在視窗內的最低點。 */
+
+function hpPolicy() {
+  return createPolicy({
+    name: 'hp-floor-test',
+    decideEveryGameSec: 60,
+    needPanels: ['battle', 'inv'],
+    targets: [
+      { id: 'hpFloor', kind: 'windowMin', path: 'view.hp', per: 'view.hpMax', windowSec: 60, atLeast: 0.4, retreatEverySec: 60 }
+    ],
+    rules: [{
+      id: 'gate', cmd: 'stage.setAutoAdvance',
+      stageGate: {
+        stage: 'view.stage', equippedRarities: 'panels.inv.equipmentRarities', argKey: 'on',
+        checkpoints: [{ minRarity: 0, coverage: 0 }],
+        retreatCmd: 'stage.go', requireTargets: ['hpFloor'],
+        targetRetreat: { step: 5, everySec: 60, minStage: 1 }
+      }
+    }]
+  });
+}
+function hpAt(sec, hp, hpMax, stage) {
+  return { gameTimeSec: sec, view: { stage: stage || 80, hp: hp, hpMax: hpMax === undefined ? 1000 : hpMax },
+    panels: { inv: { equipmentRarities: { weapon: 5 } }, battle: {} } };
+}
+/* 每秒觀測一次，hpOf(s) 給第 s 秒的血量。 */
+function hpFeed(p, t0, seconds, hpOf, hpMax, stage) {
+  for (let s = 1; s <= seconds; s++) p.observe(hpAt(t0 + s, hpOf(s), hpMax, stage));
+  return t0 + seconds;
+}
+
+test('生存壓力：場上怪再多，血量一直是滿的 → 放行（冰原第 1 關的情況）', () => {
+  const p = hpPolicy();
+  const t = hpFeed(p, 0, 60, () => 999);
+  const cmds = p.decide(hpAt(t, 999));
+  assert.equal(autoOn(cmds), true);
+  assert.equal(retreatOf(cmds).length, 0);
+});
+
+test('生存壓力：視窗內有一下掉到 25% → 關自動推關並退關（看最低點，不看平均）', () => {
+  const p = hpPolicy();
+  /* 只有 1 秒掉到 250，其餘都是滿血：平均約 98%，最低點 25%。 */
+  const t = hpFeed(p, 0, 60, (s) => (s === 30 ? 250 : 1000));
+  const cmds = p.decide(hpAt(t, 1000));
+  assert.equal(autoOn(cmds), false);
+  assert.equal(retreatOf(cmds).length, 1);
+});
+
+test('生存壓力：per 是比例，不是絕對血量（hpMax 很大時 400 點只是 4%）', () => {
+  const p = hpPolicy();
+  const t = hpFeed(p, 0, 60, () => 400, 10000);
+  assert.equal(autoOn(p.decide(hpAt(t, 400, 10000))), false);
+});
+
+test('生存壓力：hpMax 讀不到或為 0 的那一拍跳過，不會被當成血量見底', () => {
+  const p = hpPolicy();
+  let t = hpFeed(p, 0, 30, () => 900);
+  t = hpFeed(p, t, 5, () => 0, 0);           // 分母 0：跳過
+  t = hpFeed(p, t, 25, () => 900);
+  assert.equal(autoOn(p.decide(hpAt(t, 900))), true);
+});
+
+test('生存壓力：低點滑出視窗之後重新放行', () => {
+  const p = hpPolicy();
+  let t = hpFeed(p, 0, 60, (s) => (s === 10 ? 100 : 1000));
+  assert.equal(autoOn(p.decide(hpAt(t, 1000))), false, '前提：低點還在視窗內');
+  t = hpFeed(p, t, 70, () => 1000);
+  assert.equal(autoOn(p.decide(hpAt(t, 1000))), true);
+});
+
+test('生存壓力：視窗沒攢夠不下判斷（unknown 不算沒達標）', () => {
+  const p = hpPolicy();
+  const t = hpFeed(p, 0, 10, () => 100);
+  assert.equal(autoOn(p.decide(hpAt(t, 100))), true);
+});
+
+test('生存壓力：skipAtOrBelow 排除死亡那幾拍（hp＝0），同一次死亡不罰兩次', () => {
+  const base = hpPolicy();
+  let t = hpFeed(base, 0, 60, (s) => (s >= 30 && s < 33 ? 0 : 1000));
+  assert.equal(autoOn(base.decide(hpAt(t, 1000))), false, '沒有 skipAtOrBelow：死亡的 0 留在視窗裡會擋');
+
+  const p = createPolicy({
+    name: 'hp-floor-skip-test', decideEveryGameSec: 60, needPanels: ['battle', 'inv'],
+    targets: [{ id: 'hpFloor', kind: 'windowMin', path: 'view.hp', per: 'view.hpMax', skipAtOrBelow: 0, windowSec: 60, atLeast: 0.4, retreatEverySec: 60 }],
+    rules: [{ id: 'gate', cmd: 'stage.setAutoAdvance', stageGate: {
+      stage: 'view.stage', equippedRarities: 'panels.inv.equipmentRarities', argKey: 'on',
+      checkpoints: [{ minRarity: 0, coverage: 0 }], retreatCmd: 'stage.go', requireTargets: ['hpFloor'],
+      targetRetreat: { step: 5, everySec: 60, minStage: 1 } } }]
+  });
+  t = hpFeed(p, 0, 60, (s) => (s >= 30 && s < 33 ? 0 : 1000));
+  assert.equal(autoOn(p.decide(hpAt(t, 1000))), true, '只排除 0，滿血的部分照常量');
+  t = hpFeed(p, t, 60, (s) => (s === 20 ? 200 : 1000));
+  assert.equal(autoOn(p.decide(hpAt(t, 1000))), false, '活著時掉到 20% 仍然要擋');
+});
