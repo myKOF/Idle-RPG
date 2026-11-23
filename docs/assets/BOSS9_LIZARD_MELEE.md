@@ -1,6 +1,6 @@
 # BOSS9 重型爪擊動作與判定預覽
 
-任務 `BOSS9-MELEE-PREVIEW-20261123`。依使用者最新「純動作與判定邏輯」規格製作，先預覽確認再接入封魔塔。沿用已核准蜥蜴模型、手腳形態、暫代材質及直行 `Walk`，在新素材包追加 `Idle` 與 `BOSS9_Attack1`。本輪沒有修改遊戲程式、配置表、特效或音效；早先綠能版本需求由最新純動作規格取代。
+目前修訂任務 `BOSS9-PALM-R2-20261123`，基礎任務 `BOSS9-MELEE-PREVIEW-20261123`。依使用者純動作／判定規格及最新兩張手掌截圖製作，先預覽確認再接入封魔塔。沿用已核准蜥蜴模型、手腳形態、暫代材質及直行 `Walk`，追加 `Idle` 與 `BOSS9_Attack1`。本輪沒有修改遊戲程式、配置表、特效或音效；早先綠能版本需求由純動作規格取代。
 
 ## 時間軸
 
@@ -11,9 +11,9 @@
 | Active 揮擊 | 1.12–1.50 | 右爪沿外側下落並弧形橫掃至左下，身體隨之扭轉。最高點 `HitboxOn`，最低點 `HitboxOff`、`RootMotionOff`。 |
 | Recovery | 1.50–2.40 | 右爪先按地承重，左爪換到新的支撐位置，軀幹回正、右爪回到正常左右站位，雙爪及後腿回到半蹲 Idle。全程無傷害判定。 |
 
-右爪從舉起到揮下正好 1 秒。揮擊時主要長指朝敵人、約向下 15 度；結束揮擊後才轉腕按地支撐，沒有把有效揮擊做成指尖插地。尾部延遲反向擺動協助平衡，頭頸、上下顎、腰胸、鎖骨與後腿都有連動。左爪於揮擊結束後才抬起換步。
+右爪從舉起到揮下正好 1 秒。依最新截圖，右掌在下揮期間逐步轉向正面畫面右方：1.24 秒轉約 60 度，1.38–1.50 秒約 90 度，長指朝右略向下約 15 度，順著橫掃方向伸出。起手高舉手形維持，結束揮擊後才轉腕按地支撐。尾部延遲反向擺動協助平衡，頭頸、上下顎、腰胸、鎖骨與後腿都有連動。左爪於揮擊結束後才抬起換步。
 
-動畫曲線以 240 Hz 取樣，共 577 姿勢；Blend 保持 24 FPS，保留原 Walk。爪群中心沿彎曲橢圓軌跡移動，以實際指尖蒙皮方向求手腕角度。雙臂為鎖骨跟隨及肩肘腕 IK，後腿保持原物理骨段長度；支撐目標使用世界座標避免隨前撲滑動。首尾姿勢一致，但結束位置保留向前移動，不拉回原地。
+動畫曲線以 240 Hz 取樣，共 577 姿勢；Blend 保持 24 FPS，保留原 Walk。爪群中心沿彎曲橢圓軌跡移動，以實際指尖蒙皮方向求手腕角度，並補償旋轉造成的爪群中心偏移。雙臂為鎖骨跟隨及肩肘腕 IK，後腿保持原物理骨段長度；支撐目標使用世界座標避免隨前撲滑動。右腕旋轉時前臂與鎖骨連動，遇到伸臂極限保持骨長，局部爪群位置會隨可達範圍調整（本修訂最大約 0.123 模型單位，非縮放骨骼）。首尾姿勢一致，但結束位置保留向前移動，不拉回原地。
 
 ## 判定與位移
 
@@ -35,6 +35,7 @@
 - `source/tools/`：本輪九個製作、判定、預覽與封裝工具；另保存本文件與獨立測試。
 - `exports/boss9_attack1.blend`、`.glb`：可編輯骨架與成品，包含 `Walk`、`Idle`、`BOSS9_Attack1`；`build.json`、`validation.json` 保存製作及驗證資料。
 - `preview/BOSS9_Attack1.gif`：正面；`BOSS9_Attack1_Side.gif`：側面；`BOSS9_Attack1_Hitbox.gif`：有效幀／單次命中；`BOSS9_Attack1_Capsule.gif`：貼近目標阻擋。均為 900×600、120 張、50 FPS、2.4 秒，重播時從起點重設。
+- `preview/BOSS9_Attack1_Palm.png`：1.50 秒的實際 GLB 正面擷取，便於對照使用者圖 2 的指尖方向。
 - `qa/`：四視圖實際擷取資料、聯絡圖、GIF 解碼資料及最終製作／驗證／單元測試紀錄；`manifest.json` 記錄所有必要檔案雜湊及對應專案路徑，文字以 LF 正規化比較。
 
 可操作預覽：
@@ -49,7 +50,7 @@ node tools/boss9-lizard/melee/capture.cjs . --serve
 
 ```text
 blender -b --python-exit-code 1 -P tools/boss9-lizard/melee/author.py -- SOURCE.glb SOURCE.blend OUTPUT_DIR
-blender -b --python-exit-code 1 -P tools/boss9-lizard/melee/verify.py -- SOURCE.glb OUTPUT_DIR/boss9_attack1.glb OUTPUT_DIR/boss9_attack1.blend OUTPUT_DIR/validation.json
+blender -b --python-exit-code 1 -P tools/boss9-lizard/melee/verify.py -- SOURCE.glb OUTPUT_DIR/boss9_attack1.glb OUTPUT_DIR/boss9_attack1.blend OUTPUT_DIR/validation.json [PREVIOUS_REVISION.glb]
 node --test tests/boss9-melee-preview.test.cjs
 node tools/boss9-lizard/melee/capture.cjs REVIEW_DIR/front --azimuth 0 --ui-test
 node tools/boss9-lizard/melee/capture.cjs REVIEW_DIR/side --azimuth 75
@@ -64,7 +65,9 @@ node tools/boss9-lizard/melee/export.cjs
 
 ## 驗證與限制
 
-原 GLB 二進位、Walk、節點、73 骨、網格、權重、貼圖及材質逐位保留，只追加新動畫。原生 Blend 與重匯入 GLB 各檢查 1153 個時點（含錯相補間），驗證骨長、四肢實際關節段長、姿勢連續、雙爪蓄力鎖定、支撐手腳接地、root 曲線、收招 Idle、主要指尖方向，以及雙手／手腳／手頭／雙腳指定區域的三角形穿插。原生及 GLB 蒙皮頂點最大差約 0.0000012，支撐接地最大誤差約 0.0024。
+原 GLB 二進位、Walk、節點、73 骨、網格、權重、貼圖及材質逐位保留，只追加新動畫。原生 Blend 與重匯入 GLB 各檢查 1153 個時點（含錯相補間），驗證骨長、四肢實際關節段長、姿勢連續、雙爪蓄力鎖定、支撐手腳接地、root 曲線、收招 Idle、主要指尖方向，以及雙手／手腳／手頭／雙腳指定區域的三角形穿插。支撐接地最大誤差約 0.0024。
+
+本修訂另對前版成品（素材庫 `088f73d1`，GLB SHA256 `743f2f705df8fe7e29485a47cfb5b06ae0349ab36461bc941976415506e755b4`）比較所有 Idle 及非右臂動畫通道，確認主體動作、root、左臂、後腿與尾部保持。驗證取實際蒙皮長指向量，1.38–1.50 秒水平朝向須為正面畫面右方 85–95 度、向右分量大於 0.9，並保持略向下。Three.js 同時量測成品蒙皮方向，避免只改手腕參數或截圖；兩張使用者截圖僅作姿勢參考，沒有修改圖片代替骨架動作。
 
 14 項獨立測試涵蓋事件邊界與浮點累積、Windup／Recovery 無傷害、單次物理命中、擊退、30／60／144 FPS 與跨整段跳幀、扇形邊緣及垂直範圍、連續 Capsule 防穿透、斜向與端帽相撞、貼近阻擋、角色轉向及動態射程參數。四視圖共 480 張實際 GLB 擷取，另外驗證渲染 root 與阻擋後位移一致、膠囊間隙、收招停止位移、通知順序、動態弧掃、完整入鏡及無頁面錯誤／警告。互動測試實際點選暫停／播放／重播、正反拖曳、場景及視角切換。四個 GIF 逐張重開解碼並目視聯絡圖。
 

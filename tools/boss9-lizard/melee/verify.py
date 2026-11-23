@@ -5,7 +5,9 @@ from pathlib import Path
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
-source, fixed, blend, output = map(Path, sys.argv[sys.argv.index('--')+1:][:4])
+args=sys.argv[sys.argv.index('--')+1:]
+source, fixed, blend, output = map(Path,args[:4])
+prior_path=Path(args[4]) if len(args)>4 else None
 def sha(b):return hashlib.sha256(b).hexdigest()
 def glb(path):
     raw=path.read_bytes();n=struct.unpack_from('<I',raw,12)[0];j=json.loads(raw[20:20+n]);return j,raw[28+n:28+n+j['buffers'][0]['byteLength']]
@@ -19,10 +21,10 @@ assert len(new['animations'])==3 and new['animations'][0]==old['animations'][0]
 clip=new['animations'][2];assert clip['name']=='BOSS9_Attack1' and len(clip['channels'])==219
 build=json.loads(fixed.with_name('build.json').read_text());duration=2.4
 assert abs(build['timing']['sweepEnd']-build['timing']['riseStart']-1.0)<1e-6
-def accessor(i):
-    a=new['accessors'][i];v=new['bufferViews'][a['bufferView']];d={'SCALAR':1,'VEC3':3,'VEC4':4}[a['type']]
+def accessor(i,document=new,binary=newbin):
+    a=document['accessors'][i];v=document['bufferViews'][a['bufferView']];d={'SCALAR':1,'VEC3':3,'VEC4':4}[a['type']]
     assert a['componentType']==5126
-    return np.frombuffer(newbin,dtype='<f4',count=a['count']*d,offset=v.get('byteOffset',0)+a.get('byteOffset',0)).reshape(-1,d)
+    return np.frombuffer(binary,dtype='<f4',count=a['count']*d,offset=v.get('byteOffset',0)+a.get('byteOffset',0)).reshape(-1,d)
 seam=0
 for c in clip['channels']:
     sampler=clip['samplers'][c['sampler']];times=accessor(sampler['input'])[:,0];v=accessor(sampler['output'])
@@ -54,6 +56,22 @@ def surface(mesh):
     e=mesh.evaluated_get(bpy.context.evaluated_depsgraph_get());me=e.to_mesh();v=np.empty(len(me.vertices)*3);me.vertices.foreach_get('co',v);e.to_mesh_clear();return v.reshape(-1,3)
 
 arm,mesh=load(blend)
+unchanged_error=0
+if prior_path:
+    prior,priorbin=glb(prior_path)
+    right_arm={'spine_22',*[b.name for b in arm.pose.bones['spine_22'].children_recursive]}
+    for animation in [1,2]:
+        before,after=prior['animations'][animation],new['animations'][animation]
+        assert before['name']==after['name'] and len(before['channels'])==len(after['channels'])
+        for a,b in zip(before['channels'],after['channels']):
+            assert a['target']==b['target']
+            name=new['nodes'][b['target']['node']]['name']
+            sa,sb=before['samplers'][a['sampler']],after['samplers'][b['sampler']]
+            va,vb=accessor(sa['output'],prior,priorbin),accessor(sb['output'])
+            np.testing.assert_array_equal(accessor(sa['input'],prior,priorbin),accessor(sb['input']))
+            if animation==1 or name not in right_arm:
+                unchanged_error=max(unchanged_error,float(np.max(np.abs(va-vb))))
+    assert unchanged_error<1e-5,unchanged_error
 groups={g.index:g.name for g in mesh.vertex_groups}
 def ids(names,threshold=.9):
     return {v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if groups[g.group] in names)>threshold}
@@ -124,13 +142,15 @@ for label,path in [('blend',blend),('glb',fixed)]:
     idle_difference=max(idle_difference,float(np.max(np.abs(surface(mesh)-first))))
     arm.animation_data.action=attack;arm.animation_data.action_slot=attack.slots[0]
     ts=np.array(times);cp=np.array(claws);fd=np.array(finger);mask=(ts>=1.24)&(ts<=1.5)
-    aim=float((-fd[mask,1]).min());tilt=np.degrees(np.arcsin(np.clip(fd[mask,2],-1,1)))
-    entry={'samples':len(times),'boneLengthError':bone_error,'limbLinkError':link_error,'maximumJointStep':jump,'rootMotionError':root_error,'windupHipDrop':hip0-minimum_hip,'windupHandDrift':windup_hand_drift,'plantedGroundError':contact_error,'maximumBelowGround':below,'idlePoseAtAdvancedPositionError':pose_seam,'triangleOverlaps':collision,'edgeStretchP95':max_edges[0],'edgeStretchP99':max_edges[1],'edgeStretchMaximum':max_edges[2],'activeTipForwardDot':aim,'activeTipInclination':[float(tilt.min()),float(tilt.max())]}
+    late=(ts>=1.38)&(ts<=1.5)
+    aim=float(fd[late,0].min());heading=np.degrees(np.arctan2(fd[late,0],-fd[late,1]))
+    tilt=np.degrees(np.arcsin(np.clip(fd[mask,2],-1,1)))
+    entry={'samples':len(times),'boneLengthError':bone_error,'limbLinkError':link_error,'maximumJointStep':jump,'rootMotionError':root_error,'windupHipDrop':hip0-minimum_hip,'windupHandDrift':windup_hand_drift,'plantedGroundError':contact_error,'maximumBelowGround':below,'idlePoseAtAdvancedPositionError':pose_seam,'triangleOverlaps':collision,'edgeStretchP95':max_edges[0],'edgeStretchP99':max_edges[1],'edgeStretchMaximum':max_edges[2],'lateTipRightDot':aim,'lateTipYaw':[float(heading.min()),float(heading.max())],'activeTipInclination':[float(tilt.min()),float(tilt.max())]}
     print('MELEE_CHECK',label,json.dumps(entry),flush=True)
     assert bone_error<1e-5 and link_error<1e-5 and jump<.12 and root_error<1e-5 and pose_seam<1e-5,entry
     assert entry['windupHipDrop']>.08 and windup_hand_drift<.012 and contact_error<.012 and below<.008,entry
-    assert sum(collision.values())==0 and aim>.9 and tilt.min()>-30 and tilt.max()<5,entry
+    assert sum(collision.values())==0 and aim>.9 and heading.min()>85 and heading.max()<95 and tilt.min()>-30 and tilt.max()<5,entry
     results[label]=entry
 assert equivalence<2e-5 and idle_difference<2e-5,(equivalence,idle_difference)
-report={'sourceSHA256':sha(source.read_bytes()),'glbSHA256':sha(fixed.read_bytes()),'bones':73,'clips':['Walk','Idle',spec['id']],'duration':duration,'sourceBinaryAndWalkPreserved':True,'nativeGLBMaximumVertexDifference':equivalence,'idleAttackPoseDifference':idle_difference,'channelPoseSeamError':seam,'notifies':spec['notifies'],'checks':results}
+report={'sourceSHA256':sha(source.read_bytes()),'glbSHA256':sha(fixed.read_bytes()),'bones':73,'clips':['Walk','Idle',spec['id']],'duration':duration,'sourceBinaryAndWalkPreserved':True,'nativeGLBMaximumVertexDifference':equivalence,'idleAttackPoseDifference':idle_difference,'channelPoseSeamError':seam,'notifies':spec['notifies'],'previousRevisionSHA256':sha(prior_path.read_bytes()) if prior_path else None,'unchangedIdleAndNonRightArmChannelError':unchanged_error if prior_path else None,'checks':results}
 output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');print('MELEE_VERIFY_PASS',flush=True)

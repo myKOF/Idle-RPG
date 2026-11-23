@@ -79,15 +79,17 @@ hand_inverse=(base_world['spine_18']@rest['spine_18'].inverted()).inverted()
 claw_bind=hand_inverse@claw_initial
 claw_offset=claw_bind-rest['spine_18'].translation
 finger_axis=((hand_inverse@tip_mean)-(hand_inverse@base_mean)).normalized()
-# Aim the actual long-claw tips toward the enemy (-Y), 15 degrees below
-# horizontal. The wrist angle is derived from the skin rather than guessed.
+# Derive the wrist from the visible long fingers, then turn toward screen
+# right (+X) during the slash. Preserve the raised pose and downward cant.
 plane_length=math.hypot(finger_axis.y,finger_axis.z)
 forward_pitch=math.atan2(finger_axis.z,-finger_axis.y)-math.asin(-math.sin(math.radians(15))/plane_length)
 pitched=Quaternion((1,0,0),forward_pitch)@finger_axis
 forward_yaw=math.atan2(-pitched.x,-pitched.y)
 for i,k in enumerate(keys):
     row=list(k);old_q=Euler((math.radians(row[12]),0,math.radians(row[13])),'XYZ').to_quaternion()
-    if 1.24<=row[0]<=1.50:row[12:14]=[math.degrees(forward_pitch),math.degrees(forward_yaw)]
+    if 1.24<=row[0]<=1.50:
+        turn=60 if row[0]==1.24 else 90
+        row[12:14]=[math.degrees(forward_pitch),math.degrees(forward_yaw)+turn]
     if row[0]==1.50:
         new_q=Euler((math.radians(row[12]),0,math.radians(row[13])),'XYZ').to_quaternion()
         # Keep the existing R3 claw arc/recovery positions when turning the

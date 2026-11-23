@@ -17207,3 +17207,12 @@ Worker 存活且頁面正常完成載入。
 - 蒙皮範圍：尾部邊長相對原靜態網格的最差P95約1.174、P99約1.418、單邊最大2.236；仍有自動蒙皮接合區的局部伸長，不宣稱整模型所有甲片／肩髖／自身接觸完全排除。幾何檢核是固定表面區域中心，不把骨骼旋轉數值或輔助線當作外形已對齊的證據。權重修正只限明列尾根區，素材驗證核對所有改動位元組及其他區權重保持。
 - 成品／測試：正面無輔助線、俯視金色實際蒙皮中線及旁置藍色前進箭頭、側面各擷取20張，共60張，頁面例外／警告0、完整入鏡、SHA與最終GLB一致，Three.js再取實際蒙皮中心核對。三GIF皆900×600／60張／2秒、原循環連播三次，逐張解碼與完整聯絡圖目視審閱通過。Python AST、Node CJS／ESM、npm.cmd run build 755檔、axis_export.cjs雙庫SHA與Git本項差異檢查通過，測試瀏覽器清理。
 - 交接：獨立包codex-authored/boss9-lizard-axis-20261120保存原GLB、修正Blend／GLB、三GIF、權重及幾何區域明細、工具／QA／SHA清單。素材庫Commit `4f2c63cc1041c15f995f234057dfc3f207f3f8c0`；專案Commit為本段所在「[Codex] fix: 對齊蜥蜴人實際頭身與尾部中線」。本輪修正無未完成工作，可交GIF審閱；舊版及使用者桌面原檔保持，未接入遊戲或修改玩法／表格／其他模型，未合併推送develop／main。下一步由使用者看正面與俯視GIF核對箭頭方向。
+
+## BOSS9-PALM-R2-20261123 — 揮擊末段手掌向右轉九十度
+
+- Owner：Codex；Done，單人修正，交使用者預覽。依兩張截圖，右掌在下揮過程轉向正面畫面右方，1.24秒約60度、1.38–1.50秒約90度，指尖向右略下約15度，收招再平順轉回按地。維持2.4秒及抬爪至揮下1秒；三階段全身動作、root、Walk及判定保留，未接入遊戲。
+- 修改6檔：tools/boss9-lizard/melee/author.py、verify.py、viewer.js、export.cjs、docs/assets/BOSS9_LIZARD_MELEE.md及本段；更新既有素材包codex-authored/boss9-lizard-melee-20261123的Blend／GLB、四GIF、來源工具及QA，新增1.50秒手掌定格PNG，包共35檔。以蒙皮長指推導轉腕、補償爪群中心偏移並讓前臂／鎖骨IK跟隨，不改權重或骨長。既有非右臂與Idle全部動畫通道對前版最大差0；原網格、73骨、材質、貼圖及Walk二進位保留。
+- 未改但檢查：共通規範／Agent／Workflow／Codex規範／既有任務，spec.json、controller.js、capture.cjs、encode.py、14項判定測試、核准legs模型及素材庫088f73d1前版成品。未改遊戲js、Excel／CSV、VFX／SFX、傷害或位移參數。專用檔預檢無外部來源；任務檔只追加本獨立段，本輪差異以HEAD為基底對develop及實際工作副本三方試合皆0，LF正規化後無行尾假衝突，未處理分支原有其他段落差異。
+- 驗證：Blender author.py及verify.py通過；Blend與重匯入GLB各1153時點，末段實際指尖水平朝右89.9957–90.0027度、向右分量至少0.965889、傾角約向下15度。骨長／四肢鏈／支撐接地／首尾Idle／root保持，指定雙手／手腳／手頭／雙腳三角形穿插0，支撐誤差<0.002372，native/GLB頂點差<0.00000132。初輪驗證報告輸出變數名稱衝突已修正，完整重跑通過，未放寬判定。
+- GIF／程式：capture.cjs正面含UI操作、側面、命中及膠囊阻擋共480張，Three.js實際蒙皮方向與模型一致，完整入鏡、頁面錯誤警告0；encode.py四份900x600／120張／50FPS／2.4秒GIF逐張解碼及四份聯絡圖目視通過。node --test tests/boss9-melee-preview.test.cjs 14/14；Python AST3檔、Node／ESM語法、npm.cmd run build 757檔、export.cjs 34必要檔SHA及manifest、git diff --check通過。所有瀏覽器finally關閉，kill-test-browsers確認無殘留。
+- Commit：素材庫先提交0725caf4；專案為本段所在「[Codex] fix: 修正BOSS9揮擊末段手掌朝向」。已自我Review，可供預覽工具合併審閱，未合併／推送develop或main。限制：原自動蒙皮局部拉伸仍保留，轉腕時IK在極限處最多調整爪群位置約0.123模型單位；正式戰鬥接入仍待使用者確認。本輪動作修正無未完成製作；下一步看GIF及定格核對圖2方向。必要QA已保存素材庫；本聊天先前自動核准檢查拒絕刪除visualizations預覽暫存，未繞過，舊暫存與本輪boss9-palm-r2保留於聊天visualizations區並列為清理例外。
