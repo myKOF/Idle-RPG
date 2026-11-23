@@ -34,8 +34,17 @@ const ground=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandar
 ground.rotation.x=-Math.PI/2;ground.position.y=profile.ground;scene.add(ground);
 ground.receiveShadow=true;
 const grid=new THREE.GridHelper(30,60,0x81939f,0x50606c);grid.position.y=profile.ground+.001;grid.material.transparent=true;grid.material.opacity=.24;scene.add(grid);
+const guided=params.has('guide'),guide=new THREE.Group();guide.visible=guided;scene.add(guide);
+const path=[];
+if(guided){
+ for(let i=0;i<=60;i++){pose(profile.timing.sweepStart+(profile.timing.sweepEnd-profile.timing.sweepStart)*i/60);path.push(new THREE.Vector3(...clawCenter().clawWorld));}
+ const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(path),new THREE.LineBasicMaterial({color:0xffaf61,depthTest:false,transparent:true,opacity:.95}));line.renderOrder=20;guide.add(line);
+ const tangent=path.at(-1).clone().sub(path.at(-2)).normalize();const arrow=new THREE.ArrowHelper(tangent,path.at(-1).clone().addScaledVector(tangent,-.05),.18,0xffaf61,.07,.05);arrow.line.material.depthTest=false;arrow.cone.material.depthTest=false;arrow.renderOrder=21;guide.add(arrow);
+ document.getElementById('subtitle').textContent='1秒抬爪＋弧形揮擊 · 橘線：實際蒙皮爪端軌跡';
+}
+const marker=new THREE.Mesh(new THREE.SphereGeometry(.018,12,8),new THREE.MeshBasicMaterial({color:0xffdc9a,depthTest:false}));marker.renderOrder=22;guide.add(marker);
 function snapshot(){const nodes={};gltf.scene.traverse(o=>{if(o.isBone){const p=o.getWorldPosition(new THREE.Vector3()),s=p.clone().project(camera);nodes[o.name]={position:p.toArray(),screen:[(s.x+1)*W/2,(1-s.y)*H/2]};}});return nodes;}
 function bounds(){const b={minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity};vertices(p=>{const s=p.clone().project(camera);b.minX=Math.min(b.minX,(s.x+1)*W/2);b.maxX=Math.max(b.maxX,(s.x+1)*W/2);b.minY=Math.min(b.minY,(1-s.y)*H/2);b.maxY=Math.max(b.maxY,(1-s.y)*H/2);});return b;}
-function render(t){pose(t);renderer.render(scene,camera);document.getElementById('time').textContent=t.toFixed(2)+' / '+clip.duration.toFixed(2)+' s';}
+function render(t){pose(t);if(guided){marker.position.set(...clawCenter().clawWorld);marker.visible=t>=profile.timing.sweepStart&&t<=profile.timing.sweepEnd;}renderer.render(scene,camera);document.getElementById('time').textContent=t.toFixed(2)+' / '+clip.duration.toFixed(2)+' s';}
 render(0);window.lizard={ready:true,render,snapshot,bounds,centers:clawCenter,duration:clip.duration,clipName:clip.name,model:gltf.scene,camera,renderer};
 if(!params.has('capture')){const clock=new THREE.Clock();function tick(){render(clock.getElapsedTime()%clip.duration);requestAnimationFrame(tick);}requestAnimationFrame(tick);}

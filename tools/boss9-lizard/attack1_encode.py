@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 root=Path(sys.argv[1]);out=root/'preview';out.mkdir(exist_ok=True)
 report={'gifs':[],'captures':{}};font=ImageFont.truetype('C:/Windows/Fonts/arial.ttf',15)
-for folder,name in [('front','Attack1.gif'),('side','Attack1_Side.gif'),('top','Attack1_Top.gif')]:
+for folder,name in [('front','Attack1.gif'),('path','Attack1_Path.gif'),('side','Attack1_Side.gif'),('top','Attack1_Top.gif')]:
     capture=json.loads((root/folder/'capture.json').read_text())
     assert not capture['errors'] and not capture['warnings'] and len(capture['frames'])==90
     assert abs(capture['duration']-1.8)<1e-6

@@ -41,8 +41,8 @@ keys = [
  (0.34, .065,.025,-.195, -3,-17,19,-9,2, -.50,-.50,-.08, -25,-10, .48,-.62,-.442,0),
  (0.55, .08,.035,-.145, -10,-26,28,-12,9, -.55,-.39,.43, -60,-20, .48,-.62,-.442,0),
  (0.74, .08,.045,-.125, -13,-30,32,-13,13, -.56,-.33,.64, -78,-25, .48,-.62,-.442,0),
- (0.86, -.015,-.08,-.18, 7,-7,-3,4,-8, -.30,-1.20,.29, -30,4, .50,-.65,-.32,.06),
- (1.00, -.045,-.20,-.25, 20,21,-10,12,-15, .24,-1.32,-.16, 10,35, .53,-.51,-.18,.22),
+ (0.86, -.03,-.08,-.18, 7,-25,15,-6,-8, -.30,-1.20,.29, -30,4, .50,-.65,-.32,.06),
+ (1.00, -.045,-.20,-.25, 20,5,-5,6,-15, .24,-1.32,-.16, 10,35, .53,-.51,-.18,.22),
  (1.12, -.025,-.23,-.24, 23,29,-11,12,-12, .46,-1.26,-.35, 20,52, .53,-.43,-.16,.24),
  (1.23, -.015,-.19,-.22, 18,23,-7,8,-8, .44,-1.20,-.31, 17,40, .52,-.45,-.20,.22),
  (1.48, .005,-.10,-.175, 8,9,-2,3,-3, -.15,-.90,-.26, 3,12, .50,-.54,-.31,.12),
@@ -79,9 +79,15 @@ def sweep_palm(t,pitch,yaw):
     u=min(1,max(0,(t-sweep_start)/(sweep_end-sweep_start)));s=u*u*(3-2*u)
     start=Vector((axis-.56,-.33,.64))+Euler((math.radians(-78),0,math.radians(-25)),'XYZ').to_quaternion()@claw_offset
     end=Vector((axis+.46,-1.26,-.35))+Euler((math.radians(20),0,math.radians(52)),'XYZ').to_quaternion()@claw_offset
-    target=start.lerp(end,s)
-    v=min(1,u*2) if u<=.5 else (u-.5)*2;v=v*v*(3-2*v)
-    target.y=start.y+(-1.50-start.y)*v if u<=.5 else -1.50+(end.y+1.50)*v
+    # A bowed quarter-ellipse: descend along the outside of the raised arm,
+    # then carry the claw horizontally across the low part of the swing.
+    # A small outward bow matches the user's red curve near its upper end.
+    angle=s*math.pi/2
+    target=start.copy()
+    target.x+=(end.x-start.x)*(1-math.cos(angle)-.16*math.sin(2*angle))
+    target.z+=(end.z-start.z)*math.sin(angle)
+    v=min(1,u*2);v=v*v*(3-2*v)
+    target.y=start.y+(end.y-start.y)*v
     q=Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
     return target-q@claw_offset
 
@@ -262,6 +268,6 @@ while len(text)%4:text+=b' '
 while len(data)%4:data.append(0)
 binary=struct.pack('<III',0x46546c67,2,28+len(text)+len(data))+struct.pack('<II',len(text),0x4e4f534a)+text+struct.pack('<II',len(data),0x004e4942)+data
 (out/'boss9_attack1.glb').write_bytes(binary)
-report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'clawIndices':claw_ids,'timing':{'riseStart':rise_start,'sweepStart':sweep_start,'sweepEnd':sweep_end,'riseAndSweepSeconds':sweep_end-rise_start},'curve':'C1 monotone Hermite; nonzero interior lift velocities; claw-cluster diagonal in frontal XZ','reference':'User BOSS9_Attack1.gif; latest instructions override timing and slash path','recovery':'Return to starting stance by 1.8 s'}
+report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'clawIndices':claw_ids,'timing':{'riseStart':rise_start,'sweepStart':sweep_start,'sweepEnd':sweep_end,'riseAndSweepSeconds':sweep_end-rise_start},'curve':'C1 continuous lift; bowed quarter-ellipse claw path: outside descent then low rightward sweep','reference':'User red curved arrow in codex-clipboard-d0efcba6-fcf8-41f7-9f70-39e49c3626ee.png overrides the former straight diagonal','recovery':'Return to starting stance by 1.8 s'}
 (out/'build.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print('ATTACK1_PREPARED',duration,'seconds; maximum arm reach adjustment',max(reach_errors),flush=True)
