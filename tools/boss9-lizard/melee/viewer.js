@@ -13,7 +13,7 @@ const clip=gltf.animations.find(c=>c.name===spec.id);if(!clip)throw Error('Missi
 const extras=gltf.parser.json.animations.find(a=>a.name===spec.id).extras;
 if(JSON.stringify(extras.AnimationNotifies)!==JSON.stringify(spec.notifies))throw Error('Animation notify mismatch');
 const mixer=new THREE.AnimationMixer(gltf.scene),action=mixer.clipAction(clip);action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;action.play();
-const targetZ={combat:1.8,blocked:1.57,behind:-1,far:2.4};
+const targetZ={combat:1.6,blocked:1.435,behind:-1,far:2.4};
 function sample(t){return new API.Attack(spec,{targets:debug?[{id:'player',x:spec.axisX,z:targetZ[scenario]??1.8,y:spec.ground,radius:.18,height:.95}]:[]}).advanceTo(t);}
 let state;
 function pose(t){state=sample(t);action.paused=false;action.enabled=true;mixer.setTime(Math.max(0,Math.min(t,clip.duration)));container.position.set(state.position.x-spec.axisX,0,state.position.z-state.authoredDistance);container.updateMatrixWorld(true);}

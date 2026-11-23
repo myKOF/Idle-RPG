@@ -1,27 +1,27 @@
 {
   "id": "BOSS9_Attack1",
-  "version": 2,
-  "duration": 1,
-  "authorFPS": 576,
+  "version": 3,
+  "duration": 1.2,
+  "authorFPS": 480,
   "ground": -0.744,
   "axisX": 0.073,
   "phases": {
-    "windupEnd": 0.20833333333333334,
-    "activeEnd": 0.625,
-    "recoveryEnd": 1
+    "windupEnd": 0.25,
+    "activeEnd": 0.75,
+    "recoveryEnd": 1.2
   },
   "timing": {
-    "riseStart": 0.20833333333333334,
-    "sweepStart": 0.46666666666666673,
-    "sweepEnd": 0.625,
-    "rightPlant": 0.675,
-    "rightRelease": 0.7833333333333333,
-    "leftReplant": 0.7833333333333333
+    "riseStart": 0.25,
+    "sweepStart": 0.56,
+    "sweepEnd": 0.75,
+    "rightPlant": 0.81,
+    "rightRelease": 0.94,
+    "leftReplant": 0.94
   },
   "rootMotion": {
-    "start": 0.20833333333333334,
-    "end": 0.625,
-    "distance": 0.35
+    "start": 0.25,
+    "end": 0.75,
+    "distance": 0
   },
   "bossCapsule": {
     "radius": 0.7,
@@ -30,13 +30,13 @@
     "skin": 0.005
   },
   "hitbox": {
-    "on": 0.46666666666666673,
-    "off": 0.625,
+    "on": 0.56,
+    "off": 0.75,
     "type": "sector",
     "angleDegrees": 120,
     "range": 1.5,
     "initialRange": 0.35,
-    "fullReachAt": 0.5916666666666667,
+    "fullReachAt": 0.71,
     "minY": -0.65,
     "maxY": 0.8
   },
@@ -52,35 +52,35 @@
       "name": "WindupStart"
     },
     {
-      "time": 0.20833333333333334,
+      "time": 0.25,
       "name": "ActiveStart"
     },
     {
-      "time": 0.20833333333333334,
+      "time": 0.25,
       "name": "RootMotionOn"
     },
     {
-      "time": 0.46666666666666673,
+      "time": 0.56,
       "name": "HitboxOn"
     },
     {
-      "time": 0.625,
+      "time": 0.75,
       "name": "HitboxOff"
     },
     {
-      "time": 0.625,
+      "time": 0.75,
       "name": "RootMotionOff"
     },
     {
-      "time": 0.625,
+      "time": 0.75,
       "name": "RecoveryStart"
     },
     {
-      "time": 0.675,
+      "time": 0.81,
       "name": "RightClawPlant"
     },
     {
-      "time": 1,
+      "time": 1.2,
       "name": "RecoveryEnd"
     }
   ]
