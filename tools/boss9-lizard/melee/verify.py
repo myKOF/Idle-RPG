@@ -141,11 +141,15 @@ for label,path in [('blend',blend),('glb',fixed)]:
     idle=next(a for a in bpy.data.actions if a.name=='Idle');arm.animation_data.action=idle;arm.animation_data.action_slot=idle.slots[0];frame(0)
     idle_difference=max(idle_difference,float(np.max(np.abs(surface(mesh)-first))))
     arm.animation_data.action=attack;arm.animation_data.action_slot=attack.slots[0]
-    ts=np.array(times);cp=np.array(claws);fd=np.array(finger);mask=(ts>=1.24)&(ts<=1.5)
-    late=(ts>=1.38)&(ts<=1.5)
-    aim=float(fd[late,0].min());heading=np.degrees(np.arctan2(fd[late,0],-fd[late,1]))
-    tilt=np.degrees(np.arcsin(np.clip(fd[mask,2],-1,1)))
-    entry={'samples':len(times),'boneLengthError':bone_error,'limbLinkError':link_error,'maximumJointStep':jump,'rootMotionError':root_error,'windupHipDrop':hip0-minimum_hip,'windupHandDrift':windup_hand_drift,'plantedGroundError':contact_error,'maximumBelowGround':below,'idlePoseAtAdvancedPositionError':pose_seam,'triangleOverlaps':collision,'edgeStretchP95':max_edges[0],'edgeStretchP99':max_edges[1],'edgeStretchMaximum':max_edges[2],'lateTipRightDot':aim,'lateTipYaw':[float(heading.min()),float(heading.max())],'activeTipInclination':[float(tilt.min()),float(tilt.max())]}
+    ts=np.array(times);cp=np.array(claws);fd=np.array(finger);mask=(ts>=spec['timing']['sweepStart'])&(ts<=spec['timing']['sweepEnd'])
+    midpoint=(spec['timing']['sweepStart']+spec['timing']['sweepEnd'])/2
+    second=mask&(ts>=midpoint);first_half=mask&(ts<midpoint)
+    all_heading=np.degrees(np.arctan2(fd[:,0],-fd[:,1]))
+    aim=float(fd[second,0].min());heading=all_heading[second]
+    tilt=np.degrees(np.arcsin(np.clip(fd[second,2],-1,1)))
+    progress=[{'time':float(ts[i]),'yaw':float(all_heading[i])} for i in [int(np.argmin(abs(ts-t))) for t in [1.12,1.16,1.20,1.24,1.28,midpoint,1.4,1.5]]]
+    assert progress[0]['yaw']<5 and 10<progress[2]['yaw']<80 and np.min(np.diff(all_heading[first_half]))>-.1,progress
+    entry={'samples':len(times),'boneLengthError':bone_error,'limbLinkError':link_error,'maximumJointStep':jump,'rootMotionError':root_error,'windupHipDrop':hip0-minimum_hip,'windupHandDrift':windup_hand_drift,'plantedGroundError':contact_error,'maximumBelowGround':below,'idlePoseAtAdvancedPositionError':pose_seam,'triangleOverlaps':collision,'edgeStretchP95':max_edges[0],'edgeStretchP99':max_edges[1],'edgeStretchMaximum':max_edges[2],'secondHalfTipRightDot':aim,'secondHalfTipYaw':[float(heading.min()),float(heading.max())],'turnProgressSamples':progress,'activeTipInclination':[float(tilt.min()),float(tilt.max())]}
     print('MELEE_CHECK',label,json.dumps(entry),flush=True)
     assert bone_error<1e-5 and link_error<1e-5 and jump<.12 and root_error<1e-5 and pose_seam<1e-5,entry
     assert entry['windupHipDrop']>.08 and windup_hand_drift<.012 and contact_error<.012 and below<.008,entry

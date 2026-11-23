@@ -30,5 +30,15 @@ for folder,name in [('front','BOSS9_Attack1.gif'),('side','BOSS9_Attack1_Side.gi
         x=(j%5)*300;y=(j//5)*220;draw.text((x+5,y+3),'%s / %.2f s'%(folder,i/50),font=font,fill='white');contact.paste(frames[i].resize((300,200)),(x,y+20))
     contact.save(out/(folder+'-contact.jpg'),quality=92)
 assert len({c['glbSHA256'] for c in report['captures'].values()})==1
+slow=out/'BOSS9_Attack1_Wrist_Slow.gif'
+with Image.open(out/'BOSS9_Attack1.gif') as full:
+    selected=[]
+    for i in range(56,76):full.seek(i);selected.append(full.copy())
+    selected[0].save(slow,save_all=True,append_images=selected[1:],duration=80,loop=0,optimize=False,disposal=1)
+with Image.open(slow) as gif:
+    durations=[]
+    for i in range(gif.n_frames):gif.seek(i);gif.load();durations.append(gif.info['duration'])
+    assert gif.n_frames==20 and sum(durations)==1600 and gif.size==(900,600)
+    report['gifs'].append({'file':slow.name,'frames':20,'durationMs':1600,'size':[900,600],'speed':.25,'sourceStart':1.12,'sourceEnd':1.5,'sha256':hashlib.sha256(slow.read_bytes()).hexdigest()})
 (out/'encoding.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print('ATTACK1_GIF_PASS',json.dumps(report),flush=True)

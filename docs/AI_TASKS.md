@@ -147,6 +147,15 @@
 - Owner：Codex，Done。依使用者指示在 `AI_RULES.md` 第 19 節補上擷取清理規範，涵蓋正常結束、失敗、逾時、中止及交回操作時的資源釋放，工具重設、殘留 helper 精確清理，以及黃色外框消失的驗證。
 - 修改 `AI_RULES.md` 與本段。唯讀檢查 Workflow、Codex 規範、既有任務及 Computer Use 文件。逐檔預檢、文件審閱、章節一致性與 `git diff --check` 通過，無素材交付。可供使用者驗收及合併，本項完成。Commit 為本段所在的 `[Codex] docs: 規範測試後釋放螢幕擷取工作階段`。
 
+## BOSS9-PALM-R3-20261123 — 揮下前半段漸進轉腕至九十度
+
+- Owner：Codex；Done，單人依使用者最新更正完成。從舉起高點開始揮下時漸進轉腕，約揮至一半已向右90度，後半段維持；1.12秒保留原高舉手形，1.12–1.31前半段平滑轉腕，1.31–1.50保持90度，Recovery再轉回按地。取代R2末段才到位及中途曾誤解的起手即90度。
+- 修改6檔：tools/boss9-lizard/melee/{author.py,verify.py,encode.py,export.cjs}、docs/assets/BOSS9_LIZARD_MELEE.md、本段。既有素材包同路徑更新Blend／GLB、四正常速度GIF、手掌PNG及來源／QA，另新增4倍慢放BOSS9_Attack1_Wrist_Slow.gif（只取揮下20張、每張80ms、共1.6秒），包共36檔。完整動作維持2.4秒、抬爪至揮下1秒及原弧形軌跡。
+- 未改但檢查：共通規範／Workflow／Agent／Codex與歷史任務、viewer.js、spec.json、controller.js、capture.cjs、14項判定測試及0725caf4前版成品。原73骨／模型／權重／材質／Walk保持；Idle及所有非右臂動畫通道對前版差0，身體／頭／尾／左爪／雙腿／root未變，判定時間與參數未動。遊戲js、Excel／CSV、VFX／SFX及實戰保持。專用檔（含追加encode.py）預檢乾淨；本段選共同穩定錨點、只插入本段，對develop分支及實際工作副本的本輪差異三方試合0，原有其他段落不改。
+- 驗證：Blender author.py／verify.py及重匯入GLB通過，兩格式各1153時點，實際長指轉向依序約-1.8／8.4／32.9／60.7／84.0／90度（1.12／1.16／1.20／1.24／1.28／1.31秒），前半段單調漸進，後半段89.9911–90.0027度、指尖向下約15度；不是只驗末幀。骨長／四肢鏈／接地／首尾Idle及8組指定穿插檢核全通過，三角形穿插0、支撐誤差<0.002372；保留骨長的IK最大目標調整約0.1796模型單位。
+- 預覽／程式：四視圖480張（正面含UI操作），Three.js再驗前半段漸進轉腕及中段完成90度，原命中／擊退／膠囊阻擋及root一致性保持，入鏡／頁面錯誤警告0；四份正常GIF加一份慢放逐張解碼、聯絡圖目視通過。判定controller／spec／測試未改，沿用本輪先前已通過的14/14紀錄；新骨架與預覽完整重驗。Python AST3檔、Node／ESM、npm.cmd run build 757檔、export.cjs 35必要檔SHA及manifest、自我Review與git diff --check通過。瀏覽器finally關閉，孤兒檢查無殘留。
+- Commit：素材庫先提交a6179a09；專案為本段所在「[Codex] fix: 讓BOSS9在揮下前半段漸進轉腕」。本輪製作完成，交正常及慢放GIF驗收，預覽工具可供合併審閱；技能接入仍待使用者確認，未合併推送develop／main。已知限制：原自動蒙皮局部拉伸仍存在，指定檢核不代表全身所有甲片皆無接觸；右臂到可達極限時爪群位置略調整。正式世界碰撞／遊戲混合及戰鬥接入尚未進行，下一步由使用者確認轉腕時機與方向。必要QA已保存素材庫；清理本輪tmp/boss9-palm-r3-20261123前已核實絕對路徑、502檔及無reparse point，明確LiteralPath刪除仍遭自動核准檢查拒絕（僅blocked by policy、未給原因），未繞過，保留暫存並告知使用者。
+
 ## DESKTOP-MINI-LIVE-DRAG-20261119 — 迷你視窗拖曳即時跟隨滑鼠
 
 - Owner：Codex，Done。迷你標題列捕捉指標，即時移動完整視窗。按下位置隨事件傳入，修正快速拖曳時 IPC 抵達晚於滑鼠的偏移；原生 DIP 與內容區縮放共用座標，固定要求尺寸避免小數 DPI 多次拖曳累加增大。放開、取消、失去捕捉、失焦與最小化皆結束拖曳，最後位置沿用既有保存。原生最小化／方框／關閉與 Enter／Esc 保留，Windows 使用 pop-up-menu 置頂層級避免被排到工作列後方。

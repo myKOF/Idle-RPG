@@ -80,17 +80,17 @@ claw_bind=hand_inverse@claw_initial
 claw_offset=claw_bind-rest['spine_18'].translation
 finger_axis=((hand_inverse@tip_mean)-(hand_inverse@base_mean)).normalized()
 # Derive the wrist from the visible long fingers, then turn toward screen
-# right (+X) during the slash. Preserve the raised pose and downward cant.
+# right (+X) progressively during the first half of the slash, then hold.
 plane_length=math.hypot(finger_axis.y,finger_axis.z)
 forward_pitch=math.atan2(finger_axis.z,-finger_axis.y)-math.asin(-math.sin(math.radians(15))/plane_length)
 pitched=Quaternion((1,0,0),forward_pitch)@finger_axis
 forward_yaw=math.atan2(-pitched.x,-pitched.y)
 for i,k in enumerate(keys):
     row=list(k);old_q=Euler((math.radians(row[12]),0,math.radians(row[13])),'XYZ').to_quaternion()
-    if 1.24<=row[0]<=1.50:
-        turn=60 if row[0]==1.24 else 90
-        row[12:14]=[math.degrees(forward_pitch),math.degrees(forward_yaw)+turn]
-    if row[0]==1.50:
+    if 1.24<=row[0]<=sweep_end:
+        turn=smooth(sweep_start,(sweep_start+sweep_end)/2,row[0])
+        row[12:14]=[-78+(math.degrees(forward_pitch)+78)*turn,-25+(math.degrees(forward_yaw)+115)*turn]
+    if row[0]==sweep_end:
         new_q=Euler((math.radians(row[12]),0,math.radians(row[13])),'XYZ').to_quaternion()
         # Keep the existing R3 claw arc/recovery positions when turning the
         # wrist, including the hand-off between the sweep and recovery.
@@ -254,6 +254,10 @@ for t in times:
     for p in arm.pose.bones:p.rotation_mode='QUATERNION';p.matrix_basis=baseline[p.name]
     update()
     x,y,z,pitch,yaw,roll,rib,head,rx,ry,rz,hp,hy,lx,ly,lz,step=sample(t)
+    if sweep_start<=t<=sweep_end:
+        turn=smooth(sweep_start,(sweep_start+sweep_end)/2,t)
+        hp=-78+(math.degrees(forward_pitch)+78)*turn
+        hy=-25+(math.degrees(forward_yaw)+115)*turn
     root=arm.pose.bones['root'];m=root.matrix.copy();m.translation+=Vector((0,-travel(t),z));set_matrix('root',m)
     m=arm.pose.bones['hips'].matrix.copy();m.translation.x+=x;set_matrix('hips',m)
     rotate('hips',(0,yaw*.08,0))
