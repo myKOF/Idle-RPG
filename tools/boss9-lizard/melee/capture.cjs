@@ -1,0 +1,35 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),crypto=require('node:crypto');
+const {launchHeadless}=require('../../lib/headless-browser.cjs'),{resolveLibraryRoot}=require('../../vfx/vfx-library-root.cjs');
+const repo=path.resolve(__dirname,'../../..'),pack=path.join(resolveLibraryRoot({libraryId:'effects-materials'}).root,'codex-authored/boss9-lizard-melee-20261123'),out=path.resolve(process.argv[2]);
+const value=(key,fallback)=>{const i=process.argv.indexOf(key);return i<0?fallback:process.argv[i+1];};
+const original=false,quick=process.argv.includes('--quick'),top=process.argv.includes('--top'),guide=process.argv.includes('--guide'),bones=process.argv.includes('--bones'),uiTest=process.argv.includes('--ui-test'),azimuth=Number(value('--azimuth',65));
+const mime={'.html':'text/html','.js':'text/javascript','.glb':'model/gltf-binary'};
+const server=http.createServer((req,res)=>{const url=decodeURIComponent(new URL(req.url,'http://localhost').pathname);let base,rel;if(url.startsWith('/three/')){base=path.join(repo,'js/vendor/three');rel=url.slice(7);}else if(url.startsWith('/source/')||url.startsWith('/exports/')){base=pack;rel=url.slice(1);}else{base=__dirname;rel=url==='/'?'viewer.html':url.slice(1);}const file=path.resolve(base,rel);if(!file.startsWith(base+path.sep)){res.writeHead(403);return res.end();}fs.readFile(file,(e,b)=>{res.writeHead(e?404:200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(e?'missing':b);});});
+async function main(){fs.mkdirSync(out,{recursive:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));if(process.argv.includes('--serve')){console.log('Preview: http://127.0.0.1:'+server.address().port);return;}let browser,ws;const errors=[],warnings=[];
+try{browser=await launchHeadless({prefix:'idle-boss9-attack1-',args:['--window-size=900,680','--hide-scrollbars'],maxLifetimeMs:10*60*1000});ws=new WebSocket((await browser.waitForPage()).webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener('open',r,{once:true});ws.addEventListener('error',j,{once:true});});let seq=0;const pending=new Map();ws.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.id&&pending.has(m.id)){const p=pending.get(m.id);clearTimeout(p.timeout);pending.delete(m.id);p.resolve(m);}else if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);else if(m.method==='Log.entryAdded'){if(m.params.entry.level==='error')errors.push(m.params.entry.text);if(m.params.entry.level==='warning')warnings.push(m.params.entry.text);}});
+const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq,timeout=setTimeout(()=>{pending.delete(id);reject(Error(method+' timeout'));},45000);pending.set(id,{resolve,reject,timeout});ws.send(JSON.stringify({id,method,params}));});
+const ev=async expression=>{const r=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.error||r.result.exceptionDetails)throw Error(JSON.stringify(r.error||r.result.exceptionDetails));return r.result.result.value;};
+await send('Runtime.enable');await send('Page.enable');await send('Log.enable');await send('Emulation.setDeviceMetricsOverride',{width:900,height:600,deviceScaleFactor:1,mobile:false});
+const baseURL='http://127.0.0.1:'+server.address().port+'/',query=new URLSearchParams({capture:'1',azimuth:String(azimuth),scenario:value('--scenario','clean')});for(const [key,yes] of Object.entries({original,top,bones,guide}))if(yes)query.set(key,'1');
+const ready=async condition=>{for(let i=0;i<200;i++){if(errors.length)throw Error(errors.join('\n'));if(await ev(condition||'!!window.lizard?.ready'))return;await new Promise(r=>setTimeout(r,100));}throw Error('Viewer not ready');};
+await send('Page.navigate',{url:baseURL+'?'+query});await ready();
+let controlsCheck=null;
+if(uiTest){
+ const live=new URLSearchParams(query);live.delete('capture');live.set('ui','1');await send('Page.navigate',{url:baseURL+'?'+live});await ready("!!window.lizard?.ready&&new URLSearchParams(location.search).has('ui')");
+ const seek=async t=>ev(`(()=>{const s=document.getElementById('scrub');s.value=${t};s.dispatchEvent(new Event('input'));return lizard.state();})()`);
+ for(const [t,phase] of [[.25,'Windup'],[1.3,'Active'],[1.7,'Recovery'],[.1,'Windup']]){const s=await seek(t);if(s.phase!==phase||Math.abs(s.time-t)>1e-6)throw Error('Scrub control mismatch');}
+ await ev("document.getElementById('play').click()");await ready('lizard.state().time>.12');
+ await ev("document.getElementById('play').click()");const paused=await ev('lizard.state().time');await new Promise(r=>setTimeout(r,100));if(Math.abs(await ev('lizard.state().time')-paused)>1e-6)throw Error('Pause control did not pause');
+ await ev("document.getElementById('restart').click()");if(await ev('lizard.state().time')!==0)throw Error('Restart control failed');
+ await ev("(()=>{const s=document.getElementById('scenario');s.value='blocked';s.dispatchEvent(new Event('change'));})()");await ready("!!window.lizard?.ready&&lizard.scenario==='blocked'");
+ await ev("(()=>{const s=document.getElementById('view');s.value='top';s.dispatchEvent(new Event('change'));})()");await ready("!!window.lizard?.ready&&new URLSearchParams(location.search).has('top')&&document.getElementById('view').value==='top'");
+ controlsCheck={scrub:true,backwardsSeek:true,play:true,pause:true,restart:true,scenario:true,view:true};
+ await send('Page.navigate',{url:baseURL+'?'+query});await ready("!!window.lizard?.ready&&!new URLSearchParams(location.search).has('ui')");
+}
+const duration=await ev('lizard.duration'),n=120,indices=quick?[0,10,20,25,35,45,55,60,65,70,75,80,90,100,110,119]:Array.from({length:n},(_,i)=>i),report={scenario:await ev('lizard.scenario'),clipName:await ev('lizard.clipName'),original,azimuth,top,bones,guide,duration,glbSHA256:crypto.createHash('sha256').update(fs.readFileSync(path.join(pack,original?'source/BOSS9.glb':'exports/boss9_attack1.glb'))).digest('hex'),errors,warnings,frames:[]};
+for(const i of indices){const t=i*duration/n,state=await ev(`(()=>{lizard.render(${t});return {nodes:lizard.snapshot(),bounds:lizard.bounds(),geometryCenters:lizard.centers(),logic:lizard.state()};})()`),shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(out,String(i).padStart(4,'0')+'.png'),Buffer.from(shot.result.data,'base64'));report.frames.push({frame:i,time:t,...state});}
+report.controlsCheck=controlsCheck;report.endState=await ev('(()=>{lizard.render(lizard.duration);return {logic:lizard.state(),geometryCenters:lizard.centers()};})()');
+fs.writeFileSync(path.join(out,'capture.json'),JSON.stringify(report,null,2)+'\n');if(errors.length||warnings.length)throw Error(JSON.stringify({errors,warnings}));console.log('ATTACK1_CAPTURE_PASS',indices.length,'frames',original?'original':'fixed');
+}finally{if(ws)ws.close();if(browser)await browser.close();await new Promise(r=>server.close(r));}}
+main().catch(e=>{console.error(e);process.exitCode=1;});

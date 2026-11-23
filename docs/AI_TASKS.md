@@ -1,3 +1,9 @@
+## SYNC-20261123-222021 ? develop ?? 6a8fbd28
+
+- Owner?Codex??????? afe25d81 ??????????????????????? BOSS9 ???R2?R3?????????????????????????????????????
+- ???`node --test tests/boss9-melee-preview.test.cjs` 14/14 ???`npm.cmd run build` 761 ????`node tools/boss9-lizard/melee/export.cjs` ?? 37 ???????????????? 993a4276??????????
+- ??????? `git diff HEAD --check` ???????????????????????
+
 ## SYNC-20261123-205608 ? develop ? afe25d81 ????
 
 - Owner?Codex???? bcfc0bcc ? afe25d81 ?????????????????? Worker ????????Worker?VFX ????????????????? 20261123-integrated-v2?
@@ -147,10 +153,28 @@
 - Build：`npm.cmd run build`752檔通過，自我Review及本項分段暫存差異檢查通過。與同副本任務進化共用LV／任務檔不同段，三方試合乾淨後只提交本項；飛龍v2與其他任務進行中內容保留。素材來源JSON同步至既有npc-vfx-adjustments套件，雙庫SHA-256相同13237e6916e5e5a93d678c302dbeb8f24ca6eee58072abd5ed52bf587abb30e9，素材庫先提交`84f0334e`；遊戲Commit為本段所在`[Codex] fix: 讓金色護盾貼合一倍模型輪廓`。
 - 交接：本項無未完成實作，可供驗收與合併，未合併或推送develop／main。限制為上述6項既有回歸失敗，瀏覽器為正式模型與渲染模組隔離驗證，未重跑完整塔戰／跨瀏覽器／行動真機；光暈與星芒保持原動畫，不作碰撞範圍。下一步重新載入遊戲驗收；編輯器先下載未存內容備份再重載，舊Preset基準不可覆寫新版。
 
+## BOSS9-MELEE-PREVIEW-20261123 — 三階段重型爪擊與碰撞預覽
+
+- Owner：Codex；Done（預覽待使用者審閱），單人製作。依最新純動作／判定規格重做雙爪下壓仰頭張口、後腿前撲右爪弧掃、右爪按地及雙爪回穩。使用者答覆先完整預覽確認後接入；最新純動作規格取代綠光／粒子／音效要求。
+- 修改：新增tools/boss9-lizard/melee/{author.py,verify.py,spec.json,controller.js,viewer.html,viewer.js,capture.cjs,encode.py,export.cjs}、tests/boss9-melee-preview.test.cjs、docs/assets/BOSS9_LIZARD_MELEE.md及本段，素材庫新包codex-authored/boss9-lizard-melee-20261123。全長2.4秒，0–0.5雙爪蓄力、0.5–1.5抬爪前撲弧掃、1.5–2.4落地回穩；抬爪至揮下1秒，手腕保持朝敵人約下15度，Recovery才轉向按地。保留原73骨／網格／權重／貼圖／暫代材質及Walk原二進位，追加Idle與BOSS9_Attack1；可編輯Blend、GLB、4份GIF、來源工具及QA共34檔。
+- 判定：共用spec秒制AnimationNotifies；Hitbox僅[1.12,1.50)開啟，前方120度扇形隨爪伸出增長，單一目標只中一次物理傷害並平滑擊退；Windup無水平位移、Recovery無傷害及前移。Root上限0.35模型單位，連續垂直Capsule掃掠含端帽及0.005間隙，阻擋後抵銷GLB多餘root位移、不補跳；貼近靶實測前進0.1585、阻擋0.1915，僅1次命中，膠囊最小間隙0.005。HP100／傷害25及擊退0.24為獨立預覽靶參數，未寫入NPC數值或實戰。
+- 驗證：node --test tests/boss9-melee-preview.test.cjs 14/14（階段及浮點邊界、前後搖無傷害、有效幀／單次／擊退、30/60/144FPS與跳整段、扇形範圍／背後／高度、Capsule連續／斜向／端帽／阻擋、轉向／參數）；Blender author.py及verify.py通過，原生／GLB各1153時點，指定手腳／雙手／手頭／雙腳三角形穿插0，骨長／物理鏈保持，支撐最大誤差0.00238、native/GLB頂點差0.0000012、Idle首尾差<0.000001；原Walk及來源GLB逐位保留。capture.cjs四視圖480張及全部9通知、實際渲染root同步、收招停止／無誤傷、完整入鏡、UI播放暫停重播／正反拖曳／場景視角切換通過，頁面錯誤警告0；encode.py逐張解碼4份900x600/120張/50FPS/2.4秒GIF及聯絡圖目視通過；export.cjs 33必要檔SHA與manifest通過，Python AST3檔／Node及ESM語法、npm.cmd run build 757檔通過。
+- 範圍檢查：共通規範／Workflow／Agent／任務、既有attack1.py／verify／viewer／capture／export／文件、已核准legs來源及遊戲碰撞介面僅閱讀；舊R4工具／包、遊戲js、NPC／Excel／CSV／VFX／音效配置未修改。任務檔與develop分支及實際工作副本均三方試合0、只改本獨立段；初始NPC.xlsx外部修改保持並由其他任務自行提交。瀏覽器finally關閉，孤兒檢查無殘留；必要QA保存素材庫。暫存清理例外：已唯讀確認C:/Users/alway/.codex/visualizations/2026/11/19/01a1f484-334f-7072-b95d-41e32c1c4dfd/boss9-melee-preview為本任務519檔、無reparse point，刪除動作及改用明確LiteralPath的較安全刪除仍被自動核准檢查拒絕，僅回傳blocked by policy、無具體理由；未繞過限制，暫存保留並告知使用者。
+- Commit：素材庫先提交088f73d147cc2d75068f529d0b9e620650d086c1；專案Commit為本段所在「[Codex] feat: 製作BOSS9三階段近戰與判定預覽」。自我Review、雙庫SHA及git diff --check通過，未合併／推送develop或main。限制／未完成：本預覽授權範圍已完成；原自動蒙皮局部扭轉仍可能拉伸，指定區域檢查不代表所有甲片／全身無交疊；正式地形／牆體／玩家主動移動／遊戲動畫混合與傷害入口尚未接入，非實戰完成。下一步交使用者驗收GIF；預覽工具可供合併審閱，技能接入須待使用者確認，不能自行部署實戰。
+
 ## SCREEN-CAPTURE-CLEANUP-RULE-20261119 — 補上螢幕擷取工作階段清理規範
 
 - Owner：Codex，Done。依使用者指示在 `AI_RULES.md` 第 19 節補上擷取清理規範，涵蓋正常結束、失敗、逾時、中止及交回操作時的資源釋放，工具重設、殘留 helper 精確清理，以及黃色外框消失的驗證。
 - 修改 `AI_RULES.md` 與本段。唯讀檢查 Workflow、Codex 規範、既有任務及 Computer Use 文件。逐檔預檢、文件審閱、章節一致性與 `git diff --check` 通過，無素材交付。可供使用者驗收及合併，本項完成。Commit 為本段所在的 `[Codex] docs: 規範測試後釋放螢幕擷取工作階段`。
+
+## BOSS9-PALM-R3-20261123 — 揮下前半段漸進轉腕至九十度
+
+- Owner：Codex；Done，單人依使用者最新更正完成。從舉起高點開始揮下時漸進轉腕，約揮至一半已向右90度，後半段維持；1.12秒保留原高舉手形，1.12–1.31前半段平滑轉腕，1.31–1.50保持90度，Recovery再轉回按地。取代R2末段才到位及中途曾誤解的起手即90度。
+- 修改6檔：tools/boss9-lizard/melee/{author.py,verify.py,encode.py,export.cjs}、docs/assets/BOSS9_LIZARD_MELEE.md、本段。既有素材包同路徑更新Blend／GLB、四正常速度GIF、手掌PNG及來源／QA，另新增4倍慢放BOSS9_Attack1_Wrist_Slow.gif（只取揮下20張、每張80ms、共1.6秒），包共36檔。完整動作維持2.4秒、抬爪至揮下1秒及原弧形軌跡。
+- 未改但檢查：共通規範／Workflow／Agent／Codex與歷史任務、viewer.js、spec.json、controller.js、capture.cjs、14項判定測試及0725caf4前版成品。原73骨／模型／權重／材質／Walk保持；Idle及所有非右臂動畫通道對前版差0，身體／頭／尾／左爪／雙腿／root未變，判定時間與參數未動。遊戲js、Excel／CSV、VFX／SFX及實戰保持。專用檔（含追加encode.py）預檢乾淨；本段選共同穩定錨點、只插入本段，對develop分支及實際工作副本的本輪差異三方試合0，原有其他段落不改。
+- 驗證：Blender author.py／verify.py及重匯入GLB通過，兩格式各1153時點，實際長指轉向依序約-1.8／8.4／32.9／60.7／84.0／90度（1.12／1.16／1.20／1.24／1.28／1.31秒），前半段單調漸進，後半段89.9911–90.0027度、指尖向下約15度；不是只驗末幀。骨長／四肢鏈／接地／首尾Idle及8組指定穿插檢核全通過，三角形穿插0、支撐誤差<0.002372；保留骨長的IK最大目標調整約0.1796模型單位。
+- 預覽／程式：四視圖480張（正面含UI操作），Three.js再驗前半段漸進轉腕及中段完成90度，原命中／擊退／膠囊阻擋及root一致性保持，入鏡／頁面錯誤警告0；四份正常GIF加一份慢放逐張解碼、聯絡圖目視通過。判定controller／spec／測試未改，沿用本輪先前已通過的14/14紀錄；新骨架與預覽完整重驗。Python AST3檔、Node／ESM、npm.cmd run build 757檔、export.cjs 35必要檔SHA及manifest、自我Review與git diff --check通過。瀏覽器finally關閉，孤兒檢查無殘留。
+- Commit：素材庫先提交a6179a09；專案為本段所在「[Codex] fix: 讓BOSS9在揮下前半段漸進轉腕」。本輪製作完成，交正常及慢放GIF驗收，預覽工具可供合併審閱；技能接入仍待使用者確認，未合併推送develop／main。已知限制：原自動蒙皮局部拉伸仍存在，指定檢核不代表全身所有甲片皆無接觸；右臂到可達極限時爪群位置略調整。正式世界碰撞／遊戲混合及戰鬥接入尚未進行，下一步由使用者確認轉腕時機與方向。必要QA已保存素材庫；清理本輪tmp/boss9-palm-r3-20261123前已核實絕對路徑、502檔及無reparse point，明確LiteralPath刪除仍遭自動核准檢查拒絕（僅blocked by policy、未給原因），未繞過，保留暫存並告知使用者。
 
 ## DESKTOP-MINI-LIVE-DRAG-20261119 — 迷你視窗拖曳即時跟隨滑鼠
 
@@ -159,6 +183,16 @@
 - Windows 125% 縮放、全靜音與隔離 profile 實測，在 SPI_GETDRAGFULLWINDOWS=false 下用真實滑鼠連續拖曳兩次，原生位置由 (30,60) 經 (190,163) 到 (350,265)，兩次皆在 pointerup 前移動。跟隨誤差在 3 DIP 內，放開 500ms 後定位與保存座標相同，多次拖曳無尺寸累加，頁面錯誤 0；實際點標題列方框成功回主遊戲。
 - `node --test tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs tests/fullscreen-toggle.test.cjs tests/desktop-app-protocol.test.cjs tests/desktop-ship-rules.test.cjs tests/game-menu.test.cjs tests/vfx-editor-cache-versions.test.cjs` 55/55 通過。`node tools/desktop/verify-mini-window.cjs tmp/mini-live-drag-qa/full full` 通過 windowed／borderless／fullscreen 三組往返、最小化、置頂、位置重建與即時戰況；原生置中檢查計入小數 DPI 的 1 DIP 取整差，重開座標仍須一致。`npm.cmd run build` 752 檔、修改程式語法與 Git 差異檢查通過。
 - 可交使用者驗收及合併。原始碼桌面版需重啟，安裝版需重新打包；多螢幕與取消由回歸驗證，本輪原生實測為單螢幕 full 版。測試視窗與臨時 profile 關閉，暫存清理。Commit 為本段所在的 `[Codex] fix: 讓迷你視窗拖曳即時跟隨滑鼠`。
+
+## BOSS9-RESTORE-ARC-20261123 — 恢復基底並讓右臂與手爪沿弧線連動
+
+- Owner：Codex；Done，單人完成，待使用者看GIF。使用者否決固定／漸進90度版本，要求改回並提供爪尖弧線圖；先精確恢復4e31bb87／素材088f73d1基底並通過原SHA驗證，再依使用者明確回覆「是，讓手臂與手爪順著弧線連動」重拉右臂。保留基底其他動作／root／判定，不複製參考像素或綠刀光，未接實戰。
+- 修改7檔：tools/boss9-lizard/melee/{author.py,verify.py,viewer.js,encode.py,export.cjs}、docs/assets/BOSS9_LIZARD_MELEE.md及本段。整條鎖骨／肩／肘／腕IK跟隨外側下降、跨過身前再向右弧掃，掌形以爪群世界座標運動切向自然翻轉，取消90度目標角／中途鎖定。時長2.4秒、抬爪至揮下1秒、前撲0.35及命中1.12–1.50秒維持；原73骨／網格／權重／貼圖／材質／Walk保留。
+- 素材：既有codex-authored/boss9-lizard-melee-20261123更新Blend／GLB、四原預覽及來源／QA；新增Path正常速度與Arc_Slow四倍慢放、Path擷取JSON／聯絡圖，移除被否決的Palm PNG／Wrist慢放（原版本仍在Git），共38檔。路徑三條細線直接採最終GLB三根長指的實際蒙皮末端，隨爪尖走過逐段顯示；是工具標記，不是參考曲線貼圖或戰鬥VFX。參考圖SHA及來源限制記於資產文件。
+- 未改但檢查：共通規範／Agent／Workflow／Codex及歷史任務、melee/spec.json／controller.js／capture.cjs、判定測試、核准模型與088f73d1基底。Idle及非右臂通道對認可基底最大差0，root／左爪／頭身尾腿保持。遊戲js、Excel／CSV、VFX／SFX／Worker及玩法未改。專用檔預檢無外部來源；任務同檔與develop不同段，選MINI-POSITION前穩定錨點，本輪差異對develop及其工作副本三方試合0，只改本段。
+- 驗證：Blender author.py／verify.py通過，Blend與重匯入GLB各1153時點；指尖與實際爪群速度最小同向分量0.93398（夾角約21度），方向最大相鄰步變化3.014度，實際弧線橫向1.1473、下降1.0517、偏離首尾直線0.43349；中段下降72.47%／右移17.20%，末五分之一向右0.23966、僅再下降0.01334，末段指尖至少離地0.30224模型單位。骨長／四肢鏈／接地／首尾Idle／root及8組指定穿插通過，三角形穿插0、接地誤差<0.002372、native/GLB頂點差<0.00000144；IK最大目標調整約0.06515，沒有拉長骨骼。
+- 工具／測試：capture.cjs五視圖600張及UI播放暫停／重播／正反拖曳／場景視角切換、root／Capsule阻擋／單次命中／擊退保持，入鏡及頁面錯誤警告0；五份正常GIF（900x600／120張／50FPS／2.4秒）與一份4倍慢放（20張／1.6秒）逐張重開解碼、五份聯絡圖目視通過。node --test tests/boss9-melee-preview.test.cjs 14/14，Python AST3檔、Node／ESM、npm.cmd run build 757檔、export.cjs 37必要檔SHA及manifest、自我Review及git diff --check通過；所有瀏覽器finally關閉，孤兒檢查無殘留。
+- Commit：素材庫先提交993a4276；專案為本段所在「[Codex] fix: 讓BOSS9手臂與手爪沿弧線連動」。本輪製作無未完成項，預覽工具可供合併審閱，動作採用及實戰接入仍待使用者確認，未合併推送develop／main。必要QA已保存素材庫，本輪643個暫存檔以確定絕對路徑、無reparse point、檔名白名單與數量核對後逐檔非遞迴清除，再移除空目錄；沒有重試或繞過舊暫存區的刪除拒絕。已知限制：原自動蒙皮局部拉伸、未全面排除所有甲片接觸；世界碰撞／遊戲動畫混合尚未接入。下一步看純動作及實際爪尖弧線GIF核對整臂連動。
 
 ## DESKTOP-MINI-POSITION-20261119 — 迷你視窗置中、位置記憶與標題列控制
 
@@ -17212,3 +17246,12 @@ Worker 存活且頁面正常完成載入。
 - 蒙皮範圍：尾部邊長相對原靜態網格的最差P95約1.174、P99約1.418、單邊最大2.236；仍有自動蒙皮接合區的局部伸長，不宣稱整模型所有甲片／肩髖／自身接觸完全排除。幾何檢核是固定表面區域中心，不把骨骼旋轉數值或輔助線當作外形已對齊的證據。權重修正只限明列尾根區，素材驗證核對所有改動位元組及其他區權重保持。
 - 成品／測試：正面無輔助線、俯視金色實際蒙皮中線及旁置藍色前進箭頭、側面各擷取20張，共60張，頁面例外／警告0、完整入鏡、SHA與最終GLB一致，Three.js再取實際蒙皮中心核對。三GIF皆900×600／60張／2秒、原循環連播三次，逐張解碼與完整聯絡圖目視審閱通過。Python AST、Node CJS／ESM、npm.cmd run build 755檔、axis_export.cjs雙庫SHA與Git本項差異檢查通過，測試瀏覽器清理。
 - 交接：獨立包codex-authored/boss9-lizard-axis-20261120保存原GLB、修正Blend／GLB、三GIF、權重及幾何區域明細、工具／QA／SHA清單。素材庫Commit `4f2c63cc1041c15f995f234057dfc3f207f3f8c0`；專案Commit為本段所在「[Codex] fix: 對齊蜥蜴人實際頭身與尾部中線」。本輪修正無未完成工作，可交GIF審閱；舊版及使用者桌面原檔保持，未接入遊戲或修改玩法／表格／其他模型，未合併推送develop／main。下一步由使用者看正面與俯視GIF核對箭頭方向。
+
+## BOSS9-PALM-R2-20261123 — 揮擊末段手掌向右轉九十度
+
+- Owner：Codex；Done，單人修正，交使用者預覽。依兩張截圖，右掌在下揮過程轉向正面畫面右方，1.24秒約60度、1.38–1.50秒約90度，指尖向右略下約15度，收招再平順轉回按地。維持2.4秒及抬爪至揮下1秒；三階段全身動作、root、Walk及判定保留，未接入遊戲。
+- 修改6檔：tools/boss9-lizard/melee/author.py、verify.py、viewer.js、export.cjs、docs/assets/BOSS9_LIZARD_MELEE.md及本段；更新既有素材包codex-authored/boss9-lizard-melee-20261123的Blend／GLB、四GIF、來源工具及QA，新增1.50秒手掌定格PNG，包共35檔。以蒙皮長指推導轉腕、補償爪群中心偏移並讓前臂／鎖骨IK跟隨，不改權重或骨長。既有非右臂與Idle全部動畫通道對前版最大差0；原網格、73骨、材質、貼圖及Walk二進位保留。
+- 未改但檢查：共通規範／Agent／Workflow／Codex規範／既有任務，spec.json、controller.js、capture.cjs、encode.py、14項判定測試、核准legs模型及素材庫088f73d1前版成品。未改遊戲js、Excel／CSV、VFX／SFX、傷害或位移參數。專用檔預檢無外部來源；任務檔只追加本獨立段，本輪差異以HEAD為基底對develop及實際工作副本三方試合皆0，LF正規化後無行尾假衝突，未處理分支原有其他段落差異。
+- 驗證：Blender author.py及verify.py通過；Blend與重匯入GLB各1153時點，末段實際指尖水平朝右89.9957–90.0027度、向右分量至少0.965889、傾角約向下15度。骨長／四肢鏈／支撐接地／首尾Idle／root保持，指定雙手／手腳／手頭／雙腳三角形穿插0，支撐誤差<0.002372，native/GLB頂點差<0.00000132。初輪驗證報告輸出變數名稱衝突已修正，完整重跑通過，未放寬判定。
+- GIF／程式：capture.cjs正面含UI操作、側面、命中及膠囊阻擋共480張，Three.js實際蒙皮方向與模型一致，完整入鏡、頁面錯誤警告0；encode.py四份900x600／120張／50FPS／2.4秒GIF逐張解碼及四份聯絡圖目視通過。node --test tests/boss9-melee-preview.test.cjs 14/14；Python AST3檔、Node／ESM語法、npm.cmd run build 757檔、export.cjs 34必要檔SHA及manifest、git diff --check通過。所有瀏覽器finally關閉，kill-test-browsers確認無殘留。
+- Commit：素材庫先提交0725caf4；專案為本段所在「[Codex] fix: 修正BOSS9揮擊末段手掌朝向」。已自我Review，可供預覽工具合併審閱，未合併／推送develop或main。限制：原自動蒙皮局部拉伸仍保留，轉腕時IK在極限處最多調整爪群位置約0.123模型單位；正式戰鬥接入仍待使用者確認。本輪動作修正無未完成製作；下一步看GIF及定格核對圖2方向。必要QA已保存素材庫；本聊天先前自動核准檢查拒絕刪除visualizations預覽暫存，未繞過，舊暫存與本輪boss9-palm-r2保留於聊天visualizations區並列為清理例外。
