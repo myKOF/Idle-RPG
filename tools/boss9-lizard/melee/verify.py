@@ -100,9 +100,13 @@ times=sorted([duration*i/576 for i in range(577)]+[duration*(i+.371)/576 for i i
 def curve_bow(points):
     p=np.array(points)[:,[0,2]];d=p[-1]-p[0];v=p-p[0]
     return float(np.max(abs(v[:,0]*d[1]-v[:,1]*d[0]))/np.linalg.norm(d))
-def pad_up(points):
+def pad_normal(points):
     triangles=np.array(build['openHand']['padTriangles']);p=points[triangles]
-    n=np.cross(p[:,1]-p[:,0],p[:,2]-p[:,0]).sum(axis=0);return float(n[2]/np.linalg.norm(n))
+    n=np.cross(p[:,1]-p[:,0],p[:,2]-p[:,0]).sum(axis=0);return n/np.linalg.norm(n)
+
+def pad_up(points):return float(pad_normal(points)[2])
+
+def angle(a,b):return float(np.degrees(np.arccos(np.clip(np.dot(a,b),-1,1))))
 def extension_values(points):
     values=[]
     for chain,indices in zip(build['openHand']['digitChains'],build['openHand']['allTipGroups']):
@@ -117,14 +121,15 @@ if prior_path:
         frame(float(t));p=surface(mesh);old_claws.append(p[claw_ids].mean(axis=0))
         for group,indices in zip(old_tips,build['fingerTipGroups']):group.append(p[indices].mean(axis=0))
     frame(1.12);p=surface(mesh)
-    reference={'clawBow':curve_bow(old_claws),'tipBows':[curve_bow(p) for p in old_tips],'peakPadUp':pad_up(p),'peakExtensions':extension_values(p)}
+    reference={'clawBow':curve_bow(old_claws),'tipBows':[curve_bow(p) for p in old_tips],'peakPadUp':pad_up(p),'peakExtensions':extension_values(p),'peakNormal':pad_normal(p),'claws':np.array(old_claws)}
+    frame(1.5);reference['endNormal']=pad_normal(surface(mesh))
 results={};native={};equivalence=0;idle_difference=0
 for label,path in [('blend',blend),('glb',fixed)]:
     arm,mesh=load(path);frame(0);first=surface(mesh);root0=arm.pose.bones['root'].head.copy();hip0=arm.pose.bones['hips'].head.z
     planted={n:arm.pose.bones[n].head.copy() for n in ['spine_18','chest']}
     bone_error=link_error=jump=root_error=contact_error=below=0;previous=None;end=None
     collision={p:0 for p in ['handR_footL','handR_footR','handL_footL','handL_footR','handR_skull','handL_skull','handR_handL','footL_footR']}
-    minimum_hip=hip0;windup_hand_drift=0;max_edges=[0,0,0];contacts=[];claws=[];finger=[];tip_clearance=[];tip_paths=[[],[],[]];up_values=[];open_extensions=[];open_tip_rises=[]
+    minimum_hip=hip0;windup_hand_drift=0;max_edges=[0,0,0];contacts=[];claws=[];finger=[];normals=[];tip_clearance=[];tip_paths=[[],[],[]];up_values=[];open_extensions=[];open_tip_rises=[]
     for index,t in enumerate(times):
         frame(t);p=surface(mesh);assert np.all(np.isfinite(p));end=p
         current=np.array([b.head for b in arm.pose.bones])
@@ -153,6 +158,7 @@ for label,path in [('blend',blend),('glb',fixed)]:
         ratios=np.linalg.norm(p[edges[:,0]]-p[edges[:,1]],axis=1)/edge_lengths
         for k,value in enumerate([np.percentile(ratios,95),np.percentile(ratios,99),ratios.max()]):max_edges[k]=max(max_edges[k],float(value))
         claws.append(p[claw_ids].mean(axis=0));v=p[finger_tip_ids].mean(axis=0)-p[finger_base_ids].mean(axis=0);finger.append(v/np.linalg.norm(v))
+        normals.append(pad_normal(p))
         tip_clearance.append(float(p[finger_tip_ids,2].min()-spec['ground']))
         for group,indices in zip(tip_paths,build['fingerTipGroups']):group.append(p[indices].mean(axis=0))
         if 1.04<=t<=1.12:
@@ -166,7 +172,7 @@ for label,path in [('blend',blend),('glb',fixed)]:
     idle=next(a for a in bpy.data.actions if a.name=='Idle');arm.animation_data.action=idle;arm.animation_data.action_slot=idle.slots[0];frame(0)
     idle_difference=max(idle_difference,float(np.max(np.abs(surface(mesh)-first))))
     arm.animation_data.action=attack;arm.animation_data.action_slot=attack.slots[0]
-    ts=np.array(times);cp=np.array(claws);fd=np.array(finger);mask=(ts>=1.24)&(ts<=1.48)
+    ts=np.array(times);cp=np.array(claws);fd=np.array(finger);pn=np.array(normals);mask=(ts>=1.40)&(ts<=1.48)
     velocity=np.gradient(cp,ts,axis=0);velocity/=np.linalg.norm(velocity,axis=1).clip(1e-9)[:,None]
     alignment=np.sum(fd[mask]*velocity[mask],axis=1)
     a=int(np.argmin(abs(ts-1.12)));z=int(np.argmin(abs(ts-1.50)));m=int(np.argmin(abs(ts-1.31)));late=int(np.argmin(abs(ts-1.424)))
@@ -174,18 +180,33 @@ for label,path in [('blend',blend),('glb',fixed)]:
     bow=float(np.max(abs(path[:,0]*chord[1]-path[:,1]*chord[0]))/np.linalg.norm(chord))
     step_angle=np.degrees(np.arccos(np.clip(np.sum(fd[a:z]*fd[a+1:z+1],axis=1),-1,1)))
     flow={'minimumTangentAlignment':float(alignment.min()),'maximumFingerDirectionStepDegrees':float(step_angle.max()),'horizontalTravel':float(delta[0]),'verticalTravel':float(delta[2]),'arcChordDeviation':bow,'middleHorizontalProgress':float((cp[m,0]-cp[a,0])/delta[0]),'middleVerticalProgress':float((cp[m,2]-cp[a,2])/delta[2]),'lateHorizontalTravel':float(cp[z,0]-cp[late,0]),'lateVerticalDrop':float(cp[late,2]-cp[z,2]),'lateMinimumTipClearance':float(np.array(tip_clearance)[(ts>=1.42)&(ts<=1.5)].min()),'directionSamples':[{'time':float(ts[i]),'vector':fd[i].tolist()} for i in [a,m,z]]}
+    # The raised palm must remain upward into the stroke. Both its surface
+    # normal and finger heading then progress through intermediate poses.
+    # Early tangent locking would force the rejected immediate flip.
+    stages=[int(np.argmin(abs(ts-t))) for t in [1.12,1.20,1.30,1.40,1.50]]
+    total=angle(pn[a],pn[z]);fractions=[angle(pn[a],pn[i])/total for i in stages]
+    headings=[float(np.degrees(np.arctan2(fd[i,0],fd[i,2]))) for i in stages]
+    transition={'sampleTimes':[float(ts[i]) for i in stages],'padUp':[float(pn[i,2]) for i in stages],'normalProgress':fractions,'fingerHeadingDegrees':headings,'totalNormalTurnDegrees':total,'maximumNormalStepDegrees':max(angle(pn[i],pn[i+1]) for i in range(a,z)),'peakNormalChangeDegrees':angle(reference['peakNormal'],pn[a]) if reference else None,'endNormalChangeDegrees':angle(reference['endNormal'],pn[z]) if reference else None}
     tip_bows=[curve_bow(np.array(p)[a:z+1]) for p in tip_paths]
     hand={'minimumPadUp':min(up_values),'minimumFingerExtension':float(np.min(open_extensions)),'minimumTipRiseAbovePalm':min(open_tip_rises),'tipArcBows':tip_bows,'referenceClawBow':reference['clawBow'] if reference else None,'arcBowRatio':bow/reference['clawBow'] if reference else None,'tipArcBowRatios':[n/o for n,o in zip(tip_bows,reference['tipBows'])] if reference else None}
-    entry={'samples':len(times),'boneLengthError':bone_error,'limbLinkError':link_error,'maximumJointStep':jump,'rootMotionError':root_error,'windupHipDrop':hip0-minimum_hip,'windupHandDrift':windup_hand_drift,'plantedGroundError':contact_error,'maximumBelowGround':below,'idlePoseAtAdvancedPositionError':pose_seam,'triangleOverlaps':collision,'edgeStretchP95':max_edges[0],'edgeStretchP99':max_edges[1],'edgeStretchMaximum':max_edges[2],'flow':flow,'openHand':hand}
+    if reference:
+        comparison=np.array([np.interp(ts[a:z+1],np.linspace(1.12,1.5,97),reference['claws'][:,i]) for i in range(3)]).T
+        hand['maximumReferenceClawPathDifference']=float(np.linalg.norm(cp[a:z+1]-comparison,axis=1).max())
+    entry={'samples':len(times),'boneLengthError':bone_error,'limbLinkError':link_error,'maximumJointStep':jump,'rootMotionError':root_error,'windupHipDrop':hip0-minimum_hip,'windupHandDrift':windup_hand_drift,'plantedGroundError':contact_error,'maximumBelowGround':below,'idlePoseAtAdvancedPositionError':pose_seam,'triangleOverlaps':collision,'edgeStretchP95':max_edges[0],'edgeStretchP99':max_edges[1],'edgeStretchMaximum':max_edges[2],'flow':flow,'openHand':hand,'palmTransition':transition}
     print('MELEE_CHECK',label,json.dumps(entry),flush=True)
     assert bone_error<1e-5 and link_error<1e-5 and jump<.12 and root_error<1e-5 and pose_seam<1e-5,entry
     assert entry['windupHipDrop']>.08 and windup_hand_drift<.012 and contact_error<.012 and below<.008,entry
     assert sum(collision.values())==0,entry
-    assert flow['minimumTangentAlignment']>.82 and flow['maximumFingerDirectionStepDegrees']<12,flow
+    assert flow['minimumTangentAlignment']>.82 and flow['maximumFingerDirectionStepDegrees']<6,flow
     assert flow['horizontalTravel']>.7 and flow['verticalTravel']<-.9 and .08<bow<.28 and .25<flow['middleHorizontalProgress']<.55 and .45<flow['middleVerticalProgress']<.75,flow
     assert flow['lateHorizontalTravel']>.15 and .03<flow['lateVerticalDrop']<.15 and flow['lateMinimumTipClearance']>.05,flow
     assert hand['minimumPadUp']>.45 and hand['minimumFingerExtension']>.94 and hand['minimumTipRiseAbovePalm']>.10,hand
-    if reference:assert hand['arcBowRatio']<.7 and max(hand['tipArcBowRatios'])<.95 and np.mean(hand['tipArcBowRatios'])<.8,hand
+    assert transition['padUp'][1]>.25 and .05<fractions[1]<.30 and .35<fractions[2]<.75 and fractions[3]>.85,transition
+    assert abs(headings[1]-headings[0])<25 and 25<headings[2]<85 and headings[3]>95,transition
+    assert transition['maximumNormalStepDegrees']<6,transition
+    if reference:
+        assert .9<hand['arcBowRatio']<1.1 and hand['maximumReferenceClawPathDifference']<.06,hand
+        assert transition['peakNormalChangeDegrees']<.2 and transition['endNormalChangeDegrees']<.2,transition
     results[label]=entry
 assert equivalence<2e-5 and idle_difference<2e-5,(equivalence,idle_difference)
 report={'sourceSHA256':sha(source.read_bytes()),'glbSHA256':sha(fixed.read_bytes()),'bones':73,'clips':['Walk','Idle',spec['id']],'duration':duration,'sourceBinaryAndWalkPreserved':True,'nativeGLBMaximumVertexDifference':equivalence,'idleAttackPoseDifference':idle_difference,'channelPoseSeamError':seam,'notifies':spec['notifies'],'previousRevisionSHA256':sha(prior_path.read_bytes()) if prior_path else None,'unchangedIdleAndNonRightArmChannelError':unchanged_error if prior_path else None,'checks':results}

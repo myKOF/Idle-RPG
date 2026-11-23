@@ -25,7 +25,7 @@ if(process.argv[2]==='--stage'){
   const projectPath=relative.startsWith('source/tools/')?'tools/boss9-lizard/melee/'+path.basename(f):relative==='source/BOSS9_LIZARD_MELEE.md'?'docs/assets/BOSS9_LIZARD_MELEE.md':relative==='source/boss9-melee-preview.test.cjs'?'tests/boss9-melee-preview.test.cjs':null;
   return {path:relative,sha256:hash(f),...(projectPath?{project:projectPath}:{})};
  });
- fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id,status:'Upward open palm and shallower diagonal slash; awaiting user review; no game integration',base:'Approved whole-arm arc coupling with unchanged Idle, body, root motion and hit timing',specification:'Open the existing digits at the raised pose and reduce arc curvature; diagnostic paths come from actual GLB tips',files:entries},null,2)+'\n');
+ fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id,status:'Gradual palm flip and turn throughout the downstroke; awaiting user review; no game integration',base:'Upward open palm and shallower diagonal slash with unchanged Idle, body, root motion and hit timing',specification:'Preserve raised and terminal palm poses; spread both banking and heading changes across the stroke; diagnostic paths come from actual GLB tips',files:entries},null,2)+'\n');
 }
 const manifest=read(path.join(pack,'manifest.json'));
 assert.equal(manifest.id,id);assert.equal(new Set(manifest.files.map(e=>e.path)).size,manifest.files.length);
@@ -38,13 +38,17 @@ assert.equal(hash(path.join(pack,'exports/boss9_attack1.glb')),v.glbSHA256);asse
 assert.ok(b.sourceBinaryPreserved&&v.sourceBinaryAndWalkPreserved);assert.equal(v.bones,73);assert.deepEqual(v.clips,['Walk','Idle',spec.id]);assert.equal(v.duration,spec.duration);
 assert.deepEqual(b.spec,spec);assert.deepEqual(v.notifies,spec.notifies);assert.equal(b.timing.riseAndSweepSeconds,1);
 assert.ok(v.nativeGLBMaximumVertexDifference<2e-5&&v.channelPoseSeamError<1e-5&&v.idleAttackPoseDifference<2e-5);
-assert.equal(v.previousRevisionSHA256,'36e520877cd2c42cef6cff08c3e7748fa5421e499ffe02c85921672712b1f200');assert.ok(v.unchangedIdleAndNonRightArmChannelError<1e-5);
+assert.equal(v.previousRevisionSHA256,'60880efd4e4f029c9be5b6b6149099036f545b054cc4fab5bb3c705ff3793070');assert.ok(v.unchangedIdleAndNonRightArmChannelError<1e-5);
 for(const c of Object.values(v.checks)){
  assert.equal(c.samples,1153);assert.ok(c.boneLengthError<1e-5&&c.limbLinkError<1e-5&&c.maximumJointStep<.12&&c.rootMotionError<1e-5);
  assert.ok(c.windupHipDrop>.08&&c.windupHandDrift<.012&&c.plantedGroundError<.012&&c.maximumBelowGround<.008&&c.idlePoseAtAdvancedPositionError<1e-5);
  assert.ok(Object.values(c.triangleOverlaps).every(n=>n===0));
- const f=c.flow;assert.ok(f.minimumTangentAlignment>.82&&f.maximumFingerDirectionStepDegrees<12&&f.horizontalTravel>.7&&f.verticalTravel<-.9&&f.arcChordDeviation>.08&&f.arcChordDeviation<.28&&f.middleHorizontalProgress>.25&&f.middleHorizontalProgress<.55&&f.middleVerticalProgress>.45&&f.middleVerticalProgress<.75&&f.lateHorizontalTravel>.15&&f.lateVerticalDrop>.03&&f.lateVerticalDrop<.15&&f.lateMinimumTipClearance>.05);
- const h=c.openHand;assert.ok(h.minimumPadUp>.45&&h.minimumFingerExtension>.94&&h.minimumTipRiseAbovePalm>.1&&h.arcBowRatio<.7&&Math.max(...h.tipArcBowRatios)<.95&&h.tipArcBowRatios.reduce((a,b)=>a+b,0)/3<.8);
+ const f=c.flow;assert.ok(f.minimumTangentAlignment>.82&&f.maximumFingerDirectionStepDegrees<6&&f.horizontalTravel>.7&&f.verticalTravel<-.9&&f.arcChordDeviation>.08&&f.arcChordDeviation<.28&&f.middleHorizontalProgress>.25&&f.middleHorizontalProgress<.55&&f.middleVerticalProgress>.45&&f.middleVerticalProgress<.75&&f.lateHorizontalTravel>.15&&f.lateVerticalDrop>.03&&f.lateVerticalDrop<.15&&f.lateMinimumTipClearance>.05);
+ const h=c.openHand;assert.ok(h.minimumPadUp>.45&&h.minimumFingerExtension>.94&&h.minimumTipRiseAbovePalm>.1&&h.arcBowRatio>.9&&h.arcBowRatio<1.1&&h.maximumReferenceClawPathDifference<.06);
+ const t=c.palmTransition,p=t.normalProgress,d=t.fingerHeadingDegrees;
+ assert.ok(t.padUp[1]>.25&&p[1]>.05&&p[1]<.30&&p[2]>.35&&p[2]<.75&&p[3]>.85,'Palm must pass through gradual intermediate orientations');
+ assert.ok(Math.abs(d[1]-d[0])<25&&d[2]>25&&d[2]<85&&d[3]>95,'Finger heading must turn progressively through the stroke');
+ assert.ok(t.maximumNormalStepDegrees<6&&t.peakNormalChangeDegrees<.2&&t.endNormalChangeDegrees<.2);
 }
 for(const view of views){
  const c=read(path.join(pack,'qa',view+'-capture.json'));assert.equal(c.clipName,spec.id);assert.equal(c.glbSHA256,v.glbSHA256);assert.equal(c.frames.length,120);assert.ok(Math.abs(c.duration-spec.duration)<1e-6);assert.deepEqual(c.errors,[]);assert.deepEqual(c.warnings,[]);
@@ -65,11 +69,15 @@ for(const view of views){
  if(view==='front'){assert.ok(c.controlsCheck&&Object.values(c.controlsCheck).every(Boolean));
   const p=c.frames.filter(f=>f.time>=1.12&&f.time<=1.5).map(f=>f.geometryCenters.claw),a=p[0],z=p.at(-1),dx=z[0]-a[0],dy=z[1]-a[1];
   assert.ok(dx>.7&&dy<-.9);const bow=Math.max(...p.map(q=>Math.abs((q[0]-a[0])*dy-(q[1]-a[1])*dx)/Math.hypot(dx,dy)));assert.ok(bow>.08&&bow<.28,'Actual claw must follow the requested shallower diagonal arc');
+  const g=[56,60,65,70,75].map(i=>c.frames[i].geometryCenters),angle=(x,y)=>Math.acos(Math.max(-1,Math.min(1,x.reduce((s,v,i)=>s+v*y[i],0))));
+  const progress=g.map(q=>angle(g[0].palmNormal,q.palmNormal)/angle(g[0].palmNormal,g[4].palmNormal)),heading=g.map(q=>Math.atan2(q.fingerDirection[0],q.fingerDirection[1])*180/Math.PI);
+  assert.ok(g[1].palmNormal[1]>.25&&progress[1]>.05&&progress[1]<.30&&progress[2]>.35&&progress[2]<.75&&progress[3]>.85,'Rendered palm must stay upward initially and gradually flip');
+  assert.ok(Math.abs(heading[1]-heading[0])<25&&heading[2]>25&&heading[2]<85&&heading[3]>95,'Rendered fingers must gradually turn with the arm');
  }
  if(view==='path'){
   assert.ok(c.guide);const active=c.frames.filter(f=>f.time>=1.12&&f.time<=1.5);
   assert.ok(active.every(f=>f.geometryCenters.fingerTips.length===3));
-  for(let i=1;i<active.length-1;i++){const f=active[i];if(f.time<1.24||f.time>1.46)continue;const a=active[i-1].geometryCenters.claw,z=active[i+1].geometryCenters.claw,d=z.map((x,j)=>x-a[j]),length=Math.hypot(...d),finger=f.geometryCenters.fingerDirection;assert.ok(d.reduce((s,x,j)=>s+x*finger[j],0)/length>.8,'Actual moving claw must bank along its arc');}
+  for(let i=1;i<active.length-1;i++){const f=active[i];if(f.time<1.40||f.time>1.46)continue;const a=active[i-1].geometryCenters.claw,z=active[i+1].geometryCenters.claw,d=z.map((x,j)=>x-a[j]),length=Math.hypot(...d),finger=f.geometryCenters.fingerDirection;assert.ok(d.reduce((s,x,j)=>s+x*finger[j],0)/length>.8,'Late moving claw must finish banking along its arc');}
  }
  assert.equal(e.captures[view].glbSHA256,v.glbSHA256);
 }

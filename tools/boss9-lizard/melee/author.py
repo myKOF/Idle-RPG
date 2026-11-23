@@ -163,7 +163,9 @@ def flowing_hand(t):
     direction=(pb-pa).normalized()
     current_axis=hand_shape(opening(t))[2]
     q=(forward_q@current_axis).rotation_difference(direction)@forward_q
-    return raised_q.slerp(q,smooth(sweep_start,sweep_start+.075,t))
+    # Preserve the open, upward palm into the downstroke. Banking develops
+    # across the stroke instead of completing in its first few frames.
+    return raised_q.slerp(q,smooth(sweep_start,sweep_end-.02,t))
 
 end_hand=flowing_hand(sweep_end)
 for i,k in enumerate(keys):
