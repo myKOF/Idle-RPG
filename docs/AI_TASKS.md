@@ -17109,6 +17109,16 @@ Worker 存活且頁面正常完成載入。
 - 驗證：UI回歸5/5（含實際商品數12／13門檻）；1920／1366寬度實際瀏覽器驗證6／12件無捲軸且12格，13件16格／40件40格皆有捲軸且末列可見，框比例2.5，頁面例外0。接入後相關39項、Build752檔與Git差異檢查通過，截圖及JSON保留於visualizations的`merchant-final`目錄。
 - 交接：無未完成或已知新增風險，未測行動真機；Commit為本段所在`[Codex] feat: 完成神祕商人限時會話與木牌介面`，可供驗收與合併，未合併／推送；下一步重載遊戲確認無捲軸畫面。
 
+## BOSS9-LIZARD-ATTACK1-20261123 — 參考GIF製作第一招爪擊
+
+- Owner：Codex；Review，單人完成。使用者核准直線奔跑模型，以BOSS9_Attack1.gif要求盡量復刻第一個攻擊並先交GIF。以Blender 4.5.9原生骨架動作製作壓身、扭身抬右爪、向前下斜掃及收勢；同步腰胸、頸頭／下顎、雙手、骨盆、後腳前踏與尾部延遲平衡。保留參考3秒主要時序，補0.6秒回復蹲姿，Attack1共3.6秒。
+- 修改9檔：新增tools/boss9-lizard/attack1.py、attack1_verify.py、attack1_viewer.js／html、attack1_capture.cjs、attack1_encode.py、attack1_export.cjs、docs/assets/BOSS9_LIZARD_ATTACK1.md及本段。素材庫獨立包codex-authored/boss9-lizard-attack1-20261123共28檔，保存核准GLB／Blend、可編輯雙動作Blend／成品GLB、三GIF、工具、參考時序／雜湊及必要QA。未修改舊移動工具、任何遊戲／表格／玩法／其他BOSS，桌面原檔與參考不變；未複製GIF像素、背景或特效。
+- 未修改但檢查：AI_RULES.md、AGENTS.md、docs/AI_WORKFLOW.md、docs/AI_TASKS.md、prompts/codex.md、既有legs.py／legs_verify.py／預覽與素材封裝工具、核准模型與骨架／蒙皮、背景瀏覽器與素材庫解析工具。新專用檔衝突預檢無外部來源；develop只在任務檔不同區段有差異，本段插入既有DRAGON-REMOVE任務之前，三方試合0、無語意相依且僅stage本段。
+- 模型保持：來源為已核准legs成品SHA256 23319786f8663d55bbde4ee7ae48bd2259e7a493114994cb9407dd2d731dbf5d；完整原二進位、節點／rest／73骨、網格／權重、UV／材質／兩PNG與Walk的JSON及取樣資料保持，只追加Attack1。Blend維持原24FPS及Walk曲線，Attack1以120Hz烘焙433個姿勢；鎖骨與肩肘腕連動，四肢IK不拉長骨段，肘彎連續傳遞及回復避免翻轉。成品GLB SHA256 9454427e96f51e0ebce1a5bf0f96846c105b0dc2a9fba0a198ced0d96f6fe1ba。
+- 測試指令／結果：Blender背景執行attack1.py、attack1_verify.py通過，原生Blend及重匯入GLB各865時點，含120Hz及錯相補間；219通道有限值／四元數／時間／循環通過。兩者最大蒙皮頂點差0.00000120模型單位，骨長誤差小於0.00000048、四肢關節段長誤差小於0.00000288；相鄰時點最大關節位移0.05057，首尾頂點差小於0.00000024。指定雙手／雙腳／手腳／手頭區域三角形穿插全0；支撐腳接地誤差小於0.0000367、蓄勢左手小於0.004683、手腳最大低於地面0.000548。量測骨盆／頭／右手／左手／尾／右腳完整連動；整體邊長伸長P95／P99／最大1.311／1.696／5.886，保留自動蒙皮局部伸長的限制。
+- GIF驗證：attack1_capture.cjs以正面--azimuth 0、側面--azimuth 75、俯視--top各擷取90張，實際Clip為Attack1、成品SHA一致、完整入鏡、頁面錯誤警告0。attack1_encode.py三GIF各900×600、90張／25FPS／3.6秒，逐張重開解碼及各30張聯絡圖目視審閱通過。Python AST 3檔、Node CJS／ESM、npm.cmd run build 755檔、attack1_export.cjs來源／雙庫SHA／動畫／預覽及Git差異檢查通過；必要QA保存後清理本輪臨時參考拆幀、試看、腳本與日誌，測試瀏覽器已清理。
+- 交接：素材庫先提交8e3f01bc0048eb593eb76f8db29ee5be94e6ff5c；專案Commit為本段所在「[Codex] feat: 製作BOSS9第一招右爪攻擊」。GIF及可編輯模型已交，製作無未完成項目；工具／紀錄可供審閱合併，動作採用及遊戲接入待使用者看GIF決定。已知限制：單視角參考無完整深度／回復，依模型重建；未全面排除肩髖、甲片及所有自身接觸，未驗遊戲命中、速度或切換，也未製作爪痕／粒子。下一步依GIF回饋調整本招，未合併或推送。
+
 ## BOSS9-DRAGON-REMOVE-20261120 — 撤銷飛龍並清除相關資料
 
 - Owner：Codex；Done，單人處理。使用者放棄此飛龍，明確要求刪除這隻BOSS全部相關資料，將另換模型擔任BOSS9。本項取代原五筆製作／審閱任務，其技術資料已移除，只保留撤銷交接。
