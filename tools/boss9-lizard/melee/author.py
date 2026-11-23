@@ -27,11 +27,15 @@ base_world = {p.name: p.matrix.copy() for p in arm.pose.bones}
 convert = Euler((-math.pi / 2, 0, 0)).to_quaternion()
 axis = spec['axisX']
 ground = spec['ground']
-duration, fps = spec['duration'], spec['authorFPS']
-rise_start, sweep_start, sweep_end, recovery_start = (spec['timing'][n] for n in ['riseStart','sweepStart','sweepEnd','rightRelease'])
+# Keep the approved 577 poses in their original authoring time coordinates;
+# retime the animation data and all shared notifies together at export.
+pose_rate=2.4/spec['duration']
+duration, fps = 2.4, spec['authorFPS']/pose_rate
+timing={n:t*pose_rate for n,t in spec['timing'].items()}
+rise_start, sweep_start, sweep_end, recovery_start = (timing[n] for n in ['riseStart','sweepStart','sweepEnd','rightRelease'])
 def smooth(a,b,t):
     u=min(1,max(0,(t-a)/(b-a)));return u*u*(3-2*u)
-def travel(t):return spec['rootMotion']['distance']*smooth(spec['rootMotion']['start'],spec['rootMotion']['end'],t)
+def travel(t):return spec['rootMotion']['distance']*smooth(spec['rootMotion']['start']*pose_rate,spec['rootMotion']['end']*pose_rate,t)
 times = [i / fps for i in range(round(duration * fps) + 1)]
 action = bpy.data.actions.new(spec['id'])
 arm.animation_data.action = action
@@ -190,8 +194,8 @@ for i in range(1,len(keys)-1):
 
 def hand_rotation(t,pitch,yaw):
     if sweep_start<=t<=sweep_end:return flowing_hand(t)
-    if sweep_end<t<=spec['timing']['rightPlant']:
-        return end_hand.slerp(Quaternion(),smooth(sweep_end,spec['timing']['rightPlant'],t))
+    if sweep_end<t<=timing['rightPlant']:
+        return end_hand.slerp(Quaternion(),smooth(sweep_end,timing['rightPlant'],t))
     q=Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
     return q.slerp(raised_q,smooth(.74,1.04,t)) if t<sweep_start else q
 
@@ -210,6 +214,34 @@ def rotate(name, angles):
 
 def affine(q, center, target):
     m=q.to_matrix().to_4x4(); m.translation=target-q@center; return m
+
+def face_enemy(t):
+    # Stabilize the head in world space while the chest twists underneath it.
+    # The neck takes part of the counter-rotation; the skull completes it.
+    weight=smooth(0,.50,t)*(1-smooth(1.62,2.24,t))
+    head=arm.pose.bones['spine_16']
+    current=(head.matrix@rest['spine_16'].inverted()).to_quaternion()
+    nod=math.radians(-6+2*math.sin(math.pi*t/duration))
+    yaw=math.radians(1.5*math.sin(2*math.pi*t/duration))
+    bank=math.radians(2*math.sin(2*math.pi*t/duration))
+    target=Euler((-nod,bank,yaw),'XYZ').to_quaternion()
+    desired=current.slerp(target,weight)
+    counter=desired@current.inverted()
+    neck=arm.pose.bones['spine_17'];pivot=neck.head.copy()
+    neck_location=neck.location.copy();head_location=head.location.copy()
+    set_matrix('spine_17',affine(Quaternion().slerp(counter,.45),pivot,pivot)@neck.matrix)
+    neck.location=neck_location;update()
+    # Slightly lift and retract the neck as the approved claw passes the
+    # muzzle. Rotate the existing neck link; retain its physical length.
+    clearance=smooth(.94,1.24,t)*(1-smooth(1.62,1.88,t))
+    offset=head.head-neck.head
+    lift=offset.rotation_difference(offset+Vector((0,.08,.12))*clearance)
+    set_matrix('spine_17',affine(lift,pivot,pivot)@neck.matrix)
+    neck.location=neck_location;update()
+    current=(head.matrix@rest['spine_16'].inverted()).to_quaternion()
+    pivot=head.head.copy()
+    set_matrix('spine_16',affine(desired@current.inverted(),pivot,pivot)@head.matrix)
+    head.location=head_location;update()
 
 def pose_fingers(amount):
     if amount<1e-9:return
@@ -326,7 +358,8 @@ def local(name):
 channels={n:{'translation':[],'rotation':[],'scale':[]} for n in rest}
 last={}; trace=[]
 for t in times:
-    scene.frame_set(math.floor(t*24),subframe=(t*24)%1)
+    output_t=t/pose_rate
+    scene.frame_set(math.floor(output_t*24),subframe=(output_t*24)%1)
     for p in arm.pose.bones:p.rotation_mode='QUATERNION';p.matrix_basis=baseline[p.name]
     update()
     x,y,z,pitch,yaw,roll,rib,head,rx,ry,rz,hp,hy,lx,ly,lz,step=sample(t)
@@ -338,6 +371,7 @@ for t in times:
     rotate('spine2',(pitch*.15,roll*.5,rib))
     rotate('spine_16',(-head,0,-yaw*.30))
     rotate('spine_26',(max(0,head)*1.8,0,0))
+    face_enemy(t)
     hand_q=hand_rotation(t,hp,hy)
     amount=opening(t);current_offset=hand_shape(amount)[1]
     palm=arc_claw(t)-hand_q@current_offset if sweep_start<=t<=sweep_end else Vector((axis+rx,ry,rz))
@@ -357,9 +391,9 @@ for t in times:
         q=p.rotation_quaternion.copy()
         if p.name in last:q.make_compatible(last[p.name]);p.rotation_quaternion=q
         last[p.name]=q
-        for path in ['location','rotation_quaternion','scale']:p.keyframe_insert(path,frame=t*24,group=p.name)
+        for path in ['location','rotation_quaternion','scale']:p.keyframe_insert(path,frame=output_t*24,group=p.name)
         for kind,value in zip(['translation','rotation','scale'],local(p.name)):channels[p.name][kind].append(value)
-    trace.append({'time':t,'joints':{n:list(arm.pose.bones[n].head) for n in ['hips','spine_16',*arms['R'],*arms['L'],*[n for c in legs.values() for n in c],tail[-1]]}})
+    trace.append({'time':output_t,'joints':{n:list(arm.pose.bones[n].head) for n in ['hips','spine_16',*arms['R'],*arms['L'],*[n for c in legs.values() for n in c],tail[-1]]}})
 for layer in action.layers:
     for strip in layer.strips:
         for bag in strip.channelbags:
@@ -376,7 +410,7 @@ for p in arm.pose.bones:
 idle.use_fake_user=True;arm.animation_data.action=action;arm.animation_data.action_slot=action.slots[0]
 action['AnimationNotifies']=json.dumps(spec['notifies'])
 for event in spec['notifies']:action.pose_markers.new(event['name']).frame=round(event['time']*24)
-scene.frame_start=0;scene.frame_end=58;scene.frame_set(0)
+scene.frame_start=0;scene.frame_end=round(spec['duration']*24);scene.frame_set(0)
 bpy.context.preferences.filepaths.save_version=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'boss9_attack1.blend'))
 
@@ -388,7 +422,7 @@ def append(values,kind):
     if kind=='SCALAR':a.update(min=[min(values)],max=[max(values)])
     index=len(doc['accessors']);doc['accessors'].append(a);return index
 
-time_accessor=append(times,'SCALAR');clip={'name':spec['id'],'samplers':[],'channels':[],'extras':{'AnimationNotifies':spec['notifies'],'rootMotion':spec['rootMotion'],'phases':spec['phases']}}
+time_accessor=append([t/pose_rate for t in times],'SCALAR');clip={'name':spec['id'],'samplers':[],'channels':[],'extras':{'AnimationNotifies':spec['notifies'],'rootMotion':spec['rootMotion'],'phases':spec['phases']}}
 for original_channel in doc['animations'][0]['channels']:
     target=original_channel['target'];name=doc['nodes'][target['node']]['name'];kind=target['path'];values=channels[name][kind]
     output=append(values,'VEC4' if kind=='rotation' else 'VEC3');index=len(clip['samplers'])
@@ -408,5 +442,12 @@ tip_groups=[[v.index for v in mesh.data.vertices if sum(g.weight for g in v.grou
 report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'clawIndices':claw_ids,'fingerBaseIndices':finger_base_ids,'fingerTipIndices':finger_tip_ids,'fingerTipGroups':tip_groups,'spec':spec,'timing':{'riseStart':rise_start,'sweepStart':sweep_start,'sweepEnd':sweep_end,'riseAndSweepSeconds':sweep_end-rise_start},'reference':'User confirmed whole right-arm/claw arc coupling; palm banks with the arc, no fixed 90-degree yaw','recovery':'Right claw plants in Recovery; return to Idle at advanced position'}
 report['openHand']={'padTriangles':pad_triangles,'padNormalBind':list(pad_normal),'digitChains':digits,'peakTime':sweep_start,'targetNormal':list(up_normal),'allTipGroups':[[v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if group_names[g.group]==chain[-1])>.85] for chain in digits]}
 report['arcCurvature']=.45
+report['duration']=spec['duration'];report['fps']=spec['authorFPS']
+report['keys']=[[k[0]/pose_rate,*k[1:]] for k in keys]
+report['timing']={n:spec['timing'][n] for n in ['riseStart','sweepStart','sweepEnd']}
+report['timing']['riseAndSweepSeconds']=spec['timing']['sweepEnd']-spec['timing']['riseStart']
+report['openHand']['peakTime']=spec['timing']['sweepStart']
+report['headTracking']={'neck':'spine_17','skull':'spine_16','bindForward':[0,-1,0],'bindUp':[0,0,1],'neckShare':.45,'fullFrom':spec['timing']['riseStart'],'fullThrough':spec['timing']['rightPlant']}
+report['headTracking']['clearanceDirection']=[0,.08,.12]
 (out/'build.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
-print('ATTACK1_PREPARED',duration,'seconds; maximum arm reach adjustment',max(reach_errors),flush=True)
+print('ATTACK1_PREPARED',spec['duration'],'seconds; maximum arm reach adjustment',max(reach_errors),flush=True)

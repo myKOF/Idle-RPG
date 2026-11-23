@@ -19,8 +19,9 @@ assert new['accessors'][:len(old['accessors'])]==old['accessors']
 assert new['bufferViews'][:len(old['bufferViews'])]==old['bufferViews']
 assert len(new['animations'])==3 and new['animations'][0]==old['animations'][0]
 clip=new['animations'][2];assert clip['name']=='BOSS9_Attack1' and len(clip['channels'])==219
-build=json.loads(fixed.with_name('build.json').read_text());duration=2.4
-assert abs(build['timing']['sweepEnd']-build['timing']['riseStart']-1.0)<1e-6
+build=json.loads(fixed.with_name('build.json').read_text());spec=json.loads(Path(__file__).with_name('spec.json').read_text());duration=2.4
+assert spec['duration']==build['duration']==1
+assert abs(build['timing']['sweepEnd']-build['timing']['riseStart']-1/2.4)<1e-6
 def accessor(i,document=new,binary=newbin):
     a=document['accessors'][i];v=document['bufferViews'][a['bufferView']];d={'SCALAR':1,'VEC3':3,'VEC4':4}[a['type']]
     assert a['componentType']==5126
@@ -29,7 +30,7 @@ seam=0
 for c in clip['channels']:
     sampler=clip['samplers'][c['sampler']];times=accessor(sampler['input'])[:,0];v=accessor(sampler['output'])
     assert np.all(np.isfinite(v)) and np.all(np.diff(times)>0) and len(times)==577
-    assert abs(times[0])<1e-6 and abs(times[-1]-duration)<1e-6
+    assert abs(times[0])<1e-6 and abs(times[-1]-spec['duration'])<1e-6
     if c['target']['path']=='rotation':
         assert np.max(np.abs(np.linalg.norm(v,axis=1)-1))<1e-5
         e=min(np.max(np.abs(v[0]-v[-1])),np.max(np.abs(v[0]+v[-1])))
@@ -41,17 +42,19 @@ for c in clip['channels']:
 assert seam<1e-5
 
 def load(path):
+    global loaded_duration
     bpy.ops.wm.read_factory_settings(use_empty=True)
     if path.suffix=='.blend':bpy.ops.wm.open_mainfile(filepath=str(path))
     else:bpy.ops.import_scene.gltf(filepath=str(path))
     scene=bpy.context.scene;scene.render.fps=24
     arm=next(o for o in scene.objects if o.type=='ARMATURE');mesh=next(o for o in scene.objects if o.type=='MESH')
     action=next(a for a in bpy.data.actions if a.name=='BOSS9_Attack1')
+    loaded_duration=action.frame_range[1]/24
     arm.animation_data.action=action;arm.animation_data.action_slot=action.slots[0]
     for track in arm.animation_data.nla_tracks:track.mute=True
     return arm,mesh
 def frame(t):
-    f=t*24;bpy.context.scene.frame_set(math.floor(f),subframe=f%1);bpy.context.view_layer.update()
+    f=t/duration*loaded_duration*24;bpy.context.scene.frame_set(math.floor(f),subframe=f%1);bpy.context.view_layer.update()
 def surface(mesh):
     e=mesh.evaluated_get(bpy.context.evaluated_depsgraph_get());me=e.to_mesh();v=np.empty(len(me.vertices)*3);me.vertices.foreach_get('co',v);e.to_mesh_clear();return v.reshape(-1,3)
 
@@ -59,14 +62,16 @@ arm,mesh=load(blend)
 unchanged_error=0
 if prior_path:
     prior,priorbin=glb(prior_path)
-    allowed={'spine_22',*[b.name for b in arm.pose.bones['spine_22'].children_recursive]}
+    allowed={'spine_17','spine_16'}
     for animation in [1,2]:
         before,after=prior['animations'][animation],new['animations'][animation]
         assert before['name']==after['name'] and len(before['channels'])==len(after['channels'])
         for a,b in zip(before['channels'],after['channels']):
             assert a['target']==b['target']
             sa,sb=before['samplers'][a['sampler']],after['samplers'][b['sampler']]
-            np.testing.assert_array_equal(accessor(sa['input'],prior,priorbin),accessor(sb['input']))
+            before_times=accessor(sa['input'],prior,priorbin).astype(float)
+            if animation==2:before_times=before_times*spec['duration']/duration
+            np.testing.assert_allclose(before_times,accessor(sb['input']),rtol=0,atol=1e-7)
             if animation==1 or new['nodes'][b['target']['node']]['name'] not in allowed:
                 unchanged_error=max(unchanged_error,float(np.max(np.abs(accessor(sa['output'],prior,priorbin)-accessor(sb['output'])))))
     assert unchanged_error<1e-5,unchanged_error
@@ -88,6 +93,11 @@ chains=[['spine_22','spine_21','spine_20','spine_19','spine_18'],['spine_06','sp
 chains += [['rearLeg.'+s+'_01','rearLwr.'+s,'rearHorselink.'+s,'rearFoot.'+s,'rearToe.'+s] for s in ['L','R']]
 chains += [['spine_18',*chain] for chain in build['openHand']['digitChains']]
 rest_lengths={(a,b):(arm.data.bones[b].head_local-arm.data.bones[a].head_local).length for chain in chains for a,b in zip(chain,chain[1:])}
+# The accepted source has neck/head pose offsets relative to its edit bones.
+# Preserve the physical links from that accepted Idle, including those offsets.
+frame(0)
+head_links=[('spine_05','spine_17'),('spine_17','spine_16')]
+for a,b in head_links:rest_lengths[a,b]=(arm.pose.bones[b].head-arm.pose.bones[a].head).length
 rest_points=np.array([v.co for v in mesh.data.vertices]);edges=np.array([e.vertices[:] for e in mesh.data.edges]);edge_lengths=np.linalg.norm(rest_points[edges[:,0]]-rest_points[edges[:,1]],axis=1)
 valid_edges=edge_lengths>1e-4;edges=edges[valid_edges];edge_lengths=edge_lengths[valid_edges]
 spec=json.loads(Path(__file__).with_name('spec.json').read_text())
@@ -117,6 +127,8 @@ def extension_values(points):
 reference=None
 if prior_path:
     arm,mesh=load(prior_path);old_claws=[];old_tips=[[],[],[]]
+    frame(0)
+    for a,b in head_links:assert abs((arm.pose.bones[b].head-arm.pose.bones[a].head).length-rest_lengths[a,b])<1e-5
     for t in np.linspace(1.12,1.5,97):
         frame(float(t));p=surface(mesh);old_claws.append(p[claw_ids].mean(axis=0))
         for group,indices in zip(old_tips,build['fingerTipGroups']):group.append(p[indices].mean(axis=0))
@@ -129,7 +141,7 @@ for label,path in [('blend',blend),('glb',fixed)]:
     planted={n:arm.pose.bones[n].head.copy() for n in ['spine_18','chest']}
     bone_error=link_error=jump=root_error=contact_error=below=0;previous=None;end=None
     collision={p:0 for p in ['handR_footL','handR_footR','handL_footL','handL_footR','handR_skull','handL_skull','handR_handL','footL_footR']}
-    minimum_hip=hip0;windup_hand_drift=0;max_edges=[0,0,0];contacts=[];claws=[];finger=[];normals=[];tip_clearance=[];tip_paths=[[],[],[]];up_values=[];open_extensions=[];open_tip_rises=[]
+    minimum_hip=hip0;windup_hand_drift=0;max_edges=[0,0,0];contacts=[];claws=[];finger=[];normals=[];tip_clearance=[];tip_paths=[[],[],[]];up_values=[];open_extensions=[];open_tip_rises=[];head_yaw=[];head_pitch=[];head_bank=[]
     for index,t in enumerate(times):
         frame(t);p=surface(mesh);assert np.all(np.isfinite(p));end=p
         current=np.array([b.head for b in arm.pose.bones])
@@ -159,6 +171,13 @@ for label,path in [('blend',blend),('glb',fixed)]:
         for k,value in enumerate([np.percentile(ratios,95),np.percentile(ratios,99),ratios.max()]):max_edges[k]=max(max_edges[k],float(value))
         claws.append(p[claw_ids].mean(axis=0));v=p[finger_tip_ids].mean(axis=0)-p[finger_base_ids].mean(axis=0);finger.append(v/np.linalg.norm(v))
         normals.append(pad_normal(p))
+        if .50<=t<=1.62:
+            skin=arm.pose.bones['spine_16'].matrix@arm.data.bones['spine_16'].matrix_local.inverted()
+            direction=skin.to_3x3()@Vector((0,-1,0));direction.normalize()
+            up=skin.to_3x3()@Vector((0,0,1));up.normalize()
+            head_yaw.append(math.degrees(math.atan2(direction.x,-direction.y)))
+            head_pitch.append(math.degrees(math.asin(direction.z)))
+            head_bank.append(math.degrees(math.atan2(up.x,up.z)))
         tip_clearance.append(float(p[finger_tip_ids,2].min()-spec['ground']))
         for group,indices in zip(tip_paths,build['fingerTipGroups']):group.append(p[indices].mean(axis=0))
         if 1.04<=t<=1.12:
@@ -186,17 +205,19 @@ for label,path in [('blend',blend),('glb',fixed)]:
     stages=[int(np.argmin(abs(ts-t))) for t in [1.12,1.20,1.30,1.40,1.50]]
     total=angle(pn[a],pn[z]);fractions=[angle(pn[a],pn[i])/total for i in stages]
     headings=[float(np.degrees(np.arctan2(fd[i,0],fd[i,2]))) for i in stages]
-    transition={'sampleTimes':[float(ts[i]) for i in stages],'padUp':[float(pn[i,2]) for i in stages],'normalProgress':fractions,'fingerHeadingDegrees':headings,'totalNormalTurnDegrees':total,'maximumNormalStepDegrees':max(angle(pn[i],pn[i+1]) for i in range(a,z)),'peakNormalChangeDegrees':angle(reference['peakNormal'],pn[a]) if reference else None,'endNormalChangeDegrees':angle(reference['endNormal'],pn[z]) if reference else None}
+    transition={'sampleTimes':[float(ts[i]/duration*spec['duration']) for i in stages],'padUp':[float(pn[i,2]) for i in stages],'normalProgress':fractions,'fingerHeadingDegrees':headings,'totalNormalTurnDegrees':total,'maximumNormalStepDegrees':max(angle(pn[i],pn[i+1]) for i in range(a,z)),'peakNormalChangeDegrees':angle(reference['peakNormal'],pn[a]) if reference else None,'endNormalChangeDegrees':angle(reference['endNormal'],pn[z]) if reference else None}
     tip_bows=[curve_bow(np.array(p)[a:z+1]) for p in tip_paths]
     hand={'minimumPadUp':min(up_values),'minimumFingerExtension':float(np.min(open_extensions)),'minimumTipRiseAbovePalm':min(open_tip_rises),'tipArcBows':tip_bows,'referenceClawBow':reference['clawBow'] if reference else None,'arcBowRatio':bow/reference['clawBow'] if reference else None,'tipArcBowRatios':[n/o for n,o in zip(tip_bows,reference['tipBows'])] if reference else None}
     if reference:
         comparison=np.array([np.interp(ts[a:z+1],np.linspace(1.12,1.5,97),reference['claws'][:,i]) for i in range(3)]).T
         hand['maximumReferenceClawPathDifference']=float(np.linalg.norm(cp[a:z+1]-comparison,axis=1).max())
     entry={'samples':len(times),'boneLengthError':bone_error,'limbLinkError':link_error,'maximumJointStep':jump,'rootMotionError':root_error,'windupHipDrop':hip0-minimum_hip,'windupHandDrift':windup_hand_drift,'plantedGroundError':contact_error,'maximumBelowGround':below,'idlePoseAtAdvancedPositionError':pose_seam,'triangleOverlaps':collision,'edgeStretchP95':max_edges[0],'edgeStretchP99':max_edges[1],'edgeStretchMaximum':max_edges[2],'flow':flow,'openHand':hand,'palmTransition':transition}
+    entry['headTracking']={'maximumAbsYawDegrees':max(abs(v) for v in head_yaw),'minimumPitchDegrees':min(head_pitch),'maximumPitchDegrees':max(head_pitch),'maximumAbsBankDegrees':max(abs(v) for v in head_bank)}
     print('MELEE_CHECK',label,json.dumps(entry),flush=True)
     assert bone_error<1e-5 and link_error<1e-5 and jump<.12 and root_error<1e-5 and pose_seam<1e-5,entry
     assert entry['windupHipDrop']>.08 and windup_hand_drift<.012 and contact_error<.012 and below<.008,entry
     assert sum(collision.values())==0,entry
+    assert entry['headTracking']['maximumAbsYawDegrees']<3 and -8<min(head_pitch)<max(head_pitch)<-2 and entry['headTracking']['maximumAbsBankDegrees']<3,entry['headTracking']
     assert flow['minimumTangentAlignment']>.82 and flow['maximumFingerDirectionStepDegrees']<6,flow
     assert flow['horizontalTravel']>.7 and flow['verticalTravel']<-.9 and .08<bow<.28 and .25<flow['middleHorizontalProgress']<.55 and .45<flow['middleVerticalProgress']<.75,flow
     assert flow['lateHorizontalTravel']>.15 and .03<flow['lateVerticalDrop']<.15 and flow['lateMinimumTipClearance']>.05,flow
@@ -209,5 +230,5 @@ for label,path in [('blend',blend),('glb',fixed)]:
         assert transition['peakNormalChangeDegrees']<.2 and transition['endNormalChangeDegrees']<.2,transition
     results[label]=entry
 assert equivalence<2e-5 and idle_difference<2e-5,(equivalence,idle_difference)
-report={'sourceSHA256':sha(source.read_bytes()),'glbSHA256':sha(fixed.read_bytes()),'bones':73,'clips':['Walk','Idle',spec['id']],'duration':duration,'sourceBinaryAndWalkPreserved':True,'nativeGLBMaximumVertexDifference':equivalence,'idleAttackPoseDifference':idle_difference,'channelPoseSeamError':seam,'notifies':spec['notifies'],'previousRevisionSHA256':sha(prior_path.read_bytes()) if prior_path else None,'unchangedIdleAndNonRightArmChannelError':unchanged_error if prior_path else None,'checks':results}
+report={'sourceSHA256':sha(source.read_bytes()),'glbSHA256':sha(fixed.read_bytes()),'bones':73,'clips':['Walk','Idle',spec['id']],'duration':spec['duration'],'sourceBinaryAndWalkPreserved':True,'nativeGLBMaximumVertexDifference':equivalence,'idleAttackPoseDifference':idle_difference,'channelPoseSeamError':seam,'notifies':spec['notifies'],'previousRevisionSHA256':sha(prior_path.read_bytes()) if prior_path else None,'unchangedIdleAndNonHeadChannelError':unchanged_error if prior_path else None,'checks':results}
 output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');print('MELEE_VERIFY_PASS',flush=True)

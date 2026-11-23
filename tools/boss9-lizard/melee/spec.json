@@ -1,25 +1,87 @@
 {
   "id": "BOSS9_Attack1",
-  "version": 1,
-  "duration": 2.4,
-  "authorFPS": 240,
+  "version": 2,
+  "duration": 1,
+  "authorFPS": 576,
   "ground": -0.744,
   "axisX": 0.073,
-  "phases": {"windupEnd": 0.5, "activeEnd": 1.5, "recoveryEnd": 2.4},
-  "timing": {"riseStart": 0.5, "sweepStart": 1.12, "sweepEnd": 1.5, "rightPlant": 1.62, "rightRelease": 1.88, "leftReplant": 1.88},
-  "rootMotion": {"start": 0.5, "end": 1.5, "distance": 0.35},
-  "bossCapsule": {"radius": 0.7, "height": 1.7, "offsetForward": 0.55, "skin": 0.005},
-  "hitbox": {"on": 1.12, "off": 1.5, "type": "sector", "angleDegrees": 120, "range": 1.5, "initialRange": 0.35, "fullReachAt": 1.42, "minY": -0.65, "maxY": 0.8},
-  "previewOnly": {"physicalDamage": 25, "targetHP": 100, "knockbackDistance": 0.24, "knockbackSeconds": 0.18},
+  "phases": {
+    "windupEnd": 0.20833333333333334,
+    "activeEnd": 0.625,
+    "recoveryEnd": 1
+  },
+  "timing": {
+    "riseStart": 0.20833333333333334,
+    "sweepStart": 0.46666666666666673,
+    "sweepEnd": 0.625,
+    "rightPlant": 0.675,
+    "rightRelease": 0.7833333333333333,
+    "leftReplant": 0.7833333333333333
+  },
+  "rootMotion": {
+    "start": 0.20833333333333334,
+    "end": 0.625,
+    "distance": 0.35
+  },
+  "bossCapsule": {
+    "radius": 0.7,
+    "height": 1.7,
+    "offsetForward": 0.55,
+    "skin": 0.005
+  },
+  "hitbox": {
+    "on": 0.46666666666666673,
+    "off": 0.625,
+    "type": "sector",
+    "angleDegrees": 120,
+    "range": 1.5,
+    "initialRange": 0.35,
+    "fullReachAt": 0.5916666666666667,
+    "minY": -0.65,
+    "maxY": 0.8
+  },
+  "previewOnly": {
+    "physicalDamage": 25,
+    "targetHP": 100,
+    "knockbackDistance": 0.24,
+    "knockbackSeconds": 0.18
+  },
   "notifies": [
-    {"time": 0, "name": "WindupStart"},
-    {"time": 0.5, "name": "ActiveStart"},
-    {"time": 0.5, "name": "RootMotionOn"},
-    {"time": 1.12, "name": "HitboxOn"},
-    {"time": 1.5, "name": "HitboxOff"},
-    {"time": 1.5, "name": "RootMotionOff"},
-    {"time": 1.5, "name": "RecoveryStart"},
-    {"time": 1.62, "name": "RightClawPlant"},
-    {"time": 2.4, "name": "RecoveryEnd"}
+    {
+      "time": 0,
+      "name": "WindupStart"
+    },
+    {
+      "time": 0.20833333333333334,
+      "name": "ActiveStart"
+    },
+    {
+      "time": 0.20833333333333334,
+      "name": "RootMotionOn"
+    },
+    {
+      "time": 0.46666666666666673,
+      "name": "HitboxOn"
+    },
+    {
+      "time": 0.625,
+      "name": "HitboxOff"
+    },
+    {
+      "time": 0.625,
+      "name": "RootMotionOff"
+    },
+    {
+      "time": 0.625,
+      "name": "RecoveryStart"
+    },
+    {
+      "time": 0.675,
+      "name": "RightClawPlant"
+    },
+    {
+      "time": 1,
+      "name": "RecoveryEnd"
+    }
   ]
 }
