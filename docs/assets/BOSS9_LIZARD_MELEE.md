@@ -1,6 +1,6 @@
 # BOSS9 重型爪擊動作與判定預覽
 
-目前任務 `BOSS9-RESTORE-ARC-20261123`，基礎任務 `BOSS9-MELEE-PREVIEW-20261123`。使用者要求撤回前兩輪90度轉腕，並明確確認「讓手臂與手爪順著弧線連動」。先恢復至認可的4e31bb87／素材088f73d1版本，再以肩肘腕整條動作鏈、弧線切向及自然掌形重做右爪揮擊。先預覽確認再接入封魔塔；沿用核准蜥蜴模型、暫代材質及直行Walk，未改遊戲程式、配置表、特效或音效。
+目前任務 `BOSS9-GRADUAL-PALM-20261123`，基礎任務 `BOSS9-MELEE-PREVIEW-20261123`。使用者確認高舉時朝上張掌及淺弧路徑，但要求翻掌與轉向都隨揮下逐步形成。本輪保留正確的起手與收尾，把中間姿態過渡延長至整段揮擊。先預覽確認再接入封魔塔；沿用核准蜥蜴模型、暫代材質及Walk，未改遊戲程式、配置表、特效或音效。
 
 ## 時間軸
 
@@ -11,11 +11,13 @@
 | Active 揮擊 | 1.12–1.50 | 右爪沿外側下落並弧形橫掃至左下，身體隨之扭轉。最高點 `HitboxOn`，最低點 `HitboxOff`、`RootMotionOff`。 |
 | Recovery | 1.50–2.40 | 右爪先按地承重，左爪換到新的支撐位置，軀幹回正、右爪回到正常左右站位，雙爪及後腿回到半蹲 Idle。全程無傷害判定。 |
 
-右爪從舉起到揮下仍為1秒。1.12–1.50秒揮擊以弧線為主體：先沿外側下落，再穿過身前、末段向右掃出。肩、肘、腕與手爪共同跟隨弧線，指尖方向隨實際運動切向逐步轉變，手掌自然翻轉；取消固定／半程到位的90度朝向條件。結束揮擊後才轉回按地支撐，末段指尖不插地。尾部、頭頸、上下顎、腰胸及後腿沿用認可基底的連動，左爪維持原支撐／換步。
+右爪從舉起到揮下仍為1秒。低姿蓄力仍雙爪撐地；抬手過程逐漸伸展現有手指與拇指，高舉時掌面朝上、指尖分開向上延伸，再順勢揮下。1.12–1.50秒保留肩、肘、腕與手爪共同跟隨的淺弧線，路徑斜向穿過身前，末段繼續斜下掃出。掌形與指向一起連續轉變，初段仍保留朝上姿態，中段呈現過渡掌形，中後段完成沿軌跡掃出；揮擊結束後轉回按地支撐。其他頭身尾腿與左爪支撐沿用前版。
 
-動畫曲線以240Hz取樣577姿勢，Blend保持24FPS與原Walk。爪群沿彎曲橢圓軌跡移動，用含root前撲的世界座標切向帶動掌形，起手與落地以四元數平順銜接。轉腕時補償爪群中心偏移，鎖骨與肩肘腕IK同步求解，保持骨段長度；可達極限的微調量記錄於build.json。支撐目標以世界座標固定，首尾姿勢一致、結束保留前進位置。與088f73d1逐通道核對，Idle及非右臂部位保持。
+動畫以240Hz取樣577姿勢，Blend保持24FPS與Walk。弧線仍以55%首尾斜向連線、45%原曲線混合；爪群弓形偏差約0.2003，為上版0.2005的99.9%，保留核准的淺弧。翻掌與轉向原先在1.12–1.195秒即完成大部分，本輪改為1.12–1.48秒平滑過渡，再沿原末段收勢。補償手掌姿態變化造成的爪群位置偏移，肩肘腕IK共同跟進。
 
-參考為使用者本輪的`codex-clipboard-31739921-c59b-4ae0-b0e5-ada5625d958b.png`（SHA256 `739a62ec17d2b0cf562532b4e64b3f112209c2904ffbf9868edb361b467c1e96`），只分析動作／弧線，沒有複製其像素、背景或綠色刀光。
+掌形由模型實際掌墊表面求出朝向；保留上版既有拇指與三根長指的張開曲線、指節長度及指甲原形，不新增手指或改權重。1.20秒的實際掌面仍向上，完成約13%的首尾姿態角差；1.30秒約54%，1.40秒約91%。正面投影的指尖方向依序由起揮時約−1.5度、1.20秒約3度，逐步轉至1.30秒約56度、1.40秒約106度。這是實際蒙皮姿態量測，不是把世界座標固定旋轉90度。與前版8e10fdc2比較，Idle及非右臂部位逐通道保持，高舉與收尾掌面差均小於0.05度。
+
+本輪參考為使用者的`codex-clipboard-014892c0-652f-4392-a7ec-e5602346ef29.png`（紅線要求較淺弧度）及`codex-clipboard-d0368761-d990-4f8a-9226-37af623eb8f6.png`（高舉時掌心朝上張開）。前次整臂弧線參考為`codex-clipboard-31739921-c59b-4ae0-b0e5-ada5625d958b.png`，SHA256 `739a62ec17d2b0cf562532b4e64b3f112209c2904ffbf9868edb361b467c1e96`。均只分析姿勢／路徑，沒有複製像素、背景或綠色刀光。
 
 ## 判定與位移
 
@@ -39,6 +41,7 @@
 - `preview/BOSS9_Attack1.gif`：正面；`BOSS9_Attack1_Side.gif`：側面；`BOSS9_Attack1_Hitbox.gif`：有效幀／單次命中；`BOSS9_Attack1_Capsule.gif`：貼近目標阻擋。均為 900×600、120 張、50 FPS、2.4 秒，重播時從起點重設。
 - `preview/BOSS9_Attack1_Path.gif`：正面加三根長爪尖的實際路徑，細線由最終GLB蒙皮頂點量測，隨揮擊逐段顯示；不是貼上參考圖曲線，也不是遊戲刀光特效。
 - `preview/BOSS9_Attack1_Arc_Slow.gif`：只取Path第56–75張（1.12–1.50秒），每張80ms、20張共1.6秒，供4倍慢放檢查弧線與手臂連動；正常技能時長不變。前兩輪錯誤掌形PNG／Wrist慢放已隨撤回移除，舊版仍可由Git歷史取得。
+- `preview/BOSS9_Attack1_OpenPalm.png`：1.10秒的高舉張掌定格，直接取正常預覽擷取，方便對照本輪圖2。
 - `qa/`：五視圖實際擷取資料、聯絡圖、GIF解碼及最終製作／驗證／單元測試紀錄；`manifest.json`記錄所有必要檔案雜湊及對應專案路徑，文字以LF正規化比較。
 
 可操作預覽：
@@ -53,7 +56,7 @@ node tools/boss9-lizard/melee/capture.cjs . --serve
 
 ```text
 blender -b --python-exit-code 1 -P tools/boss9-lizard/melee/author.py -- SOURCE.glb SOURCE.blend OUTPUT_DIR
-blender -b --python-exit-code 1 -P tools/boss9-lizard/melee/verify.py -- SOURCE.glb OUTPUT_DIR/boss9_attack1.glb OUTPUT_DIR/boss9_attack1.blend OUTPUT_DIR/validation.json ACCEPTED_PRE_YAW.glb
+blender -b --python-exit-code 1 -P tools/boss9-lizard/melee/verify.py -- SOURCE.glb OUTPUT_DIR/boss9_attack1.glb OUTPUT_DIR/boss9_attack1.blend OUTPUT_DIR/validation.json PREVIOUS_OPEN_PALM.glb
 node --test tests/boss9-melee-preview.test.cjs
 node tools/boss9-lizard/melee/capture.cjs REVIEW_DIR/front --azimuth 0 --ui-test
 node tools/boss9-lizard/melee/capture.cjs REVIEW_DIR/side --azimuth 75
@@ -65,13 +68,13 @@ node tools/boss9-lizard/melee/export.cjs --stage REVIEW_DIR
 node tools/boss9-lizard/melee/export.cjs
 ```
 
-`ACCEPTED_PRE_YAW.glb`為素材庫088f73d1的同路徑成品，SHA256 `743f2f705df8fe7e29485a47cfb5b06ae0349ab36461bc941976415506e755b4`，可從該Git版本取出。封裝前REVIEW_DIR需有通過的build.log／verify.log／unit.log。所有瀏覽器透過launchHeadless及finally關閉。
+本輪比較輸入為素材庫8e10fdc2的同路徑前版成品，SHA256 `60880efd4e4f029c9be5b6b6149099036f545b054cc4fab5bb3c705ff3793070`（上述命令最後參數填此檔），可從該Git版本取出。封裝前REVIEW_DIR需有通過的build.log／verify.log／unit.log。所有瀏覽器透過launchHeadless及finally關閉。
 
 ## 驗證與限制
 
-原GLB二進位、Walk、節點、73骨、網格、權重、貼圖及材質保留。原生Blend與重匯入GLB各1153時點（含錯相補間），檢查骨長、四肢物理鏈、連續性、雙爪蓄力鎖定、支撐接地、root／Idle，以及雙手／手腳／手頭／雙腳指定區域三角形穿插。另逐通道比較認可基底，確保Idle及非右臂不受這次修改影響。
+原GLB二進位、Walk、73骨、網格、權重、貼圖及材質保留。原生Blend與重匯入GLB各1153時點（含錯相補間），檢查骨長、四肢及各指節物理鏈、連續性、雙爪蓄力鎖定、接地、root／Idle及8組指定三角形穿插；與前版逐通道比較Idle及非右臂。另對前版GLB實測97個揮擊時點，作為曲率比較依據。
 
-弧線驗證量測實際蒙皮爪群：橫向掃過、向下落幅、首尾連線的弓形偏差、上半段下降與末段橫掃比例；指尖方向與實際爪群速度的夾角須小於約35度，並限制逐步方向變化、末段指尖離地。這些條件取代先前強行固定掌向90度的驗收。Three.js再量測相同成品，Path的三條線取自三根長指末端群組。
+弧線驗證取實際蒙皮爪群及三根爪尖：爪群弓形偏差須為0.08–0.28且保持上版90–110%，兩版同時點爪群偏差小於0.06模型單位，同時保留向前斜下掃出及末段切向連動。依本輪逐漸翻掌要求，早段不再強制指尖立即對齊下掃切向；新增實際掌面姿態角進度、指尖轉向與每步角度檢查，1.20秒仍向上、1.30秒為中間姿態、1.40秒才接近完成。原生取樣每步掌面角差最大約2.87度、指向約2.94度。高舉最低朝上分量約0.675、各指伸展率約0.995、指尖高於掌部約0.290模型單位。Three.js再獨立驗相同逐步翻掌與轉向；Path細線直接來自蒙皮頂點。
 
 14項判定測試涵蓋事件邊界、前後搖無傷害、單次命中／擊退、各FPS與跳幀、扇形／Capsule／轉向。五視圖共600張實際GLB擷取，另驗渲染root與阻擋後位移一致、膠囊間隙、收招停止、通知順序、動態弧掃與指尖跟隨、入鏡及無頁面錯誤警告；互動測試涵蓋暫停／播放／重播／正反拖曳／場景及視角切換。五份正常GIF及一份慢放逐張解碼、聯絡圖目視。
 
