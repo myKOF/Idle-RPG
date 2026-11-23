@@ -292,6 +292,17 @@ initial_poles={}
 
 def arm_ik(side, palm, pitch, yaw, rotation=None):
     names=arms[side]; rh=[rest[n].translation for n in names]
+    if side=='L':
+        # This auto-rig's visible shoulder cap is weighted to the preceding
+        # collar link. Open that link outward from the chest before solving
+        # elbow/wrist; an elbow-pole adjustment alone leaves the cap downturned.
+        support=smooth(.5,.94,t)*(1-smooth(1.62,2.24,t))
+        collar=arm.pose.bones[collars[side]];center=collar.head.copy()
+        offset=arm.pose.bones[names[0]].head-center
+        outward=Vector((1,0,-.08)).normalized()*offset.length
+        direction=offset.lerp(outward,support).normalized()*offset.length
+        spread=offset.rotation_difference(direction)
+        set_matrix(collars[side],affine(spread,center,center)@collar.matrix)
     root=arm.pose.bones[names[0]].head.copy()
     hand_q=rotation if rotation is not None else Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
     wrist=palm-hand_q@(rh[3]-rh[2])
@@ -475,6 +486,6 @@ report['timing']['riseAndSweepSeconds']=spec['timing']['sweepEnd']-spec['timing'
 report['openHand']['peakTime']=spec['timing']['sweepStart']
 report['headTracking']={'neck':'spine_17','skull':'spine_16','bindForward':[0,-1,0],'bindUp':[0,0,1],'neckShare':.45,'fullFrom':spec['timing']['riseStart'],'fullThrough':spec['timing']['rightPlant']}
 report['headTracking']['clearanceDirection']=[0,.08,.12]
-report['stance']={'fixedFeet':True,'fixedLeftPalm':True,'bodyPitchRetention':.5,'supportBendRetention':.5,'minimumSupportBendDegrees':12,'raisedSupportBendDegrees':60,'supportElbowPole':[1,-.05,1],'supportCollarDirection':[.12,0,-.07],'maximumBodyLift':max(stance_lifts),'rootAdvance':spec['rootMotion']['distance']}
+report['stance']={'fixedFeet':True,'fixedLeftPalm':True,'bodyPitchRetention':.5,'supportBendRetention':.5,'minimumSupportBendDegrees':12,'raisedSupportBendDegrees':60,'supportElbowPole':[1,-.05,1],'supportCollarDirection':[.12,0,-.07],'visibleSupportShoulderDirection':[1,0,-.08],'maximumBodyLift':max(stance_lifts),'rootAdvance':spec['rootMotion']['distance']}
 (out/'build.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print('ATTACK1_PREPARED',spec['duration'],'seconds; maximum arm reach adjustment',max(reach_errors),flush=True)

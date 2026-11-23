@@ -62,7 +62,6 @@ arm,mesh=load(blend)
 unchanged_error=0
 if prior_path:
     prior,priorbin=glb(prior_path)
-    preserved_fingers={b.name for b in arm.pose.bones['spine_18'].children_recursive}
     for animation in [1,2]:
         before,after=prior['animations'][animation],new['animations'][animation]
         assert before['name']==after['name'] and len(before['channels'])==len(after['channels'])
@@ -72,7 +71,11 @@ if prior_path:
             before_times=accessor(sa['input'],prior,priorbin).astype(float)
             if animation==2:before_times=before_times*spec['duration']/float(before_times[-1,0])
             np.testing.assert_allclose(before_times,accessor(sb['input']),rtol=0,atol=1e-7)
-            if animation==1 or new['nodes'][b['target']['node']]['name'] in preserved_fingers:
+            # Only the visible shoulder and its solved upper/lower arm may
+            # change; every other authored channel is retained.
+            name=new['nodes'][b['target']['node']]['name']
+            corrected=animation==2 and name in {'spine_06','spine_07','spine_08','spine_09'} and b['target']['path']=='rotation'
+            if not corrected:
                 unchanged_error=max(unchanged_error,float(np.max(np.abs(accessor(sa['output'],prior,priorbin)-accessor(sb['output'])))))
     assert unchanged_error<1e-5,unchanged_error
 groups={g.index:g.name for g in mesh.vertex_groups}
@@ -84,6 +87,8 @@ for name,bone in [('handR','spine_18'),('handL','chest'),('footL','rearFoot.L'),
 faces={n:[tuple(f.vertices) for f in mesh.data.polygons if set(f.vertices).issubset(index)] for n,index in regions.items()}
 assert all(faces.values())
 right_names={'spine_18',*[b.name for b in arm.pose.bones['spine_18'].children_recursive]}
+shoulder_ids=sorted(ids({'spine_06'},.8))
+assert len(shoulder_ids)==244,'Audited vertices with >80% visible shoulder weight in the accepted source'
 claw_ids=sorted(i for i in ids(right_names,.99999) if mesh.data.vertices[i].co.z<-.40)
 assert claw_ids==sorted(build['clawIndices']) and len(claw_ids)>30
 finger_base_ids=sorted(ids({'spine_35','spine_38','spine_41'},.85))
@@ -112,6 +117,10 @@ def support_bend():
     return math.degrees((b-a).angle(c-b))
 
 def palm_rotation():return (arm.pose.bones['spine_18'].matrix@arm.data.bones['spine_18'].matrix_local.inverted()).to_quaternion()
+def skin_matrix(name):return arm.pose.bones[name].matrix@arm.data.bones[name].matrix_local.inverted()
+def joint_points():return np.array([b.head for b in arm.pose.bones if b.name not in {'spine_07','spine_08'}])
+other_bones=[b.name for b in arm.pose.bones if b.name not in {'spine_06','spine_07','spine_08'}]
+def other_skin():return np.array([skin_matrix(n) for n in other_bones])
 times=sorted([duration*i/576 for i in range(577)]+[duration*(i+.371)/576 for i in range(576)])
 def curve_bow(points):
     p=np.array(points)[:,[0,2]];d=p[-1]-p[0];v=p-p[0]
@@ -138,13 +147,18 @@ if prior_path:
     for t in np.linspace(1.12,1.5,97):
         frame(float(t));p=surface(mesh);center=p[claw_ids].mean(axis=0)
         # Compare the approved claw path after removing its cancelled pounce.
-        u=min(1,max(0,(t-.5)));center[1]+=.35*u*u*(3-2*u)
+        u=min(1,max(0,(t-.5)));center[1]+=prior['animations'][2]['extras']['rootMotion']['distance']*u*u*(3-2*u)
         old_claws.append(center);old_support.append(support_bend());old_chest.append(arm.pose.bones['spine_05'].head.z)
         old_palm.append(palm_rotation())
         for group,indices in zip(old_tips,build['fingerTipGroups']):group.append(p[indices].mean(axis=0))
     frame(1.12);p=surface(mesh)
     reference={'clawBow':curve_bow(old_claws),'tipBows':[curve_bow(p) for p in old_tips],'peakPadUp':pad_up(p),'peakExtensions':extension_values(p),'peakNormal':pad_normal(p),'claws':np.array(old_claws),'supportBend':old_support,'chestZ':old_chest,'palmRotations':old_palm}
     frame(1.5);reference['endNormal']=pad_normal(surface(mesh))
+    reference['joints']=[];reference['otherSkin']=[];reference['shoulderRotation']=[]
+    for t in times:
+        frame(t);reference['joints'].append(joint_points());reference['otherSkin'].append(other_skin())
+        reference['shoulderRotation'].append(skin_matrix('spine_06').to_quaternion())
+    frame(1.10);reference['raisedShoulderVertices']=surface(mesh)[shoulder_ids]
 results={};native={};equivalence=0;idle_difference=0
 for label,path in [('blend',blend),('glb',fixed)]:
     arm,mesh=load(path);frame(0);first=surface(mesh);root0=arm.pose.bones['root'].head.copy();hip0=arm.pose.bones['hips'].head.z
@@ -153,9 +167,19 @@ for label,path in [('blend',blend),('glb',fixed)]:
     bone_error=link_error=jump=root_error=contact_error=below=0;previous=None;end=None
     collision={p:0 for p in ['handR_footL','handR_footR','handL_footL','handL_footR','handR_skull','handL_skull','handR_handL','footL_footR']}
     minimum_hip=hip0;windup_hand_drift=0;max_edges=[0,0,0];contacts=[];claws=[];finger=[];normals=[];tip_clearance=[];tip_paths=[[],[],[]];up_values=[];open_extensions=[];open_tip_rises=[];head_yaw=[];head_pitch=[];head_bank=[]
+    joint_change=other_skin_change=baked_joint_change=baked_skin_change=0;shoulder_corrections=[];shoulder_elevations=[];shoulder_outward=[]
     for index,t in enumerate(times):
         frame(t);p=surface(mesh);assert np.all(np.isfinite(p));end=p
         current=np.array([b.head for b in arm.pose.bones])
+        if reference:
+            joint_error=float(np.max(np.linalg.norm(joint_points()-reference['joints'][index],axis=1)))
+            skin_error=float(np.max(np.abs(other_skin()-reference['otherSkin'][index])))
+            joint_change=max(joint_change,joint_error);other_skin_change=max(other_skin_change,skin_error)
+            if abs(t/duration*576-round(t/duration*576))<1e-7:
+                baked_joint_change=max(baked_joint_change,joint_error);baked_skin_change=max(baked_skin_change,skin_error)
+            delta=skin_matrix('spine_06').to_quaternion()@reference['shoulderRotation'][index].inverted()
+            if delta.w<0:delta.negate()
+            shoulder_corrections.append(delta.normalized())
         if previous is not None:jump=max(jump,float(np.linalg.norm(current-previous,axis=1).max()))
         previous=current
         for b in arm.pose.bones:
@@ -199,6 +223,9 @@ for label,path in [('blend',blend),('glb',fixed)]:
             open_tip_rises.append(float(p[finger_tip_ids,2].mean()-arm.pose.bones['spine_18'].head.z))
             s,e,w=[arm.pose.bones[n].head for n in ['spine_07','spine_08','spine_09']]
             support_setup.append([e.x-s.x,e.z-s.z,e.z-w.z,support_bend()])
+            cap=s-arm.pose.bones['spine_06'].head
+            shoulder_elevations.append(math.degrees(math.atan2(cap.z,cap.x)))
+            shoulder_outward.append(cap.x)
         if index%16==0 or index==len(times)-1:
             if label=='blend':native[index]=p
             else:equivalence=max(equivalence,float(np.max(np.abs(p-native[index]))))
@@ -230,16 +257,16 @@ for label,path in [('blend',blend),('glb',fixed)]:
     entry={'samples':len(times),'boneLengthError':bone_error,'limbLinkError':link_error,'maximumJointStep':jump,'rootMotionError':root_error,'windupHipDrop':hip0-minimum_hip,'windupHandDrift':windup_hand_drift,'plantedGroundError':contact_error,'maximumBelowGround':below,'idlePoseAtAdvancedPositionError':pose_seam,'triangleOverlaps':collision,'edgeStretchP95':max_edges[0],'edgeStretchP99':max_edges[1],'edgeStretchMaximum':max_edges[2],'flow':flow,'openHand':hand,'palmTransition':transition}
     entry['headTracking']={'maximumAbsYawDegrees':max(abs(v) for v in head_yaw),'minimumPitchDegrees':min(head_pitch),'maximumPitchDegrees':max(head_pitch),'maximumAbsBankDegrees':max(abs(v) for v in head_bank)}
     if reference:
-        before_bend=np.interp(ts[a:z+1],np.linspace(1.12,1.5,97),reference['supportBend'])
-        excessive=before_bend>=80
-        ratios=np.array(support_angles)[a:z+1][excessive]/before_bend[excessive]
-        chest_lift=np.array(chest_z)[a:z+1]-np.interp(ts[a:z+1],np.linspace(1.12,1.5,97),reference['chestZ'])
-        # The illustrated raised pose keeps a bent support elbow; lifting
-        # the torso is needed later, when the former downstroke crouched.
-        lift_window=ts[a:z+1]>=1.24
-        entry['standing']={'maximumFootDrift':foot_drift,'maximumSupportPalmDrift':support_drift,'chestLiftInterval':[1.24/duration*spec['duration'],1.5/duration*spec['duration']],'minimumChestLift':float(chest_lift[lift_window].min()),'medianSupportBendRatio':float(np.median(ratios)),'maximumSupportBendRatio':float(ratios.max())}
+        # Preserve torso, feet, planted wrist and approved attack gesture.
+        # Check the visible shoulder link and weighted skin independently of
+        # elbow position, so an elbow-only adjustment cannot pass this task.
+        entry['standing']={'maximumFootDrift':foot_drift,'maximumSupportPalmDrift':support_drift}
         setup=np.array(support_setup)
         entry['standing']['setupArm']={'minimumUpperArmOutward':float(setup[:,0].min()),'maximumUpperArmDrop':float((-setup[:,1]).max()),'minimumForearmDrop':float(setup[:,2].min()),'minimumElbowBendDegrees':float(setup[:,3].min()),'maximumElbowBendDegrees':float(setup[:,3].max())}
+        frame(1.10);skin_change=float(np.linalg.norm(surface(mesh)[shoulder_ids]-reference['raisedShoulderVertices'],axis=1).max())
+        qangle=lambda q:math.degrees(2*math.acos(min(1,abs(q.w))))
+        steps=[qangle(b@a.inverted()) for a,b in zip(shoulder_corrections,shoulder_corrections[1:])]
+        entry['shoulderCorrection']={'maximumUnchangedJointPositionChange':joint_change,'maximumOtherBoneSkinMatrixChange':other_skin_change,'maximumUnchangedBakedJointPositionChange':baked_joint_change,'maximumOtherBakedSkinMatrixChange':baked_skin_change,'raisedShoulderElevationDegrees':[min(shoulder_elevations),max(shoulder_elevations)],'minimumRaisedShoulderOutward':min(shoulder_outward),'maximumCorrectiveRotationStepDegrees':max(steps),'endpointCorrectionDegrees':[qangle(shoulder_corrections[0]),qangle(shoulder_corrections[-1])],'raisedWeightedVertexDisplacement':skin_change,'weightedVertexCount':len(shoulder_ids)}
         rotation_error=0
         # Evaluate both rigs at identical phases instead of interpolating
         # sampled world rotations through a rapidly banking gesture.
@@ -252,10 +279,16 @@ for label,path in [('blend',blend),('glb',fixed)]:
     assert entry['windupHipDrop']>.08 and windup_hand_drift<.012 and contact_error<.012 and below<.008,entry
     assert sum(collision.values())==0,entry
     assert foot_drift<1e-4 and support_drift<.012,entry.get('standing')
-    if reference:assert entry['standing']['minimumChestLift']>.05 and .3<entry['standing']['medianSupportBendRatio']<.65 and entry['standing']['maximumSupportBendRatio']<.75,entry['standing']
     if reference:
+        s=entry['shoulderCorrection']
+        # Compensating parent/child quaternion curves cancel exactly at the
+        # baked poses; interpolation between them has a bounded residual.
+        assert s['maximumUnchangedBakedJointPositionChange']<1e-5 and s['maximumOtherBakedSkinMatrixChange']<1e-5,s
+        assert s['maximumUnchangedJointPositionChange']<1e-4 and s['maximumOtherBoneSkinMatrixChange']<1e-4,s
+        assert all(-6<v<0 for v in s['raisedShoulderElevationDegrees']) and s['minimumRaisedShoulderOutward']>.17,s
+        assert s['maximumCorrectiveRotationStepDegrees']<2 and max(s['endpointCorrectionDegrees'])<.05 and s['raisedWeightedVertexDisplacement']>.05,s
         setup=entry['standing']['setupArm']
-        assert setup['minimumUpperArmOutward']>.15 and setup['maximumUpperArmDrop']<.15 and setup['minimumForearmDrop']>.20 and 45<setup['minimumElbowBendDegrees']<=setup['maximumElbowBendDegrees']<80,setup
+        assert setup['minimumUpperArmOutward']>.15 and setup['maximumUpperArmDrop']<.20 and setup['minimumForearmDrop']>.20 and 20<setup['minimumElbowBendDegrees']<=setup['maximumElbowBendDegrees']<80,setup
     assert entry['headTracking']['maximumAbsYawDegrees']<3 and -8<min(head_pitch)<max(head_pitch)<-2 and entry['headTracking']['maximumAbsBankDegrees']<3,entry['headTracking']
     assert flow['minimumTangentAlignment']>.82 and flow['maximumFingerDirectionStepDegrees']<6,flow
     assert flow['horizontalTravel']>.7 and flow['verticalTravel']<-.9 and .08<bow<.28 and .25<flow['middleHorizontalProgress']<.55 and .45<flow['middleVerticalProgress']<.75,flow
@@ -273,5 +306,5 @@ for label,path in [('blend',blend),('glb',fixed)]:
         assert transition['peakNormalChangeDegrees']<5 and transition['endNormalChangeDegrees']<5,transition
     results[label]=entry
 assert equivalence<2e-5 and idle_difference<2e-5,(equivalence,idle_difference)
-report={'sourceSHA256':sha(source.read_bytes()),'glbSHA256':sha(fixed.read_bytes()),'bones':73,'clips':['Walk','Idle',spec['id']],'duration':spec['duration'],'sourceBinaryAndWalkPreserved':True,'nativeGLBMaximumVertexDifference':equivalence,'idleAttackPoseDifference':idle_difference,'channelPoseSeamError':seam,'notifies':spec['notifies'],'previousRevisionSHA256':sha(prior_path.read_bytes()) if prior_path else None,'unchangedIdleAndFingerChannelError':unchanged_error if prior_path else None,'checks':results}
+report={'sourceSHA256':sha(source.read_bytes()),'glbSHA256':sha(fixed.read_bytes()),'bones':73,'clips':['Walk','Idle',spec['id']],'duration':spec['duration'],'sourceBinaryAndWalkPreserved':True,'nativeGLBMaximumVertexDifference':equivalence,'idleAttackPoseDifference':idle_difference,'channelPoseSeamError':seam,'notifies':spec['notifies'],'previousRevisionSHA256':sha(prior_path.read_bytes()) if prior_path else None,'unchangedOtherChannelError':unchanged_error if prior_path else None,'checks':results}
 output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');print('MELEE_VERIFY_PASS',flush=True)

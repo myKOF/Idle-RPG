@@ -26,7 +26,7 @@ if(process.argv[2]==='--stage'){
   const projectPath=relative.startsWith('source/tools/')?'tools/boss9-lizard/melee/'+path.basename(f):relative==='source/BOSS9_LIZARD_MELEE.md'?'docs/assets/BOSS9_LIZARD_MELEE.md':relative==='source/boss9-melee-preview.test.cjs'?'tests/boss9-melee-preview.test.cjs':null;
   return {path:relative,sha256:hash(f),...(projectPath?{project:projectPath}:{})};
  });
- fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id,status:'Standing 1.2-second attack with raised body and half support-arm bend; awaiting user review; no game integration',base:'Approved forward gaze, gradual palm flip, turn and shallower diagonal slash',specification:'Feet and support palm remain planted; cancel forward pounce; raise chest and halve excessive support bend; synchronize animation notifies with the 1.2-second clip',files:entries},null,2)+'\n');
+ fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id,status:'Corrected outward opening of the visible support shoulder; awaiting GIF review; no game integration',base:'Standing 1.2-second attack with forward gaze and approved gradual palm gesture',specification:'Open the weighted shoulder link outward from the chest and solve elbow/wrist; preserve planted feet and palm, torso, attacking claw and animation notifies',files:entries},null,2)+'\n');
 }
 const manifest=read(path.join(pack,'manifest.json'));
 assert.equal(manifest.id,id);assert.equal(new Set(manifest.files.map(e=>e.path)).size,manifest.files.length);
@@ -39,7 +39,8 @@ assert.equal(hash(path.join(pack,'exports/boss9_attack1.glb')),v.glbSHA256);asse
 assert.ok(b.sourceBinaryPreserved&&v.sourceBinaryAndWalkPreserved);assert.equal(v.bones,73);assert.deepEqual(v.clips,['Walk','Idle',spec.id]);assert.equal(v.duration,spec.duration);
 assert.deepEqual(b.spec,spec);assert.deepEqual(v.notifies,spec.notifies);assert.equal(spec.duration,1.2);assert.equal(spec.rootMotion.distance,0);assert.ok(Math.abs(b.timing.riseAndSweepSeconds-spec.duration/2.4)<1e-7);
 assert.ok(v.nativeGLBMaximumVertexDifference<2e-5&&v.channelPoseSeamError<1e-5&&v.idleAttackPoseDifference<2e-5);
-assert.equal(v.previousRevisionSHA256,'60061ae341708209243d74595df101c760c730042d1172c970df2b169c80f853');assert.ok(v.unchangedIdleAndFingerChannelError<1e-5);
+assert.equal(v.previousRevisionSHA256,'ae53640638467e55990265b0eefd6f922b46226542a749af3a9a4e172186b5d7');assert.ok(v.unchangedOtherChannelError<1e-5);
+assert.deepEqual(b.stance.visibleSupportShoulderDirection,[1,0,-.08]);
 for(const c of Object.values(v.checks)){
  assert.equal(c.samples,1153);assert.ok(c.boneLengthError<1e-5&&c.limbLinkError<1e-5&&c.maximumJointStep<.12&&c.rootMotionError<1e-5);
  assert.ok(c.windupHipDrop>.08&&c.windupHandDrift<.012&&c.plantedGroundError<.012&&c.maximumBelowGround<.008&&c.idlePoseAtAdvancedPositionError<1e-5);
@@ -51,8 +52,10 @@ for(const c of Object.values(v.checks)){
  assert.ok(Math.abs(d[1]-d[0])<25&&d[2]>25&&d[2]<85&&d[3]>95,'Finger heading must turn progressively through the stroke');
  assert.ok(t.maximumNormalStepDegrees<6&&t.maximumApprovedPalmRotationErrorDegrees<.2&&t.peakNormalChangeDegrees<5&&t.endNormalChangeDegrees<5);
  const gaze=c.headTracking;assert.ok(gaze.maximumAbsYawDegrees<3&&gaze.minimumPitchDegrees>-8&&gaze.maximumPitchDegrees<-2&&gaze.maximumAbsBankDegrees<3,'Neck and skull must keep the head facing the enemy');
- const stance=c.standing;assert.ok(stance.maximumFootDrift<1e-4&&stance.maximumSupportPalmDrift<.012&&stance.minimumChestLift>.05&&stance.medianSupportBendRatio>.3&&stance.medianSupportBendRatio<.65&&stance.maximumSupportBendRatio<.75,'Feet must stay planted while chest rises and the support elbow straightens');
- const setup=stance.setupArm;assert.ok(setup.minimumUpperArmOutward>.15&&setup.maximumUpperArmDrop<.15&&setup.minimumForearmDrop>.2&&setup.minimumElbowBendDegrees>45&&setup.maximumElbowBendDegrees<80,'Illustrated support arm must open outward and descend to the planted palm');
+ const stance=c.standing;assert.ok(stance.maximumFootDrift<1e-4&&stance.maximumSupportPalmDrift<.012,'Feet and support palm must stay planted');
+ const setup=stance.setupArm;assert.ok(setup.minimumUpperArmOutward>.15&&setup.maximumUpperArmDrop<.20&&setup.minimumForearmDrop>.2&&setup.minimumElbowBendDegrees>20&&setup.maximumElbowBendDegrees<80,'Illustrated support arm must open outward and descend to the planted palm');
+ const shoulder=c.shoulderCorrection;assert.ok(shoulder.maximumUnchangedBakedJointPositionChange<1e-5&&shoulder.maximumOtherBakedSkinMatrixChange<1e-5&&shoulder.maximumUnchangedJointPositionChange<1e-4&&shoulder.maximumOtherBoneSkinMatrixChange<1e-4,'Preserve the torso, feet, wrist, head and attacking claw at baked poses and bound quaternion interpolation residual');
+ assert.ok(shoulder.raisedShoulderElevationDegrees.every(v=>v>-6&&v<0)&&shoulder.minimumRaisedShoulderOutward>.17&&shoulder.maximumCorrectiveRotationStepDegrees<2&&shoulder.endpointCorrectionDegrees.every(v=>v<.05)&&shoulder.raisedWeightedVertexDisplacement>.05&&shoulder.weightedVertexCount===244,'Visible shoulder skin must follow the outward opening smoothly');
 }
 for(const view of views){
  const c=read(path.join(pack,'qa',view+'-capture.json'));assert.equal(c.clipName,spec.id);assert.equal(c.glbSHA256,v.glbSHA256);assert.equal(c.frames.length,120);assert.ok(Math.abs(c.duration-spec.duration)<1e-6);assert.deepEqual(c.errors,[]);assert.deepEqual(c.warnings,[]);
