@@ -1796,7 +1796,13 @@ var BattleRenderer = (function () {
         var e = S.entities[id];
         if (e.data && e.data.img === src && !e.sheetName && e.state !== 'dying') refreshMobBody(e);
       }
-    }).catch(function () { S.imgTex[src] = 'failed'; });
+    }).catch(function () {
+      S.imgTex[src] = 'failed';
+      Object.keys(S.entities).forEach(function (id) {
+        var ent = S.entities[id];
+        if (ent.data && ent.data.img === src && !ent.npc3d && !ent.npcSprite) captureEntityBodyBox(ent);
+      });
+    });
   }
   function refreshMobBody(e) {
     if (e.npc3d) return;
@@ -1806,6 +1812,7 @@ var BattleRenderer = (function () {
     e.body.destroy();
     e.body = next;
     e.bodyWrap.addChildAt(next, idx);
+    captureEntityBodyBox(e);
     if (e.eliteDeco) e.eliteDeco.baseScale = Math.abs(next.scale.x);
     syncNpcRankGlow(e);
   }
@@ -1867,6 +1874,10 @@ var BattleRenderer = (function () {
       });
     }).catch(function (err) {
       S.npcSheetState[name] = 'failed';
+      Object.keys(S.entities).forEach(function (id) {
+        var ent = S.entities[id], pending = npcSpriteDef(ent.data);
+        if (pending && pending.id === def.id && !ent.npcSprite && !ent.npc3d) captureEntityBodyBox(ent);
+      });
       if (typeof console !== 'undefined' && console.warn) console.warn('[battle-renderer] NPC 序列幀載入失敗，沿用 emoji：', def.id, err && err.message ? err.message : err);
     });
   }
@@ -1946,10 +1957,19 @@ var BattleRenderer = (function () {
     npc3dContentCache.set(body, { frame: body.hero3dFrame, rows: rows });
     return rows;
   }
-  /* 當幀可見範圍，換成以腳點投影的直立特效座標。cx／cy 是中心相對腳點的右／上偏移。 */
-  function entityBodyBox(id) {
-    var ent = S.entities[id], body = ent && ent.body;
-    if (!body || body.destroyed) return null;
+  /* 正式本體出生時的靜止首幀。只存本體座標，不把出招、受擊或容器抖動烘進護罩基準。 */
+  function captureEntityBodyBox(ent) {
+    var body = ent && ent.body;
+    if (!body || body.destroyed) return;
+    ent.spawnBodyBox = null;
+    if (!ent.npc3d && typeof Npc3D !== 'undefined' && Npc3D.definition(ent.data) && ent.npc3dLoading !== 'failed') return;
+    var def = npcSpriteDef(ent.data);
+    if (!ent.npc3d && !ent.npcSprite && def && S.npcSheetState['npc:' + def.id] !== 'failed') return;
+    if (body instanceof PIXI.Text && ent.data && ent.data.img && S.imgTex[ent.data.img] !== 'failed') return;
+    if (ent.npcSprite && ent.npcFacing) {
+      var dx = playerPos().x - ent.wx;
+      if (Math.abs(dx) > 6) body.scale.x = (dx >= 0 ? 1 : -1) * ent.npcFacing * Math.abs(body.scale.x);
+    }
     var left, top, right, bottom;
     if (body instanceof PIXI.Text) {
       var bounds = body.getLocalBounds();
@@ -1957,22 +1977,39 @@ var BattleRenderer = (function () {
     } else {
       var tex = body.texture;
       var rows = ent.npc3d ? npc3dContentRows(body) : textureContentRows(tex);
-      if (!rows) return null;
-      var orig = tex.orig || tex.frame, trim = tex.trim;
-      var anchorX = body.anchor.x * orig.width - (trim ? trim.x : 0);
-      var anchorY = body.anchor.y * orig.height - (trim ? trim.y : 0);
-      left = rows.left - anchorX; right = rows.right - anchorX;
-      top = rows.top - anchorY; bottom = rows.bot - anchorY;
+      if (!rows) {
+        var fallback = body.getLocalBounds();
+        left = fallback.minX; right = fallback.maxX; top = fallback.minY; bottom = fallback.maxY;
+      } else {
+        var orig = tex.orig || tex.frame, trim = tex.trim;
+        var anchorX = body.anchor.x * orig.width - (trim ? trim.x : 0);
+        var anchorY = body.anchor.y * orig.height - (trim ? trim.y : 0);
+        left = rows.left - anchorX; right = rows.right - anchorX;
+        top = rows.top - anchorY; bottom = rows.bot - anchorY;
+      }
     }
-    if (!(right > left && bottom > top)) return null;
+    if (!(right > left && bottom > top)) return;
     body.updateLocalTransform();
-    ent.bodyWrap.updateLocalTransform();
-    ent.view.updateLocalTransform();
-    var matrix = body.localTransform.clone().prepend(ent.bodyWrap.localTransform).prepend(ent.view.localTransform);
-    var root = ent.root, foot = airScreenPose(root.x, root.y);
-    var box = new PIXI.Bounds();
+    var m = body.localTransform, box = new PIXI.Bounds();
     for (var x of [left, right]) {
       for (var y of [top, bottom]) {
+        var px = m.a * x + m.c * y + m.tx, py = m.b * x + m.d * y + m.ty;
+        box.addFrame(px, py, px, py);
+      }
+    }
+    ent.spawnBodyBox = { body: body, scale: ent.visScale || 1,
+      left: box.minX, right: box.maxX, top: box.minY, bottom: box.maxY };
+  }
+  /* 出生基準投影到目前腳點；寬高與中心不再取施放當下的動畫剪影。 */
+  function entityBodyBox(id) {
+    var ent = S.entities[id], ref = ent && ent.spawnBodyBox;
+    if (!ref || ref.body !== ent.body || ent.body.destroyed) return null;
+    ent.view.updateLocalTransform();
+    var matrix = ent.view.localTransform, ratio = (ent.visScale || 1) / ref.scale;
+    var root = ent.root, foot = airScreenPose(root.x, root.y);
+    var box = new PIXI.Bounds();
+    for (var x of [ref.left * ratio, ref.right * ratio]) {
+      for (var y of [ref.top * ratio, ref.bottom * ratio]) {
         var p = airScreenPose(root.x + matrix.a * x + matrix.c * y + matrix.tx,
           root.y + matrix.b * x + matrix.d * y + matrix.ty);
         box.addFrame(p.x, p.y, p.x, p.y);
@@ -2017,9 +2054,16 @@ var BattleRenderer = (function () {
       e.curAnim = ''; e.baseAnim = 'idle';
       e.hitHeight = 64 * e.visScale; e.hitCenter = e.hitHeight * .55;
       playAnim(e, 'idle');
+      var target = playerPos();
+      body.hero3dFace(target.x - e.wx, target.y - 26 - e.wy);
+      body.hero3d.yaw = body.hero3d.yawTarget;
+      body.update(null, 0);
+      captureEntityBodyBox(e);
       if (e.eliteDeco) e.eliteDeco.baseScale = Math.abs(body.scale.x);
       syncNpcRankGlow(e);
     }).catch(function (error) {
+      e.npc3dLoading = 'failed';
+      if (S.entities[e.id] === e && e.state !== 'dying' && e.state !== 'gone') captureEntityBodyBox(e);
       console.warn('[battle-renderer] NPC 3D load failed; retaining existing body:', error);
     });
   }
@@ -2040,6 +2084,7 @@ var BattleRenderer = (function () {
     var hitBox = spriteHitBox(next);
     if (hitBox) { e.hitHeight = hitBox.height; e.hitCenter = hitBox.center; }
     e.npcFacing = S.sheets[name].manifest.facing | 0;
+    captureEntityBodyBox(e);
     if (e.eliteDeco) e.eliteDeco.baseScale = Math.abs(next.scale.x);
     syncNpcRankGlow(e);
   }
@@ -2086,6 +2131,9 @@ var BattleRenderer = (function () {
     var tierSize = Number(data._size) > 0 ? Number(data._size) : 0;
     var tierName = data._tier || '';
     var npcCfg = (typeof NPC_CONFIG_TABLE !== 'undefined' && data.npcId) ? NPC_CONFIG_TABLE[data.npcId] : null;
+    if (!npcCfg && data.towerBoss && typeof BOSS_LIST !== 'undefined') {
+      npcCfg = BOSS_LIST.find(function (boss) { return boss.id === data.npcId; });
+    }
     var visScale = (tierSize || (isBoss ? 1 : (isElite ? 1.28 : 1))) * (npcCfg && npcCfg.scale > 0 ? npcCfg.scale : 1);
     var sz = cellSize();
     var nameSize = Math.max(8, Math.round((isBoss ? 14 : 11) * dScale)) + 4;
@@ -2246,6 +2294,7 @@ var BattleRenderer = (function () {
     S.layers.entity.addChild(root);
     syncNpcRankGlow(ent);
     applyEntityBillboard(ent);   // 出生的那一幀就別歪（tickWorld 之後每幀會再算）
+    captureEntityBodyBox(ent);
     drawHpBar(ent);
     requestNpc3d(ent);
     return ent;

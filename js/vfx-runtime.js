@@ -2111,7 +2111,7 @@ var VFXRuntime = (function () {
        entries：[{ key, sids: [statusId...], radii?: { statusId: 半徑 } }]，key 即 posOf 認得的 elId
        尺寸：狀態實例帶半徑（以玩家為中心的領域，js/status.js statusSetVfxR）＝代表一個範圍，
        依權威半徑縮放（AI_RULES 8.3），半徑改變時逐幀補間（8.3.1）；
-       沒帶＝照 Preset 世界尺寸畫。fitBody 的護罩在生成時貼合本體，量不到時固定採用上述尺寸。
+       沒帶＝照 Preset 世界尺寸畫。fitBody 採出生靜止輪廓，保持作者比例；正式本體未就緒則下次快照重試。
        腳底光環在地板層；直立光罩走 billboard 層。
        --------------------------------------------------------------- */
     function syncStatuses(entries) {
@@ -2134,7 +2134,10 @@ var VFXRuntime = (function () {
             mult: r > 0 ? profile.areaScale : profile.scale * bodyScaleOf(e.key) };
           auraTarget(a, r);
           a.sx = a.tsx; a.sy = a.tsy;
-          if (ctx.bodyBoxOf && tuning(presetId, 'fitBody') === true) a.fitOffset = fitAura(a);
+          if (ctx.bodyBoxOf && tuning(presetId, 'fitBody') === true) {
+            a.fitOffset = fitAura(a);
+            if (!a.fitOffset) return;
+          }
           /* 整份標 perspective:false 的光罩（護盾球…）走 billboard 層：不受視角方向與 FOV 影響；其餘（地面光環）留在場景層 */
           a.ref = play(billboardPresets[presetId] ? rtBillboard : rtZone, presetId, auraTransform(a), a.mult);
           if (a.ref) auras[k] = a;
@@ -2148,15 +2151,15 @@ var VFXRuntime = (function () {
         delete auras[k];
       });
     }
-    /* 生成時量一次輪廓，將寬高及中心相對腳點的偏移固定在這次護罩上。 */
+    /* 以出生靜止輪廓定型，等比包住基準，避免揮劍時的長寬把楕圓撐成圓形。 */
     function fitAura(a) {
       var box = ctx.bodyBoxOf(a.key), sz = presetSizes[a.presetId], au = sz && sz.authored;
       var aw = au && (au.width || au.radius * 2), ah = au && (au.height || au.radius * 2);
-      if (!box || !(box.w > 0) || !(box.h > 0) || !(aw > 0) || !(ah > 0) || !(a.mult > 0)) return { x: 0, y: 0 };
+      if (!box || !(box.w > 0) || !(box.h > 0) || !(aw > 0) || !(ah > 0) || !(a.mult > 0)) return null;
       var pad = tuning(a.presetId, 'fitPadding');
-      var height = box.h * pad;
-      a.sx = box.w * pad / (aw * a.mult);
-      a.sy = height / (ah * a.mult);
+      var fit = Math.max(box.w / aw, box.h / ah) * pad;
+      var height = ah * fit;
+      a.sx = a.sy = fit / a.mult;
       /* 名目罩心在原點上方 ah/2；縮放後補齊到實際中心的差。 */
       return { x: box.cx, y: height / 2 - box.cy };
     }
