@@ -27,7 +27,7 @@ all_lock＝全鎖定（不會出現在任何裝備部位上，也不會出現在
 詞條池,normalDmgRed,普通敵人傷害抗性,30,2.1,FALSE,9,1,4,shoulder;chest;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,eliteDmgRed,菁英傷害抗性,30,2.1,FALSE,9,1,4,shoulder;chest;wrist;legs;boots;ring;amulet,,,,,,,
 詞條池,bossDmgRed,BOSS傷害抗性,30,2.1,FALSE,9,1,4,shoulder;chest;wrist;legs;boots;ring;amulet,,,,,,,
-詞條池,aspd,攻擊速度%,3,3.6,TRUE,6,2.8,,weapon;gloves;ring;amulet,,,,,,,
+詞條池,aspd,攻擊速度%,2,0.25,TRUE,6,2.8,,weapon;gloves;ring;amulet,,,,,,,
 詞條池,critRate,暴擊率%,1,2.4E-2,TRUE,6,2.4,,weapon;belt;ring;amulet,,,,,,,
 詞條池,critDmg,暴擊傷害%,5,0.4,TRUE,5,0.9,,weapon;belt;ring;amulet,,,,,,,
 詞條池,pPen,物理穿透%,20,4.4999999999999998E-2,TRUE,4,2.2000000000000002,4,weapon;gloves;wrist;ring;amulet,,,,,,,

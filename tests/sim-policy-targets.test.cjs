@@ -1002,3 +1002,69 @@ test('打不動：DPS 有值就放行（只要不是全部 0）', () => {
 test('打不動：fieldLoad 面板有 dps，而且自動列進觀測面板', () => {
   assert.ok(dpsPolicy().observePanels.indexOf('fieldLoad') >= 0);
 });
+
+/* ============ 法力來源（使用者 2026-11-24：吸魔最優先，智力／法力上限次之，回魔不考慮） ============ */
+
+test('目標的 when 可以引用排在前面的目標結果（同一個決策點就生效）', () => {
+  /* ctx 每個決策點整包重建；以前 ctx.deficit 要等全部目標算完才掛上，
+     「缺魔時才要求吸魔詞條」這種條件永遠讀到 undefined。 */
+  const p = createPolicy({
+    name: 'chain-test', decideEveryGameSec: 60, needPanels: ['fieldLoad'],
+    targets: [
+      { id: 'manaCapacity', kind: 'value', path: 'panels.fieldLoad.mpCapCasts', atLeast: 2 },
+      { id: 'probe', kind: 'value', path: 'panels.fieldLoad.one', atLeast: 5, when: ['ctx.deficit.manaCapacity.met', 'falsy'] }
+    ],
+    rules: [{ id: 'noop', cmd: 'stage.setAutoAdvance', if: [['ctx.deficit.probe.met', 'falsy']], args: { on: false } }]
+  });
+  const st = (casts) => ({ gameTimeSec: 100, view: {}, panels: { fieldLoad: { mpCapCasts: casts, one: 1 } } });
+  assert.equal(p.decide(st(1)).length, 1, '上限不夠 → probe 生效且不達標 → 規則觸發');
+  assert.equal(p.decide(st(5)).length, 0, '上限夠 → probe 的前提不成立、算達標 → 規則不觸發');
+});
+
+function convertPolicy(boostWhen) {
+  return createPolicy({
+    name: 'convert-boost-test', decideEveryGameSec: 60, needPanels: ['gems', 'gemRules'],
+    rules: [{ id: 'cv', cmd: 'gem.convert', convertToPreferred: {
+      gems: 'panels.gems.gems', rules: 'panels.gemRules.convertInput', maxSlots: 9, maxPerSlot: 1000, maxCommands: 4,
+      preferTypes: ['ruby'],
+      quota: [{ type: 'manastone', count: 1 }],
+      boost: [{ type: 'manastone', shares: 2, when: boostWhen }]
+    } }]
+  });
+}
+const gemState = (flag) => ({ gameTimeSec: 100, view: {}, ctx: {}, panels: {
+  gems: { gems: { topaz: { 1: 12 }, manastone: { 1: 4 } } }, gemRules: { convertInput: 2 } }, flag });
+
+test('寶石轉換：配額種類（吸魔）不會被當雜牌轉掉', () => {
+  const cmds = convertPolicy(['flag', 'truthy']).decide(gemState(false));
+  const fromTypes = cmds.flatMap((c) => c.args.slots.map((s) => s.type));
+  assert.ok(fromTypes.length > 0, '前提：黃玉是雜牌，要被轉');
+  assert.ok(!fromTypes.includes('manastone'), '吸魔寶石是配額種類，不能被轉掉');
+});
+
+test('寶石轉換：缺魔（boost 條件成立）時雜牌優先轉成吸魔', () => {
+  const off = convertPolicy(['flag', 'truthy']).decide(gemState(false)).map((c) => c.args.targetType);
+  const on = convertPolicy(['flag', 'truthy']).decide(gemState(true)).map((c) => c.args.targetType);
+  assert.deepEqual([...new Set(off)], ['ruby'], '平時照偏好轉成紅寶石');
+  assert.equal(on[0], 'manastone', '缺魔時第一個目標是吸魔寶石');
+});
+
+test('換裝保護：keepOnSwap:false 的目標詞條不算「投資過」，不擋換更高品質', () => {
+  /* 智力目標加進來之後，帶智力的精良裝要高 2 階才換得掉，24h 實測 3/5 seed 卡在第 12 關。 */
+  const mk = (keepOnSwap) => createPolicy({
+    name: 'keep-on-swap-test', decideEveryGameSec: 60, needPanels: ['inv'],
+    targets: [{ id: 'intGear', kind: 'affixCount', affixKey: 'int', equipment: 'panels.inv.equipment', slots: ['helmet'], atLeast: 1, keepOnSwap }],
+    rules: [{ id: 'eq', cmd: 'item.equip', bestPerSlot: {
+      items: 'panels.inv.items', equippedScores: 'panels.inv.equipmentScores', equipment: 'panels.inv.equipment',
+      keepInvested: { ancientOnly: false, overrideRarityGap: 2 } } }]
+  });
+  const st = { gameTimeSec: 100, view: {}, panels: { inv: {
+    equipment: { helmet: { id: 'old', slot: 'helmet', rarity: 1, level: 1, affixes: [{ key: 'int' }] } },
+    equipmentScores: { helmet: 10 },
+    items: [{ id: 'new', slot: 'helmet', rarity: 2, level: 1, score: 20, ancientCount: 0 }]
+  } } };
+  assert.equal(mk(undefined).decide(st).length, 0, '前提：預設會保護（要高 2 階才換）');
+  const cmds = mk(false).decide(st);
+  assert.equal(cmds.length, 1, 'keepOnSwap:false：稀有頭盔照常換上');
+  assert.equal(cmds[0].args.itemId, 'new');
+});

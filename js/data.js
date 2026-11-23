@@ -848,7 +848,7 @@ var AFFIX_POOL = {
   normalDmgRed: { name: '普通敵人傷害抗性', base: 30, lv: 2.1, pct: false, weight: 9, minR: 4, slots: ['shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   eliteDmgRed: { name: '菁英傷害抗性', base: 30, lv: 2.1, pct: false, weight: 9, minR: 4, slots: ['shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
   bossDmgRed: { name: 'BOSS傷害抗性', base: 30, lv: 2.1, pct: false, weight: 9, minR: 4, slots: ['shoulder', 'chest', 'wrist', 'legs', 'boots', 'ring', 'amulet'] },
-  aspd: { name: '攻擊速度%', base: 3, lv: 3.6, pct: true, weight: 6, slots: ['weapon', 'gloves', 'ring', 'amulet'] },
+  aspd: { name: '攻擊速度%', base: 2, lv: 0.25, pct: true, weight: 6, slots: ['weapon', 'gloves', 'ring', 'amulet'] },
   critRate: { name: '暴擊率%', base: 1, lv: 0.024, pct: true, weight: 6, slots: ['weapon', 'belt', 'ring', 'amulet'] },
   critDmg: { name: '暴擊傷害%', base: 5, lv: 0.4, pct: true, weight: 5, slots: ['weapon', 'belt', 'ring', 'amulet'] },
   pPen: { name: '物理穿透%', base: 20, lv: 0.045, pct: true, weight: 4, minR: 4, slots: ['weapon', 'gloves', 'wrist', 'ring', 'amulet'] },

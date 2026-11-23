@@ -958,6 +958,10 @@ function windowSecOf(t) {
 
 function evalTargets(state, policy, memo) {
   var out = {};
+  /* 邊算邊掛上 ctx.deficit：目標的 when 可以引用**排在它前面**的目標結果
+     （例如「缺魔（manaIncome 不達標）時才要求吸魔詞條」）。呼叫端算完後會再指派同一個物件。
+     ctx 每個決策點整包重建，不先掛上的話 ctx.deficit 在這裡永遠是 undefined。 */
+  if (state.ctx) state.ctx.deficit = out;
   var list = policy.targets || [];
   for (var i = 0; i < list.length; i++) {
     var t = list[i];
@@ -1962,7 +1966,10 @@ function decide(state, policy, memo) {
           var keyset = {};
           var kiT = policy.targets || [];
           for (var kti = 0; kti < kiT.length; kti++) {
-            if (kiT[kti] && kiT[kti].affixKey) keyset[kiT[kti].affixKey] = true;
+            /* keepOnSwap: false＝這個目標的詞條不算「投資過」。給智力、吸魔這種到處都洗得到的詞條用：
+               算進去的話，帶智力的精良頭盔要等到高 2 階（獨特）才換得掉——實測 24h × 5 seed 有 3 個
+               卡在第一道裝備關卡（85% 稀有）停在第 12 關一整天。 */
+            if (kiT[kti] && kiT[kti].affixKey && kiT[kti].keepOnSwap !== false) keyset[kiT[kti].affixKey] = true;
           }
           var invested = 0;
           for (var kai = 0; kai < currItem.affixes.length; kai++) {
@@ -3168,6 +3175,18 @@ function decide(state, policy, memo) {
          沒有這份面板時退回 1，行為與舊版相同。 */
       var cK = Number(pathVal(state, cCfg.rules || 'panels.gemRules.convertInput')) || 1;
       var cBand = bandGroups(pickBand(state, cCfg.preferByLevel, cCfg.levelPath), cCfg.preferTypes);
+      /* boost：條件成立時，把指定種類插到轉換目標的最前面（各佔 shares 份）。
+         用途是缺魔時把雜牌優先轉成吸魔寶石——偏好段描述的是「平常想要什麼」，
+         缺魔是另一個軸，寫進每一段 preferByLevel 會讓每段都多一份要同步的副本。 */
+      /* 轉換目標是 flat 輪流發（同一種出現幾次就佔幾份），所以 boost 直接排到 flat 最前面。 */
+      var cBoost = [];
+      for (var cbi = 0; cbi < (cCfg.boost || []).length; cbi++) {
+        var cb = cCfg.boost[cbi];
+        if (!cb || !cb.type || (cb.when && !testCond(state, cb.when))) continue;
+        for (var cbs = 0; cbs < (cb.shares || 1); cbs++) cBoost.push(cb.type);
+        cBand.set[cb.type] = true;
+      }
+      if (cBoost.length) cBand.flat = cBoost.concat(cBand.flat);
 
       if (cBand.flat.length) {
         var maxSlots = cCfg.maxSlots || 9;

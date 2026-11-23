@@ -535,6 +535,46 @@ const hpLoadStats = {
   }
 };
 
+/* ---- 法力壓力：法力夠不夠放技能 ----
+
+   施法消耗取該群組**已學的最高階**（js/skills2.js skills2ManaCost），所以技能進階之後消耗會跳升
+   （飛刀第 1 階 10、第 7 階 800）。每秒取樣：目前法力比例，以及法力是否低於裝配中主動技能的
+   最低／最高施法消耗——低於最低＝一個技能都放不出來，低於最高＝最貴的那個放不出來。
+   消耗由遊戲函式算，不在這裡重推。 */
+const mpLoadStats = {
+  n: 0, ratios: [], belowMin: 0, belowMax: 0, costMin: [], costMax: [],
+  add(view, ctx) {
+    if (!(view.mpMax > 0) || typeof ctx.skills2ManaCost !== 'function') return;
+    const G0 = ctx.G, pre = ctx.SG_PREFIX || 'sg:';
+    const lo = (G0.player && G0.player.loadout) || [];
+    let mn = Infinity, mx = 0;
+    for (const id of lo) {
+      if (typeof id !== 'string' || id.indexOf(pre) !== 0) continue;
+      const c = Number(ctx.skills2ManaCost(id.slice(pre.length))) || 0;
+      if (c <= 0) continue;                           // 被動技能沒有施法消耗
+      if (c < mn) mn = c;
+      if (c > mx) mx = c;
+    }
+    if (!(mx > 0)) return;                            // 還沒有任何主動技能
+    this.n++;
+    this.ratios.push(view.mp / view.mpMax);
+    if (view.mp < mn) this.belowMin++;
+    if (view.mp < mx) this.belowMax++;
+    if (this.n % 60 === 0) { this.costMin.push(mn); this.costMax.push(mx); }
+  },
+  summary() {
+    const q = (a, p) => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y); return +s[Math.min(s.length - 1, Math.floor(s.length * p))].toFixed(3); };
+    const last = (a) => (a.length ? a[a.length - 1] : null);
+    return {
+      samples: this.n,
+      ratio: { p10: q(this.ratios, 0.1), p25: q(this.ratios, 0.25), p50: q(this.ratios, 0.5) },
+      belowMinCostFrac: this.n ? +(this.belowMin / this.n).toFixed(4) : null,
+      belowMaxCostFrac: this.n ? +(this.belowMax / this.n).toFixed(4) : null,
+      costAtEnd: { min: last(this.costMin), max: last(this.costMax) }
+    };
+  }
+};
+
 let lastKillsTotal = 0;
 let lastHourChecked = 0;
 /* 累計在線秒數。宣告在這裡而不是主迴圈那一段，是因為 snapshot() 要用它做每小時的
@@ -729,6 +769,7 @@ try {
           policy.observe({ view: oView, panels: oPanels, gameTimeSec: engine.gameTimeSec() });
           observations++;
           if (oView.hpMax > 0) hpLoadStats.add(engine.gameTimeSec(), oView.hp / oView.hpMax, (engine.ctx.LOOT_STATS || {}).deaths || 0);
+          mpLoadStats.add(oView, engine.ctx);
           if (engine.ctx.liveFieldEnemies) {
             const liveNow = engine.ctx.liveFieldEnemies().length;
             liveSeries.push([engine.gameTimeSec(), liveNow]);
@@ -963,6 +1004,7 @@ const summary = {
   equipSetSec: equipSetSec,
   fieldLoad: fieldLoadStats.summary(),
   hpLoad: hpLoadStats.summary(),
+  mpLoad: mpLoadStats.summary(),
   dpsZero: dpsZero,
   performance: {
     /* 實際跑掉的步數。啟用班表時它會少於 wallHours × 36000——離線那一段沒有跑 simStep，
