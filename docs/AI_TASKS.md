@@ -133,6 +133,15 @@
 - Build：`npm.cmd run build`752檔通過，自我Review及本項分段暫存差異檢查通過。與同副本任務進化共用LV／任務檔不同段，三方試合乾淨後只提交本項；飛龍v2與其他任務進行中內容保留。素材來源JSON同步至既有npc-vfx-adjustments套件，雙庫SHA-256相同13237e6916e5e5a93d678c302dbeb8f24ca6eee58072abd5ed52bf587abb30e9，素材庫先提交`84f0334e`；遊戲Commit為本段所在`[Codex] fix: 讓金色護盾貼合一倍模型輪廓`。
 - 交接：本項無未完成實作，可供驗收與合併，未合併或推送develop／main。限制為上述6項既有回歸失敗，瀏覽器為正式模型與渲染模組隔離驗證，未重跑完整塔戰／跨瀏覽器／行動真機；光暈與星芒保持原動畫，不作碰撞範圍。下一步重新載入遊戲驗收；編輯器先下載未存內容備份再重載，舊Preset基準不可覆寫新版。
 
+## BOSS9-MELEE-PREVIEW-20261123 — 三階段重型爪擊與碰撞預覽
+
+- Owner：Codex；Done（預覽待使用者審閱），單人製作。依最新純動作／判定規格重做雙爪下壓仰頭張口、後腿前撲右爪弧掃、右爪按地及雙爪回穩。使用者答覆先完整預覽確認後接入；最新純動作規格取代綠光／粒子／音效要求。
+- 修改：新增tools/boss9-lizard/melee/{author.py,verify.py,spec.json,controller.js,viewer.html,viewer.js,capture.cjs,encode.py,export.cjs}、tests/boss9-melee-preview.test.cjs、docs/assets/BOSS9_LIZARD_MELEE.md及本段，素材庫新包codex-authored/boss9-lizard-melee-20261123。全長2.4秒，0–0.5雙爪蓄力、0.5–1.5抬爪前撲弧掃、1.5–2.4落地回穩；抬爪至揮下1秒，手腕保持朝敵人約下15度，Recovery才轉向按地。保留原73骨／網格／權重／貼圖／暫代材質及Walk原二進位，追加Idle與BOSS9_Attack1；可編輯Blend、GLB、4份GIF、來源工具及QA共34檔。
+- 判定：共用spec秒制AnimationNotifies；Hitbox僅[1.12,1.50)開啟，前方120度扇形隨爪伸出增長，單一目標只中一次物理傷害並平滑擊退；Windup無水平位移、Recovery無傷害及前移。Root上限0.35模型單位，連續垂直Capsule掃掠含端帽及0.005間隙，阻擋後抵銷GLB多餘root位移、不補跳；貼近靶實測前進0.1585、阻擋0.1915，僅1次命中，膠囊最小間隙0.005。HP100／傷害25及擊退0.24為獨立預覽靶參數，未寫入NPC數值或實戰。
+- 驗證：node --test tests/boss9-melee-preview.test.cjs 14/14（階段及浮點邊界、前後搖無傷害、有效幀／單次／擊退、30/60/144FPS與跳整段、扇形範圍／背後／高度、Capsule連續／斜向／端帽／阻擋、轉向／參數）；Blender author.py及verify.py通過，原生／GLB各1153時點，指定手腳／雙手／手頭／雙腳三角形穿插0，骨長／物理鏈保持，支撐最大誤差0.00238、native/GLB頂點差0.0000012、Idle首尾差<0.000001；原Walk及來源GLB逐位保留。capture.cjs四視圖480張及全部9通知、實際渲染root同步、收招停止／無誤傷、完整入鏡、UI播放暫停重播／正反拖曳／場景視角切換通過，頁面錯誤警告0；encode.py逐張解碼4份900x600/120張/50FPS/2.4秒GIF及聯絡圖目視通過；export.cjs 33必要檔SHA與manifest通過，Python AST3檔／Node及ESM語法、npm.cmd run build 757檔通過。
+- 範圍檢查：共通規範／Workflow／Agent／任務、既有attack1.py／verify／viewer／capture／export／文件、已核准legs來源及遊戲碰撞介面僅閱讀；舊R4工具／包、遊戲js、NPC／Excel／CSV／VFX／音效配置未修改。任務檔與develop分支及實際工作副本均三方試合0、只改本獨立段；初始NPC.xlsx外部修改保持並由其他任務自行提交。瀏覽器finally關閉，孤兒檢查無殘留；必要QA保存素材庫。暫存清理例外：已唯讀確認C:/Users/alway/.codex/visualizations/2026/11/19/01a1f484-334f-7072-b95d-41e32c1c4dfd/boss9-melee-preview為本任務519檔、無reparse point，刪除動作及改用明確LiteralPath的較安全刪除仍被自動核准檢查拒絕，僅回傳blocked by policy、無具體理由；未繞過限制，暫存保留並告知使用者。
+- Commit：素材庫先提交088f73d147cc2d75068f529d0b9e620650d086c1；專案Commit為本段所在「[Codex] feat: 製作BOSS9三階段近戰與判定預覽」。自我Review、雙庫SHA及git diff --check通過，未合併／推送develop或main。限制／未完成：本預覽授權範圍已完成；原自動蒙皮局部扭轉仍可能拉伸，指定區域檢查不代表所有甲片／全身無交疊；正式地形／牆體／玩家主動移動／遊戲動畫混合與傷害入口尚未接入，非實戰完成。下一步交使用者驗收GIF；預覽工具可供合併審閱，技能接入須待使用者確認，不能自行部署實戰。
+
 ## SCREEN-CAPTURE-CLEANUP-RULE-20261119 — 補上螢幕擷取工作階段清理規範
 
 - Owner：Codex，Done。依使用者指示在 `AI_RULES.md` 第 19 節補上擷取清理規範，涵蓋正常結束、失敗、逾時、中止及交回操作時的資源釋放，工具重設、殘留 helper 精確清理，以及黃色外框消失的驗證。
