@@ -79,19 +79,43 @@ hand_inverse=(base_world['spine_18']@rest['spine_18'].inverted()).inverted()
 claw_bind=hand_inverse@claw_initial
 claw_offset=claw_bind-rest['spine_18'].translation
 finger_axis=((hand_inverse@tip_mean)-(hand_inverse@base_mean)).normalized()
-# Derive the wrist from the visible long fingers, then turn toward screen
-# right (+X) progressively during the first half of the slash, then hold.
+# Aim the actual long-claw tips toward the enemy (-Y), 15 degrees below
+# horizontal. The wrist angle is derived from the skin rather than guessed.
 plane_length=math.hypot(finger_axis.y,finger_axis.z)
 forward_pitch=math.atan2(finger_axis.z,-finger_axis.y)-math.asin(-math.sin(math.radians(15))/plane_length)
 pitched=Quaternion((1,0,0),forward_pitch)@finger_axis
 forward_yaw=math.atan2(-pitched.x,-pitched.y)
+forward_q=Euler((forward_pitch,0,forward_yaw),'XYZ').to_quaternion()
+raised_q=Euler((math.radians(-78),0,math.radians(-25)),'XYZ').to_quaternion()
+
+def arc_claw(t):
+    u=min(1,max(0,(t-sweep_start)/(sweep_end-sweep_start)));s=u*u*(3-2*u)
+    start=Vector((axis-.56,-.33,.64))+raised_q@claw_offset
+    end=Vector((axis+.46,-1.26,-.35))+Euler((math.radians(20),0,math.radians(52)),'XYZ').to_quaternion()@claw_offset
+    end.z=-.30
+    angle=s*math.pi/2
+    target=start.copy()
+    target.x+=(end.x-start.x)*(1-math.cos(angle)-.16*math.sin(2*angle))
+    target.z+=(end.z-start.z)*math.sin(angle)
+    v=min(1,u*2);v=v*v*(3-2*v)
+    target.y=start.y+(end.y-start.y)*v
+    return target
+
+def flowing_hand(t):
+    # The claw banks with its moving arc, rather than turning to a fixed
+    # screen-space heading. Include the pounce in the world-space tangent.
+    a=max(sweep_start,t-.0003);b=min(sweep_end,t+.0003)
+    pa,pb=arc_claw(a),arc_claw(b);pa.y-=travel(a);pb.y-=travel(b)
+    direction=(pb-pa).normalized()
+    q=(forward_q@finger_axis).rotation_difference(direction)@forward_q
+    return raised_q.slerp(q,smooth(sweep_start,sweep_start+.075,t))
+
+end_hand=flowing_hand(sweep_end)
 for i,k in enumerate(keys):
     row=list(k);old_q=Euler((math.radians(row[12]),0,math.radians(row[13])),'XYZ').to_quaternion()
-    if 1.24<=row[0]<=sweep_end:
-        turn=smooth(sweep_start,(sweep_start+sweep_end)/2,row[0])
-        row[12:14]=[-78+(math.degrees(forward_pitch)+78)*turn,-25+(math.degrees(forward_yaw)+115)*turn]
-    if row[0]==sweep_end:
-        new_q=Euler((math.radians(row[12]),0,math.radians(row[13])),'XYZ').to_quaternion()
+    if 1.24<=row[0]<=1.50:row[12:14]=[math.degrees(forward_pitch),math.degrees(forward_yaw)]
+    if row[0]==1.50:
+        new_q=end_hand
         # Keep the existing R3 claw arc/recovery positions when turning the
         # wrist, including the hand-off between the sweep and recovery.
         old_claw=Vector((axis+row[9],row[10],row[11]))+old_q@claw_offset
@@ -107,22 +131,11 @@ for i in range(1,len(keys)-1):
     a,b=secants[i-1],secants[i];mask=a*b>0;w1,w2=2*h[i]+h[i-1],h[i]+2*h[i-1]
     slopes[i,mask]=(w1+w2)/(w1/a[mask]+w2/b[mask])
 
-def sweep_palm(t,pitch,yaw):
-    u=min(1,max(0,(t-sweep_start)/(sweep_end-sweep_start)));s=u*u*(3-2*u)
-    start=Vector((axis-.56,-.33,.64))+Euler((math.radians(-78),0,math.radians(-25)),'XYZ').to_quaternion()@claw_offset
-    end=Vector((axis+.46,-1.26,-.35))+Euler((math.radians(20),0,math.radians(52)),'XYZ').to_quaternion()@claw_offset
-    end.z=-.30
-    # A bowed quarter-ellipse: descend along the outside of the raised arm,
-    # then carry the claw horizontally across the low part of the swing.
-    # A small outward bow matches the user's red curve near its upper end.
-    angle=s*math.pi/2
-    target=start.copy()
-    target.x+=(end.x-start.x)*(1-math.cos(angle)-.16*math.sin(2*angle))
-    target.z+=(end.z-start.z)*math.sin(angle)
-    v=min(1,u*2);v=v*v*(3-2*v)
-    target.y=start.y+(end.y-start.y)*v
-    q=Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
-    return target-q@claw_offset
+def hand_rotation(t,pitch,yaw):
+    if sweep_start<=t<=sweep_end:return flowing_hand(t)
+    if sweep_end<t<=spec['timing']['rightPlant']:
+        return end_hand.slerp(Quaternion(),smooth(sweep_end,spec['timing']['rightPlant'],t))
+    return Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
 
 def update(): bpy.context.view_layer.update()
 
@@ -154,10 +167,10 @@ reach_errors=[]
 last_poles={}
 initial_poles={}
 
-def arm_ik(side, palm, pitch, yaw):
+def arm_ik(side, palm, pitch, yaw, rotation=None):
     names=arms[side]; rh=[rest[n].translation for n in names]
     root=arm.pose.bones[names[0]].head.copy()
-    hand_q=Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
+    hand_q=rotation if rotation is not None else Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
     wrist=palm-hand_q@(rh[3]-rh[2])
     lengths=[(rh[i+1]-rh[i]).length for i in range(2)]
     # Let the clavicle follow a reaching arm before solving elbow/wrist.
@@ -254,10 +267,6 @@ for t in times:
     for p in arm.pose.bones:p.rotation_mode='QUATERNION';p.matrix_basis=baseline[p.name]
     update()
     x,y,z,pitch,yaw,roll,rib,head,rx,ry,rz,hp,hy,lx,ly,lz,step=sample(t)
-    if sweep_start<=t<=sweep_end:
-        turn=smooth(sweep_start,(sweep_start+sweep_end)/2,t)
-        hp=-78+(math.degrees(forward_pitch)+78)*turn
-        hy=-25+(math.degrees(forward_yaw)+115)*turn
     root=arm.pose.bones['root'];m=root.matrix.copy();m.translation+=Vector((0,-travel(t),z));set_matrix('root',m)
     m=arm.pose.bones['hips'].matrix.copy();m.translation.x+=x;set_matrix('hips',m)
     rotate('hips',(0,yaw*.08,0))
@@ -266,8 +275,9 @@ for t in times:
     rotate('spine2',(pitch*.15,roll*.5,rib))
     rotate('spine_16',(-head,0,-yaw*.30))
     rotate('spine_26',(max(0,head)*1.8,0,0))
-    palm=sweep_palm(t,hp,hy) if sweep_start<=t<=sweep_end else Vector((axis+rx,ry,rz))
-    palm.y-=travel(t);arm_ik('R',palm,hp,hy)
+    hand_q=hand_rotation(t,hp,hy)
+    palm=arc_claw(t)-hand_q@claw_offset if sweep_start<=t<=sweep_end else Vector((axis+rx,ry,rz))
+    palm.y-=travel(t);arm_ik('R',palm,hp,hy,hand_q)
     arm_ik('L',Vector((axis+lx,ly-travel(t)*smooth(1.62,1.88,t),lz)),0,-5)
     for side in ['L','R']:leg_ik(side,step)
     # Tail opposes the torso twist with a delayed wave through its full length.
@@ -326,6 +336,7 @@ while len(text)%4:text+=b' '
 while len(data)%4:data.append(0)
 binary=struct.pack('<III',0x46546c67,2,28+len(text)+len(data))+struct.pack('<II',len(text),0x4e4f534a)+text+struct.pack('<II',len(data),0x004e4942)+data
 (out/'boss9_attack1.glb').write_bytes(binary)
-report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'clawIndices':claw_ids,'fingerBaseIndices':finger_base_ids,'fingerTipIndices':finger_tip_ids,'spec':spec,'timing':{'riseStart':rise_start,'sweepStart':sweep_start,'sweepEnd':sweep_end,'riseAndSweepSeconds':sweep_end-rise_start},'reference':'Latest pure animation and hitbox specification; preview first, no game integration','recovery':'Right claw plants in Recovery; return to Idle at advanced position'}
+tip_groups=[[v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if group_names[g.group]==n)>.85] for n in ['spine_33','spine_36','spine_39']]
+report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'clawIndices':claw_ids,'fingerBaseIndices':finger_base_ids,'fingerTipIndices':finger_tip_ids,'fingerTipGroups':tip_groups,'spec':spec,'timing':{'riseStart':rise_start,'sweepStart':sweep_start,'sweepEnd':sweep_end,'riseAndSweepSeconds':sweep_end-rise_start},'reference':'User confirmed whole right-arm/claw arc coupling; palm banks with the arc, no fixed 90-degree yaw','recovery':'Right claw plants in Recovery; return to Idle at advanced position'}
 (out/'build.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print('ATTACK1_PREPARED',duration,'seconds; maximum arm reach adjustment',max(reach_errors),flush=True)

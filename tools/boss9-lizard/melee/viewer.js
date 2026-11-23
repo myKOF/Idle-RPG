@@ -36,13 +36,21 @@ const fanPoints=[];for(let i=0;i<32;i++){const a=(-60+i*120/32)*Math.PI/180,b=(-
 const fanGeometry=new THREE.BufferGeometry();fanGeometry.setAttribute('position',new THREE.Float32BufferAttribute(fanPoints,3));const fan=new THREE.Mesh(fanGeometry,new THREE.MeshBasicMaterial({color:0xff654b,transparent:true,opacity:.26,side:THREE.DoubleSide,depthWrite:false}));scene.add(fan);
 let skin,rootBone;gltf.scene.traverse(o=>{if(o.isSkinnedMesh)skin=o;if(o.isBone&&o.name==='root')rootBone=o;});
 pose(0);const rootStart=rootBone.getWorldPosition(new THREE.Vector3());
-function geometry(){const v=new THREE.Vector3(),p=new THREE.Vector3();for(const i of profile.clawIndices){skin.getVertexPosition(i,p);v.add(p.applyMatrix4(skin.matrixWorld));}v.multiplyScalar(1/profile.clawIndices.length);const mean=ids=>{const q=new THREE.Vector3();for(const i of ids){skin.getVertexPosition(i,p);q.add(p.applyMatrix4(skin.matrixWorld));}return q.multiplyScalar(1/ids.length);};const finger=mean(profile.fingerTipIndices).sub(mean(profile.fingerBaseIndices)).normalize();const root=rootBone.getWorldPosition(new THREE.Vector3());return {claw:v.toArray(),fingerDirection:finger.toArray(),rootHead:root.toArray(),rootAdvance:root.z-rootStart.z,minimumCapsuleGap:state.targets.length?Math.min(...state.targets.map(t=>API.capsuleGap(state.bodyCapsule,t))):null};}
+function geometry(){const p=new THREE.Vector3(),mean=ids=>{const q=new THREE.Vector3();for(const i of ids){skin.getVertexPosition(i,p);q.add(p.applyMatrix4(skin.matrixWorld));}return q.multiplyScalar(1/ids.length);};const claw=mean(profile.clawIndices),base=mean(profile.fingerBaseIndices),tip=mean(profile.fingerTipIndices),finger=tip.clone().sub(base).normalize(),root=rootBone.getWorldPosition(new THREE.Vector3());return {claw:claw.toArray(),fingerDirection:finger.toArray(),fingerTips:profile.fingerTipGroups.map(ids=>mean(ids).toArray()),rootHead:root.toArray(),rootAdvance:root.z-rootStart.z,minimumCapsuleGap:state.targets.length?Math.min(...state.targets.map(t=>API.capsuleGap(state.bodyCapsule,t))):null};}
 function bounds(){const b={minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity};vertices(p=>{const s=p.clone().project(camera);b.minX=Math.min(b.minX,(s.x+1)*W/2);b.maxX=Math.max(b.maxX,(s.x+1)*W/2);b.minY=Math.min(b.minY,(1-s.y)*H/2);b.maxY=Math.max(b.maxY,(1-s.y)*H/2);});return b;}
 function snapshot(){const nodes={};gltf.scene.traverse(o=>{if(o.isBone)nodes[o.name]=o.getWorldPosition(new THREE.Vector3()).toArray();});return nodes;}
 const labels={Windup:'前搖蓄力',Active:'抬爪／揮擊',Recovery:'收招回穩',Idle:'待機'},colors={Windup:'#786a32',Active:'#9c4934',Recovery:'#365e83',Idle:'#435d69'};
+const guides=[];
+if(params.has('guide')){
+ const tracks=[[],[],[]],steps=96;
+ for(let i=0;i<=steps;i++){pose(spec.hitbox.on+(spec.hitbox.off-spec.hitbox.on)*i/steps);geometry().fingerTips.forEach((p,j)=>tracks[j].push(new THREE.Vector3(...p)));}
+ for(let j=0;j<3;j++){const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(tracks[j]),new THREE.LineBasicMaterial({color:[0xffd67f,0xa5e6ef,0xffffff][j],transparent:true,opacity:.8,depthTest:false}));line.renderOrder=10;scene.add(line);guides.push(line);}
+ document.getElementById('subtitle').textContent='實際三根爪尖的移動軌跡（檢視標記）';
+}
 function render(t){
  pose(t);bodyCapsule.position.set(state.bodyCapsule.x,spec.ground+spec.bossCapsule.height/2,state.bodyCapsule.z);fan.visible=debug&&state.hitbox;fan.scale.setScalar(state.hitboxRange/spec.hitbox.range);fan.position.set(state.position.x,spec.ground+.015,state.position.z);
  if(debug){const target=state.targets[0];avatar.position.set(target.x,target.y+target.height/2,target.z);avatar.material.color.set(state.hits.length?0xff8e74:0x78d4f5);}
+ for(const line of guides)line.geometry.setDrawRange(0,t<spec.hitbox.on?0:Math.min(97,1+Math.floor((t-spec.hitbox.on)/(spec.hitbox.off-spec.hitbox.on)*96)));
  renderer.render(scene,camera);document.getElementById('phase').textContent=labels[state.phase];document.getElementById('phase').style.background=colors[state.phase];document.getElementById('time').textContent=t.toFixed(2)+' / '+spec.duration.toFixed(2)+' s';
  document.getElementById('detail').style.display=debug?'block':'none';document.getElementById('detail').textContent=`Hitbox: ${state.hitbox?'ON':'OFF'}   命中: ${state.hits.length}   HP: ${state.targets[0]?.hp??100}\n前移: ${state.actualDistance.toFixed(3)} / ${spec.rootMotion.distance.toFixed(3)}   阻擋: ${state.blockedDistance.toFixed(3)}`;
  document.getElementById('scrub').value=String(t);

@@ -164,6 +164,16 @@
 - `node --test tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs tests/fullscreen-toggle.test.cjs tests/desktop-app-protocol.test.cjs tests/desktop-ship-rules.test.cjs tests/game-menu.test.cjs tests/vfx-editor-cache-versions.test.cjs` 55/55 通過。`node tools/desktop/verify-mini-window.cjs tmp/mini-live-drag-qa/full full` 通過 windowed／borderless／fullscreen 三組往返、最小化、置頂、位置重建與即時戰況；原生置中檢查計入小數 DPI 的 1 DIP 取整差，重開座標仍須一致。`npm.cmd run build` 752 檔、修改程式語法與 Git 差異檢查通過。
 - 可交使用者驗收及合併。原始碼桌面版需重啟，安裝版需重新打包；多螢幕與取消由回歸驗證，本輪原生實測為單螢幕 full 版。測試視窗與臨時 profile 關閉，暫存清理。Commit 為本段所在的 `[Codex] fix: 讓迷你視窗拖曳即時跟隨滑鼠`。
 
+## BOSS9-RESTORE-ARC-20261123 — 恢復基底並讓右臂與手爪沿弧線連動
+
+- Owner：Codex；Done，單人完成，待使用者看GIF。使用者否決固定／漸進90度版本，要求改回並提供爪尖弧線圖；先精確恢復4e31bb87／素材088f73d1基底並通過原SHA驗證，再依使用者明確回覆「是，讓手臂與手爪順著弧線連動」重拉右臂。保留基底其他動作／root／判定，不複製參考像素或綠刀光，未接實戰。
+- 修改7檔：tools/boss9-lizard/melee/{author.py,verify.py,viewer.js,encode.py,export.cjs}、docs/assets/BOSS9_LIZARD_MELEE.md及本段。整條鎖骨／肩／肘／腕IK跟隨外側下降、跨過身前再向右弧掃，掌形以爪群世界座標運動切向自然翻轉，取消90度目標角／中途鎖定。時長2.4秒、抬爪至揮下1秒、前撲0.35及命中1.12–1.50秒維持；原73骨／網格／權重／貼圖／材質／Walk保留。
+- 素材：既有codex-authored/boss9-lizard-melee-20261123更新Blend／GLB、四原預覽及來源／QA；新增Path正常速度與Arc_Slow四倍慢放、Path擷取JSON／聯絡圖，移除被否決的Palm PNG／Wrist慢放（原版本仍在Git），共38檔。路徑三條細線直接採最終GLB三根長指的實際蒙皮末端，隨爪尖走過逐段顯示；是工具標記，不是參考曲線貼圖或戰鬥VFX。參考圖SHA及來源限制記於資產文件。
+- 未改但檢查：共通規範／Agent／Workflow／Codex及歷史任務、melee/spec.json／controller.js／capture.cjs、判定測試、核准模型與088f73d1基底。Idle及非右臂通道對認可基底最大差0，root／左爪／頭身尾腿保持。遊戲js、Excel／CSV、VFX／SFX／Worker及玩法未改。專用檔預檢無外部來源；任務同檔與develop不同段，選MINI-POSITION前穩定錨點，本輪差異對develop及其工作副本三方試合0，只改本段。
+- 驗證：Blender author.py／verify.py通過，Blend與重匯入GLB各1153時點；指尖與實際爪群速度最小同向分量0.93398（夾角約21度），方向最大相鄰步變化3.014度，實際弧線橫向1.1473、下降1.0517、偏離首尾直線0.43349；中段下降72.47%／右移17.20%，末五分之一向右0.23966、僅再下降0.01334，末段指尖至少離地0.30224模型單位。骨長／四肢鏈／接地／首尾Idle／root及8組指定穿插通過，三角形穿插0、接地誤差<0.002372、native/GLB頂點差<0.00000144；IK最大目標調整約0.06515，沒有拉長骨骼。
+- 工具／測試：capture.cjs五視圖600張及UI播放暫停／重播／正反拖曳／場景視角切換、root／Capsule阻擋／單次命中／擊退保持，入鏡及頁面錯誤警告0；五份正常GIF（900x600／120張／50FPS／2.4秒）與一份4倍慢放（20張／1.6秒）逐張重開解碼、五份聯絡圖目視通過。node --test tests/boss9-melee-preview.test.cjs 14/14，Python AST3檔、Node／ESM、npm.cmd run build 757檔、export.cjs 37必要檔SHA及manifest、自我Review及git diff --check通過；所有瀏覽器finally關閉，孤兒檢查無殘留。
+- Commit：素材庫先提交993a4276；專案為本段所在「[Codex] fix: 讓BOSS9手臂與手爪沿弧線連動」。本輪製作無未完成項，預覽工具可供合併審閱，動作採用及實戰接入仍待使用者確認，未合併推送develop／main。必要QA已保存素材庫，本輪643個暫存檔以確定絕對路徑、無reparse point、檔名白名單與數量核對後逐檔非遞迴清除，再移除空目錄；沒有重試或繞過舊暫存區的刪除拒絕。已知限制：原自動蒙皮局部拉伸、未全面排除所有甲片接觸；世界碰撞／遊戲動畫混合尚未接入。下一步看純動作及實際爪尖弧線GIF核對整臂連動。
+
 ## DESKTOP-MINI-POSITION-20261119 — 迷你視窗置中、位置記憶與標題列控制
 
 - Owner：Codex；Done，單人實作。使用者要求首次開啟在畫面中央，其後記住最後位置而不重置。前置：迷你視窗及還原／Enter功能已完成，工作區乾淨、逐檔衝突預檢通過。

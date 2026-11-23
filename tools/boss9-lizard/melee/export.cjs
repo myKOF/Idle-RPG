@@ -9,14 +9,13 @@ const hash=f=>{const b=fs.readFileSync(f);return crypto.createHash('sha256').upd
 const copy=(a,b)=>{fs.mkdirSync(path.dirname(b),{recursive:true});fs.copyFileSync(a,b);};
 const files=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(path.join(d,e.name)):[path.join(d,e.name)]);
 const tools=['author.py','verify.py','spec.json','controller.js','viewer.html','viewer.js','capture.cjs','encode.py','export.cjs'];
-const views=['front','side','combat','blocked'];
+const views=['front','side','combat','blocked','path'];
 if(process.argv[2]==='--stage'){
  const review=path.resolve(process.argv[3]);
  for(const name of tools)copy(path.join(__dirname,name),path.join(pack,'source/tools',name));
  copy(path.join(project,'tests/boss9-melee-preview.test.cjs'),path.join(pack,'source/boss9-melee-preview.test.cjs'));
  copy(path.join(project,'docs/assets/BOSS9_LIZARD_MELEE.md'),path.join(pack,'source/BOSS9_LIZARD_MELEE.md'));
- for(const name of ['BOSS9_Attack1.gif','BOSS9_Attack1_Side.gif','BOSS9_Attack1_Hitbox.gif','BOSS9_Attack1_Capsule.gif','BOSS9_Attack1_Wrist_Slow.gif'])copy(path.join(review,'preview',name),path.join(pack,'preview',name));
- copy(path.join(review,'front/0075.png'),path.join(pack,'preview/BOSS9_Attack1_Palm.png'));
+ for(const name of ['BOSS9_Attack1.gif','BOSS9_Attack1_Side.gif','BOSS9_Attack1_Hitbox.gif','BOSS9_Attack1_Capsule.gif','BOSS9_Attack1_Path.gif','BOSS9_Attack1_Arc_Slow.gif'])copy(path.join(review,'preview',name),path.join(pack,'preview',name));
  for(const view of views){copy(path.join(review,view,'capture.json'),path.join(pack,'qa',view+'-capture.json'));copy(path.join(review,'preview',view+'-contact.jpg'),path.join(pack,'qa',view+'-contact.jpg'));}
  copy(path.join(review,'preview/encoding.json'),path.join(pack,'qa/encoding.json'));
  for(const name of ['build.log','verify.log','unit.log'])copy(path.join(review,name),path.join(pack,'qa',name));
@@ -25,7 +24,7 @@ if(process.argv[2]==='--stage'){
   const projectPath=relative.startsWith('source/tools/')?'tools/boss9-lizard/melee/'+path.basename(f):relative==='source/BOSS9_LIZARD_MELEE.md'?'docs/assets/BOSS9_LIZARD_MELEE.md':relative==='source/boss9-melee-preview.test.cjs'?'tests/boss9-melee-preview.test.cjs':null;
   return {path:relative,sha256:hash(f),...(projectPath?{project:projectPath}:{})};
  });
- fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id,status:'Pure animation and collision preview; awaiting user review; no game integration',base:'User-approved lizard and Walk, original mesh/skin/materials retained',specification:'Latest pure animation and physical hitbox requirements; no VFX or SFX',files:entries},null,2)+'\n');
+ fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id,status:'Whole-arm curved slash preview; awaiting user review; no game integration',base:'Restored the accepted pre-yaw version, then coupled the claw heading to the moving arc',specification:'User confirmed arm and claw must flow together along the curve; diagnostic paths are actual GLB tips, not VFX',files:entries},null,2)+'\n');
 }
 const manifest=read(path.join(pack,'manifest.json'));
 assert.equal(manifest.id,id);assert.equal(new Set(manifest.files.map(e=>e.path)).size,manifest.files.length);
@@ -38,12 +37,12 @@ assert.equal(hash(path.join(pack,'exports/boss9_attack1.glb')),v.glbSHA256);asse
 assert.ok(b.sourceBinaryPreserved&&v.sourceBinaryAndWalkPreserved);assert.equal(v.bones,73);assert.deepEqual(v.clips,['Walk','Idle',spec.id]);assert.equal(v.duration,spec.duration);
 assert.deepEqual(b.spec,spec);assert.deepEqual(v.notifies,spec.notifies);assert.equal(b.timing.riseAndSweepSeconds,1);
 assert.ok(v.nativeGLBMaximumVertexDifference<2e-5&&v.channelPoseSeamError<1e-5&&v.idleAttackPoseDifference<2e-5);
-if(v.previousRevisionSHA256)assert.ok(v.unchangedIdleAndNonRightArmChannelError<1e-5);
+assert.equal(v.previousRevisionSHA256,'743f2f705df8fe7e29485a47cfb5b06ae0349ab36461bc941976415506e755b4');assert.ok(v.unchangedIdleAndNonRightArmChannelError<1e-5);
 for(const c of Object.values(v.checks)){
  assert.equal(c.samples,1153);assert.ok(c.boneLengthError<1e-5&&c.limbLinkError<1e-5&&c.maximumJointStep<.12&&c.rootMotionError<1e-5);
  assert.ok(c.windupHipDrop>.08&&c.windupHandDrift<.012&&c.plantedGroundError<.012&&c.maximumBelowGround<.008&&c.idlePoseAtAdvancedPositionError<1e-5);
- assert.ok(Object.values(c.triangleOverlaps).every(n=>n===0));assert.ok(c.secondHalfTipRightDot>.9&&c.secondHalfTipYaw[0]>85&&c.secondHalfTipYaw[1]<95&&c.activeTipInclination[0]>-30&&c.activeTipInclination[1]<5);
- assert.ok(c.turnProgressSamples[0].yaw<5&&c.turnProgressSamples[2].yaw>10&&c.turnProgressSamples[2].yaw<80);
+ assert.ok(Object.values(c.triangleOverlaps).every(n=>n===0));
+ const f=c.flow;assert.ok(f.minimumTangentAlignment>.82&&f.maximumFingerDirectionStepDegrees<12&&f.horizontalTravel>.7&&f.verticalTravel<-.9&&f.arcChordDeviation>.2&&f.middleHorizontalProgress<.35&&f.middleVerticalProgress>.55&&f.lateHorizontalTravel>.15&&f.lateVerticalDrop<.07&&f.lateMinimumTipClearance>.05);
 }
 for(const view of views){
  const c=read(path.join(pack,'qa',view+'-capture.json'));assert.equal(c.clipName,spec.id);assert.equal(c.glbSHA256,v.glbSHA256);assert.equal(c.frames.length,120);assert.ok(Math.abs(c.duration-spec.duration)<1e-6);assert.deepEqual(c.errors,[]);assert.deepEqual(c.warnings,[]);
@@ -53,7 +52,6 @@ for(const view of views){
   assert.ok(Math.abs(s.actualDistance-f.geometryCenters.rootAdvance)<1e-5,'Rendered root must obey the collision result');
   assert.ok(s.actualDistance>=-1e-7&&s.actualDistance<=spec.rootMotion.distance+1e-7);
   assert.ok(s.hits.length<=1);for(const h of s.hits)assert.ok(h.time>=spec.hitbox.on&&h.time<spec.hitbox.off&&h.damageType==='physical');
-  if(f.time>=(spec.hitbox.on+spec.hitbox.off)/2&&f.time<=spec.hitbox.off){const d=f.geometryCenters.fingerDirection;assert.ok(d[0]>.9&&d[1]<0&&d[1]>-.5&&Math.abs(d[2])<.09,'Claw tips must reach screen-right by halfway through the sweep');}
   if(s.phase==='Windup')assert.ok(Math.abs(s.actualDistance)<1e-7&&s.hits.length===0);
   if(f.geometryCenters.minimumCapsuleGap!==null)assert.ok(f.geometryCenters.minimumCapsuleGap>=spec.bossCapsule.skin-1e-6,'Player capsules must not overlap');
  }
@@ -62,14 +60,16 @@ for(const view of views){
  if(view==='combat'||view==='blocked'){assert.equal(end.hits.length,1);assert.equal(end.targets[0].hp,75);}else assert.equal(end.hits.length,0);
  if(view==='blocked'){assert.ok(end.contacts>0&&end.blockedDistance>.01&&end.actualDistance<spec.rootMotion.distance);}else assert.ok(Math.abs(end.actualDistance-spec.rootMotion.distance)<1e-7);
  if(view==='front'){assert.ok(c.controlsCheck&&Object.values(c.controlsCheck).every(Boolean));
-  const first=c.frames.filter(f=>f.time>=spec.hitbox.on&&f.time<(spec.hitbox.on+spec.hitbox.off)/2).map(f=>Math.atan2(f.geometryCenters.fingerDirection[0],f.geometryCenters.fingerDirection[2])*180/Math.PI);
-  assert.ok(first[0]<5&&first[4]>10&&first[4]<80&&first.at(-1)>85,'Turn must develop during the downstroke and finish around its midpoint');for(let i=1;i<first.length;i++)assert.ok(first[i]>=first[i-1]-.1);
   const p=c.frames.filter(f=>f.time>=1.12&&f.time<=1.5).map(f=>f.geometryCenters.claw),a=p[0],z=p.at(-1),dx=z[0]-a[0],dy=z[1]-a[1];
   assert.ok(dx>.7&&dy<-.9);const bow=Math.max(...p.map(q=>Math.abs((q[0]-a[0])*dy-(q[1]-a[1])*dx)/Math.hypot(dx,dy)));assert.ok(bow>.2,'Actual claw must follow a curved diagonal sweep');
  }
+ if(view==='path'){
+  assert.ok(c.guide);const active=c.frames.filter(f=>f.time>=1.12&&f.time<=1.5);
+  assert.ok(active.every(f=>f.geometryCenters.fingerTips.length===3));
+  for(let i=1;i<active.length-1;i++){const f=active[i];if(f.time<1.24||f.time>1.46)continue;const a=active[i-1].geometryCenters.claw,z=active[i+1].geometryCenters.claw,d=z.map((x,j)=>x-a[j]),length=Math.hypot(...d),finger=f.geometryCenters.fingerDirection;assert.ok(d.reduce((s,x,j)=>s+x*finger[j],0)/length>.8,'Actual moving claw must bank along its arc');}
+ }
  assert.equal(e.captures[view].glbSHA256,v.glbSHA256);
 }
-for(const gif of e.gifs){const slow=gif.file==='BOSS9_Attack1_Wrist_Slow.gif';assert.equal(gif.frames,slow?20:120);assert.equal(gif.durationMs,slow?1600:2400);assert.deepEqual(gif.size,[900,600]);assert.equal(hash(path.join(pack,'preview',gif.file)),gif.sha256);if(slow){assert.equal(gif.speed,.25);assert.equal(gif.sourceStart,1.12);assert.equal(gif.sourceEnd,1.5);}}
-assert.equal(e.gifs.length,5);
-const palm=fs.readFileSync(path.join(pack,'preview/BOSS9_Attack1_Palm.png'));assert.equal(palm.toString('hex',0,8),'89504e470d0a1a0a');assert.equal(palm.readUInt32BE(16),900);assert.equal(palm.readUInt32BE(20),600);
+for(const gif of e.gifs){const slow=gif.file==='BOSS9_Attack1_Arc_Slow.gif';assert.equal(gif.frames,slow?20:120);assert.equal(gif.durationMs,slow?1600:2400);assert.deepEqual(gif.size,[900,600]);assert.equal(hash(path.join(pack,'preview',gif.file)),gif.sha256);if(slow)assert.equal(gif.speed,.25);}
+assert.equal(e.gifs.length,6);
 console.log('BOSS9_MELEE_PACKAGE_PASS',manifest.files.length,'files; Walk preserved; native/GLB/Idle/animation notifies/GIFs/collision/UI verified');

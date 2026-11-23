@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 root=Path(sys.argv[1]);out=root/'preview';out.mkdir(exist_ok=True)
 report={'gifs':[],'captures':{}};font=ImageFont.truetype('C:/Windows/Fonts/arial.ttf',15)
-for folder,name in [('front','BOSS9_Attack1.gif'),('side','BOSS9_Attack1_Side.gif'),('combat','BOSS9_Attack1_Hitbox.gif'),('blocked','BOSS9_Attack1_Capsule.gif')]:
+for folder,name in [('front','BOSS9_Attack1.gif'),('side','BOSS9_Attack1_Side.gif'),('combat','BOSS9_Attack1_Hitbox.gif'),('blocked','BOSS9_Attack1_Capsule.gif'),('path','BOSS9_Attack1_Path.gif')]:
     capture=json.loads((root/folder/'capture.json').read_text())
     assert not capture['errors'] and not capture['warnings'] and len(capture['frames'])==120
     assert abs(capture['duration']-2.4)<1e-6
@@ -30,10 +30,10 @@ for folder,name in [('front','BOSS9_Attack1.gif'),('side','BOSS9_Attack1_Side.gi
         x=(j%5)*300;y=(j//5)*220;draw.text((x+5,y+3),'%s / %.2f s'%(folder,i/50),font=font,fill='white');contact.paste(frames[i].resize((300,200)),(x,y+20))
     contact.save(out/(folder+'-contact.jpg'),quality=92)
 assert len({c['glbSHA256'] for c in report['captures'].values()})==1
-slow=out/'BOSS9_Attack1_Wrist_Slow.gif'
-with Image.open(out/'BOSS9_Attack1.gif') as full:
+slow=out/'BOSS9_Attack1_Arc_Slow.gif'
+with Image.open(out/'BOSS9_Attack1_Path.gif') as source:
     selected=[]
-    for i in range(56,76):full.seek(i);selected.append(full.copy())
+    for i in range(56,76):source.seek(i);selected.append(source.copy())
     selected[0].save(slow,save_all=True,append_images=selected[1:],duration=80,loop=0,optimize=False,disposal=1)
 with Image.open(slow) as gif:
     durations=[]
