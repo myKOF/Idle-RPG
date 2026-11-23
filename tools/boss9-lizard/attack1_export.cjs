@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
 const {resolveLibraryRoot}=require('../vfx/vfx-library-root.cjs');
 const project=path.resolve(__dirname,'../..');
-const pack=path.join(resolveLibraryRoot({libraryId:'effects-materials'}).root,'codex-authored/boss9-lizard-attack1-20261123');
+const pack=path.join(resolveLibraryRoot({libraryId:'effects-materials'}).root,'codex-authored/boss9-lizard-attack1-r2-20261123');
 const read=f=>JSON.parse(fs.readFileSync(f,'utf8'));
 const hash=f=>{const b=fs.readFileSync(f);return crypto.createHash('sha256').update(/\.(?:py|js|cjs|html|json|md|log)$/.test(f)?b.toString('utf8').replace(/\r\n/g,'\n'):b).digest('hex');};
 const copy=(a,b)=>{fs.mkdirSync(path.dirname(b),{recursive:true});fs.copyFileSync(a,b);};
@@ -24,7 +24,7 @@ if(process.argv[2]==='--stage'){
   const relative=path.relative(pack,f).replaceAll('\\','/');
   return {path:relative,sha256:hash(f),...(relative.startsWith('source/tools/')?{project:'tools/boss9-lizard/'+path.basename(f)}:relative==='source/BOSS9_LIZARD_ATTACK1.md'?{project:'docs/assets/BOSS9_LIZARD_ATTACK1.md'}:{})};
  });
- fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id:'boss9-lizard-attack1-20261123',status:'Attack1 GIF review; no game integration',base:'User-approved straight running lizard; source binary and Walk retained',reference:'User BOSS9_Attack1.gif, movement analysis only; no reference pixels, backgrounds or effects copied',files:entries},null,2)+'\n');
+ fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id:'boss9-lizard-attack1-r2-20261123',status:'Attack1 GIF review; no game integration',base:'User-approved straight running lizard; source binary and Walk retained',reference:'User BOSS9_Attack1.gif, movement analysis only; no reference pixels, backgrounds or effects copied',files:entries},null,2)+'\n');
 }
 const m=read(path.join(pack,'manifest.json'));
 for(const entry of m.files){const f=path.resolve(pack,entry.path);assert.ok(f.startsWith(pack+path.sep));assert.equal(hash(f),entry.sha256,entry.path);if(entry.project)assert.equal(hash(path.join(project,entry.project)),entry.sha256,entry.project);}
@@ -32,18 +32,25 @@ const b=read(path.join(pack,'exports/build.json')),v=read(path.join(pack,'export
 assert.equal(hash(path.join(pack,'source/boss9_lizard.glb')),'23319786f8663d55bbde4ee7ae48bd2259e7a493114994cb9407dd2d731dbf5d');
 assert.equal(hash(path.join(pack,'source/boss9_lizard.glb')),v.sourceSHA256);assert.equal(b.sourceSHA256,v.sourceSHA256);
 assert.equal(hash(path.join(pack,'exports/boss9_attack1.glb')),v.glbSHA256);assert.equal(b.glbSHA256,v.glbSHA256);
-assert.ok(b.sourceBinaryPreserved&&v.sourceBinaryAndWalkPreserved);assert.equal(v.bones,73);assert.deepEqual(v.clips,['Walk','Attack1']);assert.equal(v.duration,3.6);
+assert.ok(b.sourceBinaryPreserved&&v.sourceBinaryAndWalkPreserved);assert.equal(v.bones,73);assert.deepEqual(v.clips,['Walk','Attack1']);assert.equal(v.duration,1.8);
 assert.ok(v.nativeGLBMaximumVertexDifference<2e-5&&v.channelLoopError<1e-5);
 for(const c of Object.values(v.checks)){
  assert.equal(c.samples,865);assert.ok(c.boneLengthError<1e-5&&c.limbJointLinkError<1e-5&&c.loopVertexError<1e-5&&c.maximumAdjacentJointStep<.12);
  assert.ok(c.supportFootGroundError<.005&&c.supportHandGroundError<.008&&c.maximumBelowGround<.008);
  assert.ok(Object.values(c.triangleOverlaps).every(n=>n===0));
+ assert.equal(c.motion.riseAndSweepSeconds,1);assert.ok(c.motion.minimumInteriorLiftClawSpeed>.25);
+ assert.ok(c.motion.slashXTravel>.7&&c.motion.slashZTravel<-.9&&c.motion.minimumSlashXStep>-1e-4&&c.motion.maximumSlashZStep<1e-4&&c.motion.slashDiagonalMaximumDeviation<.035);
 }
 for(const view of ['front','side','top']){
- const c=read(path.join(pack,'qa',view+'-capture.json'));assert.equal(c.clipName,'Attack1');assert.equal(c.glbSHA256,v.glbSHA256);assert.equal(c.frames.length,90);assert.ok(Math.abs(c.duration-3.6)<1e-6);assert.deepEqual(c.errors,[]);assert.deepEqual(c.warnings,[]);
+ const c=read(path.join(pack,'qa',view+'-capture.json'));assert.equal(c.clipName,'Attack1');assert.equal(c.glbSHA256,v.glbSHA256);assert.equal(c.frames.length,90);assert.ok(Math.abs(c.duration-1.8)<1e-6);assert.deepEqual(c.errors,[]);assert.deepEqual(c.warnings,[]);
  for(const f of c.frames)assert.ok(f.bounds.minX>=0&&f.bounds.maxX<=900&&f.bounds.minY>=0&&f.bounds.maxY<=600);
  assert.equal(e.captures[view].glbSHA256,v.glbSHA256);
+ if(view==='front'){
+  const points=c.frames.filter(f=>f.time>=.74-1e-6&&f.time<=1.12+1e-6).map(f=>f.geometryCenters.clawScreen);
+  assert.equal(points.length,20);assert.ok(points.at(-1)[0]-points[0][0]>120&&points.at(-1)[1]-points[0][1]>180);
+  for(let i=1;i<points.length;i++)assert.ok(points[i][0]>=points[i-1][0]-.05&&points[i][1]>=points[i-1][1]-.05,'Claw must travel left-upper to right-lower in the actual frontal camera');
+ }
 }
-for(const gif of e.gifs){assert.equal(gif.frames,90);assert.equal(gif.durationMs,3600);assert.deepEqual(gif.size,[900,600]);assert.equal(hash(path.join(pack,'preview',gif.file)),gif.sha256);}
+for(const gif of e.gifs){assert.equal(gif.frames,90);assert.equal(gif.durationMs,1800);assert.deepEqual(gif.size,[900,600]);assert.equal(hash(path.join(pack,'preview',gif.file)),gif.sha256);}
 assert.equal(e.gifs.length,3);
 console.log('ATTACK1_PACKAGE_PASS',m.files.length,'files; accepted Walk unchanged; Attack1 native/GLB and GIFs verified');

@@ -17,7 +17,8 @@ assert new['accessors'][:len(old['accessors'])]==old['accessors']
 assert new['bufferViews'][:len(old['bufferViews'])]==old['bufferViews']
 assert len(new['animations'])==2 and new['animations'][0]==old['animations'][0]
 clip=new['animations'][1];assert clip['name']=='Attack1' and len(clip['channels'])==219
-build=json.loads(fixed.with_name('build.json').read_text());duration=3.6
+build=json.loads(fixed.with_name('build.json').read_text());duration=1.8
+assert abs(build['timing']['sweepEnd']-build['timing']['riseStart']-1.0)<1e-6
 def accessor(i):
     a=new['accessors'][i];v=new['bufferViews'][a['bufferView']];d={'SCALAR':1,'VEC3':3,'VEC4':4}[a['type']]
     assert a['componentType']==5126
@@ -51,13 +52,16 @@ def surface(mesh):
 
 arm,mesh=load(blend)
 groups={g.index:g.name for g in mesh.vertex_groups}
-def ids(names):
-    return {v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if groups[g.group] in names)>.9}
+def ids(names,threshold=.9):
+    return {v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if groups[g.group] in names)>threshold}
 regions={}
 for name,bone in [('handR','spine_18'),('handL','chest'),('footL','rearFoot.L'),('footR','rearFoot.R'),('skull','spine_16')]:
     regions[name]=ids({bone,*[b.name for b in arm.pose.bones[bone].children_recursive]})
 faces={n:[tuple(f.vertices) for f in mesh.data.polygons if set(f.vertices).issubset(index)] for n,index in regions.items()}
 assert all(faces.values())
+right_names={'spine_18',*[b.name for b in arm.pose.bones['spine_18'].children_recursive]}
+claw_ids=sorted(i for i in ids(right_names,.99999) if mesh.data.vertices[i].co.z<-.40)
+assert claw_ids==sorted(build['clawIndices']) and len(claw_ids)>30
 chains=[['spine_22','spine_21','spine_20','spine_19','spine_18'],['spine_06','spine_07','spine_08','spine_09','chest']]
 chains += [['rearLeg.'+s+'_01','rearLwr.'+s,'rearHorselink.'+s,'rearFoot.'+s,'rearToe.'+s] for s in ['L','R']]
 rest_lengths={(a,b):(arm.data.bones[b].head_local-arm.data.bones[a].head_local).length for chain in chains for a,b in zip(chain,chain[1:])}
@@ -68,9 +72,10 @@ native={};results={};equivalence=0
 for label,path in [('blend',blend),('glb',fixed)]:
     arm,mesh=load(path);bone_error=link_error=jump=loop=0;previous=None;ends=[];issues=[]
     collision={p:0 for p in ['handR_footL','handR_footR','handL_footL','handL_footR','handR_skull','handL_skull','handR_handL','footL_footR']}
-    foot_contact=left_contact=below_ground=0;edge_p95=edge_p99=edge_max=0;heads=[]
+    foot_contact=left_contact=below_ground=0;edge_p95=edge_p99=edge_max=0;heads=[];claws=[]
     for index,t in enumerate(times):
         frame(t);p=surface(mesh);assert np.all(np.isfinite(p))
+        claws.append(p[claw_ids].mean(axis=0))
         current=np.array([b.head for b in arm.pose.bones]);heads.append(current)
         if previous is not None:
             steps=np.linalg.norm(current-previous,axis=1);largest=float(steps.max());jump=max(jump,largest)
@@ -82,7 +87,7 @@ for label,path in [('blend',blend),('glb',fixed)]:
         for (a,b),length in rest_lengths.items():link_error=max(link_error,abs((arm.pose.bones[b].head-arm.pose.bones[a].head).length-length))
         floors={n:float(p[list(regions[n]),2].min()) for n in ['footL','footR','handL','handR']}
         foot_contact=max(foot_contact,abs(floors['footL']-build['ground']))
-        if t<2.2 or t>3.599:
+        if t<.74 or t>1.799:
             contact=abs(floors['handL']-build['ground']);left_contact=max(left_contact,contact)
             if contact>.008:issues.append({'time':t,'leftHandGroundError':contact})
         below_ground=max(below_ground,build['ground']-min(floors.values()))
@@ -100,12 +105,21 @@ for label,path in [('blend',blend),('glb',fixed)]:
     loop=float(np.max(np.abs(ends[0]-ends[1])))
     hi={b.name:i for i,b in enumerate(arm.pose.bones)};h=np.array(heads)
     ranges={n:np.ptp(h[:,hi[n]],axis=0).tolist() for n in ['hips','spine_16','spine_18','chest','tail_07','rearFoot.R']}
-    result={'samples':len(times),'boneLengthError':bone_error,'limbJointLinkError':link_error,'maximumAdjacentJointStep':jump,'loopVertexError':loop,'supportFootGroundError':foot_contact,'supportHandGroundError':left_contact,'maximumBelowGround':below_ground,'triangleOverlaps':collision,'edgeStretchP95':edge_p95,'edgeStretchP99':edge_p99,'edgeStretchMaximum':edge_max,'jointMotionRanges':ranges}
+    ts=np.array(times);cp=np.array(claws)
+    lift=np.where((ts>=.18)&(ts<=.68))[0]
+    lift_speed=np.linalg.norm(np.diff(cp[lift],axis=0),axis=1)/np.diff(ts[lift])
+    stroke=cp[(ts>=.74)&(ts<=1.12)][:,[0,2]]
+    travel=stroke[-1]-stroke[0];steps=np.diff(stroke,axis=0)
+    line_error=float(np.max(np.abs(np.cross(stroke-stroke[0],travel)))/np.linalg.norm(travel))
+    motion={'riseAndSweepSeconds':1.0,'minimumInteriorLiftClawSpeed':float(lift_speed.min()),'slashXTravel':float(travel[0]),'slashZTravel':float(travel[1]),'minimumSlashXStep':float(steps[:,0].min()),'maximumSlashZStep':float(steps[:,1].max()),'slashDiagonalMaximumDeviation':line_error}
+    result={'samples':len(times),'boneLengthError':bone_error,'limbJointLinkError':link_error,'maximumAdjacentJointStep':jump,'loopVertexError':loop,'supportFootGroundError':foot_contact,'supportHandGroundError':left_contact,'maximumBelowGround':below_ground,'triangleOverlaps':collision,'edgeStretchP95':edge_p95,'edgeStretchP99':edge_p99,'edgeStretchMaximum':edge_max,'jointMotionRanges':ranges,'motion':motion}
     print('ATTACK1_CHECK',label,json.dumps(result),flush=True)
     print('ATTACK1_DIAGNOSTICS',json.dumps(issues),flush=True)
     assert bone_error<1e-5 and link_error<1e-5 and jump<.12 and loop<1e-5,result
     assert foot_contact<.005 and left_contact<.008 and below_ground<.008,result
     assert sum(collision.values())==0,result
+    assert motion['minimumInteriorLiftClawSpeed']>.25 and motion['slashXTravel']>.7 and motion['slashZTravel']<-.9,motion
+    assert motion['minimumSlashXStep']>-1e-4 and motion['maximumSlashZStep']<1e-4 and line_error<.035,motion
     assert ranges['spine_18'][2]>1.0 and ranges['hips'][1]>.2 and ranges['spine_16'][2]>.15 and max(ranges['tail_07'])>.15
     results[label]=result
 assert equivalence<2e-5,equivalence

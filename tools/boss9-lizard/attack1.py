@@ -25,7 +25,8 @@ base_world = {p.name: p.matrix.copy() for p in arm.pose.bones}
 convert = Euler((-math.pi / 2, 0, 0)).to_quaternion()
 axis = .073
 ground = -.744
-duration, fps = 3.6, 120
+duration, fps = 1.8, 240
+rise_start, sweep_start, sweep_end, recovery_start = .12, .74, 1.12, 1.23
 times = [i / fps for i in range(round(duration * fps) + 1)]
 action = bpy.data.actions.new('Attack1')
 arm.animation_data.action = action
@@ -35,47 +36,54 @@ scene.render.fps = 24
 # right palm x/y/z, hand pitch/yaw, left palm x/y/z, right foot step.
 # Coordinates are Blender Z-up; -Y is forward. Anatomical right is -X.
 keys = [
- (0.00, 0,0,-.02, 0,0,0,0,0, -.48,-.62,-.38, 0,0, .48,-.62,-.38,0),
- (0.45, 0,0,-.035, 2,-2,1,-1,-2, -.48,-.62,-.39, 0,0, .48,-.62,-.39,0),
- (0.80, .025,.015,-.10, 5,-7,3,-4,-3, -.50,-.59,-.30, -8,-5, .49,-.65,-.40,0),
- (1.15, .065,.025,-.055, -3,-17,7,-9,2, -.53,-.48,.14, -35,-12, .49,-.67,-.40,0),
- (1.60, .08,.035,.025, -10,-26,10,-12,9, -.53,-.39,.49, -83,-20, .49,-.68,-.40,0),
- (2.05, .08,.045,.045, -13,-30,11,-13,13, -.50,-.33,.64, -98,-25, .49,-.68,-.40,0),
- (2.20, .055,.025,.035, -10,-28,9,-10,9, -.52,-.39,.64, -92,-22, .49,-.68,-.40,0),
- (2.38, -.015,-.08,-.045, 7,-7,-3,4,-8, -.33,-.83,.26, -30,4, .50,-.65,-.32,.06),
- (2.56, -.045,-.20,-.13, 20,21,-10,12,-15, .03,-1.02,-.17, 10,35, .53,-.51,-.18,.22),
- (2.76, -.025,-.23,-.12, 23,29,-11,12,-12, .26,-.94,-.35, 20,52, .53,-.43,-.16,.24),
- (2.96, -.015,-.19,-.10, 18,23,-7,8,-8, .25,-.87,-.31, 17,40, .52,-.45,-.20,.22),
- (3.20, .005,-.10,-.055, 8,9,-2,3,-3, -.15,-.77,-.26, 3,12, .50,-.54,-.31,.12),
- (3.60, 0,0,-.02, 0,0,0,0,0, -.48,-.62,-.38, 0,0, .48,-.62,-.38,0),
+ (0.00, 0,0,-.14, 0,0,0,0,0, -.44,-.62,-.436, 0,0, .48,-.62,-.442,0),
+ (0.12, .025,.015,-.22, 5,-7,3,-4,-3, -.44,-.62,-.436, 0,0, .48,-.62,-.442,0),
+ (0.34, .065,.025,-.195, -3,-17,19,-9,2, -.50,-.50,-.08, -25,-10, .48,-.62,-.442,0),
+ (0.55, .08,.035,-.145, -10,-26,28,-12,9, -.55,-.39,.43, -60,-20, .48,-.62,-.442,0),
+ (0.74, .08,.045,-.125, -13,-30,32,-13,13, -.56,-.33,.64, -78,-25, .48,-.62,-.442,0),
+ (0.86, -.015,-.08,-.18, 7,-7,-3,4,-8, -.30,-1.20,.29, -30,4, .50,-.65,-.32,.06),
+ (1.00, -.045,-.20,-.25, 20,21,-10,12,-15, .24,-1.32,-.16, 10,35, .53,-.51,-.18,.22),
+ (1.12, -.025,-.23,-.24, 23,29,-11,12,-12, .46,-1.26,-.35, 20,52, .53,-.43,-.16,.24),
+ (1.23, -.015,-.19,-.22, 18,23,-7,8,-8, .44,-1.20,-.31, 17,40, .52,-.45,-.20,.22),
+ (1.48, .005,-.10,-.175, 8,9,-2,3,-3, -.15,-.90,-.26, 3,12, .50,-.54,-.31,.12),
+ (1.80, 0,0,-.14, 0,0,0,0,0, -.44,-.62,-.436, 0,0, .48,-.62,-.442,0),
 ]
-# Plant the fingertips and feet on one fixed ground plane. Roll the rib cage
-# onto the supporting left arm while raising the attacking right shoulder.
-for i,k in enumerate(keys):
-    row=list(k); row[3]-=.12
-    if row[0]<=2.2 or row[0]>=3.6:row[14:17]=[.48,-.62,-.442]
-    if row[0] in [0,.45,3.6]:row[9]=-.44;row[11]=-.436
-    if row[0]==.80:row[11]=-.34
-    if row[0]==1.15:row[6]=19
-    if row[0]==1.60:row[6]=28
-    if row[0]==2.05:row[6]=32
-    if row[0]==2.20:row[6]=26
-    if row[0]==2.76:row[11]=-.38
-    if row[0]==2.38:row[10]=-1.18
-    if row[0]==2.56:row[10]=-1.35
-    if row[0]==2.76:row[10]=-1.26
-    if row[0]==2.96:row[10]=-1.20
-    if row[0]==3.20:row[10]=-.90
-    if row[0] in [1.60,2.05,2.20]:row[3]-=.05
-    if row[0]==1.15:row[3]-=.02
-    keys[i]=tuple(row)
 key_array = np.array(keys, dtype=float)
+# One C1 monotone Hermite curve across the poses. Interior lift poses retain
+# velocity instead of easing every separate segment to a complete stop.
+h=np.diff(key_array[:,0]);secants=np.diff(key_array[:,1:],axis=0)/h[:,None]
+slopes=np.zeros_like(key_array[:,1:])
+for i in range(1,len(keys)-1):
+    a,b=secants[i-1],secants[i];mask=a*b>0
+    w1,w2=2*h[i]+h[i-1],h[i]+2*h[i-1]
+    slopes[i,mask]=(w1+w2)/(w1/a[mask]+w2/b[mask])
 
 def sample(t):
     i = min(len(keys)-2, max(0, int(np.searchsorted(key_array[:,0], t, side='right')-1)))
     u = (t-keys[i][0])/(keys[i+1][0]-keys[i][0])
-    u = min(1,max(0,u)); u = u*u*(3-2*u)
-    return key_array[i,1:]*(1-u)+key_array[i+1,1:]*u
+    u = min(1,max(0,u));dt=keys[i+1][0]-keys[i][0]
+    return ((2*u**3-3*u*u+1)*key_array[i,1:]+(u**3-2*u*u+u)*dt*slopes[i]
+            +(-2*u**3+3*u*u)*key_array[i+1,1:]+(u**3-u*u)*dt*slopes[i+1])
+
+# Follow the visible claw cluster, rather than merely moving a wrist joint.
+right_hand_names={'spine_18',*[b.name for b in arm.pose.bones['spine_18'].children_recursive]}
+group_names={g.index:g.name for g in mesh.vertex_groups}
+claw_ids=[v.index for v in mesh.data.vertices if v.co.z<-.40 and sum(g.weight for g in v.groups if group_names[g.group] in right_hand_names)>.99999]
+assert len(claw_ids)>30
+evaluated=mesh.evaluated_get(bpy.context.evaluated_depsgraph_get());skin=evaluated.to_mesh()
+claw_initial=Vector(np.mean([skin.vertices[i].co for i in claw_ids],axis=0));evaluated.to_mesh_clear()
+claw_bind=(base_world['spine_18']@rest['spine_18'].inverted()).inverted()@claw_initial
+claw_offset=claw_bind-rest['spine_18'].translation
+
+def sweep_palm(t,pitch,yaw):
+    u=min(1,max(0,(t-sweep_start)/(sweep_end-sweep_start)));s=u*u*(3-2*u)
+    start=Vector((axis-.56,-.33,.64))+Euler((math.radians(-78),0,math.radians(-25)),'XYZ').to_quaternion()@claw_offset
+    end=Vector((axis+.46,-1.26,-.35))+Euler((math.radians(20),0,math.radians(52)),'XYZ').to_quaternion()@claw_offset
+    target=start.lerp(end,s)
+    v=min(1,u*2) if u<=.5 else (u-.5)*2;v=v*v*(3-2*v)
+    target.y=start.y+(-1.50-start.y)*v if u<=.5 else -1.50+(end.y+1.50)*v
+    q=Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
+    return target-q@claw_offset
 
 def update(): bpy.context.view_layer.update()
 
@@ -134,8 +142,8 @@ def arm_ik(side, palm, pitch, yaw):
     v=wrist-root; d=v.length; direction=v.normalized()
     pole=Vector((-1 if side=='R' else 1,.55,.05))
     if side=='R':
-        u=min(1,max(0,(t-2.18)/.45));u=u*u*(3-2*u)
-        recovery=min(1,max(0,(t-3.05)/.55));recovery=recovery*recovery*(3-2*recovery)
+        u=min(1,max(0,(t-sweep_start)/(sweep_end-sweep_start)));u=u*u*(3-2*u)
+        recovery=min(1,max(0,(t-recovery_start)/(duration-recovery_start)));recovery=recovery*recovery*(3-2*recovery)
         u*=1-recovery
         pole= pole.lerp(Vector((-.4,.7,1)),u)
     preferred=(pole-direction*pole.dot(direction)).normalized()
@@ -143,7 +151,7 @@ def arm_ik(side, palm, pitch, yaw):
         pole=last_poles[side]-direction*last_poles[side].dot(direction)
         if pole.length<1e-5:pole=preferred.copy()
         pole.normalize()
-        if t>3.05:
+        if t>recovery_start:
             goal=initial_poles[side]-direction*initial_poles[side].dot(direction);goal.normalize()
             turn=pole.rotation_difference(goal)
             alpha=(1/fps)/max(1/fps,duration-t+1/fps)
@@ -209,12 +217,13 @@ for t in times:
     rotate('spine2',(pitch*.15,roll*.5,rib))
     rotate('spine_16',(-head,0,-yaw*.30))
     rotate('spine_26',(max(0,head)*1.2,0,0))
-    arm_ik('R',Vector((axis+rx,ry,rz)),hp,hy)
+    palm=sweep_palm(t,hp,hy) if sweep_start<=t<=sweep_end else Vector((axis+rx,ry,rz))
+    arm_ik('R',palm,hp,hy)
     arm_ik('L',Vector((axis+lx,ly,lz)),0,-5)
     for side in ['L','R']:leg_ik(side,step)
     # Tail opposes the torso twist with a delayed wave through its full length.
     for i,n in enumerate(tail):
-        delayed=sample(max(0,t-.055*i));dyaw=delayed[4]
+        delayed=sample(max(0,t-.025*i));dyaw=delayed[4]
         envelope=math.sin(math.pi*t/duration)**2
         rotate(n,(envelope*(1.4+i*.20),0,-dyaw*(.11+.018*i)*envelope))
     for p in arm.pose.bones:
@@ -230,7 +239,7 @@ for layer in action.layers:
             for curve in bag.fcurves:
                 for key in curve.keyframe_points:key.interpolation='LINEAR'
 walk.use_fake_user=True;action.use_fake_user=True
-scene.frame_start=0;scene.frame_end=87;scene.frame_set(0)
+scene.frame_start=0;scene.frame_end=44;scene.frame_set(0)
 bpy.context.preferences.filepaths.save_version=0
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'boss9_attack1.blend'))
 
@@ -253,6 +262,6 @@ while len(text)%4:text+=b' '
 while len(data)%4:data.append(0)
 binary=struct.pack('<III',0x46546c67,2,28+len(text)+len(data))+struct.pack('<II',len(text),0x4e4f534a)+text+struct.pack('<II',len(data),0x004e4942)+data
 (out/'boss9_attack1.glb').write_bytes(binary)
-report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'reference':'User Desktop/BOSS9_Attack1.gif, 30 frames / 3 seconds, motion reference only','recovery':'Reference strike retained through 3.0 s; return to starting stance by 3.6 s'}
+report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'clawIndices':claw_ids,'timing':{'riseStart':rise_start,'sweepStart':sweep_start,'sweepEnd':sweep_end,'riseAndSweepSeconds':sweep_end-rise_start},'curve':'C1 monotone Hermite; nonzero interior lift velocities; claw-cluster diagonal in frontal XZ','reference':'User BOSS9_Attack1.gif; latest instructions override timing and slash path','recovery':'Return to starting stance by 1.8 s'}
 (out/'build.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print('ATTACK1_PREPARED',duration,'seconds; maximum arm reach adjustment',max(reach_errors),flush=True)

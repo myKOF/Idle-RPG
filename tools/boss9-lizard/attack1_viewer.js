@@ -13,6 +13,8 @@ env.add(sphere);const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm
 const gltf=await new GLTFLoader().loadAsync('/exports/boss9_attack1.glb');scene.add(gltf.scene);
 gltf.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
 const profile=await(await fetch('/exports/build.json')).json();
+let skin;gltf.scene.traverse(o=>{if(o.isSkinnedMesh)skin=o;});
+function clawCenter(){const p=new THREE.Vector3(),mean=new THREE.Vector3();for(const i of profile.clawIndices){skin.getVertexPosition(i,p);mean.add(p.applyMatrix4(skin.matrixWorld));}mean.multiplyScalar(1/profile.clawIndices.length);const s=mean.clone().project(camera);return {clawWorld:mean.toArray(),clawScreen:[(s.x+1)*W/2,(1-s.y)*H/2]};}
 const clip=gltf.animations.find(c=>c.name==='Attack1');if(!clip)throw Error('Missing Attack1');
 const mixer=new THREE.AnimationMixer(gltf.scene),action=mixer.clipAction(clip);
 action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;action.play();
@@ -35,5 +37,5 @@ const grid=new THREE.GridHelper(30,60,0x81939f,0x50606c);grid.position.y=profile
 function snapshot(){const nodes={};gltf.scene.traverse(o=>{if(o.isBone){const p=o.getWorldPosition(new THREE.Vector3()),s=p.clone().project(camera);nodes[o.name]={position:p.toArray(),screen:[(s.x+1)*W/2,(1-s.y)*H/2]};}});return nodes;}
 function bounds(){const b={minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity};vertices(p=>{const s=p.clone().project(camera);b.minX=Math.min(b.minX,(s.x+1)*W/2);b.maxX=Math.max(b.maxX,(s.x+1)*W/2);b.minY=Math.min(b.minY,(1-s.y)*H/2);b.maxY=Math.max(b.maxY,(1-s.y)*H/2);});return b;}
 function render(t){pose(t);renderer.render(scene,camera);document.getElementById('time').textContent=t.toFixed(2)+' / '+clip.duration.toFixed(2)+' s';}
-render(0);window.lizard={ready:true,render,snapshot,bounds,centers:()=>({}),duration:clip.duration,clipName:clip.name,model:gltf.scene,camera,renderer};
+render(0);window.lizard={ready:true,render,snapshot,bounds,centers:clawCenter,duration:clip.duration,clipName:clip.name,model:gltf.scene,camera,renderer};
 if(!params.has('capture')){const clock=new THREE.Clock();function tick(){render(clock.getElapsedTime()%clip.duration);requestAnimationFrame(tick);}requestAnimationFrame(tick);}
