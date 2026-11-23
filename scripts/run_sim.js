@@ -326,6 +326,8 @@ function dispatch(cmds) {
 
 /* ---- 不變量斷言：任一失敗立即停止，不產出「看起來完成」的檔案 ---- */
 const problems = [];
+/* 檢查點讀到面板 DPS 為 0 的次數與時刻（見下方「DPS 為 0：記錄，不中止」）。寫進 run_summary.json。 */
+const dpsZero = { count: 0, firstAtHour: null, lastAtHour: null, last: null };
 let lastLevel = 0;
 let lastReinc = 0;
 function assertInvariants(view, stats) {
@@ -383,10 +385,41 @@ function assertInvariants(view, stats) {
     bad.push(`同一個 item id 出現在多處（${dupes.length}${dupes.length >= 5 ? '+' : ''} 組）：` + dupes.join('、'));
   }
   
-  // 移植：第 30 秒起 DPS 必須大於 0
+  /* DPS 為 0：記錄，不中止。
+
+     以前這是一條不變量（第 30 秒起 DPS 必須大於 0），但它擋下的不是壞資料，而是正常會發生的戰況：
+     實測 seed 474906691 在第 38.83 小時讀到 0——剛復活、場上 34 隻、最近 10 秒 17 筆傷害全是 0。
+     命中沒有閃避，是怪的防禦把傷害壓到 0（荒漠 51 關，裝備跟不上）。怪太強、閃避太高、
+     某個技能讓怪無敵，都會這樣；退關或離開 BOSS 戰就解決，那一場模擬照樣有效。
+     應對交給策略（survival-gate 的 dpsAlive 目標：持續 0 傷害就退關），這裡只留紀錄。
+
+     「戰鬥根本沒在跑」這種 harness 故障由「每在線小時擊殺數為 0」那條擋，不靠這一條。 */
   const dps = engine.ctx.currentDps ? engine.ctx.currentDps() : 0;
   if (engine.gameTimeSec() > 30 && dps <= 0) {
-    bad.push(`面板 DPS 異常：${dps}`);
+    /* 附上當下狀態：DPS 是 10 秒視窗（js/combat.js trackDps），視窗只在有新傷害進來時才修剪，
+       所以 0 代表最近 10 秒只記到 0 傷害（閃避不記，命中但被防禦壓到 0 才會記 0）或從沒記過。
+       沒有這些欄位就只能重跑一整場去猜是哪一種。 */
+    const c = engine.ctx;
+    const F = c.FIELD || {};
+    const win = F.dpsWindow || [];
+    const T = c.TOWER || {};
+    const ctxInfo = {
+      gt: c.GT,
+      tower: !!(G.tower && G.tower.active), towerFloor: T.floor, towerIntroCd: T.introCd,
+      paused: typeof c.isCombatPaused === 'function' ? c.isCombatPaused() : null,
+      dieCd: F.dieCd, reviveCd: F.reviveCd, riseCd: F.riseCd,
+      playerHp: F.player ? F.player.hp : null,
+      liveEnemies: typeof c.liveFieldEnemies === 'function' ? c.liveFieldEnemies().length : null,
+      dpsWindow: { n: win.length, nonZero: win.filter((x) => x[1] > 0).length,
+        oldest: win.length ? win[0][0] : null, newest: win.length ? win[win.length - 1][0] : null }
+    };
+    dpsZero.count++;
+    if (dpsZero.firstAtHour === null) {
+      dpsZero.firstAtHour = +(engine.gameTimeSec() / 3600).toFixed(3);
+      console.log(`\n⚠️ 面板 DPS 為 0 @ 遊戲 ${dpsZero.firstAtHour}h（不中止，交給策略退關）　當下狀態 ${JSON.stringify(ctxInfo)}`);
+    }
+    dpsZero.lastAtHour = +(engine.gameTimeSec() / 3600).toFixed(3);
+    dpsZero.last = ctxInfo;
   }
 
   if (bad.length) {
@@ -930,6 +963,7 @@ const summary = {
   equipSetSec: equipSetSec,
   fieldLoad: fieldLoadStats.summary(),
   hpLoad: hpLoadStats.summary(),
+  dpsZero: dpsZero,
   performance: {
     /* 實際跑掉的步數。啟用班表時它會少於 wallHours × 36000——離線那一段沒有跑 simStep，
        用 totalSteps 會把吞吐量灌水成好幾倍。 */

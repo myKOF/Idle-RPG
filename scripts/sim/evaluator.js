@@ -1727,7 +1727,12 @@ function buildTalentPlanPanel() {
 function buildFieldLoadPanel() {
   if (typeof liveFieldEnemies !== 'function' || typeof fieldMaxLiveEnemiesFor !== 'function') return null;
   var live = liveFieldEnemies().length, cap = fieldMaxLiveEnemiesFor();
-  return { live: live, cap: cap, ratio: cap > 0 ? live / cap : 0 };
+  /* dps：遊戲面板顯示的同一個值（js/combat.js currentDps，10 秒視窗）。放在這裡而不是讀 header 面板，
+     是因為 header 會重算兩次全身屬性，掛上 1Hz 觀測太貴；這個面板本來就每秒建一次。
+     視窗只在有新傷害記進來時才修剪，所以死亡、轉場時它停在舊值；會變成 0 只有一種情況：
+     最近 10 秒的命中全部是 0 傷害（怪的防禦把傷害壓到 0、無敵護盾之類）——打不動。 */
+  var dps = (typeof currentDps === 'function') ? currentDps() : null;
+  return { live: live, cap: cap, ratio: cap > 0 ? live / cap : 0, dps: dps };
 }
 
 /* ============ 遺物面板（harness 專用） ============

@@ -383,6 +383,8 @@ test('速率目標的計數器路徑在遊戲的面板裡真的取得到', () =>
   for (const f of POLICY_FILES) {
     for (const t of loadPolicy(f).targets || []) {
       if (t && t.kind === 'ratePerMin' && t.counter) specs.push({ f, id: t.id, path: t.counter });
+      /* 視窗型目標讀的是即時值（場上存活數、DPS），路徑寫錯一樣是整場 unknown、閘門靜默失效。 */
+      if (t && (t.kind === 'windowAvg' || t.kind === 'slopePerMin') && /^panels./.test(t.path || '')) specs.push({ f, id: t.id, path: t.path });
     }
   }
   if (!specs.length) return;
@@ -425,6 +427,18 @@ test('視窗最低點目標（windowMin）的 path 與 per 在遊戲的 view 裡
       assert.ok(m, `${s.f} 目標 ${s.id} 的「${path}」不是 view.<欄位>——windowMin 目前只驗 view 路徑`);
       assert.equal(typeof view[m[1]], 'number', `${s.f} 目標 ${s.id} 的「${path}」在 view 裡不是數字（得到 ${view[m[1]]}）`);
     }
+  }
+});
+
+test('每份策略的 survival-gate 都要求 dpsAlive（持續 0 傷害就退關）', () => {
+  /* 少了它，命中全被防禦壓到 0 的那一關會一直待下去——以前是 harness 不變量把整場模擬中止，
+     現在不變量只記錄，退關完全靠這個目標。 */
+  for (const f of POLICY_FILES) {
+    const p = loadPolicy(f);
+    const rule = p.rules.find((r) => r.id === 'survival-gate');
+    assert.ok(rule && rule.stageGate, `${f} 沒有 survival-gate`);
+    assert.ok((rule.stageGate.requireTargets || []).indexOf('dpsAlive') >= 0, `${f} 的 survival-gate 沒有要求 dpsAlive`);
+    assert.ok(rule.stageGate.targetRetreat, `${f} 的 survival-gate 沒有 targetRetreat——dpsAlive 不達標時不會退關`);
   }
 });
 

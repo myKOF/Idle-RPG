@@ -226,7 +226,8 @@
         "requireTargets": [
           "killRate",
           "fieldTrend",
-          "fieldCap"
+          "fieldCap",
+          "dpsAlive"
         ],
         "targetRetreat": {
           "step": 5,
@@ -2988,6 +2989,16 @@
     "equippedScores": "panels.inv.equipmentScores"
   },
   "targets": [
+    {
+      "id": "dpsAlive",
+      "kind": "windowAvg",
+      "path": "panels.fieldLoad.dps",
+      "windowSec": 60,
+      "atLeast": 1,
+      "retreatEverySec": 60,
+      "說明": "最近 60 秒面板 DPS 的平均。持續為 0＝命中全部是 0 傷害（怪的防禦把傷害壓到 0、無敵護盾之類）＝打不動：不推關，每 60 秒退 5 關直到打得動",
+      "依據": "seed 474906691（extreme，48h）在第 38.83 小時剛復活、場上 34 隻、最近 10 秒 17 筆傷害全是 0（命中沒被閃避，是被防禦壓到 0），舊的 harness 不變量因此中止整場模擬。DPS 視窗只在有新傷害記進來時才修剪，死亡、轉場時停在舊值，會是 0 只有「命中全為 0 傷害」一種情況，所以門檻 1 就分得出來。退關即可解決，那一場模擬照樣有效（使用者 2026-11-23）"
+    },
     {
       "id": "killRate",
       "kind": "ratePerMin",

@@ -957,3 +957,48 @@ test('生存壓力：skipAtOrBelow 排除死亡那幾拍（hp＝0），同一次
   t = hpFeed(p, t, 60, (s) => (s === 20 ? 200 : 1000));
   assert.equal(autoOn(p.decide(hpAt(t, 1000))), false, '活著時掉到 20% 仍然要擋');
 });
+
+/* ============ 打不動：持續 0 傷害就退關（dpsAlive） ============
+
+   seed 474906691 在第 38.83 小時剛復活、場上 34 隻、最近 10 秒 17 筆傷害全是 0——
+   命中沒被閃避，是被怪的防禦壓到 0。以前 harness 把這當成不變量失敗、中止整場；
+   現在交給策略：60 秒平均 DPS 為 0 就不推關並退關。 */
+
+function dpsPolicy() {
+  return createPolicy({
+    name: 'dps-alive-test', decideEveryGameSec: 60, needPanels: ['battle', 'inv', 'fieldLoad'],
+    targets: [{ id: 'dpsAlive', kind: 'windowAvg', path: 'panels.fieldLoad.dps', windowSec: 60, atLeast: 1, retreatEverySec: 60 }],
+    rules: [{ id: 'gate', cmd: 'stage.setAutoAdvance', stageGate: {
+      stage: 'view.stage', equippedRarities: 'panels.inv.equipmentRarities', argKey: 'on',
+      checkpoints: [{ minRarity: 0, coverage: 0 }], retreatCmd: 'stage.go', requireTargets: ['dpsAlive'],
+      targetRetreat: { step: 5, everySec: 60, minStage: 1 } } }]
+  });
+}
+function dpsAt(sec, dps, stage) {
+  return { gameTimeSec: sec, view: { stage: stage || 51 },
+    panels: { fieldLoad: { live: 34, dps: dps }, inv: { equipmentRarities: { weapon: 5 } }, battle: {} } };
+}
+function dpsFeed(p, t0, seconds, dps) {
+  for (let s = 5; s <= seconds; s += 5) p.observe(dpsAt(t0 + s, dps));
+  return t0 + seconds;
+}
+
+test('打不動：60 秒 DPS 全是 0 → 關自動推關並退 5 關', () => {
+  const p = dpsPolicy();
+  const t = dpsFeed(p, 0, 60, 0);
+  const cmds = p.decide(dpsAt(t, 0));
+  assert.equal(autoOn(cmds), false);
+  const r = retreatOf(cmds);
+  assert.equal(r.length, 1);
+});
+
+test('打不動：DPS 有值就放行（只要不是全部 0）', () => {
+  const p = dpsPolicy();
+  let t = dpsFeed(p, 0, 50, 0);
+  t = dpsFeed(p, t, 10, 5000);
+  assert.equal(autoOn(p.decide(dpsAt(t, 5000))), true);
+});
+
+test('打不動：fieldLoad 面板有 dps，而且自動列進觀測面板', () => {
+  assert.ok(dpsPolicy().observePanels.indexOf('fieldLoad') >= 0);
+});
