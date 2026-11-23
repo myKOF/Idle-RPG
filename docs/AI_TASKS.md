@@ -194,6 +194,16 @@
 - 工具／測試：capture.cjs五視圖600張及UI播放暫停／重播／正反拖曳／場景視角切換、root／Capsule阻擋／單次命中／擊退保持，入鏡及頁面錯誤警告0；五份正常GIF（900x600／120張／50FPS／2.4秒）與一份4倍慢放（20張／1.6秒）逐張重開解碼、五份聯絡圖目視通過。node --test tests/boss9-melee-preview.test.cjs 14/14，Python AST3檔、Node／ESM、npm.cmd run build 757檔、export.cjs 37必要檔SHA及manifest、自我Review及git diff --check通過；所有瀏覽器finally關閉，孤兒檢查無殘留。
 - Commit：素材庫先提交993a4276；專案為本段所在「[Codex] fix: 讓BOSS9手臂與手爪沿弧線連動」。本輪製作無未完成項，預覽工具可供合併審閱，動作採用及實戰接入仍待使用者確認，未合併推送develop／main。必要QA已保存素材庫，本輪643個暫存檔以確定絕對路徑、無reparse point、檔名白名單與數量核對後逐檔非遞迴清除，再移除空目錄；沒有重試或繞過舊暫存區的刪除拒絕。已知限制：原自動蒙皮局部拉伸、未全面排除所有甲片接觸；世界碰撞／遊戲動畫混合尚未接入。下一步看純動作及實際爪尖弧線GIF核對整臂連動。
 
+## BOSS9-OPEN-PALM-20261123 — 起手向上張掌與減小弧線彎曲
+
+- Owner：Codex；Done，單人完成、待GIF驗收。使用者合併前版後要求繼續：高舉時掌心朝上張開、揮下弧度收直一些。本輪保留整條右臂／手爪連動、三階段與2.4秒總長、抬爪至揮下1秒、root0.35及原命中時序，未接實戰。
+- 修改6檔：tools/boss9-lizard/melee/{author.py,verify.py,viewer.js,export.cjs}、docs/assets/BOSS9_LIZARD_MELEE.md及本段。掌面朝向取自原網格掌墊三角形，抬手時自然翻上；既有拇指與三根長指以原指節長度伸展、外展，0.62–0.98秒張開，高舉後隨下揮自然回到爪形。指部形變納入爪群中心補償及世界切向，不新增手指／骨骼或改權重。弧線55%斜向連線加45%原曲線，末段仍斜下掃出，保留淺弧。
+- 素材：更新既有codex-authored/boss9-lizard-melee-20261123的可編輯Blend／GLB、六GIF及來源／QA，新增BOSS9_Attack1_OpenPalm.png（1.10秒實際擷取）供對照掌形，包共39檔。GLB SHA256 60880efd4e4f029c9be5b6b6149099036f545b054cc4fab5bb3c705ff3793070；原73骨／網格／權重／材質／貼圖及Walk二進位保留。
+- 未改但檢查：共通規範／Agent／Workflow／Codex與歷史任務、melee/spec.json／controller.js／capture.cjs／encode.py、14項判定測試、核准legs來源及993a4276前版GLB。Idle及非右臂通道對前版差0，其他頭身尾腿／左爪／root不變；遊戲js、Excel／CSV、VFX／SFX／Worker及玩法未改。專用檔預檢無外部來源，任務本獨立段對develop與其工作副本三方試合0，分段修改、不動其他工作。
+- 模型驗證：Blender author.py與verify.py通過，前版GLB97個揮擊時點作比較，新Blend／重匯入GLB各1153時點。高舉時實際掌面朝上分量至少0.67485、各指伸展率至少0.99529、指尖高於掌部至少0.29039模型單位；爪群弓形偏差0.43343降至0.20056（46.27%），三根爪尖彎曲量為前版48.82%／52.57%／56.34%，保留淺弧而更直。指尖與運動切向最小同向分量0.99122，末段斜下0.06471、指尖至少離地0.28541；骨長／四肢及各指節物理鏈／接地／Idle首尾／root保持，8組指定三角形穿插0，支撐誤差<0.002372，native/GLB頂點差<0.00000144，IK最大目標調整約0.05188。
+- 預覽與程式：capture.cjs五視圖600張（正面含UI播放暫停、重播、正反拖曳及場景視角切換），Three.js再量測實際掌面與指尖朝上，原root／Capsule阻擋／單次命中／擊退檢查保持，入鏡、頁面錯誤警告0。六GIF逐張解碼（五份900x600／120張／50FPS／2.4秒及一份4倍慢放20張／1.6秒）、五份聯絡圖與張掌定格目視通過。node --test tests/boss9-melee-preview.test.cjs 14/14，Python AST3檔、Node／ESM、npm.cmd run build 761檔、export.cjs 38必要檔SHA及manifest、自我Review與git diff --check通過；所有瀏覽器finally關閉，孤兒檢查無殘留。
+- Commit：素材庫先提交8e10fdc2；專案為本段所在「[Codex] fix: 調整BOSS9張掌起手與淺弧揮擊」。必要QA保存素材庫後，以絕對路徑／無reparse point／檔名白名單及數量核對，逐檔非遞迴移除本輪643個暫存檔及空目錄。本輪製作完成，可供預覽工具合併審閱；動作採用與遊戲接入待使用者驗收，新修改未合併／推送develop或main。已知限制為原自動蒙皮局部拉伸、指定區域檢查未涵蓋全身所有甲片；正式世界碰撞／遊戲動畫混合尚未接入。下一步看正常／軌跡GIF及起手PNG確認掌形、淺弧程度。
+
 ## DESKTOP-MINI-POSITION-20261119 — 迷你視窗置中、位置記憶與標題列控制
 
 - Owner：Codex；Done，單人實作。使用者要求首次開啟在畫面中央，其後記住最後位置而不重置。前置：迷你視窗及還原／Enter功能已完成，工作區乾淨、逐檔衝突預檢通過。

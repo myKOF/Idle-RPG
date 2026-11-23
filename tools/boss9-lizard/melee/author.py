@@ -1,6 +1,7 @@
 """Author Attack1 in Blender, appending it without changing the accepted Walk GLB."""
 import bpy, sys, json, math, struct, hashlib
 import numpy as np
+from functools import lru_cache
 from pathlib import Path
 from mathutils import Vector, Quaternion, Euler, Matrix
 
@@ -86,17 +87,70 @@ forward_pitch=math.atan2(finger_axis.z,-finger_axis.y)-math.asin(-math.sin(math.
 pitched=Quaternion((1,0,0),forward_pitch)@finger_axis
 forward_yaw=math.atan2(-pitched.x,-pitched.y)
 forward_q=Euler((forward_pitch,0,forward_yaw),'XYZ').to_quaternion()
-raised_q=Euler((math.radians(-78),0,math.radians(-25)),'XYZ').to_quaternion()
+old_raised_q=Euler((math.radians(-78),0,math.radians(-25)),'XYZ').to_quaternion()
+digits=[['spine_32','spine_31','spine_30'],['spine_35','spine_34','spine_33'],['spine_38','spine_37','spine_36'],['spine_41','spine_40','spine_39']]
+palm_head=rest['spine_18'].translation
+palm_forward=(sum((rest[n].translation for n in ['spine_35','spine_38','spine_41']),Vector())/3-palm_head).normalized()
+palm_side=(rest['spine_41'].translation-rest['spine_35'].translation).normalized()
+volar_hint=palm_side.cross(palm_forward).normalized()
+if volar_hint.z>0:volar_hint.negate()
+palm_weights={v.index:sum(g.weight for g in v.groups if group_names[g.group]=='spine_18') for v in mesh.data.vertices}
+pad_faces=[tuple(f.vertices) for f in mesh.data.polygons if all(palm_weights[i]>.65 for i in f.vertices) and f.normal.dot(volar_hint)>.5]
+pad_triangles=[(p[0],p[i],p[i+1]) for p in pad_faces for i in range(1,len(p)-1)]
+assert len(pad_triangles)>3,'No palm pad surface found'
+pad_normal=Vector()
+for a,b,c in pad_triangles:pad_normal+=(mesh.data.vertices[b].co-mesh.data.vertices[a].co).cross(mesh.data.vertices[c].co-mesh.data.vertices[a].co)
+pad_normal.normalize()
+palm_forward=(palm_forward-pad_normal*palm_forward.dot(pad_normal)).normalized()
+palm_side=palm_forward.cross(pad_normal).normalized()
+up_normal=Vector((0,-.8,.6)).normalized()
+up_forward=Vector((-.35,.56,.75));up_forward=(up_forward-up_normal*up_forward.dot(up_normal)).normalized()
+up_side=up_forward.cross(up_normal).normalized()
+raised_q=(Matrix((up_side,up_forward,up_normal)).transposed()@Matrix((palm_side,palm_forward,pad_normal)).transposed().inverted()).to_quaternion()
+tracked=sorted(set(claw_ids+finger_base_ids+finger_tip_ids))
+tracked_positions=np.array([mesh.data.vertices[i].co for i in tracked],dtype=float)
+tracked_lookup={i:j for j,i in enumerate(tracked)}
+tracked_claw=[tracked_lookup[i] for i in claw_ids];tracked_base=[tracked_lookup[i] for i in finger_base_ids];tracked_tip=[tracked_lookup[i] for i in finger_tip_ids]
+tracked_weights={n:np.array([sum(g.weight for g in mesh.data.vertices[i].groups if group_names[g.group]==n) for i in tracked]) for chain in digits for n in chain}
+terminal_axes={}
+for chain in digits:
+    n=chain[-1];points=[v.co for v in mesh.data.vertices if sum(g.weight for g in v.groups if group_names[g.group]==n)>.85]
+    assert points
+    terminal_axes[n]=(sum(points,Vector())/len(points)-rest[n].translation).normalized()
+
+def opening(t):return smooth(.62,.98,t)*(1-smooth(1.12,1.40,t))
+
+@lru_cache(maxsize=1024)
+def hand_shape(amount):
+    if amount<1e-9:return {},claw_offset.copy(),finger_axis.copy()
+    skins={};points=tracked_positions.copy()
+    for chain,spread in zip(digits,[1.25,-.42,0,.42]):
+        heads=[rest[n].translation for n in chain]
+        aim=(palm_forward+palm_side*spread).normalized()
+        d1=(aim+pad_normal*.10).normalized();d2=(aim+pad_normal*.22).normalized()
+        goals=[(heads[1]-heads[0]).rotation_difference(aim),(heads[2]-heads[1]).rotation_difference(d1),terminal_axes[chain[-1]].rotation_difference(d2)]
+        rotations=[Quaternion().slerp(goals[0],amount)]
+        for i in [1,2]:rotations.append(rotations[-1]@Quaternion().slerp(goals[i-1].inverted()@goals[i],amount))
+        starts=[heads[0]]
+        for i in [0,1]:starts.append(starts[-1]+rotations[i]@(heads[i+1]-heads[i]))
+        for n,q,head,start in zip(chain,rotations,heads,starts):
+            m=q.to_matrix().to_4x4();m.translation=start-q@head;skins[n]=m
+            a=np.array(m,dtype=float);changed=tracked_positions@a[:3,:3].T+a[:3,3]
+            points+=tracked_weights[n][:,None]*(changed-tracked_positions)
+    offset=Vector(points[tracked_claw].mean(axis=0))-palm_head
+    direction=Vector(points[tracked_tip].mean(axis=0)-points[tracked_base].mean(axis=0)).normalized()
+    return skins,offset,direction
 
 def arc_claw(t):
     u=min(1,max(0,(t-sweep_start)/(sweep_end-sweep_start)));s=u*u*(3-2*u)
-    start=Vector((axis-.56,-.33,.64))+raised_q@claw_offset
+    start=Vector((axis-.56,-.33,.64))+old_raised_q@claw_offset
     end=Vector((axis+.46,-1.26,-.35))+Euler((math.radians(20),0,math.radians(52)),'XYZ').to_quaternion()@claw_offset
     end.z=-.30
     angle=s*math.pi/2
     target=start.copy()
-    target.x+=(end.x-start.x)*(1-math.cos(angle)-.16*math.sin(2*angle))
-    target.z+=(end.z-start.z)*math.sin(angle)
+    curve=.45
+    target.x+=(end.x-start.x)*((1-curve)*s+curve*(1-math.cos(angle)-.16*math.sin(2*angle)))
+    target.z+=(end.z-start.z)*((1-curve)*s+curve*math.sin(angle))
     v=min(1,u*2);v=v*v*(3-2*v)
     target.y=start.y+(end.y-start.y)*v
     return target
@@ -107,7 +161,8 @@ def flowing_hand(t):
     a=max(sweep_start,t-.0003);b=min(sweep_end,t+.0003)
     pa,pb=arc_claw(a),arc_claw(b);pa.y-=travel(a);pb.y-=travel(b)
     direction=(pb-pa).normalized()
-    q=(forward_q@finger_axis).rotation_difference(direction)@forward_q
+    current_axis=hand_shape(opening(t))[2]
+    q=(forward_q@current_axis).rotation_difference(direction)@forward_q
     return raised_q.slerp(q,smooth(sweep_start,sweep_start+.075,t))
 
 end_hand=flowing_hand(sweep_end)
@@ -135,7 +190,8 @@ def hand_rotation(t,pitch,yaw):
     if sweep_start<=t<=sweep_end:return flowing_hand(t)
     if sweep_end<t<=spec['timing']['rightPlant']:
         return end_hand.slerp(Quaternion(),smooth(sweep_end,spec['timing']['rightPlant'],t))
-    return Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
+    q=Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
+    return q.slerp(raised_q,smooth(.74,1.04,t)) if t<sweep_start else q
 
 def update(): bpy.context.view_layer.update()
 
@@ -152,6 +208,11 @@ def rotate(name, angles):
 
 def affine(q, center, target):
     m=q.to_matrix().to_4x4(); m.translation=target-q@center; return m
+
+def pose_fingers(amount):
+    if amount<1e-9:return
+    skin=arm.pose.bones['spine_18'].matrix@rest['spine_18'].inverted()
+    for n,m in hand_shape(amount)[0].items():set_matrix(n,skin@m@rest[n])
 
 def segment_q(a,b,normal,desired_normal):
     y=a.normalized(); x=(normal-y*normal.dot(y)).normalized(); z=x.cross(y).normalized(); x=y.cross(z)
@@ -276,8 +337,13 @@ for t in times:
     rotate('spine_16',(-head,0,-yaw*.30))
     rotate('spine_26',(max(0,head)*1.8,0,0))
     hand_q=hand_rotation(t,hp,hy)
-    palm=arc_claw(t)-hand_q@claw_offset if sweep_start<=t<=sweep_end else Vector((axis+rx,ry,rz))
+    amount=opening(t);current_offset=hand_shape(amount)[1]
+    palm=arc_claw(t)-hand_q@current_offset if sweep_start<=t<=sweep_end else Vector((axis+rx,ry,rz))
+    if t<sweep_start and amount>0:
+        previous_q=Euler((math.radians(hp),0,math.radians(hy)),'XYZ').to_quaternion()
+        palm+=previous_q@claw_offset-hand_q@current_offset
     palm.y-=travel(t);arm_ik('R',palm,hp,hy,hand_q)
+    pose_fingers(amount)
     arm_ik('L',Vector((axis+lx,ly-travel(t)*smooth(1.62,1.88,t),lz)),0,-5)
     for side in ['L','R']:leg_ik(side,step)
     # Tail opposes the torso twist with a delayed wave through its full length.
@@ -338,5 +404,7 @@ binary=struct.pack('<III',0x46546c67,2,28+len(text)+len(data))+struct.pack('<II'
 (out/'boss9_attack1.glb').write_bytes(binary)
 tip_groups=[[v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if group_names[g.group]==n)>.85] for n in ['spine_33','spine_36','spine_39']]
 report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'clawIndices':claw_ids,'fingerBaseIndices':finger_base_ids,'fingerTipIndices':finger_tip_ids,'fingerTipGroups':tip_groups,'spec':spec,'timing':{'riseStart':rise_start,'sweepStart':sweep_start,'sweepEnd':sweep_end,'riseAndSweepSeconds':sweep_end-rise_start},'reference':'User confirmed whole right-arm/claw arc coupling; palm banks with the arc, no fixed 90-degree yaw','recovery':'Right claw plants in Recovery; return to Idle at advanced position'}
+report['openHand']={'padTriangles':pad_triangles,'padNormalBind':list(pad_normal),'digitChains':digits,'peakTime':sweep_start,'targetNormal':list(up_normal),'allTipGroups':[[v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if group_names[g.group]==chain[-1])>.85] for chain in digits]}
+report['arcCurvature']=.45
 (out/'build.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print('ATTACK1_PREPARED',duration,'seconds; maximum arm reach adjustment',max(reach_errors),flush=True)
