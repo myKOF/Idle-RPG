@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),crypto=require('node:crypto');
 const {launchHeadless}=require('../../lib/headless-browser.cjs'),{resolveLibraryRoot}=require('../../vfx/vfx-library-root.cjs');
+const spec=require('./spec.json');
 const repo=path.resolve(__dirname,'../../..'),pack=path.join(resolveLibraryRoot({libraryId:'effects-materials'}).root,'codex-authored/boss9-lizard-melee-20261123'),out=path.resolve(process.argv[2]);
 const value=(key,fallback)=>{const i=process.argv.indexOf(key);return i<0?fallback:process.argv[i+1];};
 const original=false,quick=process.argv.includes('--quick'),top=process.argv.includes('--top'),guide=process.argv.includes('--guide'),bones=process.argv.includes('--bones'),uiTest=process.argv.includes('--ui-test'),azimuth=Number(value('--azimuth',65));
@@ -18,7 +19,7 @@ let controlsCheck=null;
 if(uiTest){
  const live=new URLSearchParams(query);live.delete('capture');live.set('ui','1');await send('Page.navigate',{url:baseURL+'?'+live});await ready("!!window.lizard?.ready&&new URLSearchParams(location.search).has('ui')");
  const seek=async t=>ev(`(()=>{const s=document.getElementById('scrub');s.value=${t};s.dispatchEvent(new Event('input'));return lizard.state();})()`);
- for(const [t,phase] of [[.25,'Windup'],[1.3,'Active'],[1.7,'Recovery'],[.1,'Windup']]){const s=await seek(t);if(s.phase!==phase||Math.abs(s.time-t)>1e-6)throw Error('Scrub control mismatch');}
+ for(const [t,phase] of [[spec.phases.windupEnd/2,'Windup'],[(spec.hitbox.on+spec.hitbox.off)/2,'Active'],[(spec.phases.activeEnd+spec.duration)/2,'Recovery'],[spec.phases.windupEnd/5,'Windup']]){const s=await seek(t);if(s.phase!==phase||Math.abs(s.time-t)>1e-6)throw Error('Scrub control mismatch');}
  await ev("document.getElementById('play').click()");await ready('lizard.state().time>.12');
  await ev("document.getElementById('play').click()");const paused=await ev('lizard.state().time');await new Promise(r=>setTimeout(r,100));if(Math.abs(await ev('lizard.state().time')-paused)>1e-6)throw Error('Pause control did not pause');
  await ev("document.getElementById('restart').click()");if(await ev('lizard.state().time')!==0)throw Error('Restart control failed');
@@ -28,7 +29,7 @@ if(uiTest){
  await send('Page.navigate',{url:baseURL+'?'+query});await ready("!!window.lizard?.ready&&!new URLSearchParams(location.search).has('ui')");
 }
 const duration=await ev('lizard.duration'),n=120,indices=quick?[0,10,20,25,35,45,55,60,65,70,75,80,90,100,110,119]:Array.from({length:n},(_,i)=>i),report={scenario:await ev('lizard.scenario'),clipName:await ev('lizard.clipName'),original,azimuth,top,bones,guide,duration,glbSHA256:crypto.createHash('sha256').update(fs.readFileSync(path.join(pack,original?'source/BOSS9.glb':'exports/boss9_attack1.glb'))).digest('hex'),errors,warnings,frames:[]};
-for(const i of indices){const t=i*duration/n,state=await ev(`(()=>{lizard.render(${t});return {nodes:lizard.snapshot(),bounds:lizard.bounds(),geometryCenters:lizard.centers(),logic:lizard.state()};})()`),shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(out,String(i).padStart(4,'0')+'.png'),Buffer.from(shot.result.data,'base64'));report.frames.push({frame:i,time:t,...state});}
+for(const i of indices){const t=i*duration/n,state=await ev(`(()=>{lizard.render(${t});return {nodes:lizard.snapshot(),bounds:lizard.bounds(),geometryCenters:lizard.centers(),headGaze:lizard.gaze(),logic:lizard.state()};})()`),shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(out,String(i).padStart(4,'0')+'.png'),Buffer.from(shot.result.data,'base64'));report.frames.push({frame:i,time:t,...state});}
 report.controlsCheck=controlsCheck;report.endState=await ev('(()=>{lizard.render(lizard.duration);return {logic:lizard.state(),geometryCenters:lizard.centers()};})()');
 fs.writeFileSync(path.join(out,'capture.json'),JSON.stringify(report,null,2)+'\n');if(errors.length||warnings.length)throw Error(JSON.stringify({errors,warnings}));console.log('ATTACK1_CAPTURE_PASS',indices.length,'frames',original?'original':'fixed');
 }finally{if(ws)ws.close();if(browser)await browser.close();await new Promise(r=>server.close(r));}}

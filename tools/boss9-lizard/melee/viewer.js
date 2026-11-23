@@ -13,7 +13,7 @@ const clip=gltf.animations.find(c=>c.name===spec.id);if(!clip)throw Error('Missi
 const extras=gltf.parser.json.animations.find(a=>a.name===spec.id).extras;
 if(JSON.stringify(extras.AnimationNotifies)!==JSON.stringify(spec.notifies))throw Error('Animation notify mismatch');
 const mixer=new THREE.AnimationMixer(gltf.scene),action=mixer.clipAction(clip);action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;action.play();
-const targetZ={combat:1.8,blocked:1.57,behind:-1,far:2.4};
+const targetZ={combat:1.6,blocked:1.435,behind:-1,far:2.4};
 function sample(t){return new API.Attack(spec,{targets:debug?[{id:'player',x:spec.axisX,z:targetZ[scenario]??1.8,y:spec.ground,radius:.18,height:.95}]:[]}).advanceTo(t);}
 let state;
 function pose(t){state=sample(t);action.paused=false;action.enabled=true;mixer.setTime(Math.max(0,Math.min(t,clip.duration)));container.position.set(state.position.x-spec.axisX,0,state.position.z-state.authoredDistance);container.updateMatrixWorld(true);}
@@ -34,7 +34,9 @@ const bodyCapsule=new THREE.Mesh(new THREE.CapsuleGeometry(spec.bossCapsule.radi
 const avatar=new THREE.Mesh(new THREE.CapsuleGeometry(.18,.95-.36,8,16),new THREE.MeshStandardMaterial({color:0x78d4f5,transparent:true,opacity:.6,roughness:.5}));avatar.visible=debug;avatar.castShadow=true;scene.add(avatar);
 const fanPoints=[];for(let i=0;i<32;i++){const a=(-60+i*120/32)*Math.PI/180,b=(-60+(i+1)*120/32)*Math.PI/180;fanPoints.push(0,0,0,Math.sin(a)*spec.hitbox.range,0,Math.cos(a)*spec.hitbox.range,Math.sin(b)*spec.hitbox.range,0,Math.cos(b)*spec.hitbox.range);}
 const fanGeometry=new THREE.BufferGeometry();fanGeometry.setAttribute('position',new THREE.Float32BufferAttribute(fanPoints,3));const fan=new THREE.Mesh(fanGeometry,new THREE.MeshBasicMaterial({color:0xff654b,transparent:true,opacity:.26,side:THREE.DoubleSide,depthWrite:false}));scene.add(fan);
-let skin,rootBone,palmBone;gltf.scene.traverse(o=>{if(o.isSkinnedMesh)skin=o;if(o.isBone&&o.name==='root')rootBone=o;if(o.isBone&&o.name==='spine_18')palmBone=o;});
+let skin,rootBone,palmBone,headBone;gltf.scene.traverse(o=>{if(o.isSkinnedMesh)skin=o;if(o.isBone&&o.name==='root')rootBone=o;if(o.isBone&&o.name==='spine_18')palmBone=o;if(o.isBone&&o.name==='spine_16')headBone=o;});
+const headInverse=skin.skeleton.boneInverses[skin.skeleton.bones.indexOf(headBone)];
+function gaze(){const m=new THREE.Matrix4().multiplyMatrices(headBone.matrixWorld,headInverse),direction=new THREE.Vector3(0,0,1).transformDirection(m),up=new THREE.Vector3(0,1,0).transformDirection(m);return {position:headBone.getWorldPosition(new THREE.Vector3()).toArray(),direction:direction.toArray(),yawDegrees:Math.atan2(direction.x,direction.z)*180/Math.PI,pitchDegrees:Math.asin(direction.y)*180/Math.PI,bankDegrees:Math.atan2(up.x,up.y)*180/Math.PI};}
 pose(0);const rootStart=rootBone.getWorldPosition(new THREE.Vector3());
 function geometry(){const p=new THREE.Vector3(),mean=ids=>{const q=new THREE.Vector3();for(const i of ids){skin.getVertexPosition(i,p);q.add(p.applyMatrix4(skin.matrixWorld));}return q.multiplyScalar(1/ids.length);};const claw=mean(profile.clawIndices),base=mean(profile.fingerBaseIndices),tip=mean(profile.fingerTipIndices),finger=tip.clone().sub(base).normalize(),root=rootBone.getWorldPosition(new THREE.Vector3()),palm=palmBone.getWorldPosition(new THREE.Vector3()),normal=new THREE.Vector3();for(const tri of profile.openHand.padTriangles){const points=tri.map(i=>{const v=new THREE.Vector3();skin.getVertexPosition(i,v);return v.applyMatrix4(skin.matrixWorld);});normal.add(points[1].sub(points[0]).cross(points[2].sub(points[0])));}normal.normalize();return {claw:claw.toArray(),fingerDirection:finger.toArray(),fingerTips:profile.fingerTipGroups.map(ids=>mean(ids).toArray()),palmNormal:normal.toArray(),palm:palm.toArray(),longTipRise:tip.y-palm.y,rootHead:root.toArray(),rootAdvance:root.z-rootStart.z,minimumCapsuleGap:state.targets.length?Math.min(...state.targets.map(t=>API.capsuleGap(state.bodyCapsule,t))):null};}
 function bounds(){const b={minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity};vertices(p=>{const s=p.clone().project(camera);b.minX=Math.min(b.minX,(s.x+1)*W/2);b.maxX=Math.max(b.maxX,(s.x+1)*W/2);b.minY=Math.min(b.minY,(1-s.y)*H/2);b.maxY=Math.max(b.maxY,(1-s.y)*H/2);});return b;}
@@ -55,7 +57,8 @@ function render(t){
  document.getElementById('detail').style.display=debug?'block':'none';document.getElementById('detail').textContent=`Hitbox: ${state.hitbox?'ON':'OFF'}   命中: ${state.hits.length}   HP: ${state.targets[0]?.hp??100}\n前移: ${state.actualDistance.toFixed(3)} / ${spec.rootMotion.distance.toFixed(3)}   阻擋: ${state.blockedDistance.toFixed(3)}`;
  document.getElementById('scrub').value=String(t);
 }
-render(0);window.lizard={ready:true,render,snapshot,bounds,centers:geometry,state:()=>state,duration:spec.duration,clipName:clip.name,scenario,model:gltf.scene};
+document.getElementById('scrub').max=String(spec.duration);document.getElementById('scrub').step=String(spec.duration/240);
+render(0);window.lizard={ready:true,render,snapshot,bounds,centers:geometry,gaze,state:()=>state,duration:spec.duration,clipName:clip.name,scenario,model:gltf.scene};
 if(params.has('capture'))document.getElementById('controls').style.display='none';
 else{
  let running=true,time=0,last=performance.now();document.getElementById('scenario').value=scenario;document.getElementById('view').value=top?'top':String(Number(params.get('azimuth')??0));
