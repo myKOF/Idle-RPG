@@ -342,7 +342,7 @@ test('動態退關的間隔必須不短於速率目標的取樣視窗', () => {
       const every = (typeof g.targetRetreat.everySec === 'number') ? g.targetRetreat.everySec : 300;
       for (const id of g.requireTargets || []) {
         const t = declared[id];
-        if (!t || ['ratePerMin', 'windowAvg', 'slopePerMin'].indexOf(t.kind) < 0) continue;
+        if (!t || ['ratePerMin', 'windowAvg', 'slopePerMin', 'windowMin'].indexOf(t.kind) < 0) continue;
         const win = (typeof t.windowSec === 'number') ? t.windowSec : 300;
         const every2 = (typeof t.retreatEverySec === 'number') ? t.retreatEverySec : every;
         assert.ok(every2 >= win,
@@ -403,6 +403,28 @@ test('速率目標的計數器路徑在遊戲的面板裡真的取得到', () =>
       cur = cur[part];
     }
     assert.equal(typeof cur, 'number', `${s.f} 目標 ${s.id} 的 counter「${s.path}」解出來不是數字（得到 ${cur}）`);
+  }
+});
+
+test('視窗最低點目標（windowMin）的 path 與 per 在遊戲的 view 裡真的是數字', () => {
+  /* 生存壓力閘門讀 view.hp / view.hpMax。欄位改名時 peekPath 只會讀到 undefined、
+     那一拍被跳過，目標永遠 unknown——unknown 不擋推關，閘門等於整個關掉，報表上看不出來。 */
+  const specs = [];
+  for (const f of POLICY_FILES) {
+    for (const t of loadPolicy(f).targets || []) {
+      if (t && t.kind === 'windowMin') specs.push({ f, id: t.id, paths: [t.path, t.per].filter(Boolean) });
+    }
+  }
+  if (!specs.length) return;
+  const eng = createEngine({ seed: 7 }).boot(null);
+  eng.step(20);
+  const view = eng.view();
+  for (const s of specs) {
+    for (const path of s.paths) {
+      const m = /^view\.(.+)$/.exec(path);
+      assert.ok(m, `${s.f} 目標 ${s.id} 的「${path}」不是 view.<欄位>——windowMin 目前只驗 view 路徑`);
+      assert.equal(typeof view[m[1]], 'number', `${s.f} 目標 ${s.id} 的「${path}」在 view 裡不是數字（得到 ${view[m[1]]}）`);
+    }
   }
 });
 

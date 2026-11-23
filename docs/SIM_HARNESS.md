@@ -823,7 +823,7 @@ seed 230266934 正好相反。兩臂各有 2/8 個 seed 卡在關卡 50（第一
 
 ### 目前的設定與哨兵
 
-**`extreme` 與 `extreme.roi` 啟用了產出閘門**（`killRate`＋`fieldTrend`＋`fieldCap`）：
+**`extreme` 與 `extreme.roi` 啟用了產出閘門**（`killRate`＋`hpFloor`，見下方「改量生存壓力」）：
 極限玩家 `dailyActiveHours=24` 全程在線、沒有離線收益可領，上面那個離線誘因對它不成立。
 其餘五份（default／light／moderate／heavy／lategame）仍然關閉——在現行的離線誘因下
 它實測會讓成績變差（第一輪那張表）。要開只需在 `stageGate` 加：
@@ -837,10 +837,11 @@ seed 230266934 正好相反。兩臂各有 2/8 個 seed 卡在關卡 50（第一
 **若日後調整 `10-離線` 的參數讓線上刷關重新划算，記得回來重跑一次這個 A/B**——
 第二輪那張表就是在那種前提下量的，門檻 15 隻/分全面最佳。
 
-四支哨兵（`tests/policy-keys.test.cjs`）盯著這個機制最容易靜默失效的地方：
+五支哨兵（`tests/policy-keys.test.cjs`）盯著這個機制最容易靜默失效的地方：
 `requireTargets` 必須指到宣告過的目標、退關間隔不得短於取樣視窗、
 計數器路徑必須在真實面板裡解得出來（實際開一場遊戲打到有擊殺再解一次）、
-`targetRetreat.releaseAtFloor` 只能放行 `requireTargets` 裡的目標而且 `stageGate` 要有 `zone`。
+`targetRetreat.releaseAtFloor` 只能放行 `requireTargets` 裡的目標而且 `stageGate` 要有 `zone`、
+`windowMin` 目標的 `path`／`per` 在真實的 view 裡必須是數字（讀不到＝永遠 unknown＝閘門等於關掉）。
 
 ### 這個機制自己踩過的三個坑
 
@@ -882,6 +883,47 @@ seed 230266934 正好相反。兩臂各有 2/8 個 seed 卡在關卡 50（第一
 
   冰原第 1 關起每波約 5.5 隻是**刻意設計**：從這張地圖開始，玩家必須平衡生存與攻擊的配比
   （以及技能搭配），不能只堆其中一項。所以這裡修的是策略，不是出怪表。
+
+### 改量生存壓力：`hpFloor` 取代場上存活數（2026-11-23）
+
+`releaseAtFloor` 治的是症狀。根本問題是 `fieldCap`／`fieldTrend` 量錯了東西：
+這條規則想擋的是「場上怪多到會讓你死」，但它量的是「場上怪多」。兩者在冰原脫鉤——
+三個技能冷卻都是 8 秒（每分鐘最多約 22 次施放，每次只打得到幾隻），普攻每分鐘約 38 下，
+健康狀態下每分鐘也只殺得了約 90 隻，而冰原每分鐘出約 127 隻，場上**必然**堆滿；
+同時第 1 關的怪每下只打 1 點，場上 100 隻也沒有危險。
+
+考慮過「擊殺數 ÷ 場上存活數」，但遊戲在場上滿了之後就不再出怪（出怪數＝容量−存活數，
+js/combat.js），存活數會釘在容量上，比值退化成「擊殺率 ÷ 100」，等於重複量 `killRate`；
+荒漠場上常常只有幾隻，比值又會暴大，同一個門檻跨地圖不通用。
+
+改成量結果：新的目標種類 `windowMin`（視窗內的最低點），搭配 `per`（除以另一個即時值）
+與 `skipAtOrBelow`（不記這個值以下的樣本）：
+
+```json
+{ "id": "hpFloor", "kind": "windowMin", "path": "view.hp", "per": "view.hpMax",
+  "skipAtOrBelow": 0, "windowSec": 120, "atLeast": 0.4, "retreatEverySec": 120 }
+```
+
+- **最低點，不是平均**：危險是那一下掉到多低，平均會被回滿的時間稀釋。
+- **`skipAtOrBelow: 0` 排除死亡那幾拍**：死亡本身已經有處理（遊戲退 10 關、`survivalFarm`
+  的同關死亡計數），讓那個 0 在視窗裡留 2 分鐘等於同一次死亡罰兩次。
+- `requireTargets` 改為 `["killRate", "hpFloor"]`；`fieldTrend`／`fieldCap` 與
+  `releaseAtFloor`／`zone` 從兩份策略移除（機制與測試留在直譯器裡）。
+
+門檻 40% 來自 24h × 10 seed 的校準（`run_summary.json` 的 `hpLoad`，由 `scripts/run_sim.js`
+每秒取樣）：
+
+| | 最低血量 < 30% | < 40% | < 50% |
+|---|---|---|---|
+| 視窗內沒有死亡的時段（中位數 99%） | 2–7% | 4–10% | 5–13% |
+| 每次死亡之前（上一次死亡後到死前 3 秒） | 49–62% | 63–78% | 76–89% |
+
+40% 是兩組分得最開的點。約三成的死亡事前沒有掉血跡象（一瞬間被打穿），任何血量門檻都預測不到，
+那部分仍交給死亡退關與 `survivalFarm`。
+
+⚠️ 校準時的現況：同一組 seed 在目前的程式碼下大多卡在**荒漠 51–53 關**、約每 4 分鐘死一次
+（與 `sim_batch_survival_ab4` 的 survB 組逐筆相同），10 個 seed 只有 2 個進到冰原。
+這是另一個問題（第 50 關的分段），不是這個閘門造成的。A/B 結果待補。
 
 ---
 

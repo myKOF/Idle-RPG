@@ -455,6 +455,53 @@ const fieldLoadStats = {
   }
 };
 
+/* ---- 生存壓力：視窗內的血量最低點（survival-gate hpFloor 目標的校準資料）----
+
+   「場上怪很多」本身不危險，危險的是它讓你掉血。冰原第 1 關的怪每下只打 1 點，
+   場上 100 隻也不會死，用存活數當閘門會在那裡把角色永遠鎖住（docs/SIM_HARNESS.md）。
+   這裡量的是結果：每秒取樣 hp/hpMax，記下 HP_WINDOW_SEC 視窗內的最低點。
+
+   兩組分布要一起看才訂得出門檻：
+     clean     —— 視窗內**沒有死亡**的時刻，視窗最低點的分布（＝活著的時候平常掉到多低）
+     preDeath  —— 每次死亡前，從上一次死亡之後到死前 PRE_DEATH_SKIP_SEC 秒，
+                  活著的樣本裡的最低點（＝死之前有沒有先掉血的預兆）
+   兩組都只看活著的樣本（hp > 0）。死亡那幾拍的 0 不排除的話，死得頻繁的場次
+   （每 4 分鐘一次）幾乎每個 2 分鐘視窗都含一個 0，分布量到的只是「死過」。
+   preDeath 偏高代表死亡多半是一瞬間被打穿，任何血量門檻都預測不到。
+   單調佇列求滑動最小值，每個樣本 O(1) 攤銷。 */
+const HP_WINDOW_SEC = 120;
+const PRE_DEATH_SKIP_SEC = 3;
+const hpLoadStats = {
+  dq: [], sinceDeath: [], clean: [], preDeath: [], lastDeaths: null, lastDeathT: null, firstT: null,
+  add(t, ratio, deaths) {
+    if (!(ratio >= 0) || !isFinite(ratio)) return;
+    if (this.firstT === null) this.firstT = t;
+    if (this.lastDeaths !== null && deaths > this.lastDeaths) {
+      let m = Infinity;
+      for (const x of this.sinceDeath) if (x[0] <= t - PRE_DEATH_SKIP_SEC && x[1] < m) m = x[1];
+      if (m !== Infinity) this.preDeath.push(m);
+      this.sinceDeath = [];
+      this.lastDeathT = t;
+    }
+    this.lastDeaths = deaths;
+    if (ratio <= 0) return;
+    this.sinceDeath.push([t, ratio]);
+    const dq = this.dq;
+    while (dq.length && dq[dq.length - 1][1] >= ratio) dq.pop();
+    dq.push([t, ratio]);
+    while (dq.length && dq[0][0] < t - HP_WINDOW_SEC) dq.shift();
+    const start = this.lastDeathT === null ? this.firstT : this.lastDeathT;
+    if (t - start >= HP_WINDOW_SEC) this.clean.push(dq[0][1]);
+  },
+  summary() {
+    const q = (a, p) => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y); return +s[Math.min(s.length - 1, Math.floor(s.length * p))].toFixed(3); };
+    const below = (a, th) => a.length ? +(a.filter((x) => x < th).length / a.length).toFixed(4) : null;
+    const dist = (a) => ({ n: a.length, p01: q(a, 0.01), p05: q(a, 0.05), p10: q(a, 0.1), p25: q(a, 0.25), p50: q(a, 0.5),
+      below20: below(a, 0.2), below30: below(a, 0.3), below40: below(a, 0.4), below50: below(a, 0.5), below70: below(a, 0.7) });
+    return { windowSec: HP_WINDOW_SEC, preDeathSkipSec: PRE_DEATH_SKIP_SEC, clean: dist(this.clean), preDeath: dist(this.preDeath) };
+  }
+};
+
 let lastKillsTotal = 0;
 let lastHourChecked = 0;
 /* 累計在線秒數。宣告在這裡而不是主迴圈那一段，是因為 snapshot() 要用它做每小時的
@@ -645,8 +692,10 @@ try {
           left -= chunk;
           const oPanels = {};
           for (const p of observePanels) oPanels[p] = engine.panel(p, panelParamsFor(p));
-          policy.observe({ view: engine.view(), panels: oPanels, gameTimeSec: engine.gameTimeSec() });
+          const oView = engine.view();
+          policy.observe({ view: oView, panels: oPanels, gameTimeSec: engine.gameTimeSec() });
           observations++;
+          if (oView.hpMax > 0) hpLoadStats.add(engine.gameTimeSec(), oView.hp / oView.hpMax, (engine.ctx.LOOT_STATS || {}).deaths || 0);
           if (engine.ctx.liveFieldEnemies) {
             const liveNow = engine.ctx.liveFieldEnemies().length;
             liveSeries.push([engine.gameTimeSec(), liveNow]);
@@ -880,6 +929,7 @@ const summary = {
   })(),
   equipSetSec: equipSetSec,
   fieldLoad: fieldLoadStats.summary(),
+  hpLoad: hpLoadStats.summary(),
   performance: {
     /* 實際跑掉的步數。啟用班表時它會少於 wallHours × 36000——離線那一段沒有跑 simStep，
        用 totalSteps 會把吞吐量灌水成好幾倍。 */
