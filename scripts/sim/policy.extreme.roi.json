@@ -20,6 +20,7 @@
     "equipSets",
     "gemRules",
     "talentPlan",
+    "fieldLoad",
     "relicPlan",
     "merchantPlan"
   ],
@@ -275,14 +276,23 @@
         "retreatCmd": "stage.go",
         "requireTargets": [
           "killRate",
-          "hpFloor"
+          "fieldTrend",
+          "fieldCap",
+          "dpsAlive"
         ],
         "targetRetreat": {
           "step": 5,
           "everySec": 300,
           "minStage": 1,
-          "說明": "產出不足就每 300 秒往回退 5 關。everySec 必須 >= killRate 的 windowSec（tests/policy-keys.test.cjs 有哨兵）"
+          "說明": "產出不足就每 300 秒往回退 5 關。everySec 必須 >= killRate 的 windowSec（tests/policy-keys.test.cjs 有哨兵）",
+          "releaseAtFloor": [
+            "fieldTrend",
+            "fieldCap"
+          ],
+          "releaseAtFloor_依據": "退到地板（minStage）、冷卻也過了，場上負載仍然超標，就證明退關修不好它——這兩個目標在這張圖內不再擋推關，換圖重新量。冰原的小怪每波 1~9 隻、平均約 5.5 隻且不分關卡（ZONE_ENCOUNTER.Icefield.mobCount 只有一列），而遊戲只有死亡會清場：退關讓怪變弱但不會變少。實測 24h × 5 seed 有 3 個被鎖在冰原第 1 關 10~14 小時（每分鐘仍殺 19~78 隻，killRate 達標），等級凍結在 114~146。killRate 不在清單裡：在地板都殺不動是真的太弱，照舊待著刷"
         },
+        "zone": "panels.battle.stage.zone",
+        "zone_依據": "releaseAtFloor 的放行以地圖為單位：出怪密度是地圖的屬性，換圖就作廢重新量",
         "requireTargets_依據": "極限玩家 dailyActiveHours=24 全程在線，沒有離線收益可領，所以「待在刷得動的關卡」直接決定產出。實測 4 個 seed：中位等級 201→412、擊殺 30K→138K、死亡 73→23",
         "tierPush": {
           "source": "panels.eval.tier",
@@ -3166,6 +3176,16 @@
   },
   "targets": [
     {
+      "id": "dpsAlive",
+      "kind": "windowAvg",
+      "path": "panels.fieldLoad.dps",
+      "windowSec": 60,
+      "atLeast": 1,
+      "retreatEverySec": 60,
+      "說明": "最近 60 秒面板 DPS 的平均。持續為 0＝命中全部是 0 傷害（怪的防禦把傷害壓到 0、無敵護盾之類）＝打不動：不推關，每 60 秒退 5 關直到打得動",
+      "依據": "seed 474906691（extreme，48h）在第 38.83 小時剛復活、場上 34 隻、最近 10 秒 17 筆傷害全是 0（命中沒被閃避，是被防禦壓到 0），舊的 harness 不變量因此中止整場模擬。DPS 視窗只在有新傷害記進來時才修剪，死亡、轉場時停在舊值，會是 0 只有「命中全為 0 傷害」一種情況，所以門檻 1 就分得出來。退關即可解決，那一場模擬照樣有效（使用者 2026-11-23）"
+    },
+    {
       "id": "killRate",
       "kind": "ratePerMin",
       "counter": "panels.battle.lootStats.sources.field.kills",
@@ -3194,16 +3214,24 @@
       "說明": "冷卻縮減。上限是遊戲的 STAT_CAPS.cdr=60，所以目標直接訂在上限——真人的說法是「後期冷卻需常態在 60% 上限值」。來源有兩條：專注附魔（focus，util 類別，鞋子與項鍊）與 cdr 詞條（minR 4，頭盔／腰帶／手套／戒指／項鍊）"
     },
     {
-      "id": "hpFloor",
-      "kind": "windowMin",
-      "path": "view.hp",
-      "per": "view.hpMax",
-      "skipAtOrBelow": 0,
+      "id": "fieldTrend",
+      "kind": "slopePerMin",
+      "path": "panels.fieldLoad.live",
+      "windowSec": 300,
+      "atMost": 3,
+      "retreatEverySec": 300,
+      "說明": "場上存活敵人數的趨勢（隻／分鐘）。1 分鐘內由 5 隻長到 10 隻（+5）照勢頭必然掛不住，要往後退；5 分鐘才長 5 隻（+1）還撐得住。",
+      "依據": "場上敵人是一波一波出現的，1 分鐘視窗的斜率在健康狀態下就有 45% 超過 3/分（p90＝18），無法分辨。實測 extreme 3 小時、10,800 個 1 秒取樣：5 分鐘視窗斜率 p50＝0.05、p90＝2.3、超過 3 的只有 5.9%，超過 6 的 0%——只有「持續 5 分鐘一路堆高」才會越線。使用者的例子（5 分鐘長 5 隻＝+1/分 可接受）落在門檻以下"
+    },
+    {
+      "id": "fieldCap",
+      "kind": "windowAvg",
+      "path": "panels.fieldLoad.live",
       "windowSec": 120,
-      "atLeast": 0.4,
+      "atMost": 50,
       "retreatEverySec": 120,
-      "說明": "生存壓力：最近 2 分鐘活著時血量的最低比例（hp / hpMax）。低於門檻就不推關、每 120 秒退 5 關。死亡那幾拍（hp＝0）不算——死亡本身已有遊戲退 10 關與 survivalFarm 處理，不重複罰",
-      "依據": "取代 fieldTrend／fieldCap（場上存活數）：場上怪多本身不危險，危險的是它讓你掉血。冰原的小怪每波平均約 5.5 隻、不分關卡，健康狀態下每分鐘也只殺得了約 90 隻、出怪約 127 隻，場上必然堆滿；第 1 關的怪每下只打 1 點，用存活數擋推關會把角色永遠鎖在那裡（使用者確認冰原的出怪密度是刻意設計）。門檻取自 24h × 10 seed 的校準（scripts/run_sim.js 的 hpLoad）：視窗內沒有死亡的時段，2 分鐘最低血量低於 40% 的只有 4~10%（中位數 99%）；每次死亡之前（上一次死亡之後、死前 3 秒以前），血量先掉到 40% 以下的有 63~78%。40% 是兩組分得最開的點：30% 只抓得到 49~62% 的死前預兆，50% 會在 5~13% 的平常時段誤擋"
+      "說明": "場上存活敵人數的極限值（1 分鐘平均）。超過就一律往後退，不管趨勢。",
+      "依據": "使用者指定 40~50 隻。實測健康狀態場上敵人 p50＝20、p90＝39、p99＝57、最多 75；2 分鐘平均超過 50 屬於罕見尖峰以外的持續過載"
     },
     {
       "id": "jewelEnhance",
