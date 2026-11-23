@@ -62,6 +62,9 @@ assert all(faces.values())
 right_names={'spine_18',*[b.name for b in arm.pose.bones['spine_18'].children_recursive]}
 claw_ids=sorted(i for i in ids(right_names,.99999) if mesh.data.vertices[i].co.z<-.40)
 assert claw_ids==sorted(build['clawIndices']) and len(claw_ids)>30
+finger_base_ids=sorted(ids({'spine_35','spine_38','spine_41'},.85))
+finger_tip_ids=sorted(ids({'spine_33','spine_36','spine_39'},.85))
+assert finger_base_ids==sorted(build['fingerBaseIndices']) and finger_tip_ids==sorted(build['fingerTipIndices'])
 chains=[['spine_22','spine_21','spine_20','spine_19','spine_18'],['spine_06','spine_07','spine_08','spine_09','chest']]
 chains += [['rearLeg.'+s+'_01','rearLwr.'+s,'rearHorselink.'+s,'rearFoot.'+s,'rearToe.'+s] for s in ['L','R']]
 rest_lengths={(a,b):(arm.data.bones[b].head_local-arm.data.bones[a].head_local).length for chain in chains for a,b in zip(chain,chain[1:])}
@@ -72,10 +75,13 @@ native={};results={};equivalence=0
 for label,path in [('blend',blend),('glb',fixed)]:
     arm,mesh=load(path);bone_error=link_error=jump=loop=0;previous=None;ends=[];issues=[]
     collision={p:0 for p in ['handR_footL','handR_footR','handL_footL','handL_footR','handR_skull','handL_skull','handR_handL','footL_footR']}
-    foot_contact=left_contact=below_ground=0;edge_p95=edge_p99=edge_max=0;heads=[];claws=[]
+    foot_contact=left_contact=below_ground=0;edge_p95=edge_p99=edge_max=0;heads=[];claws=[];finger_directions=[];tip_clearances=[]
     for index,t in enumerate(times):
         frame(t);p=surface(mesh);assert np.all(np.isfinite(p))
         claws.append(p[claw_ids].mean(axis=0))
+        direction=p[finger_tip_ids].mean(axis=0)-p[finger_base_ids].mean(axis=0)
+        finger_directions.append(direction/np.linalg.norm(direction))
+        tip_clearances.append(float(p[finger_tip_ids,2].min()-build['ground']))
         current=np.array([b.head for b in arm.pose.bones]);heads.append(current)
         if previous is not None:
             steps=np.linalg.norm(current-previous,axis=1);largest=float(steps.max());jump=max(jump,largest)
@@ -113,7 +119,9 @@ for label,path in [('blend',blend),('glb',fixed)]:
     line_error=float(np.max(np.abs(np.cross(stroke-stroke[0],travel)))/np.linalg.norm(travel))
     middle=stroke[len(stroke)//2];late=stroke[round((len(stroke)-1)*.8)]
     motion={'riseAndSweepSeconds':1.0,'minimumInteriorLiftClawSpeed':float(lift_speed.min()),'slashXTravel':float(travel[0]),'slashZTravel':float(travel[1]),'minimumSlashXStep':float(steps[:,0].min()),'maximumSlashZStep':float(steps[:,1].max()),'arcMaximumChordDeviation':line_error,'midHorizontalProgress':float((middle[0]-stroke[0,0])/travel[0]),'midVerticalProgress':float((middle[1]-stroke[0,1])/travel[1]),'lastFifthHorizontalTravel':float(stroke[-1,0]-late[0]),'lastFifthVerticalDrop':float(late[1]-stroke[-1,1]),'minimumSecondHalfXStep':float(steps[len(steps)//2:,0].min())}
-    result={'samples':len(times),'boneLengthError':bone_error,'limbJointLinkError':link_error,'maximumAdjacentJointStep':jump,'loopVertexError':loop,'supportFootGroundError':foot_contact,'supportHandGroundError':left_contact,'maximumBelowGround':below_ground,'triangleOverlaps':collision,'edgeStretchP95':edge_p95,'edgeStretchP99':edge_p99,'edgeStretchMaximum':edge_max,'jointMotionRanges':ranges,'motion':motion}
+    fd=np.array(finger_directions);mask=(ts>=.86)&(ts<=1.23);inclinations=np.degrees(np.arcsin(np.clip(fd[mask,2],-1,1)))
+    aim={'raisedInclinationDegrees':float(np.degrees(np.arcsin(fd[np.argmin(abs(ts-.74)),2]))),'minimumForwardDot':float((-fd[mask,1]).min()),'minimumInclinationDegrees':float(inclinations.min()),'maximumInclinationDegrees':float(inclinations.max()),'minimumEndingTipGroundClearance':float(np.array(tip_clearances)[(ts>=.98)&(ts<=1.23)].min())}
+    result={'samples':len(times),'boneLengthError':bone_error,'limbJointLinkError':link_error,'maximumAdjacentJointStep':jump,'loopVertexError':loop,'supportFootGroundError':foot_contact,'supportHandGroundError':left_contact,'maximumBelowGround':below_ground,'triangleOverlaps':collision,'edgeStretchP95':edge_p95,'edgeStretchP99':edge_p99,'edgeStretchMaximum':edge_max,'jointMotionRanges':ranges,'motion':motion,'fingerAim':aim}
     print('ATTACK1_CHECK',label,json.dumps(result),flush=True)
     print('ATTACK1_DIAGNOSTICS',json.dumps(issues),flush=True)
     assert bone_error<1e-5 and link_error<1e-5 and jump<.12 and loop<1e-5,result
@@ -123,6 +131,8 @@ for label,path in [('blend',blend),('glb',fixed)]:
     assert motion['maximumSlashZStep']<1e-4 and motion['minimumSecondHalfXStep']>-1e-4,motion
     assert line_error>.25 and motion['midHorizontalProgress']<.30 and motion['midVerticalProgress']>.55,motion
     assert motion['lastFifthHorizontalTravel']>.15 and motion['lastFifthVerticalDrop']<.07,motion
+    assert aim['raisedInclinationDegrees']>5 and aim['minimumForwardDot']>.90,aim
+    assert aim['minimumInclinationDegrees']>-30 and aim['maximumInclinationDegrees']<5 and aim['minimumEndingTipGroundClearance']>.04,aim
     assert ranges['spine_18'][2]>1.0 and ranges['hips'][1]>.2 and ranges['spine_16'][2]>.15 and max(ranges['tail_07'])>.15
     results[label]=result
 assert equivalence<2e-5,equivalence

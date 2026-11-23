@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),crypto=require('node:crypto');
 const {launchHeadless}=require('../lib/headless-browser.cjs'),{resolveLibraryRoot}=require('../vfx/vfx-library-root.cjs');
-const repo=path.resolve(__dirname,'../..'),pack=path.join(resolveLibraryRoot({libraryId:'effects-materials'}).root,'codex-authored/boss9-lizard-attack1-r3-20261123'),out=path.resolve(process.argv[2]);
+const repo=path.resolve(__dirname,'../..'),pack=path.join(resolveLibraryRoot({libraryId:'effects-materials'}).root,'codex-authored/boss9-lizard-attack1-r4-20261123'),out=path.resolve(process.argv[2]);
 const value=(key,fallback)=>{const i=process.argv.indexOf(key);return i<0?fallback:process.argv[i+1];};
 const original=false,quick=process.argv.includes('--quick'),top=process.argv.includes('--top'),guide=process.argv.includes('--guide'),bones=process.argv.includes('--bones'),azimuth=Number(value('--azimuth',65));
 const mime={'.html':'text/html','.js':'text/javascript','.glb':'model/gltf-binary'};

@@ -42,22 +42,12 @@ keys = [
  (0.55, .08,.035,-.145, -10,-26,28,-12,9, -.55,-.39,.43, -60,-20, .48,-.62,-.442,0),
  (0.74, .08,.045,-.125, -13,-30,32,-13,13, -.56,-.33,.64, -78,-25, .48,-.62,-.442,0),
  (0.86, -.03,-.08,-.18, 7,-25,15,-6,-8, -.30,-1.20,.29, -30,4, .50,-.65,-.32,.06),
- (1.00, -.045,-.20,-.25, 20,5,-5,6,-15, .24,-1.32,-.16, 10,35, .53,-.51,-.18,.22),
- (1.12, -.025,-.23,-.24, 23,29,-11,12,-12, .46,-1.26,-.35, 20,52, .53,-.43,-.16,.24),
- (1.23, -.015,-.19,-.22, 18,23,-7,8,-8, .44,-1.20,-.31, 17,40, .52,-.45,-.20,.22),
+ (1.00, -.02,-.20,-.275, 20,5,-5,6,-15, .24,-1.32,-.16, 10,35, .53,-.51,-.18,.22),
+ (1.12, .015,-.23,-.27, 23,29,-11,12,-12, .46,-1.26,-.35, 20,52, .53,-.43,-.16,.24),
+ (1.23, .02,-.19,-.25, 18,23,-7,8,-8, .44,-1.20,-.31, 17,40, .52,-.45,-.20,.22),
  (1.48, .005,-.10,-.175, 8,9,-2,3,-3, -.15,-.90,-.26, 3,12, .50,-.54,-.31,.12),
  (1.80, 0,0,-.14, 0,0,0,0,0, -.44,-.62,-.436, 0,0, .48,-.62,-.442,0),
 ]
-key_array = np.array(keys, dtype=float)
-# One C1 monotone Hermite curve across the poses. Interior lift poses retain
-# velocity instead of easing every separate segment to a complete stop.
-h=np.diff(key_array[:,0]);secants=np.diff(key_array[:,1:],axis=0)/h[:,None]
-slopes=np.zeros_like(key_array[:,1:])
-for i in range(1,len(keys)-1):
-    a,b=secants[i-1],secants[i];mask=a*b>0
-    w1,w2=2*h[i]+h[i-1],h[i]+2*h[i-1]
-    slopes[i,mask]=(w1+w2)/(w1/a[mask]+w2/b[mask])
-
 def sample(t):
     i = min(len(keys)-2, max(0, int(np.searchsorted(key_array[:,0], t, side='right')-1)))
     u = (t-keys[i][0])/(keys[i+1][0]-keys[i][0])
@@ -70,10 +60,42 @@ right_hand_names={'spine_18',*[b.name for b in arm.pose.bones['spine_18'].childr
 group_names={g.index:g.name for g in mesh.vertex_groups}
 claw_ids=[v.index for v in mesh.data.vertices if v.co.z<-.40 and sum(g.weight for g in v.groups if group_names[g.group] in right_hand_names)>.99999]
 assert len(claw_ids)>30
+finger_base_ids=[v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if group_names[g.group] in {'spine_35','spine_38','spine_41'})>.85]
+finger_tip_ids=[v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if group_names[g.group] in {'spine_33','spine_36','spine_39'})>.85]
+assert len(finger_base_ids)>20 and len(finger_tip_ids)>20
 evaluated=mesh.evaluated_get(bpy.context.evaluated_depsgraph_get());skin=evaluated.to_mesh()
-claw_initial=Vector(np.mean([skin.vertices[i].co for i in claw_ids],axis=0));evaluated.to_mesh_clear()
-claw_bind=(base_world['spine_18']@rest['spine_18'].inverted()).inverted()@claw_initial
+claw_initial=Vector(np.mean([skin.vertices[i].co for i in claw_ids],axis=0))
+base_mean=Vector(np.mean([skin.vertices[i].co for i in finger_base_ids],axis=0))
+tip_mean=Vector(np.mean([skin.vertices[i].co for i in finger_tip_ids],axis=0));evaluated.to_mesh_clear()
+hand_inverse=(base_world['spine_18']@rest['spine_18'].inverted()).inverted()
+claw_bind=hand_inverse@claw_initial
 claw_offset=claw_bind-rest['spine_18'].translation
+finger_axis=((hand_inverse@tip_mean)-(hand_inverse@base_mean)).normalized()
+# Aim the actual long-claw tips toward the enemy (-Y), 15 degrees below
+# horizontal. The wrist angle is derived from the skin rather than guessed.
+plane_length=math.hypot(finger_axis.y,finger_axis.z)
+forward_pitch=math.atan2(finger_axis.z,-finger_axis.y)-math.asin(-math.sin(math.radians(15))/plane_length)
+pitched=Quaternion((1,0,0),forward_pitch)@finger_axis
+forward_yaw=math.atan2(-pitched.x,-pitched.y)
+for i,k in enumerate(keys):
+    row=list(k);old_q=Euler((math.radians(row[12]),0,math.radians(row[13])),'XYZ').to_quaternion()
+    if .86<=row[0]<=1.23:row[12:14]=[math.degrees(forward_pitch),math.degrees(forward_yaw)]
+    if row[0]==1.48:row[12:14]=[math.degrees(forward_pitch)*.5,math.degrees(forward_yaw)*.5]
+    if row[0]>=1.12:
+        new_q=Euler((math.radians(row[12]),0,math.radians(row[13])),'XYZ').to_quaternion()
+        # Keep the existing R3 claw arc/recovery positions when turning the
+        # wrist, including the hand-off between the sweep and recovery.
+        old_claw=Vector((axis+row[9],row[10],row[11]))+old_q@claw_offset
+        palm=old_claw-new_q@claw_offset;row[9:12]=[palm.x-axis,palm.y,palm.z]
+    keys[i]=tuple(row)
+
+key_array=np.array(keys,dtype=float)
+# One C1 curve retains velocity at the interior lift poses.
+h=np.diff(key_array[:,0]);secants=np.diff(key_array[:,1:],axis=0)/h[:,None]
+slopes=np.zeros_like(key_array[:,1:])
+for i in range(1,len(keys)-1):
+    a,b=secants[i-1],secants[i];mask=a*b>0;w1,w2=2*h[i]+h[i-1],h[i]+2*h[i-1]
+    slopes[i,mask]=(w1+w2)/(w1/a[mask]+w2/b[mask])
 
 def sweep_palm(t,pitch,yaw):
     u=min(1,max(0,(t-sweep_start)/(sweep_end-sweep_start)));s=u*u*(3-2*u)
@@ -268,6 +290,6 @@ while len(text)%4:text+=b' '
 while len(data)%4:data.append(0)
 binary=struct.pack('<III',0x46546c67,2,28+len(text)+len(data))+struct.pack('<II',len(text),0x4e4f534a)+text+struct.pack('<II',len(data),0x004e4942)+data
 (out/'boss9_attack1.glb').write_bytes(binary)
-report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'clawIndices':claw_ids,'timing':{'riseStart':rise_start,'sweepStart':sweep_start,'sweepEnd':sweep_end,'riseAndSweepSeconds':sweep_end-rise_start},'curve':'C1 continuous lift; bowed quarter-ellipse claw path: outside descent then low rightward sweep','reference':'User red curved arrow in codex-clipboard-d0efcba6-fcf8-41f7-9f70-39e49c3626ee.png overrides the former straight diagonal','recovery':'Return to starting stance by 1.8 s'}
+report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'duration':duration,'fps':fps,'bones':len(rest),'ground':ground,'keys':[list(k) for k in keys],'trace':trace,'maximumArmTargetClamp':max(reach_errors),'sourceBinaryPreserved':data[:len(original_binary)]==original_binary,'clawIndices':claw_ids,'fingerBaseIndices':finger_base_ids,'fingerTipIndices':finger_tip_ids,'fingerAim':{'forwardPitchDegrees':math.degrees(forward_pitch),'forwardYawDegrees':math.degrees(forward_yaw),'targetTipInclinationDegrees':-15},'timing':{'riseStart':rise_start,'sweepStart':sweep_start,'sweepEnd':sweep_end,'riseAndSweepSeconds':sweep_end-rise_start},'curve':'R3 curved claw path retained; raise tips upward then aim forward and slightly down through the sweep and follow-through','reference':'Latest user instruction: forward-facing fingers during the slash, not a downward ground stab','recovery':'Return to starting stance by 1.8 s'}
 (out/'build.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print('ATTACK1_PREPARED',duration,'seconds; maximum arm reach adjustment',max(reach_errors),flush=True)

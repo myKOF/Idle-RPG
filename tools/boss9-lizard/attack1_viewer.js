@@ -14,7 +14,8 @@ const gltf=await new GLTFLoader().loadAsync('/exports/boss9_attack1.glb');scene.
 gltf.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
 const profile=await(await fetch('/exports/build.json')).json();
 let skin;gltf.scene.traverse(o=>{if(o.isSkinnedMesh)skin=o;});
-function clawCenter(){const p=new THREE.Vector3(),mean=new THREE.Vector3();for(const i of profile.clawIndices){skin.getVertexPosition(i,p);mean.add(p.applyMatrix4(skin.matrixWorld));}mean.multiplyScalar(1/profile.clawIndices.length);const s=mean.clone().project(camera);return {clawWorld:mean.toArray(),clawScreen:[(s.x+1)*W/2,(1-s.y)*H/2]};}
+function meanWorld(ids){const p=new THREE.Vector3(),mean=new THREE.Vector3();for(const i of ids){skin.getVertexPosition(i,p);mean.add(p.applyMatrix4(skin.matrixWorld));}return mean.multiplyScalar(1/ids.length);}
+function clawCenter(){const mean=meanWorld(profile.clawIndices),s=mean.clone().project(camera),a=meanWorld(profile.fingerBaseIndices),b=meanWorld(profile.fingerTipIndices);return {clawWorld:mean.toArray(),clawScreen:[(s.x+1)*W/2,(1-s.y)*H/2],fingerBaseWorld:a.toArray(),fingerTipWorld:b.toArray(),fingerDirectionWorld:b.sub(a).normalize().toArray()};}
 const clip=gltf.animations.find(c=>c.name==='Attack1');if(!clip)throw Error('Missing Attack1');
 const mixer=new THREE.AnimationMixer(gltf.scene),action=mixer.clipAction(clip);
 action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;action.play();
