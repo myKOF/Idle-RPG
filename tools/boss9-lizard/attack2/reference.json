@@ -1,0 +1,26 @@
+{
+  "file": "Gemini_Generated_Gif_4ji6ud4ji6ud4ji6.gif",
+  "sha256": "7de5ca3aa4573f80b0fae1d29b45437ed7fb48208670a18a9fcfd19bdec7d1a6",
+  "frames": 30,
+  "sourceDuration": 3,
+  "previewDuration": 1.5,
+  "timeScale": 0.5,
+  "analysis": "Manual visual timing analysis, not motion capture. Reference pixels are not included in the asset package. User R3 timing and landing arrows supersede the original raised hold and narrow arm spread.",
+  "revision": {
+    "timing": {"raise": 0.8, "release": 0.3, "recovery": 0.4, "total": 1.5},
+    "notes": "Wider upper arms and outward tilted forearms; no raised hold; accelerating downward inward claws, landing on the ground between both feet.",
+    "images": [
+      {"file": "codex-clipboard-e6b9ae60-51d7-49bd-9fc2-17b1c556e291.png", "sha256": "2df1696e05d67dee28830ac7d53694c3769db67b37d9046a17f5e11c6d446d53"},
+      {"file": "codex-clipboard-b62699bc-b2b6-4cc0-a477-18d4201c51c0.png", "sha256": "1efd200a9c98f57575701dde9f7bd15ab49c716917528e6eb65b0346ac2dc475"}
+    ]
+  },
+  "landmarks": [
+    {"sourceTime": 0.3, "pose": "Low crouch; hands still hanging"},
+    {"sourceTime": 1.0, "pose": "Chest erect, head up, upper arms spread; forearms follow"},
+    {"sourceTime": 1.5, "pose": "Bent elbows, near vertical forearms, open curved claws, skyward roar"},
+    {"sourceTime": 2.0, "pose": "End of raised roar hold"},
+    {"sourceTime": 2.1, "pose": "Head starts descending before hands"},
+    {"sourceTime": 2.6, "pose": "Chest folds forward; both claws sweep down and slightly inward"},
+    {"sourceTime": 2.9, "pose": "Low stance, dorsal hands toward enemy, settle to idle"}
+  ]
+}

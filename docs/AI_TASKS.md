@@ -1,3 +1,55 @@
+## SYNC-DEVELOP-20261125 — 整合桌面遊玩記錄、Demo 法力與配樂
+
+- Owner：Codex；待控制器暫存及建立合併提交。合併基底 `0f39548b`，原 HEAD `0eea3bb2`，傳入 `0d85dad4`。
+- 解決 `index.html` 的 bridge 快取衝突。保留桌面內測遊玩記錄在 bridge 之後、main 之前載入，以及 Demo 技能法力倍率、地圖配樂和升級特效設定。主頁、Worker 及場景預覽使用新的 `20261125-playlog-demo-music-v1`，同步升級 Preset 請求。
+- 修改 `index.html`、`js/battle-renderer.js`、`js/bridge.js`、`js/worker/sim.worker.js`、`tools/scene-preview.html`、`tests/demo-edition.test.cjs` 及本段。唯讀檢查共通規範、兩個來源提交、來源工作簿與素材庫。未偵測 XLSX 衝突，兩份工作簿保留傳入內容，素材庫已具來源檔。
+- `node tools/config_tables.cjs --sync Zones` 與 `node tools/xlsx_to_csv.cjs` 的匯出結果按 Git 的 LF 規則與暫存內容逐檔一致。`node tools/config_tables.cjs --apply --write Zones` 重建 4 個字面值、0 語意差異。`node tools/apply_params.cjs` 631 項一致，`--check-anchors` 擾動 575 個數值後通過 631 個錨點。
+- 傳入提交的 Demo 測試在 LF checkout 會因匯出檔採 CRLF 而失敗。確認測試、工作簿、追蹤 CSV 和匯出工具與傳入提交相同後重現。測試現分別驗證匯出 CRLF 格式與換行正規化後的完整內容，保留 Demo 參數及試跑不寫入的斷言。
+- 驗證：`node --test --test-reporter=tap` 執行 play-log、demo-edition、reincarnation-mana-cost、zone-music、levelup-preset、vfx-core、vfx-preset-cost、vfx-editor-cache-versions、worker-protocol、boss9-melee-preview 共 246 項全通過。`npm.cmd run build` 通過 767 檔，`node tools/vfx/authoring/author/level-up.cjs --check` 通過，完整 `git diff HEAD --check` 通過。未做桌面實機或全庫測試。
+- 交接：工作檔已解決，可由控制器完成合併。HEAD 與 MERGE_HEAD 保持原值，合併提交由控制器產生。
+
+
+## MUSIC-LEVELUP-TESTS-20261125 — 修正配樂與升級特效回歸測試
+
+- Owner：Codex；Done，單人處理。使用者要求修好前次未通過的兩項測試，確認通過後提交。
+- 範圍：tests/zone-music.test.cjs、tests/levelup-preset.test.cjs、歷史快照fixture及本段；必要時同步既有素材庫歸檔。保留使用者正式配樂、粒子參數及遊戲程式，不變更Excel／CSV／JS、快照既有雜湊或地圖解鎖，不合併推送分支。
+- 預檢：上述四檔無其他副本或分支修改；專案僅殘留先前受限的attack2 Python快取，素材庫乾淨。基線重跑37項中35通過，兩項失敗與前次相同。
+- 驗收：Excel權威曲目逐地圖核對CSV／runtime／檔案存在與輪播順序；歷史外觀使用固定來源參數重驗原18個雜湊，目前可調Preset另驗普通／減少動態模式粒子及拖尾數；原有播放器、資源回收、編輯器保護相關回歸與Build通過後提交。
+- 完成／修改4檔：zone-music測試改為以Excel逐地圖比對CSV／runtime兩欄及每個音檔存在且非空，保留正反轉換與素材SHA檢查；新增10張地圖正式播放列表的輪播驗證（7張有配樂、3張無配樂），確認曲序、循環及重用播放器。levelup測試改用歷史fixture參數驗原外觀，另驗目前Preset與零數量／自訂數量下普通及減少動態模式的粒子／拖尾數。fixture僅新增原始配置及來源b2e5ba1a，原sourceCommit、seed及18個外觀雜湊不變；本段同步。
+- 驗證：`node --test tests/zone-music.test.cjs tests/levelup-preset.test.cjs` 39/39通過（原37項加2項）；連同`tests/vfx-core.test.cjs tests/vfx-preset-cost.test.cjs`合跑188/188通過，涵蓋375份正式Preset合法性／成本與Core節點數一致性。`npm.cmd run build`762檔通過，Git差異檢查通過。
+- 反向檢核：聊天專用QA以記憶體注入模擬音檔遺失、曲序顛倒、無視配置固定170粒子、外觀位移四種錯誤，對應測試均如預期失敗；未修改磁碟素材或程式。fixture配置與b2e5ba1a原Preset逐欄完全相同，前次提交的18個快照雜湊完整保留，沒有重錄快照或降低斷言。
+- 唯讀檢查：共通規範／Workflow／Codex、js/ui-sound.js、vfx-celebration／Core／backend、config_tables、現行Preset、原始配置提交、素材庫歸檔工具及來源manifest。Excel／CSV／data.js、播放器、特效程式與正式Preset相對HEAD均無差異。既有素材庫歸檔同步歷史fixture及source.json兩檔，`--check`四來源SHA通過；未新增素材來源，不需VFX登記或LV文件變更。
+- 限制／交接：本輪範圍無未完成項目，自我Review完成，可供合併審閱；未執行全庫測試或另做實機視聽，不宣稱全庫全綠。舊attack2 Python快取仍依前次審查限制保留未提交，未重試刪除。下一步由使用者審閱本輪提交；未合併或推送develop／main。
+- 雙倉庫提交：素材庫master先完成`3fcd8f3d6053d4839500ab658b9cd90b62b87c75`，提交後乾淨；專案commit為本段所在`[Codex] test: 修正配樂與升級特效配置回歸`，位於ai/codex。
+
+## COMMIT-USER-CHANGES-20261125 — 提交使用者配樂與特效調整
+
+- Owner：Codex；Done，單人處理。使用者授權提交所有當前必要修改，並明確要求補上音樂路徑副檔名。
+- 範圍：保留四個使用者新增MP3與升級特效vortexCount=20；僅補Zones來源工作簿四個BGM路徑的.mp3，同步CSV與data.js，核對素材庫並先提交素材庫。記錄來源及雜湊、執行配樂／特效相關驗證與Build。不合併或推送任何分支。
+- 衝突預檢：工作簿、CSV、data.js及文件未偵測其他副本或分支修改。自動產生的attack2 Python快取不屬必要交付；僅移出暫存區並保留磁碟檔案，先前清理曾遭自動審核攔截，不重試刪除。
+- 驗收：四個音樂路徑實際存在，Excel／CSV／JS一致，使用者其他配置不變，兩庫必要素材逐位相同；提交後回報兩個SHA與檢查限制。
+- 完成／修改11檔：四個新MP3原樣納入；Zones.xlsx四格補副檔名並同步CSV與js/data.js；保留使用者level-up.json的粒子數20；既有熔岩山第二首音樂移除檔名中的意外空格（100%相同內容），使其符合原表引用；新增docs/assets/ZONE_MUSIC_20261125.md及本段。重新命名亦經衝突預檢，沒有其他來源。未修改BOSS9動作或接入實戰。
+- Excel：原檔獨占存取確認通過。試算表技能工具的候選匯出未採用，依AI_RULES 8.5改用既有tools/excel-update-sheets.ps1原生API正常儲存及兩次重開；寫入僅D6／E6／D8／E8四格。來源前後全格值／公式、有效字型／填色／邊框／對齊／保護／數字格式、列高／欄寬、凍結／篩選／驗證／合併與列印設定逐項一致，只有四格字串補.mp3。
+- 驗證：node tools/config_tables.cjs --apply Zones試跑重建4個字面值、語意變更0；獨立核對Excel／CSV／JS提取前15欄一致，所有已設定BGM檔均存在；素材庫六首音樂與專案逐位／SHA256一致（含原提交b3c84c35的熔岩山兩首補存）。level-up歸檔--check驗證四來源檔與manifest通過。npm.cmd run build通過762檔，兩庫Git差異檢查通過。
+- 相關回歸：node --test tests/zone-music.test.cjs tests/levelup-preset.test.cjs，37項中35通過、2失敗。配樂表測試仍以空白期待既有熔岩山BGM（任務開始前已失敗，舊任務亦有相同記錄）；特效legacy快照仍期待調參前170粒子的幾何，與使用者20設定不同。保留使用者設定與原測試斷言，未為通過而降標或更新快照。本輪沒有另跑瀏覽器視聽或全庫測試。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／Codex規範、相關配樂與特效測試、config_tables與xlsx_to_csv、ui-sound播放器、level-up歸檔工具與素材來源紀錄。試作／檢核輸出保存在聊天專用visualizations目錄，不進專案。舊attack2的.pyc僅移出暫存區，先前刪除遭自動審查政策限制，仍保留磁碟且未換工具重試。
+- 雙倉庫：素材庫master先提交b416732158de7e11e503a0dfad06d24aee12d852（10檔，含六音檔／來源manifest、PROVENANCE與特效來源），提交後乾淨。專案commit為本段所在`[Codex] chore: 提交地圖配樂與升級特效調整`，位於ai/codex；未合併或推送develop／main。
+- 交接：本次提交範圍無未完成製作，可供合併審閱；已知限制為上述兩項舊預期不符、未做實機視聽及受限快取殘留，不宣稱工作區完全乾淨或測試全綠。下一步由使用者審閱提交，後續若調整測試須依正式配置規格處理，勿覆蓋使用者調參。
+
+## DEMO-SKILL-MANA-20261124 — 接通 Demo 技能法力消耗倍率
+
+- Owner：Codex；Done，單人實作。使用者已在 game_parameters.xlsx 新增編號380「11-Demo版／Demo 技能法力消耗倍率」，參數a為0.5；本輪接通該來源，正式版維持原消耗。
+- 允許：來源工作簿原樣納入、其CSV匯出、tools/apply_params.cjs、js/data.js／skills2.js、tests/demo-edition.test.cjs、必要主頁／Worker／bridge快取、LV_upgrade_system.md及本段。禁止改其他配置、素材、戰鬥公式或存檔／協議，不合併推送develop或main。
+- 前置：來源唯讀匯出僅新增第380筆，其他值無差異；來源檔不重新儲存。專用檔預檢無外部來源。使用者已同意與Claude e979806c統一index.html的bridge快取版本；bridge.js本身只改頂部Worker資產版本，與對方CMD記錄區段不同。保留現有地圖BGM、VFX及其他未提交修改，data.js分段暫存。
+- 驗收：普通階／終極／反擊／自動施放共用倍率，介面快照與模擬扣魔一致；與轉生及符文乘區疊乘，零倍率／免費施放／GM鎖魔維持正確；正式版不變。參數來源／錨點、相關回歸、全庫測試與Build；完成後自我Review並提交。
+- 完成／修改11檔：game_parameters.xlsx原樣納入、CSV只新增380列；tools/apply_params.cjs新增scalar具名錨點，js/data.js新增DEMO_SKILL_MANA_MULT，js/skills2.js在skills2TierManaCost單一入口套用Demo乘區；主頁／Worker的data與skills2快取及bridge的Worker資產版本同步為20261124-demo-mana-v1。新增6項Demo回歸至tests/demo-edition.test.cjs，更新LV_upgrade_system.md及本段。沒有新增顯示字串、協議或存檔欄位，素材庫無變更。
+- 唯讀檢查：規範／Workflow／Codex、js/ui.js快照與提示、skills.js排程、player.js／formula.js轉生法力、game-edition.js及桌面外殼、既有耗魔回歸、xlsx_to_csv與參數／快取驗證工具。來源xlsx前後SHA256相同；CSV與來源逐位一致，未重存或改寫工作簿。data.js只暫存新增常數，原月影沼澤／亡靈山脈BGM等他項修改保留未提交。
+- 衝突：index.html的bridge快取與Claude e979806c同一行，使用者已明確同意統一版本；將該核准值帶入對方暫存內容後三方試合0，對方play-log載入保留。bridge.js頂部版本與對方CMD記錄不同區段，三方試合0；未合併其他分支。
+- 驗證：`node --test tests/demo-edition.test.cjs tests/reincarnation-mana-cost.test.cjs tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-tower-control.test.cjs tests/params-direct-edit.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 53/53通過。包含17項Demo測試、所有群組各階／終極、反擊本體／追加、轉生及符文一次疊乘、起手／實際扣魔／法力消耗通知、零倍率／小數／免費追加／GM鎖魔、UI無G快照與真Worker面板及讀檔。變更前skills2程式重跑舊skills2-mana-cost.test.cjs，重現相同兩項既有失敗（舊表定25、現值15及終極排程），未修改其斷言。
+- `node tools/apply_params.cjs`631項一致、變更0、錨點問題0（原630，新增1）；`--check-anchors`擾動575值後631錨點各命中一次。`npm.cmd run build`762檔通過，Git本項差異檢查通過。未另跑桌面或瀏覽器實機；顯示接線以正式UI函式及Worker快照回歸驗證。
+- 全庫限制：已執行`node --test --test-concurrency=4 --test-timeout=30000 "tests/*.test.cjs"`，298秒後仍有sync-auto-conflicts／sync-feature-worktrees／sync-shortcut-recovery等Git同步測試未結束；辨識本輪PID及命令後停止其程序樹，確認無殘留。停止前輸出3696項通過、603項失敗，未逐一歸因，不宣稱603項全部為既有問題或全庫全綠。報告與QA摘要保存在本聊天visualizations/demo-skill-mana-qa；自動審查以政策限制拒絕刪除專用tmp/demo-mana-20261124，該目錄保留且未繞過限制。
+- 交接：自我Review完成，本輪接線無未完成製作，可供功能驗收及合併審閱，全庫限制如上。Commit為本段所在`[Codex] feat: 接通Demo技能法力消耗倍率`，位於ai/codex；未合併／推送develop或main。下一步重啟Demo驗收；日後修改第380筆參數a後，儲存關閉Excel並套用參數即可。
+
 ## MERCHANT-TYPE-SORT-20261124 — 神祕商人商品依類型排列
 
 - Owner：Codex；Done，單人實作。使用者要求商品區依遺物、裝備、符文、寶石排序，依賴既有商人UI／交易完成。
@@ -270,6 +322,76 @@
 - 保留核對：除支撐鏈06／07／08／09的旋轉外，全部通道最大差<0.000000954。09局部反向補償讓腕掌保持原地原朝向；軀幹、頭、腳、腕掌及攻擊側的烘焙世界位置／蒙皮矩陣差<0.00000149。額外錯相時點因父子四元數補間有<0.0000604殘差，獨立限值0.0001，並維持烘焙嚴格限值0.00001；未以放寬原骨長／接地／穿插檢查掩蓋姿態錯誤。原前視、淺弧及漸進翻掌檢查保持。
 - 程式／預覽：node --test tests/boss9-melee-preview.test.cjs 16/16；npm.cmd run build 761檔；Python AST3檔、Node語法、export.cjs 38必要檔SHA／manifest、差異自我Review通過。五視圖600張與UI操作、固定腳掌、零root、單次命中／膠囊間隙、6GIF逐幀解碼皆通過，頁面錯誤警告0；五份聯絡圖與肩部定格目視。瀏覽器finally關閉且無孤兒，必要QA留入素材包。核實本輪tmp/boss9-shoulder-20261124絕對路徑、無連結、白名單與740檔後，以非遞迴逐檔清理並移除空目錄；最終4份任務試合檔同樣限名清理。任務不同區段對develop及其實際工作副本試合均0，未動其他輪暫存或合併分支。
 - 交接：GLB SHA256 `d669fdc2804202e63bd912c1770278382a62b4fedc103474d0010c11e211ae57`；素材庫先提交2ef883d7cbff65bf90a399919261127e0dba726f，專案Commit為本段所在「[Codex] fix: 從肩骨向外展開BOSS9支撐臂」。可供預覽工具合併審閱，動作採用仍待GIF驗收；未合併／推送develop或main。已知限制：原自動蒙皮局部拉伸及未涵蓋甲片接觸仍可能存在，眼睛隨頭骨前視；正式遊戲混合／世界碰撞／多人尚未接入。下一步檢視正常GIF、肩部定格與完整慢放。
+
+## BOSS9-RIGHT-RETURN-20261124 — 右側延伸揮爪與直接收回
+
+- Owner：Codex；Done，單人完成，待GIF姿勢驗收。依最新2a1f90bc與595afac9圖，揮爪後半段更朝畫面右側，取消對側腳前的落爪停留，揮完直接連續回原位。依賴已完成肩部修正版，保留1.2秒、腳掌定地、頭向與漸進翻掌。
+- 範圍：tools/boss9-lizard/melee/author.py、spec.json、verify.py、export.cjs、tests/boss9-melee-preview.test.cjs、docs/assets/BOSS9_LIZARD_MELEE.md及本段，既有素材包成品／GIF／QA。必要時調整獨立viewer的時間核對。不改原模型／權重／Walk／Idle、身體與支撐肩曲線、傷害／射程／判定有效窗、遊戲、表格、VFX／音效或實戰，不合併推送。
+- 驗收：實際蒙皮爪尖向右延伸，起手朝上與漸進翻掌保持；0.75秒後直接回收，途中無原中繼落地／停留，最終回原爪位。同步最終落爪通知，保留碰撞、頭向、肩形、接地、骨長／穿插及Walk原始二進位核對；交正常、側面與完整慢放GIF，完成必要驗證並雙庫提交。fetch及專用檔預檢乾淨。
+- 追加完成：依338321c0圖，攻擊手的上臂先向肩下、肘部留外側，再由前臂斜向畫面右下銜接爪；調整攻擊側pole並取消對該方向的錯誤反號，連續旋轉過渡，不改既有爪尖目標、翻掌、支撐肩或總時長。0.90秒實測上臂下降0.1564、肘在肩外側0.0179，前臂向右0.2566且向下0.1177，另交該幀PNG對照。
+- 完成／修改7檔：author.py以實際爪群逐漸向右延伸0.22、深度收近0.08以維持臂長，改正攻擊側彎臂平面；0.75–1.12秒以單段回收曲線回原爪位，移除對側腳前的按地／停留。spec.json v4將落爪通知同步至1.12秒，分開回收、pole回正與前視末點；verify.py、export.cjs、既有判定測試、資產文件及本段同步。素材包40檔含manifest，更新6GIF及QA，新增BOSS9_Attack1_Elbow.png，保留可編輯Blend與GLB。
+- 未修改但檢查：AI_RULES／AGENTS／Workflow／Codex提示詞、既有BOSS9任務、controller.js、viewer.js／html、capture.cjs、encode.py、素材庫解析與背景瀏覽器工具、已核准模型及2ef883d7肩部基底。原73骨、網格、權重、暫代材質、Walk原始二進位、Idle、傷害／射程／命中窗保持；遊戲、表格、Worker、LV解鎖、VFX／音效與實戰未修改。工作期間出現的vfx/presets/level-up.json外部修改保留，不納入本項。
+- 模型驗證：Blender author.py、verify.py通過，Blend／GLB各1153時點。實際末端向右增加0.2200、垂直軌跡差<0.000371；核准揮擊掌骨旋轉差<0.04度。0.75–1.12秒回收X無反向／停留，內段速度至少1.583模型單位／秒、離地至少0.02672，原爪位誤差<0.0000197。8組指定BVH穿插皆0、物理鏈誤差<0.00000284、接地<0.002471、native/GLB頂點差<0.00000144；未改分支世界矩陣差<0.00000173（GLB與前版逐值為0），除攻擊鏈4骨旋轉外的通道差<0.00000190。頭向、支撐肩、固定腳掌、淺弧與漸進翻掌均通過。
+- 程式／預覽：node --test tests/boss9-melee-preview.test.cjs 16/16；npm.cmd run build 762檔；最終Python AST3檔、Node語法、export.cjs 39必要檔SHA／manifest及差異自我Review通過。五視圖600張與UI操作、通知／單次命中／膠囊間隙、零root、腳掌定地、前視與連續回收核對通過，頁面錯誤警告0；五份正常GIF各1200ms、完整4倍慢放4800ms，逐幀解碼通過。最終正側聯絡圖與0.90秒彎臂定格目視，必要QA保存在素材包。瀏覽器finally關閉且無孤兒。
+- 交接：GLB SHA256 `7cc2450cdf682f287c35c291e843a8bff7315faeeaab4fa8d33e873abfe0f190`；素材庫先提交825b0ca8cb4e31e0f8776c077c303b6d8bc29b9b，專案Commit為本段所在「[Codex] fix: 修正BOSS9斜掃彎臂與直接收招」。核實本輪tmp/boss9-right-return-20261124絕對路徑、無連結、白名單及623檔後非遞迴清除，最後4份任務試合檔同樣限名清理；與develop及實際副本試合均0。可供預覽工具合併審閱，動作採用仍待GIF驗收，未合併／推送develop或main。限制：原自動蒙皮局部拉伸及未涵蓋甲片接觸仍可能存在，正式遊戲混合／世界碰撞／多人尚未接入。下一步檢視正常／慢放GIF與彎臂定格。
+
+## BOSS9-ATTACK2-20261124 — 雙手高舉同步斜向下抓
+
+- Owner：Codex；Done，單人完成，待第二招GIF驗收。使用者本輪已驗收Attack1，要求第二招雙手高舉向上張開、上半身仰起，再沿82063002圖兩條向內斜下線同步抓下，完整約1.5秒；完成先GIF，不接實戰。
+- 前置：已核准7cc2450c模型／Walk／Idle／Attack1可用。範圍：新增tools/boss9-lizard/attack2/{rig.py,author.py,spec.json,verify.py,viewer.html,viewer.js,capture.cjs,encode.py,export.cjs}、docs/assets/BOSS9_LIZARD_ATTACK2.md與本段；新增獨立素材包boss9-lizard-attack2-20261124。禁止改動已核准第一招及其素材包、原模型／骨骼／權重／材質、遊戲／表格／VFX／音效或實戰，不合併推送。原有vfx/presets/level-up.json外部修改保留。
+- 設計／驗收：雙後腳定地，胸背後仰帶出雙臂上舉及張掌，雙側肩肘腕同步內斜下抓，膝蓋與尾部配合重心；收回原待機，全長1.5秒。沿用73骨，辨認左指節的自動命名後使用既有4指鏈，不新增骨或重製模型。獨立驗證原三個動作與二進位保留、物理鏈長／尺度、雙腳定地／接地、同步雙爪實際軌跡、張掌／上仰、穿插與Blend／GLB等價；交正常、側面、路徑及慢放GIF，可編輯來源與雙庫提交。fetch及新檔／任務檔預檢乾淨。
+- 追加完成：依89a466fd圖，下抓姿勢須雙手掌背朝正前方敵人；下抓全程平順轉成掌背朝前，保留高舉張掌及雙爪路徑，不在末幀突然翻掌。
+- 完成／修改11檔：新增上述9個獨立製作／驗證／檢視工具、資產文件及本段。用既有雙側4指鏈製作張掌，胸背後仰、肩肘腕／膝蓋及尾部連動，雙後腳定地；0.70–1.02秒同時斜向內下抓，1.40秒回原待機，完整1.5秒／480Hz／721姿態。肘部pole移離抬手軸線，避免升臂時突然翻折。新素材包33檔含manifest，保存核准來源、四動作Blend／GLB、4GIF、2PNG及QA。
+- 未修改但檢查：AI_RULES／AGENTS／Workflow／Codex、既有BOSS9任務及第一招author／capture／viewer／encode／verify／export、原模型及核准GLB／Blend、共用Three.js／headless-browser與素材庫解析。第一招素材包及工具、模型73骨／網格／權重／暫代材質、原Walk／Idle／Attack1完全保留。遊戲、表格、Worker、LV解鎖、傷害、VFX／音效及實戰未改；原有vfx/presets/level-up.json外部修改不納入本輪。
+- 模型驗證：Blender author.py與獨立verify.py通過，Blend／GLB各1441時點。GLB原始二進位前綴與三個動畫逐值保持，原生三動作曲線雜湊亦一致。物理父子鏈誤差<0.000000836、腳漂移<0.000000961、接地<0.001234、native/GLB頂點差<0.00000155；首末回原Idle，尺度／零水平root／8組指定BVH穿插均通過。全身關節最大速率8.936模型單位／秒，維持原30上限。
+- 動作核對：高舉胸口上抬至少0.1938、後收0.1181、軀幹仰起增加19.13度，雙手指尖高出頭頂至少0.3274，指節伸展比≥0.9947；雙爪各向內約0.35、向下1.470，曲線離弦<0.035，同步進度差<0.0000266。下抓末段掌背向前法線分量≥0.8287，高舉掌面仍向上；全程平順翻轉。抬手目標可達修正最高0.01088模型單位，沒有拉長骨骼。
+- 程式／預覽：npm.cmd run build 762檔、Python AST4檔及Node／ESM語法、export.cjs 32必要檔SHA／manifest、第一招原export與差異自我Review通過。三視圖450張核對完整入鏡、腳掌定地、零水平root、雙爪同步與掌背；實際live頁面播放／暫停／重播、正反向拖曳通過，錯誤警告0。四GIF逐幀解碼：三正常視圖75張×20ms＝1500ms，完整慢放150張×40ms＝6000ms；正側聯絡圖及高舉／掌背定格目視，必要紀錄保存於素材包。所有瀏覽器finally關閉且無孤兒。
+- 交接：GLB SHA256 `a68ade1d4a9aa0f3d969864fa150e9a1b066f3dc95eef54e1247e7e64f773456`；素材庫先提交54520190fb66040e1e08087aead72771de603dfb，專案Commit為本段所在「[Codex] feat: 新增BOSS9一點五秒雙爪下抓動作」。可供獨立預覽工具合併審閱，動作採用待GIF驗收，未合併／推送develop或main。已知限制：原自動蒙皮的局部拉伸及未涵蓋甲片接觸仍可能存在，正式世界碰撞／遊戲動畫混合／傷害等尚未接入；本次純動作製作無未完成項。下一步檢視正常、側面、慢放GIF及掌背定格。
+- 清理例外：自動審核拒絕「清理本輪暫存並提交素材」的複合命令，只回報blocked by policy，未說明更細原因，命令未執行；改為單獨驗證及提交正式成品成功。tmp/boss9-attack2-20261124內500份暫存，以及本輪產生的rig.cpython-311.pyc保留，未納入提交；沒有重試被阻擋的清理。
+
+## BOSS9-ATTACK2-R2-20261124 — 依新GIF重做全身連動雙爪下抓
+
+- Owner：Codex；Done，單人重做，待GIF驗收。使用者否決前版Attack2不協調，要求依Gemini_Generated_Gif_4ji6ud4ji6ud4ji6.gif重做；全長沿用1.5秒，先GIF驗收。
+- 範圍：tools/boss9-lizard/attack2既有9工具與新增reference.json、docs/assets/BOSS9_LIZARD_ATTACK2.md及本段；更新獨立Attack2素材包。已核准第一招／模型／權重／材質及其他動作保持，禁止實戰、表格、VFX、音效或遊戲修改，不合併／推送。
+- 參考分析：30張、原長3秒，按0.5倍時間映射至1.5秒。先挺胸仰頭張口，肩臂外展後前臂跟上，屈肘高舉維持咆哮；頭胸領先雙爪下抓，落至原待機。改以肩肘分段旋轉與胸背連動，取消前版直臂大V及單一抬手進度。
+- 驗收：源三動作與二進位保持、骨長／尺度／雙腳定地／接地／首尾Idle、原生與GLB等價、指定穿插；新增軀幹直立、仰頭咆哮、屈肘前臂朝上、全身先後節奏及下抓掌背朝敵人的幾何核對，正常／側面／軌跡／慢放GIF與逐幀目視。預檢通過，保留無關vfx/presets/level-up.json及前輪審核拒絕清理的暫存，不納入提交。
+- 完成／修改10檔：attack2/{author.py,rig.py,spec.json,verify.py,viewer.js,capture.cjs,export.cjs}、新增reference.json、資產文件與本段。骨盆／胸背挺起，仰頭75度張口，上臂外展後前臂接續上舉，0.78–0.98秒屈肘仰吼；頭胸先收下，1.04–1.35秒雙爪沿窄弧下抓，漸進翻掌／彎指，1.5秒回Idle。釋放雙節解算沿用同一肩肘彎曲平面；限制抬身高度並提高固定足端解算迭代，保持實體鏈長。預覽鏡頭降低俯視角，核對仰吼與掌背。
+- 素材：既有獨立Attack2包更新四動作Blend／GLB、4GIF、2定格與QA，新增參考分析來源，共34檔含manifest。原第一招素材包／工具、模型73骨／網格／權重／材質及Walk／Idle／Attack1保持，三個原生動作曲線雜湊與GLB二進位前綴亦一致；未把參考像素帶入成品。
+- 未修改但檢查：AI_RULES／AGENTS／Workflow／Codex提示詞、既有BOSS9任務及核准第一招GLB／Blend／export、attack2/viewer.html與encode.py、素材庫解析及headless-browser／kill-test-browsers。遊戲、配置表、LV解鎖、傷害、VFX／音效、世界碰撞及實戰皆未改；無關vfx外部修改及既有cache保留。
+- 模型驗證指令：Blender author.py與verify.py（參數見資產文件）通過，Blend／GLB各1441時點含錯相補間；鏈長誤差<0.000001000、雙腳漂移<0.000001545、尺度誤差<0.000002027、水平root<0.000000023、接地／地面誤差<0.004759、首末與來源Idle<0.000000835、原生／GLB頂點差<0.000001729；8組指定BVH穿插皆0。最大關節速率10.9241，原30上限不變。
+- 動作核對：高舉胸口上抬0.4054、後收0.4371，軀幹72.20度，雙肘84.62度、前臂向上分量≥0.9859；頭仰75度。1.10秒頭已收至31.61度，雙爪僅下降約3.21%，符合頭胸先帶動；雙爪下降1.7367／1.5948模型單位、略向內收，標準化同步進度差<0.0000511。高舉掌面前上方，下抓末段掌背朝敵人分量≥0.8312；沒有末幀翻面。
+- 程式／預覽指令：npm.cmd run build 762檔通過；Python AST4檔、Node CJS／ESM語法、node tools/boss9-lizard/attack2/export.cjs 33必要檔雜湊及第一招export 39檔、自我差異Review與git diff --check通過。capture.cjs三視圖450張、真實UI播放／暫停／重播／正反拖曳與完整入鏡通過，錯誤警告0；encode.py四GIF逐幀解碼，三正常75張×20ms＝1500ms，慢放150張×40ms＝6000ms。已目視正側聯絡圖、高舉及掌背定格，必要QA存入素材庫，所有瀏覽器finally關閉，孤兒檢查無殘留。
+- 交接：GLB SHA256 `c128c7017715b3391d5bfd8f43acfa866984c39f2de79d9347f1e6611e2fa576`；素材庫先提交78c3fecac540b93a7c8edc36107a618ced9a2bda，專案Commit為本段所在「[Codex] fix: 依參考GIF重做BOSS9雙爪下抓連動」。10檔對develop分支及其實際副本的Git物件三方試合皆0，未新增試合暫存。可供獨立預覽工具合併審閱，動作採用仍待GIF驗收，未合併／推送develop或main。
+- 限制／下一步：單一正面參考無法精確回推深度、遮蔽關節及不同骨架比例，依可見姿態和節奏製作；原自動蒙皮局部拉伸與未涵蓋甲片接觸仍可能存在，正式世界碰撞／遊戲混合／傷害尚未接入。本次重做與預覽無未完成項，下一步由使用者看GIF驗收；清理沿用前輪自動審核blocked by policy的例外，不重試舊刪除，本輪tmp/boss9-attack2-r2-20261124的分析／擷取暫存亦保留，未提交。
+
+## BOSS9-ATTACK2-R3-20261124 — 擴大張臂與連續加速抓落中線兩側
+
+- Owner：Codex；Done，單人完成，待GIF驗收。使用者要求高舉時加大肩臂／前臂外展，取消高舉停頓，慢起手、快落爪；落點依b62699bc圖綠箭頭，雙爪收至雙腳之間的中線兩側。追加明確分段：0–0.8秒起身高舉、0.8–1.1秒下抓落地、1.1–1.5秒回原姿；末句「總共0.5秒」按分段合計1.5秒視為筆誤，已告知。
+- 前置：819ce9f6／素材78c3feca可用；沿用核准7cc2450c模型、Walk／Idle／Attack1。範圍限attack2工具、reference.json、資產文件及本段與既有獨立素材包；禁止改原第一招／模型／權重／材質、實戰、遊戲、配置表、VFX與音效，不合併或推送。
+- 驗收：擴大腕距及屈肘角、完整0.8／0.3／0.4秒、連續無高舉停留、下抓加速與地面內收落點。維持骨長／尺度、雙腳定地、零水平root、原三動作／源二進位、首末Idle、Blend／GLB等價及8組指定穿插；交正常／側面／路徑／慢放GIF，雙庫提交。fetch與逐檔預檢乾淨，無關vfx及前輪清理例外保留。
+- 完成／修改9檔：attack2/{author.py,rig.py,spec.json,verify.py,capture.cjs,export.cjs,reference.json}、資產文件及本段。取消hold區間；起身與抬手0.8秒，0.3秒以1.7次方加速斜向內抓，0.4秒回穩。肩胛隨可達距離配合，以外／後／下方彎臂方向避開腕部軸線，消除加速內收時肘部翻折；手腕與指節連續翻轉，逐手求實際爪面落地高度。沒有改骨長或拉長模型。
+- 動作核對：雙肘106.23度（前版84.62）、前臂外傾約23度，腕距1.2388（前版1.0667，增加約16%）。高點近靜止區間按三維速率<0.02計為0秒；下抓平均速率為抬手的至少2.64倍，末80ms比初80ms至少快3.87倍。雙爪各向內0.4130／0.5042、向下1.8420／1.6905模型單位；1.1秒位於中線兩側各0.15、雙腳之間，接地誤差<0.000101、落點誤差<0.000001074；下抓末段掌背向敵人，無末幀翻面。
+- 素材／未改但檢查：獨立Attack2包仍34檔含manifest，更新四動作Blend／GLB、4GIF、2定格、QA、來源與文件。核准第一招素材／工具、Walk／Idle／Attack1三動畫與原二進位保持，三個原生動作曲線雜湊一致；模型73骨、網格、權重、暫代材質保持。唯讀核對共通規範／Workflow／Codex、既有任務、viewer.js／html、encode.py、素材庫解析／headless-browser及第一招export；遊戲、配置表、LV、傷害、VFX／音效及實戰未改，原有level-up.json外部修改不納入。
+- 模型測試：Blender author.py／verify.py（完整參數見資產文件）通過；Blend／GLB各1441時點含錯相補間。鏈長誤差<0.000000903、尺度誤差<0.000002265、雙腳漂移<0.000002083、水平root<0.000000023、接地／地面誤差<0.004758，首末／原Idle<0.000000835、原生／GLB頂點差<0.000001669；8組指定BVH穿插均0。全身最大關節速率16.5229，維持原30上限；雙爪標準化同步進度差<0.0000430。
+- 程式／預覽測試：npm.cmd run build 762檔、Python AST4檔、Node CJS／ESM語法、git diff --check與差異自我Review通過；node tools/boss9-lizard/attack2/export.cjs 33必要檔及第一招export 39檔雜湊通過。capture.cjs三視圖450張、完整入鏡、固定腳掌、零水平root、掌面與最終內收落點及實際UI播放／暫停／重播／正反拖曳均通過，錯誤警告0。encode.py四GIF逐幀解碼：三正常75張×20ms＝1500ms、完整慢放150張×40ms＝6000ms；目視正側聯絡圖、高舉／接地與中段幀，必要QA存入素材庫。瀏覽器finally關閉，孤兒檢查無殘留。
+- 交接：GLB SHA256 `b00d2fd34dcd205368a449208dbb5de573a9a4d266a2060d426177a9baea5da8`；素材庫先提交60aa2bb6c1e48bdb81bdb04b9ee9e016cdc48f40，專案Commit為本段所在「[Codex] fix: 調整BOSS9雙爪張幅與連續抓地節奏」。9檔對develop分支及實際副本的Git物件三方試合皆0；預覽工具可供合併審閱，動畫採用仍待GIF驗收，未合併／推送develop或main。
+- 已知限制／未完成／下一步：單一正面參考無法精確回推深度、遮蔽關節及不同骨架比例，原自動蒙皮局部拉伸與未涵蓋甲片接觸仍可能存在；正式世界碰撞／遊戲混合／傷害未接入。本輪動畫及預覽無未完成項，下一步由使用者看GIF確認。清理例外：確認R3絕對路徑、503檔白名單與無reparse point後，清理命令仍被自動審核CreateProcess拒絕，只回報blocked by policy，未執行；503份本輪暫存保留、未提交、不重試。前輪已拒絕清理的目錄及cache亦未動。
+
+## BOSS9-ATTACK3-20261124 — 右爪接左爪連續斜揮
+
+- Owner：Codex；Done，單人完成，待GIF驗收。使用者已核准Attack2，第三招先右手高舉斜揮，再左手高舉斜揮，兩側沿已核准Attack1的動作風格，完整1.5秒，先GIF預覽。
+- 前置：第一招7cc2450c、第二招b00d2fd3／素材60aa2bb6已核准。範圍：新增tools/boss9-lizard/attack3/{author.py,rig.py,spec.json,verify.py,viewer.js,viewer.html,capture.cjs,encode.py,export.cjs}、docs/assets/BOSS9_LIZARD_ATTACK3.md與本段，以及獨立素材包boss9-lizard-attack3-20261124。禁止修改前兩招／原模型／網格／權重／材質、遊戲／配置表／傷害／VFX／音效或接入實戰，不合併推送。
+- 設計／驗收：取核准第一招實際骨架／爪群路徑作右擊，鏡射動向並依左側骨長重新解算左擊；右擊收招銜接左擊起手，頭胸肩肘腕與尾部連動、雙腳定地、零水平root。保留前四個動畫及源二進位／原生曲線，驗骨長／尺度／首末Idle／穿插／原生與GLB等價及雙側順序、路徑、掌面與1.5秒；交正常／側面／軌跡／慢放GIF與雙庫提交。fetch及新增檔預檢乾淨。初始Zones.xlsx、四份audio/zones新音樂、level-up.json及既有cache保留，不納入本輪。
+- 使用者追加27628bc3圖：左擊時頭眼須大致朝前，腳掌不得變形，抬起的手指不應彎折。修正為頭部完整姿態含側傾的穩定、鎖定踝／腳／趾整組再解算大腿與小腿、按左掌實際指鏈張開；新增頭部側傾、腳面形狀與高舉指節伸展驗證。
+- 完成／修改11檔：新增上述9個獨立製作／驗證／預覽工具、資產文件與本段。直接取核准Attack1實際骨架及蒙皮爪群，以原右擊接鏡射動向的左擊；按兩側實體骨長解算，右擊收招銜接左擊準備。右側約0.411–0.550秒、左側1.031–1.170秒斜揮，1.5秒回Idle；胸背、肩胛、肘腕與尾部配合，零水平root。左擊平順下沉最多0.085模型單位，讓較短的右承重臂撐地。
+- 頭腳指修正：頭部及臉／顎／冠刺採第一招核准的未鏡射頭部模板，保持眼口朝前；頸部小幅後收抬起避開回爪。踝／腳掌／腳趾固定為核准Idle世界姿態，改由大腿／小腿兩節接回，避免只固定足端但腳面仍被踝骨拉扯。左指依其自身掌面及指鏈張直，右指保留原第一招形狀；手掌仍連續翻轉。
+- 素材：獨立boss9-lizard-attack3-20261124共39檔含manifest，含原核准第二招GLB／Blend來源、五動畫GLB與可編輯壓縮Blend、帶來源雜湊的重建採樣、4GIF、左右高舉PNG及QA。原第一／二招工具及素材包未改；73骨、網格、權重、材質、原GLB二進位前綴與前四動畫逐值保留，四個原生動作曲線雜湊一致。僅依自有核准動作製作，沒有引入新外部動作或參考像素。
+- 未改但檢查：AI_RULES／AGENTS／Workflow／Codex提示詞、既有BOSS9任務、第一招spec／author／素材文件及export、第二招rig／author／viewer／capture／verify／export、Three.js／headless-browser／素材庫解析。未修改遊戲、配置表、LV解鎖、傷害、VFX／音效或實戰；工作期間外部新增的CSV與js/data.js、原Zones.xlsx、四份audio/zones音樂、level-up.json及舊cache維持，不納入本項。
+- 模型測試：Blender author.py、快速verify.py及完整verify.py（命令見資產文件）通過；Blend／GLB各1441時點含錯相補間。非hips控制連結的實體鏈誤差<0.000000563、尺度誤差0、足端漂移<0.00006772、水平root<0.000000053、接地／地面誤差<0.000604，首末與原Idle<0.000001550、原生／GLB頂點差<0.000001073；8組指定BVH穿插皆0。hips控制平移沿用核准第一招，不視為肢體拉長。最大關節速率26.3373，維持原30上限。
+- 實際表面／動作核對：腳面1301個實際蒙皮頂點與核准Idle外形最大差<0.00006831；頭部前視偏角<4.024度、側傾<0.440度，左右高舉頭臉表面姿態差<0.00001206。高舉指節伸展率右≥0.99528／左≥0.99478，掌面向上。兩側斜掃橫移約±1.367、下降約1.0515模型單位，依序於0.4104／1.0313秒達高點；相對原GLB獨立重採路徑最大差右<0.000843、左<0.006534（含回收近地修正），另一爪承重漂移<0.000843。
+- 程式／預覽測試：npm.cmd run build 762檔、Python AST4檔、CJS／ESM語法、自我Review與Git差異檢查通過；node tools/boss9-lizard/attack3/export.cjs 38必要檔及原第一／二招export 39／33檔雜湊通過。capture.cjs三視圖450張均完整入鏡，實際UI播放／暫停／重播及正反拖曳通過，錯誤警告0。encode.py在記憶體串流編碼及逐幀解碼，三正常75張×20ms＝1500ms，完整慢放150張×40ms＝6000ms；正側聯絡圖及修正後左右高舉幀目視。必要來源／快速與完整QA保留於素材包，沒有新增450張PNG暫存；瀏覽器finally關閉且孤兒檢查無殘留，舊已拒絕清理的檔案未觸碰。
+- 交接：GLB SHA256 `c1666559c92806b297b7eb79dcaa8328b332076be9654e704462eda849ab3039`；素材庫先提交a1b1e5a08397ee8c9139d7e499ba6b9751324c13，專案Commit為本段所在「[Codex] feat: 製作BOSS9左右連擊並修正頭腳掌姿態」。11檔對develop分支及實際副本的Git物件三方試合皆0；獨立預覽工具可供合併審閱，動畫採用仍待GIF驗收，未合併／推送develop或main。
+- 已知限制／未完成／下一步：左右自動骨架與掌形非完全對稱，按可達性與原形重新解算；原自動蒙皮局部拉伸及未涵蓋甲片接觸仍可能存在，指定穿插檢查不代表全網格任意接觸皆已排除。正式世界碰撞／遊戲混合／傷害未接入。本輪動作與預覽無未完成項，下一步由使用者看正常與慢放GIF驗收。
 
 ## DESKTOP-MINI-LIVE-DRAG-20261119 — 迷你視窗拖曳即時跟隨滑鼠
 

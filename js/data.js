@@ -200,6 +200,7 @@ var REINCARNATION_MAX = 10;
 var DEMO_ENEMY_XP_MULT = 1.5;        // 打敵人得到的玩家經驗倍率（野外、離線、封魔塔 BOSS）
 var DEMO_MASTERY_XP_MULT = 5;        // 打敵人得到的技能熟練度經驗倍率
 var DEMO_SKILL_GOLD_MULT = 0.5;      // 技能升級（含終極進化）金幣消耗倍率
+var DEMO_SKILL_MANA_MULT = 0.5;      // 技能表定法力消耗倍率（含終極進化與反擊觸發）
 var DEMO_CHEST_FORGE_XP_MULT = 2;    // 熔爐寶箱的鍛造經驗倍率
 var DEMO_MAX_LEVEL = 1000;           // 角色等級上限（不超過 MAX_LEVEL）
 var DEMO_REINCARNATION_OPEN = 0;     // 1＝開放轉生；0＝確認視窗的轉生按鈕置灰（未開放）
@@ -1676,9 +1677,9 @@ var ZONES = {
   Icefield: { pool: ICEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.Icefield, name: "冰原", emoji: "🧊", realm: "human", maxStage: 150, bgm: "audio/zones/desert-of-frozen-hearts.mp3", bgm2: "audio/zones/desert-of-frozen-hearts_2.mp3", reqZone: "desert", reqStage: 100, hpMult: 1.8, atkMult: 2, defMult: 1, aspdMult: 1.25, rewardMult: 1.2 },
   mist_forest: { pool: MIST_FOREST_POOL, enemyTable: ZONE_ENEMY_TABLES.mist_forest, name: "迷霧森林", emoji: "🌲", realm: "human", maxStage: 200, bgm: "audio/zones/mystic-forest-ascent.mp3", bgm2: "audio/zones/mystic-forest-ascent_2.mp3", reqZone: "Icefield", reqStage: 150, hpMult: 3.6, atkMult: 4, defMult: 1.8, aspdMult: 1.45, rewardMult: 1.3 },
   lava_mountain: { pool: LAVA_MOUNTAIN_POOL, enemyTable: ZONE_ENEMY_TABLES.lava_mountain, name: "熔岩山", emoji: "🌋", realm: "human", maxStage: 250, bgm: "audio/zones/black-crust-breaks.mp3", bgm2: "audio/zones/black-crust-breaks_2.mp3", reqZone: "mist_forest", reqStage: 200, hpMult: 5.5, atkMult: 7, defMult: 2.6, aspdMult: 1.5, rewardMult: 1.4 },
-  swamp: { pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, name: "月影沼澤", emoji: "🌙", realm: "human", maxStage: 300, reqZone: "lava_mountain", reqStage: 250, hpMult: 8, atkMult: 10, defMult: 3.2, aspdMult: 1.6, rewardMult: 1.5 },
+  swamp: { pool: SWAMP_POOL, enemyTable: ZONE_ENEMY_TABLES.swamp, name: "月影沼澤", emoji: "🌙", realm: "human", maxStage: 300, bgm: "audio/zones/swamp-pressure.mp3", bgm2: "audio/zones/swamp-pressure_2.mp3", reqZone: "lava_mountain", reqStage: 250, hpMult: 8, atkMult: 10, defMult: 3.2, aspdMult: 1.6, rewardMult: 1.5 },
   thunder_peak: { pool: THUNDER_PEAK_POOL, enemyTable: ZONE_ENEMY_TABLES.thunder_peak, name: "落雷峰", emoji: "🌩️", realm: "human", maxStage: 350, bgm: "audio/zones/tower-of-sin.mp3", reqZone: "swamp", reqStage: 300, hpMult: 12, atkMult: 24, defMult: 6, aspdMult: 1.7, rewardMult: 1.85 },
-  undead_mountains: { pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, name: "亡靈山脈", emoji: "⛰️", realm: "human", maxStage: 400, reqZone: "thunder_peak", reqStage: 350, hpMult: 25, atkMult: 50, defMult: 10, aspdMult: 1.8, rewardMult: 2.25 },
+  undead_mountains: { pool: UNDEAD_MOUNTAINS_POOL, enemyTable: ZONE_ENEMY_TABLES.undead_mountains, name: "亡靈山脈", emoji: "⛰️", realm: "human", maxStage: 400, bgm: "audio/zones/undead-mountain-ascent.mp3", bgm2: "audio/zones/undead-mountain-ascent_2.mp3", reqZone: "thunder_peak", reqStage: 350, hpMult: 25, atkMult: 50, defMult: 10, aspdMult: 1.8, rewardMult: 2.25 },
   god_battlefield: { pool: GOD_BATTLEFIELD_POOL, enemyTable: ZONE_ENEMY_TABLES.god_battlefield, name: "太古戰場", emoji: "⚔️", realm: "god", maxStage: 450, reqZone: "undead_mountains", reqStage: 400, hpMult: 50, atkMult: 150, defMult: 25, aspdMult: 2, rewardMult: 4 },
   god_chaos: { pool: GOD_CHAOS_POOL, enemyTable: ZONE_ENEMY_TABLES.god_chaos, name: "混沌界", emoji: "🌀", realm: "god", maxStage: 500, reqZone: "god_battlefield", reqStage: 450, hpMult: 150, atkMult: 500, defMult: 50, aspdMult: 2, rewardMult: 8 },
   god_sanctuary: { pool: GOD_SANCTUARY_POOL, enemyTable: ZONE_ENEMY_TABLES.god_sanctuary, name: "永恒神殿", emoji: "✨", realm: "god", maxStage: 600, reqZone: "god_chaos", reqStage: 500, hpMult: 500, atkMult: 2000, defMult: 100, aspdMult: 2, rewardMult: 16 }

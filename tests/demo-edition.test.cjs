@@ -155,3 +155,157 @@ test('封魔塔：demo 超過開放樓層不能開打（扣錢之前就擋下）
   assert.equal(c.G.player.gold, 1e15);
   assert.ok(c.logs.some((l) => l.includes(NOT_OPEN)));
 });
+
+test('技能法力：正式版不變，demo普通階／終極／反擊及快照共用表定倍率', () => {
+  for (const edition of [undefined, 'full', 'demo']) {
+    const c = env(edition), prog = { level: 999999, reinc: 2, towerHighest: 999999 };
+    assert.equal(c.DEMO_SKILL_MANA_MULT, 0.5);
+    const mult = edition === 'demo' ? 0.5 : 1;
+    delete c.G; // UI只有快照，不能依賴Worker中的G。
+    for (const [gid, group] of Object.entries(c.SKILLS2)) {
+      for (const [i, tier] of group.tiers.entries()) {
+        const levels = group.tiers.map((_, j) => j <= i ? 1 : 0);
+        const cost = (tier.cost || 0) * 2.5 * mult;
+        assert.equal(c.skills2TierManaCost(gid, i, null, prog), cost, gid + ':' + i);
+        if (!c.skills2IsPassive(gid)) assert.equal(c.skills2ManaCost(gid, levels, {}, prog), cost);
+        if (gid === 'counter') {
+          assert.equal(c.skills2TierTriggerMp(gid, i, prog), cost);
+          assert.equal(c.skills2PassiveMinMp(gid, levels, {}, prog), cost);
+        }
+      }
+      for (const [pick, ult] of (group.ult || []).entries()) {
+        const levels = group.tiers.map(() => 10), raw = { [gid]: { pick, lv: 1 } };
+        const cost = (ult.cost || 0) * 2.5 * mult;
+        assert.equal(c.skills2TierManaCost(gid, 0, ult.id, prog), cost);
+        const active = gid === 'counter' ? c.skills2PassiveMinMp(gid, levels, raw, prog)
+          : c.skills2ManaCost(gid, levels, raw, prog);
+        assert.equal(active, c.skills2IsPassive(gid) && gid !== 'counter' ? 0 : cost);
+      }
+    }
+  }
+});
+
+function prepareManaCast(c) {
+  c.G.player.reincarnations = 1;
+  c.G.player.skills2.levels.thrust = [1, 0, 0, 0, 0, 0, 0];
+  c.SKILLS2.thrust.tiers[0].cost = 20;
+  c.skills2Castable = () => true;
+  c.getStats = () => ({});
+  c.skills2CanReach = () => true;
+  c.sgCastThrust = () => {};
+  c.skills2Cooldown = () => 8;
+  c.sgArmUltRepeat = () => {};
+  c.rwManaCostFactor = () => 1.2;
+}
+
+test('demo施放與自動排程：轉生及符文耗魔疊乘一次，足額才起手並實際扣魔', () => {
+  const c = env('demo'); prepareManaCast(c);
+  const p = { hp: 100, mp: 17 }, enemy = { hp: 100 };
+  assert.equal(c.castSkill2(p, [enemy], 'thrust', ''), null);
+  assert.equal(p.mp, 17); assert.equal(p.skillCds, undefined);
+  c.G.player.loadout = ['sg:thrust'];
+  c.skillCastInProgress = () => false; c.ensureSkillReadyOrder = () => {};
+  let jobs = 0; c.beginSkillCast = () => { jobs++; return { casting: true }; };
+  p._skillReadyQueue = ['sg:thrust']; p._skillReadyQueued = { 'sg:thrust': true };
+  assert.equal(c.pickAndCastSkill(p, [enemy], ''), null); assert.equal(jobs, 0);
+  p.mp = 18;
+  assert.ok(c.pickAndCastSkill(p, [enemy], '')); assert.equal(jobs, 1);
+  const spent = []; c.legendaryOnManaSpent = (_p, cost) => spent.push(cost);
+  assert.ok(c.castSkill2(p, [enemy], 'thrust', ''));
+  assert.equal(p.mp, 0); assert.equal(p.skillCds['sg:thrust'], 8);
+  assert.deepEqual(spent, [18]);
+  p.mp = 17; assert.equal(c.sgAutoCastCanPay(p, 'thrust'), false);
+  p.mp = 18; assert.equal(c.sgAutoCastCanPay(p, 'thrust'), true);
+  c.sgAutoCastPay(p, 'thrust'); assert.equal(p.mp, 0);
+  assert.deepEqual(spent, [18, 18]);
+});
+
+test('demo反擊本體與追加按減幅扣魔，免費技能／追加／零倍率及GM鎖魔保持正確', () => {
+  const c = env('demo'); prepareManaCast(c);
+  c.G.player.skills2.levels.counter = [1, 0, 0, 0, 0, 0, 0];
+  c.SKILLS2.counter.tiers[0].cost = 20; c.SKILLS2.counter.tiers[5].cost = 40;
+  const p = { hp: 100, mp: 14 };
+  assert.equal(c.sgCounterPayMp(p), false); assert.equal(p.mp, 14);
+  p.mp = 45;
+  assert.equal(c.sgCounterPayMp(p), true); assert.equal(p.mp, 30);
+  assert.equal(c.sgCounterPayMp(p, 5), true); assert.equal(p.mp, 0);
+  for (const opts of [{ repeat: true }, { storm: true }]) {
+    assert.ok(c.castSkill2(p, [{ hp: 100 }], 'thrust', '', opts));
+    assert.equal(p.mp, 0); assert.equal(p.skillCds, undefined);
+  }
+  c.gmMpLockActive = () => true;
+  assert.ok(c.castSkill2(p, [{ hp: 100 }], 'thrust', '')); assert.equal(p.mp, 0);
+  assert.equal(c.sgCounterPayMp(p, 5), true);
+  c.sgAutoCastPay(p, 'thrust'); assert.equal(p.mp, 0);
+  c.gmMpLockActive = () => false;
+  c.DEMO_SKILL_MANA_MULT = 0;
+  assert.equal(c.skills2ManaCost('thrust'), 0);
+  assert.equal(c.sgAutoCastCanPay(p, 'thrust'), true);
+  assert.ok(c.castSkill2(p, [{ hp: 100 }], 'thrust', '')); assert.equal(p.mp, 0);
+  c.DEMO_SKILL_MANA_MULT = 0.25;
+  assert.equal(c.skills2ManaCost('thrust'), 7.5, '參數可調且保留小數，不提早取整');
+  c.SKILLS2.thrust.tiers[0].cost = 0;
+  assert.equal(c.skills2ManaCost('thrust'), 0);
+});
+
+test('demo技能標頭與反擊提示讀取相同快照耗魔，主執行緒無G也一致', () => {
+  const c = env('demo'); prepareManaCast(c); delete c.G;
+  const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  for (const [from, to] of [
+    ['function sgUiUnlockProgress(', 'function sgUiTotalLevel('],
+    ['function sgbMetaText(', '/* 未解鎖階段']
+  ]) vm.runInContext(ui.slice(ui.indexOf(from), ui.indexOf(to, ui.indexOf(from))), c);
+  c.SKILLS2.counter.tiers[0].cost = 20;
+  const snapshot = { skills2: { levels: { thrust: [1], counter: [1] }, ult: {},
+    progress: { level: 1, reinc: 1, skillUnlock: true } } };
+  assert.match(c.sgbMetaText('thrust', 0, snapshot), /15 MP/);
+  assert.match(c.sgbMetaText('counter', 0, snapshot), /15/);
+  assert.match(c.describeSkill2Group('counter', [1], {}, snapshot.skills2.progress), /🔵15 MP/);
+});
+
+test('Demo技能法力參數可由Excel匯出並經具名錨點調整，試跑不寫入遊戲', () => {
+  const os = require('node:os'), { execFileSync } = require('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-mana-'));
+  const csv = path.join(dir, 'game_parameters.csv');
+  const dataBefore = fs.readFileSync(path.join(root, 'js/data.js'));
+  try {
+    execFileSync(process.execPath, ['tools/xlsx_to_csv.cjs'], {
+      cwd: root, env: { ...process.env, PARAMS_CSV_OUT: csv }
+    });
+    const source = fs.readFileSync(csv, 'utf8');
+    // The exporter uses CRLF, while .gitattributes stores the CSV with LF.
+    assert.ok(source.endsWith('\r\n'));
+    assert.doesNotMatch(source.replaceAll('\r\n', ''), /[\r\n]/);
+    const tracked = fs.readFileSync(path.join(root, 'config/CSV/game_parameters.csv'), 'utf8');
+    assert.deepEqual(Buffer.from(source.replaceAll('\r\n', '\n')), Buffer.from(tracked.replaceAll('\r\n', '\n')));
+    const row = source.split(/\r?\n/).find(line => line.startsWith('380,'));
+    const cells = row.split(',');
+    assert.equal(cells[2], '11-Demo版');
+    assert.equal(cells[3], 'Demo 技能法力消耗倍率');
+    assert.equal(Number(cells[6]), 0.5);
+    cells[6] = '0.25'; fs.writeFileSync(csv, source.replace(row, cells.join(',')));
+    const output = execFileSync(process.execPath, ['tools/apply_params.cjs'], {
+      cwd: root, encoding: 'utf8', env: { ...process.env, PARAMS_CSV: csv }
+    });
+    assert.match(output, /將變更 1、錨點問題 0/);
+    assert.match(output, /DEMO_SKILL_MANA_MULT：0\.5 → 0\.25/);
+    assert.deepEqual(fs.readFileSync(path.join(root, 'js/data.js')), dataBefore);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('真Worker技能面板及讀檔使用demo倍率，法力上限與正式版消耗不受影響', () => {
+  const { createEngine } = require('../scripts/sim/engine.js');
+  const full = createEngine({ seed: 20261124 }).boot(null);
+  const demo = createEngine({ seed: 20261124 }).boot(null);
+  demo.ctx.GAME_EDITION = 'demo'; // 模擬桌面外殼提供的版本旗標。
+  const fullCost = full.ctx.skills2ManaCost('knife');
+  assert.equal(demo.ctx.skills2ManaCost('knife'), fullCost * 0.5);
+  assert.equal(demo.ctx.getStats().mp, full.ctx.getStats().mp);
+  const panel = demo.panel('skills').skills2;
+  assert.equal(demo.ctx.skills2ManaCost('knife', panel.levels.knife, panel.ult, panel.progress), fullCost * 0.5);
+  const restored = createEngine({ seed: 20261124 }).boot(JSON.parse(demo.saveJson()));
+  restored.ctx.GAME_EDITION = 'demo';
+  assert.equal(restored.ctx.skills2ManaCost('knife'), fullCost * 0.5);
+  restored.ctx.GAME_EDITION = 'full';
+  assert.equal(restored.ctx.skills2ManaCost('knife'), fullCost);
+});

@@ -166,18 +166,6 @@ test('Zones Excel, CSV, runtime BGM and reverse extraction stay in sync with the
   assert.equal(rows[0][3], 'BGM');
   assert.equal(rows[0][4], 'BGM2');
   const id = rows[0].indexOf('地圖識別碼'), bgm = rows[0].indexOf('BGM'), bgm2 = rows[0].indexOf('BGM2');
-  const playlists = {
-    desert: [track, track2],
-    Icefield: ['audio/zones/desert-of-frozen-hearts.mp3', 'audio/zones/desert-of-frozen-hearts_2.mp3'],
-    mist_forest: ['audio/zones/mystic-forest-ascent.mp3', 'audio/zones/mystic-forest-ascent_2.mp3'],
-    thunder_peak: ['audio/zones/tower-of-sin.mp3', '']
-  };
-  for (const row of rows.slice(1)) {
-    const expected = playlists[row[id]] || ['', ''];
-    assert.equal(row[bgm], expected[0]);
-    assert.equal(row[bgm2], expected[1]);
-    for (const file of expected.filter(Boolean)) assert.ok(fs.statSync(path.join(root, file)).size > 0, file);
-  }
   const src = read('js/data.js');
   const rebuilt = SCHEMAS.Zones.rebuild(rows.slice(1), rows[0], src);
   const actual = SCHEMAS.Zones.evaluate(extractLiteral(src, 'ZONES').literal);
@@ -185,18 +173,41 @@ test('Zones Excel, CSV, runtime BGM and reverse extraction stay in sync with the
   assert.equal(JSON.stringify(actual), JSON.stringify(expected));
   const extracted = SCHEMAS.Zones.extract(src);
   assert.deepEqual(extracted.map(row => row.slice(0, 15)), rows.slice(1).map(row => row.slice(0, 15)));
-  assert.equal(actual.desert.bgm, track);
-  assert.equal(actual.desert.bgm2, track2);
-  assert.equal(actual.Icefield.bgm, playlists.Icefield[0]);
-  assert.equal(actual.Icefield.bgm2, playlists.Icefield[1]);
-  assert.equal(actual.mist_forest.bgm, playlists.mist_forest[0]);
-  assert.equal(actual.mist_forest.bgm2, playlists.mist_forest[1]);
-  assert.equal(actual.thunder_peak.bgm, playlists.thunder_peak[0]);
+  // Excel is authoritative; map authors can edit playlists without rewriting this test.
+  for (const row of xlsx.slice(1)) {
+    const zone = row[id], configured = [row[bgm], row[bgm2]];
+    assert.ok(actual[zone], zone);
+    assert.deepEqual([actual[zone].bgm || '', actual[zone].bgm2 || ''], configured, zone);
+    for (const file of configured.filter(Boolean)) {
+      const stat = fs.statSync(path.join(root, file));
+      assert.ok(stat.isFile() && stat.size > 0, `${zone}: ${file}`);
+    }
+  }
   const manifest = JSON.parse(read('audio/zones/manifest.json'));
   const bytes = fs.readFileSync(path.join(root, track));
   assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), manifest.sha256);
   const manifest2 = JSON.parse(read('audio/zones/manifest-2.json'));
   assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root, track2))).digest('hex'), manifest2.sha256);
+});
+
+test('every configured map plays its Excel playlist in column order and loops back to the first track', () => {
+  const rows = readXlsxRows(path.join(root, 'config/Excel/Zones.xlsx'), '地圖');
+  const header = rows[0], id = header.indexOf('地圖識別碼');
+  const columns = [header.indexOf('BGM'), header.indexOf('BGM2')];
+  const zones = SCHEMAS.Zones.evaluate(extractLiteral(read('js/data.js'), 'ZONES').literal);
+  for (const row of rows.slice(1)) {
+    const zone = row[id], playlist = columns.map(col => row[col]).filter(Boolean);
+    const m = mount(); m.c.ZONES = zones; m.scene(zone);
+    if (!playlist.length) { assert.equal(m.music.length, 0, zone); continue; }
+    assert.equal(m.music.length, 1, zone);
+    const audio = m.music[0];
+    for (const expected of [...playlist, playlist[0]]) {
+      assert.equal(audio.src, expected, zone);
+      assert.equal(audio.paused, false, zone);
+      m.finish(audio); m.advance(10000);
+    }
+    assert.equal(m.music.length, 1, `${zone}: reuse the same player`);
+  }
 });
 
 test('entering a configured map loops music; ticks and stage changes preserve playback', () => {

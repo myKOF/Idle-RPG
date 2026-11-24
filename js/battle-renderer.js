@@ -2655,7 +2655,7 @@ var BattleRenderer = (function () {
   var levelUpPresetPromise = null;
   function loadLevelUpPreset() {
     if (levelUpPresetPromise) return levelUpPresetPromise;
-    levelUpPresetPromise = fetch('vfx/presets/level-up.json?v=20261105-preset-v1', { cache: 'no-store' }).then(function (response) {
+    levelUpPresetPromise = fetch('vfx/presets/level-up.json?v=20261125-playlog-demo-music-v1', { cache: 'no-store' }).then(function (response) {
       if (!response.ok) throw new Error('level-up preset HTTP ' + response.status);
       return response.json();
     }).then(function (preset) {

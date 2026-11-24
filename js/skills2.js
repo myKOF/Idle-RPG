@@ -596,7 +596,9 @@ function skills2TierManaCost(gid, tierIdx, ultId, prog) {
   var g = SKILLS2[gid];
   if (!g) return 0;
   var row = ultId ? (g.ult || []).filter(function (u) { return u.id === ultId; })[0] : g.tiers[tierIdx];
-  return Math.max(0, Number(row && row.cost) || 0) * skills2ManaMultiplier(prog);
+  // 普通階、終極進化、反擊及UI預覽共用Demo乘區；符文乘區仍由施放端套用。
+  var demoCostMult = typeof demoMult === 'function' ? demoMult(DEMO_SKILL_MANA_MULT) : 1;
+  return Math.max(0, Number(row && row.cost) || 0) * skills2ManaMultiplier(prog) * demoCostMult;
 }
 function skills2ManaCost(gid, lvs, ultRaw, prog) {
   var g = SKILLS2[gid];
