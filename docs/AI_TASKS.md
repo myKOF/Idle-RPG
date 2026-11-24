@@ -1,3 +1,17 @@
+## COMMIT-USER-CHANGES-20261125 — 提交使用者配樂與特效調整
+
+- Owner：Codex；Done，單人處理。使用者授權提交所有當前必要修改，並明確要求補上音樂路徑副檔名。
+- 範圍：保留四個使用者新增MP3與升級特效vortexCount=20；僅補Zones來源工作簿四個BGM路徑的.mp3，同步CSV與data.js，核對素材庫並先提交素材庫。記錄來源及雜湊、執行配樂／特效相關驗證與Build。不合併或推送任何分支。
+- 衝突預檢：工作簿、CSV、data.js及文件未偵測其他副本或分支修改。自動產生的attack2 Python快取不屬必要交付；僅移出暫存區並保留磁碟檔案，先前清理曾遭自動審核攔截，不重試刪除。
+- 驗收：四個音樂路徑實際存在，Excel／CSV／JS一致，使用者其他配置不變，兩庫必要素材逐位相同；提交後回報兩個SHA與檢查限制。
+- 完成／修改11檔：四個新MP3原樣納入；Zones.xlsx四格補副檔名並同步CSV與js/data.js；保留使用者level-up.json的粒子數20；既有熔岩山第二首音樂移除檔名中的意外空格（100%相同內容），使其符合原表引用；新增docs/assets/ZONE_MUSIC_20261125.md及本段。重新命名亦經衝突預檢，沒有其他來源。未修改BOSS9動作或接入實戰。
+- Excel：原檔獨占存取確認通過。試算表技能工具的候選匯出未採用，依AI_RULES 8.5改用既有tools/excel-update-sheets.ps1原生API正常儲存及兩次重開；寫入僅D6／E6／D8／E8四格。來源前後全格值／公式、有效字型／填色／邊框／對齊／保護／數字格式、列高／欄寬、凍結／篩選／驗證／合併與列印設定逐項一致，只有四格字串補.mp3。
+- 驗證：node tools/config_tables.cjs --apply Zones試跑重建4個字面值、語意變更0；獨立核對Excel／CSV／JS提取前15欄一致，所有已設定BGM檔均存在；素材庫六首音樂與專案逐位／SHA256一致（含原提交b3c84c35的熔岩山兩首補存）。level-up歸檔--check驗證四來源檔與manifest通過。npm.cmd run build通過762檔，兩庫Git差異檢查通過。
+- 相關回歸：node --test tests/zone-music.test.cjs tests/levelup-preset.test.cjs，37項中35通過、2失敗。配樂表測試仍以空白期待既有熔岩山BGM（任務開始前已失敗，舊任務亦有相同記錄）；特效legacy快照仍期待調參前170粒子的幾何，與使用者20設定不同。保留使用者設定與原測試斷言，未為通過而降標或更新快照。本輪沒有另跑瀏覽器視聽或全庫測試。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／Codex規範、相關配樂與特效測試、config_tables與xlsx_to_csv、ui-sound播放器、level-up歸檔工具與素材來源紀錄。試作／檢核輸出保存在聊天專用visualizations目錄，不進專案。舊attack2的.pyc僅移出暫存區，先前刪除遭自動審查政策限制，仍保留磁碟且未換工具重試。
+- 雙倉庫：素材庫master先提交b416732158de7e11e503a0dfad06d24aee12d852（10檔，含六音檔／來源manifest、PROVENANCE與特效來源），提交後乾淨。專案commit為本段所在`[Codex] chore: 提交地圖配樂與升級特效調整`，位於ai/codex；未合併或推送develop／main。
+- 交接：本次提交範圍無未完成製作，可供合併審閱；已知限制為上述兩項舊預期不符、未做實機視聽及受限快取殘留，不宣稱工作區完全乾淨或測試全綠。下一步由使用者審閱提交，後續若調整測試須依正式配置規格處理，勿覆蓋使用者調參。
+
 ## DEMO-SKILL-MANA-20261124 — 接通 Demo 技能法力消耗倍率
 
 - Owner：Codex；Done，單人實作。使用者已在 game_parameters.xlsx 新增編號380「11-Demo版／Demo 技能法力消耗倍率」，參數a為0.5；本輪接通該來源，正式版維持原消耗。
