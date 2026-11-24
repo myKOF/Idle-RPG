@@ -3492,6 +3492,41 @@
 /* 開頁時把作息提示補上。預設型態是輕度（2 小時／日），不先算一次的話，
    使用者看到的第一眼是「模擬總時長 24 小時」而不知道那其實只玩 2 小時。 */
 updateHoursHint();
+
+/* ---- 工作列／分頁標題顯示模擬進度 ----
+   Windows 工作列與瀏覽器分頁顯示的是 document.title，而且只看得到開頭幾個字，
+   所以進度放在最前面：「57% ⏳ 模擬中（0/2）｜放置型 RPG…」。
+   獨立輪詢 /sim_progress，不掛在 triggerNativeSimulation 裡：模擬中途重新整理頁面、
+   或從另一個分頁啟動的模擬，這一頁的標題一樣要跟著動。
+   伺服器只回報「現在有沒有在跑」，所以「完成／取消／失敗」是由「上一次還在跑、這一次不跑了」判斷，
+   標題會停在結果上，直到下一次開跑。 */
+(function simTitleProgress() {
+    const BASE_TITLE = document.title;
+    let wasRunning = false;
+    async function poll() {
+        if (location.protocol === 'file:') return;
+        let p;
+        try {
+            const r = await fetch('/sim_progress?t=' + Date.now());
+            if (!r.ok) return;
+            p = await r.json();
+        } catch (e) { return; }
+        if (p.isSimulating) {
+            wasRunning = true;
+            const pct = Math.max(0, Math.min(100, Math.floor(Number(p.percent) || 0)));
+            const b = p.batch;
+            const batchPart = (b && b.total) ? `（${b.done || 0}/${b.total}）` : '';
+            document.title = `${pct}% ⏳ 模擬中${batchPart}｜${BASE_TITLE}`;
+        } else if (wasRunning) {
+            wasRunning = false;
+            const text = p.statusText || '';
+            const mark = /取消|已關閉/.test(text) ? '⏹️ 已取消' : (Number(p.percent) === 100 ? '✅ 完成' : '❌ 失敗');
+            document.title = `${mark}｜${BASE_TITLE}`;
+        }
+    }
+    poll();
+    setInterval(poll, 2000);
+})();
 </script>
 </body>
 </html>
