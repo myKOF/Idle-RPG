@@ -121,7 +121,7 @@ def combine(sources, destination):
     return records
 
 
-def render_portrait(scene, output, low, high):
+def render_portrait(scene, output, low, high, suffix):
     height = high.z - low.z
     target = Vector(((low.x + high.x)/2, (low.y + high.y)/2, low.z + height*.72))
     camera_data = bpy.data.cameras.new('Portrait')
@@ -152,16 +152,13 @@ def render_portrait(scene, output, low, high):
     scene.render.film_transparent = True
     scene.render.image_settings.file_format = 'PNG'
     scene.render.image_settings.color_mode = 'RGBA'
-    scene.render.filepath = str(output / 'boss10_lava.png')
+    scene.render.filepath = str(output / f'boss10_lava{suffix}.png')
     bpy.ops.file.pack_all()
-    bpy.ops.wm.save_as_mainfile(filepath=str(output / 'boss10.blend'), compress=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(output / f'boss10{suffix}.blend'), compress=True)
     bpy.ops.render.render(write_still=True)
 
 
-def prepare(source, output):
-    output.mkdir(parents=True, exist_ok=True)
-    runtime = output / 'boss10.glb'
-    records = combine(source, runtime)
+def import_and_render(runtime, output, records, suffix=''):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.fps = 30
@@ -187,8 +184,16 @@ def prepare(source, output):
     points = [evaluated.matrix_world @ vertex.co for vertex in evaluated.data.vertices]
     low = Vector(min(point[i] for point in points) for i in range(3))
     high = Vector(max(point[i] for point in points) for i in range(3))
-    render_portrait(scene, output, low, high)
-    report = {'blender': bpy.app.version_string, 'clips': records, 'bones': len(arm.data.bones),
+    render_portrait(scene, output, low, high, suffix)
+    return len(arm.data.bones)
+
+
+def prepare(source, output):
+    output.mkdir(parents=True, exist_ok=True)
+    runtime = output / 'boss10.glb'
+    records = combine(source, runtime)
+    bones = import_and_render(runtime, output, records)
+    report = {'blender': bpy.app.version_string, 'clips': records, 'bones': bones,
               'bindRigMeshAndTexturesIdentical': True, 'originalMotionSamplesIdentical': True,
               'portrait': [1080,1080]}
     (output / 'model-qa.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')

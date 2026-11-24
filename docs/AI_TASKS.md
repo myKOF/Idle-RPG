@@ -17321,3 +17321,14 @@ Worker 存活且頁面正常完成載入。
 - 在隔離Edge用既有BOSS8實機驗證器的暫存第10層版本 `node tmp/boss10/verify_ingame.cjs tmp/boss10/game 10`。模型載入五段，三擊輪替、方形頭像與圓形縮圖正常，實際挑戰第10層以3D模型播放 Attack1，頁面例外0。其餘兩層由實際樓層查表函式回歸驗證。實機未驗證完整勝敗流程。
 - `node --test tests/boss10-character-asset.test.cjs tests/boss8-character-asset.test.cjs tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 為59通過、4失敗。失敗來自BOSS7、NPC 3D及塔舊測試仍比對舊NPC名稱，於乾淨 develop `c1f597d6` 的同三個測試檔重現相同四項。BOSS10專項再次通過，`npm.cmd run build`通過762檔，`node tools/boss10/export.cjs --check`驗證14項雜湊，Git差異檢查通過。瀏覽器及專用暫存已清理。
 - 素材庫提交 `fc4eb54667b9e7e948c3a9f7ce12520123c2c52c`，專案提交為本段所在的 `[Codex] feat: 接入熔岩巨人首套材質與五動作`。交付在 ai/codex，可合併。
+
+## TOWER-BOSS10-MATERIAL2-20261124 — 熔岩巨人第二套材質及五動作
+
+- Codex 已完成。以使用者提供的 BOSS10_2.glb 接入第20／70／120層，依第二套骨架對應首套的移動、三段攻擊與死亡。NPC.xlsx 第501列採用「熔岩巨人」與「外觀：熔岩巨人2」。
+- 範圍為第二套素材、製作與匯出工具、NPC表格及衍生資料、快取及相關文件／測試。index.html 的資料快取與 Claude 的字串快取分屬不同列，三方試合乾淨。
+- `blender -b --python-exit-code 1 -P tools/boss10/prepare_variant.py -- <首套遊戲GLB> <BOSS10_2.glb> <exports>` 驗證52骨骼、14,061頂點、3張原貼圖、原網格／UV／蒙皮與靜止骨架。右手兩支匯出名稱互換的指骨鏈依位置配對，每條對應距離不超過0.0498模型單位，按名稱交叉配對最小距離約0.1046。成品五段各144通道，取樣時間與首套相同，四元數、有限值與縮放檢查通過。Blender 重開成品並產生1080透明頭像及可編輯檔。
+- 原生Excel第501列改13格，兩次重開正常，24,535格樣式、393個公式與版面一致。CSV與遊戲資料只更新該列，`node tools/config_tables.cjs --apply NPC` 試跑差異0，字串稽核0。回歸確認第20／70／120層取第二套，首套的樓層正常。戰鬥沿用該列技能、屬性與數值。
+- 修改項目為第二套GLB／頭像、新增動畫對應工具、BOSS10製作／匯出工具、BOSS10／NPC回歸、NPC.xlsx／CSV、data.js與主頁／橋接／Worker快取、素材／技能名稱／LV文件及本段。唯讀檢查專案規範、首套素材與流程、原生Excel寫入工具、BOSS8實機驗證器、樓層查表及分支差異。
+- 在隔離Edge以既有驗證器的暫存第二套版本 `node tmp/boss10-v2/verify_ingame.cjs tmp/boss10-v2/game 20` 渲染五段、確認三段攻擊輪替及兩種頭像，在第20層實戰看到移動及Attack1出招。頁面例外0，實機未跑完整勝敗流程。瀏覽器與專案暫存已清理。
+- `node --test tests/boss10-character-asset.test.cjs tests/boss8-character-asset.test.cjs tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 為60通過、4失敗。四項為與首套驗收相同的其他首領舊名稱斷言，已於乾淨develop `c1f597d6` 重現。BOSS10兩項專測、`npm.cmd run build` 762檔、`node tools/boss10/export.cjs --check` 及第二套的 `--check --variants`、Git差異檢查通過。
+- 素材庫提交 `41b427d5d950b27821ff7d5094036edb38c3939f`，保存原GLB、可編輯檔、遊戲模型、頭像、工具與驗證。專案提交為本段所在的 `[Codex] feat: 接入熔岩巨人第二套材質與五動作`。交付在 ai/codex，可合併。

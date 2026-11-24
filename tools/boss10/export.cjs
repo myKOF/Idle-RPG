@@ -5,13 +5,16 @@ const crypto = require('node:crypto');
 const { resolveLibraryRoot } = require('../vfx/vfx-library-root.cjs');
 
 const project = path.resolve(__dirname, '../..');
-const library = path.join(resolveLibraryRoot().root, 'codex-authored/boss10-lava-20261124');
+const variant = process.argv.includes('--variants');
+const suffix = variant ? '_lv2' : '';
+const packageName = variant ? 'boss10-lava-variant2-20261124' : 'boss10-lava-20261124';
+const library = path.join(resolveLibraryRoot().root, 'codex-authored', packageName);
 const mode = process.argv[2] || '--check';
 if (!['--check', '--apply'].includes(mode)) throw new Error('Use --check or --apply');
 const manifest = JSON.parse(fs.readFileSync(path.join(library, 'manifest.json'), 'utf8'));
 const exportsBySource = {
-  'exports/boss10.glb': 'images/models/npc3d/boss10.glb',
-  'exports/boss10_lava.png': 'images/sprites/boss/boss10_lava.png'
+  ['exports/boss10'+suffix+'.glb']: 'images/models/npc3d/boss10'+suffix+'.glb',
+  ['exports/boss10_lava'+suffix+'.png']: 'images/sprites/boss/boss10_lava'+suffix+'.png'
 };
 const sha = (bytes, file) => crypto.createHash('sha256').update(/\.(py|cjs|json|md)$/.test(file)
   ? bytes.toString('utf8').replace(/\r\n/g, '\n') : bytes).digest('hex');
