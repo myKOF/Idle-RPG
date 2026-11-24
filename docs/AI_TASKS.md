@@ -1,3 +1,53 @@
+## MERCHANT-TYPE-SORT-20261124 — 神祕商人商品依類型排列
+
+- Owner：Codex；Done，單人實作。使用者要求商品區依遺物、裝備、符文、寶石排序，依賴既有商人UI／交易完成。
+- 允許：js/ui.js商品呈現排序、index.html對應快取、tests/merchant-cards-ui.test.cjs與商人／LV／本段文件。禁止修改抽樣／庫存原順序／價格／購買協議／表格／素材，不合併推送。初始Store.xlsx為使用者未提交調參，保留不動、不納入本輪提交。
+- 預檢：ui／測試／文件無外部來源；首頁與Claude 6cb1a8e4為不同快取行，git merge-tree試合乾淨，分段修改。
+- 設計與驗收：僅排序顯示副本，同類保留原順序；按鈕、等待狀態及裝備tips皆保留原庫存索引。確認混合排序、售出不移位、缺金／pending對應、實際點擊買對商品、舊寶石資料及40件上限，相關回歸與Build。
+- 完成／修改6檔：js/ui.js只排序帶原索引的顯示副本；index.html更新ui快取為20261124-merchant-sort-v1；tests/merchant-cards-ui.test.cjs新增混合穩定順序與正式點擊交易回歸；docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段同步。唯讀檢查共通規範／Workflow／Agent／Codex、js/item.js供應器及購買、ui.js點擊／等待／tooltip委派與卡片快取、既有商人／寶店／字串測試；未改Worker、抽樣、庫存、價格、配置或素材，素材庫無需提交。
+- 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/string-table.test.cjs` 58項中57通過，商品UI的13項全通過。新增測試確認同類順序、舊版無kind寶石、售出保位、缺金及等待按原索引停用、裝備tips原索引；透過正式點擊處理器／engine指令購買排序後首張遺物，扣款及發放正確，未誤買原第一格寶石。唯一失敗為Store原生Excel與CSV一致性：任務開始前Store.xlsx已是使用者未提交調參，CSV未套用；該測試與HEAD逐位相同，這次未改表格或降低斷言。此項保留供使用者後續套用。
+- `npm.cmd run build`762檔通過，Git差異檢查通過；最終首頁快取與Claude字串快取以git merge-file三方試合0，無語意相依。沒有另跑實機UI或全庫測試；此輪排序及交易對應無已知新增風險，配置一致性限制如上。
+- 交接：自我Review完成，本輪無未完成製作，暫存已清理。Commit為本段所在`[Codex] fix: 依類型排列神祕商人商品`，位於ai/codex，可供合併審閱，未合併／推送develop或main。Store.xlsx原有使用者修改保持未提交，不納入此輪。下一步重新載入遊戲查看遺物→裝備→符文→寶石順序；另於調參完成且儲存關閉Excel後套用參數。
+
+## MERCHANT-STAGE-LEVEL-20261124 — 商人裝備改讀全場景最高到達關卡
+
+- Owner：Codex；Done，單人實作。使用者要求以所有場景最高到達關卡取最大值作為商店裝備等級基準，例如100／60／90取100，不再讀玩家等級；保留既有倍率與裝備分段。依賴既有場景進度與商人流程完成。
+- 允許：js/item.js商店裝備基準、tests/mystery-merchant.test.cjs與gem-shop回歸、Store原生Excel單格說明及CSV／js/data.js衍生同步、必要首頁／Worker／bridge快取、商人文件／LV與本段。禁止修改場景進度語意／存檔／協議／裝備共用公式／其他表格數值，不合併推送。
+- 預檢：邏輯／測試／文件無外部衝突，Store獨占確認成功，最新來源使用者修改保留並以來源雜湊防覆蓋。index.html與Claude 6cb1a8e4為不同快取行，整體三方試合乾淨，分段修改。
+- 驗收：三場景100／60／90、目前場景即時best與切換／回低關、玩家等級及轉生無影響、新局／缺舊欄、倍率／分段／標價一致、刷新與原商品不變、Excel重開／值格式保持、商人與快取相關測試及Build。
+- 完成：item.js新增純讀取merchantEquipmentProgressLevel，遍歷ZONES，以zoneBestProgress讀各場景（目前場景直接讀stage.best），依合法場景上限取最大關卡；乘原Store倍率後交既有makeEquipment分段。全新或缺舊進度回有效關卡，品質仍由原有封魔塔／Store品質規則決定，既有商品等級與售價不重擲。
+- 修改12檔：js/item.js、js/data.js、js/bridge.js、js/worker/sim.worker.js、index.html、config/Excel/Store.xlsx／CSV/Store.csv、tests/mystery-merchant.test.cjs／gem-shop.test.cjs、docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段。唯讀檢查AI_RULES／AGENTS／Workflow／Codex、js/player.js／data.js場景讀取器／combat.js切場景及推關／save.js舊檔補值／formula.js裝備分段、原有商人UI／協議與回歸、原生Excel工具。無素材修改，素材庫無需提交。
+- Excel：沿用試算表技能與既有原生API，正常儲存及兩次重開驗值；相對本輪最新來源只改F53說明，其他全部格值／公式及有效樣式一致，渲染文字完整。使用者在來源已調整的商品數量權重、通用類別權重與公式欄內容完整保留；從該最新來源匯出CSV並套用4項data資料，無回寫企劃數字。數量選表測試改用獨立固定fixture，不再把使用者可調的Lv.20商品數當成選表邏輯的前提。
+- 驗證：`node --test tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/merchant-cards-ui.test.cjs tests/relics.test.cjs tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-tower-control.test.cjs tests/params-direct-edit.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 97/97通過。包含100／60／90生成100級及UI投影、即時175映射150、倍率2映射350、回低關保留進度、玩家等級／轉生、缺舊欄、原商品購買不重算與正式刷新更新。另用實際engine例子（玩家999級）確認sourceLevel100、equipmentLevels[100]。
+- 檢核：`node tools/apply_params.cjs`630項一致、變更0、錨點問題0；`--check-anchors`擾動574數值後630錨點通過。`npm.cmd run build`762檔通過；Git差異檢查及最終首頁對Claude字串快取三方試合通過。主頁／Worker／bridge快取20261124-merchant-stage-v1。本輪未改參數錨點或協議，未重跑前項已卡住的全庫測試，亦未另跑實機UI；檢核涵蓋正式指令與UI資料投影，無已知新增功能風險。
+- 交接：自我Review完成，本輪無未完成製作，必要暫存已清理。Commit為本段所在`[Codex] fix: 商店裝備依全場景最高關卡生成`，位於ai/codex，可供合併審閱，未合併／推送develop或main。下一步重新載入遊戲並刷新商店，倍率1時以全場景最高到達關卡生成對應套級裝備。
+
+## MERCHANT-RELIC-20261124 — 商人遺物販售與商品數量更名
+
+- Owner：Codex；Done，單人實作。使用者授權接入遺物權重開關、價格、購買與發放，並將數量表改名「商品刷出數量」。依賴既有遺物系統／商人交易完成。
+- 允許：item.js供應器與ui.js商品卡、Store原生Excel／CSV及data衍生資料、apply_params與相關測試、必要首頁／Worker／bridge快取、商人文件／LV與本段；不修改遺物效果／升級數值、其他表格、協議或存檔格式，不合併／推送。
+- 設計：遺物無稀有階級，原預留階級欄明確改為編號，逐級編號權重／空白通用範圍；每件基數定價、共用折扣，relicGrant發放一件。數量表是每批全部類型商品總數。保留來源既有使用者數值及遺物0權重設定。
+- 預檢：專用邏輯／表格／測試／文件無外部來源，Store獨占確認成功。本副本Store.xlsx已有使用者未提交調參，保存前版並只改本輪文字、從最新來源匯出。index.html與Claude 6cb1a8e4只同檔不同快取行，git merge-tree HEAD ai/claude試合乾淨，分段修改。
+- 驗收：正權重／0關閉、逐級／通用及不合法編號、總數抽取與上限、保底／比例、定價折扣、缺金／重複購買／全買／滿包、首件與累積／存讀／過期保護、UI圖示名稱tips售出、原生Excel重開及格式值比對、參數與快取回歸、實機與Build。完成交使用者驗收合併。
+- 完成：新增relic供應器及merchantRelicPairs，讀逐級編號權重或通用編號範圍，缺少有效候選不耗券；標價取整、購買共用折扣及交易保護，透過relicGrant發放。卡片沿用原有遺物圖示、名稱與效果提示，不新增素材或顯示字串。20列數量表更名「8-商品刷出數量」、明確標示每批全部類型商品總數；遺物階級欄更名編號，更新通用權重的備用說明。
+- 修改15檔：js/item.js、js/ui.js、js/data.js、js/bridge.js、js/worker/sim.worker.js、index.html、config/Excel/Store.xlsx、config/CSV/Store.csv、tools/apply_params.cjs、tests/gem-shop.test.cjs、tests/mystery-merchant.test.cjs、tests/merchant-cards-ui.test.cjs、docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段。唯讀檢查規範／Workflow／Agent／Codex、js/relic.js／relic_data.js／ui-relic.js／save.js／worker/protocol.js／start-menu.js／main.js、Relics表、CSS與既有Excel／瀏覽器工具及相關測試。無素材變更，素材庫無需提交。
+- 來源：原生Excel兩輪正常儲存與重開校驗，最終相對任務前來源僅129格名稱／說明不同；全部使用者參數、其他值、公式、有效樣式、欄寬、視窗、篩選與驗證保持。原生Excel重編自訂數值格式ID，但格式碼及其引用語意一致，未手工改XML。渲染確認新數量與遺物說明完整。來源已有的價格、升級基數、邀請券區間及20級寶石／商品數量權重一起匯出並套用13項Store資料；相關數值斷言依該已存在來源更新，未回寫企劃數值。
+- 回歸：`node --test tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/merchant-cards-ui.test.cjs tests/relics.test.cjs tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-tower-control.test.cjs tests/params-direct-edit.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 95/95通過。`node tools/apply_params.cjs`630項一致、變更0、錨點問題0；`--check-anchors`擾動574數值後630錨點均通過；字串稽核仍寫死0條。`npm.cmd run build`762檔通過。首頁／Worker／bridge採20261124-merchant-relic-v1，協議與存檔格式不變；最終首頁差異與Claude字串快取行git merge-file試合0。
+- 實機：隔離Edge以HTTP回應暫存fixture啟用遺物類別與編號1（不改正式0權重來源），由真正主頁啟動、GM給金與邀請券、正式Worker召喚及混合8件商品，確認圖示載入、名稱／效果提示與標價。按實際購買鈕扣1000000、首件解鎖Lv.1／件數0、商品售出，頁面例外0。驗證先等待Loading結束並用正式combat.setPaused避免掛機金幣干擾；初輪使用整體選單暫停會延後購買，改用戰鬥暫停後完整通過，未更改產品邏輯。瀏覽器及伺服器finally關閉，孤兒瀏覽器檢查無殘留。
+- 全庫限制：依參數接線規範已執行`node --test "tests/*.test.cjs"`。部分輸出出現598個失敗，包含其他戰鬥、寶石共鳴、圖示與超重岩配置檢核；未逐一歸因，不宣稱全部是既有問題。工作區同步測試長時間無進度且資源壅塞，核對本次runner PID與命令後停止其測試子樹，全庫未完成／未全綠；不降低斷言或擴大修改無關功能。相關95項及實機已獨立通過。
+- 交接：自我Review完成，本輪功能無未完成製作；全庫驗證限制如上。必要暫存已清理。Commit為本段所在`[Codex] feat: 接入商人遺物販售並更名商品數量表`，位於ai/codex，供功能驗收與合併審閱，未合併／推送develop或main。既有遺物類別權重仍0；啟用請在對應商店等級的「8-商人刷出類別」填正遺物權重，0關閉，儲存關閉Excel後套用參數。通用遺物權重只在逐級類別列留白時使用。
+
+## STORE-WEIGHTS-20261124 — Store 抽取分布改用相對權重
+
+- Owner：Codex；Done，單人實作。使用者要求 Store 不必加總為100%，改用權重。前置依賴已滿足，fetch及逐檔預檢無外部衝突，Store來源獨占存取成功。
+- 允許：Store.xlsx原生編修及CSV、tools/apply_params.cjs的Store分布驗證、商人／寶店相關回歸、docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段。禁止修改其他表格數值、邀請券獨立掉落率、戰鬥／存檔／協議或素材，不合併／推送develop或main。
+- 驗收：非100總和與單項超過100可套用，依相對權重抽取；負數／非有限值／重複／無效全零仍拒絕，類別全零保留關閉語意；原生Excel重開與格式／數值保持、CSV一致、參數錨點、相關測試與Build。完成交使用者驗收與整合。
+- 完成：套用工具移除商人逐級與通用太古分布的100總和限制及逐級單項100上限，保留原始權重傳入既有wpick；寶石階級／數量補上非負有限權重、正總和及重複驗證。9類分布統一說明，既有配置數字與遊戲資料保持，無需改遊戲JS或快取。
+- 修改7檔：config/Excel/Store.xlsx、config/CSV/Store.csv、tools/apply_params.cjs、tests/mystery-merchant.test.cjs、docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段。唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、js/item.js／util.js／data.js、tools/config_tables.cjs／xlsx_to_csv.cjs／excel-update-sheets.ps1與既有商人／寶店／參數測試。沒有素材修改，素材庫無需提交。
+- Excel：以tools/excel-update-sheets.ps1原生寫入321格說明，正常模式兩次重開驗值；182列×39欄CSV一致。唯讀封裝比對只有E／F文字變更，其他值、公式與全部儲存格樣式一致。原生Excel在本環境調整預設列高與欄寬，與未編輯控制副本儲存結果一致；20列遺物說明因換行自動增為30pt，已渲染確認文字完整。未手工修改XML。
+- 測試：`node --test tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-tower-control.test.cjs tests/params-direct-edit.test.cjs tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/merchant-cards-ui.test.cjs` 52/52通過，涵蓋9類非100權重／小數／超過100／無效值、類別全零關閉及相同亂數下等比例縮放。`node tools/apply_params.cjs` 630項一致、變更0、錨點問題0；`node tools/apply_params.cjs --check-anchors`擾動574數值後630錨點通過。`npm.cmd run build`762檔通過，Git差異檢查通過。初輪新測試誤以變數名比對既有中文錨點標籤，已校正後完整相關測試通過。
+- 交接：自我Review完成，無本輪未完成項目；未跑全庫測試或實機UI，本輪未修改玩家顯示／執行期邏輯。必要暫存已清理。專案Commit為本段所在`[Codex] feat: 將Store抽取分布改用相對權重`，位於ai/codex，可合併；未合併／推送develop或main。下一步可直接在Store填相對權重，儲存關閉Excel後執行套用參數。
+
 ## SYNC-20261123-222021 ? develop ?? 6a8fbd28
 
 - Owner?Codex??????? afe25d81 ??????????????????????? BOSS9 ???R2?R3?????????????????????????????????????
@@ -17310,3 +17360,35 @@ Worker 存活且頁面正常完成載入。
 - 驗證：Blender author.py及verify.py通過；Blend與重匯入GLB各1153時點，末段實際指尖水平朝右89.9957–90.0027度、向右分量至少0.965889、傾角約向下15度。骨長／四肢鏈／支撐接地／首尾Idle／root保持，指定雙手／手腳／手頭／雙腳三角形穿插0，支撐誤差<0.002372，native/GLB頂點差<0.00000132。初輪驗證報告輸出變數名稱衝突已修正，完整重跑通過，未放寬判定。
 - GIF／程式：capture.cjs正面含UI操作、側面、命中及膠囊阻擋共480張，Three.js實際蒙皮方向與模型一致，完整入鏡、頁面錯誤警告0；encode.py四份900x600／120張／50FPS／2.4秒GIF逐張解碼及四份聯絡圖目視通過。node --test tests/boss9-melee-preview.test.cjs 14/14；Python AST3檔、Node／ESM語法、npm.cmd run build 757檔、export.cjs 34必要檔SHA及manifest、git diff --check通過。所有瀏覽器finally關閉，kill-test-browsers確認無殘留。
 - Commit：素材庫先提交0725caf4；專案為本段所在「[Codex] fix: 修正BOSS9揮擊末段手掌朝向」。已自我Review，可供預覽工具合併審閱，未合併／推送develop或main。限制：原自動蒙皮局部拉伸仍保留，轉腕時IK在極限處最多調整爪群位置約0.123模型單位；正式戰鬥接入仍待使用者確認。本輪動作修正無未完成製作；下一步看GIF及定格核對圖2方向。必要QA已保存素材庫；本聊天先前自動核准檢查拒絕刪除visualizations預覽暫存，未繞過，舊暫存與本輪boss9-palm-r2保留於聊天visualizations區並列為清理例外。
+
+## TOWER-BOSS10-MATERIAL1-20261124 — 熔岩巨人首套材質及五動作
+
+- Codex 已完成。使用者提供 BOSS10 首套五個 GLB，並指定名稱「熔岩巨人」。第10／60／110層共用 NPC.xlsx 第491列 `tower_boss_10`，備註「外觀：熔岩巨人1」。本次先接入 BOSS10，BOSS9製作另行進行。
+- 範圍含 BOSS10 模型與頭像、來源與素材庫、製作／匯出工具、NPC 表格及匯出、必要快取、配置回歸與功能文件。驗收包含五段原始動作及材質校驗、Excel 原生重開、實機出招與建置。index.html 與 Claude 的字串快取修改在不同列，三方試合乾淨。
+- 製作使用 `blender -b --python-exit-code 1 -P tools/boss10/prepare.py -- <sources> <exports>`。五份來源的52骨骼、14,057頂點、蒙皮、網格及3張貼圖二進位相符。成品比對每段144個通道與原始取樣逐位元相符。五段時長為4.10／1.8333／2.80／3.1667／2.9667秒，Blender重新匯入後保存可編輯檔及1080透明頭像。
+- 原生Excel寫入及重開校驗完成，與任務前比對僅 NPC 第491列13格不同，393公式及24,535格樣式一致。Excel將兩工作表部分列高與欄寬按此環境重新儲存，與未編輯副本的原生儲存完全相同。CSV與data.js只改該首領一列，`node tools/config_tables.cjs --apply NPC`試跑差異0，`node tools/string-table/build_string_csv.cjs --check`通過。
+- 新增製作／匯出工具、首套GLB、透明PNG、素材說明及專項測試。更新NPC.xlsx／CSV、遊戲資料、主頁／bridge／Worker快取、外觀備註映射、既有NPC回歸、樓層／系統文件及本段。唯讀檢查規範、塔關卡輪替、BOSS7／8流程、BOSS9製作任務及相關分支，BOSS10使用原先的技能與戰鬥數值。
+- 在隔離Edge用既有BOSS8實機驗證器的暫存第10層版本 `node tmp/boss10/verify_ingame.cjs tmp/boss10/game 10`。模型載入五段，三擊輪替、方形頭像與圓形縮圖正常，實際挑戰第10層以3D模型播放 Attack1，頁面例外0。其餘兩層由實際樓層查表函式回歸驗證。實機未驗證完整勝敗流程。
+- `node --test tests/boss10-character-asset.test.cjs tests/boss8-character-asset.test.cjs tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 為59通過、4失敗。失敗來自BOSS7、NPC 3D及塔舊測試仍比對舊NPC名稱，於乾淨 develop `c1f597d6` 的同三個測試檔重現相同四項。BOSS10專項再次通過，`npm.cmd run build`通過762檔，`node tools/boss10/export.cjs --check`驗證14項雜湊，Git差異檢查通過。瀏覽器及專用暫存已清理。
+- 素材庫提交 `fc4eb54667b9e7e948c3a9f7ce12520123c2c52c`，專案提交為本段所在的 `[Codex] feat: 接入熔岩巨人首套材質與五動作`。交付在 ai/codex，可合併。
+
+## TOWER-BOSS10-MATERIAL2-20261124 — 熔岩巨人第二套材質及五動作
+
+- Codex 已完成。以使用者提供的 BOSS10_2.glb 接入第20／70／120層，依第二套骨架對應首套的移動、三段攻擊與死亡。NPC.xlsx 第501列採用「熔岩巨人」與「外觀：熔岩巨人2」。
+- 範圍為第二套素材、製作與匯出工具、NPC表格及衍生資料、快取及相關文件／測試。index.html 的資料快取與 Claude 的字串快取分屬不同列，三方試合乾淨。
+- `blender -b --python-exit-code 1 -P tools/boss10/prepare_variant.py -- <首套遊戲GLB> <BOSS10_2.glb> <exports>` 驗證52骨骼、14,061頂點、3張原貼圖、原網格／UV／蒙皮與靜止骨架。右手兩支匯出名稱互換的指骨鏈依位置配對，每條對應距離不超過0.0498模型單位，按名稱交叉配對最小距離約0.1046。成品五段各144通道，取樣時間與首套相同，四元數、有限值與縮放檢查通過。Blender 重開成品並產生1080透明頭像及可編輯檔。
+- 原生Excel第501列改13格，兩次重開正常，24,535格樣式、393個公式與版面一致。CSV與遊戲資料只更新該列，`node tools/config_tables.cjs --apply NPC` 試跑差異0，字串稽核0。回歸確認第20／70／120層取第二套，首套的樓層正常。戰鬥沿用該列技能、屬性與數值。
+- 修改項目為第二套GLB／頭像、新增動畫對應工具、BOSS10製作／匯出工具、BOSS10／NPC回歸、NPC.xlsx／CSV、data.js與主頁／橋接／Worker快取、素材／技能名稱／LV文件及本段。唯讀檢查專案規範、首套素材與流程、原生Excel寫入工具、BOSS8實機驗證器、樓層查表及分支差異。
+- 在隔離Edge以既有驗證器的暫存第二套版本 `node tmp/boss10-v2/verify_ingame.cjs tmp/boss10-v2/game 20` 渲染五段、確認三段攻擊輪替及兩種頭像，在第20層實戰看到移動及Attack1出招。頁面例外0，實機未跑完整勝敗流程。瀏覽器與專案暫存已清理。
+- `node --test tests/boss10-character-asset.test.cjs tests/boss8-character-asset.test.cjs tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 為60通過、4失敗。四項為與首套驗收相同的其他首領舊名稱斷言，已於乾淨develop `c1f597d6` 重現。BOSS10兩項專測、`npm.cmd run build` 762檔、`node tools/boss10/export.cjs --check` 及第二套的 `--check --variants`、Git差異檢查通過。
+- 素材庫提交 `41b427d5d950b27821ff7d5094036edb38c3939f`，保存原GLB、可編輯檔、遊戲模型、頭像、工具與驗證。專案提交為本段所在的 `[Codex] feat: 接入熔岩巨人第二套材質與五動作`。交付在 ai/codex，可合併。
+
+## TOWER-BOSS10-MATERIAL3-20261124 — 熔岩巨人第三套材質及五動作
+
+- Codex 已完成。將 BOSS10_3.glb 的紫晶外觀接入封魔塔第 30／80／130 層。NPC.xlsx 第 511 列（tower_boss_30）名稱為「熔岩巨人」，備註登記第三套外觀，並設定模型、頭像與五個動作。
+- 沿用首套移動、三段攻擊與死亡的取樣時間，每段 144 條動畫通道。依第三套的手指實際位置對應右手骨骼，保留兩根左腿輔助骨的原始綁定。重建第二套所得 GLB 與既有成品逐位元一致。
+- 修改第三套模型與頭像、NPC Excel 與匯出、遊戲載入快取、製作與匯出工具、專項測試及封魔塔文件。檢查過首套與第二套模型、匯出清單及封魔塔戰鬥流程。index.html 與 Claude 的快取變更位置不同，三方試合乾淨。
+- `node tools/boss10/export.cjs --check --material3` 通過 11 項素材雜湊驗證。`node tools/config_tables.cjs --apply NPC` 與 `node tools/string-table/build_string_csv.cjs --check` 均無額外差異。Excel 使用原生介面寫入並重新開啟，核對僅第 511 列的 13 格值有修改，公式、格式及版面相同。
+- `node --test` 執行 13 支封魔塔、3D 角色與快取相關測試檔，65 項中 61 項通過，4 項為既有的 BOSS7、妖樹首領及惡魔首領名稱斷言。BOSS10 專項全數通過。`node tmp/boss10-v3/verify_ingame.cjs tmp/boss10-v3/game 30` 驗證五個動作、三攻連續輪替、第 30 層實戰移動、出招與兩種頭像尺寸，無執行期錯誤。
+- `npm.cmd run build` 通過 762 檔語法與空檔檢查，兩支 Python 工具通過語法剖析，Git 差異檢查通過。
+- 素材庫提交 `8b7e8f427b80612aaef18308b6d55868432a53b2`。遊戲提交訊息 `[Codex] feat: 接入熔岩巨人第三套材質與五動作`，位於 `ai/codex`，可合併。工作區內的驗證暫存與瀏覽器程序已清理。自動審查以政策限制拒絕刪除工作區外的 Blender 重建驗證圖，該圖留在 `C:/tmp/boss10-v3/rebuild-2/boss10_lava_lv2.png`。
