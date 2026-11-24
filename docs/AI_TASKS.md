@@ -1,3 +1,14 @@
+## STORE-WEIGHTS-20261124 — Store 抽取分布改用相對權重
+
+- Owner：Codex；Done，單人實作。使用者要求 Store 不必加總為100%，改用權重。前置依賴已滿足，fetch及逐檔預檢無外部衝突，Store來源獨占存取成功。
+- 允許：Store.xlsx原生編修及CSV、tools/apply_params.cjs的Store分布驗證、商人／寶店相關回歸、docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段。禁止修改其他表格數值、邀請券獨立掉落率、戰鬥／存檔／協議或素材，不合併／推送develop或main。
+- 驗收：非100總和與單項超過100可套用，依相對權重抽取；負數／非有限值／重複／無效全零仍拒絕，類別全零保留關閉語意；原生Excel重開與格式／數值保持、CSV一致、參數錨點、相關測試與Build。完成交使用者驗收與整合。
+- 完成：套用工具移除商人逐級與通用太古分布的100總和限制及逐級單項100上限，保留原始權重傳入既有wpick；寶石階級／數量補上非負有限權重、正總和及重複驗證。9類分布統一說明，既有配置數字與遊戲資料保持，無需改遊戲JS或快取。
+- 修改7檔：config/Excel/Store.xlsx、config/CSV/Store.csv、tools/apply_params.cjs、tests/mystery-merchant.test.cjs、docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段。唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、js/item.js／util.js／data.js、tools/config_tables.cjs／xlsx_to_csv.cjs／excel-update-sheets.ps1與既有商人／寶店／參數測試。沒有素材修改，素材庫無需提交。
+- Excel：以tools/excel-update-sheets.ps1原生寫入321格說明，正常模式兩次重開驗值；182列×39欄CSV一致。唯讀封裝比對只有E／F文字變更，其他值、公式與全部儲存格樣式一致。原生Excel在本環境調整預設列高與欄寬，與未編輯控制副本儲存結果一致；20列遺物說明因換行自動增為30pt，已渲染確認文字完整。未手工修改XML。
+- 測試：`node --test tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-tower-control.test.cjs tests/params-direct-edit.test.cjs tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/merchant-cards-ui.test.cjs` 52/52通過，涵蓋9類非100權重／小數／超過100／無效值、類別全零關閉及相同亂數下等比例縮放。`node tools/apply_params.cjs` 630項一致、變更0、錨點問題0；`node tools/apply_params.cjs --check-anchors`擾動574數值後630錨點通過。`npm.cmd run build`762檔通過，Git差異檢查通過。初輪新測試誤以變數名比對既有中文錨點標籤，已校正後完整相關測試通過。
+- 交接：自我Review完成，無本輪未完成項目；未跑全庫測試或實機UI，本輪未修改玩家顯示／執行期邏輯。必要暫存已清理。專案Commit為本段所在`[Codex] feat: 將Store抽取分布改用相對權重`，位於ai/codex，可合併；未合併／推送develop或main。下一步可直接在Store填相對權重，儲存關閉Excel後執行套用參數。
+
 ## SYNC-20261123-222021 ? develop ?? 6a8fbd28
 
 - Owner?Codex??????? afe25d81 ??????????????????????? BOSS9 ???R2?R3?????????????????????????????????????

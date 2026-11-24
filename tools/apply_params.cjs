@@ -768,18 +768,22 @@ function levelGrowthContent(cat, name) {
 function rebuildPairTable(varName, group) {
   const lines = [];
   for (let lv = 1; lv <= 20; lv++) {
-    // 只取真正的「數量=機率」格；空格與被 Excel 填成純數字（如 0）的補位格一律略過。
+    // 只取真正的「數量=權重」格；空格與被 Excel 填成純數字（如 0）的補位格一律略過。
     const params = index[group]['商店 Lv.' + lv].filter(x => x !== '' && x.indexOf('=') >= 0);
     const pairs = params.map(p => {
       const s = p.split('=');
       const n = Number(s[0]), pr = Number(s[1]);
-      // 每格必須是「數量=機率」兩個有效數字；否則中止（Excel 常把含冒號的格轉成時間值破壞資料）。
-      if (s.length !== 2 || !isFinite(n) || !isFinite(pr)) {
-        throw new Error(group + ' 商店 Lv.' + lv + ' 的「' + p + '」無法解析為「數量=機率」（可能被 Excel 破壞）');
+      // 權重不限制總和；保留正整數項目與非負有限權重驗證。
+      if (s.length !== 2 || !Number.isSafeInteger(n) || n < 1 || !s[1].trim() || !isFinite(pr) || pr < 0) {
+        throw new Error(group + ' 商店 Lv.' + lv + ' 的「' + p + '」無法解析為「正整數項目=非負權重」（可能被 Excel 破壞）');
       }
-      return '[' + n + ', ' + pr + ']';
+      return [n, pr];
     });
-    lines.push('\n  [' + pairs.join(', ') + ']');
+    const total = pairs.reduce((sum, pair) => sum + pair[1], 0);
+    if (new Set(pairs.map(pair => pair[0])).size !== pairs.length || !Number.isFinite(total) || total <= 0) {
+      throw new Error(group + ' 商店 Lv.' + lv + ' 不得重複項目，權重總和須為大於0的有限數字');
+    }
+    lines.push('\n  [' + pairs.map(pair => '[' + pair.join(', ') + ']').join(', ') + ']');
   }
   arrayContent('data', varName, lines.join(',') + '\n', varName);
 }
@@ -810,11 +814,13 @@ rebuildPairTable('GEM_SHOP_TIER_TABLE', '8-寶店刷出階級');
 
 // 商人太古詞條分佈以具名資料表錨點接線，不綁內嵌程式碼。
 const ancientCountPairs = index['神祕商人']['裝備太古詞條機率'].filter(x => x !== '' && x !== '0').map(text => {
-  const pair = text.split('=').map(Number);
-  if (pair.length !== 2 || !Number.isInteger(pair[0]) || pair[0] < 0 || !Number.isFinite(pair[1]) || pair[1] < 0) throw new Error('Store 裝備太古詞條機率需填「非負整數條數=機率%」');
+  const parts = text.split('=').map(part => part.trim());
+  const pair = parts.map(Number);
+  if (pair.length !== 2 || !parts[0] || !parts[1] || !Number.isSafeInteger(pair[0]) || pair[0] < 0 || !Number.isFinite(pair[1]) || pair[1] < 0) throw new Error('Store 裝備太古詞條機率需填「非負整數條數=非負權重」');
   return pair;
 });
-if (!ancientCountPairs.length || new Set(ancientCountPairs.map(p => p[0])).size !== ancientCountPairs.length || Math.abs(ancientCountPairs.reduce((sum,p) => sum + p[1],0) - 100) > 1e-8) throw new Error('Store 裝備太古詞條機率不得重複條數，且總和須為100%');
+const ancientCountTotal = ancientCountPairs.reduce((sum,p) => sum + p[1],0);
+if (!ancientCountPairs.length || new Set(ancientCountPairs.map(p => p[0])).size !== ancientCountPairs.length || !Number.isFinite(ancientCountTotal) || ancientCountTotal <= 0) throw new Error('Store 裝備太古詞條機率不得重複條數，權重總和須為大於0的有限數字');
 arrayContent('data', 'MERCHANT_EQUIPMENT_ANCIENT_COUNT_TABLE', '\n  ' + ancientCountPairs.map(p => '[' + p.join(', ') + ']').join(', ') + '\n', '商人裝備太古詞條機率');
 
 const merchantCategories = new Map([['寶石', 'gem'], ['裝備', 'equipment'], ['符文', 'rune'], ['遺物', 'relic']]);
@@ -842,21 +848,21 @@ for (const [variable, group, parseKey, canDisable] of merchantLevelGroups) {
     const name = '商店 Lv.' + (i + 1);
     const label = 'Store ' + group + ' / ' + name;
     const cells = index[group] && index[group][name];
-    if (!cells) throw new Error(label + ' 缺少機率列');
+    if (!cells) throw new Error(label + ' 缺少權重列');
     const entries = cells.map(cell => cell.trim()).filter(cell => cell !== '' && cell !== '0');
     if (!entries.length) return null;
     const pairs = entries.map(cell => {
       const parts = cell.split('=').map(part => part.trim());
       const key = parseKey(parts[0]);
-      const chance = Number(parts[1]);
-      if (parts.length !== 2 || key === undefined || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(parts[1]) || !Number.isFinite(chance) || chance > 100) {
-        throw new Error(label + ' 的「' + cell + '」需填有效項目=機率%');
+      const weight = Number(parts[1]);
+      if (parts.length !== 2 || key === undefined || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(parts[1]) || !Number.isFinite(weight)) {
+        throw new Error(label + ' 的「' + cell + '」需填有效項目=非負權重');
       }
-      return [key, chance];
+      return [key, weight];
     });
     const total = pairs.reduce((sum, pair) => sum + pair[1], 0);
-    if (new Set(pairs.map(pair => pair[0])).size !== pairs.length || (!(canDisable && total === 0) && Math.abs(total - 100) > 1e-8)) {
-      throw new Error(label + ' 不得重複項目，機率總和須為100%');
+    if (new Set(pairs.map(pair => pair[0])).size !== pairs.length || !Number.isFinite(total) || (!canDisable && total <= 0)) {
+      throw new Error(label + ' 不得重複項目，權重總和須為大於0的有限數字（刷出類別可全0關閉）');
     }
     return pairs;
   });

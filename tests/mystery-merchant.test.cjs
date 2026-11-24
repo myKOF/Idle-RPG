@@ -5,7 +5,7 @@ const path = require('node:path');
 const os = require('node:os');
 const {execFileSync} = require('node:child_process');
 const {createEngine} = require('../scripts/sim/engine.js');
-const {readXlsxRows,csvParse} = require('../tools/config_tables.cjs');
+const {readXlsxRows,csvParse,csvStringify} = require('../tools/config_tables.cjs');
 const root = path.resolve(__dirname,'..');
 const plain = v => JSON.parse(JSON.stringify(v));
 function game(seed=17) { return createEngine({seed}).boot(); }
@@ -300,7 +300,7 @@ test('掉落統計將邀請券顯示為道具名稱與數量',()=>{
   assert.ok(c.LOOT_MAT_DEFS.some(d=>d.key==='mystery_invitation'&&d.name===c.STR(2436)));
 });
 
-test('Store由原生Excel匯出，商店參數從主表完整搬移且古詞條機率總和驗證',()=>{
+test('Store由原生Excel匯出，商店參數完整搬移且拒絕無效權重',()=>{
   const excel=readXlsxRows(path.join(root,'config/Excel/Store.xlsx'),'Store');
   const csv=csvParse(fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8'));
   assert.deepEqual(excel.map(r=>r.map(String)),csv);
@@ -320,10 +320,10 @@ test('Store由原生Excel匯出，商店參數從主表完整搬移且古詞條�
   try {
     const invalid = [
       [source.replace(/(神祕商人,存在時間\(秒\),[^\r\n]*?,)600,/, (_match, prefix) => prefix+'0,'),/存在時間/],
-      [source.replace('3=20','3=19'),/太古詞條機率/],
+      [source.replace('3=20','3=-1'),/太古詞條機率/],
       [source.replace('{51,100,10}','{50,100,10}'),/邀請券掉落率樓層區間不得重疊/],
       [source.replace('{1,50,10}','{1,50,101}'),/邀請券掉落率樓層或百分比超出範圍/],
-      [source.replace(/(8-商人刷出類別,商店 Lv\.1,[^\r\n]*?)裝備=30/, '$1裝備=29'),/刷出類別.*總和須為100%/],
+      [source.replace(/(8-商人刷出類別,商店 Lv\.1,[^\r\n]*?)裝備=30/, '$1裝備=-1'),/刷出類別.*有效項目/],
       [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,34=5'),/符文階級.*有效項目/],
       [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,19=5'),/符文階級.*不得重複/]
     ];
@@ -335,5 +335,88 @@ test('Store由原生Excel匯出，商店參數從主表完整搬移且古詞條�
     }
   } finally {
     fs.rmSync(temp,{recursive:true});
+  }
+});
+
+test('Store全部分布接受非100總和、小數與超過100的權重，保留原權重套用',()=>{
+  const source=csvParse(fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8'));
+  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'merchant-weights-'));
+  const file=path.join(temp,'Store.csv');
+  const groups=new Set();
+  for (const row of source.slice(1)) {
+    if (!/^8-(?:寶店刷出|商人)/.test(row[2]) && row[3]!=='裝備太古詞條機率') continue;
+    groups.add(row[2]+' / '+(row[2]==='神祕商人'?row[3]:''));
+    const entries=row.slice(6).filter(cell=>cell.includes('='));
+    if (!entries.length) entries.push('武器=1','戒指=1');
+    row.splice(6, row.length-6, ...entries.map((cell,i)=>cell.split('=')[0]+'='+([0.5,250,0][i%3])));
+  }
+  assert.equal(groups.size,9);
+  try {
+    fs.writeFileSync(file,csvStringify(source));
+    const output=execFileSync(process.execPath,['tools/apply_params.cjs'],{cwd:root,env:{...process.env,STORE_CSV:file},encoding:'utf8'});
+    assert.match(output,/錨點問題 0/);
+    for (const variable of ['GEM_SHOP_COUNT_TABLE','GEM_SHOP_TIER_TABLE','商人裝備太古詞條機率',
+      'MERCHANT_CATEGORY_TABLE','MERCHANT_EQUIPMENT_RARITY_TABLE','MERCHANT_EQUIPMENT_SLOT_TABLE',
+      'MERCHANT_EQUIPMENT_ANCIENT_LEVEL_TABLE','MERCHANT_RUNE_TIER_TABLE','MERCHANT_RELIC_TIER_TABLE']) {
+      assert.match(output,new RegExp(variable));
+    }
+    assert.match(output,/\[1, 0\.5\], \[2, 250\]/);
+    assert.match(output,/\["gem", 0\.5\], \["equipment", 250\]/);
+  } finally { fs.rmSync(temp,{recursive:true}); }
+});
+
+test('Store分布仍拒絕全零、重複及非有限權重；類別全零可停用',()=>{
+  const source=csvParse(fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8'));
+  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'merchant-weight-invalid-'));
+  const file=path.join(temp,'Store.csv');
+  const variants=[
+    ['8-寶店刷出階級',['1=0','2=0']],
+    ['8-寶店刷出數量',['5=1','5=2']],
+    ['8-寶店刷出數量',['5=-1']],
+    ['神祕商人',['0=0','3=0']],
+    ['神祕商人',['0=Infinity']],
+    ['8-商人裝備品質',['2=0','3=0']],
+    ['8-商人裝備部位',['武器=NaN']],
+    ['8-商人符文階級',['1=Infinity']],
+    ['8-商人遺物階級',['1='+('9'.repeat(309))]],
+    ['8-商人遺物階級',['1='+('9'.repeat(308)),'2='+('9'.repeat(308))]]
+  ];
+  try {
+    for (const [group,entries] of variants) {
+      const rows=plain(source), row=rows.find(r=>r[2]===group && (group!=='神祕商人'||r[3]==='裝備太古詞條機率'));
+      row.splice(6,row.length-6,...entries);
+      fs.writeFileSync(file,csvStringify(rows));
+      assert.throws(()=>execFileSync(process.execPath,['tools/apply_params.cjs'],{cwd:root,env:{...process.env,STORE_CSV:file},stdio:'pipe'}),
+        error=>String(error.stderr).includes(group==='神祕商人'?'太古詞條機率':group),group+' '+entries);
+    }
+    const row=source.find(r=>r[2]==='8-商人刷出類別');
+    row.splice(6,row.length-6,'寶石=0','裝備=0','符文=0','遺物=0');
+    fs.writeFileSync(file,csvStringify(source));
+    assert.doesNotThrow(()=>execFileSync(process.execPath,['tools/apply_params.cjs'],{cwd:root,env:{...process.env,STORE_CSV:file},stdio:'pipe'}));
+  } finally { fs.rmSync(temp,{recursive:true}); }
+});
+
+test('商人商品依相對權重抽取，整列等比例縮放不改變相同亂數的商品結果',()=>{
+  const tables=['GEM_SHOP_COUNT_TABLE','GEM_SHOP_TIER_TABLE','MERCHANT_CATEGORY_TABLE',
+    'MERCHANT_EQUIPMENT_RARITY_TABLE','MERCHANT_EQUIPMENT_SLOT_TABLE',
+    'MERCHANT_EQUIPMENT_ANCIENT_LEVEL_TABLE','MERCHANT_RUNE_TIER_TABLE'];
+  const generate=scale=>{
+    const e=game(91),c=e.ctx;
+    c.Date.now=()=>1700000000000;
+    for(const table of tables) {
+      c[table]=c[table].map(row=>row && row.map(pair=>[pair[0],pair[1]*scale]));
+    }
+    const batches=[];
+    for(let i=0;i<20;i++) { assert.equal(c.rollGemShop(),true);batches.push(plain(c.gemShop().items)); }
+    return batches;
+  };
+  const baseline=generate(1);
+  assert.deepEqual(generate(10),baseline);
+  assert.deepEqual(generate(0.1),baseline);
+  const c=game().ctx;
+  for(const [random,want] of [[0.05,'a'],[0.2,'b'],[0.5,'c'],[0.99,'c']]) {
+    c.Math.random=()=>random;
+    assert.equal(c.wpick([['a',1],['b',2],['c',7]]),want);
+    assert.equal(c.wpick([['a',100],['b',200],['c',700]]),want);
   }
 });
