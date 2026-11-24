@@ -342,5 +342,5 @@ AI 完成目前任務後，不以 P0、P1、P2 編號決定是否繼續。
 - 讓特效出現第三種來源：特效只能是配置表填入的，或程式碼寫死並登記在
   `docs/vfx/VFX_PRESET_USAGE_OUTSIDE_TABLES.md` 的（見 `AI_RULES.md` 第 8.4 節）
 - 把顯示給玩家的文字寫死在程式或 HTML，而不登記到 `config/Excel/String.xlsx` 並由表讀取（見 `AI_RULES.md` 第 8.10 節）
-- 在打包設定或程式裡另外寫死遊戲名稱；正式名稱中文「神力之巔」、英文「Idle: Divine Apex」，唯一來源是 String 表第 2569 條（見 `AI_RULES.md` 第 8.11 節）
+- 在打包設定或程式裡另外寫死遊戲名稱；正式名稱中文「神力之巔」、英文「Divine Ascension: Idle RPG」，唯一來源是 String 表第 2569 條（見 `AI_RULES.md` 第 8.11 節）
 - 新增系統功能、修改既有功能或調整其解鎖條件時，遺漏同步更新 `LV_upgrade_system.md`（見 `AI_RULES.md` 第 8.9 節）
