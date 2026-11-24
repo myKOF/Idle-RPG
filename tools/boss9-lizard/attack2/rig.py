@@ -50,6 +50,46 @@ class Rig:
         self.set(name,affine(q,c,c)@p.matrix)
     def translate(self,name,v):
         m=self.arm.pose.bones[name].matrix.copy();m.translation+=Vector(v);self.set(name,m)
+    def arm_fk(self,side,upper_direction,forearm_direction,q,opening,spread,floor_limit,claw_target=None):
+        """Chest carries the shoulder; upper arm and forearm have separate arcs."""
+        collar_name,upper,lower,wrist_name,palm_name=self.arms[side]
+        r=[self.base[n].translation for n in [upper,lower,wrist_name]]
+        collar=self.arm.pose.bones[collar_name];center=collar.head.copy()
+        link=self.arm.pose.bones[upper].head-center
+        lateral=Vector((-1 if side=='R' else 1,0,.02)).normalized()*link.length
+        direction=Quaternion().slerp(link.rotation_difference(lateral),spread)
+        self.set(collar_name,affine(direction,center,center)@collar.matrix)
+        root=self.arm.pose.bones[upper].head.copy()
+        elbow=root+upper_direction.normalized()*(r[1]-r[0]).length
+        wrist=elbow+forearm_direction.normalized()*(r[2]-r[1]).length
+        shaped=self.hands[side].shape(opening)[0]
+        local=self.hands[side].skin(shaped,self.hands[side].claws)-np.array(r[2])
+        if claw_target is not None:
+            goal=claw_target-q@Vector(local.mean(axis=0));v=goal-root
+            lengths=[(r[i+1]-r[i]).length for i in range(2)]
+            maximum=sum(lengths)*.999
+            if v.length>maximum:
+                goal=root+v.normalized()*maximum
+                self.max_clamp=max(self.max_clamp,(goal-(claw_target-q@Vector(local.mean(axis=0)))).length)
+            v=goal-root;d=v.length;direction=v.normalized()
+            pole=elbow-root;pole-=direction*pole.dot(direction);pole.normalize()
+            along=(lengths[0]**2-lengths[1]**2+d*d)/(2*d)
+            elbow=root+direction*along+pole*math.sqrt(max(0,lengths[0]**2-along*along));wrist=goal
+        floor=float((local@np.array(q.to_matrix()).T+np.array(wrist))[:,2].min())
+        if floor<floor_limit:
+            # Lift the shoulder-to-wrist arc, preserving both physical lengths.
+            v=wrist-root;z=v.z+(floor_limit-floor);assert z<v.length
+            goal=Vector((v.x,v.y,0)).normalized()*math.sqrt(v.length*v.length-z*z);goal.z=z
+            lift=v.rotation_difference(goal);elbow=root+lift@(elbow-root);wrist=root+goal
+        normal=(r[1]-r[0]).cross(r[2]-r[1]).normalized()
+        desired=(elbow-root).cross(wrist-elbow).normalized()
+        for i,(name,start,end) in enumerate([(upper,root,elbow),(lower,elbow,wrist)]):
+            delta=segment_q(r[i+1]-r[i],end-start,normal,desired)
+            self.set(name,affine(delta,r[i],start)@self.base[name])
+        hand=affine(q,r[2],wrist)
+        self.set(wrist_name,hand@self.base[wrist_name]);self.set(palm_name,hand@self.base[palm_name])
+        for n,m in self.hands[side].shape(opening)[0].items():self.set(n,hand@m)
+        return wrist+q@Vector(local.mean(axis=0))
     def arm_ik(self,side,palm,q,opening,envelope):
         collar_name,upper,lower,wrist_name,palm_name=self.arms[side]
         names=[upper,lower,wrist_name,palm_name];r=[self.base[n].translation for n in names]
@@ -86,7 +126,7 @@ class Rig:
         names=self.legs[side];r=[self.base[n].translation for n in names[:4]]
         root=self.arm.pose.bones[names[0]].head.copy();p=[x+root-r[0] for x in r];target=r[-1]
         lengths=[(r[i+1]-r[i]).length for i in range(3)]
-        for _ in range(30):
+        for _ in range(100):
             p[-1]=target.copy()
             for i in range(2,-1,-1):p[i]=p[i+1]+(p[i]-p[i+1]).normalized()*lengths[i]
             p[0]=root.copy()

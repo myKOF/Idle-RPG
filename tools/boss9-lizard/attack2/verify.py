@@ -84,7 +84,7 @@ if '--quick' in sys.argv:samples=sorted(set([i*duration/120 for i in range(121)]
 results={};native={};equivalence=0
 for label,path in [('blend',blend),('glb',fixed)]:
     arm,mesh=load(path);frame(0);first=surface(mesh);feet={n:arm.pose.bones[n].head.copy() for n in ['rearFoot.R','rearFoot.L']};root=arm.pose.bones['root'].head.copy();idle_torso=torso(arm);idle_chest=arm.pose.bones['spine_05'].head.copy()
-    foot_drift=root_xy=link_error=scale_error=jump=speed=ground_error=below=0;previous=None;previous_t=None;claws={'R':[],'L':[]};normals={'R':[],'L':[]};raised=[];late_backs=[];extension=[]
+    foot_drift=root_xy=link_error=scale_error=jump=speed=ground_error=below=0;previous=None;previous_t=None;claws={'R':[],'L':[]};normals={'R':[],'L':[]};raised=[];late_backs=[];extension=[];head_lead=[]
     collisions={n:0 for n in ['handR_footL','handR_footR','handL_footL','handL_footR','handR_skull','handL_skull','handR_handL','footL_footR']}
     for index,t in enumerate(samples):
         frame(t);points=surface(mesh);assert np.all(np.isfinite(points))
@@ -106,9 +106,21 @@ for label,path in [('blend',blend),('glb',fixed)]:
             a,b=pair.split('_');collisions[pair]+=len(trees[a].overlap(trees[b]))
         for side,h in build['hands'].items():
             claws[side].append(points[h['clawIndices']].mean(axis=0));normals[side].append(normal(points,h['padTriangles']))
-        if timing['raised']<=t<=timing['slashStart']:
+        if abs(t-1.10)<.0011:
+            skin=arm.pose.bones['spine_16'].matrix@arm.data.bones['spine_16'].matrix_local.inverted()
+            nose=skin.to_3x3()@Vector((0,-1,0));head_lead.append({'time':t,'headPitch':math.degrees(math.atan2(nose.z,-nose.y)),'claws':[claws[s][-1].tolist() for s in ['R','L']]})
+        if timing['raised']<=t<=timing['holdEnd']:
             heads=arm.pose.bones;top=float(points[list(regions['skull']),2].max())
-            raised.append({'chestLift':heads['spine_05'].head.z-idle_chest.z,'chestRetraction':heads['spine_05'].head.y-idle_chest.y,'torsoGain':torso(arm)-idle_torso,'tipAboveHead':min(max(float(points[ids,2].max()) for ids in h['tipGroups'])-top for h in build['hands'].values()),'minimumPadUp':min(normals[s][-1][2] for s in ['R','L'])})
+            pose={'chestLift':heads['spine_05'].head.z-idle_chest.z,'chestRetraction':heads['spine_05'].head.y-idle_chest.y,'torsoGain':torso(arm)-idle_torso,'torsoInclination':torso(arm),'tipAboveHead':min(max(float(points[ids,2].max()) for ids in h['tipGroups'])-top for h in build['hands'].values()),'minimumPadUp':min(normals[s][-1][2] for s in ['R','L']),'minimumPalmForward':min(-normals[s][-1][1] for s in ['R','L'])}
+            angles=[];fore_up=[];upper_lateral=[]
+            for names in [['spine_21','spine_20','spine_19'],['spine_07','spine_08','spine_09']]:
+                shoulder,elbow,wrist=[heads[n].head for n in names];u=elbow-shoulder;f=wrist-elbow
+                angles.append(math.degrees((-u).angle(f)));fore_up.append(f.normalized().z);upper_lateral.append(abs(u.normalized().x))
+            skin=heads['spine_16'].matrix@arm.data.bones['spine_16'].matrix_local.inverted()
+            pose.update(minimumElbowAngle=min(angles),maximumElbowAngle=max(angles),minimumForearmUp=min(fore_up),minimumUpperLateral=min(upper_lateral),headPitch=math.degrees(math.atan2(-(skin.to_3x3()@Vector((0,-1,0))).z,-(skin.to_3x3()@Vector((0,-1,0))).y)))
+            # Forward is native -Y; skyward nose has positive Z.
+            pose['headPitch']=-pose['headPitch']
+            raised.append(pose)
             for h in build['hands'].values():
                 for chain,group in zip(h['chains'],h['tipGroups']):
                     # Physical finger links plus its original terminal-tip offset.
@@ -127,13 +139,22 @@ for label,path in [('blend',blend),('glb',fixed)]:
     progress={s:(p[:,2]-p[0,2])/(p[-1,2]-p[0,2]) for s,p in paths.items()}
     synchronization=float(np.max(abs(progress['R']-progress['L'])))
     values={k:min(float(r[k]) for r in raised) for k in raised[0]}
+    values['maximumElbowAngle']=max(r['maximumElbowAngle'] for r in raised)
+    lead=[]
+    for sample in head_lead:
+        drop=max((paths[s][0,2]-sample['claws'][i][2])/(paths[s][0,2]-paths[s][-1,2]) for i,s in enumerate(['R','L']))
+        lead.append({'time':sample['time'],'headPitch':sample['headPitch'],'clawDropProgress':drop})
     entry={'samples':len(samples),'maximumJointStep':jump,'maximumJointSpeed':speed,'maximumScaleError':scale_error,'maximumLinkError':link_error,'maximumFootDrift':foot_drift,'rootHorizontalDrift':root_xy,'groundError':ground_error,'maximumBelowGround':below,'poseSeamError':float(np.max(abs(points-first))),'sourceIdleError':float(np.max(abs(first-source_idle))),'triangleOverlaps':collisions,'raised':values,'flow':flow,'maximumSynchronizationError':synchronization,'minimumLateDorsalForward':min(late_backs),'fingerExtensionMinimum':min(extension)}
+    entry['headLeadsDownstroke']=lead
     print('ATTACK2_CHECK',label,json.dumps(entry),flush=True)
     assert scale_error<1e-5 and link_error<1e-5 and speed<30 and foot_drift<1e-4 and root_xy<1e-6,entry
     assert ground_error<.012 and below<.008 and entry['poseSeamError']<2e-5 and entry['sourceIdleError']<2e-5,entry
     assert sum(collisions.values())==0,entry
-    assert values['chestLift']>.10 and values['chestRetraction']>.08 and values['torsoGain']>15 and values['tipAboveHead']>.02 and values['minimumPadUp']>.4,values
-    assert flow['R']['horizontalTravel']>.25 and flow['L']['horizontalTravel']<-.25 and all(f['verticalTravel']<-1.35 and f['chordDeviation']<.10 and f['minimumSideClearance']>.15 for f in flow.values()),flow
+    assert values['chestLift']>.35 and values['chestRetraction']>.20 and values['torsoGain']>45 and values['torsoInclination']>55 and values['headPitch']>65,values
+    assert values['minimumElbowAngle']>55 and max(r['maximumElbowAngle'] for r in raised)<115 and values['minimumForearmUp']>.9 and values['minimumUpperLateral']>.85,values
+    assert values['tipAboveHead']>-.12 and values['minimumPadUp']>.15 and values['minimumPalmForward']>.65,values
+    assert flow['R']['horizontalTravel']>0 and flow['L']['horizontalTravel']<0 and flow['R']['horizontalTravel']-flow['L']['horizontalTravel']>.12 and all(f['verticalTravel']<-1 and f['minimumSideClearance']>.22 for f in flow.values()),flow
+    assert lead and all(r['headPitch']<45 and r['clawDropProgress']<.35 for r in lead),lead
     assert synchronization<.03 and min(late_backs)>.5 and min(extension)>.90,entry
     results[label]=entry
 assert equivalence<2e-5,equivalence

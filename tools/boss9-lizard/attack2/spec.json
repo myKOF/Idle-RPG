@@ -1,12 +1,21 @@
 {
   "id": "BOSS9_Attack2",
-  "version": 1,
+  "version": 2,
   "duration": 1.5,
   "authorFPS": 480,
   "axisX": 0.073,
   "ground": -0.744,
-  "timing": {"raiseStart": 0.1, "raised": 0.64, "slashStart": 0.7, "slashEnd": 1.02, "returnEnd": 1.4},
-  "clawTargets": {"raised": [0.62, -0.35, 0.99], "lowered": [0.27, -0.98, -0.48]},
+  "timing": {"raiseStart": 0.18, "raised": 0.78, "holdEnd": 0.98, "slashStart": 1.04, "slashEnd": 1.35, "returnEnd": 1.5},
+  "motion": {
+    "bodyRise": [0.18, 0.68], "headRise": [0.20, 0.68],
+    "upperRise": [0.24, 0.65], "foreRise": [0.34, 0.78], "handRise": [0.42, 0.78],
+    "headFall": [0.99, 1.20], "bodyFall": [1.02, 1.32],
+    "upperFall": [1.04, 1.31], "foreFall": [1.07, 1.35], "handFall": [1.06, 1.30],
+    "hipsPitch": -18, "spinePitch": -62, "headPitch": 75, "jawOpen": 30,
+    "rootLift": 0.10, "fingerOpening": 0.68,
+    "upperDirection": [1, 0.15, -0.20], "foreDirection": [0.12, -0.12, 1],
+    "grabClaw": [0.36, -0.90, -0.50], "grabBow": 0.025
+  },
   "rootMotion": false,
   "previewOnly": true
 }

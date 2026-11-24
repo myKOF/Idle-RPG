@@ -17,11 +17,18 @@ action=bpy.data.actions.new(spec['id']);rig.arm.animation_data.action=action;sce
 axis=spec['axisX'];times=[i/fps for i in range(round(duration*fps)+1)]
 converted=Euler((-math.pi/2,0,0)).to_quaternion()
 channels={n:{'translation':[],'rotation':[],'scale':[]} for n in rig.base};trace=[];last={}
-orientations={}
+orientations={};directions={};motion=spec['motion']
 for side,h in rig.hands.items():
     sign=-1 if side=='R' else 1
-    orientations[side]={'up':h.orientation((0,-.65,.76),(sign*.20,.35,.92)),
+    orientations[side]={'up':h.orientation((0,-.94,.34),(sign*.05,.20,.98)),
                         'down':h.orientation((0,.83,-.55),(0,-.55,-.83))}
+    names=rig.arms[side][1:4];r=[rig.base[n].translation for n in names]
+    directions[side]=[(r[i+1]-r[i]).normalized() for i in range(2)]
+
+def curve(name,t):return smooth(*motion[name],t)
+
+def aim(base,target,amount):
+    return Quaternion().slerp(base.rotation_difference(target),amount)@base
 
 def phase(t):
     if t<timing['slashStart']:return 'Raise'
@@ -37,40 +44,49 @@ def local(name):
         pos=pq.inverted()@(pos-converted@p.parent.head);q=pq.inverted()@q
     return list(pos),[q.x,q.y,q.z,q.w],list(p.scale)
 
-for t in times:
-    scene.frame_set(math.floor(t*24),subframe=t*24%1);rig.reset()
-    rise=smooth(timing['raiseStart'],timing['raised'],t)
-    slash=smooth(timing['slashStart'],timing['slashEnd'],t)
+def posebody(t):
+    rig.reset()
+    rise=curve('bodyRise',t);slash=curve('bodyFall',t)
     recover=smooth(timing['slashEnd'],timing['returnEnd'],t)
-    envelope=rise*(1-recover)
-    # The chest arches back before the legs and spine drive the downward grab.
-    root_z=-.045*smooth(0,.10,t)*(1-rise)+.045*rise*(1-slash)-.035*slash*(1-recover)
+    envelope=rise*(1-slash)
+    # Reference order: chest/head rise, shoulders spread, bent forearms follow.
+    root_z=motion['rootLift']*envelope+.025*slash*(1-recover)
     rig.translate('root',(0,0,root_z))
-    pitch=(-28*rise*(1-slash)+16*slash)*(1-recover)
+    rig.rotate('hips',(motion['hipsPitch']*envelope,0,0))
+    pitch=motion['spinePitch']*envelope+6*slash*(1-recover)
     rig.rotate('spine_02',(pitch*.55,0,0));rig.rotate('spine_03',(pitch*.3,0,0));rig.rotate('spine2',(pitch*.15,0,0))
-    rig.head(10*rise*(1-slash)-6*slash,smooth(0,.20,t)*(1-recover))
-    rig.rotate('spine_26',(14*rise*(1-slash)*(1-recover),0,0))
-    opening=rise*(1-.75*slash)*(1-recover)
+    head_fall=curve('headFall',t)
+    rig.head(motion['headPitch']*curve('headRise',t)*(1-head_fall)-6*head_fall,smooth(.12,.30,t)*(1-recover))
+    rig.rotate('spine_26',(motion['jawOpen']*curve('headRise',t)*(1-smooth(1.02,1.25,t)),0,0))
+    hand_fall=curve('handFall',t)
+    opening=(motion['fingerOpening']*curve('handRise',t)*(1-hand_fall)+.12*hand_fall)*(1-recover)
+    return envelope,slash,recover,hand_fall,opening
+
+# Snapshot the raised pose so the release follows the reference's narrow arcs.
+# FK supplies the elbow plane; the release solves the two physical arm links.
+envelope,*_=posebody(timing['slashStart']);raised_claws={}
+for side,h in rig.hands.items():
+    sign=-1 if side=='R' else 1;u=Vector(motion['upperDirection']);u.x*=sign;f=Vector(motion['foreDirection']);f.x*=sign
+    raised_claws[side]=rig.arm_fk(side,u,f,orientations[side]['up'],motion['fingerOpening'],.7*envelope,spec['ground']+.0001)
+
+for t in times:
+    scene.frame_set(math.floor(t*24),subframe=t*24%1)
+    envelope,slash,recover,hand_fall,opening=posebody(t)
     for side,h in rig.hands.items():
         sign=-1 if side=='R' else 1;up,down=orientations[side]['up'],orientations[side]['down']
-        raised=Vector((axis+sign*spec['clawTargets']['raised'][0],*spec['clawTargets']['raised'][1:]))
-        lowered=Vector((axis+sign*spec['clawTargets']['lowered'][0],*spec['clawTargets']['lowered'][1:]))
-        if t<timing['slashStart']:
-            q=Quaternion().slerp(up,rise)
-            idle_claw=h.head+h.shape(0)[1]
-            claw=idle_claw.lerp(raised,rise)
-            # Move out from the torso before going overhead.
-            claw.x+=sign*.08*math.sin(math.pi*rise)
-            palm=claw-q@h.shape(opening)[1]
-        elif t<=timing['slashEnd']:
-            q=up.slerp(down,slash)
-            claw=raised.lerp(lowered,slash);claw.x+=sign*.035*math.sin(math.pi*slash)
-            palm=claw-q@h.shape(opening)[1]
-        else:
-            q=down.slerp(Quaternion(),recover)
-            start=lowered-down@h.shape(.25)[1]
-            palm=start.lerp(h.head,recover)+Vector((0,-.08,.12))*math.sin(math.pi*recover)
-        rig.arm_ik(side,palm,q,opening,envelope)
+        u=Vector(motion['upperDirection']);u.x*=sign
+        f=Vector(motion['foreDirection']);f.x*=sign
+        upper=aim(directions[side][0],u,curve('upperRise',t)*(1-curve('upperFall',t)))
+        fore=aim(directions[side][1],f,curve('foreRise',t)*(1-curve('foreFall',t)))
+        q=Quaternion().slerp(up,curve('handRise',t)).slerp(down,hand_fall).slerp(Quaternion(),recover)
+        target=None
+        if t>=timing['slashStart']:
+            grab=Vector((axis+sign*motion['grabClaw'][0],*motion['grabClaw'][1:]))
+            down_progress=curve('foreFall',t)
+            target=raised_claws[side].lerp(grab,down_progress)
+            target.x+=sign*motion['grabBow']*math.sin(math.pi*down_progress)
+            target=target.lerp(h.head+h.shape(0)[1],recover)
+        rig.arm_fk(side,upper,fore,q,opening,.7*envelope,spec['ground']+.0001,target)
     for side in ['R','L']:rig.leg_ik(side)
     for i,name in enumerate(['tail1','tail2','tail3','tail_04','tail4','tail_06','tail_07']):
         gate=math.sin(math.pi*t/duration)**2

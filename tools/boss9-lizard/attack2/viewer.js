@@ -17,7 +17,7 @@ const azimuth=Number(params.get('azimuth')||0)*Math.PI/180,forward=new THREE.Vec
 let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
 for(let i=0;i<=60;i++){pose(i*spec.duration/60);vertices(v=>{const x=v.dot(right),z=v.dot(forward);minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,v.y);maxY=Math.max(maxY,v.y);minZ=Math.min(minZ,z);maxZ=Math.max(maxZ,z);});}
 const center=right.clone().multiplyScalar((minX+maxX)/2).addScaledVector(forward,(minZ+maxZ)/2);center.y=(minY+maxY)/2;
-const camera=new THREE.OrthographicCamera(-1,1,1,-1,.01,100);camera.position.copy(center).addScaledVector(forward,6);camera.position.y+=1.6;camera.lookAt(center);camera.updateMatrixWorld();
+const camera=new THREE.OrthographicCamera(-1,1,1,-1,.01,100);camera.position.copy(center).addScaledVector(forward,6);camera.position.y+=.65;camera.lookAt(center);camera.updateMatrixWorld();
 let fitX=0,fitY=0;
 for(let i=0;i<=60;i++){pose(i*spec.duration/60);vertices(v=>{v.applyMatrix4(camera.matrixWorldInverse);fitX=Math.max(fitX,Math.abs(v.x));fitY=Math.max(fitY,Math.abs(v.y));});}
 const hh=Math.max(fitY,fitX/(W/H))*1.17;Object.assign(camera,{left:-hh*W/H,right:hh*W/H,top:hh,bottom:-hh});camera.updateProjectionMatrix();
