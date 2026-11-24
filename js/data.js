@@ -200,6 +200,7 @@ var REINCARNATION_MAX = 10;
 var DEMO_ENEMY_XP_MULT = 1.5;        // 打敵人得到的玩家經驗倍率（野外、離線、封魔塔 BOSS）
 var DEMO_MASTERY_XP_MULT = 5;        // 打敵人得到的技能熟練度經驗倍率
 var DEMO_SKILL_GOLD_MULT = 0.5;      // 技能升級（含終極進化）金幣消耗倍率
+var DEMO_SKILL_MANA_MULT = 0.5;      // 技能表定法力消耗倍率（含終極進化與反擊觸發）
 var DEMO_CHEST_FORGE_XP_MULT = 2;    // 熔爐寶箱的鍛造經驗倍率
 var DEMO_MAX_LEVEL = 1000;           // 角色等級上限（不超過 MAX_LEVEL）
 var DEMO_REINCARNATION_OPEN = 0;     // 1＝開放轉生；0＝確認視窗的轉生按鈕置灰（未開放）

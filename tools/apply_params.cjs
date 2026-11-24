@@ -348,6 +348,7 @@ scalar('player', 'INITIAL_ESSENCE', '0-遊戲預設', '開場附魔精華', 0);
 scalar('data', 'DEMO_ENEMY_XP_MULT', '11-Demo版', 'Demo 敵人經驗倍率', 0);
 scalar('data', 'DEMO_MASTERY_XP_MULT', '11-Demo版', 'Demo 敵人經驗倍率', 1);
 scalar('data', 'DEMO_SKILL_GOLD_MULT', '11-Demo版', 'Demo 技能升級金幣倍率', 0);
+scalar('data', 'DEMO_SKILL_MANA_MULT', '11-Demo版', 'Demo 技能法力消耗倍率', 0);
 scalar('data', 'DEMO_CHEST_FORGE_XP_MULT', '11-Demo版', 'Demo 寶箱鍛造經驗倍率', 0);
 scalar('data', 'DEMO_MAX_LEVEL', '11-Demo版', 'Demo 等級上限 / 轉生', 0);
 scalar('data', 'DEMO_REINCARNATION_OPEN', '11-Demo版', 'Demo 等級上限 / 轉生', 1);

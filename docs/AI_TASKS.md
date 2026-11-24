@@ -1,3 +1,17 @@
+## DEMO-SKILL-MANA-20261124 — 接通 Demo 技能法力消耗倍率
+
+- Owner：Codex；Done，單人實作。使用者已在 game_parameters.xlsx 新增編號380「11-Demo版／Demo 技能法力消耗倍率」，參數a為0.5；本輪接通該來源，正式版維持原消耗。
+- 允許：來源工作簿原樣納入、其CSV匯出、tools/apply_params.cjs、js/data.js／skills2.js、tests/demo-edition.test.cjs、必要主頁／Worker／bridge快取、LV_upgrade_system.md及本段。禁止改其他配置、素材、戰鬥公式或存檔／協議，不合併推送develop或main。
+- 前置：來源唯讀匯出僅新增第380筆，其他值無差異；來源檔不重新儲存。專用檔預檢無外部來源。使用者已同意與Claude e979806c統一index.html的bridge快取版本；bridge.js本身只改頂部Worker資產版本，與對方CMD記錄區段不同。保留現有地圖BGM、VFX及其他未提交修改，data.js分段暫存。
+- 驗收：普通階／終極／反擊／自動施放共用倍率，介面快照與模擬扣魔一致；與轉生及符文乘區疊乘，零倍率／免費施放／GM鎖魔維持正確；正式版不變。參數來源／錨點、相關回歸、全庫測試與Build；完成後自我Review並提交。
+- 完成／修改11檔：game_parameters.xlsx原樣納入、CSV只新增380列；tools/apply_params.cjs新增scalar具名錨點，js/data.js新增DEMO_SKILL_MANA_MULT，js/skills2.js在skills2TierManaCost單一入口套用Demo乘區；主頁／Worker的data與skills2快取及bridge的Worker資產版本同步為20261124-demo-mana-v1。新增6項Demo回歸至tests/demo-edition.test.cjs，更新LV_upgrade_system.md及本段。沒有新增顯示字串、協議或存檔欄位，素材庫無變更。
+- 唯讀檢查：規範／Workflow／Codex、js/ui.js快照與提示、skills.js排程、player.js／formula.js轉生法力、game-edition.js及桌面外殼、既有耗魔回歸、xlsx_to_csv與參數／快取驗證工具。來源xlsx前後SHA256相同；CSV與來源逐位一致，未重存或改寫工作簿。data.js只暫存新增常數，原月影沼澤／亡靈山脈BGM等他項修改保留未提交。
+- 衝突：index.html的bridge快取與Claude e979806c同一行，使用者已明確同意統一版本；將該核准值帶入對方暫存內容後三方試合0，對方play-log載入保留。bridge.js頂部版本與對方CMD記錄不同區段，三方試合0；未合併其他分支。
+- 驗證：`node --test tests/demo-edition.test.cjs tests/reincarnation-mana-cost.test.cjs tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-tower-control.test.cjs tests/params-direct-edit.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 53/53通過。包含17項Demo測試、所有群組各階／終極、反擊本體／追加、轉生及符文一次疊乘、起手／實際扣魔／法力消耗通知、零倍率／小數／免費追加／GM鎖魔、UI無G快照與真Worker面板及讀檔。變更前skills2程式重跑舊skills2-mana-cost.test.cjs，重現相同兩項既有失敗（舊表定25、現值15及終極排程），未修改其斷言。
+- `node tools/apply_params.cjs`631項一致、變更0、錨點問題0（原630，新增1）；`--check-anchors`擾動575值後631錨點各命中一次。`npm.cmd run build`762檔通過，Git本項差異檢查通過。未另跑桌面或瀏覽器實機；顯示接線以正式UI函式及Worker快照回歸驗證。
+- 全庫限制：已執行`node --test --test-concurrency=4 --test-timeout=30000 "tests/*.test.cjs"`，298秒後仍有sync-auto-conflicts／sync-feature-worktrees／sync-shortcut-recovery等Git同步測試未結束；辨識本輪PID及命令後停止其程序樹，確認無殘留。停止前輸出3696項通過、603項失敗，未逐一歸因，不宣稱603項全部為既有問題或全庫全綠。報告與QA摘要保存在本聊天visualizations/demo-skill-mana-qa；自動審查以政策限制拒絕刪除專用tmp/demo-mana-20261124，該目錄保留且未繞過限制。
+- 交接：自我Review完成，本輪接線無未完成製作，可供功能驗收及合併審閱，全庫限制如上。Commit為本段所在`[Codex] feat: 接通Demo技能法力消耗倍率`，位於ai/codex；未合併／推送develop或main。下一步重啟Demo驗收；日後修改第380筆參數a後，儲存關閉Excel並套用參數即可。
+
 ## MERCHANT-TYPE-SORT-20261124 — 神祕商人商品依類型排列
 
 - Owner：Codex；Done，單人實作。使用者要求商品區依遺物、裝備、符文、寶石排序，依賴既有商人UI／交易完成。
