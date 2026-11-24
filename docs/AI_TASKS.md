@@ -1,3 +1,16 @@
+## MUSIC-LEVELUP-TESTS-20261125 — 修正配樂與升級特效回歸測試
+
+- Owner：Codex；Done，單人處理。使用者要求修好前次未通過的兩項測試，確認通過後提交。
+- 範圍：tests/zone-music.test.cjs、tests/levelup-preset.test.cjs、歷史快照fixture及本段；必要時同步既有素材庫歸檔。保留使用者正式配樂、粒子參數及遊戲程式，不變更Excel／CSV／JS、快照既有雜湊或地圖解鎖，不合併推送分支。
+- 預檢：上述四檔無其他副本或分支修改；專案僅殘留先前受限的attack2 Python快取，素材庫乾淨。基線重跑37項中35通過，兩項失敗與前次相同。
+- 驗收：Excel權威曲目逐地圖核對CSV／runtime／檔案存在與輪播順序；歷史外觀使用固定來源參數重驗原18個雜湊，目前可調Preset另驗普通／減少動態模式粒子及拖尾數；原有播放器、資源回收、編輯器保護相關回歸與Build通過後提交。
+- 完成／修改4檔：zone-music測試改為以Excel逐地圖比對CSV／runtime兩欄及每個音檔存在且非空，保留正反轉換與素材SHA檢查；新增10張地圖正式播放列表的輪播驗證（7張有配樂、3張無配樂），確認曲序、循環及重用播放器。levelup測試改用歷史fixture參數驗原外觀，另驗目前Preset與零數量／自訂數量下普通及減少動態模式的粒子／拖尾數。fixture僅新增原始配置及來源b2e5ba1a，原sourceCommit、seed及18個外觀雜湊不變；本段同步。
+- 驗證：`node --test tests/zone-music.test.cjs tests/levelup-preset.test.cjs` 39/39通過（原37項加2項）；連同`tests/vfx-core.test.cjs tests/vfx-preset-cost.test.cjs`合跑188/188通過，涵蓋375份正式Preset合法性／成本與Core節點數一致性。`npm.cmd run build`762檔通過，Git差異檢查通過。
+- 反向檢核：聊天專用QA以記憶體注入模擬音檔遺失、曲序顛倒、無視配置固定170粒子、外觀位移四種錯誤，對應測試均如預期失敗；未修改磁碟素材或程式。fixture配置與b2e5ba1a原Preset逐欄完全相同，前次提交的18個快照雜湊完整保留，沒有重錄快照或降低斷言。
+- 唯讀檢查：共通規範／Workflow／Codex、js/ui-sound.js、vfx-celebration／Core／backend、config_tables、現行Preset、原始配置提交、素材庫歸檔工具及來源manifest。Excel／CSV／data.js、播放器、特效程式與正式Preset相對HEAD均無差異。既有素材庫歸檔同步歷史fixture及source.json兩檔，`--check`四來源SHA通過；未新增素材來源，不需VFX登記或LV文件變更。
+- 限制／交接：本輪範圍無未完成項目，自我Review完成，可供合併審閱；未執行全庫測試或另做實機視聽，不宣稱全庫全綠。舊attack2 Python快取仍依前次審查限制保留未提交，未重試刪除。下一步由使用者審閱本輪提交；未合併或推送develop／main。
+- 雙倉庫提交：素材庫master先完成`3fcd8f3d6053d4839500ab658b9cd90b62b87c75`，提交後乾淨；專案commit為本段所在`[Codex] test: 修正配樂與升級特效配置回歸`，位於ai/codex。
+
 ## COMMIT-USER-CHANGES-20261125 — 提交使用者配樂與特效調整
 
 - Owner：Codex；Done，單人處理。使用者授權提交所有當前必要修改，並明確要求補上音樂路徑副檔名。

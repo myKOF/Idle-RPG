@@ -43,11 +43,29 @@ test('LEVELUP Preset validates/roundtrips, retains font55/stroke2/String2314 and
 
 test('LEVELUP exact legacy aura geometry/appearance at nine timestamps for normal and reduced modes',()=>{
  const baseline=require('./fixtures/levelup-legacy-samples.json');assert.equal(baseline.sourceCommit,'405279a2');
+ assert.equal(baseline.configSourceCommit,'b2e5ba1a');
+ assert.deepEqual(Generator.validate(baseline.celebration),[]);
  for(const reduced of [false,true]){
-  const sample=Generator.prepare(preset.layers[0].celebration,Core.makeRng(baseline.seed),reduced);
+  // Golden hashes describe the migration's original settings, not the editable live preset.
+  const sample=Generator.prepare(copy(baseline.celebration),Core.makeRng(baseline.seed),reduced);
   for(const [time,expected] of Object.entries(baseline[reduced?'reduced':'normal'])){
    const actual=crypto.createHash('sha256').update(JSON.stringify(normal(sample(Number(time))))).digest('hex');
    assert.equal(actual,expected,`reduced=${reduced}, time=${time}`);
+  }
+ }
+});
+
+test('LEVELUP editable aura honors normal/reduced vortex and trail counts, including zero',()=>{
+ const current=preset.layers.find(l=>l.celebration.part==='aura').celebration;
+ const countDots=node=>(node.kind==='dot'?1:0)+node.children.reduce((sum,child)=>sum+countDots(child),0);
+ for(const c of [copy(current),{...copy(current),vortexCount:0,vortexReduced:0},
+  {...copy(current),vortexCount:3,vortexReduced:2,trailCount:4,trailReduced:1}]){
+  for(const reduced of [false,true]){
+   const gather=reduced?c.gatherReduced:c.gatherCount,sparks=reduced?c.sparkReduced:c.sparkCount;
+   const vortices=reduced?c.vortexReduced:c.vortexCount,trails=reduced?c.trailReduced:c.trailCount;
+   const sample=Generator.prepare(c,Core.makeRng(12345),reduced);
+   for(const time of [.3,1.3,2.1])assert.equal(countDots(sample(time)),gather+sparks+vortices*trails,
+    `reduced=${reduced}, vortex=${vortices}, trails=${trails}, time=${time}`);
   }
  }
 });
