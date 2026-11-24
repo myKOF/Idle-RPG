@@ -959,7 +959,19 @@
             </div>
         </div>
 
-        <form id="simParamsForm" onsubmit="handleFormSimSubmit(event)" style="display: grid; grid-template-columns: 1fr 0.7fr 1fr 1fr; gap: 14px; align-items: end; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+        <form id="simParamsForm" onsubmit="handleFormSimSubmit(event)" style="display: grid; grid-template-columns: 0.8fr 1fr 0.7fr 1fr 1fr; gap: 14px; align-items: end; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+            <!-- 遊戲版本：兩版數值平衡不同（demo 的倍率與開放範圍見 js/data.js「Demo 版」，
+                 來源 game_parameters「11-Demo版」）。單跑、批次、作息對照組都吃這個值，
+                 跑出來的結果卡會標出用的是哪一版。 -->
+            <div class="form-group">
+                <label for="editionInput" style="font-size: 13px; font-weight: 600; color: var(--accent-rose); display: block; margin-bottom: 6px;">🏷️ 遊戲版本</label>
+                <select id="editionInput" onchange="rememberEdition()" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;">
+                    <option value="full">內測版（正式數值）</option>
+                    <option value="demo">Demo 版</option>
+                </select>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">兩版的經驗、技能金幣、開放地圖與封魔塔層數不同</div>
+            </div>
+
             <div class="form-group">
                 <label for="hoursInput" style="font-size: 13px; font-weight: 600; color: var(--accent-amber); display: block; margin-bottom: 6px;">⏱️ 模擬總時長 (小時 Hours)</label>
                 <input type="number" id="hoursInput" min="1" max="2160" value="100" oninput="updateHoursHint()" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;" required>
@@ -1066,6 +1078,7 @@
                 </div>
 
                 <div class="summary-details" style="font-size: 13px; display: flex; flex-direction: column; gap: 6px; color: var(--text-muted);">
+                    <div style="display: flex; justify-content: space-between;"><span>🏷️ 遊戲版本 (Edition)</span><b id="sumEdition" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>🔑 PRNG 隨機種子 (Seed)</span><b id="sumSeed" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>⏱️ 模擬遊戲時長 (Hours)</span><b id="sumHours" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>📜 使用策略檔案 (Policy)</span><b id="sumPolicy" style="color: var(--text-main);">-</b></div>
@@ -1705,8 +1718,9 @@
 
             /* 這份資料是什麼時候跑的。舊的 run_summary 沒有這個欄位，顯示為「—」，
                那本身就是有用的訊息：代表這份資料舊到還沒有時間戳。 */
-            setSimStartedAt(summary.startedAt, 'seed ' + (summary.seed || '?') + '｜' + (summary.gameHours || '?') + ' 小時', false);
+            setSimStartedAt(summary.startedAt, editionLabel(summary.edition) + '｜seed ' + (summary.seed || '?') + '｜' + (summary.gameHours || '?') + ' 小時', false);
 
+            document.getElementById('sumEdition').innerText = editionLabel(summary.edition);
             document.getElementById('sumSeed').innerText = summary.seed || '-';
             document.getElementById('sumHours').innerText = (summary.gameHours || '-') + ' 小時';
             document.getElementById('sumPolicy').innerText = (summary.policy && summary.policy.file) || '-';
@@ -2152,6 +2166,25 @@
         return Number(el && el.value) || 20260730;
     }
 
+    /* ---- 遊戲版本 ----
+       full＝內測版／正式版數值；demo＝Steam 封測數值。選擇記在本機瀏覽器，下次打開沿用。
+       舊的 run_summary 沒有 edition 欄位：那時模擬器只會跑 full，所以缺欄一律視為內測版。 */
+    const EDITION_STORE_KEY = 'mc.simEdition';
+    function selectedEdition() {
+        const el = document.getElementById('editionInput');
+        return el && el.value === 'demo' ? 'demo' : 'full';
+    }
+    function editionLabel(ed) { return ed === 'demo' ? 'Demo 版' : '內測版'; }
+    function rememberEdition() {
+        try { localStorage.setItem(EDITION_STORE_KEY, selectedEdition()); } catch (e) {}
+    }
+    (function restoreEdition() {
+        let v = null;
+        try { v = localStorage.getItem(EDITION_STORE_KEY); } catch (e) {}
+        const el = document.getElementById('editionInput');
+        if (el && (v === 'full' || v === 'demo')) el.value = v;
+    })();
+
     async function handleFormSimSubmit(event) {
         event.preventDefault();
         const hours = Number(document.getElementById('hoursInput').value) || 100;
@@ -2232,7 +2265,7 @@
             const resp = await fetch('/run_sim', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out, seeds: seedCount, ignoreSchedule: ignoreSchedule })
+                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out, seeds: seedCount, ignoreSchedule: ignoreSchedule, edition: selectedEdition() })
             });
             const accepted = await resp.json();
             if (!resp.ok || !accepted.ok) {

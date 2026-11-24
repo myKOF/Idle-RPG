@@ -223,7 +223,7 @@ const server = http.createServer((req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       let params = { hours: 100, seed: 20260730, policy: 'scripts/sim/policy.default.json', out: 'sim_out',
-                     ignoreSchedule: false };
+                     ignoreSchedule: false, edition: 'full' };
       try {
         if (body) {
           const parsed = JSON.parse(body);
@@ -234,6 +234,12 @@ const server = http.createServer((req, res) => {
           if (parsed.seeds) params.seeds = Math.max(1, Math.floor(Number(parsed.seeds)));
           /* 忽略策略宣告的每日在線時數，全程在線。儀表板的「對照組」用它跑舊口徑那一半。 */
           params.ignoreSchedule = !!parsed.ignoreSchedule;
+          /* 遊戲版本（full＝內測版數值、demo＝Steam 封測數值）。只收白名單，其他值當成壞請求退回，
+             不靜靜改跑 full——兩版數值不同，跑錯版本的結果看起來一樣合理，不會有徵兆。 */
+          if (parsed.edition !== undefined) {
+            if (parsed.edition !== 'full' && parsed.edition !== 'demo') throw new Error('不認得的遊戲版本：' + parsed.edition);
+            params.edition = parsed.edition;
+          }
         }
       } catch (e) {
         /* ⚠️ 不能吞掉。先前是 catch(e){} 什麼都不做，於是請求內容壞掉時
@@ -276,7 +282,7 @@ const server = http.createServer((req, res) => {
           : `🚀 開始全系統原生內核模擬 (總時長 ${params.hours} 小時)...`
       };
 
-      console.log(`\n🚀 [伺服器收到觸發請求] ${isBatch ? `批次 ${params.seeds} 個 seed` : `Seed ${params.seed}`}, 時數 ${params.hours}h`);
+      console.log(`\n🚀 [伺服器收到觸發請求] ${isBatch ? `批次 ${params.seeds} 個 seed` : `Seed ${params.seed}`}, 時數 ${params.hours}h, 版本 ${params.edition}`);
 
       const args = isBatch ? [
         path.join(ROOT, 'scripts/run_batch.js'),
@@ -298,6 +304,7 @@ const server = http.createServer((req, res) => {
       ];
       /* 旗標型參數要在陣列組好之後再加，批次與單跑共用同一個開關。 */
       if (params.ignoreSchedule) args.push('--ignore-schedule');
+      args.push(`--edition=${params.edition}`);
 
       /* stdout 直接丟棄（不是 'pipe'）：沒有人讀管線的話，子行程寫滿緩衝區就會卡死，
          而 run_sim.js 全程都在印進度。stderr 保留，錯誤要看得到。 */
