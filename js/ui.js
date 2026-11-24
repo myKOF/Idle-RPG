@@ -10684,7 +10684,15 @@ function renderGemShop(merchant, player) {
   var emptySlot = '<div class="shop-card empty" aria-hidden="true"></div>';
   // 等待與可買狀態直接更新按鈕，不放入卡片HTML快取，避免無關重建。
   var purchaseUnavailable = [];
-  var htmls = s.items.slice(0, MYSTERY_MERCHANT_SLOTS).map(function (item, i) {
+  var categoryOrder = ['relic', 'equipment', 'rune', 'gem'];
+  // 只重排顯示副本；購買、pending 與裝備 tips 仍用原庫存索引。
+  var displayItems = s.items.slice(0, MYSTERY_MERCHANT_SLOTS).map(function (item, i) { return { item: item, index: i }; });
+  displayItems.sort(function (a, b) {
+    var aRank = categoryOrder.indexOf(a.item.kind || 'gem'), bRank = categoryOrder.indexOf(b.item.kind || 'gem');
+    return (aRank < 0 ? categoryOrder.length : aRank) - (bRank < 0 ? categoryOrder.length : bRank) || a.index - b.index;
+  });
+  var htmls = displayItems.map(function (entry) {
+    var item = entry.item, i = entry.index;
     var name, icon, stat = '', c = '#c7a65c', effClass = '', frameColor, tipAttrs = '';
     if (!item.kind || item.kind === 'gem') {
       if (!GEM_TYPES[item.type]) return emptySlot;

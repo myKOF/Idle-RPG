@@ -1,3 +1,14 @@
+## MERCHANT-TYPE-SORT-20261124 — 神祕商人商品依類型排列
+
+- Owner：Codex；Done，單人實作。使用者要求商品區依遺物、裝備、符文、寶石排序，依賴既有商人UI／交易完成。
+- 允許：js/ui.js商品呈現排序、index.html對應快取、tests/merchant-cards-ui.test.cjs與商人／LV／本段文件。禁止修改抽樣／庫存原順序／價格／購買協議／表格／素材，不合併推送。初始Store.xlsx為使用者未提交調參，保留不動、不納入本輪提交。
+- 預檢：ui／測試／文件無外部來源；首頁與Claude 6cb1a8e4為不同快取行，git merge-tree試合乾淨，分段修改。
+- 設計與驗收：僅排序顯示副本，同類保留原順序；按鈕、等待狀態及裝備tips皆保留原庫存索引。確認混合排序、售出不移位、缺金／pending對應、實際點擊買對商品、舊寶石資料及40件上限，相關回歸與Build。
+- 完成／修改6檔：js/ui.js只排序帶原索引的顯示副本；index.html更新ui快取為20261124-merchant-sort-v1；tests/merchant-cards-ui.test.cjs新增混合穩定順序與正式點擊交易回歸；docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段同步。唯讀檢查共通規範／Workflow／Agent／Codex、js/item.js供應器及購買、ui.js點擊／等待／tooltip委派與卡片快取、既有商人／寶店／字串測試；未改Worker、抽樣、庫存、價格、配置或素材，素材庫無需提交。
+- 驗證：`node --test tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/string-table.test.cjs` 58項中57通過，商品UI的13項全通過。新增測試確認同類順序、舊版無kind寶石、售出保位、缺金及等待按原索引停用、裝備tips原索引；透過正式點擊處理器／engine指令購買排序後首張遺物，扣款及發放正確，未誤買原第一格寶石。唯一失敗為Store原生Excel與CSV一致性：任務開始前Store.xlsx已是使用者未提交調參，CSV未套用；該測試與HEAD逐位相同，這次未改表格或降低斷言。此項保留供使用者後續套用。
+- `npm.cmd run build`762檔通過，Git差異檢查通過；最終首頁快取與Claude字串快取以git merge-file三方試合0，無語意相依。沒有另跑實機UI或全庫測試；此輪排序及交易對應無已知新增風險，配置一致性限制如上。
+- 交接：自我Review完成，本輪無未完成製作，暫存已清理。Commit為本段所在`[Codex] fix: 依類型排列神祕商人商品`，位於ai/codex，可供合併審閱，未合併／推送develop或main。Store.xlsx原有使用者修改保持未提交，不納入此輪。下一步重新載入遊戲查看遺物→裝備→符文→寶石順序；另於調參完成且儲存關閉Excel後套用參數。
+
 ## MERCHANT-STAGE-LEVEL-20261124 — 商人裝備改讀全場景最高到達關卡
 
 - Owner：Codex；Done，單人實作。使用者要求以所有場景最高到達關卡取最大值作為商店裝備等級基準，例如100／60／90取100，不再讀玩家等級；保留既有倍率與裝備分段。依賴既有場景進度與商人流程完成。

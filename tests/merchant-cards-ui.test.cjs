@@ -47,6 +47,65 @@ function renderer() {
     ctx.renderGemShop({ shop: { items, level }, tickets }, { gold }) };
 }
 
+test('商品依遺物、裝備、符文、寶石穩定排列，購買索引、tips及停用狀態對應原庫存', () => {
+  const {ctx,nodes,render}=renderer(),equipment=ctx.makeEquipment(1,{rarity:4});
+  const items=[
+    {kind:'gem',type:'garnet',lv:1,price:10,sold:false},
+    {kind:'rune',runeId:'r01',price:20,sold:false},
+    {kind:'equipment',equipment,price:30,sold:false},
+    {kind:'relic',relicId:1,price:40,sold:false},
+    {kind:'gem',type:'garnet',lv:2,price:50,sold:false},
+    {kind:'relic',relicId:2,price:60,sold:false},
+    {kind:'equipment',equipment:{...equipment,id:equipment.id+'-second'},price:70,sold:false},
+    {type:'garnet',lv:1,price:80,sold:false}
+  ];
+  const original=JSON.stringify(items),order=[3,5,2,6,1,0,4,7];
+  render(items,45);
+  const cards=nodes['gem-shop-grid'].children.slice(0,items.length);
+  assert.deepEqual(cards.map(n=>Number(n.button.getAttribute('data-shop-buy'))),order);
+  assert.equal(JSON.stringify(items),original,'顯示排序不可修改正式庫存');
+  assert.ok(cards[2].html.includes('data-merchant-equipment="2"'));
+  assert.ok(cards[3].html.includes('data-merchant-equipment="6"'));
+  for(let i=0;i<order.length;i++) {
+    assert.equal(cards[i].button.disabled,items[order[i]].price>45);
+    assert.equal(cards[i].button.getAttribute('data-ui-pending-key'),'node:gem-shop-buy:'+order[i]);
+  }
+  ctx.isUiCommandPending=key=>key==='node:gem-shop-buy:1';render(items);
+  const pendingCards=nodes['gem-shop-grid'].children.slice(0,items.length);
+  assert.deepEqual(pendingCards.map(n=>n.button.disabled),[false,false,false,false,true,false,false,false]);
+  items[3].sold=true;render(items);
+  assert.ok(nodes['gem-shop-grid'].children[0].html.includes(ctx.RELIC_BY_ID[1].name));
+  assert.match(nodes['gem-shop-grid'].children[0].html,/shop-sold/);
+  assert.equal(nodes['gem-shop-grid'].children[0].button,undefined);
+  assert.deepEqual(nodes['gem-shop-grid'].children.slice(1,items.length).map(n=>Number(n.button.getAttribute('data-shop-buy'))),order.slice(1));
+});
+
+test('點擊排序後首張遺物卡購買原庫存遺物，沒有誤買原本第一格寶石', async () => {
+  const {engine,ctx,nodes,render}=renderer(),source=fs.readFileSync(path.join(root,'js/ui.js'),'utf8');
+  vm.runInContext(source.slice(source.indexOf('function uiCommandResultError('),source.indexOf('function requestUiPanels('))+
+    source.slice(source.indexOf('function sendGemUiCommand('),source.indexOf('function runTalentUiAction(')),ctx);
+  vm.runInContext('function clickMerchant(e) { '+source.slice(source.indexOf('// 寶石商店：單顆購買'),source.indexOf('// 符文鑲嵌（符文鑲嵌頁'))+' }',ctx);
+  ctx.MERCHANT_CATEGORY_TABLE[0]=[['gem',5],['equipment',3],['rune',2],['relic',1]];
+  ctx.MERCHANT_RELIC_TIER_TABLE[0]=[[1,1]];
+  ctx.addMerchantInvitations(1);assert.equal(engine.cmd('merchant.open').result,null);
+  const items=ctx.gemShop().items,g=engine.state();g.player.gold=1e12;
+  assert.equal(items[0].kind,'gem');
+  const index=items.findIndex(it=>it.kind==='relic');assert.ok(index>0);
+  render(items,g.player.gold);
+  const first=nodes['gem-shop-grid'].children[0].button;
+  assert.equal(Number(first.getAttribute('data-shop-buy')),index);
+  ctx.reportUiCommandFailure=(_title,error)=>assert.fail(String(error));
+  ctx.sendUiCommand=(name,args,options)=>{
+    assert.equal(args.index,index);
+    assert.equal(JSON.stringify(options.keys),JSON.stringify(['node:gem-shop','node:gem-shop-buy:'+index]));
+    return Promise.resolve(engine.cmd(name,args).result);
+  };
+  const gold=g.player.gold,price=ctx.merchantItemPrice(items[index]);
+  ctx.clickMerchant({target:{closest:()=>first}});await new Promise(setImmediate);
+  assert.equal(items[index].sold,true);assert.equal(items[0].sold,false);
+  assert.equal(g.player.gold,gold-price);assert.equal(ctx.relicLevel(1),1);
+});
+
 test('商人卡使用實際寶石品質與符文階級，移除屬性數值並保留價格與三列占位', () => {
   const { ctx, nodes, render } = renderer();
   render([{kind:'gem', type:'garnet', lv:2, price:123, sold:false}, {kind:'rune', runeId:'r33', price:456, sold:false}]);
