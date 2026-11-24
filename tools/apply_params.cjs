@@ -158,7 +158,7 @@ storeNumber('最高等級', 1, 20, true);
 storeNumber('存在時間(秒)', 1, Math.floor(Number.MAX_SAFE_INTEGER / 1000), true);
 ['寶石權重','裝備權重','符文權重','遺物權重','裝備價格基數','符文價格基數','符文價格指數','遺物價格基數'].forEach(n => storeNumber(n,0,Number.MAX_SAFE_INTEGER));
 storeNumber('裝備等級倍率', Number.MIN_VALUE, Number.MAX_SAFE_INTEGER);
-for (const [lo,hi,min,max] of [['裝備最低品質','裝備最高品質',0,11],['符文最低階級','符文最高階級',1,33],['遺物最低階級','遺物最高階級',1,Number.MAX_SAFE_INTEGER]]) {
+for (const [lo,hi,min,max] of [['裝備最低品質','裝備最高品質',0,11],['符文最低階級','符文最高階級',1,33],['遺物最低編號','遺物最高編號',1,Number.MAX_SAFE_INTEGER]]) {
   if (storeNumber(lo,min,max,true) > storeNumber(hi,min,max,true)) throw new Error('Store ' + lo + ' 不得大於 ' + hi);
 }
 
@@ -545,8 +545,8 @@ objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runeMaxTier', '神祕商人', '
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runePriceBase', '神祕商人', '符文價格基數', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'runePriceExponent', '神祕商人', '符文價格指數', 0);
 objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicPriceBase', '神祕商人', '遺物價格基數', 0);
-objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicMinTier', '神祕商人', '遺物最低階級', 0);
-objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicMaxTier', '神祕商人', '遺物最高階級', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicMinTier', '神祕商人', '遺物最低編號', 0);
+objFieldML('data', 'MYSTERY_MERCHANT_SETTINGS', 'relicMaxTier', '神祕商人', '遺物最高編號', 0);
 // 升級費用：參數表早就有「8-寶石商店／升級費用」這一列（a + 等級^b × c），但一直沒接上，
 // 於是係數寫死在 formula.js 裡，改參數表不會生效。2026-08-10 補接。
 scalar('data', 'GEM_SHOP_UPGRADE_BASE', '8-寶石商店', '升級費用', 0);
@@ -764,7 +764,7 @@ function levelGrowthContent(cat, name) {
 [1,2,3,4,5,6,7,8,9,10].forEach((lv, i) => {
   edits.push({ file: 'data', re: new RegExp('lv: ' + lv + ', price: (\\d+)'), grp: 1, value: P('8-寶石商店', '寶石標價(Lv1~10)', i), label: '寶石標價Lv' + lv });
 });
-// 寶石商店刷出數量 / 階級表（整段重建）
+// 商品總數 / 寶石階級權重表（整段重建）；內部 GEM_SHOP 名稱沿用既有存檔與API。
 function rebuildPairTable(varName, group) {
   const lines = [];
   for (let lv = 1; lv <= 20; lv++) {
@@ -787,7 +787,7 @@ function rebuildPairTable(varName, group) {
   }
   arrayContent('data', varName, lines.join(',') + '\n', varName);
 }
-rebuildPairTable('GEM_SHOP_COUNT_TABLE', '8-寶店刷出數量');
+rebuildPairTable('GEM_SHOP_COUNT_TABLE', '8-商品刷出數量');
 rebuildPairTable('GEM_SHOP_TIER_TABLE', '8-寶店刷出階級');
 
 // 邀請券：Store 每格 {起始層,結束層,掉落率%}，區間兩端皆包含。
@@ -831,13 +831,14 @@ const merchantSlots = new Map([
 function merchantIntegerKey(min, max) {
   return key => /^\d+$/.test(key) && Number(key) >= min && Number(key) <= max ? Number(key) : undefined;
 }
+const merchantRelicIds = new Set(parseCsv(fs.readFileSync(path.join(ROOT, 'config/CSV/Relics.csv'), 'utf8')).slice(1).map(row => Number(row[0])));
 const merchantLevelGroups = [
   ['MERCHANT_CATEGORY_TABLE', '8-商人刷出類別', key => merchantCategories.get(key), true],
   ['MERCHANT_EQUIPMENT_RARITY_TABLE', '8-商人裝備品質', merchantIntegerKey(0, 11)],
   ['MERCHANT_EQUIPMENT_SLOT_TABLE', '8-商人裝備部位', key => merchantSlots.get(key)],
   ['MERCHANT_EQUIPMENT_ANCIENT_LEVEL_TABLE', '8-商人裝備太古', merchantIntegerKey(0, Number.MAX_SAFE_INTEGER)],
   ['MERCHANT_RUNE_TIER_TABLE', '8-商人符文階級', merchantIntegerKey(1, 33)],
-  ['MERCHANT_RELIC_TIER_TABLE', '8-商人遺物階級', merchantIntegerKey(1, Number.MAX_SAFE_INTEGER)]
+  ['MERCHANT_RELIC_TIER_TABLE', '8-商人遺物編號', key => /^\d+$/.test(key) && merchantRelicIds.has(Number(key)) ? Number(key) : undefined]
 ];
 const hasMerchantLevelRows = merchantLevelGroups.some(([, group]) => index[group]);
 for (const [variable, group, parseKey, canDisable] of merchantLevelGroups) {

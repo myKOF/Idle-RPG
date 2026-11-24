@@ -251,8 +251,7 @@ function gemShop() {
   s.level = clamp(s.level || 1, 1, GEM_SHOP_MAX_LEVEL);
   return s;
 }
-// 遺物系統完成後可提供 relic 的 available / roll / canBuy / grant 供應器。
-// 未註冊供應器時，即使表格權重為正也不會產生或販售該類商品。
+// 各類商品共用權重、交易與存貨流程；遺物透過既有 relicGrant 發放件數。
 var MYSTERY_MERCHANT_PROVIDERS = {
   gem: {
     available: function () { return Object.keys(GEM_TYPES).some(isGemEnabled); },
@@ -308,6 +307,17 @@ var MYSTERY_MERCHANT_PROVIDERS = {
     },
     canBuy: function (it) { return RUNE_BY_ID[it.runeId] ? null : STR(2443); },
     grant: function (it) { addRune(it.runeId, 1); }
+  },
+  relic: {
+    available: function (level) { return typeof relicGrant === 'function' && merchantRelicPairs(level).length > 0; },
+    roll: function (level) {
+      var relic = wpick(merchantRelicPairs(level));
+      return { kind: 'relic', relicId: relic.id, price: Math.round(MYSTERY_MERCHANT_SETTINGS.relicPriceBase), sold: false };
+    },
+    canBuy: function (it) {
+      return typeof relicGrant === 'function' && typeof RELIC_BY_ID !== 'undefined' && Number.isSafeInteger(it.relicId) && RELIC_BY_ID[it.relicId] ? null : STR(2443);
+    },
+    grant: function (it) { relicGrant(it.relicId, 1); }
   }
 };
 function merchantLevelPairs(table, level) {
@@ -323,6 +333,17 @@ function merchantRunePairs(level) {
   }
   return RUNES.filter(function (r) { return r.tier >= MYSTERY_MERCHANT_SETTINGS.runeMinTier && r.tier <= MYSTERY_MERCHANT_SETTINGS.runeMaxTier; })
     .map(function (r) { return [r, 1]; });
+}
+function merchantRelicPairs(level) {
+  if (typeof RELICS === 'undefined' || typeof RELIC_BY_ID === 'undefined') return [];
+  // 既有遺物只有編號與持有等級；保留內部 Tier 欄名以相容既有參數錨點。
+  var pairs = merchantLevelPairs(MERCHANT_RELIC_TIER_TABLE, level);
+  if (pairs) {
+    return pairs.map(function (pair) { return [RELIC_BY_ID[pair[0]], pair[1]]; })
+      .filter(function (pair) { return !!pair[0]; });
+  }
+  return RELICS.filter(function (relic) { return relic.id >= MYSTERY_MERCHANT_SETTINGS.relicMinTier && relic.id <= MYSTERY_MERCHANT_SETTINGS.relicMaxTier; })
+    .map(function (relic) { return [relic, 1]; });
 }
 function merchantEquipmentRarityRange() {
   // 已通關最高層只決定品質上限，不看目前選取層數；尚未通關以首層為基準。

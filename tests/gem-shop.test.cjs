@@ -22,16 +22,19 @@ function loadGameContext() {
   return context;
 }
 
-test('寶石商店機率表與價格符合 20 級規格', () => {
+test('寶石權重表與價格符合 Store 的20級配置，總和不限定100', () => {
   const context = loadGameContext();
   assert.equal(context.GEM_SHOP_COUNT_TABLE.length, 20);
   assert.equal(context.GEM_SHOP_TIER_TABLE.length, 20);
-  context.GEM_SHOP_COUNT_TABLE.forEach((pairs) => assert.equal(pairs.reduce((sum, pair) => sum + pair[1], 0), 100));
-  context.GEM_SHOP_TIER_TABLE.forEach((pairs) => assert.equal(pairs.reduce((sum, pair) => sum + pair[1], 0), 100));
+  assert.deepEqual(JSON.parse(JSON.stringify(context.GEM_SHOP_COUNT_TABLE[0])),[[5,50],[6,30]]);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.GEM_SHOP_TIER_TABLE[0])),[[1,40],[2,20],[3,5],[4,1]]);
+  for (const table of [context.GEM_SHOP_COUNT_TABLE,context.GEM_SHOP_TIER_TABLE]) {
+    table.forEach(pairs=>assert.ok(pairs.every(pair=>pair[1]>=0&&Number.isFinite(pair[1]))&&pairs.some(pair=>pair[1]>0)));
+  }
   // CSV: config/CSV/Store.csv。
   assert.equal(context.gemShopPrice(1), 10000);
-  assert.equal(context.gemShopPrice(6), 50000000);
-  assert.equal(context.gemShopPrice(10), 1000000000000);
+  assert.equal(context.gemShopPrice(6), 10000000);
+  assert.equal(context.gemShopPrice(10), 10000000000);
 });
 
 /* 期望值＝目前設定算出來的實際值（js/formula.js gemShopUpgradeCost）。
@@ -42,10 +45,10 @@ test('寶石商店機率表與價格符合 20 級規格', () => {
    這條原本長期是紅的：公式的指數改過，但期望值沒有同步更新。 */
 test('商店升級費用與等級上限正確', () => {
   const context = loadGameContext();
-  assert.equal(context.gemShopUpgradeCost(1), 4100000);
-  assert.equal(context.gemShopUpgradeCost(5), 1118133988.7498949);
-  assert.equal(context.gemShopUpgradeCost(10), 12649210640.673517);
-  assert.equal(context.gemShopUpgradeCost(19), 119590851414.98192);
+  assert.equal(context.gemShopUpgradeCost(1), 5000000);
+  assert.equal(context.gemShopUpgradeCost(5), 1119033988.7498949);
+  assert.equal(context.gemShopUpgradeCost(10), 12650110640.673517);
+  assert.equal(context.gemShopUpgradeCost(19), 119591751414.98192);
   assert.equal(context.gemShopUpgradeCost(20), 0);
 });
 
@@ -68,7 +71,7 @@ test('商店依等級刷出對應數量與高階寶石', () => {
   context.wpick = (pairs) => pairs[pairs.length - 1][0];
   context.G.player.gemShop.level = 20;
   context.rollGemShop();
-  assert.equal(context.G.player.gemShop.items.length, 20);
+  assert.equal(context.G.player.gemShop.items.length, 16);
   assert.ok(context.G.player.gemShop.items.every((item) => item.lv === 10));
 });
 

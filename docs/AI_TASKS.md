@@ -1,3 +1,18 @@
+## MERCHANT-RELIC-20261124 — 商人遺物販售與商品數量更名
+
+- Owner：Codex；Done，單人實作。使用者授權接入遺物權重開關、價格、購買與發放，並將數量表改名「商品刷出數量」。依賴既有遺物系統／商人交易完成。
+- 允許：item.js供應器與ui.js商品卡、Store原生Excel／CSV及data衍生資料、apply_params與相關測試、必要首頁／Worker／bridge快取、商人文件／LV與本段；不修改遺物效果／升級數值、其他表格、協議或存檔格式，不合併／推送。
+- 設計：遺物無稀有階級，原預留階級欄明確改為編號，逐級編號權重／空白通用範圍；每件基數定價、共用折扣，relicGrant發放一件。數量表是每批全部類型商品總數。保留來源既有使用者數值及遺物0權重設定。
+- 預檢：專用邏輯／表格／測試／文件無外部來源，Store獨占確認成功。本副本Store.xlsx已有使用者未提交調參，保存前版並只改本輪文字、從最新來源匯出。index.html與Claude 6cb1a8e4只同檔不同快取行，git merge-tree HEAD ai/claude試合乾淨，分段修改。
+- 驗收：正權重／0關閉、逐級／通用及不合法編號、總數抽取與上限、保底／比例、定價折扣、缺金／重複購買／全買／滿包、首件與累積／存讀／過期保護、UI圖示名稱tips售出、原生Excel重開及格式值比對、參數與快取回歸、實機與Build。完成交使用者驗收合併。
+- 完成：新增relic供應器及merchantRelicPairs，讀逐級編號權重或通用編號範圍，缺少有效候選不耗券；標價取整、購買共用折扣及交易保護，透過relicGrant發放。卡片沿用原有遺物圖示、名稱與效果提示，不新增素材或顯示字串。20列數量表更名「8-商品刷出數量」、明確標示每批全部類型商品總數；遺物階級欄更名編號，更新通用權重的備用說明。
+- 修改15檔：js/item.js、js/ui.js、js/data.js、js/bridge.js、js/worker/sim.worker.js、index.html、config/Excel/Store.xlsx、config/CSV/Store.csv、tools/apply_params.cjs、tests/gem-shop.test.cjs、tests/mystery-merchant.test.cjs、tests/merchant-cards-ui.test.cjs、docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段。唯讀檢查規範／Workflow／Agent／Codex、js/relic.js／relic_data.js／ui-relic.js／save.js／worker/protocol.js／start-menu.js／main.js、Relics表、CSS與既有Excel／瀏覽器工具及相關測試。無素材變更，素材庫無需提交。
+- 來源：原生Excel兩輪正常儲存與重開校驗，最終相對任務前來源僅129格名稱／說明不同；全部使用者參數、其他值、公式、有效樣式、欄寬、視窗、篩選與驗證保持。原生Excel重編自訂數值格式ID，但格式碼及其引用語意一致，未手工改XML。渲染確認新數量與遺物說明完整。來源已有的價格、升級基數、邀請券區間及20級寶石／商品數量權重一起匯出並套用13項Store資料；相關數值斷言依該已存在來源更新，未回寫企劃數值。
+- 回歸：`node --test tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/merchant-cards-ui.test.cjs tests/relics.test.cjs tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-tower-control.test.cjs tests/params-direct-edit.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 95/95通過。`node tools/apply_params.cjs`630項一致、變更0、錨點問題0；`--check-anchors`擾動574數值後630錨點均通過；字串稽核仍寫死0條。`npm.cmd run build`762檔通過。首頁／Worker／bridge採20261124-merchant-relic-v1，協議與存檔格式不變；最終首頁差異與Claude字串快取行git merge-file試合0。
+- 實機：隔離Edge以HTTP回應暫存fixture啟用遺物類別與編號1（不改正式0權重來源），由真正主頁啟動、GM給金與邀請券、正式Worker召喚及混合8件商品，確認圖示載入、名稱／效果提示與標價。按實際購買鈕扣1000000、首件解鎖Lv.1／件數0、商品售出，頁面例外0。驗證先等待Loading結束並用正式combat.setPaused避免掛機金幣干擾；初輪使用整體選單暫停會延後購買，改用戰鬥暫停後完整通過，未更改產品邏輯。瀏覽器及伺服器finally關閉，孤兒瀏覽器檢查無殘留。
+- 全庫限制：依參數接線規範已執行`node --test "tests/*.test.cjs"`。部分輸出出現598個失敗，包含其他戰鬥、寶石共鳴、圖示與超重岩配置檢核；未逐一歸因，不宣稱全部是既有問題。工作區同步測試長時間無進度且資源壅塞，核對本次runner PID與命令後停止其測試子樹，全庫未完成／未全綠；不降低斷言或擴大修改無關功能。相關95項及實機已獨立通過。
+- 交接：自我Review完成，本輪功能無未完成製作；全庫驗證限制如上。必要暫存已清理。Commit為本段所在`[Codex] feat: 接入商人遺物販售並更名商品數量表`，位於ai/codex，供功能驗收與合併審閱，未合併／推送develop或main。既有遺物類別權重仍0；啟用請在對應商店等級的「8-商人刷出類別」填正遺物權重，0關閉，儲存關閉Excel後套用參數。通用遺物權重只在逐級類別列留白時使用。
+
 ## STORE-WEIGHTS-20261124 — Store 抽取分布改用相對權重
 
 - Owner：Codex；Done，單人實作。使用者要求 Store 不必加總為100%，改用權重。前置依賴已滿足，fetch及逐檔預檢無外部衝突，Store來源獨占存取成功。

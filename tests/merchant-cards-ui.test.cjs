@@ -40,6 +40,7 @@ function renderer() {
     setAttrIfChanged: (node, key, value) => node.setAttribute(key, value)
   });
   const source = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/ui-relic.js'), 'utf8'),ctx);
   vm.runInContext(source.slice(source.indexOf('function itemRarityEffectClass('),source.indexOf('function itemDetailClass(')),ctx);
   vm.runInContext(source.slice(source.indexOf('var GEM_TIER_COLORS ='), source.indexOf('/* ============ 迷你監控視窗')), ctx);
   return { engine, ctx, nodes, render: (items, gold = 1e12, tickets = 1, level = 1) =>
@@ -57,6 +58,31 @@ test('商人卡使用實際寶石品質與符文階級，移除屬性數值並�
   assert.doesNotMatch(html, /undefined|NaN| \+/);
   assert.equal((html.match(/class="shop-card/g) || []).length, 12);
   assert.ok(!('data-scrollable-stock' in nodes['gem-shop-grid'].attrs));
+});
+
+test('商人遺物卡顯示正式名稱圖示、數量、效果提示與折扣價，售出不可再買', () => {
+  const {ctx,nodes,render}=renderer(), relic=ctx.RELIC_BY_ID[1];
+  const item={kind:'relic',relicId:1,price:1000000,sold:false};
+  render([item]);
+  const html=nodes['gem-shop-grid'].innerHTML;
+  assert.ok(html.includes(relic.name));
+  assert.ok(html.includes(ctx.relicIconPath(1)));
+  assert.match(html,/merchant-relic-icon/);
+  assert.match(html,/×1/);
+  assert.ok(html.includes(ctx.relicDescAt(relic,1)));
+  assert.match(html,/data-tt-title=/);
+  assert.equal(nodes['gem-shop-grid'].children[0].button.disabled,false);
+  render([item],0);
+  assert.equal(nodes['gem-shop-grid'].children[0].button.disabled,true);
+  ctx.relicDiscount=(_key,price)=>price*0.5;
+  render([item],500000);
+  assert.ok(nodes['gem-shop-grid'].innerHTML.includes(ctx.merchantGoldPriceHTML(500000)));
+  assert.equal(nodes['gem-shop-grid'].children[0].button.disabled,false);
+  item.sold=true;render([item]);
+  assert.match(nodes['gem-shop-grid'].children[0].html,/shop-sold/);
+  assert.equal(nodes['gem-shop-grid'].children[0].button,undefined);
+  render([{kind:'relic',relicId:999,price:1,sold:false}]);
+  assert.doesNotMatch(nodes['gem-shop-grid'].innerHTML,/data-shop-buy|undefined|NaN/);
 });
 
 test('商品十二件內隱藏捲軸，超過十二件才顯示並只補齊最後一列', () => {
@@ -132,10 +158,10 @@ test('饋贈以指定說明及金幣完整數字提示，等級變動更新費�
   const button = nodes['shop-upgrade'];
   assert.equal(button.textContent, '饋贈');
   assert.equal(button.attrs['data-tt-title'], '饋贈');
-  assert.equal(button.attrs['data-tt-desc'], ctx.STR(2573, ctx.merchantGoldPriceHTML(4100000, true)));
+  assert.equal(button.attrs['data-tt-desc'], ctx.STR(2573, ctx.merchantGoldPriceHTML(5000000, true)));
   assert.match(button.attrs['data-tt-desc'], /^贈與<img .*博取商人的好感，由此提升商店等級$/);
   assert.match(button.attrs['data-tt-desc'], /<img src="images\/icon_gold.png"/);
-  assert.match(button.attrs['data-tt-desc'], />4,100,000<\/span>/);
+  assert.match(button.attrs['data-tt-desc'], />5,000,000<\/span>/);
   assert.match(button.attrs['data-tt-desc'], /<\/span><br>博取商人的好感/);
   render([], 1e12, 1, 2);
   assert.ok(button.attrs['data-tt-desc'].includes('>'+ctx.fmtFull(ctx.gemShopUpgradeCost(2))+'</span>'));

@@ -10685,7 +10685,7 @@ function renderGemShop(merchant, player) {
   // 等待與可買狀態直接更新按鈕，不放入卡片HTML快取，避免無關重建。
   var purchaseUnavailable = [];
   var htmls = s.items.slice(0, MYSTERY_MERCHANT_SLOTS).map(function (item, i) {
-    var name, icon, stat = '', c = '#c7a65c', effClass = '', frameColor;
+    var name, icon, stat = '', c = '#c7a65c', effClass = '', frameColor, tipAttrs = '';
     if (!item.kind || item.kind === 'gem') {
       if (!GEM_TYPES[item.type]) return emptySlot;
       var gt = GEM_TYPES[item.type];
@@ -10702,11 +10702,17 @@ function renderGemShop(merchant, player) {
     } else if (item.kind === 'rune' && RUNE_BY_ID[item.runeId]) {
       name = runeLabel(item.runeId); icon = runeStoneHTML(item.runeId, 'rs-icon');
       stat = esc(STR(1563, RUNE_BY_ID[item.runeId].tier));
+    } else if (item.kind === 'relic' && typeof RELIC_BY_ID !== 'undefined' && RELIC_BY_ID[item.relicId]) {
+      var relic = RELIC_BY_ID[item.relicId];
+      name = relic.name;
+      icon = '<img src="' + esc(relicIconPath(relic.id)) + '" class="merchant-relic-icon" alt="">';
+      stat = '×1';
+      tipAttrs = ' data-tt-title="' + esc(relic.name) + '" data-tt-desc="' + esc(relicTooltipDesc(relic, player.relics || {})) + '" tabindex="0"';
     } else return emptySlot;
     var price = merchantItemPrice(item);
     var unavailable = item.kind === 'gem' && !isGemEnabled(item.type);
     purchaseUnavailable[i] = player.gold < price || unavailable;
-    return '<div class="shop-card' + effClass + (item.sold ? ' sold' : '') + '"' + (item.kind === 'equipment' ? ' data-merchant-equipment="' + i + '" data-merchant-equipment-id="' + esc(item.equipment.id || '') + '" tabindex="0"' : '') + ' style="border-color:' + (frameColor || c) + '">' +
+    return '<div class="shop-card' + effClass + (item.sold ? ' sold' : '') + '"' + tipAttrs + (item.kind === 'equipment' ? ' data-merchant-equipment="' + i + '" data-merchant-equipment-id="' + esc(item.equipment.id || '') + '" tabindex="0"' : '') + ' style="border-color:' + (frameColor || c) + '">' +
       '<div class="shop-emoji">' + icon + '</div>' +
       '<div class="shop-name" title="' + esc(name) + '" style="color:' + c + '">' + esc(name) + '</div>' +
       '<div class="shop-stat">' + stat + '</div>' +

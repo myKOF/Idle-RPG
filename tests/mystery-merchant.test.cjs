@@ -136,15 +136,105 @@ test('商人太古數依獨立機率表；零／三／四及超額截斷，不�
   assert.equal(JSON.stringify(c.ANCIENT_COUNT_WEIGHTS),fieldWeights);
 });
 
-test('遺物未註冊不會產生假商品；全類別關閉不扣邀請券',()=>{
+test('遺物正權重參與商品保底與補位，零權重關閉；全類別關閉不扣邀請券',()=>{
   const e=game(),c=e.ctx,p=e.state().player;
   c.MERCHANT_CATEGORY_TABLE[0]=[['gem',40],['equipment',30],['rune',10],['relic',20]];
   c.addMerchantInvitations(2);success(e,'merchant.open');
-  assert.ok(c.gemShop().items.every(it=>it.kind!=='relic'));
+  assert.ok(c.gemShop().items.some(it=>it.kind==='relic'));
+  assert.deepEqual(Array.from(c.gemShop().items.slice(0,4),it=>it.kind),['gem','equipment','rune','relic']);
   success(e,'merchant.close');
+  c.MERCHANT_CATEGORY_TABLE[0]=[['gem',40],['equipment',30],['rune',10],['relic',0]];
+  assert.equal(c.rollGemShop(),true);
+  assert.ok(c.gemShop().items.every(it=>it.kind!=='relic'));
   c.MERCHANT_CATEGORY_TABLE[0]=[['gem',0],['equipment',0],['rune',0],['relic',0]];
   assert.match(e.cmd('merchant.open').result,/沒有可販售/);
   assert.equal(p.consumables.mystery_invitation,1);
+});
+
+test('遺物依逐級編號權重抽取，零權重不選中、留白讀通用範圍、無候選不耗券',()=>{
+  const e=game(),c=e.ctx;
+  c.MERCHANT_CATEGORY_TABLE[0]=[['relic',10]];
+  c.GEM_SHOP_COUNT_TABLE[0]=[[5,1]];
+  c.MERCHANT_RELIC_TIER_TABLE[0]=[[1,0],[32,250]];
+  c.Math.random=()=>0;
+  c.addMerchantInvitations(2);success(e,'merchant.open');
+  assert.equal(c.gemShop().items.length,5);
+  assert.ok(c.gemShop().items.every(it=>it.kind==='relic'&&it.relicId===32));
+  c.MERCHANT_RELIC_TIER_TABLE[0]=null;
+  c.MYSTERY_MERCHANT_SETTINGS.relicMinTier=3;c.MYSTERY_MERCHANT_SETTINGS.relicMaxTier=4;
+  assert.deepEqual(Array.from(c.merchantRelicPairs(1),pair=>pair[0].id),[3,4]);
+  c.MERCHANT_RELIC_TIER_TABLE[1]=[[7,1]];
+  assert.deepEqual(Array.from(c.merchantRelicPairs(2),pair=>pair[0].id),[7]);
+  c.MERCHANT_CATEGORY_TABLE[0]=null;
+  Object.assign(c.MYSTERY_MERCHANT_SETTINGS,{gemWeight:0,equipmentWeight:0,runeWeight:0,relicWeight:1});
+  assert.deepEqual(Array.from(c.merchantCategoryPairs(1),pair=>pair[0]),['relic']);
+  c.MYSTERY_MERCHANT_SETTINGS.relicWeight=0;
+  assert.equal(c.merchantCategoryPairs(1).length,0);
+  c.MYSTERY_MERCHANT_SETTINGS.relicWeight=1;
+  c.MERCHANT_RELIC_TIER_TABLE[0]=[[999,1]];
+  const stock=plain(c.gemShop().items);success(e,'merchant.close');
+  assert.match(e.cmd('merchant.open').result,/沒有可販售/);
+  assert.equal(c.merchantInvitationCount(e.state().player),1);
+  assert.deepEqual(plain(c.gemShop().items),stock);
+});
+
+test('商品刷出數量決定整批總數，包含各類保底且受40件上限限制',()=>{
+  const e=game(),c=e.ctx;
+  c.MERCHANT_CATEGORY_TABLE[0]=[['gem',5],['equipment',3],['rune',2],['relic',1]];
+  for(const [size,want] of [[10,10],[99,40],[2,2]]) {
+    c.GEM_SHOP_COUNT_TABLE[0]=[[size,1]];
+    assert.equal(c.rollGemShop(),true);assert.equal(c.gemShop().items.length,want);
+    assert.deepEqual(Array.from(c.gemShop().items.slice(0,Math.min(size,4)),it=>it.kind),['gem','equipment','rune','relic'].slice(0,size));
+  }
+  c.GEM_SHOP_COUNT_TABLE[0]=[[5,1],[9,3]];
+  for(const [random,want] of [[0.1,5],[0.5,9]]) {
+    c.Math.random=()=>random;
+    assert.equal(c.rollGemShop(),true);assert.equal(c.gemShop().items.length,want);
+  }
+});
+
+test('遺物按Store基數標價、購買套折扣；首件解鎖、重複累積，缺金與重購不扣款',()=>{
+  const e=game(),c=e.ctx,g=e.state();
+  c.MERCHANT_CATEGORY_TABLE[0]=[['relic',1]];c.MERCHANT_RELIC_TIER_TABLE[0]=[[1,1]];
+  c.MYSTERY_MERCHANT_SETTINGS.relicPriceBase=123.6;
+  c.addMerchantInvitations(1);success(e,'merchant.open');
+  const stock=c.gemShop().items;
+  assert.ok(stock.every(it=>it.price===124));
+  g.player.gold=123;assert.match(e.cmd('gem.shopBuy',{index:0}).result,/金幣不足/);
+  assert.equal(c.relicLevel(1),0);assert.equal(g.player.gold,123);assert.equal(stock[0].sold,false);
+  g.player.gold=124;success(e,'gem.shopBuy',{index:0});
+  assert.deepEqual(plain(c.relicEntry(1)),{lv:1,n:0});assert.equal(g.player.gold,0);
+  g.player.gold=1000;
+  assert.match(e.cmd('gem.shopBuy',{index:0}).result,/售|購買/);assert.equal(g.player.gold,1000);
+  const discount=c.RELIC_BY_EFFECT.merchantDiscount;
+  c.relicGrant(discount.id,1);
+  const price=Math.round(124*(1-c.relicPct('merchantDiscount')));
+  assert.equal(c.merchantItemPrice(stock[1]),price);
+  const inventory=g.inventory;g.inventory=Array(c.inventoryCapacityWithTalents()).fill({locked:true});
+  success(e,'gem.shopBuy',{index:1});
+  assert.equal(g.player.gold,1000-price);assert.deepEqual(plain(c.relicEntry(1)),{lv:1,n:1});
+  g.inventory=inventory;
+  const result=e.cmd('gem.shopBuyAll').result;
+  assert.equal(result.bought,stock.length-2);assert.equal(result.spent,price*(stock.length-2));
+  assert.equal(c.relicEntry(1).n,stock.length-1);
+  const snapshot=plain(g.player.relics), gold=g.player.gold;
+  assert.equal(e.cmd('gem.shopBuyAll').result.bought,0);assert.deepEqual(plain(g.player.relics),snapshot);assert.equal(g.player.gold,gold);
+  const loaded=createEngine({seed:19}).boot(JSON.parse(e.saveJson()));
+  assert.deepEqual(plain(loaded.state().player.relics),snapshot);
+  assert.deepEqual(plain(loaded.ctx.gemShop().items),plain(stock));
+  assert.equal(loaded.panel('tower').merchant.active,false);
+});
+
+test('遺物非法編號與過期會話拒絕交易；不扣款、不發放、不標售出',()=>{
+  const e=game(),c=e.ctx,g=e.state();
+  c.MERCHANT_CATEGORY_TABLE[0]=[['relic',1]];c.MERCHANT_RELIC_TIER_TABLE[0]=[[1,1]];
+  c.addMerchantInvitations(1);success(e,'merchant.open');g.player.gold=1e9;
+  const item=c.gemShop().items[0],gold=g.player.gold;
+  item.relicId=999;assert.ok(e.cmd('gem.shopBuy',{index:0}).result);
+  assert.equal(g.player.gold,gold);assert.equal(item.sold,false);assert.equal(c.relicLevel(1),0);
+  item.relicId=1;c.Date.now=()=>c.MYSTERY_MERCHANT_EXPIRES_AT+1;
+  assert.ok(e.cmd('gem.shopBuy',{index:0}).result);
+  assert.equal(g.player.gold,gold);assert.equal(item.sold,false);assert.equal(c.relicLevel(1),0);
 });
 
 test('召喚與升級各讀該商店等級的類別、裝備品質與部位、太古條數及符文',()=>{
@@ -304,7 +394,9 @@ test('Store由原生Excel匯出，商店參數完整搬移且拒絕無效權重'
   const excel=readXlsxRows(path.join(root,'config/Excel/Store.xlsx'),'Store');
   const csv=csvParse(fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8'));
   assert.deepEqual(excel.map(r=>r.map(String)),csv);
-  assert.equal(csv.filter(r=>/^8-寶(?:石商店|店刷出)/.test(r[2])).length,42);
+  assert.equal(csv.filter(r=>/^8-(?:寶(?:石商店|店刷出)|商品刷出數量)/.test(r[2])).length,42);
+  assert.equal(csv.filter(r=>r[2]==='8-商品刷出數量').length,20);
+  assert.ok(!csv.some(r=>r[2]==='8-寶店刷出數量'));
   assert.equal(csv.filter(r=>/^8-商人/.test(r[2])).length,120);
   assert.equal(csv[0].at(-1),'參數ag');
   assert.ok(!csv.some(r=>r[2]==='8-寶石商店' && ['手動刷新費用','刷新週期'].includes(r[3])));
@@ -321,8 +413,8 @@ test('Store由原生Excel匯出，商店參數完整搬移且拒絕無效權重'
     const invalid = [
       [source.replace(/(神祕商人,存在時間\(秒\),[^\r\n]*?,)600,/, (_match, prefix) => prefix+'0,'),/存在時間/],
       [source.replace('3=20','3=-1'),/太古詞條機率/],
-      [source.replace('{51,100,10}','{50,100,10}'),/邀請券掉落率樓層區間不得重疊/],
-      [source.replace('{1,50,10}','{1,50,101}'),/邀請券掉落率樓層或百分比超出範圍/],
+      [source.replace(/\{51,100,[\d.]+\}/,'{50,100,10}'),/邀請券掉落率樓層區間不得重疊/],
+      [source.replace(/\{1,50,[\d.]+\}/,'{1,50,101}'),/邀請券掉落率樓層或百分比超出範圍/],
       [source.replace(/(8-商人刷出類別,商店 Lv\.1,[^\r\n]*?)裝備=30/, '$1裝備=-1'),/刷出類別.*有效項目/],
       [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,34=5'),/符文階級.*有效項目/],
       [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,19=5'),/符文階級.*不得重複/]
@@ -344,7 +436,7 @@ test('Store全部分布接受非100總和、小數與超過100的權重，保留
   const file=path.join(temp,'Store.csv');
   const groups=new Set();
   for (const row of source.slice(1)) {
-    if (!/^8-(?:寶店刷出|商人)/.test(row[2]) && row[3]!=='裝備太古詞條機率') continue;
+    if (!/^8-(?:寶店刷出|商品刷出|商人)/.test(row[2]) && row[3]!=='裝備太古詞條機率') continue;
     groups.add(row[2]+' / '+(row[2]==='神祕商人'?row[3]:''));
     const entries=row.slice(6).filter(cell=>cell.includes('='));
     if (!entries.length) entries.push('武器=1','戒指=1');
@@ -371,15 +463,16 @@ test('Store分布仍拒絕全零、重複及非有限權重；類別全零可停
   const file=path.join(temp,'Store.csv');
   const variants=[
     ['8-寶店刷出階級',['1=0','2=0']],
-    ['8-寶店刷出數量',['5=1','5=2']],
-    ['8-寶店刷出數量',['5=-1']],
+    ['8-商品刷出數量',['5=1','5=2']],
+    ['8-商品刷出數量',['5=-1']],
     ['神祕商人',['0=0','3=0']],
     ['神祕商人',['0=Infinity']],
     ['8-商人裝備品質',['2=0','3=0']],
     ['8-商人裝備部位',['武器=NaN']],
     ['8-商人符文階級',['1=Infinity']],
-    ['8-商人遺物階級',['1='+('9'.repeat(309))]],
-    ['8-商人遺物階級',['1='+('9'.repeat(308)),'2='+('9'.repeat(308))]]
+    ['8-商人遺物編號',['999=1']],
+    ['8-商人遺物編號',['1='+('9'.repeat(309))]],
+    ['8-商人遺物編號',['1='+('9'.repeat(308)),'2='+('9'.repeat(308))]]
   ];
   try {
     for (const [group,entries] of variants) {
