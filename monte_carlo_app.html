@@ -951,18 +951,19 @@
                 <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">長時間掛機，衝刺高等級與關卡</div>
             </div>
 
-            <div class="profile-tab-btn" id="tab-EXTREME" onclick="selectProfileUI('EXTREME')" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
-                <div class="tab-title" style="font-weight: 700; color: var(--accent-purple);">👑 極限玩家</div>
-                <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">極速極限決策，最大化資源利用率與試煉衝刺</div>
+            <!-- 兩個極限玩家的差別（使用者的定義）：「極限玩家」＝不轉生前的極限版，「極限玩家（ROI）」＝無限制的極限版。
+                 policy.extreme.json 沒有轉生、熔爐零件、神鑄規則；policy.extreme.roi.json 有，
+                 另外換裝／強化／洗煉／推關改問評估器的 ΔDPS／ΔEHP，加上敗因診斷與資源止損。
+                 所以兩者的成績差異同時來自「會不會轉生、用不用熔爐」與「判斷方式」，不是只差 ROI 判斷。
+                 滑鼠移到分頁上的 title 是完整差異；改了任一份策略的這幾項，這裡要一起改。 -->
+            <div class="profile-tab-btn" id="tab-EXTREME" onclick="selectProfileUI('EXTREME')" title="不轉生前的極限版（24 小時在線）&#10;・不轉生、不升熔爐零件、不裝零件、不神鑄&#10;・換裝：比品質／裝等／太古數／評分，保住已投資的詞條&#10;・強化：依品質上限，全部位平均強化&#10;・洗詞條：洗掉保留清單外的詞條（每 5 分鐘）&#10;・推關：裝備品質門檻＋場上存活數" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
+                <div class="tab-title" style="font-weight: 700; color: var(--accent-purple);">👑 極限玩家（不轉生前）</div>
+                <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">不轉生、不用熔爐零件與神鑄；換裝看品質裝等，依清單洗詞條</div>
             </div>
 
-            <!-- 邊際效益版：與「極限玩家」是同一份策略，只有四條規則不同（換裝／洗煉／強化／關卡閘門
-                 改成問評估器要 ΔDPS/ΔEHP）。刻意獨立成一個分頁而不是做成開關——
-                 目前只有極限有 ROI 版，做成開關的話選其他型態勾了會找不到策略檔。
-                 之後每多一份 policy.*.roi.json 就多一個分頁。 -->
-            <div class="profile-tab-btn" id="tab-EXTREME_ROI" onclick="selectProfileUI('EXTREME_ROI')" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
-                <div class="tab-title" style="font-weight: 700; color: var(--accent-purple);">📈 極限玩家（ROI）</div>
-                <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">邊際效益導向：敗因診斷、ΔDPS 選詞條、裝等分段感知</div>
+            <div class="profile-tab-btn" id="tab-EXTREME_ROI" onclick="selectProfileUI('EXTREME_ROI')" title="無限制的極限版（24 小時在線）&#10;・會轉生（到等級立刻轉）、升熔爐零件、解零件格、依庫存裝零件、神鑄&#10;・換裝：問遊戲換上後輸出／存活實際提升多少，不到 1% 不換&#10;・強化：同樣的品質上限，但逐部位確認付得起，快被換掉的部位不強化&#10;・洗詞條：清單外的照洗（每 1 分鐘），另依「哪條提升最多、拿掉哪條損失最小」挑&#10;・推關：再加裝等斷點判斷，卡關先退回刷一段再推&#10;・敗因診斷：判斷卡關是打不死還是活不下來，詞條隨之偏向輸出或生存&#10;・資源止損：精華或強化材料見底時暫停花用" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
+                <div class="tab-title" style="font-weight: 700; color: var(--accent-purple);">📈 極限玩家（無限制・ROI）</div>
+                <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">會轉生、用熔爐零件與神鑄；換裝／強化／洗煉／推關改算 ΔDPS·ΔEHP</div>
             </div>
 
             <div class="profile-tab-btn" id="tab-LATEGAME" onclick="selectProfileUI('LATEGAME')" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
@@ -2063,8 +2064,8 @@
             case 'MODERATE': return 'scripts/sim/policy.moderate.json';
             case 'HEAVY': return 'scripts/sim/policy.heavy.json';
             case 'EXTREME': return 'scripts/sim/policy.extreme.json';
-            /* 與 EXTREME 是同一份策略，只有四條規則不同（換裝／洗煉／強化／關卡閘門）。
-               要做 A/B 就用這兩個分頁跑同一個 seed 與同一個時長。 */
+            /* 無限制的極限版。與 EXTREME（不轉生前的極限版）不只差在 ROI 判斷，還多了轉生與熔爐規則，
+               兩者對照時成績差異混著這兩種來源（見上方分頁的註解）。 */
             case 'EXTREME_ROI': return 'scripts/sim/policy.extreme.roi.json';
             case 'LATEGAME': return 'scripts/sim/policy.lategame.json';
             default: return 'scripts/sim/policy.default.json';
