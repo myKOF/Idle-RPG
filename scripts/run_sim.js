@@ -228,8 +228,15 @@ console.log(`seed ${SEED}  時數 ${HOURS}h  快照每 ${SNAP_MIN} 遊戲分鐘\
 /* 起始存檔：--save 優先，其次是軌跡自帶的錄製起點。
    兩者都沒有就是全新角色——對軌跡而言那幾乎一定是錯的（真人不會從零開始錄），
    所以明白警告，不要讓人拿一場從頭開始的重播去比對。 */
+/* 存檔可以是純 JSON，也可以是 gzip（桌面版 saves/ 與遊玩記錄 play_logs/saves/ 的副本都是 gzip，
+   副檔名仍是 .json），一律看開頭的 gzip 魔術位元組判斷。 */
+function readSaveFile(p) {
+  const buf = fs.readFileSync(p);
+  const raw = (buf[0] === 0x1f && buf[1] === 0x8b) ? require('zlib').gunzipSync(buf) : buf;
+  return JSON.parse(raw.toString('utf8'));
+}
 const startSave = SAVE_PATH
-  ? JSON.parse(fs.readFileSync(path.resolve(ROOT, String(SAVE_PATH)), 'utf8'))
+  ? readSaveFile(path.resolve(ROOT, String(SAVE_PATH)))
   : (TRACE_PATH ? policy.startSave : null);
 if (startSave) {
   console.log(`起始存檔 ${SAVE_PATH || '（來自錄製檔）'}`);

@@ -165,6 +165,10 @@ var WorkerBridge = (function () {
       if (typeof PlayRecorder !== 'undefined' && PlayRecorder.active()) {
         PlayRecorder.onSend(id, name, args);
       }
+      /* 真人遊玩記錄（js/play-log.js，只在桌面內測版啟用）。理由同上。 */
+      if (typeof PlayLog !== 'undefined' && PlayLog.active()) {
+        PlayLog.onSend(id, name, args);
+      }
       post(MSG_IN.CMD, { id: id, name: name, args: args || {} });
     });
   }
