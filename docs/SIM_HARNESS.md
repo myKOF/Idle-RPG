@@ -38,6 +38,13 @@ node --max-semi-space-size=64 scripts/run_sim.js --hours=100 --seed=20260730
 
 `--max-semi-space-size=64` 是 GC 調參，實測比預設快約 1.4 倍，不影響結果。
 
+**遊戲版本**：`--edition=full`（預設，內測版／正式版數值）或 `--edition=demo`（Steam 封測數值：經驗、熟練度、技能金幣、熔爐寶箱的倍率，開放地圖數與封魔塔層數，見 `js/data.js`「Demo 版」，來源 game_parameters「11-Demo版」）。`run_batch.js` 與儀表板（頁面上的「🏷️ 遊戲版本」）都會往下傳。
+
+- 引擎用和桌面外殼一樣的做法改寫 `js/game-edition.js` 的內容，遊戲程式只有一份。
+- 打錯版本名稱會直接報錯，不會靜靜退回 full。
+- `run_summary.json` 與 `batch_summary.json` 都記錄 `edition`。舊資料沒有這個欄位，一律視為 full。
+- 實測（seed 7、極限策略、3 小時）：demo 版 Lv.48、內測版 Lv.43。
+
 輸出在 `sim_out/`（已 gitignore）：
 
 - `save_final.json` — 可直接匯入遊戲續玩

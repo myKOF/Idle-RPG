@@ -52,6 +52,7 @@ var Menu = electron.Menu;
 var ipcMain = electron.ipcMain;
 var AppProtocol = require('./app-protocol.cjs');
 var SaveFiles = require('./save-files.cjs');
+var PlayLog = require('./play-log.cjs');
 var WindowActivity = require('./window-activity.cjs');
 
 /* ---- 啟動參數 ---- */
@@ -593,6 +594,29 @@ function setupSaveIpc() {
   }));
 }
 
+/* ---- 真人遊玩記錄（electron/play-log.cjs、js/play-log.js、docs/PLAY_LOG.md）----
+   只在 --internal（原始碼執行）時建立。--smoke 有自己的 userData，一起記也不會混進你的記錄，
+   還能拿 --smoke --internal 驗證記錄器。其他情況 status 回 enabled:false，
+   append／writeSave 一律拒絕，遊戲端據此整個不啟動。 */
+function setupPlayLogIpc() {
+  var playLog = OPTS.internal
+    ? PlayLog.create(path.join(app.getPath('userData'), 'play_logs'), { log: log })
+    : null;
+  if (playLog) log('[playlog] 遊玩記錄啟用：', playLog.dir);
+  ipcMain.handle('playlog:status', function (event) {
+    if (!trustedSender(event)) throw new Error('拒絕：不是遊戲頁面');
+    return playLog ? playLog.status() : { enabled: false };
+  });
+  ipcMain.on('playlog:append', function (event, lines) {
+    if (!playLog || !trustedSender(event)) return;
+    try { playLog.append(lines); } catch (e) { /* play-log.cjs 已寫進 desktop.log；記錄失敗不能影響遊戲 */ }
+  });
+  ipcMain.handle('playlog:save', function (event, json, meta) {
+    if (!playLog || !trustedSender(event)) throw new Error('遊玩記錄未啟用');
+    return playLog.writeSave(json, meta);
+  });
+}
+
 function setupDisplayIpc() {
   ipcMain.handle('activity:get', function (event) {
     if (!trustedSender(event)) throw new Error('Untrusted activity sender');
@@ -643,6 +667,7 @@ function onReady() {
     if (win) win.close();   // 走 close 事件，一樣會先存檔
   });
   setupSaveIpc();
+  setupPlayLogIpc();
   setupDisplayIpc();
   setupMiniIpc();
 

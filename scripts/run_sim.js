@@ -14,6 +14,7 @@
      --seed=N         PRNG 種子（預設 20260730；--trace 時預設為錄製當下的種子）
      --policy=path    策略檔（預設 scripts/sim/policy.default.json）
      --trace=path     改用真人錄製軌跡當決策來源（js/recorder.js 匯出的檔），與 --policy 互斥
+     --edition=full|demo 遊戲版本（預設 full＝內測版／正式版數值；demo＝Steam 封測的倍率與開放範圍）
      --save=path      從既有存檔開局（預設 null＝全新角色；--trace 時預設為錄製檔內的起始存檔）
      --out=dir        輸出目錄（預設 sim_out）
      --snap-min=N     每 N 遊戲分鐘取一次快照（預設 10）
@@ -26,11 +27,12 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { createEngine } = require('./sim/engine');
+const { createEngine, normalizeEdition } = require('./sim/engine');
 const { createPolicy } = require('./sim/policy');
 const { createPanelSupplier } = require('./sim/lazy_panels');
 const { createTraceSource } = require('./sim/trace');
 const { stateHash } = require('./sim/hash');
+const { equipSetRoles } = require('./sim/equip_set_roles');
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -81,6 +83,9 @@ const SEED = process.argv.some((a) => a.startsWith('--seed='))
   ? Number(arg('seed'))
   : (TRACE_PATH && policy.seed !== null ? policy.seed : 20260730);
 const SAVE_PATH = arg('save', null);
+/* 遊戲版本：full＝內測版／正式版的數值，demo＝Steam 封測（倍率與開放範圍不同，見 js/data.js「Demo 版」）。
+   不認得的值由 normalizeEdition 直接報錯，不靜靜退回 full。 */
+const EDITION = normalizeEdition(arg('edition', 'full'));
 
 if (TRACE_PATH && policy.seed === null) {
   console.warn('⚠️ 錄製檔沒有記錄 seed，改用預設值 ' + SEED + '。這場重播不會重現原本那一場。');
@@ -223,13 +228,20 @@ if (TRACE_PATH) {
     console.log(`  註：${r.sharedGtCommands} 道指令與前一道共用 gt（同一個 tick 內連送），重播會在同一步依序送出，可完整重現。`);
   }
 }
-console.log(`seed ${SEED}  時數 ${HOURS}h  快照每 ${SNAP_MIN} 遊戲分鐘\n`);
+console.log(`版本 ${EDITION === 'demo' ? 'Demo 版' : '內測版（正式數值）'}  seed ${SEED}  時數 ${HOURS}h  快照每 ${SNAP_MIN} 遊戲分鐘\n`);
 
 /* 起始存檔：--save 優先，其次是軌跡自帶的錄製起點。
    兩者都沒有就是全新角色——對軌跡而言那幾乎一定是錯的（真人不會從零開始錄），
    所以明白警告，不要讓人拿一場從頭開始的重播去比對。 */
+/* 存檔可以是純 JSON，也可以是 gzip（桌面版 saves/ 與遊玩記錄 play_logs/saves/ 的副本都是 gzip，
+   副檔名仍是 .json），一律看開頭的 gzip 魔術位元組判斷。 */
+function readSaveFile(p) {
+  const buf = fs.readFileSync(p);
+  const raw = (buf[0] === 0x1f && buf[1] === 0x8b) ? require('zlib').gunzipSync(buf) : buf;
+  return JSON.parse(raw.toString('utf8'));
+}
 const startSave = SAVE_PATH
-  ? JSON.parse(fs.readFileSync(path.resolve(ROOT, String(SAVE_PATH)), 'utf8'))
+  ? readSaveFile(path.resolve(ROOT, String(SAVE_PATH)))
   : (TRACE_PATH ? policy.startSave : null);
 if (startSave) {
   console.log(`起始存檔 ${SAVE_PATH || '（來自錄製檔）'}`);
@@ -242,7 +254,7 @@ if (startSave) {
   else console.warn('⚠️ 錄製檔沒有起始存檔，也沒記錄原因（舊版錄製器）。若當時不是全新角色，這一場不可比。');
 }
 
-engine = createEngine({ seed: SEED, onEvents });
+engine = createEngine({ seed: SEED, onEvents, edition: EDITION });
 engine.boot(startSave);
 
 /* 軌跡是逐步對齊的：決策間隔必須剛好是一步，否則真人落在步與步之間的指令會被
@@ -931,6 +943,7 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
 
 const summary = {
   seed: SEED,
+  edition: EDITION,
   gameHours: HOURS,
   /* 這份資料是什麼時候跑出來的（本機時間，秒級）。
      沒有這個欄位的話，儀表板讀到的快照究竟是剛跑完的還是幾小時前的完全分不出來——
@@ -1002,6 +1015,8 @@ const summary = {
     return R.map((r, i) => ({ index: i, key: r.key, name: r.name }));
   })(),
   equipSetSec: equipSetSec,
+  /* 三套裝備各自的用途（讀策略的切套規則），鍵與 equipSetSec 相同（0 起）。真人軌跡沒有策略，為 null。 */
+  equipSetRoles: TRACE_PATH ? null : equipSetRoles(JSON.parse(policySrc)),
   fieldLoad: fieldLoadStats.summary(),
   hpLoad: hpLoadStats.summary(),
   mpLoad: mpLoadStats.summary(),

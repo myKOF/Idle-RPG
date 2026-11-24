@@ -54,6 +54,15 @@ electron.contextBridge.exposeInMainWorld('ApexHost', {
       return ipc.invoke('steam:activate-achievements', Array.isArray(names) ? names.map(String) : []);
     }
   },
+  /* 真人遊玩記錄（js/play-log.js）：只有內測模式的主行程會回 enabled:true，
+     其他情況 append 被主行程忽略、save 被拒絕。 */
+  playLog: {
+    status: function () { return ipc.invoke('playlog:status'); },
+    append: function (lines) { ipc.send('playlog:append', Array.isArray(lines) ? lines.map(String) : []); },
+    save: function (json, meta) {
+      return ipc.invoke('playlog:save', String(json), { level: meta && Number(meta.level) || 0 });
+    }
+  },
   saves: {
     list: function () { return ipc.invoke('saves:list'); },
     read: function (name) { return ipc.invoke('saves:read', String(name)); },

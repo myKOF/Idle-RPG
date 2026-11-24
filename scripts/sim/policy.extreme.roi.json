@@ -1,6 +1,6 @@
 {
   "name": "policy-extreme-roi",
-  "description": "極限玩家（邊際效益導向）：敗因診斷 + ROI 詞條選擇 + 裝等斷點感知 + 資源止損。與 policy.extreme.json 的差異只有四條規則與四個宣告區塊，其餘完全相同，供 A/B 對照。",
+  "description": "極限玩家（邊際效益導向）：敗因診斷 + ROI 詞條選擇 + 裝等斷點感知 + 資源止損。定位是「無限制的極限版」；policy.extreme.json 是「不轉生前的極限版」。差異有兩類：① 本檔多了轉生、熔爐零件升級／解格／安裝、神鑄共 6 條規則；② 換裝、強化、洗煉、推關改問評估器的 ΔDPS／ΔEHP，並加上敗因診斷（profile）、資源止損（stopLoss）、裝等斷點推關（tierPush／farmPark）。兩者對照時成績差異混著這兩類，不是只差 ROI 判斷。",
   "decideEveryGameSec": 5,
   "dailyActiveHours": 24,
   "needPanels": [

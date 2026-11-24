@@ -21,6 +21,14 @@ const { makeRng } = require('./rng');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const WORKER_DIR = path.join(ROOT, 'js', 'worker');
+const EDITION_FILE = path.join(ROOT, 'js', 'game-edition.js');
+const EDITIONS = ['full', 'demo'];
+/* 不認得的值直接報錯：靜靜退回 'full' 的話，使用者以為跑的是 demo，結果全是正式版數值。 */
+function normalizeEdition(v) {
+  if (v === undefined || v === null || v === '') return 'full';
+  if (EDITIONS.indexOf(v) < 0) throw new Error('不認得的遊戲版本：' + v + '（可用：' + EDITIONS.join('、') + '）');
+  return v;
+}
 
 /* ---- 邊際效益評估器（harness 專用，不出貨給玩家） ----
 
@@ -56,6 +64,8 @@ function createEngine(opts) {
   /* 只給 scripts/verify_equivalence.js 用：把 updateShownRes 換回改造前的實作，
      證明 early-skip 沒有改變 G。正式跑不要開。 */
   const legacyShownRes = !!opts.legacyShownRes;
+  /* 遊戲版本：'full'（正式版／內測版的數值）或 'demo'（Steam 封測，倍率與開放範圍見 js/data.js「Demo 版」）。 */
+  const edition = normalizeEdition(opts.edition);
 
   let vNowMs = EPOCH_MS;          // 虛擬時鐘（毫秒），只由 advanceClock 推進
   const timers = [];              // setTimeout 佇列，由 flushTimers 手動排掉
@@ -106,7 +116,12 @@ function createEngine(opts) {
            不是遊戲該遷就 harness——線上用 ?v= 破快取是完全正當的做法。 */
         const clean = String(f).split('#')[0].split('?')[0];
         const abs = path.resolve(WORKER_DIR, clean);
-        vm.runInContext(fs.readFileSync(abs, 'utf8'), ctx, { filename: path.relative(ROOT, abs) });
+        /* 版本旗標：與桌面外殼（electron/main.cjs 的 EDITION_SCRIPT）同一個做法——
+           js/game-edition.js 永遠寫 'full'，demo 版改寫它的內容，遊戲程式只有一份。 */
+        const src = (edition !== 'full' && abs === EDITION_FILE)
+          ? "'use strict';\nvar GAME_EDITION = " + JSON.stringify(edition) + ';\n'
+          : fs.readFileSync(abs, 'utf8');
+        vm.runInContext(src, ctx, { filename: path.relative(ROOT, abs) });
       }
     }
   };
@@ -190,6 +205,7 @@ function createEngine(opts) {
   return {
     ctx,
     seed,
+    edition,
     dt: DT,
 
     /* 開機走 Worker 真正的 boot()，含 migrateSave / newGameState / initFieldPlayer /
@@ -332,4 +348,4 @@ function createEngine(opts) {
   };
 }
 
-module.exports = { createEngine, EPOCH_MS, MAINTENANCE_FNS };
+module.exports = { createEngine, EPOCH_MS, MAINTENANCE_FNS, EDITIONS, normalizeEdition };

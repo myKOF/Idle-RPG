@@ -40,6 +40,9 @@ const HOURS = Number(arg('hours', 1));
 /* 轉送給每一個 run_sim.js。批次自己不解讀它的意思，但一定要轉送——
    不轉送的話旗標會被安靜吃掉，使用者以為跑的是全程在線，實際上跑的是班表。 */
 const IGNORE_SCHEDULE = process.argv.includes('--ignore-schedule');
+/* 遊戲版本（full／demo），同樣原封轉送給每一個 run_sim.js。先在這裡驗一次，打錯字時整批直接停，
+   不要跑完幾十分鐘才發現每個子模擬都失敗。 */
+const EDITION = require('./sim/engine').normalizeEdition(arg('edition', 'full'));
 const OUT_DIR = path.resolve(ROOT, String(arg('out', 'sim_batch')));
 /* 預設同時數＝核心數 − 2，留兩顆給系統與前景程式。
    以前是核心數 − 1：6 核同時跑 5 個全速的行程，整機 CPU 頂到 100%。縮時模擬現在每場要跑好幾十分鐘
@@ -71,7 +74,7 @@ for (const policy of POLICIES) {
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 console.log(`批次模擬：${POLICIES.length} 個策略 × ${SEEDS.length} 個 seed = ${jobs.length} 次`);
-console.log(`每次 ${HOURS} 遊戲小時，同時執行 ${CONCURRENCY} 個（CPU ${os.cpus().length} 核）\n`);
+console.log(`版本 ${EDITION === 'demo' ? 'Demo 版' : '內測版（正式數值）'}，每次 ${HOURS} 遊戲小時，同時執行 ${CONCURRENCY} 個（CPU ${os.cpus().length} 核）\n`);
 
 const results = [];
 let started = 0;
@@ -105,6 +108,7 @@ function runJob(job) {
       `--policy=${job.policy}`, `--out=${job.out}`
     ];
     if (IGNORE_SCHEDULE) childArgs.push('--ignore-schedule');
+    childArgs.push(`--edition=${EDITION}`);
     const child = spawn(process.execPath, childArgs, { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] });
     liveChildren.add(child);
     /* 降成「低於標準」優先權：前景程式（瀏覽器、編輯器）永遠先拿到 CPU，
@@ -219,7 +223,7 @@ async function main() {
 
   const summaryFile = path.join(OUT_DIR, 'batch_summary.json');
   fs.writeFileSync(summaryFile, JSON.stringify({
-    hours: HOURS, policies: POLICIES, seeds: SEEDS, concurrency: CONCURRENCY,
+    hours: HOURS, edition: EDITION, policies: POLICIES, seeds: SEEDS, concurrency: CONCURRENCY,
     outDir: path.relative(ROOT, OUT_DIR).replace(/\\/g, '/'),
     elapsedSec: +elapsed.toFixed(1), failed: failed.length,
     說明: 'rows 為各次模擬的原生結果；spread 為跨次統計量（不是遊戲數值）。',

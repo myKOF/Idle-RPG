@@ -555,6 +555,14 @@
             margin-bottom: 20px;
         }
 
+        .snap-seed-picker { display: flex; align-items: center; gap: 8px; margin-left: 18px; margin-right: auto; flex-wrap: wrap; }
+        .snap-seed-picker label { font-size: 13px; color: #cbd5e1; font-weight: 600; }
+        .snap-seed-picker select {
+            min-width: 360px; max-width: 100%; padding: 6px 10px; border-radius: 6px; font-family: inherit; font-size: 13px;
+            background: #0f172a; color: #e2e8f0; border: 1px solid #818cf8;
+        }
+        .snap-seed-picker #snapSeedHint { font-size: 12px; color: #94a3b8; }
+
         .modal-title {
             font-size: 20px;
             font-weight: 700;
@@ -827,6 +835,10 @@
         .equip-set-tabs .set-tab:hover { border-color: #818cf8; }
         .equip-set-tabs .set-tab.active { background: #312e81; border-color: #818cf8; color: #fff; font-weight: 700; }
         .equip-set-tabs .set-note { color: #94a3b8; font-size: 12px; }
+        .equip-set-tabs .set-role {
+            display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px;
+            background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; font-size: 12px; font-weight: 700;
+        }
 
         .item-detail-header {
             display: flex;
@@ -939,18 +951,19 @@
                 <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">長時間掛機，衝刺高等級與關卡</div>
             </div>
 
-            <div class="profile-tab-btn" id="tab-EXTREME" onclick="selectProfileUI('EXTREME')" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
-                <div class="tab-title" style="font-weight: 700; color: var(--accent-purple);">👑 極限玩家</div>
-                <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">極速極限決策，最大化資源利用率與試煉衝刺</div>
+            <!-- 兩個極限玩家的差別（使用者的定義）：「極限玩家」＝不轉生前的極限版，「極限玩家（ROI）」＝無限制的極限版。
+                 policy.extreme.json 沒有轉生、熔爐零件、神鑄規則；policy.extreme.roi.json 有，
+                 另外換裝／強化／洗煉／推關改問評估器的 ΔDPS／ΔEHP，加上敗因診斷與資源止損。
+                 所以兩者的成績差異同時來自「會不會轉生、用不用熔爐」與「判斷方式」，不是只差 ROI 判斷。
+                 滑鼠移到分頁上的 title 是完整差異；改了任一份策略的這幾項，這裡要一起改。 -->
+            <div class="profile-tab-btn" id="tab-EXTREME" onclick="selectProfileUI('EXTREME')" title="不轉生前的極限版（24 小時在線）&#10;・不轉生、不升熔爐零件、不裝零件、不神鑄&#10;・換裝：比品質／裝等／太古數／評分，保住已投資的詞條&#10;・強化：依品質上限，全部位平均強化&#10;・洗詞條：洗掉保留清單外的詞條（每 5 分鐘）&#10;・推關：裝備品質門檻＋場上存活數" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
+                <div class="tab-title" style="font-weight: 700; color: var(--accent-purple);">👑 極限玩家（不轉生前）</div>
+                <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">不轉生、不用熔爐零件與神鑄；換裝看品質裝等，依清單洗詞條</div>
             </div>
 
-            <!-- 邊際效益版：與「極限玩家」是同一份策略，只有四條規則不同（換裝／洗煉／強化／關卡閘門
-                 改成問評估器要 ΔDPS/ΔEHP）。刻意獨立成一個分頁而不是做成開關——
-                 目前只有極限有 ROI 版，做成開關的話選其他型態勾了會找不到策略檔。
-                 之後每多一份 policy.*.roi.json 就多一個分頁。 -->
-            <div class="profile-tab-btn" id="tab-EXTREME_ROI" onclick="selectProfileUI('EXTREME_ROI')" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
-                <div class="tab-title" style="font-weight: 700; color: var(--accent-purple);">📈 極限玩家（ROI）</div>
-                <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">邊際效益導向：敗因診斷、ΔDPS 選詞條、裝等分段感知</div>
+            <div class="profile-tab-btn" id="tab-EXTREME_ROI" onclick="selectProfileUI('EXTREME_ROI')" title="無限制的極限版（24 小時在線）&#10;・會轉生（到等級立刻轉）、升熔爐零件、解零件格、依庫存裝零件、神鑄&#10;・換裝：問遊戲換上後輸出／存活實際提升多少，不到 1% 不換&#10;・強化：同樣的品質上限，但逐部位確認付得起，快被換掉的部位不強化&#10;・洗詞條：清單外的照洗（每 1 分鐘），另依「哪條提升最多、拿掉哪條損失最小」挑&#10;・推關：再加裝等斷點判斷，卡關先退回刷一段再推&#10;・敗因診斷：判斷卡關是打不死還是活不下來，詞條隨之偏向輸出或生存&#10;・資源止損：精華或強化材料見底時暫停花用" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
+                <div class="tab-title" style="font-weight: 700; color: var(--accent-purple);">📈 極限玩家（無限制・ROI）</div>
+                <div class="tab-desc" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">會轉生、用熔爐零件與神鑄；換裝／強化／洗煉／推關改算 ΔDPS·ΔEHP</div>
             </div>
 
             <div class="profile-tab-btn" id="tab-LATEGAME" onclick="selectProfileUI('LATEGAME')" style="border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px; cursor: pointer; background: var(--input-bg);">
@@ -959,7 +972,19 @@
             </div>
         </div>
 
-        <form id="simParamsForm" onsubmit="handleFormSimSubmit(event)" style="display: grid; grid-template-columns: 1fr 0.7fr 1fr 1fr; gap: 14px; align-items: end; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+        <form id="simParamsForm" onsubmit="handleFormSimSubmit(event)" style="display: grid; grid-template-columns: 0.8fr 1fr 0.7fr 1fr 1fr; gap: 14px; align-items: end; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+            <!-- 遊戲版本：兩版數值平衡不同（demo 的倍率與開放範圍見 js/data.js「Demo 版」，
+                 來源 game_parameters「11-Demo版」）。單跑、批次、作息對照組都吃這個值，
+                 跑出來的結果卡會標出用的是哪一版。 -->
+            <div class="form-group">
+                <label for="editionInput" style="font-size: 13px; font-weight: 600; color: var(--accent-rose); display: block; margin-bottom: 6px;">🏷️ 遊戲版本</label>
+                <select id="editionInput" onchange="rememberEdition()" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;">
+                    <option value="full">內測版（正式數值）</option>
+                    <option value="demo">Demo 版</option>
+                </select>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">兩版的經驗、技能金幣、開放地圖與封魔塔層數不同</div>
+            </div>
+
             <div class="form-group">
                 <label for="hoursInput" style="font-size: 13px; font-weight: 600; color: var(--accent-amber); display: block; margin-bottom: 6px;">⏱️ 模擬總時長 (小時 Hours)</label>
                 <input type="number" id="hoursInput" min="1" max="2160" value="100" oninput="updateHoursHint()" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: #fff; font-weight: bold;" required>
@@ -1066,6 +1091,7 @@
                 </div>
 
                 <div class="summary-details" style="font-size: 13px; display: flex; flex-direction: column; gap: 6px; color: var(--text-muted);">
+                    <div style="display: flex; justify-content: space-between;"><span>🏷️ 遊戲版本 (Edition)</span><b id="sumEdition" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>🔑 PRNG 隨機種子 (Seed)</span><b id="sumSeed" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>⏱️ 模擬遊戲時長 (Hours)</span><b id="sumHours" style="color: var(--text-main);">-</b></div>
                     <div style="display: flex; justify-content: space-between;"><span>📜 使用策略檔案 (Policy)</span><b id="sumPolicy" style="color: var(--text-main);">-</b></div>
@@ -1273,6 +1299,13 @@
     <div class="modal-card">
         <div class="modal-header">
             <div class="modal-title">🎮 遊戲快照 (Game Snapshot)</div>
+            <!-- 批次模式才出現：直接在快照裡切換要看哪一個 seed。選項與主畫面的「🔍 檢視對象」是同一份、互相同步，
+                 切換後整個儀表板（卡片、圖表、快照）都換成那一場。 -->
+            <div class="snap-seed-picker" id="snapSeedPicker" style="display: none;">
+                <label for="snapSeedSelect">🎲 檢視 seed</label>
+                <select id="snapSeedSelect" onchange="onSnapSeedChange()"></select>
+                <span id="snapSeedHint"></span>
+            </div>
             <button type="button" class="btn-close-modal" onclick="closeEquipmentModal()">&times;</button>
         </div>
         <!-- 上方切頁：裝備／技能／威能／遺物 -->
@@ -1467,6 +1500,8 @@
     const LOG_PAGE_SIZE = 50;
     let selectedEquipSlotKey = 'chest';
     let equipSetSecLoaded = null;                        // run_summary.equipSetSec：{ 套別: 遊戲秒 }
+    let equipSetRolesLoaded = null;                      // run_summary.equipSetRoles：{ 套別: ['field'|'boss'|'tower'|'elite'] }
+    let equipSetRolesFromCurrentPolicy = false;          // 舊資料沒記用途，改讀「目前」的策略檔推得
     let selectedEquipSetIdx = 0;                         // 紙娃娃目前看的是第幾套（0＝第 1 套）
     let finalSaveG = null;
 
@@ -1705,8 +1740,9 @@
 
             /* 這份資料是什麼時候跑的。舊的 run_summary 沒有這個欄位，顯示為「—」，
                那本身就是有用的訊息：代表這份資料舊到還沒有時間戳。 */
-            setSimStartedAt(summary.startedAt, 'seed ' + (summary.seed || '?') + '｜' + (summary.gameHours || '?') + ' 小時', false);
+            setSimStartedAt(summary.startedAt, editionLabel(summary.edition) + '｜seed ' + (summary.seed || '?') + '｜' + (summary.gameHours || '?') + ' 小時', false);
 
+            document.getElementById('sumEdition').innerText = editionLabel(summary.edition);
             document.getElementById('sumSeed').innerText = summary.seed || '-';
             document.getElementById('sumHours').innerText = (summary.gameHours || '-') + ' 小時';
             document.getElementById('sumPolicy').innerText = (summary.policy && summary.policy.file) || '-';
@@ -1721,6 +1757,7 @@
                 : '-';
             /* 三套裝備各自的使用時間（遊戲秒）；舊資料沒有這個欄位就是 null，頁籤不顯示佔比。 */
             equipSetSecLoaded = (summary.equipSetSec && typeof summary.equipSetSec === 'object') ? summary.equipSetSec : null;
+            loadEquipSetRoles(summary);
             document.getElementById('sumSpeedup').innerText = (summary.performance && summary.performance.speedupX) ? (summary.performance.speedupX.toLocaleString() + 'x') : '-';
             document.getElementById('sumDecisions').innerText = summary.decisions ? summary.decisions.toLocaleString() : '-';
             
@@ -2027,8 +2064,8 @@
             case 'MODERATE': return 'scripts/sim/policy.moderate.json';
             case 'HEAVY': return 'scripts/sim/policy.heavy.json';
             case 'EXTREME': return 'scripts/sim/policy.extreme.json';
-            /* 與 EXTREME 是同一份策略，只有四條規則不同（換裝／洗煉／強化／關卡閘門）。
-               要做 A/B 就用這兩個分頁跑同一個 seed 與同一個時長。 */
+            /* 無限制的極限版。與 EXTREME（不轉生前的極限版）不只差在 ROI 判斷，還多了轉生與熔爐規則，
+               兩者對照時成績差異混著這兩種來源（見上方分頁的註解）。 */
             case 'EXTREME_ROI': return 'scripts/sim/policy.extreme.roi.json';
             case 'LATEGAME': return 'scripts/sim/policy.lategame.json';
             default: return 'scripts/sim/policy.default.json';
@@ -2152,6 +2189,25 @@
         return Number(el && el.value) || 20260730;
     }
 
+    /* ---- 遊戲版本 ----
+       full＝內測版／正式版數值；demo＝Steam 封測數值。選擇記在本機瀏覽器，下次打開沿用。
+       舊的 run_summary 沒有 edition 欄位：那時模擬器只會跑 full，所以缺欄一律視為內測版。 */
+    const EDITION_STORE_KEY = 'mc.simEdition';
+    function selectedEdition() {
+        const el = document.getElementById('editionInput');
+        return el && el.value === 'demo' ? 'demo' : 'full';
+    }
+    function editionLabel(ed) { return ed === 'demo' ? 'Demo 版' : '內測版'; }
+    function rememberEdition() {
+        try { localStorage.setItem(EDITION_STORE_KEY, selectedEdition()); } catch (e) {}
+    }
+    (function restoreEdition() {
+        let v = null;
+        try { v = localStorage.getItem(EDITION_STORE_KEY); } catch (e) {}
+        const el = document.getElementById('editionInput');
+        if (el && (v === 'full' || v === 'demo')) el.value = v;
+    })();
+
     async function handleFormSimSubmit(event) {
         event.preventDefault();
         const hours = Number(document.getElementById('hoursInput').value) || 100;
@@ -2198,6 +2254,8 @@
         if (spreadBox) spreadBox.style.display = 'none';
         const seedPicker = document.getElementById('batchSeedPicker');
         if (seedPicker) seedPicker.style.display = 'none';
+        const snapSeedPicker = document.getElementById('snapSeedPicker');
+        if (snapSeedPicker) snapSeedPicker.style.display = 'none';
         batchViewCtx = null;
         if (statusText) {
             statusText.innerText = `🚀 系統正在由零建角跑 ${hours} 小時無作弊測試 (0%)...`;
@@ -2232,7 +2290,7 @@
             const resp = await fetch('/run_sim', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out, seeds: seedCount, ignoreSchedule: ignoreSchedule })
+                body: JSON.stringify({ hours: hours, seed: seed, policy: policy, out: out, seeds: seedCount, ignoreSchedule: ignoreSchedule, edition: selectedEdition() })
             });
             const accepted = await resp.json();
             if (!resp.ok || !accepted.ok) {
@@ -2547,6 +2605,14 @@
         }).join('');
         sel.value = pickDir;
         wrap.style.display = 'flex';
+        /* 快照視窗裡的同一份選單 */
+        const snapSel = document.getElementById('snapSeedSelect');
+        const snapWrap = document.getElementById('snapSeedPicker');
+        if (snapSel && snapWrap) {
+            snapSel.innerHTML = sel.innerHTML;
+            snapSel.value = pickDir;
+            snapWrap.style.display = 'flex';
+        }
         const hint = document.getElementById('batchSeedHint');
         if (hint) hint.innerText = `共 ${rows.length} 個 seed，卡片與圖表都是選中那一場的資料`;
     }
@@ -2556,6 +2622,8 @@
         const sel = document.getElementById('batchSeedSelect');
         const hint = document.getElementById('batchSeedHint');
         if (!sel || !sel.value) return;
+        const snapSel = document.getElementById('snapSeedSelect');
+        if (snapSel) snapSel.value = sel.value;
         const row = batchViewCtx.rows.find((r) => r.dir === sel.value);
         if (hint) hint.innerText = '讀取中…';
         try {
@@ -2565,6 +2633,27 @@
             if (hint) hint.innerText = `共 ${batchViewCtx.rows.length} 個 seed，卡片與圖表都是選中那一場的資料`;
         } catch (e) {
             if (hint) hint.innerText = '讀取失敗：' + e.message;
+        }
+    }
+
+    /* 快照視窗裡切 seed：交給主畫面的同一條流程載入（卡片、圖表一起換），載完若視窗還開著就整個重畫。 */
+    async function onSnapSeedChange() {
+        const snapSel = document.getElementById('snapSeedSelect');
+        const sel = document.getElementById('batchSeedSelect');
+        const hint = document.getElementById('snapSeedHint');
+        if (!snapSel || !sel || !snapSel.value) return;
+        sel.value = snapSel.value;
+        snapSel.disabled = true;
+        if (hint) hint.innerText = '讀取中…';
+        try {
+            await onBatchSeedChange();
+            const modal = document.getElementById('equipModalOverlay');
+            if (modal && modal.style.display !== 'none') openEquipmentSnapshotModal();
+            if (hint) hint.innerText = '';
+        } catch (e) {
+            if (hint) hint.innerText = '讀取失敗：' + e.message;
+        } finally {
+            snapSel.disabled = false;
         }
     }
 
@@ -2953,6 +3042,44 @@
         }
     }
 
+    /* ---- 三套裝備各自的用途 ----
+       來源是策略的切套規則（equipSetSwitch：home＝平常穿的那套＝練功，encounter＝碰到 BOSS／菁英／封魔塔切哪套），
+       由 scripts/sim/equip_set_roles.js 算好寫進 run_summary.equipSetRoles。
+       舊資料沒有這個欄位：改抓那場用的策略檔、照同一個規則推，頁籤上註明「依目前策略檔」——
+       策略檔可能在那場之後改過，不能裝作是當時的紀錄。 */
+    const EQUIP_SET_ROLE_LABELS = { field: '練功', boss: '野外 BOSS', tower: '封魔塔', elite: '菁英' };
+    const EQUIP_SET_ROLE_ORDER = ['field', 'boss', 'tower', 'elite'];
+    function equipSetRolesFromPolicy(policyJson) {
+        const rule = ((policyJson && policyJson.rules) || []).find((r) => r && r.equipSetSwitch);
+        if (!rule) return null;
+        const cfg = rule.equipSetSwitch, enc = cfg.encounter || {}, roles = {};
+        const add = (idx, role) => { const k = Math.floor(Number(idx)); if (k >= 0) (roles[k] = roles[k] || []).push(role); };
+        add(cfg.home === undefined ? 0 : cfg.home, 'field');
+        EQUIP_SET_ROLE_ORDER.forEach((role) => { if (role !== 'field' && enc[role] !== undefined) add(enc[role], role); });
+        return roles;
+    }
+    function loadEquipSetRoles(summary) {
+        equipSetRolesFromCurrentPolicy = false;
+        equipSetRolesLoaded = (summary.equipSetRoles && typeof summary.equipSetRoles === 'object') ? summary.equipSetRoles : null;
+        const file = summary.policy && summary.policy.file;
+        if (equipSetRolesLoaded || !file || summary.trace) return;
+        fetch('./' + String(file).split('\\').join('/') + '?t=' + Date.now())
+            .then((r) => (r.ok ? r.json() : null))
+            .then((p) => {
+                const roles = p ? equipSetRolesFromPolicy(p) : null;
+                if (!roles || equipSetRolesLoaded) return;
+                equipSetRolesLoaded = roles;
+                equipSetRolesFromCurrentPolicy = true;
+                renderEquipSetTabs();
+            })
+            .catch(() => {});
+    }
+    function equipSetRoleText(idx) {
+        const list = equipSetRolesLoaded && equipSetRolesLoaded[idx];
+        if (!list || !list.length) return '';
+        return list.map((k) => EQUIP_SET_ROLE_LABELS[k] || k).join('／');
+    }
+
     /* 裝備組頁籤：第 1／2／3 套各看一次，標出「存檔結束時使用中」的那一套。
        左邊的屬性面板是存檔當下（使用中那套）的數值，另外兩套沒有現成的屬性可讀，所以會標註。 */
     function renderEquipSetTabs() {
@@ -2970,9 +3097,11 @@
             const sec = equipSetSecLoaded ? (Number(equipSetSecLoaded[i]) || 0) : null;
             const tot = equipSetSecLoaded ? Object.values(equipSetSecLoaded).reduce((a, v) => a + (Number(v) || 0), 0) : 0;
             const share = (sec !== null && tot > 0) ? ` · 使用 ${(sec / tot * 100).toFixed(1)}%（${(sec / 3600).toFixed(1)}h）` : '';
-            return `<button type="button" class="set-tab${i === selectedEquipSetIdx ? ' active' : ''}" onclick="selectEquipSet(${i})">${nm} · ${n} 件${share}${live}</button>`;
+            const role = equipSetRoleText(i);
+            const roleTag = role ? `<span class="set-role">${role}</span>` : '';
+            return `<button type="button" class="set-tab${i === selectedEquipSetIdx ? ' active' : ''}" onclick="selectEquipSet(${i})">${nm}${roleTag} · ${n} 件${share}${live}</button>`;
         }).join('')
-            + `<span class="set-note">左側屬性面板是存檔當下使用中那套的數值，切換頁籤只換紙娃娃與詳情</span>`;
+            + `<span class="set-note">左側屬性面板是存檔當下使用中那套的數值，切換頁籤只換紙娃娃與詳情${equipSetRolesLoaded ? '。用途取自策略的切套規則：平常穿練功那套，碰到 BOSS／菁英／封魔塔才切' + (equipSetRolesFromCurrentPolicy ? '（這場的結果沒記錄用途，依目前策略檔推得）' : '') : ''}</span>`;
     }
 
     function selectEquipSet(idx) {
@@ -3363,6 +3492,41 @@
 /* 開頁時把作息提示補上。預設型態是輕度（2 小時／日），不先算一次的話，
    使用者看到的第一眼是「模擬總時長 24 小時」而不知道那其實只玩 2 小時。 */
 updateHoursHint();
+
+/* ---- 工作列／分頁標題顯示模擬進度 ----
+   Windows 工作列與瀏覽器分頁顯示的是 document.title，而且只看得到開頭幾個字，
+   所以總進度放在最前面：「57% 模擬中｜放置型 RPG…」。
+   獨立輪詢 /sim_progress，不掛在 triggerNativeSimulation 裡：模擬中途重新整理頁面、
+   或從另一個分頁啟動的模擬，這一頁的標題一樣要跟著動。
+   伺服器只回報「現在有沒有在跑」，所以「完成／取消／失敗」是由「上一次還在跑、這一次不跑了」判斷，
+   標題會停在結果上，直到下一次開跑。 */
+(function simTitleProgress() {
+    const BASE_TITLE = document.title;
+    let wasRunning = false;
+    async function poll() {
+        if (location.protocol === 'file:') return;
+        let p;
+        try {
+            const r = await fetch('/sim_progress?t=' + Date.now());
+            if (!r.ok) return;
+            p = await r.json();
+        } catch (e) { return; }
+        if (p.isSimulating) {
+            wasRunning = true;
+            const pct = Math.max(0, Math.min(100, Math.floor(Number(p.percent) || 0)));
+            /* 只放總進度（批次是所有 seed 的平均，伺服器算好的 percent）。
+               「完成幾個 seed」之類的細節放進來只會擠掉、或被誤看成主要數字，使用者要看的是總進度。 */
+            document.title = `${pct}% 模擬中｜${BASE_TITLE}`;
+        } else if (wasRunning) {
+            wasRunning = false;
+            const text = p.statusText || '';
+            const mark = /取消|已關閉/.test(text) ? '⏹️ 已取消' : (Number(p.percent) === 100 ? '✅ 完成' : '❌ 失敗');
+            document.title = `${mark}｜${BASE_TITLE}`;
+        }
+    }
+    poll();
+    setInterval(poll, 2000);
+})();
 </script>
 </body>
 </html>

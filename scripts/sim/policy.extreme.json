@@ -1,6 +1,6 @@
 {
   "name": "policy-extreme",
-  "description": "極限玩家：24小時不間斷在線。採最佳配裝策略(物理+吸血續戰+爆擊爆傷詞條)，equip-best-per-slot自動換裝，全身11部位平均強化至+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，階梯點滿轉生天賦。穩定擴背包至1000格，R0~R1自動拆解，史詩以上裝備洗詞條",
+  "description": "極限玩家（不轉生前的極限版；無限制版是 policy.extreme.roi.json，差異見該檔 description）：本檔沒有轉生、熔爐零件、神鑄規則。24小時不間斷在線。採最佳配裝策略(物理+吸血續戰+爆擊爆傷詞條)，equip-best-per-slot自動換裝，全身11部位平均強化至+60，80%+6太古詞條+5菁英傷，寶石商店重置8次+掃光，階梯點滿轉生天賦。穩定擴背包至1000格，R0~R1自動拆解，史詩以上裝備洗詞條",
   "decideEveryGameSec": 5,
   "dailyActiveHours": 24,
   "needPanels": [
