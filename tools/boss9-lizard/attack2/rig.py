@@ -50,7 +50,7 @@ class Rig:
         self.set(name,affine(q,c,c)@p.matrix)
     def translate(self,name,v):
         m=self.arm.pose.bones[name].matrix.copy();m.translation+=Vector(v);self.set(name,m)
-    def arm_fk(self,side,upper_direction,forearm_direction,q,opening,spread,floor_limit,claw_target=None):
+    def arm_fk(self,side,upper_direction,forearm_direction,q,opening,spread,floor_limit,claw_target=None,pole_blend=0):
         """Chest carries the shoulder; upper arm and forearm have separate arcs."""
         collar_name,upper,lower,wrist_name,palm_name=self.arms[side]
         r=[self.base[n].translation for n in [upper,lower,wrist_name]]
@@ -69,10 +69,27 @@ class Rig:
             lengths=[(r[i+1]-r[i]).length for i in range(2)]
             maximum=sum(lengths)*.999
             if v.length>maximum:
+                # Scapula follows the reach before limiting the hand target.
+                cl=(root-center).length;d=(goal-center).length
+                if d>(cl+maximum)*.999:
+                    limited=center+(goal-center).normalized()*(cl+maximum)*.999
+                    self.max_clamp=max(self.max_clamp,(limited-goal).length);goal=limited;d=(goal-center).length
+                direction=(goal-center).normalized();along=(cl*cl-maximum*maximum+d*d)/(2*d)
+                lateral=root-center-direction*(root-center).dot(direction)
+                if lateral.length<1e-6:lateral=Vector((-1 if side=='R' else 1,0,0)).cross(direction)
+                moved=center+direction*along+lateral.normalized()*math.sqrt(max(0,cl*cl-along*along))
+                delta=(root-center).rotation_difference(moved-center)
+                self.set(collar_name,affine(delta,center,center)@self.arm.pose.bones[collar_name].matrix)
+                oldroot=root;root=self.arm.pose.bones[upper].head.copy();elbow+=root-oldroot;v=goal-root
+            if v.length>maximum:
                 goal=root+v.normalized()*maximum
                 self.max_clamp=max(self.max_clamp,(goal-(claw_target-q@Vector(local.mean(axis=0)))).length)
             v=goal-root;d=v.length;direction=v.normalized()
-            pole=elbow-root;pole-=direction*pole.dot(direction);pole.normalize()
+            # Stay outside/back/below the moving wrist axis; a parallel pole
+            # makes the elbow plane flip during the fast inward release.
+            outward=Vector((-1 if side=='R' else 1,1.60,-1.20)).normalized()
+            pole=(elbow-root).normalized().lerp(outward,pole_blend)
+            pole-=direction*pole.dot(direction);pole.normalize()
             along=(lengths[0]**2-lengths[1]**2+d*d)/(2*d)
             elbow=root+direction*along+pole*math.sqrt(max(0,lengths[0]**2-along*along));wrist=goal
         floor=float((local@np.array(q.to_matrix()).T+np.array(wrist))[:,2].min())

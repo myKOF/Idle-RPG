@@ -1,20 +1,22 @@
 {
   "id": "BOSS9_Attack2",
-  "version": 2,
+  "version": 3,
   "duration": 1.5,
   "authorFPS": 480,
   "axisX": 0.073,
   "ground": -0.744,
-  "timing": {"raiseStart": 0.18, "raised": 0.78, "holdEnd": 0.98, "slashStart": 1.04, "slashEnd": 1.35, "returnEnd": 1.5},
+  "timing": {"raiseStart": 0, "raised": 0.8, "slashStart": 0.8, "slashEnd": 1.1, "returnEnd": 1.5},
   "motion": {
-    "bodyRise": [0.18, 0.68], "headRise": [0.20, 0.68],
-    "upperRise": [0.24, 0.65], "foreRise": [0.34, 0.78], "handRise": [0.42, 0.78],
-    "headFall": [0.99, 1.20], "bodyFall": [1.02, 1.32],
-    "upperFall": [1.04, 1.31], "foreFall": [1.07, 1.35], "handFall": [1.06, 1.30],
+    "bodyRise": [0, 0.8], "headRise": [0.02, 0.76],
+    "upperRise": [0.04, 0.8], "foreRise": [0.12, 0.8], "handRise": [0.20, 0.8],
+    "headFall": [0.8, 1.0], "bodyFall": [0.8, 1.1],
+    "upperFall": [0.8, 1.1], "foreFall": [0.8, 1.1], "handFall": [0.8, 1.1],
     "hipsPitch": -18, "spinePitch": -62, "headPitch": 75, "jawOpen": 30,
-    "rootLift": 0.10, "fingerOpening": 0.68,
-    "upperDirection": [1, 0.15, -0.20], "foreDirection": [0.12, -0.12, 1],
-    "grabClaw": [0.36, -0.90, -0.50], "grabBow": 0.025
+    "rootLift": 0.10, "impactRoot": -0.01, "fingerOpening": 0.68,
+    "upperDirection": [1, 0.10, -0.10], "foreDirection": [0.42, -0.12, 1],
+    "handSpread": 0.32, "shoulderSpread": 0.85,
+    "grabClaw": [0.15, -0.85], "grabBow": 0.025, "releasePower": 1.7,
+    "headLeadSample": 0.93
   },
   "rootMotion": false,
   "previewOnly": true

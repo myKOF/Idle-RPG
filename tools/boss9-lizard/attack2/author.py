@@ -20,12 +20,15 @@ channels={n:{'translation':[],'rotation':[],'scale':[]} for n in rig.base};trace
 orientations={};directions={};motion=spec['motion']
 for side,h in rig.hands.items():
     sign=-1 if side=='R' else 1
-    orientations[side]={'up':h.orientation((0,-.94,.34),(sign*.05,.20,.98)),
+    orientations[side]={'up':h.orientation((0,-.94,.34),(sign*motion['handSpread'],.20,.98)),
                         'down':h.orientation((0,.83,-.55),(0,-.55,-.83))}
     names=rig.arms[side][1:4];r=[rig.base[n].translation for n in names]
     directions[side]=[(r[i+1]-r[i]).normalized() for i in range(2)]
 
-def curve(name,t):return smooth(*motion[name],t)
+def curve(name,t):
+    a,b=motion[name]
+    if name in ['foreFall','handFall']:return max(0,min(1,(t-a)/(b-a)))**motion['releasePower']
+    return smooth(a,b,t)
 
 def aim(base,target,amount):
     return Quaternion().slerp(base.rotation_difference(target),amount)@base
@@ -50,24 +53,26 @@ def posebody(t):
     recover=smooth(timing['slashEnd'],timing['returnEnd'],t)
     envelope=rise*(1-slash)
     # Reference order: chest/head rise, shoulders spread, bent forearms follow.
-    root_z=motion['rootLift']*envelope+.025*slash*(1-recover)
+    root_z=motion['rootLift']*envelope+motion['impactRoot']*slash*(1-recover)
     rig.translate('root',(0,0,root_z))
     rig.rotate('hips',(motion['hipsPitch']*envelope,0,0))
     pitch=motion['spinePitch']*envelope+6*slash*(1-recover)
     rig.rotate('spine_02',(pitch*.55,0,0));rig.rotate('spine_03',(pitch*.3,0,0));rig.rotate('spine2',(pitch*.15,0,0))
     head_fall=curve('headFall',t)
-    rig.head(motion['headPitch']*curve('headRise',t)*(1-head_fall)-6*head_fall,smooth(.12,.30,t)*(1-recover))
-    rig.rotate('spine_26',(motion['jawOpen']*curve('headRise',t)*(1-smooth(1.02,1.25,t)),0,0))
+    rig.head(motion['headPitch']*curve('headRise',t)*(1-head_fall)-6*head_fall,smooth(0,.20,t)*(1-recover))
+    rig.rotate('spine_26',(motion['jawOpen']*curve('headRise',t)*(1-smooth(timing['slashStart'],timing['slashEnd'],t)),0,0))
     hand_fall=curve('handFall',t)
     opening=(motion['fingerOpening']*curve('handRise',t)*(1-hand_fall)+.12*hand_fall)*(1-recover)
     return envelope,slash,recover,hand_fall,opening
 
 # Snapshot the raised pose so the release follows the reference's narrow arcs.
 # FK supplies the elbow plane; the release solves the two physical arm links.
-envelope,*_=posebody(timing['slashStart']);raised_claws={}
+envelope,*_=posebody(timing['slashStart']);raised_claws={};grab_targets={}
 for side,h in rig.hands.items():
     sign=-1 if side=='R' else 1;u=Vector(motion['upperDirection']);u.x*=sign;f=Vector(motion['foreDirection']);f.x*=sign
-    raised_claws[side]=rig.arm_fk(side,u,f,orientations[side]['up'],motion['fingerOpening'],.7*envelope,spec['ground']+.0001)
+    raised_claws[side]=rig.arm_fk(side,u,f,orientations[side]['up'],motion['fingerOpening'],motion['shoulderSpread']*envelope,spec['ground']+.0001)
+    points=h.skin(h.shape(.12)[0],h.claws);offsets=(points-points.mean(axis=0))@np.array(orientations[side]['down'].to_matrix()).T
+    grab_targets[side]=Vector((axis+sign*motion['grabClaw'][0],motion['grabClaw'][1],spec['ground']+.0001-float(offsets[:,2].min())))
 
 for t in times:
     scene.frame_set(math.floor(t*24),subframe=t*24%1)
@@ -81,12 +86,13 @@ for t in times:
         q=Quaternion().slerp(up,curve('handRise',t)).slerp(down,hand_fall).slerp(Quaternion(),recover)
         target=None
         if t>=timing['slashStart']:
-            grab=Vector((axis+sign*motion['grabClaw'][0],*motion['grabClaw'][1:]))
+            grab=grab_targets[side]
             down_progress=curve('foreFall',t)
             target=raised_claws[side].lerp(grab,down_progress)
             target.x+=sign*motion['grabBow']*math.sin(math.pi*down_progress)
             target=target.lerp(h.head+h.shape(0)[1],recover)
-        rig.arm_fk(side,upper,fore,q,opening,.7*envelope,spec['ground']+.0001,target)
+        pole_blend=smooth(timing['slashStart'],timing['slashStart']+.12,t)*(1-recover)
+        rig.arm_fk(side,upper,fore,q,opening,motion['shoulderSpread']*envelope,spec['ground']+.0001,target,pole_blend)
     for side in ['R','L']:rig.leg_ik(side)
     for i,name in enumerate(['tail1','tail2','tail3','tail_04','tail4','tail_06','tail_07']):
         gate=math.sin(math.pi*t/duration)**2
@@ -126,6 +132,6 @@ while len(encoded)%4:encoded+=b' '
 while len(data)%4:data.append(0)
 binary=struct.pack('<III',0x46546c67,2,28+len(encoded)+len(data))+struct.pack('<II',len(encoded),0x4e4f534a)+encoded+struct.pack('<II',len(data),0x004e4942)+data
 (out/'boss9_attack2.glb').write_bytes(binary)
-report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'sourceBinaryPreserved':data[:len(oldbin)]==oldbin,'spec':spec,'maximumArmTargetClamp':rig.max_clamp,'bones':len(rig.base),'trace':trace,'hands':{s:{'palm':h.palm,'chains':h.chains,'clawIndices':h.claws,'tipGroups':h.tip_groups,'baseGroups':h.base_groups,'padTriangles':h.pad} for s,h in rig.hands.items()}}
+report={'sourceSHA256':hashlib.sha256(raw).hexdigest(),'glbSHA256':hashlib.sha256(binary).hexdigest(),'sourceBinaryPreserved':data[:len(oldbin)]==oldbin,'spec':spec,'maximumArmTargetClamp':rig.max_clamp,'grabTargets':{s:list(v) for s,v in grab_targets.items()},'bones':len(rig.base),'trace':trace,'hands':{s:{'palm':h.palm,'chains':h.chains,'clawIndices':h.claws,'tipGroups':h.tip_groups,'baseGroups':h.base_groups,'padTriangles':h.pad} for s,h in rig.hands.items()}}
 (out/'build.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
 print('ATTACK2_AUTHORED',duration,'seconds',len(times),'poses; maximum clamp',rig.max_clamp,flush=True)

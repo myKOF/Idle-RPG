@@ -5,7 +5,15 @@
   "sourceDuration": 3,
   "previewDuration": 1.5,
   "timeScale": 0.5,
-  "analysis": "Manual visual timing analysis, not motion capture. Reference pixels are not included in the asset package.",
+  "analysis": "Manual visual timing analysis, not motion capture. Reference pixels are not included in the asset package. User R3 timing and landing arrows supersede the original raised hold and narrow arm spread.",
+  "revision": {
+    "timing": {"raise": 0.8, "release": 0.3, "recovery": 0.4, "total": 1.5},
+    "notes": "Wider upper arms and outward tilted forearms; no raised hold; accelerating downward inward claws, landing on the ground between both feet.",
+    "images": [
+      {"file": "codex-clipboard-e6b9ae60-51d7-49bd-9fc2-17b1c556e291.png", "sha256": "2df1696e05d67dee28830ac7d53694c3769db67b37d9046a17f5e11c6d446d53"},
+      {"file": "codex-clipboard-b62699bc-b2b6-4cc0-a477-18d4201c51c0.png", "sha256": "1efd200a9c98f57575701dde9f7bd15ab49c716917528e6eb65b0346ac2dc475"}
+    ]
+  },
   "landmarks": [
     {"sourceTime": 0.3, "pose": "Low crouch; hands still hanging"},
     {"sourceTime": 1.0, "pose": "Chest erect, head up, upper arms spread; forearms follow"},
