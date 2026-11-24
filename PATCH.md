@@ -1,5 +1,12 @@
 # PATCH.md
 
+## 序章前 30 秒電影級復刻分鏡製作手冊（Antigravity 2026-11-25）
+
+- **新增序章前 30 秒電影級復刻分鏡手冊（[`opening_animation/CINEMATIC_30S_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_30S_STORYBOARD.md)）**：
+  - 完整解析原片 `opening_animation/shots-01-05-replay.mp4` 前 30.000 秒（1920×1080、30 fps、共 900 幀）之精確鏡頭時間軸與 BGM 節拍卡點（含 `11.72s` 幀 352 主塔遇襲、`16.000s–16.950s` 幀 480–508 疊化轉場與 `27.5s–30.0s` 焦羽掠鏡）。
+  - 拆分為 4 段對應 Gemini Pro 網頁版（Veo）之 7–8 秒電影級英文 Prompt 與雙圖參考流程，並搭配本機審片目錄 `opening_animation/review/cinematic_30s_pack/` 的幀級精準合成與 `Desert Ascendant` BGM 同步作業。
+
+
 ## 寶箱系統出貨統計與 1 天累積試算報告（Antigravity 2026-11-13）
 
 - **新增寶箱系統出貨統計報告（[`docs/CHEST_DROP_STATISTICS_REPORT.md`](file:///d:/MyGame/Idle-RPG/antigravity/docs/CHEST_DROP_STATISTICS_REPORT.md)）**：
