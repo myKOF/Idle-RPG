@@ -68,10 +68,12 @@ test('手動刷新扣一張券，無券保留原貨，商品上限四十件', ()
 
 test('商店依等級刷出對應數量與高階寶石', () => {
   const context = loadGameContext();
+  context.GEM_SHOP_COUNT_TABLE[19] = [[20, 1]];
+  context.GEM_SHOP_TIER_TABLE[19] = [[10, 1]];
   context.wpick = (pairs) => pairs[pairs.length - 1][0];
   context.G.player.gemShop.level = 20;
   context.rollGemShop();
-  assert.equal(context.G.player.gemShop.items.length, 16);
+  assert.equal(context.G.player.gemShop.items.length, 20);
   assert.ok(context.G.player.gemShop.items.every((item) => item.lv === 10));
 });
 

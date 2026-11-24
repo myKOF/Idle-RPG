@@ -269,7 +269,7 @@ var MYSTERY_MERCHANT_PROVIDERS = {
     available: function () { return true; },
     roll: function (shopLevel) {
       var cfg = MYSTERY_MERCHANT_SETTINGS;
-      var level = Math.max(1, Math.floor(G.player.level * cfg.equipmentLevelMultiplier));
+      var level = Math.max(1, Math.floor(merchantEquipmentProgressLevel() * cfg.equipmentLevelMultiplier));
       var range = merchantEquipmentRarityRange();
       var rarityPairs = merchantLevelPairs(MERCHANT_EQUIPMENT_RARITY_TABLE, shopLevel);
       if (rarityPairs) {
@@ -344,6 +344,15 @@ function merchantRelicPairs(level) {
   }
   return RELICS.filter(function (relic) { return relic.id >= MYSTERY_MERCHANT_SETTINGS.relicMinTier && relic.id <= MYSTERY_MERCHANT_SETTINGS.relicMaxTier; })
     .map(function (relic) { return [relic, 1]; });
+}
+function merchantEquipmentProgressLevel() {
+  // stage.best 是目前場景的即時進度；其他場景由既有進度讀取器取值。
+  var highest = 1;
+  Object.keys(ZONES).forEach(function (zoneKey) {
+    var best = Number(zoneBestProgress(zoneKey));
+    if (Number.isFinite(best)) highest = Math.max(highest, Math.min(zoneMaxStage(zoneKey), Math.floor(best)));
+  });
+  return highest;
 }
 function merchantEquipmentRarityRange() {
   // 已通關最高層只決定品質上限，不看目前選取層數；尚未通關以首層為基準。

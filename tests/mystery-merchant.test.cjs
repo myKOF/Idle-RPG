@@ -117,6 +117,51 @@ test('最高已通關層決定裝備品質上限，選取／當前層及高玩�
   assert.deepEqual(plain(c.merchantEquipmentRarityRange()),{min:5,max:5});
 });
 
+test('商店裝備取全場景最高到達關卡，與玩家等級、目前低關及封魔塔無關',()=>{
+  const e=game(),c=e.ctx,g=e.state();
+  c.MERCHANT_CATEGORY_TABLE[0]=[['equipment',1]];
+  c.MERCHANT_EQUIPMENT_RARITY_TABLE[0]=[[2,1]];
+  g.zoneProgress.desert={current:100,best:100,cleared:99};
+  g.zoneProgress.Icefield={current:60,best:60,cleared:59};
+  g.zoneProgress.mist_forest={current:90,best:90,cleared:89};
+  g.stage={...g.stage,zone:'Icefield',current:10,best:60};
+  g.tower.highest=150;
+  for(const playerLevel of [1,999]) {
+    g.player.level=playerLevel;
+    assert.equal(c.merchantEquipmentProgressLevel(),100);
+    assert.equal(c.rollGemShop(),true);
+    assert.ok(c.gemShop().items.every(it=>it.equipment.level===100));
+    assert.ok(c.gemShop().items.every(it=>it.price===c.MYSTERY_MERCHANT_SETTINGS.equipmentPriceBase*100*3));
+    assert.ok(e.panel('tower').merchant.shop.items.every(it=>it.equipment.level===100),'UI投影收到相同裝備等級');
+  }
+  g.player.reincarnations=5;g.player.level=1;
+  g.stage={...g.stage,zone:'mist_forest',current:100,best:175};
+  assert.equal(g.zoneProgress.mist_forest.best,90,'目前場景保存副本尚未同步');
+  assert.equal(c.merchantEquipmentProgressLevel(),175);
+  c.rollGemShop();assert.ok(c.gemShop().items.every(it=>it.equipment.level===150));
+  c.MYSTERY_MERCHANT_SETTINGS.equipmentLevelMultiplier=2;
+  c.rollGemShop();assert.ok(c.gemShop().items.every(it=>it.equipment.level===350));
+  g.zoneProgress.mist_forest={current:100,best:175,cleared:174};
+  g.stage={...g.stage,zone:'desert',current:1,best:100};
+  assert.equal(c.merchantEquipmentProgressLevel(),175,'切回低關仍取其他場景的最高到達關卡');
+});
+
+test('新局與舊進度缺欄退回有效到達關卡，刷新才重算商品等級且購買不重擲',()=>{
+  const e=game(),c=e.ctx,g=e.state();
+  c.MERCHANT_CATEGORY_TABLE[0]=[['equipment',1]];
+  assert.equal(c.merchantEquipmentProgressLevel(),1);
+  c.addMerchantInvitations(2);success(e,'merchant.open');
+  assert.ok(c.gemShop().items.every(it=>it.equipment.level===1));
+  g.zoneProgress=undefined;g.stage.best=100;
+  assert.equal(c.merchantEquipmentProgressLevel(),100,'缺其他場景欄位時仍讀目前場景即時進度');
+  const item=c.gemShop().items[0], price=c.merchantItemPrice(item);
+  g.player.gold=price;success(e,'gem.shopBuy',{index:0});
+  assert.equal(g.inventory.at(-1).level,1,'購買已生成的舊商品不重新計算');
+  assert.equal(g.player.gold,0);
+  success(e,'gem.shopRefresh');
+  assert.ok(c.gemShop().items.every(it=>it.equipment.level===100));
+});
+
 test('商人太古數依獨立機率表；零／三／四及超額截斷，不影響野外設定',()=>{
   const e=game(),c=e.ctx,g=e.state();
   const fieldWeights=JSON.stringify(c.ANCIENT_COUNT_WEIGHTS);

@@ -1,3 +1,16 @@
+## MERCHANT-STAGE-LEVEL-20261124 — 商人裝備改讀全場景最高到達關卡
+
+- Owner：Codex；Done，單人實作。使用者要求以所有場景最高到達關卡取最大值作為商店裝備等級基準，例如100／60／90取100，不再讀玩家等級；保留既有倍率與裝備分段。依賴既有場景進度與商人流程完成。
+- 允許：js/item.js商店裝備基準、tests/mystery-merchant.test.cjs與gem-shop回歸、Store原生Excel單格說明及CSV／js/data.js衍生同步、必要首頁／Worker／bridge快取、商人文件／LV與本段。禁止修改場景進度語意／存檔／協議／裝備共用公式／其他表格數值，不合併推送。
+- 預檢：邏輯／測試／文件無外部衝突，Store獨占確認成功，最新來源使用者修改保留並以來源雜湊防覆蓋。index.html與Claude 6cb1a8e4為不同快取行，整體三方試合乾淨，分段修改。
+- 驗收：三場景100／60／90、目前場景即時best與切換／回低關、玩家等級及轉生無影響、新局／缺舊欄、倍率／分段／標價一致、刷新與原商品不變、Excel重開／值格式保持、商人與快取相關測試及Build。
+- 完成：item.js新增純讀取merchantEquipmentProgressLevel，遍歷ZONES，以zoneBestProgress讀各場景（目前場景直接讀stage.best），依合法場景上限取最大關卡；乘原Store倍率後交既有makeEquipment分段。全新或缺舊進度回有效關卡，品質仍由原有封魔塔／Store品質規則決定，既有商品等級與售價不重擲。
+- 修改12檔：js/item.js、js/data.js、js/bridge.js、js/worker/sim.worker.js、index.html、config/Excel/Store.xlsx／CSV/Store.csv、tests/mystery-merchant.test.cjs／gem-shop.test.cjs、docs/MYSTERY_MERCHANT.md、LV_upgrade_system.md與本段。唯讀檢查AI_RULES／AGENTS／Workflow／Codex、js/player.js／data.js場景讀取器／combat.js切場景及推關／save.js舊檔補值／formula.js裝備分段、原有商人UI／協議與回歸、原生Excel工具。無素材修改，素材庫無需提交。
+- Excel：沿用試算表技能與既有原生API，正常儲存及兩次重開驗值；相對本輪最新來源只改F53說明，其他全部格值／公式及有效樣式一致，渲染文字完整。使用者在來源已調整的商品數量權重、通用類別權重與公式欄內容完整保留；從該最新來源匯出CSV並套用4項data資料，無回寫企劃數字。數量選表測試改用獨立固定fixture，不再把使用者可調的Lv.20商品數當成選表邏輯的前提。
+- 驗證：`node --test tests/mystery-merchant.test.cjs tests/gem-shop.test.cjs tests/merchant-cards-ui.test.cjs tests/relics.test.cjs tests/apply-params.test.cjs tests/apply-params-scientific.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-tower-control.test.cjs tests/params-direct-edit.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs` 97/97通過。包含100／60／90生成100級及UI投影、即時175映射150、倍率2映射350、回低關保留進度、玩家等級／轉生、缺舊欄、原商品購買不重算與正式刷新更新。另用實際engine例子（玩家999級）確認sourceLevel100、equipmentLevels[100]。
+- 檢核：`node tools/apply_params.cjs`630項一致、變更0、錨點問題0；`--check-anchors`擾動574數值後630錨點通過。`npm.cmd run build`762檔通過；Git差異檢查及最終首頁對Claude字串快取三方試合通過。主頁／Worker／bridge快取20261124-merchant-stage-v1。本輪未改參數錨點或協議，未重跑前項已卡住的全庫測試，亦未另跑實機UI；檢核涵蓋正式指令與UI資料投影，無已知新增功能風險。
+- 交接：自我Review完成，本輪無未完成製作，必要暫存已清理。Commit為本段所在`[Codex] fix: 商店裝備依全場景最高關卡生成`，位於ai/codex，可供合併審閱，未合併／推送develop或main。下一步重新載入遊戲並刷新商店，倍率1時以全場景最高到達關卡生成對應套級裝備。
+
 ## MERCHANT-RELIC-20261124 — 商人遺物販售與商品數量更名
 
 - Owner：Codex；Done，單人實作。使用者授權接入遺物權重開關、價格、購買與發放，並將數量表改名「商品刷出數量」。依賴既有遺物系統／商人交易完成。
