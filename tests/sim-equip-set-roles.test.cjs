@@ -48,6 +48,6 @@ test('遊戲快照視窗有 seed 下拉選單：與主畫面的檢視對象同�
 test('分頁／工作列標題顯示模擬進度：進度放最前面，獨立輪詢（重新整理後也會動）', () => {
   const page = fs.readFileSync(path.join(ROOT, 'monte_carlo_app.html'), 'utf8');
   assert.match(page, /\(function simTitleProgress\(\) \{/);
-  assert.match(page, /document\.title = `\$\{pct\}% ⏳ 模擬中\$\{batchPart\}｜\$\{BASE_TITLE\}`/);
+  assert.match(page, /document\.title = `\$\{pct\}% 模擬中｜\$\{BASE_TITLE\}`/, '標題開頭就是總進度百分比');
   assert.match(page, /setInterval\(poll, 2000\)/);
 });

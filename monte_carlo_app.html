@@ -3495,7 +3495,7 @@ updateHoursHint();
 
 /* ---- 工作列／分頁標題顯示模擬進度 ----
    Windows 工作列與瀏覽器分頁顯示的是 document.title，而且只看得到開頭幾個字，
-   所以進度放在最前面：「57% ⏳ 模擬中（0/2）｜放置型 RPG…」。
+   所以總進度放在最前面：「57% 模擬中｜放置型 RPG…」。
    獨立輪詢 /sim_progress，不掛在 triggerNativeSimulation 裡：模擬中途重新整理頁面、
    或從另一個分頁啟動的模擬，這一頁的標題一樣要跟著動。
    伺服器只回報「現在有沒有在跑」，所以「完成／取消／失敗」是由「上一次還在跑、這一次不跑了」判斷，
@@ -3514,9 +3514,9 @@ updateHoursHint();
         if (p.isSimulating) {
             wasRunning = true;
             const pct = Math.max(0, Math.min(100, Math.floor(Number(p.percent) || 0)));
-            const b = p.batch;
-            const batchPart = (b && b.total) ? `（${b.done || 0}/${b.total}）` : '';
-            document.title = `${pct}% ⏳ 模擬中${batchPart}｜${BASE_TITLE}`;
+            /* 只放總進度（批次是所有 seed 的平均，伺服器算好的 percent）。
+               「完成幾個 seed」之類的細節放進來只會擠掉、或被誤看成主要數字，使用者要看的是總進度。 */
+            document.title = `${pct}% 模擬中｜${BASE_TITLE}`;
         } else if (wasRunning) {
             wasRunning = false;
             const text = p.statusText || '';
