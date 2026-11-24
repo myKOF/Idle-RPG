@@ -5,21 +5,29 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const cfg = require('../tools/config_tables.cjs');
 
-for (const [baseFloor, material, suffix] of [[10,1,''],[20,2,'_lv2']]) test('BOSS10 material '+material+' carries the five supplied motions and its tower appearance', () => {
+for (const [baseFloor, material, suffix] of [[10,1,''],[20,2,'_lv2'],[30,3,'_lv3']]) test('BOSS10 material '+material+' carries the five supplied motions and its tower appearance', () => {
   const modelPath = 'images/models/npc3d/boss10'+suffix+'.glb';
   const model = fs.readFileSync(require.resolve('../'+modelPath));
   assert.equal(model.readUInt32LE(0), 0x46546c67);
   assert.equal(model.readUInt32LE(8), model.length);
   const doc = JSON.parse(model.subarray(20, 20 + model.readUInt32LE(12)));
   assert.equal(doc.meshes.length, 1);
-  assert.equal(doc.skins[0].joints.length, 52);
+  assert.equal(doc.skins[0].joints.length, material === 3 ? 54 : 52);
   assert.equal(doc.images.length, 3);
   const expected = { Walk: 4.1, Attack1: 55/30, Attack2: 2.8, Attack3: 95/30, Die: 89/30 };
   assert.deepEqual(doc.animations.map(clip => clip.name), Object.keys(expected));
   for (const clip of doc.animations) {
     assert.equal(clip.channels.length, 144);
+    const animated = new Set(clip.channels.map(channel => doc.nodes[channel.target.node].name));
+    for (const name of ['mixamorig:Hips', 'mixamorig:LeftFoot', 'mixamorig:RightFoot']) assert.ok(animated.has(name), clip.name+' '+name);
     const duration = Math.max(...clip.samplers.map(sampler => doc.accessors[sampler.input].max[0]));
     assert.ok(Math.abs(duration - expected[clip.name]) < .0001, clip.name);
+  }
+  if (material === 3) {
+    const index = name => doc.nodes.findIndex(node => node.name === name);
+    assert.ok(doc.nodes[index('mixamorig:LeftLeg')].children.includes(index('Bone_004')));
+    assert.ok(doc.nodes[index('Bone_004')].children.includes(index('Bone_003')));
+    assert.ok(doc.nodes[index('Bone_003')].children.includes(index('mixamorig:LeftFoot')));
   }
 
   const rows = cfg.readXlsxRows(require.resolve('../config/Excel/NPC.xlsx'));
@@ -38,7 +46,7 @@ for (const [baseFloor, material, suffix] of [[10,1,''],[20,2,'_lv2']]) test('BOS
   assert.equal(boss.model3d.file, modelPath);
   assert.equal(boss.img, 'sprites/boss/boss10_lava'+suffix+'.png');
   assert.deepEqual(Object.values(boss.model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
-  for (const floor of [9, 30, 40, 50]) assert.equal(bosses[floor-1].model3d, undefined);
+  for (const floor of [9, 40, 50]) assert.equal(bosses[floor-1].model3d, undefined);
 
   const formula = fs.readFileSync(require.resolve('../js/formula.js'), 'utf8');
   const lookupSource = formula.match(/^function towerBossDefFor\(floor\) \{[\s\S]*?^\}/m)?.[0];

@@ -5,9 +5,10 @@ const crypto = require('node:crypto');
 const { resolveLibraryRoot } = require('../vfx/vfx-library-root.cjs');
 
 const project = path.resolve(__dirname, '../..');
-const variant = process.argv.includes('--variants');
-const suffix = variant ? '_lv2' : '';
-const packageName = variant ? 'boss10-lava-variant2-20261124' : 'boss10-lava-20261124';
+const material = process.argv.includes('--material3') ? 3 : process.argv.includes('--variants') ? 2 : 1;
+const suffix = material === 1 ? '' : '_lv' + material;
+const variantPart = material === 1 ? '' : '-variant' + material;
+const packageName = 'boss10-lava' + variantPart + '-20261124';
 const library = path.join(resolveLibraryRoot().root, 'codex-authored', packageName);
 const mode = process.argv[2] || '--check';
 if (!['--check', '--apply'].includes(mode)) throw new Error('Use --check or --apply');

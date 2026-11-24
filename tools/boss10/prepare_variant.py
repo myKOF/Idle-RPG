@@ -1,6 +1,6 @@
-"""Apply BOSS10's five approved clips to the second material's own bind rig.
+"""Apply BOSS10's five approved clips to a variant's own bind rig.
 
-blender -b --python-exit-code 1 -P tools/boss10/prepare_variant.py -- FIRST.glb BOSS10_2.glb OUTPUT_DIR
+blender -b --python-exit-code 1 -P tools/boss10/prepare_variant.py -- FIRST.glb VARIANT.glb OUTPUT_DIR [2|3]
 """
 from copy import deepcopy
 import hashlib
@@ -40,25 +40,44 @@ class BindPose:
         return self.parent_transform(parent) @ Matrix.LocRotScale(*self.local[parent])
 
 
-def compare_fingers(first, variant, old, new):
-    aliases = {i: (a['name'], b['name']) for i, (a, b) in
-               enumerate(zip(first['nodes'], variant['nodes'], strict=True)) if a['name'] != b['name']}
-    expected = {}
-    for index, digit in enumerate(range(4, 0, -1)):
-        thumb = f'mixamorig:RightHandThumb{digit}'
-        middle = f'mixamorig:RightHandMiddle{digit}'
-        expected[20+index] = (middle, thumb)
-        expected[28+index] = (thumb, middle)
-    assert aliases == expected, aliases
+def map_nodes(first, variant, old, new, material_number):
+    first_names = {node['name']: i for i, node in enumerate(first['nodes'])}
+    variant_names = {node['name']: i for i, node in enumerate(variant['nodes'])}
+    assert len(first_names) == len(first['nodes']) and len(variant_names) == len(variant['nodes'])
+    extras = set(variant_names) - set(first_names)
+    assert extras == ({'Bone_003', 'Bone_004'} if material_number == 3 else set())
+    mapping = {i: variant_names[name] for name, i in first_names.items()}
 
-    # The exported names swap two branches. Their actual locations relative to
-    # the palm match by index, so keep each clip on the same physical finger.
-    wrist = next(i for i, n in enumerate(first['nodes']) if n['name'] == 'mixamorig:RightHand')
-    palm = lambda bind, i: bind.world[i].translation - bind.world[wrist].translation
-    matching = max((palm(old, i)-palm(new, i)).length for i in aliases)
-    swapped = min((palm(old, i)-palm(new, i+8 if i<24 else i-8)).length for i in aliases)
-    assert matching < .06 and matching < swapped, (matching, swapped)
-    return {'aliasesByNode': aliases, 'maxSamePositionError': matching, 'minSwappedPositionError': swapped}
+    # Both variants label two right-hand branches in reverse. Confirm the
+    # correspondence using the rest positions relative to each palm.
+    aliases = {}
+    matching, name_only = [], []
+    wrist = first_names['mixamorig:RightHand']
+    for digit in range(1, 5):
+        for source, target in [('Thumb', 'Middle'), ('Middle', 'Thumb')]:
+            first_name = f'mixamorig:RightHand{source}{digit}'
+            target_name = f'mixamorig:RightHand{target}{digit}'
+            i, j = first_names[first_name], variant_names[target_name]
+            original_offset = old.world[i].translation - old.world[wrist].translation
+            new_wrist = new.world[mapping[wrist]].translation
+            matching.append((original_offset - (new.world[j].translation-new_wrist)).length)
+            name_only.append((original_offset - (new.world[mapping[i]].translation-new_wrist)).length)
+            mapping[i] = j
+            aliases[i] = (first_name, target_name)
+    assert all(correct < crossed for correct, crossed in zip(matching, name_only, strict=True)), (matching, name_only)
+
+    mapped = set(mapping.values())
+    extra_ids = {variant_names[name] for name in extras}
+    assert len(mapped) == len(mapping)
+    assert {mapping[i] for i in first['skins'][0]['joints']} | extra_ids == set(variant['skins'][0]['joints'])
+    for i, j in mapping.items():
+        parent = new.parents.get(j)
+        while parent in extra_ids:
+            parent = new.parents.get(parent)
+        assert parent == mapping.get(old.parents.get(i)), (first['nodes'][i]['name'], parent)
+    fingers = {'aliasesByNode': aliases, 'maxSamePositionError': max(matching),
+               'minSwappedPositionError': min(name_only)}
+    return mapping, fingers, sorted(extras)
 
 
 def samples(doc, binary, index, kind):
@@ -88,13 +107,15 @@ def append_samples(doc, binary, descriptor, values):
     return len(doc['accessors'])-1
 
 
-def retarget_clip(first, first_binary, original, result, binary, old, new):
+def retarget_clip(first, first_binary, original, result, binary, old, new, mapping):
     converted = deepcopy(original)
     used = set()
     time_targets = {}
     timelines = {}
     for channel in converted['channels']:
         index = channel['target']['node']
+        target_index = mapping[index]
+        channel['target']['node'] = target_index
         prop = channel['target']['path']
         slot = channel['sampler']
         assert slot not in used and index in first['skins'][0]['joints']
@@ -112,14 +133,14 @@ def retarget_clip(first, first_binary, original, result, binary, old, new):
         desc, data = samples(first, first_binary, sampler['output'], 'VEC4' if prop=='rotation' else 'VEC3')
         assert len(data) == len(timelines[time_index])
         old_pos, _, old_scale = old.local[index]
-        new_pos, _, new_scale = new.local[index]
+        new_pos, _, new_scale = new.local[target_index]
         old_parent = old.parent_transform(index)
-        new_parent_inverse = new.parent_transform(index).inverted()
+        new_parent_inverse = new.parent_transform(target_index).inverted()
         if prop == 'rotation':
             # Preserve the world-space rotation delta, conjugated into the
             # second skeleton's parent and local bind axes.
             prefix = new_parent_inverse.to_quaternion() @ old_parent.to_quaternion()
-            suffix = old.world[index].to_quaternion().inverted() @ new.world[index].to_quaternion()
+            suffix = old.world[index].to_quaternion().inverted() @ new.world[target_index].to_quaternion()
             values = []
             for x, y, z, w in data:
                 q = (prefix @ Quaternion((w,x,y,z)) @ suffix).normalized()
@@ -136,33 +157,36 @@ def retarget_clip(first, first_binary, original, result, binary, old, new):
     return converted, max(times[-1][0] for times in timelines.values())
 
 
-def prepare(first_path, material_path, output):
+def prepare(first_path, material_path, output, material_number=2):
+    assert material_number in (2, 3)
     output.mkdir(parents=True, exist_ok=True)
     first_raw, material_raw = first_path.read_bytes(), material_path.read_bytes()
     first, first_binary = read_glb(first_raw)
     material, material_binary = read_glb(material_raw)
     assert tuple(clip['name'] for clip in first['animations']) == CLIPS
-    assert first['skins'][0]['joints'] == material['skins'][0]['joints']
     old, new = BindPose(first), BindPose(material)
-    assert old.parents == new.parents
-    fingers = compare_fingers(first, material, old, new)
+    mapping, fingers, extras = map_nodes(first, material, old, new, material_number)
 
     result = deepcopy(material)
     result['animations'] = []
     binary = bytearray(material_binary)
     records = {}
     for original in first['animations']:
-        clip, length = retarget_clip(first, first_binary, original, result, binary, old, new)
+        clip, length = retarget_clip(first, first_binary, original, result, binary, old, new, mapping)
         assert len(clip['channels']) == 144
         result['animations'].append(clip)
         records[clip['name']] = {'seconds': length, 'channels': len(clip['channels'])}
     result['buffers'][0]['byteLength'] = len(binary)
-    runtime = output / 'boss10_lv2.glb'
+    suffix = f'_lv{material_number}'
+    runtime = output / f'boss10{suffix}.glb'
     write_glb(runtime, result, bytes(binary))
     exported, exported_binary = read_glb(runtime.read_bytes())
     assert static_data(exported, exported_binary) == static_data(material, material_binary)
     for original, clip in zip(first['animations'], exported['animations'], strict=True):
-        assert clip['channels'] == original['channels']
+        expected = deepcopy(original['channels'])
+        for channel in expected:
+            channel['target']['node'] = mapping[channel['target']['node']]
+        assert clip['channels'] == expected
         for source, target in zip(original['samplers'], clip['samplers'], strict=True):
             assert source['interpolation'] == target['interpolation']
             assert samples(first, first_binary, source['input'], 'SCALAR')[1] == samples(exported, exported_binary, target['input'], 'SCALAR')[1]
@@ -174,15 +198,18 @@ def prepare(first_path, material_path, output):
                 assert all(abs(math.hypot(*q)-1) < .00001 for q in values)
             if prop == 'scale':
                 assert all(min(row)>0 for row in values)
-    bones = import_and_render(runtime, output, records, '_lv2')
+    bones = import_and_render(runtime, output, records, suffix, 52+len(extras))
     report = {'blender': bpy.app.version_string, 'clips': records, 'bones': bones,
               'sourceSha256': hashlib.sha256(material_raw).hexdigest(),
               'motionSha256': hashlib.sha256(first_raw).hexdigest(),
-              'fingerMapping': fingers, 'bindRigMeshAndTexturesIdenticalToMaterial2': True,
+              'fingerMapping': fingers, 'additionalBonesFollowingParent': extras,
+              'bindRigMeshAndTexturesIdenticalToVariant': True,
               'sourceAnimationTimesIdentical': True, 'portrait': [1080,1080]}
     (output/'model-qa.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
-    print('BOSS10_MATERIAL2_PREPARED', json.dumps(report), flush=True)
+    print(f'BOSS10_MATERIAL{material_number}_PREPARED', json.dumps(report), flush=True)
 
 
 if __name__ == '__main__':
-    prepare(*map(Path, sys.argv[sys.argv.index('--')+1:]))
+    args = sys.argv[sys.argv.index('--')+1:]
+    assert len(args) in (3, 4)
+    prepare(*map(Path, args[:3]), material_number=int(args[3]) if len(args)==4 else 2)

@@ -21,3 +21,11 @@ NPC.xlsx 第491列 `tower_boss_10` 綁定第10／60／110層，名稱「熔岩�
 NPC.xlsx 第501列 `tower_boss_20` 綁定第20／70／120層，名稱「熔岩巨人」，外觀備註「熔岩巨人2」，使用 `images/models/npc3d/boss10_lv2.glb` 及 `sprites/boss/boss10_lava_lv2.png`。
 
 素材庫 `codex-authored/boss10-lava-variant2-20261124/` 保存來源、成品、可編輯 Blender 檔、頭像及驗證。製作用 `blender -b --python-exit-code 1 -P tools/boss10/prepare_variant.py -- <首套遊戲GLB> <BOSS10_2.glb> <exports>`。匯出用 `node tools/boss10/export.cjs --apply --variants`，驗證用 `--check --variants`。
+
+## 第三套材質
+
+`BOSS10_3.glb` 是紫晶岩石外觀，含54根骨骼、14,070個頂點及3張內嵌貼圖。五個動作沿用首套取樣時間，按第三套的靜止骨架調整旋轉、位移與比例。右手兩支指骨鏈依實際位置配對。左腿額外的 Bone_004、Bone_003 沿原骨骼層級跟隨左腿，維持原始蒙皮，左腳與腳趾也保留動作。
+
+NPC.xlsx 第511列 `tower_boss_30` 綁定第30／80／130層，名稱「熔岩巨人」，外觀備註「熔岩巨人3」，使用 `images/models/npc3d/boss10_lv3.glb` 及 `sprites/boss/boss10_lava_lv3.png`。
+
+素材庫 `codex-authored/boss10-lava-variant3-20261124/` 保存原檔、五動作成品、可編輯 Blender 檔、1080透明頭像及驗證。製作用 `blender -b --python-exit-code 1 -P tools/boss10/prepare_variant.py -- <首套遊戲GLB> <BOSS10_3.glb> <exports> 3`。匯出用 `node tools/boss10/export.cjs --apply --material3`，驗證用 `--check --material3`。

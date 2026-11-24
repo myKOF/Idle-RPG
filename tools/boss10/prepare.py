@@ -158,7 +158,8 @@ def render_portrait(scene, output, low, high, suffix):
     bpy.ops.render.render(write_still=True)
 
 
-def import_and_render(runtime, output, records, suffix=''):
+def import_and_render(runtime, output, records, suffix='', expected_bones=52):
+    output = output.resolve()
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.fps = 30
@@ -166,7 +167,7 @@ def import_and_render(runtime, output, records, suffix=''):
     arm, = [obj for obj in scene.objects if obj.type == 'ARMATURE']
     body, = [obj for obj in scene.objects if obj.type == 'MESH'
              and any(mod.type == 'ARMATURE' and mod.object == arm for mod in obj.modifiers)]
-    assert len(arm.data.bones) == 52
+    assert len(arm.data.bones) == expected_bones
     actions = {action.name: action for action in bpy.data.actions}
     assert set(actions) == set(CLIPS)
     animation = arm.animation_data

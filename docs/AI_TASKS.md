@@ -17332,3 +17332,13 @@ Worker 存活且頁面正常完成載入。
 - 在隔離Edge以既有驗證器的暫存第二套版本 `node tmp/boss10-v2/verify_ingame.cjs tmp/boss10-v2/game 20` 渲染五段、確認三段攻擊輪替及兩種頭像，在第20層實戰看到移動及Attack1出招。頁面例外0，實機未跑完整勝敗流程。瀏覽器與專案暫存已清理。
 - `node --test tests/boss10-character-asset.test.cjs tests/boss8-character-asset.test.cjs tests/boss7-character-asset.test.cjs tests/boss4-character-asset.test.cjs tests/tower-boss3d.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/npc3d-config.test.cjs tests/tower-head-layout.test.cjs tests/tower-action-motion.test.cjs tests/tower-arena-bounds.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 為60通過、4失敗。四項為與首套驗收相同的其他首領舊名稱斷言，已於乾淨develop `c1f597d6` 重現。BOSS10兩項專測、`npm.cmd run build` 762檔、`node tools/boss10/export.cjs --check` 及第二套的 `--check --variants`、Git差異檢查通過。
 - 素材庫提交 `41b427d5d950b27821ff7d5094036edb38c3939f`，保存原GLB、可編輯檔、遊戲模型、頭像、工具與驗證。專案提交為本段所在的 `[Codex] feat: 接入熔岩巨人第二套材質與五動作`。交付在 ai/codex，可合併。
+
+## TOWER-BOSS10-MATERIAL3-20261124 — 熔岩巨人第三套材質及五動作
+
+- Codex 已完成。將 BOSS10_3.glb 的紫晶外觀接入封魔塔第 30／80／130 層。NPC.xlsx 第 511 列（tower_boss_30）名稱為「熔岩巨人」，備註登記第三套外觀，並設定模型、頭像與五個動作。
+- 沿用首套移動、三段攻擊與死亡的取樣時間，每段 144 條動畫通道。依第三套的手指實際位置對應右手骨骼，保留兩根左腿輔助骨的原始綁定。重建第二套所得 GLB 與既有成品逐位元一致。
+- 修改第三套模型與頭像、NPC Excel 與匯出、遊戲載入快取、製作與匯出工具、專項測試及封魔塔文件。檢查過首套與第二套模型、匯出清單及封魔塔戰鬥流程。index.html 與 Claude 的快取變更位置不同，三方試合乾淨。
+- `node tools/boss10/export.cjs --check --material3` 通過 11 項素材雜湊驗證。`node tools/config_tables.cjs --apply NPC` 與 `node tools/string-table/build_string_csv.cjs --check` 均無額外差異。Excel 使用原生介面寫入並重新開啟，核對僅第 511 列的 13 格值有修改，公式、格式及版面相同。
+- `node --test` 執行 13 支封魔塔、3D 角色與快取相關測試檔，65 項中 61 項通過，4 項為既有的 BOSS7、妖樹首領及惡魔首領名稱斷言。BOSS10 專項全數通過。`node tmp/boss10-v3/verify_ingame.cjs tmp/boss10-v3/game 30` 驗證五個動作、三攻連續輪替、第 30 層實戰移動、出招與兩種頭像尺寸，無執行期錯誤。
+- `npm.cmd run build` 通過 762 檔語法與空檔檢查，兩支 Python 工具通過語法剖析，Git 差異檢查通過。
+- 素材庫提交 `8b7e8f427b80612aaef18308b6d55868432a53b2`。遊戲提交訊息 `[Codex] feat: 接入熔岩巨人第三套材質與五動作`，位於 `ai/codex`，可合併。工作區內的驗證暫存與瀏覽器程序已清理。自動審查以政策限制拒絕刪除工作區外的 Blender 重建驗證圖，該圖留在 `C:/tmp/boss10-v3/rebuild-2/boss10_lava_lv2.png`。
