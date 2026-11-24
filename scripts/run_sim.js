@@ -32,6 +32,7 @@ const { createPolicy } = require('./sim/policy');
 const { createPanelSupplier } = require('./sim/lazy_panels');
 const { createTraceSource } = require('./sim/trace');
 const { stateHash } = require('./sim/hash');
+const { equipSetRoles } = require('./sim/equip_set_roles');
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -1014,6 +1015,8 @@ const summary = {
     return R.map((r, i) => ({ index: i, key: r.key, name: r.name }));
   })(),
   equipSetSec: equipSetSec,
+  /* 三套裝備各自的用途（讀策略的切套規則），鍵與 equipSetSec 相同（0 起）。真人軌跡沒有策略，為 null。 */
+  equipSetRoles: TRACE_PATH ? null : equipSetRoles(JSON.parse(policySrc)),
   fieldLoad: fieldLoadStats.summary(),
   hpLoad: hpLoadStats.summary(),
   mpLoad: mpLoadStats.summary(),
