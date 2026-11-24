@@ -1,0 +1,12 @@
+{
+  "id": "BOSS9_Attack2",
+  "version": 1,
+  "duration": 1.5,
+  "authorFPS": 480,
+  "axisX": 0.073,
+  "ground": -0.744,
+  "timing": {"raiseStart": 0.1, "raised": 0.64, "slashStart": 0.7, "slashEnd": 1.02, "returnEnd": 1.4},
+  "clawTargets": {"raised": [0.62, -0.35, 0.99], "lowered": [0.27, -0.98, -0.48]},
+  "rootMotion": false,
+  "previewOnly": true
+}
