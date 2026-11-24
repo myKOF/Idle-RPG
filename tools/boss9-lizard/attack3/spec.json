@@ -1,0 +1,11 @@
+{
+  "id": "BOSS9_Attack3", "version": 1, "duration": 1.5, "authorFPS": 480,
+  "axisX": 0.073, "ground": -0.744,
+  "sourceSHA256": "b00d2fd34dcd205368a449208dbb5de573a9a4d266a2060d426177a9baea5da8",
+  "referenceClip": "BOSS9_Attack1", "referenceDuration": 1.2,
+  "cycles": {"R": {"start": 0, "end": 0.88}, "L": {"start": 0.62, "end": 1.5}},
+  "strokes": {"R": {"start": 0.4106666666666667, "end": 0.55}, "L": {"start": 1.0306666666666666, "end": 1.17}},
+  "rightRaisedFrame": 41, "leftRaisedFrame": 103,
+  "leftSupportDrop": 0.085,
+  "rootMotion": false, "previewOnly": true
+}
