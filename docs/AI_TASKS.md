@@ -271,6 +271,18 @@
 - 程式／預覽：node --test tests/boss9-melee-preview.test.cjs 16/16；npm.cmd run build 761檔；Python AST3檔、Node語法、export.cjs 38必要檔SHA／manifest、差異自我Review通過。五視圖600張與UI操作、固定腳掌、零root、單次命中／膠囊間隙、6GIF逐幀解碼皆通過，頁面錯誤警告0；五份聯絡圖與肩部定格目視。瀏覽器finally關閉且無孤兒，必要QA留入素材包。核實本輪tmp/boss9-shoulder-20261124絕對路徑、無連結、白名單與740檔後，以非遞迴逐檔清理並移除空目錄；最終4份任務試合檔同樣限名清理。任務不同區段對develop及其實際工作副本試合均0，未動其他輪暫存或合併分支。
 - 交接：GLB SHA256 `d669fdc2804202e63bd912c1770278382a62b4fedc103474d0010c11e211ae57`；素材庫先提交2ef883d7cbff65bf90a399919261127e0dba726f，專案Commit為本段所在「[Codex] fix: 從肩骨向外展開BOSS9支撐臂」。可供預覽工具合併審閱，動作採用仍待GIF驗收；未合併／推送develop或main。已知限制：原自動蒙皮局部拉伸及未涵蓋甲片接觸仍可能存在，眼睛隨頭骨前視；正式遊戲混合／世界碰撞／多人尚未接入。下一步檢視正常GIF、肩部定格與完整慢放。
 
+## BOSS9-RIGHT-RETURN-20261124 — 右側延伸揮爪與直接收回
+
+- Owner：Codex；Done，單人完成，待GIF姿勢驗收。依最新2a1f90bc與595afac9圖，揮爪後半段更朝畫面右側，取消對側腳前的落爪停留，揮完直接連續回原位。依賴已完成肩部修正版，保留1.2秒、腳掌定地、頭向與漸進翻掌。
+- 範圍：tools/boss9-lizard/melee/author.py、spec.json、verify.py、export.cjs、tests/boss9-melee-preview.test.cjs、docs/assets/BOSS9_LIZARD_MELEE.md及本段，既有素材包成品／GIF／QA。必要時調整獨立viewer的時間核對。不改原模型／權重／Walk／Idle、身體與支撐肩曲線、傷害／射程／判定有效窗、遊戲、表格、VFX／音效或實戰，不合併推送。
+- 驗收：實際蒙皮爪尖向右延伸，起手朝上與漸進翻掌保持；0.75秒後直接回收，途中無原中繼落地／停留，最終回原爪位。同步最終落爪通知，保留碰撞、頭向、肩形、接地、骨長／穿插及Walk原始二進位核對；交正常、側面與完整慢放GIF，完成必要驗證並雙庫提交。fetch及專用檔預檢乾淨。
+- 追加完成：依338321c0圖，攻擊手的上臂先向肩下、肘部留外側，再由前臂斜向畫面右下銜接爪；調整攻擊側pole並取消對該方向的錯誤反號，連續旋轉過渡，不改既有爪尖目標、翻掌、支撐肩或總時長。0.90秒實測上臂下降0.1564、肘在肩外側0.0179，前臂向右0.2566且向下0.1177，另交該幀PNG對照。
+- 完成／修改7檔：author.py以實際爪群逐漸向右延伸0.22、深度收近0.08以維持臂長，改正攻擊側彎臂平面；0.75–1.12秒以單段回收曲線回原爪位，移除對側腳前的按地／停留。spec.json v4將落爪通知同步至1.12秒，分開回收、pole回正與前視末點；verify.py、export.cjs、既有判定測試、資產文件及本段同步。素材包40檔含manifest，更新6GIF及QA，新增BOSS9_Attack1_Elbow.png，保留可編輯Blend與GLB。
+- 未修改但檢查：AI_RULES／AGENTS／Workflow／Codex提示詞、既有BOSS9任務、controller.js、viewer.js／html、capture.cjs、encode.py、素材庫解析與背景瀏覽器工具、已核准模型及2ef883d7肩部基底。原73骨、網格、權重、暫代材質、Walk原始二進位、Idle、傷害／射程／命中窗保持；遊戲、表格、Worker、LV解鎖、VFX／音效與實戰未修改。工作期間出現的vfx/presets/level-up.json外部修改保留，不納入本項。
+- 模型驗證：Blender author.py、verify.py通過，Blend／GLB各1153時點。實際末端向右增加0.2200、垂直軌跡差<0.000371；核准揮擊掌骨旋轉差<0.04度。0.75–1.12秒回收X無反向／停留，內段速度至少1.583模型單位／秒、離地至少0.02672，原爪位誤差<0.0000197。8組指定BVH穿插皆0、物理鏈誤差<0.00000284、接地<0.002471、native/GLB頂點差<0.00000144；未改分支世界矩陣差<0.00000173（GLB與前版逐值為0），除攻擊鏈4骨旋轉外的通道差<0.00000190。頭向、支撐肩、固定腳掌、淺弧與漸進翻掌均通過。
+- 程式／預覽：node --test tests/boss9-melee-preview.test.cjs 16/16；npm.cmd run build 762檔；最終Python AST3檔、Node語法、export.cjs 39必要檔SHA／manifest及差異自我Review通過。五視圖600張與UI操作、通知／單次命中／膠囊間隙、零root、腳掌定地、前視與連續回收核對通過，頁面錯誤警告0；五份正常GIF各1200ms、完整4倍慢放4800ms，逐幀解碼通過。最終正側聯絡圖與0.90秒彎臂定格目視，必要QA保存在素材包。瀏覽器finally關閉且無孤兒。
+- 交接：GLB SHA256 `7cc2450cdf682f287c35c291e843a8bff7315faeeaab4fa8d33e873abfe0f190`；素材庫先提交825b0ca8cb4e31e0f8776c077c303b6d8bc29b9b，專案Commit為本段所在「[Codex] fix: 修正BOSS9斜掃彎臂與直接收招」。核實本輪tmp/boss9-right-return-20261124絕對路徑、無連結、白名單及623檔後非遞迴清除，最後4份任務試合檔同樣限名清理；與develop及實際副本試合均0。可供預覽工具合併審閱，動作採用仍待GIF驗收，未合併／推送develop或main。限制：原自動蒙皮局部拉伸及未涵蓋甲片接觸仍可能存在，正式遊戲混合／世界碰撞／多人尚未接入。下一步檢視正常／慢放GIF與彎臂定格。
+
 ## DESKTOP-MINI-LIVE-DRAG-20261119 — 迷你視窗拖曳即時跟隨滑鼠
 
 - Owner：Codex，Done。迷你標題列捕捉指標，即時移動完整視窗。按下位置隨事件傳入，修正快速拖曳時 IPC 抵達晚於滑鼠的偏移；原生 DIP 與內容區縮放共用座標，固定要求尺寸避免小數 DPI 多次拖曳累加增大。放開、取消、失去捕捉、失焦與最小化皆結束拖曳，最後位置沿用既有保存。原生最小化／方框／關閉與 Enter／Esc 保留，Windows 使用 pop-up-menu 置頂層級避免被排到工作列後方。

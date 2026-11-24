@@ -32,7 +32,7 @@ ground = spec['ground']
 pose_rate=2.4/spec['duration']
 duration, fps = 2.4, spec['authorFPS']/pose_rate
 timing={n:t*pose_rate for n,t in spec['timing'].items()}
-rise_start, sweep_start, sweep_end, recovery_start = (timing[n] for n in ['riseStart','sweepStart','sweepEnd','rightRelease'])
+rise_start, sweep_start, sweep_end, recovery_start = (timing[n] for n in ['riseStart','sweepStart','sweepEnd','poleResetStart'])
 def smooth(a,b,t):
     u=min(1,max(0,(t-a)/(b-a)));return u*u*(3-2*u)
 def travel(t):return spec['rootMotion']['distance']*smooth(spec['rootMotion']['start']*pose_rate,spec['rootMotion']['end']*pose_rate,t)
@@ -146,7 +146,7 @@ def hand_shape(amount):
     direction=Vector(points[tracked_tip].mean(axis=0)-points[tracked_base].mean(axis=0)).normalized()
     return skins,offset,direction
 
-def arc_claw(t):
+def arc_claw(t, redirected=True):
     u=min(1,max(0,(t-sweep_start)/(sweep_end-sweep_start)));s=u*u*(3-2*u)
     start=Vector((axis-.56,-.33,.64))+old_raised_q@claw_offset
     end=Vector((axis+.46,-1.26,-.35))+Euler((math.radians(20),0,math.radians(52)),'XYZ').to_quaternion()@claw_offset
@@ -158,13 +158,18 @@ def arc_claw(t):
     target.z+=(end.z-start.z)*((1-curve)*s+curve*math.sin(angle))
     v=min(1,u*2);v=v*v*(3-2*v)
     target.y=start.y+(end.y-start.y)*v
+    if redirected:
+        # Extend toward screen right. Bring the end slightly closer in depth
+        # to stay within the physical arm's reach without stretching bones.
+        target.x+=.22*s
+        target.y+=.08*s
     return target
 
 def flowing_hand(t):
     # Keep the approved arc's palm banking after the pounce is cancelled.
     # Its former advance supplies an orientation reference, not root motion.
     a=max(sweep_start,t-.0003);b=min(sweep_end,t+.0003)
-    pa,pb=arc_claw(a),arc_claw(b);pa.y-=approved_hand_advance(a);pb.y-=approved_hand_advance(b)
+    pa,pb=arc_claw(a,False),arc_claw(b,False);pa.y-=approved_hand_advance(a);pb.y-=approved_hand_advance(b)
     direction=(pb-pa).normalized()
     current_axis=hand_shape(opening(t))[2]
     q=(forward_q@current_axis).rotation_difference(direction)@forward_q
@@ -173,16 +178,25 @@ def flowing_hand(t):
     return raised_q.slerp(q,smooth(sweep_start,sweep_end-.02,t))
 
 end_hand=flowing_hand(sweep_end)
+
+def return_palm(t):
+    # One uninterrupted return to the original stance. No stop or intermediate
+    # planting in front of the opposite foot; a modest lift clears the toes.
+    u=smooth(timing['directReturnStart'],timing['rightPlant'],t)
+    start=arc_claw(sweep_end)-end_hand@claw_offset
+    goal=Vector((axis-.44,-.62,-.436))
+    return start.lerp(goal,u)+Vector((0,-.08,.17))*math.sin(math.pi*u)
+
 for i,k in enumerate(keys):
-    row=list(k);old_q=Euler((math.radians(row[12]),0,math.radians(row[13])),'XYZ').to_quaternion()
+    row=list(k)
     if 1.24<=row[0]<=1.50:row[12:14]=[math.degrees(forward_pitch),math.degrees(forward_yaw)]
     if row[0]==1.50:
         new_q=end_hand
-        # Keep the existing R3 claw arc/recovery positions when turning the
-        # wrist, including the hand-off between the sweep and recovery.
-        old_claw=Vector((axis+row[9],row[10],row[11]))+old_q@claw_offset
-        old_claw.z=-.30
-        palm=old_claw-new_q@claw_offset;row[9:12]=[palm.x-axis,palm.y,palm.z]
+        # Share one exact endpoint between the wider slash and direct return.
+        claw_target=arc_claw(sweep_end)
+        palm=claw_target-new_q@claw_offset;row[9:12]=[palm.x-axis,palm.y,palm.z]
+    if row[0]>sweep_end:
+        palm=return_palm(row[0]);row[9:12]=[palm.x-axis,palm.y,palm.z]
     keys[i]=tuple(row)
 
 key_array=np.array(keys,dtype=float)
@@ -196,7 +210,7 @@ for i in range(1,len(keys)-1):
 def hand_rotation(t,pitch,yaw):
     if sweep_start<=t<=sweep_end:return flowing_hand(t)
     if sweep_end<t<=timing['rightPlant']:
-        return end_hand.slerp(Quaternion(),smooth(sweep_end,timing['rightPlant'],t))
+        return end_hand.slerp(Quaternion(),smooth(timing['directReturnStart'],timing['rightPlant'],t))
     q=Euler((math.radians(pitch),0,math.radians(yaw)),'XYZ').to_quaternion()
     return q.slerp(raised_q,smooth(.74,1.04,t)) if t<sweep_start else q
 
@@ -331,7 +345,10 @@ def arm_ik(side, palm, pitch, yaw, rotation=None):
         u=min(1,max(0,(t-sweep_start)/(sweep_end-sweep_start)));u=u*u*(3-2*u)
         recovery=min(1,max(0,(t-recovery_start)/(duration-recovery_start)));recovery=recovery*recovery*(3-2*recovery)
         u*=1-recovery
-        pole= pole.lerp(Vector((-.4,.7,1)),u)
+        # Keep the attacking elbow below its shoulder, on the outer side;
+        # the forearm then crosses diagonally toward the claw. An upward
+        # pole folds the elbow inward and leaves the forearm pointing down.
+        pole=pole.lerp(Vector((-1,.15,.20)),u)
     else:
         support=smooth(.5,.94,t)*(1-smooth(1.62,2.24,t))
         pole=pole.lerp(Vector((1,-.05,1)),support)
@@ -346,8 +363,14 @@ def arm_ik(side, palm, pitch, yaw, rotation=None):
             alpha=(1/fps)/max(1/fps,duration-t+1/fps)
             pole=Quaternion((1,0,0,0)).slerp(turn,alpha)@pole
         else:
-            if preferred.dot(pole)<0:preferred.negate()
-            pole=pole.lerp(preferred,.10).normalized()
+            if side=='R':
+                # A pole is a physical elbow direction, not a quaternion:
+                # negating it would restore the rejected bend direction.
+                turn=pole.rotation_difference(preferred)
+                pole=Quaternion().slerp(turn,.10)@pole
+            else:
+                if preferred.dot(pole)<0:preferred.negate()
+                pole=pole.lerp(preferred,.10).normalized()
     else:pole=preferred
     if t==0:initial_poles[side]=pole.copy()
     last_poles[side]=pole.copy()
@@ -412,6 +435,7 @@ for t in times:
     hand_q=hand_rotation(t,hp,hy)
     amount=opening(t);current_offset=hand_shape(amount)[1]
     palm=arc_claw(t)-hand_q@current_offset if sweep_start<=t<=sweep_end else Vector((axis+rx,ry,rz))
+    if t>sweep_end:palm=return_palm(t)
     if t<sweep_start and amount>0:
         previous_q=Euler((math.radians(hp),0,math.radians(hy)),'XYZ').to_quaternion()
         palm+=previous_q@claw_offset-hand_q@current_offset
@@ -484,7 +508,10 @@ report['keys']=[[k[0]/pose_rate,*k[1:]] for k in keys]
 report['timing']={n:spec['timing'][n] for n in ['riseStart','sweepStart','sweepEnd']}
 report['timing']['riseAndSweepSeconds']=spec['timing']['sweepEnd']-spec['timing']['riseStart']
 report['openHand']['peakTime']=spec['timing']['sweepStart']
-report['headTracking']={'neck':'spine_17','skull':'spine_16','bindForward':[0,-1,0],'bindUp':[0,0,1],'neckShare':.45,'fullFrom':spec['timing']['riseStart'],'fullThrough':spec['timing']['rightPlant']}
+report['headTracking']={'neck':'spine_17','skull':'spine_16','bindForward':[0,-1,0],'bindUp':[0,0,1],'neckShare':.45,'fullFrom':spec['timing']['riseStart'],'fullThrough':spec['timing']['headStableEnd']}
+report['slashRedirect']={'rightwardExtension':.22,'depthRetraction':.08,'approvedPalmOrientationRetained':True}
+report['slashRedirect']['attackingElbowPole']=[-1,.15,.20]
+report['recovery']={'directReturnStart':spec['timing']['directReturnStart'],'plantAtOriginalPosition':spec['timing']['rightPlant'],'intermediatePlant':False,'clearanceLift':.17}
 report['headTracking']['clearanceDirection']=[0,.08,.12]
 report['stance']={'fixedFeet':True,'fixedLeftPalm':True,'bodyPitchRetention':.5,'supportBendRetention':.5,'minimumSupportBendDegrees':12,'raisedSupportBendDegrees':60,'supportElbowPole':[1,-.05,1],'supportCollarDirection':[.12,0,-.07],'visibleSupportShoulderDirection':[1,0,-.08],'maximumBodyLift':max(stance_lifts),'rootAdvance':spec['rootMotion']['distance']}
 (out/'build.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')

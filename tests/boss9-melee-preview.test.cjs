@@ -11,7 +11,8 @@ test('shared animation notifies validate and phase boundaries are half-open',()=
  const landing=structuredClone(spec);landing.notifies.find(e=>e.name==='RightClawPlant').time=off-.01;assert.throws(()=>api.validate(landing));
 });
 test('the complete attack and notify timeline last exactly 1.2 seconds',()=>{
- assert.equal(doneAt,1.2);close(windupEnd,.25);close(activeEnd,.75);close(on,.56);close(spec.timing.rightPlant,.81);
+ assert.equal(doneAt,1.2);close(windupEnd,.25);close(activeEnd,.75);close(on,.56);close(spec.timing.rightPlant,1.12);
+ close(spec.timing.directReturnStart,off);assert.equal(spec.notifies.filter(e=>e.name==='RightClawPlant').length,1);
  assert.equal(spec.rootMotion.distance,0);
  const a=new api.Attack(spec);assert.equal(a.advanceTo(1.2-1e-6).phase,'Recovery');assert.equal(a.advanceTo(1.2).phase,'Idle');assert.deepEqual(a.events,spec.notifies);
 });

@@ -18,6 +18,7 @@ if(process.argv[2]==='--stage'){
  copy(path.join(project,'docs/assets/BOSS9_LIZARD_MELEE.md'),path.join(pack,'source/BOSS9_LIZARD_MELEE.md'));
  for(const name of ['BOSS9_Attack1.gif','BOSS9_Attack1_Side.gif','BOSS9_Attack1_Hitbox.gif','BOSS9_Attack1_Capsule.gif','BOSS9_Attack1_Path.gif','BOSS9_Attack1_Arc_Slow.gif'])copy(path.join(review,'preview',name),path.join(pack,'preview',name));
  copy(path.join(review,'front/0055.png'),path.join(pack,'preview/BOSS9_Attack1_OpenPalm.png'));
+ copy(path.join(review,'front/0090.png'),path.join(pack,'preview/BOSS9_Attack1_Elbow.png'));
  for(const view of views){copy(path.join(review,view,'capture.json'),path.join(pack,'qa',view+'-capture.json'));copy(path.join(review,'preview',view+'-contact.jpg'),path.join(pack,'qa',view+'-contact.jpg'));}
  copy(path.join(review,'preview/encoding.json'),path.join(pack,'qa/encoding.json'));
  for(const name of ['build.log','verify.log','unit.log'])copy(path.join(review,name),path.join(pack,'qa',name));
@@ -26,7 +27,7 @@ if(process.argv[2]==='--stage'){
   const projectPath=relative.startsWith('source/tools/')?'tools/boss9-lizard/melee/'+path.basename(f):relative==='source/BOSS9_LIZARD_MELEE.md'?'docs/assets/BOSS9_LIZARD_MELEE.md':relative==='source/boss9-melee-preview.test.cjs'?'tests/boss9-melee-preview.test.cjs':null;
   return {path:relative,sha256:hash(f),...(projectPath?{project:projectPath}:{})};
  });
- fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id,status:'Corrected outward opening of the visible support shoulder; awaiting GIF review; no game integration',base:'Standing 1.2-second attack with forward gaze and approved gradual palm gesture',specification:'Open the weighted shoulder link outward from the chest and solve elbow/wrist; preserve planted feet and palm, torso, attacking claw and animation notifies',files:entries},null,2)+'\n');
+ fs.writeFileSync(path.join(pack,'manifest.json'),JSON.stringify({id,status:'Wider slash with corrected attacking-elbow bend and uninterrupted return; awaiting GIF review',base:'Standing 1.2-second attack with corrected support shoulder and gradual palm gesture',specification:'Upper arm descends before the forearm crosses diagonally right/down; extend the slash rightward; plant only at the original stance at 1.12 seconds; keep the hitbox window unchanged',files:entries},null,2)+'\n');
 }
 const manifest=read(path.join(pack,'manifest.json'));
 assert.equal(manifest.id,id);assert.equal(new Set(manifest.files.map(e=>e.path)).size,manifest.files.length);
@@ -39,14 +40,17 @@ assert.equal(hash(path.join(pack,'exports/boss9_attack1.glb')),v.glbSHA256);asse
 assert.ok(b.sourceBinaryPreserved&&v.sourceBinaryAndWalkPreserved);assert.equal(v.bones,73);assert.deepEqual(v.clips,['Walk','Idle',spec.id]);assert.equal(v.duration,spec.duration);
 assert.deepEqual(b.spec,spec);assert.deepEqual(v.notifies,spec.notifies);assert.equal(spec.duration,1.2);assert.equal(spec.rootMotion.distance,0);assert.ok(Math.abs(b.timing.riseAndSweepSeconds-spec.duration/2.4)<1e-7);
 assert.ok(v.nativeGLBMaximumVertexDifference<2e-5&&v.channelPoseSeamError<1e-5&&v.idleAttackPoseDifference<2e-5);
-assert.equal(v.previousRevisionSHA256,'ae53640638467e55990265b0eefd6f922b46226542a749af3a9a4e172186b5d7');assert.ok(v.unchangedOtherChannelError<1e-5);
+assert.equal(v.previousRevisionSHA256,'d669fdc2804202e63bd912c1770278382a62b4fedc103474d0010c11e211ae57');assert.ok(v.unchangedOtherChannelError<1e-5);
 assert.deepEqual(b.stance.visibleSupportShoulderDirection,[1,0,-.08]);
+assert.equal(b.recovery.intermediatePlant,false);assert.equal(b.recovery.directReturnStart,.75);assert.equal(b.recovery.plantAtOriginalPosition,1.12);
+assert.deepEqual(b.slashRedirect.attackingElbowPole,[-1,.15,.20]);
 for(const c of Object.values(v.checks)){
  assert.equal(c.samples,1153);assert.ok(c.boneLengthError<1e-5&&c.limbLinkError<1e-5&&c.maximumJointStep<.12&&c.rootMotionError<1e-5);
  assert.ok(c.windupHipDrop>.08&&c.windupHandDrift<.012&&c.plantedGroundError<.012&&c.maximumBelowGround<.008&&c.idlePoseAtAdvancedPositionError<1e-5);
  assert.ok(Object.values(c.triangleOverlaps).every(n=>n===0));
  const f=c.flow;assert.ok(f.minimumTangentAlignment>.82&&f.maximumFingerDirectionStepDegrees<6&&f.horizontalTravel>.7&&f.verticalTravel<-.9&&f.arcChordDeviation>.08&&f.arcChordDeviation<.28&&f.middleHorizontalProgress>.25&&f.middleHorizontalProgress<.55&&f.middleVerticalProgress>.45&&f.middleVerticalProgress<.75&&f.lateHorizontalTravel>.15&&f.lateVerticalDrop>.03&&f.lateVerticalDrop<.15&&f.lateMinimumTipClearance>.05);
- const h=c.openHand;assert.ok(h.minimumPadUp>.45&&h.minimumFingerExtension>.94&&h.minimumTipRiseAbovePalm>.1&&h.arcBowRatio>.9&&h.arcBowRatio<1.1&&h.maximumReferenceClawPathDifference<.06);
+ const h=c.openHand;assert.ok(h.minimumPadUp>.45&&h.minimumFingerExtension>.94&&h.minimumTipRiseAbovePalm>.1);
+ const redirect=h.redirect;assert.ok(redirect.startPathDifference<.002&&redirect.endRightwardShift>.18&&redirect.endRightwardShift<.26&&redirect.maximumVerticalPathChange<.01&&redirect.minimumRightwardShift>-.002,'Actual claw must extend rightward while keeping its original raised start and vertical arc');
  const t=c.palmTransition,p=t.normalProgress,d=t.fingerHeadingDegrees;
  assert.ok(t.padUp[1]>.25&&p[1]>.05&&p[1]<.30&&p[2]>.35&&p[2]<.75&&p[3]>.85,'Palm must pass through gradual intermediate orientations');
  assert.ok(Math.abs(d[1]-d[0])<25&&d[2]>25&&d[2]<85&&d[3]>95,'Finger heading must turn progressively through the stroke');
@@ -54,8 +58,10 @@ for(const c of Object.values(v.checks)){
  const gaze=c.headTracking;assert.ok(gaze.maximumAbsYawDegrees<3&&gaze.minimumPitchDegrees>-8&&gaze.maximumPitchDegrees<-2&&gaze.maximumAbsBankDegrees<3,'Neck and skull must keep the head facing the enemy');
  const stance=c.standing;assert.ok(stance.maximumFootDrift<1e-4&&stance.maximumSupportPalmDrift<.012,'Feet and support palm must stay planted');
  const setup=stance.setupArm;assert.ok(setup.minimumUpperArmOutward>.15&&setup.maximumUpperArmDrop<.20&&setup.minimumForearmDrop>.2&&setup.minimumElbowBendDegrees>20&&setup.maximumElbowBendDegrees<80,'Illustrated support arm must open outward and descend to the planted palm');
- const shoulder=c.shoulderCorrection;assert.ok(shoulder.maximumUnchangedBakedJointPositionChange<1e-5&&shoulder.maximumOtherBakedSkinMatrixChange<1e-5&&shoulder.maximumUnchangedJointPositionChange<1e-4&&shoulder.maximumOtherBoneSkinMatrixChange<1e-4,'Preserve the torso, feet, wrist, head and attacking claw at baked poses and bound quaternion interpolation residual');
- assert.ok(shoulder.raisedShoulderElevationDegrees.every(v=>v>-6&&v<0)&&shoulder.minimumRaisedShoulderOutward>.17&&shoulder.maximumCorrectiveRotationStepDegrees<2&&shoulder.endpointCorrectionDegrees.every(v=>v<.05)&&shoulder.raisedWeightedVertexDisplacement>.05&&shoulder.weightedVertexCount===244,'Visible shoulder skin must follow the outward opening smoothly');
+ const preserve=c.preservation;assert.ok(preserve.maximumUnchangedBakedJointPositionChange<1e-5&&preserve.maximumOtherBakedSkinMatrixChange<1e-5&&preserve.maximumUnchangedJointPositionChange<1e-4&&preserve.maximumOtherBoneSkinMatrixChange<1e-4,'Preserve the torso, feet, head and corrected support shoulder');
+ assert.ok(preserve.raisedShoulderElevationDegrees.every(v=>v>-6&&v<0)&&preserve.minimumRaisedShoulderOutward>.17);
+ const r=c.directReturn;assert.ok(r.start===.75&&r.plant===1.12&&r.maximumRightwardReversal<1e-5&&r.minimumInteriorReturnSpeed>.3&&r.minimumInteriorGroundClearance>.025&&r.plantPositionError<1e-4,'Return continuously to the original stance without an intermediate hold or plant');
+ const arm=c.attackingArmBend;assert.ok(arm.upperArmDrop>.15&&Math.abs(arm.elbowOutwardOffset)<.09&&arm.forearmRightwardTravel>.15&&arm.forearmDrop>.08&&arm.forearmDrop<.15,'Attacking upper arm must descend first, with its forearm then crossing diagonally to the claw');
 }
 for(const view of views){
  const c=read(path.join(pack,'qa',view+'-capture.json'));assert.equal(c.clipName,spec.id);assert.equal(c.glbSHA256,v.glbSHA256);assert.equal(c.frames.length,120);assert.ok(Math.abs(c.duration-spec.duration)<1e-6);assert.deepEqual(c.errors,[]);assert.deepEqual(c.warnings,[]);
@@ -66,7 +72,7 @@ for(const view of views){
   assert.ok(s.actualDistance>=-1e-7&&s.actualDistance<=spec.rootMotion.distance+1e-7);
   assert.ok(s.hits.length<=1);for(const h of s.hits)assert.ok(h.time>=spec.hitbox.on&&h.time<spec.hitbox.off&&h.damageType==='physical');
   if(poseTime(f.time)>=1.04&&poseTime(f.time)<=1.12)assert.ok(f.geometryCenters.palmNormal[1]>.45&&f.geometryCenters.longTipRise>.10,'Raised palm surface must face upward and fingers must extend above it');
-  if(f.time>=spec.timing.riseStart&&f.time<=spec.timing.rightPlant)assert.ok(Math.abs(f.headGaze.yawDegrees)<3&&f.headGaze.pitchDegrees>-8&&f.headGaze.pitchDegrees<-2&&Math.abs(f.headGaze.bankDegrees)<3,'Rendered head and eyes must keep facing forward');
+  if(f.time>=spec.timing.riseStart&&f.time<=spec.timing.headStableEnd)assert.ok(Math.abs(f.headGaze.yawDegrees)<3&&f.headGaze.pitchDegrees>-8&&f.headGaze.pitchDegrees<-2&&Math.abs(f.headGaze.bankDegrees)<3,'Rendered head and eyes must keep facing forward');
   if(s.phase==='Windup')assert.ok(Math.abs(s.actualDistance)<1e-7&&s.hits.length===0);
   if(f.geometryCenters.minimumCapsuleGap!==null)assert.ok(f.geometryCenters.minimumCapsuleGap>=spec.bossCapsule.skin-1e-6,'Player capsules must not overlap');
  }
@@ -82,6 +88,8 @@ for(const view of views){
   const progress=g.map(q=>angle(g[0].palmNormal,q.palmNormal)/angle(g[0].palmNormal,g[4].palmNormal)),heading=g.map(q=>Math.atan2(q.fingerDirection[0],q.fingerDirection[1])*180/Math.PI);
   assert.ok(g[1].palmNormal[1]>.25&&progress[1]>.05&&progress[1]<.30&&progress[2]>.35&&progress[2]<.75&&progress[3]>.85,'Rendered palm must stay upward initially and gradually flip');
   assert.ok(Math.abs(heading[1]-heading[0])<25&&heading[2]>25&&heading[2]<85&&heading[3]>95,'Rendered fingers must gradually turn with the arm');
+  const returning=c.frames.filter(f=>f.time>=.80&&f.time<=1.08);for(let i=1;i<returning.length;i++)assert.ok(returning[i].geometryCenters.palm[0]<returning[i-1].geometryCenters.palm[0]-.001,'Rendered claw must keep returning instead of holding in front of the opposite foot');
+  assert.ok(Math.hypot(...c.frames[112].geometryCenters.palm.map((v,i)=>v-c.frames[0].geometryCenters.palm[i]))<1e-4,'Rendered hand must plant only at its original position');
  }
  if(view==='path'){
   assert.ok(c.guide);const active=c.frames.filter(f=>poseTime(f.time)>=1.12&&poseTime(f.time)<=1.5);
@@ -93,4 +101,5 @@ for(const view of views){
 for(const gif of e.gifs){const slow=gif.file==='BOSS9_Attack1_Arc_Slow.gif';assert.equal(gif.frames,slow?120:60);assert.equal(gif.durationMs,slow?4800:1200);assert.deepEqual(gif.size,[900,600]);assert.equal(hash(path.join(pack,'preview',gif.file)),gif.sha256);if(slow)assert.equal(gif.speed,.25);}
 assert.equal(e.gifs.length,6);
 const openPalm=fs.readFileSync(path.join(pack,'preview/BOSS9_Attack1_OpenPalm.png'));assert.equal(openPalm.readUInt32BE(16),900);assert.equal(openPalm.readUInt32BE(20),600);
+const elbowPose=fs.readFileSync(path.join(pack,'preview/BOSS9_Attack1_Elbow.png'));assert.equal(elbowPose.readUInt32BE(16),900);assert.equal(elbowPose.readUInt32BE(20),600);
 console.log('BOSS9_MELEE_PACKAGE_PASS',manifest.files.length,'files; Walk preserved; native/GLB/Idle/animation notifies/GIFs/collision/UI verified');
