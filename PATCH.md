@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 序章第二段（00:34–01:09.5 / Shot 03）電影級復刻分鏡手冊與參考圖包（Antigravity 2026-11-25）
+
+- **新增 [`opening_animation/CINEMATIC_PART2_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_PART2_STORYBOARD.md) 與 `opening_animation/cinematic_part2_pack/`**：
+  - 依原片 [`shots-01-05-replay.mp4`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/shots-01-05-replay.mp4) 完整 Shot 03（`00:34.000 – 01:09.500`，35.500 秒 / 1065 幀）拆分為 4 段（Clip 05 ～ Clip 08：薩爾維恩大陸與紫霧蔓延、天降希望神光並俯衝荒漠、煙塵散去顯現倒臥大天使長、焦羽落胸星芒爆發）。
+  - 擷取 4 張原片構圖基準圖並自製生成 3 張 AAA 3D CGI 電影風格基準圖（`ref_map.png`、`ref_desert_fallen.png`、`ref_feather_glow.png`），直接內嵌於分鏡手冊並納入 Git 追蹤。
+  - 新增一鍵合成腳本 [`assemble_part2.mjs`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/cinematic_part2_pack/assemble_part2.mjs)，自動對齊 1920×1080 30 fps、跨溶解銜接並同步混入原片 `00:34.00 – 01:09.50` 音效與 `desert-ascendant.mp3` BGM。
+
+
 ## 序章前 30 秒分鏡手冊補齊參考圖與直接投餵格式（Antigravity 2026-11-25）
 
 - **補齊 6 張參考圖與一鍵合成腳本並納入 Git 追蹤（`opening_animation/cinematic_30s_pack/`）**：
