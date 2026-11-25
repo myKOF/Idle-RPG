@@ -20,6 +20,7 @@ function setup(rendererSource = src) {
     inner: tex(140, 92), outer: tex(140, 92), width: 64, height: 40, k: 2, pad: 6
   }]));
   c.buildNpcRankMasks = frame => maps.get(frame) || null;
+  c.captureEntityBodyBox = () => {}; // 本測試只驗本體替換後的階級覆光，命中框另由專項驗證。
   const rootNode = new P.Container(), wrap = new P.Container(), body = new P.Sprite(frameA);
   rootNode.addChild(wrap); wrap.addChild(body); body.anchor.set(.5, 1);
   const ent = { id: 'npc', root: rootNode, bodyWrap: wrap, body, data: { elite: true },
@@ -78,12 +79,50 @@ test('換幀使用該幀遮罩；階級／受擊alpha／visible即時同步，�
   ent.data._tier = 'elite'; c.syncNpcRankGlow(ent);
   assert.equal(glow.inner.alpha, .95 * c.NPC_ELITE_BLEND_ALPHA); assert.equal(glow.outer.alpha, .95 * c.NPC_ELITE_GLOW_ALPHA);
   ent.data.isBoss = true; c.syncNpcRankGlow(ent);
-  assert.equal(glow.inner.alpha, .95 * .3); assert.equal(glow.outer.alpha, .95);
+  assert.equal(glow.inner.alpha, 0); assert.equal(glow.inner.visible, false); assert.equal(glow.outer.alpha, .95);
   assert.equal(ent.body.alpha, .95);
   ent.body.texture = P.Texture.EMPTY; c.syncNpcRankGlow(ent);
   assert.equal(glow.inner.visible, false); assert.equal(glow.outer.visible, false);
   ent.body.texture = frameB; ent.body.visible = true; c.syncNpcRankGlow(ent);
-  assert.equal(glow.inner.visible, true);
+  assert.equal(glow.inner.visible, false); assert.equal(glow.outer.visible, true);
+});
+
+test('野外與三區封魔塔BOSS只顯示外暈，2D／3D換幀與階級切換均保留本體色彩及透明度', () => {
+  const bosses = [{ isBoss: true }, { _tier: 'boss' }, { _tier: 'tower' },
+    { towerBoss: true }, { towerBoss: true, hell: true }, { towerBoss: true, purgatory: true }];
+  for (const is3d of [false, true]) {
+    const { c, ent, maps, frameA, frameB } = setup();
+    if (is3d) {
+      ent.body.hero3d = {};
+      c.buildNpc3dRankMasks = body => maps.get(body.texture);
+    }
+    c.syncNpcRankGlow(ent); // 已有菁英覆色時升成BOSS，也必須移除舊覆色。
+    assert.equal(ent.rankGlow.inner.visible, true);
+    for (const data of bosses) {
+      ent.data = data;
+      for (const frame of [frameA, frameB]) {
+        ent.body.texture = frame;
+        ent.body.tint = 0xb59672;
+        for (const alpha of [1, .43]) {
+          ent.body.alpha = alpha;
+          c.syncNpcRankGlow(ent);
+          assert.equal(ent.rankGlow.inner.visible, false);
+          assert.equal(ent.rankGlow.inner.alpha, 0);
+          assert.equal(ent.rankGlow.outer.visible, true);
+          assert.equal(ent.rankGlow.outer.alpha, alpha);
+          assert.equal(ent.rankGlow.outer.texture, maps.get(frame).outer);
+          assert.ok(ent.bodyWrap.getChildIndex(ent.rankGlow.outer) < ent.bodyWrap.getChildIndex(ent.body));
+          assert.equal(ent.body.texture, frame);
+          assert.equal(ent.body.tint, 0xb59672);
+          assert.equal(ent.body.alpha, alpha);
+        }
+      }
+    }
+    ent.data = { elite: true }; c.syncNpcRankGlow(ent);
+    assert.equal(ent.rankGlow.inner.visible, true);
+    assert.equal(ent.rankGlow.inner.alpha, .43 * c.NPC_ELITE_BLEND_ALPHA);
+    assert.ok(ent.bodyWrap.getChildIndex(ent.rankGlow.outer) > ent.bodyWrap.getChildIndex(ent.body));
+  }
 });
 
 test('圖片晚載替換本體後輪廓更新、成長基準重設；普通怪不建立覆層', () => {
@@ -117,7 +156,7 @@ test('參數表藍／黃光暈與混色濃度各自獨立套用到外框光暈�
     for (const file of ['tools/apply_params.cjs', 'js/data.js', 'js/formula.js', 'js/combat.js',
       'js/item.js', 'js/player.js', 'js/save.js', 'js/battle-renderer.js',
       'config/CSV/Zones.csv', 'config/CSV/Zone_Stage_Drops.csv', 'config/CSV/Store.csv',
-      'config/CSV/system_unlock.csv', 'config/CSV/Equipment_Affix.csv']) {
+      'config/CSV/system_unlock.csv', 'config/CSV/Equipment_Affix.csv', 'config/CSV/Relics.csv']) {
       const target = path.join(temp, file);
       fs.mkdirSync(path.dirname(target), { recursive: true });
       fs.copyFileSync(path.join(root, file), target);
@@ -142,7 +181,7 @@ test('參數表藍／黃光暈與混色濃度各自獨立套用到外框光暈�
       const { c, ent } = setup(applied);
       ent.body.alpha = .5;
       for (const [data, glowV, mixV] of [[{ elite: true }, blue, blueMix], [{ _tier: 'elite_adv' }, yellow, yellowMix],
-        [{ isBoss: true }, 1, .3]]) {
+        [{ isBoss: true }, 1, 0]]) {
         ent.data = data; c.syncNpcRankGlow(ent);
         assert.equal(ent.rankGlow.outer.alpha, glowV * .5);
         assert.equal(ent.rankGlow.inner.alpha, mixV * .5);

@@ -1558,12 +1558,13 @@ var BattleRenderer = (function () {
   var NPC_RANK_STYLES = {
     elite: { rim: 0x329dff, inner: 0x70cfff, glow: NPC_ELITE_GLOW_ALPHA, blend: NPC_ELITE_BLEND_ALPHA },
     elite_adv: { rim: 0xffcf32, inner: 0xffe878, glow: NPC_ELITE_ADV_GLOW_ALPHA, blend: NPC_ELITE_ADV_BLEND_ALPHA },
-    boss: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0.3 },
+    /* BOSS只保留外層光暈，不以階級顏色覆蓋模型本色。 */
+    boss: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0 },
     /* 封魔塔 BOSS 依塔區換光色（使用者 2026-11-09）：1~50 層藍、51~100 層紫、101~150 層紅。
        分段沿用塔區旗標（formula.js isHellTowerFloor／isPurgatoryTowerFloor，界線在 data.js TOWER_*_MAX_FLOOR）。 */
-    towerTrial: { rim: 0x329dff, inner: 0x70cfff, glow: 1, blend: 0.3 },
-    towerHell: { rim: 0xb45cff, inner: 0xdcaaff, glow: 1, blend: 0.3 },
-    towerPurgatory: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0.3 }
+    towerTrial: { rim: 0x329dff, inner: 0x70cfff, glow: 1, blend: 0 },
+    towerHell: { rim: 0xb45cff, inner: 0xdcaaff, glow: 1, blend: 0 },
+    towerPurgatory: { rim: 0xff3020, inner: 0xffb43c, glow: 1, blend: 0 }
   };
   function npcRankStyle(data) {
     if (data.towerBoss) {
@@ -1750,6 +1751,11 @@ var BattleRenderer = (function () {
     }
     glow.outer.texture = masks.outer; glow.inner.texture = masks.inner;
     glow.outer.tint = style.rim; glow.inner.tint = style.inner;
+    /* BOSS外暈置於本體後方，避免低解析度遮罩的柔邊滲入模型蓋色；階級切換時同步恢復順序。 */
+    var bodyIndex = ent.bodyWrap.getChildIndex(body), outerIndex = ent.bodyWrap.getChildIndex(glow.outer);
+    if ((!style.blend && outerIndex > bodyIndex) || (style.blend > 0 && outerIndex < bodyIndex)) {
+      ent.bodyWrap.setChildIndex(glow.outer, bodyIndex);
+    }
     /* 與本體同父層，抖動、死亡壓扁、淡出與billboard矩陣自然共用；
        本體自己還有成長縮放／anchor／翻面，兩層也必須逐幀同步。 */
     var ax = body.anchor.x, ay = body.anchor.y;
@@ -1760,7 +1766,8 @@ var BattleRenderer = (function () {
       sp.position.copyFrom(body.position); sp.scale.set(body.scale.x / masks.k, body.scale.y / masks.k);
       sp.rotation = body.rotation; sp.skew.copyFrom(body.skew);
       sp.pivot.set(body.pivot.x * masks.k, body.pivot.y * masks.k);
-      sp.alpha = body.alpha * (i ? style.blend : style.glow); sp.visible = body.visible;
+      sp.alpha = body.alpha * (i ? style.blend : style.glow);
+      sp.visible = body.visible && (!i || style.blend > 0);
     }
   }
 

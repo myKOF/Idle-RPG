@@ -13,6 +13,18 @@
 - 雙倉庫：素材庫master先提交`68a51325cd64075d3aecbc85a8f5740cf29044be`（33檔，含新包與來源紀錄），提交後乾淨；專案commit為本段所在`[Codex] feat: 依參考重製BOSS9交叉連爪預覽`，位於ai/codex。完成自我Review，製作範圍無未完成項目；下一步交正常與慢放GIF給使用者驗收，視覺核准前不導入實戰。未合併或推送任何分支。
 - 同副本交接：收尾時出現另一項BOSS-OUTER-GLOW-20261125任務紀錄，與本輪僅共享文件而無程式相依；分段暫存本段，該進行中任務與其他未提交修改保留，不納入本輪提交。
 
+## BOSS-OUTER-GLOW-20261125 — BOSS只保留外層漸層光暈
+
+- Owner：Codex；Done，單人修改。依使用者截圖取消BOSS模型的階級覆色，只保留外側漸層光暈，模型原色與透明度維持；包含野外與封魔塔三區、2D備援及3D模型。
+- 前置：既有階級遮罩與3D逐幀光暈已完成；fetch及逐檔衝突預檢無外部來源。同副本BOSS9第三招製作及其任務紀錄保留，僅暫存本項段落。
+- 允許：js/battle-renderer.js的BOSS覆光設定與可見性、index.html及tools/scene-preview.html對應快取、tests/npc-rank-glow.test.cjs、LV_upgrade_system.md與本段。禁止修改模型／貼圖／Excel／CSV／技能或戰鬥數值／Worker／存檔及解鎖，不合併推送。
+- 驗收：BOSS外暈原色與漸層保持、內層覆色不顯示、模型tint／alpha不被覆光同步改寫；菁英原覆色與死亡隱藏維持。相關回歸、Build、瀏覽器畫面／Console及Git差異檢查後提交，交使用者審閱合併。
+- 完成／修改6檔：js/battle-renderer.js的野外／三區塔BOSS混色歸零並隱藏內層，外暈置於本體後方避免低解析度柔邊蓋色；切回菁英恢復原圖層順序。index.html與tools/scene-preview.html同步renderer快取20261125-boss-outer-glow-v1；tests/npc-rank-glow.test.cjs驗2D／3D、換幀／階級切換／原tint與alpha，並補既有隔離fixture缺少的captureEntityBodyBox stub及Relics.csv依賴；LV_upgrade_system.md及本段同步。未新增或修改美術素材，素材庫無本項變更，不建立空提交。
+- 指令／結果：node --test tests/npc-rank-glow.test.cjs tests/npc3d-runtime.test.cjs tests/npc3d-locomotion.test.cjs tests/vfx-editor-cache-versions.test.cjs為20/20通過；npm.cmd run build通過767檔；Git差異與自我Review通過。初始基線另跑tests/npc-death-ui.test.cjs，3項皆因既有fixture缺DEATH_ANIM_DELAY_MS失敗，本輪未改該測試或死亡流程。原rank-glow的兩項fixture缺依賴已修好，未降低功能斷言。
+- 畫面：browser技能IAB無可用backend，改專案launchHeadless看門狗管理的隔離靜音Edge。以正式Npc3D／Hero3D／Pixi及當前renderer遮罩／同步函式，載boss3.glb，比較Walk兩幀及Attack1一幀×野外紅／塔藍紫紅共12組。不透明本體像素每組7,999～9,930個，與無覆光原模型逐RGBA差異0，外暈像素均存在，本體alpha=1、tint=白、內層隱藏；死亡立即隱藏內外層。首次比對曾發現外暈柔邊蓋入本體，調整前後順序後重驗全部通過，未放寬像素斷言。截圖目視原色與三區外暈保持，Console錯誤／警告0。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex.md、既有任務、js/npc3d.js／hero3d.js／data.js、tools/apply_params.cjs／boss8/verify_ingame.cjs／lib/headless-browser.cjs、既有死亡UI／3D／快取測試與BOSS3模型。未改Worker、協議、模型材質、配置或戰鬥數值；同副本其他聊天的NPC.xlsx／NPC.csv／data.js進行中修改不納入本次提交。
+- 交接：本項無未完成實作，可審閱合併；限制為未跑完整塔戰勝敗、全庫、多瀏覽器及桌面包，另有上述3項既有死亡UI測試失敗。BOSS9第三招在本輪期間已獨立提交，本段與其不同區段且無語意相依；僅提交本項6檔。瀏覽器／伺服器關閉，kill-test-browsers確認無測試瀏覽器，無桌面擷取工作階段。自動核准審查以政策限制拒絕刪除專用tmp/boss-outer-glow-20261125，內含驗證腳本／PNG／JSON，保留於磁碟且不提交，未換方式重試。Commit為本段所在「[Codex] fix: BOSS僅保留外層漸層光暈」，SHA見交付；未合併或推送任何分支。下一步重新載入遊戲驗收。
+
 ## SYNC-DEVELOP-20261125 — 整合桌面遊玩記錄、Demo 法力與配樂
 
 - Owner：Codex；待控制器暫存及建立合併提交。合併基底 `0f39548b`，原 HEAD `0eea3bb2`，傳入 `0d85dad4`。
