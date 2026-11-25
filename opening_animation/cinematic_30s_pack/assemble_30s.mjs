@@ -22,7 +22,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const CLIPS_DIR = path.join(__dirname, 'clips_input');
-const ORIGINAL_VIDEO = path.resolve(__dirname, '..', 'shots-01-05-replay.mp4');
+const ORIGINAL_SFX = path.resolve(__dirname, '..', 'shots-01-05-replay-sfx.mp3');
+const ORIGINAL_BGM = path.resolve(__dirname, '..', '..', 'audio', 'zones', 'desert-ascendant.mp3');
 const OUTPUT_VIDEO = path.join(__dirname, 'output_30s_cinematic.mp4');
 
 const REQUIRED_CLIPS = [
@@ -39,8 +40,13 @@ function checkPrerequisites() {
     process.exit(1);
   }
 
-  if (!fs.existsSync(ORIGINAL_VIDEO)) {
-    console.error(`[錯誤] 找不到原片音軌來源：${ORIGINAL_VIDEO}`);
+  if (!fs.existsSync(ORIGINAL_SFX)) {
+    console.error(`[錯誤] 找不到原片音效檔：${ORIGINAL_SFX}`);
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(ORIGINAL_BGM)) {
+    console.error(`[錯誤] 找不到原片 BGM 檔：${ORIGINAL_BGM}`);
     process.exit(1);
   }
 
@@ -66,14 +72,16 @@ function main() {
   const clip2Dur = (8 + 29 / 30).toFixed(6);
 
   const filterComplex = [
-    `[0:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.000,setpts=PTS-STARTPTS[v0]`,
-    `[1:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=${clip2Dur},setpts=PTS-STARTPTS[v1]`,
-    `[2:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=7.000,setpts=PTS-STARTPTS[v2]`,
-    `[3:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=7.000,setpts=PTS-STARTPTS[v3]`,
-    `[v0][v1]concat=n=2:v=1:a=0[v01]`,
-    `[v01][v2]xfade=transition=fade:duration=${xfadeDur}:offset=16.000[v012]`,
+    `[0:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.000,setpts=PTS-STARTPTS,settb=1/30[v0]`,
+    `[1:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=${clip2Dur},setpts=PTS-STARTPTS,settb=1/30[v1]`,
+    `[2:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=7.000,setpts=PTS-STARTPTS,settb=1/30[v2]`,
+    `[3:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=7.000,setpts=PTS-STARTPTS,settb=1/30[v3]`,
+    `[v0][v1]concat=n=2:v=1:a=0,fps=30,settb=1/30[v01]`,
+    `[v01][v2]xfade=transition=fade:duration=${xfadeDur}:offset=16.000,fps=30,settb=1/30[v012]`,
     `[v012][v3]concat=n=2:v=1:a=0,trim=duration=30.000,setpts=PTS-STARTPTS[vout]`,
-    `[4:a]atrim=duration=30.000,asetpts=PTS-STARTPTS[aout]`,
+    `[4:a]aresample=48000,atrim=duration=30.000,asetpts=PTS-STARTPTS,volume=1.0[asfx]`,
+    `[5:a]aresample=48000,atrim=duration=30.000,asetpts=PTS-STARTPTS,volume=0.75[abgm]`,
+    `[asfx][abgm]amix=inputs=2:duration=shortest:normalize=0,afade=t=out:st=29.5:d=0.5[aout]`,
   ].join(';');
 
   const args = [
@@ -82,7 +90,8 @@ function main() {
     '-i', inputs[1],
     '-i', inputs[2],
     '-i', inputs[3],
-    '-i', ORIGINAL_VIDEO,
+    '-i', ORIGINAL_SFX,
+    '-i', ORIGINAL_BGM,
     '-filter_complex', filterComplex,
     '-map', '[vout]',
     '-map', '[aout]',
