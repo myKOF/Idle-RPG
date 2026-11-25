@@ -68,17 +68,18 @@ function main() {
     'scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,fps=30,format=yuv420p,setsar=1';
 
   // 29 幀 @ 30fps = 0.966667s（對齊手冊 00:16.000–00:16.950 / 幀 480–508）
-  const xfadeDur = (29 / 30).toFixed(6);
-  const clip2Dur = (8 + 29 / 30).toFixed(6);
+  // 同時在 7.6s（Clip 01→02，0.8s 柔化疊化）與 23.0s（Clip 03→04，0.5s 柔化疊化）平滑銜接，消除硬切跳幀感
+  const xfadeShot2 = (29 / 30).toFixed(6);
+  const clip2Dur = (8.4 + 29 / 30).toFixed(6); // 9.366667s：7.600 + 9.366667 = 16.966667s
 
   const filterComplex = [
-    `[0:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.000,setpts=PTS-STARTPTS,settb=1/30[v0]`,
+    `[0:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.400,setpts=PTS-STARTPTS,settb=1/30[v0]`,
     `[1:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=${clip2Dur},setpts=PTS-STARTPTS,settb=1/30[v1]`,
-    `[2:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=7.000,setpts=PTS-STARTPTS,settb=1/30[v2]`,
+    `[2:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=7.500,setpts=PTS-STARTPTS,settb=1/30[v2]`,
     `[3:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=7.000,setpts=PTS-STARTPTS,settb=1/30[v3]`,
-    `[v0][v1]concat=n=2:v=1:a=0,fps=30,settb=1/30[v01]`,
-    `[v01][v2]xfade=transition=fade:duration=${xfadeDur}:offset=16.000,fps=30,settb=1/30[v012]`,
-    `[v012][v3]concat=n=2:v=1:a=0,trim=duration=30.000,setpts=PTS-STARTPTS[vout]`,
+    `[v0][v1]xfade=transition=fade:duration=0.800:offset=7.600,fps=30,settb=1/30[v01]`,
+    `[v01][v2]xfade=transition=fade:duration=${xfadeShot2}:offset=16.000,fps=30,settb=1/30[v012]`,
+    `[v012][v3]xfade=transition=fade:duration=0.500:offset=23.000,fps=30,trim=duration=30.000,setpts=PTS-STARTPTS[vout]`,
     `[4:a]aresample=48000,atrim=duration=30.000,asetpts=PTS-STARTPTS,volume=1.0[asfx]`,
     `[5:a]aresample=48000,atrim=duration=30.000,asetpts=PTS-STARTPTS,volume=0.75[abgm]`,
     `[asfx][abgm]amix=inputs=2:duration=shortest:normalize=0,afade=t=out:st=29.5:d=0.5[aout]`,
