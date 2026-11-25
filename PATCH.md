@@ -1,5 +1,14 @@
 # PATCH.md
 
+## 序章前 30 秒分鏡手冊補齊參考圖與直接投餵格式（Antigravity 2026-11-25）
+
+- **補齊 6 張參考圖與一鍵合成腳本並納入 Git 追蹤（`opening_animation/cinematic_30s_pack/`）**：
+  - 從原片 `opening_animation/shots-01-05-replay.mp4` 重新擷取 4 張原片構圖基準圖（`orig_01_00s50.png`、`orig_02_08s00.png`、`orig_04_17s20.png`、`orig_05_23s00.png`），並重新生成 2 張 AAA 3D CGI 電影風格基準圖（`ref_battle.png`、`ref_fall.png`），移出被 `.gitignore` 忽略的 `review/` 改置於受 Git 追蹤的 `opening_animation/cinematic_30s_pack/refs/`。
+  - 補上 30 秒幀級精準合成腳本 `opening_animation/cinematic_30s_pack/assemble_30s.mjs` 與 `clips_input/.gitkeep`。
+- **更新 [`opening_animation/CINEMATIC_30S_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_30S_STORYBOARD.md)**：
+  - 於各段落直接以 Markdown 表格嵌入對應的 2 張參考圖預覽，並將內文改寫為「直接面向 Gemini 的執行指示與生成指令」，讓使用者整份文件連同參考圖傳給 Gemini 即可直接依序執行。
+
+
 ## 序章前 30 秒電影級復刻分鏡製作手冊（Antigravity 2026-11-25）
 
 - **新增序章前 30 秒電影級復刻分鏡手冊（[`opening_animation/CINEMATIC_30S_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_30S_STORYBOARD.md)）**：
