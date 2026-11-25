@@ -4,12 +4,13 @@ from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont
 pack=Path(sys.argv[1]);view=sys.argv[2];out=pack/'preview';qa=pack/'qa'
 spec=json.loads(Path(__file__).with_name('spec.json').read_text());count=int(sys.argv[3]);duration=spec['duration']
+base='BOSS9_Attack3_v'+str(spec['version'])
 out.mkdir(exist_ok=True);qa.mkdir(exist_ok=True);frames=[]
 for line in sys.stdin:
     item=json.loads(line);assert item['frame']==len(frames)
     frame=Image.open(io.BytesIO(base64.b64decode(item['png']))).convert('RGB');assert frame.size==(900,600)
     for side,label in [('R','Right'),('L','Left')]:
-        if view=='front' and item['frame']==round(spec['strokes'][side]['start']/duration*count):frame.save(out/('BOSS9_Attack3_'+label+'.png'))
+        if view=='front' and item['frame']==round(spec['strokes'][side]['start']/duration*count):frame.save(out/(base+'_'+label+'.png'))
     frames.append(frame)
 assert len(frames)==count
 font=ImageFont.truetype('C:/Windows/Fonts/arial.ttf',15)
@@ -19,10 +20,10 @@ for j in range(30):
 contact.save(qa/(view+'-contact.jpg'),quality=92)
 palette=contact.quantize(colors=256,method=Image.Quantize.MEDIANCUT)
 indexed=[f.quantize(palette=palette,dither=Image.Dither.FLOYDSTEINBERG) for f in frames]
-normal='BOSS9_Attack3'+{'front':'','side':'_Side','path':'_Path'}[view]+'.gif'
+normal=base+{'front':'','side':'_Side','path':'_Path'}[view]+'.gif'
 step=1 if count==30 else 2
 settings=[(normal,list(range(0,count,step)),round(duration/count*step*1000))]
-if view=='front':settings.append(('BOSS9_Attack3_Slow.gif',list(range(count)),round(duration/count*4000)))
+if view=='front':settings.append((base+'_Slow.gif',list(range(count)),round(duration/count*4000)))
 report={'view':view,'gifs':[],'streamedFrames':count}
 for name,ids,ms in settings:
     selected=[indexed[i] for i in ids];target=out/name;selected[0].save(target,save_all=True,append_images=selected[1:],duration=ms,loop=0,optimize=False,disposal=1)

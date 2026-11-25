@@ -6,6 +6,7 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 source,fixed,blend,output=map(Path,sys.argv[sys.argv.index('--')+1:][:4])
 spec=json.loads(Path(__file__).with_name('spec.json').read_text());duration=spec['duration'];fps=spec['authorFPS']
+recovery=json.loads(Path(__file__).with_name('recovery.json').read_text())
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def read(p):
     raw=p.read_bytes();n=struct.unpack_from('<I',raw,12)[0];j=json.loads(raw[20:20+n]);return j,raw[28+n:28+n+j['buffers'][0]['byteLength']]
@@ -48,7 +49,7 @@ def surface(mesh):
 arm,mesh=load(blend);frame(0);initial=surface(mesh);assert len(arm.pose.bones)==73
 groups={g.index:g.name for g in mesh.vertex_groups}
 def ids(names,threshold=.9):return {v.index for v in mesh.data.vertices if sum(g.weight for g in v.groups if groups[g.group] in names)>threshold}
-regions={n:ids({bone,*[b.name for b in arm.pose.bones[bone].children_recursive]}) for n,bone in [('handR','spine_18'),('handL','chest'),('footR','rearFoot.R'),('footL','rearFoot.L'),('skull','spine_16')]}
+regions={n:ids({bone,*[b.name for b in arm.pose.bones[bone].children_recursive]}) for n,bone in [('handR','spine_18'),('handL','chest'),('footR','rearFoot.R'),('footL','rearFoot.L'),('skull','spine_16'),('legR','rearLeg.R_01'),('legL','rearLeg.L_01')]}
 faces={n:[tuple(f.vertices) for f in mesh.data.polygons if set(f.vertices).issubset(v)] for n,v in regions.items()};assert all(faces.values())
 links={(b.parent.name,b.name):(b.head-b.parent.head).length for b in arm.pose.bones if b.parent and b.name!='hips'}
 for side,h in build['hands'].items():
@@ -92,13 +93,17 @@ if '--quick' in sys.argv:samples=sorted(set([i*duration/120 for i in range(121)]
 results={};native={};equivalence=0
 for label,path in [('blend',blend),('glb',fixed)]:
     arm,mesh=load(path);frame(0);first=surface(mesh);feet={n:arm.pose.bones[n].head.copy() for n in ['rearFoot.R','rearFoot.L']};root=arm.pose.bones['root'].head.copy()
+    base_rotations={p.name:p.matrix.to_quaternion().copy() for p in arm.pose.bones}
+    idle_local={p.name:p.matrix_basis.to_quaternion().copy() for p in arm.pose.bones}
+    wrist_twist={s:0 for s in ['R','L']}
     peak_heads=[]
     for side in ['R','L']:
         frame(spec['strokes'][side]['start']);peak_heads.append(surface(mesh)[head_shapes]-np.array(arm.pose.bones['spine_16'].head))
     head_shape_match=float(np.linalg.norm(peak_heads[0]-peak_heads[1],axis=1).max())
     foot_drift=root_xy=link_error=scale_error=jump=speed=ground_error=below=foot_shape_error=head_roll=0;previous=None;previous_t=None;claws={'R':[],'L':[]};normals={'R':[],'L':[]};raised={s:[] for s in ['R','L']};gaze=0;target_error={s:0 for s in ['R','L']};support_error={s:0 for s in ['R','L']};speed_location={}
-    collisions={n:0 for n in ['handR_footL','handR_footR','handL_footL','handL_footR','handR_skull','handL_skull','handR_handL','footL_footR']};collision_times={};link_location={}
+    collisions={n:0 for n in ['handR_footL','handR_footR','handL_footL','handL_footR','handR_skull','handL_skull','handR_handL','footL_footR','handR_legR','handR_legL','handL_legR','handL_legL']};collision_times={};link_location={}
     for index,t in enumerate(samples):
+        if index%240==0:print('ATTACK3_VALIDATE_FRAME',label,index,'/',len(samples),flush=True)
         frame(t);points=surface(mesh);assert np.all(np.isfinite(points));joints=np.array([b.head for b in arm.pose.bones])
         if previous is not None:
             distances=np.linalg.norm(joints-previous,axis=1);step=float(distances.max());jump=max(jump,step)
@@ -124,6 +129,14 @@ for label,path in [('blend',blend),('glb',fixed)]:
             other='L' if side=='R' else 'R';actual=points[h['clawIndices']].mean(axis=0);claws[side].append(actual);normals[side].append(normal(points,h['padTriangles']))
             expected=authored_target(side,t)
             target_error[side]=max(target_error[side],float(np.linalg.norm(actual-expected)))
+            if t>=recovery[side]['collectTime']:
+                lower,wrist,palm={'R':['spine_20','spine_19','spine_18'],'L':['spine_08','spine_09','chest']}[side]
+                axis=arm.pose.bones[wrist].head-arm.pose.bones[lower].head;rest_axis=source_heads[wrist]-source_heads[lower]
+                hand_q=arm.pose.bones[palm].matrix.to_quaternion()@base_rotations[palm].inverted()
+                lower_q=arm.pose.bones[lower].matrix.to_quaternion()@base_rotations[lower].inverted()
+                aligned=(hand_q@rest_axis).rotation_difference(axis)@hand_q
+                angle=math.degrees(lower_q.rotation_difference(aligned).angle)
+                wrist_twist[side]=max(wrist_twist[side],min(angle,abs(360-angle)))
             w=spec['strokes'][side]
             if w['start']-.008<=t<=w['start']:
                 extensions=[]
@@ -157,8 +170,46 @@ for label,path in [('blend',blend),('glb',fixed)]:
     assert foot_shape_error<.0005 and head_roll<5 and all(f['minimumFingerExtension']>.97 for f in flow.values()),entry
     assert flow['R']['horizontalTravel']>.8 and flow['L']['horizontalTravel']<-.8 and all(f['verticalTravel']<-.7 and f['minimumRaisedLift']>.7 and f['minimumRaisedPalmUp']>.4 for f in flow.values()),flow
     assert all(abs(flow[s]['maximumHeightTime']-spec['strokes'][s]['start'])<duration*.02 for s in ['R','L']),flow
-    assert flow['L']['maximumHeightTime']-flow['R']['maximumHeightTime']>duration*.3,flow
+    assert flow['L']['maximumHeightTime']>flow['R']['maximumHeightTime'],flow
     assert max(target_error.values())<.01 and gaze<20,entry
+    entry['maximumRecoveryWristTwist']=wrist_twist
+    assert max(wrist_twist.values())<5,wrist_twist
+    # Check the requested overlap and backswing on evaluated mesh vertices.
+    overlap_time=spec['strokes']['R']['start']+(spec['strokes']['R']['end']-spec['strokes']['R']['start'])/2
+    frame(overlap_time);p=surface(mesh)
+    overlap_lift=float(p[build['hands']['L']['clawIndices'],2].mean()-idle_claws['L'][2])
+    assert overlap_lift>.02,('Second hand has not prepared at half of the first slash',overlap_lift)
+    recovery_flow={}
+    for side in ['R','L']:
+        h=build['hands'][side];key=recovery[side];claw=np.array(claws[side]);ts=np.array(samples)
+        window=(ts>=spec['strokes'][side]['end'])&(ts<=key['backTime'])
+        clearance=float((claw[window,2]-idle_claws[side][2]).min())
+        frame(key['collectTime']);collected=surface(mesh)[h['clawIndices']].mean(axis=0)
+        frame(key['backTime']);back=surface(mesh)[h['clawIndices']].mean(axis=0)
+        arm_names={'R':['spine_21','spine_20','spine_19'],'L':['spine_07','spine_08','spine_09']}[side]
+        shoulder,elbow,wrist=[arm.pose.bones[n].head.copy() for n in arm_names];sign=-1 if side=='R' else 1
+        fingers=sum(((arm.pose.bones[c[-1]].head-arm.pose.bones[c[0]].head).normalized() for c in h['chains'][1:]),Vector())/3
+        posture={'upperOutward':sign*(elbow.x-shoulder.x),'upperDrop':shoulder.z-elbow.z,'forearmDrop':elbow.z-wrist.z,'fingerOutward':sign*fingers.x,'fingerDown':-fingers.z}
+        assert posture['upperOutward']>.06 and posture['upperDrop']>.02 and posture['forearmDrop']>.04 and posture['fingerOutward']>.12 and posture['fingerDown']>.3,(side,posture)
+        sync_names={'R':['spine_22','spine_21'],'L':['spine_06','spine_07']}[side]
+        back_q={n:arm.pose.bones[n].matrix_basis.to_quaternion().copy() for n in sync_names}
+        frame((key['backTime']+duration)/2);sync={}
+        for n,q in back_q.items():
+            total=q.rotation_difference(idle_local[n]).angle;total=min(total,abs(2*math.pi-total))
+            if total<math.radians(3):continue
+            angle=q.rotation_difference(arm.pose.bones[n].matrix_basis.to_quaternion()).angle;angle=min(angle,abs(2*math.pi-angle))
+            sync[n]=angle/total
+        assert sync and all(abs(v-.5)<.05 for v in sync.values()),(side,sync)
+        backward=float(back[1]-collected[1]);assert backward>.25 and clearance>.15,(side,backward,clearance)
+        frame(key['collectTime']-.002);before=surface(mesh)[h['clawIndices']].mean(axis=0)
+        frame(key['collectTime']+.002);after=surface(mesh)[h['clawIndices']].mean(axis=0)
+        incoming=(collected-before)/.002;outgoing=(after-collected)/.002
+        continuity=float(incoming@outgoing/(np.linalg.norm(incoming)*np.linalg.norm(outgoing)))
+        collect_speed=float(np.linalg.norm((after-before)/.004))
+        assert collect_speed>.3 and continuity>.98,(side,collect_speed,continuity)
+        recovery_flow[side]={'collectPosition':collected.tolist(),'backPosition':back.tolist(),'backwardTravel':backward,'minimumLiftAboveIdleBeforeBackswing':clearance,'collectSpeed':collect_speed,'collectDirectionContinuity':continuity,'posture':posture,'midReturnRotationProgress':sync}
+    entry['overlap']={'firstSlashFraction':.5,'time':overlap_time,'secondClawLift':overlap_lift}
+    entry['recoveryFlow']=recovery_flow
     results[label]=entry
 assert equivalence<2e-5,equivalence
 report={'sourceSHA256':sha(source),'glbSHA256':sha(fixed),'duration':duration,'bones':73,'clips':[a['name'] for a in new['animations']],'sourceMeshAndFourClipsPreserved':True,'preservedNativeActions':original_actions,'channelSeamError':seam,'nativeGLBMaximumVertexDifference':equivalence,'checks':results}

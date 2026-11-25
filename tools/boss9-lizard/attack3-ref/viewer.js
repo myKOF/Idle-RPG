@@ -30,11 +30,11 @@ if(params.has('guide')){
   for(let i=0;i<=96;i++){pose(w.start+(w.end-w.start)*i/96);points.push(new THREE.Vector3(...geometry()[side].claw));}
   const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color,transparent:true,opacity:.85,depthTest:false}));line.userData.window=w;line.renderOrder=10;scene.add(line);guides.push(line);
  }
- document.getElementById('subtitle').textContent='右爪 → 左爪實際蒙皮軌跡（檢視標記）';
+ document.getElementById('subtitle').textContent='第一擊 → 第二擊實際蒙皮軌跡（檢視標記）';
 }
-const phase=t=>t<spec.strokes.R.start?'右爪高舉':t<spec.strokes.R.end?'右爪斜揮':t<spec.strokes.L.start?'銜接左爪高舉':t<spec.strokes.L.end?'左爪斜揮':t<spec.duration?'收招回穩':'待機';let current=0;
+const phase=t=>t<spec.strokes.R.start?'第一擊蓄勢':t<spec.strokes.R.end?'第一擊斜揮':t<spec.strokes.L.start?'銜接第二擊':t<spec.strokes.L.end?'第二擊斜揮':t<spec.duration?'收招回穩':'待機';let current=0;
 document.getElementById('scrub').max=spec.duration;
-if(!params.has('guide'))document.getElementById('subtitle').textContent='右爪斜掃 → 左爪接續交叉斜掃 → 回穩';
+if(!params.has('guide'))document.getElementById('subtitle').textContent='交錯接招・收爪後甩・順勢側傾';
 function render(t){current=t;pose(t);for(const g of guides){const w=g.userData.window;g.geometry.setDrawRange(0,t<w.start?0:Math.min(97,1+Math.floor((t-w.start)/(w.end-w.start)*96)));}renderer.render(scene,camera);document.getElementById('phase').textContent=phase(t);document.getElementById('time').textContent=t.toFixed(2)+' / '+spec.duration.toFixed(2)+' s';document.getElementById('scrub').value=t;}
 function snapshot(){const nodes={};gltf.scene.traverse(o=>{if(o.isBone)nodes[o.name]=o.getWorldPosition(new THREE.Vector3()).toArray();});return nodes;}
 function bounds(){const b={minX:Infinity,maxX:-Infinity,minY:Infinity,maxY:-Infinity};vertices(v=>{v.project(camera);const x=(v.x+1)*W/2,y=(1-v.y)*H/2;b.minX=Math.min(b.minX,x);b.maxX=Math.max(b.maxX,x);b.minY=Math.min(b.minY,y);b.maxY=Math.max(b.maxY,y);});return b;}
