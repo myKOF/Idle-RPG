@@ -17886,3 +17886,17 @@ Worker 存活且頁面正常完成載入。
 - Build／歸檔：npm.cmd run build通過774檔，Python AST兩檔、工具語法與Git差異檢查通過。game/export.cjs歸檔及正式核對17項manifest通過（綁定實機QA的正式GLB SHA），舊death25項與attack3-ref36項包純核對仍通過。提交僅保留可重建來源、正式資產與必要QA；本輪tmp/boss9-game-20261127的Excel控制副本、前後預覽、一次性稽核／基準腳本與node_modules連結，刪除前有明確絕對路徑與連結檢查，但執行整段清理命令時被自動核准審查以政策限制拒絕，未執行、未重試或改用其他工具，暫存保持且不納入提交。
 - 同副本其他修改：執行期間另有冰原掉落來源／CSV及data.js的ZONE_STAGE_DROP_PROFILES修改，與BOSS_LIST第9列不同區段、沒有語意相依。分別以HEAD建構本案／其餘修改，git merge-file三方試跑乾淨且結果逐位元等於共享工作檔；只暫存本案data.js hunk，其他表格／掉落修改保留，不順帶提交或還原。
 - 雙倉庫／交接：素材庫先提交ec9d21d8113db7a2e65d6e66df2c659053d78085，提交後乾淨；遊戲專案ai/codex為本段所在「[Codex] feat: 將核准蜥蜴獸六動作接入封魔塔BOSS9」提交，共21檔，SHA見交付／Git log。未合併或推送；下一步由使用者審閱合併至實際啟動分支後重載／重啟遊戲，其他尚未提交的表格修改保持。
+
+## BOSS9-NAMES-20261127 — 正式模型與NPC動作命名遵循塔王規則
+
+- Owner：Codex；Done。使用者指出第490列與其他BOSS規則不一致，正式綁定統一Walk／Walk／Attack1／Attack2／Attack3／Die。製作來源仍保留原六Action，正式GLB／Blend只取五段並對三攻擊／死亡重新命名；待機依規則保持Walk首幀，不修改任何核准動畫鍵格、模型／蒙皮／材質或戰鬥數值。
+- 範圍：game製作／驗證／匯出四工具、同一素材包／PROVENANCE、NPC.xlsx五格及CSV／data衍生、兩項命名回歸、必要首頁／Worker快取、專用說明／LV／本段。前置：已接入版ac2a2397及素材庫ec9d21d8；Excel獨占可用、逐檔預檢無外部分支／副本來源；同副本既有冰原掉落／其他CSV變更保留，data.js不同段落分段處理，不合併或推送。
+- 驗收：正式五動畫及兩種待機／移動語意採既有標準；來源曲線／二進位保持、原生／GLB實際蒙皮一致，NPC來源原生編修與正常重開、只指定五格內容改變／CSV及runtime一致；正式renderer與真正塔戰輪替／死亡回收、相關回歸與Build、雙倉庫提交。
+- 完成／修改16檔：game四工具、boss9.glb、NPC.xlsx／CSV及data單列、boss9-character-asset與npc3d-config兩回歸、index／bridge／sim.worker三個必要快取、專用說明／LV與本段。取消命名例外，全部正式塔王共同驗證Walk／Attack1～3／Die。原生Blend同步五Action，來源六Action仍在核准death包；保留原頭像輸出，不提交重繪的浮點／時間戳差異。
+- 表格：確認獨占後以excel-update-sheets.ps1只寫AC490與AE490～AH490，原生正常重開兩次、7個繪圖物件保持。前後全工作簿比較只有五格值改變；樣式、公式、工作表結構、drawing／media及styles完全相同；試算表技能匯入前後三列並渲染目視，欄位符合鄰列。NPC單表匯出531×34，config_tables套用只改BOSS_LIST一項，後續dry-run為0語意差異。
+- 素材／實機：GLB完整二進位SHA仍b190ad68c1e9a4eb1f22893bfae12832eb3e1933a9f89326cac57cb81b5cf9e2，五段sampler／channel完全相同。verify.py原生與GLB各45姿態最大誤差2.0401e-6；正式GLB SHA e451d3ac591d5b08bffff618fbdf6d3c36cd543d73bc3896db9d0aab39240685。真實Chrome180姿態可見未裁切，待機Walk0秒paused，三攻各約0.283334秒、死亡原速4秒保持；隔離seed9塔戰正常Walk／三攻／Die，約4.108秒仍在、4.214秒回收，例外／警告／Worker錯誤皆0。靜音前一次觀察到既有合成音頻率警告；改用遊戲正常靜音偏好隔離音效。初次靜音測試因低命中／攻速而未在60秒內擊殺，改為三招觀察後使用既有GM maxstats基準再擊殺，不改判定或放寬死亡驗收。所有測試瀏覽器與伺服器finally關閉。
+- 測試指令：node --test執行boss9-character-asset、npc3d-config、npc3d-runtime、npc3d-locomotion、hero3d-locomotion、vfx-editor-cache-versions及worker-protocol共36/36；npm.cmd run build共774檔通過；兩Python AST、兩CJS語法與Git差異檢查通過。game/export.cjs --stage／--check核對17項來源與遊戲雜湊，舊製作來源保持。未跑全庫，原整合任務記錄的TBMA-5既有參數列斷言不在本次命名範圍。
+- 共用修改保護：data.js的冰原掉落與本案不同區段；以HEAD構造本案／其餘修改的三方試跑乾淨且結果等於共享檔，只暫存BOSS9一行。其餘NPC以外的表格與CSV不暫存、不還原。唯讀檢查規範／Workflow／Codex、核准death來源、既有Npc3D／Hero3D／塔戰／ACT、Excel更新／CSV匯出及config_tables、素材庫解析與頭像；沒有新VFX、玩家文字、數值／技能、存檔或協議變更。
+- 自我Review完成：命名／欄位／模型一致，Idle保持語意與其他塔王相同，原始動作及二進位保持；模型與表格無未完成項。只驗本機Chrome，未驗其他瀏覽器或裝置；下一步使用者審閱合併後重載遊戲。可供合併，未自行合併或推送develop／main；雙庫SHA見本段後續交接。
+- 清理：tmp/boss9-standard-names-20261127保存本輪表格前後副本／渲染、唯讀稽核、data三方試跑／選取patch及依賴junction。僅針對該新目錄、逐項明列名稱並檢查絕對路徑與連結後，嘗試非遞迴刪除，整段命令被自動核准審查以政策限制拒絕，未執行／未重試；不納入提交。上輪已拒絕清理的tmp/boss9-game-20261127完全未動，沒有繞過限制。
+- 雙庫提交：素材庫先提交05087d3db6c351b5a68e7c219ff673e771d9e900（17檔，manifest內17個實際Git index blob SHA全部通過，提交後乾淨）；遊戲ai/codex為本段所在「[Codex] fix: 統一BOSS9模型與NPC動作命名」提交（16檔），SHA見交付及Git log。既有冰原掉落／其他CSV維持未暫存，可供使用者合併。

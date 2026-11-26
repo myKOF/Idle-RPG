@@ -1,4 +1,4 @@
-"""Place the approved six-clip lizard at the game origin; render its portrait.
+"""Place the approved lizard at the game origin; export standard boss clips.
 
 No resampling: the GLB retains the original binary and bone/animation data.
 Blender owns the editable scene, uniform placement and portrait rendering.
@@ -17,6 +17,7 @@ doc = json.loads(raw[20:20+size])
 binary = raw[28+size:]
 original = copy.deepcopy(doc)
 assert [a['name'] for a in doc['animations']] == ['Walk', 'Idle', 'BOSS9_Attack1', 'BOSS9_Attack2', 'BOSS9_Attack3', 'BOSS9_Death']
+name_map = {'Walk':'Walk', 'BOSS9_Attack1':'Attack1', 'BOSS9_Attack2':'Attack2', 'BOSS9_Attack3':'Attack3', 'BOSS9_Death':'Die'}
 
 bpy.ops.wm.open_mainfile(filepath=str(blend))
 scene = bpy.context.scene
@@ -57,15 +58,19 @@ doc['nodes'].append({'name': wrapper.name, 'children': doc['scenes'][doc.get('sc
 doc['scenes'][doc.get('scene', 0)]['nodes'] = [node]
 doc['asset'].setdefault('extras', {}).update(pbrEmbedded=True, approvedSourceSHA256=source_sha,
     locomotion={'feet': ['rearFoot.R','rearFoot.L'], 'hips':'hips'})
+doc['animations'] = [a for a in doc['animations'] if a['name'] in name_map]
 for a in doc['animations']:
+    a['name'] = name_map[a['name']]
     if 'previewOnly' in a.get('extras', {}):
         a['extras']['previewOnly'] = False
+for old_name, new_name in name_map.items():
+    bpy.data.actions[old_name].name = new_name
 text = json.dumps(doc, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
 text += b' ' * (-len(text) % 4)
 result = struct.pack('<III', 0x46546c67, 2, 28+len(text)+len(binary)) + struct.pack('<II', len(text), 0x4e4f534a) + text + struct.pack('<II', len(binary), 0x004e4942) + binary
 (out/'boss9.glb').write_bytes(result)
 assert doc['nodes'][:-1] == original['nodes']
-for a, b in zip(doc['animations'], original['animations']):
+for a, b in zip(doc['animations'], [a for a in original['animations'] if a['name'] in name_map]):
     assert a['channels'] == b['channels'] and a['samplers'] == b['samplers']
 
 target = wrapper.matrix_world @ Vector((center.x, -.57, .25))
@@ -100,10 +105,15 @@ scene.render.image_settings.color_mode = 'RGBA'
 scene.render.filepath = str(out/'boss9_lizard.png')
 bpy.context.preferences.filepaths.save_version = 0
 bpy.ops.file.pack_all()
-bpy.ops.wm.save_as_mainfile(filepath=str(out/'boss9.blend'), compress=True)
 bpy.ops.render.render(write_still=True)
+arm.animation_data.action = bpy.data.actions['Walk']
+arm.animation_data.action_slot = arm.animation_data.action.slots[0]
+bpy.data.actions.remove(bpy.data.actions['Idle'])
+scene.frame_set(0)
+bpy.ops.wm.save_as_mainfile(filepath=str(out/'boss9.blend'), compress=True)
 report = {'sourceSHA256': source_sha, 'glbSHA256': hashlib.sha256(result).hexdigest(),
-          'binaryPreserved': True, 'sixAnimationTracksPreserved': True,
+          'binaryPreserved': True, 'fiveAnimationTracksPreserved': True, 'animationNameMap': name_map,
+          'exportedClips': list(name_map.values()), 'idleBinding': 'Walk first frame',
           'sourceBounds': [list(low), list(high)], 'sourceGround': ground,
           'placement': {'node': node, 'translation': translation, 'scale': scale},
           'portrait': [1080,1080], 'blender': bpy.app.version_string}

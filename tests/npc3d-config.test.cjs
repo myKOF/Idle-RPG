@@ -70,7 +70,7 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
     } else if (i === 8) {
       assert.equal(result[i].model3d.file, 'images/models/npc3d/boss9.glb');
-      assert.deepEqual(Object.values(result[i].model3d.clips), ['Idle', 'Walk', 'BOSS9_Attack1', 'BOSS9_Attack2', 'BOSS9_Attack3', 'BOSS9_Death']);
+      assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
       assert.equal(result[i].img, 'sprites/boss/boss9_lizard.png');
       assert.equal(result[i].atkSpeed, 3);
     } else if (i === 9 || i === 19 || i === 29) {
@@ -199,14 +199,12 @@ test('all three bosses retain distinct supplied base-color textures', () => {
   }
 });
 
-test('every tower boss 3D binding uses bossN[_lvM].glb and its approved semantic clips', () => {
+test('every tower boss 3D binding uses bossN[_lvM].glb and the standard clip names Walk / Attack1-3 / Die', () => {
   const bound = bosses(source).filter(b => b.model3d);
   assert.ok(bound.length >= 16);
   for (const b of bound) {
     assert.match(b.model3d.file, /^images\/models\/npc3d\/boss\d+(_lv[23])?\.glb$/, b.id);
-    const expected = b.id === 'tower_boss_9'
-      ? { idle: 'Idle', walk: 'Walk', attack1: 'BOSS9_Attack1', attack2: 'BOSS9_Attack2', attack3: 'BOSS9_Attack3', die: 'BOSS9_Death' }
-      : { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' };
+    const expected = { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' };
     assert.deepEqual(b.model3d.clips, expected, b.id);
     const bytes = fs.readFileSync(path.join(root, b.model3d.file));
     const names = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12))).animations.map(a => a.name).sort();

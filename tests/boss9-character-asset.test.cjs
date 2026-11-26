@@ -6,16 +6,16 @@ const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'j
 const bosses=cfg.evalLiteral(cfg.extractLiteral(source,'BOSS_LIST').literal);
 const bytes=fs.readFileSync(path.join(root,'images/models/npc3d/boss9.glb'));
 const end=20+bytes.readUInt32LE(12),g=JSON.parse(bytes.subarray(20,end));
-const clips={idle:'Idle',walk:'Walk',attack1:'BOSS9_Attack1',attack2:'BOSS9_Attack2',attack3:'BOSS9_Attack3',die:'BOSS9_Death'};
-const seconds={Walk:2/3,Idle:1,BOSS9_Attack1:1.2,BOSS9_Attack2:1.5,BOSS9_Attack3:1.5,BOSS9_Death:4};
+const clips={idle:'Walk',walk:'Walk',attack1:'Attack1',attack2:'Attack2',attack3:'Attack3',die:'Die'};
+const seconds={Walk:2/3,Attack1:1.2,Attack2:1.5,Attack3:1.5,Die:4};
 
-test('BOSS9 ships the approved six clips, embedded temporary materials and a uniform placement parent',()=>{
+test('BOSS9 ships the five standard boss clips with approved animation data, materials and placement',()=>{
   assert.equal(bytes.readUInt32LE(0),0x46546c67);assert.equal(bytes.readUInt32LE(8),bytes.length);
   assert.equal(g.skins[0].joints.length,73);assert.equal(g.meshes.length,1);
   assert.equal(g.asset.extras.approvedSourceSHA256,'3df3a9e486bb5e513eea3236212b2e61c316cd8a8cf52f1fab2bb5bf3a25cca0');
   assert.equal(g.asset.extras.pbrEmbedded,true);
   assert.deepEqual(g.asset.extras.locomotion,{feet:['rearFoot.R','rearFoot.L'],hips:'hips'});
-  assert.equal(crypto.createHash('sha256').update(bytes.subarray(end+8)).digest('hex'),'b190ad68c1e9a4eb1f22893bfae12832eb3e1933a9f89326cac57cb81b5cf9e2','approved mesh, textures and six animation buffers stay byte-identical');
+  assert.equal(crypto.createHash('sha256').update(bytes.subarray(end+8)).digest('hex'),'b190ad68c1e9a4eb1f22893bfae12832eb3e1933a9f89326cac57cb81b5cf9e2','approved mesh, textures and animation buffers stay byte-identical');
   assert.ok(g.images.every(i=>Number.isInteger(i.bufferView)));assert.ok(g.materials[0].pbrMetallicRoughness.baseColorTexture);
   const placement=g.nodes[g.scenes[g.scene||0].nodes[0]];
   assert.equal(placement.name,'BOSS9_GamePlacement');assert.deepEqual(placement.children,[0,74]);
@@ -60,14 +60,14 @@ test('makeBoss, ACT duration and Npc3D cycle all three clips at the existing att
   const ctx={Hero3D:{create:async()=>ctrl,makeBody:()=>body}};
   vm.runInNewContext(fs.readFileSync(path.join(root,'js/npc3d.js'),'utf8'),ctx);
   await ctx.Npc3D.create(boss.model3d);
-  assert.equal(ctx.Npc3D.play(body,'idle').clip,'Idle');
+  const idle=ctx.Npc3D.play(body,'idle');assert.equal(idle.clip,'Walk');assert.equal(idle.still,true);
   ctx.Npc3D.play(body,'walk');ctx.Npc3D.move(body,10,.1);assert.equal(body.animationSpeed,.5);
   for(const semantic of ['attack','cast','attack','attack']){
     const a=ctx.Npc3D.play(body,semantic,3,lock);
     assert.ok(Math.abs(seconds[a.clip]/(body.animationSpeed*2)-lock)<1e-9);
   }
   assert.equal(body.npc3d.attackKey,'attack1');
-  const die=ctx.Npc3D.play(body,'die');assert.equal(die.clip,'BOSS9_Death');assert.equal(die.hold,true);assert.equal(body.animationSpeed,.5);
+  const die=ctx.Npc3D.play(body,'die');assert.equal(die.clip,'Die');assert.equal(die.hold,true);assert.equal(body.animationSpeed,.5);
   assert.equal(ctrl.duration(die.clip)/(body.animationSpeed*2),4);
 });
 
