@@ -67,22 +67,22 @@ function main() {
   const normFilter =
     'scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,fps=30,format=yuv420p,setsar=1';
 
-  // 時間軸對齊原片 00:34.000 – 01:09.500（全長 35.500s / 1065 幀 @ 30fps）
-  // v0: 9.500s (0.6s 黑幕淡入)
-  // v1: 9.500s (於 9.000s 處 0.500s 跨溶解 -> 累計 18.500s)
-  // v2: 8.400s (於 18.000s 處 0.500s 跨溶解 -> 累計 26.400s)
-  // v3: 9.500s (於 26.000s 處 0.400s 跨溶解 -> 累計 35.500s)
+  // 時間軸（全長 29.200s / 876 幀 @ 30fps）：
+  // v0 (Clip 05): 9.500s (0.6s 黑幕淡入)
+  // v1 (Clip 06): 9.500s (於 9.000s 處 0.500s 跨溶解 -> 累計 18.500s)
+  // v2 (Clip 07): 僅取前 2.200s 煙塵散去（於 18.000s 處 0.500s 跨溶解 -> 累計 20.200s），避免重複構圖與後段異常肢體
+  // v3 (Clip 08): 9.500s 近景焦羽落胸與金光爆發（於 19.700s 處 0.500s 跨溶解 -> 累計 29.200s）
   const filterComplex = [
     `[0:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=9.500,setpts=PTS-STARTPTS,fade=t=in:st=0:d=0.6,settb=1/30[v0]`,
     `[1:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=9.500,setpts=PTS-STARTPTS,settb=1/30[v1]`,
-    `[2:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.400,setpts=PTS-STARTPTS,settb=1/30[v2]`,
+    `[2:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=2.200,setpts=PTS-STARTPTS,settb=1/30[v2]`,
     `[3:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=9.500,setpts=PTS-STARTPTS,settb=1/30[v3]`,
     `[v0][v1]xfade=transition=fade:duration=0.500:offset=9.000,fps=30,settb=1/30[v01]`,
     `[v01][v2]xfade=transition=fade:duration=0.500:offset=18.000,fps=30,settb=1/30[v012]`,
-    `[v012][v3]xfade=transition=fade:duration=0.400:offset=26.000,fps=30,trim=duration=35.500,setpts=PTS-STARTPTS[vout]`,
-    `[4:a]aresample=48000,atrim=start=34.000:duration=35.500,asetpts=PTS-STARTPTS,volume=1.0[asfx]`,
-    `[5:a]aresample=48000,atrim=start=34.000:duration=35.500,asetpts=PTS-STARTPTS,volume=0.75[abgm]`,
-    `[asfx][abgm]amix=inputs=2:duration=shortest:normalize=0,afade=t=in:st=0:d=0.3,afade=t=out:st=35.0:d=0.5[aout]`,
+    `[v012][v3]xfade=transition=fade:duration=0.500:offset=19.700,fps=30,trim=duration=29.200,setpts=PTS-STARTPTS[vout]`,
+    `[4:a]aresample=48000,atrim=start=34.000:duration=29.200,asetpts=PTS-STARTPTS,volume=1.0[asfx]`,
+    `[5:a]aresample=48000,atrim=start=34.000:duration=29.200,asetpts=PTS-STARTPTS,volume=0.75[abgm]`,
+    `[asfx][abgm]amix=inputs=2:duration=shortest:normalize=0,afade=t=in:st=0:d=0.3,afade=t=out:st=28.7:d=0.5[aout]`,
   ].join(';');
 
   const args = [

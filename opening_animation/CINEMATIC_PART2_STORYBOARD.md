@@ -15,8 +15,8 @@
 |---|---|---|---|---|
 | **Clip 05 (Shot 3A)** | `00:34.000 – 00:43.000` | 9.00s（+0.5s 疊化尾段） | `00:36`「薩爾維恩，黑暗與光明的交界」；`00:41.5`「黑暗逐漸蔓延」，暗紫迷霧自四周吞噬大陸 | `clip_05_shot3a.mp4` |
 | **Clip 06 (Shot 3B)** | `00:43.000 – 00:52.000` | 9.00s（+0.5s 疊化尾段） | **`00:46.89`「然而希望之光並未熄滅」**，天降金白聖光柱擊退紫霧 → 鏡頭沿光束俯衝穿雲落入荒漠 | `clip_06_shot3b.mp4` |
-| **Clip 07 (Shot 3C)** | `00:52.000 – 01:00.000` | 8.00s（+0.4s 疊化尾段） | 荒漠煙塵散去，露出倒臥沙丘的破損盔甲大天使長 → 高空焦羽翻轉飄落接近 | `clip_07_shot3c.mp4` |
-| **Clip 08 (Shot 3D)** | `01:00.000 – 01:09.500` | 9.50s | 焦羽輕觸胸甲、羽軸亮起純白星芒 → **金白色神聖光束爆發並擴張至淹沒全畫面**（銜接第三段 Shot 04） | `clip_08_shot3d.mp4` |
+| **Clip 07 (Shot 3C)** | `00:52.000 – 00:54.200` | 2.20s（僅取前段煙塵散去） | 荒漠漫天煙塵吹散、初步顯露倒臥沙丘的大天使長，隨即平滑銜接 Clip 08 近景 | `clip_07_shot3c.mp4` |
+| **Clip 08 (Shot 3D)** | `00:54.200 – 01:03.700` | 9.50s | 倒臥近景（全身與兜帽頭完全靜止不動、無多餘肢體）→ 焦羽落胸亮起純白星芒 → **金白神光爆發淹沒全畫面** | `clip_08_shot3d.mp4` |
 
 > [!TIP]
 > **參考圖檔案位置（已納入 Git 追蹤）**：
@@ -94,13 +94,18 @@ Create an ultra-realistic AAA dark fantasy 3D CGI cinematic 16:9 video in a sing
 |---|---|
 | ![Clip 08 原片構圖基準](./cinematic_part2_pack/refs/orig_08_63s00.png) | ![Clip 08 電影風格基準](./cinematic_part2_pack/refs/ref_feather_glow.png) |
 
-### 給 Gemini 的生成指令（Clip 08 — 請直接依此段 Prompt 生成）
+### 給 Gemini 的生成指令（Clip 08 — 請開新對話並只附 `orig_08_63s00.png` + `ref_feather_glow.png` 直接依此段 Prompt 生成）
 ```text
-Create an ultra-realistic AAA dark fantasy 3D CGI cinematic 16:9 video in a single continuous unbroken medium close-up shot (no scene cuts, no text, no subtitles, no black letterbox bars). Use orig_08_63s00.png (first image) as the exact medium close-up framing of the fallen archangel's cracked chestplate and tattered hood, and transform it completely into the photorealistic 3D CGI film quality, intricate gold-filigree metal reflections, glowing volumetric rays, and cinematic bloom of ref_feather_glow.png (second reference image).
+Create an ultra-realistic AAA dark fantasy 3D CGI cinematic 16:9 video in a single continuous unbroken medium close-up shot (no scene cuts, no text, no subtitles, no black letterbox bars). Start IMMEDIATELY at the exact medium close-up framing of orig_08_63s00.png (first image)—showing only the fallen archangel's cracked chestplate, upper legs, arms, and shadowed hood—and transform it completely into the photorealistic 3D CGI film quality, intricate gold-filigree metal reflections, glowing volumetric rays, and cinematic bloom of ref_feather_glow.png (second reference image).
 
-[0-3s] Dramatic medium close-up of the fallen hooded archangel lying motionless in windswept desert sand, face hidden in pitch-black shadow inside the torn ivory hood. A single detailed white angel feather with charred edges floats gently down from above, a tiny pure-white star spark glowing at the center of its shaft as it softly touches down onto the cracked ivory-and-gold chestplate.
-[3-7s] Upon touching the armor, the white star flare violently ignites into dazzling golden-white volumetric light rays, shimmering energy particles, and warm divine shockwaves radiating outward from the feather across the metallic filigree and lifting sand grains into the air as the camera slowly pushes closer.
-[7-9.5s] The radiant golden-white light intensifies and expands rapidly from the chestplate like a rising sun, blooming brighter and brighter until warm luminous golden-white light completely fills the entire frame. Epic AAA cinematic lighting and lens bloom.
+STRICT ANATOMY & MOTIONLESS BODY LOCK (CRITICAL):
+- The fallen archangel has STRICTLY TWO legs only (never generate a third leg or extra limbs; scattered armor shards in the sand must remain small flat metal fragments, never morphing into boots or legs).
+- The archangel's entire body—including the hooded head, shoulders, arms, and both legs—must remain 100% COMPLETELY MOTIONLESS, HEAVY, AND FLAT on the desert sand throughout the entire video. DO NOT lift, turn, or raise the hooded head. DO NOT move, bend, or float any leg in the wind.
+- Only tiny tattered cloth fringes, drifting desert dust, and the falling feather may move in the breeze.
+
+[0-3s] Medium close-up of the completely motionless fallen hooded archangel lying flat on the windswept desert sand, face hidden in pitch-black shadow inside the torn ivory hood resting flat on the ground. A single detailed white angel feather with charred edges drifts gently down from the top of the frame, a tiny pure-white star spark glowing at the center of its shaft as it softly touches down onto the cracked ivory-and-gold chestplate.
+[3-6.5s] Upon touching the armor, the white star flare ignites into dazzling golden-white volumetric light rays, shimmering energy particles, and warm divine shockwaves radiating outward from the feather across the motionless metallic filigree, lifting fine sand grains into the air as the camera slowly and smoothly pushes closer toward the chestplate.
+[6.5-10s] The radiant golden-white light intensifies and expands rapidly from the chestplate like a rising sun, blooming brighter and brighter until warm luminous golden-white light completely fills the entire frame. Epic AAA cinematic lighting and lens bloom.
 ```
 
 ---
