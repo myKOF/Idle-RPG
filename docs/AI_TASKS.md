@@ -4917,6 +4917,15 @@
 - 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
 - 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
 
+## SOCKET-ACTION-CONTRAST-20261126 — 鑲嵌操作淺黃底與效果文字左移
+
+- Owner：Codex；Done，單人處理。使用者要求寶石／符文鑲嵌與卸下操作更顯眼，採淡淺黃底；鑲孔列的效果文字（如吸血+7）向左移5px。沿既有共用鑲嵌頁及socket-remove樣式完成。
+- 修改4檔：css/ashen-forge.css、index.html、LV_upgrade_system.md及本段。寶石／符文入口、刻印及孔列卸下／抹除／取消採#e6d9ad淺黃底、#3c321d深色字，hover／選中略加亮；原停用透明度及一般箭頭保持。效果span以translateX(-5px)位移，只作用於鑲嵌頁；CSS快取20261126-socket-action-contrast-v1。未改文字、費用、暫放／鑲嵌規則、資料表／存檔／Worker或素材。
+- 逐檔預檢無外部來源；本副本開箱／副手標籤任務共用index／LV／任務檔為不同區段，分段修改及暫存，三方試合乾淨且無語意相依。未納入其他聊天修改。
+- `node --test tests/equip-socket-ui.test.cjs tests/gem-socket-height-compact.test.cjs`29/29通過，涵蓋選孔／卸下／符文抹除二次確認／暫放刻印／等待與失敗恢復、唯讀孔位與原列高。`npm.cmd run build`771檔與Git差異檢查通過；本輪為可逆CSS微調，沿用既有測試，未新增只鏡像CSS的測試。
+- 隔離靜音Edge以正式itemSocketHTML／itemRuneHTML產出寶石與符文孔，載入完整正式CSS，比對HEAD原樣式與本輪樣式。兩頁效果文字x各精確減5px，列及操作鈕的x／y／寬／高完全相同；淺黃底rgb(230,217,173)、深色字rgb(60,50,29)、hover rgb(244,232,191)，停用opacity0.6／cursor default，卸下／抹除按鈕中心命中原按鈕，頁面例外0；兩頁截圖已目視確認。初輪QA漏設固定畫布容器高度導致內容被clip，補齊fixture容器後完整重跑通過，未改產品布局。瀏覽器finally關閉，孤兒瀏覽器檢查無殘留。
+- 唯讀檢查：共通規範／Workflow／Codex、js/item.js與ui.js鑲孔／操作列產生器、符文共用樣式及Brass主題、既有鑲嵌／高度回歸。無新字串或素材，素材庫不需提交。本輪無未完成項目，自我Review通過，可審閱合併；未做完整遊戲長時間操作或全庫回歸。Commit為本段所在`[Codex] fix: 加強鑲嵌操作辨識與調整效果文字`，未合併或推送。下一步重新載入此版本檢視兩種鑲嵌頁；其他聊天修改保留。
+
 ## AUTO-STAGE-TIP-20261126 — 自動推關底色與兩行提示
 
 - Owner：Codex；Done，單人處理。使用者指定啟動綠底、關閉灰底，tips 第一行顯示「自動推進關卡啟動中／關閉中」，第二行以較小淺灰字顯示「點擊取消／點擊開啟」。沿用既有 Worker 指令與 header 樂觀狀態同步，初始化、點擊、在途及失敗恢復時同步提示。

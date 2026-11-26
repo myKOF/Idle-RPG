@@ -1845,6 +1845,23 @@ html *::-webkit-scrollbar-corner {
 #tab-equip #detail-pane .socket-remove:hover { border-color: #a8322c; }
 #tab-equip #detail-pane :is(.socket-pick, .socket-remove):disabled { cursor: default; opacity: 0.6; }
 
+/* 寶石／符文鑲嵌入口、刻印與孔列取下操作共用淡黃底。 */
+#ui-shell #tab-equip :is(#detail-pane .socket-remove, #equip-action-bar [data-act="toggle-socket"], #equip-action-bar [data-act="toggle-rune"], #equip-action-bar [data-act="engrave-rune"]) {
+  background: #e6d9ad !important;
+  border-color: #b6a371 !important;
+  color: #3c321d !important;
+  text-shadow: none !important;
+}
+#ui-shell #tab-equip :is(#detail-pane .socket-remove, #equip-action-bar [data-act="toggle-socket"], #equip-action-bar [data-act="toggle-rune"], #equip-action-bar [data-act="engrave-rune"]):is(:hover, :focus-visible):not(:disabled) {
+  background: #f4e8bf !important;
+  border-color: #927536 !important;
+}
+#ui-shell #tab-equip #equip-action-bar :is([data-act="toggle-socket"], [data-act="toggle-rune"])[aria-pressed="true"] {
+  background: #f4e8bf !important;
+  border-color: #927536 !important;
+}
+#tab-equip #detail-pane .socket-pick .sk-val { transform: translateX(-5px); }
+
 .equip-socket-gems { margin-top: 12px; }
 
 /* 四模式共用固定外框；長鑲嵌內容在詳情區捲動，不推動操作列及背包。 */
