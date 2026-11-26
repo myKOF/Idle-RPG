@@ -51,3 +51,27 @@ test('分頁／工作列標題顯示模擬進度：進度放最前面，獨立�
   assert.match(page, /document\.title = `\$\{pct\}% 模擬中｜\$\{BASE_TITLE\}`/, '標題開頭就是總進度百分比');
   assert.match(page, /setInterval\(poll, 2000\)/);
 });
+
+test('最高場景的最高關卡：以已解鎖場景中最後一張的最高關為準，快照記下場景、最高關、上限', () => {
+  const { createEngine } = require(path.join(ROOT, 'scripts/sim/engine.js'));
+  const e = createEngine({ seed: 1 });
+  e.boot(null);
+  const c = e.ctx;
+  /* 荒漠打通 → 冰原解鎖：最高場景換成冰原，最高關是冰原自己的關卡，不是荒漠的 100 */
+  c.G.zoneProgress = c.G.zoneProgress || {};
+  c.G.zoneProgress.desert = { current: 100, best: 100, cleared: 100 };
+  c.G.zoneProgress.Icefield = { current: 12, best: 12, cleared: 11 };
+  c.G.stage.zone = 'Icefield'; c.G.stage.best = 12; c.G.stage.current = 12;
+  const list = c.ZONE_LIST;
+  let idx = -1;
+  for (let i = 0; i < list.length; i++) if (c.isZoneUnlocked(list[i])) idx = i;
+  assert.equal(list[idx], 'Icefield');
+  assert.equal(c.zoneBestProgress(list[idx]), 12);
+  assert.equal(c.zoneMaxStage(list[idx]), 150);
+
+  const runSim = fs.readFileSync(path.join(ROOT, 'scripts/run_sim.js'), 'utf8');
+  assert.match(runSim, /function topZoneProgress\(\)/);
+  assert.match(runSim, /\.\.\.topZoneProgress\(\)/, '每筆快照都要帶這三欄');
+  const page = fs.readFileSync(path.join(ROOT, 'monte_carlo_app.html'), 'utf8');
+  assert.match(page, /return `\$\{name\} \$\{tz\.best\}\/\$\{tz\.max\}`;/, '標示成「冰原 120/150」');
+});
