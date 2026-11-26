@@ -9,6 +9,8 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    寶箱圖依品質載入透明 WebP；未解鎖時本體置灰並疊上鎖鏈與掛鎖。 */
 
 var CHEST_UI = { bound: false, sig: '', results: [] };
+var CHEST_OPENING_MS = 2500;
+var CHEST_REVEAL_STEP_MS = 100;
 
 var CHEST_ART_FILES = {
   common: 'bronze',
@@ -227,7 +229,19 @@ function chestBindResultGrid(viewport, rewards) {
   var track = grid.parentNode;
   var slots = rewards.slots, total = rewards.total;
   var columns = 1, stride = 1, first = -1, last = -1;
+  var revealed = 0, revealTimer = null, stopped = false;
+  var started = performance.now();
   viewport.style.setProperty('--nfc-count', Math.max(1, total));
+
+  function updateRevealed(animate) {
+    Array.from(grid.children).forEach(function (node) {
+      var pending = Number(node.getAttribute('data-nfc-index')) >= revealed;
+      var entering = !pending && node.classList.contains('is-pending');
+      node.classList.toggle('is-pending', pending);
+      node.setAttribute('aria-hidden', pending ? 'true' : 'false');
+      if (entering && animate) node.classList.add('is-entering');
+    });
+  }
 
   function render() {
     var startRow = Math.max(0, Math.floor(viewport.scrollTop / stride) - 1);
@@ -236,17 +250,19 @@ function chestBindResultGrid(viewport, rewards) {
     if (start === first && end === last) return;
     first = start;
     last = end;
-    grid.classList.remove('is-revealing');
     var html = '';
     for (var i = 0; i < slots.length && start < end; i++) {
       var slot = slots[i];
       var count = Math.min(end, slot.end) - start;
       if (count <= 0) continue;
-      html += slot.html.repeat(count);
+      for (var j = 0; j < count; j++) {
+        html += slot.html.replace('<li ', '<li data-nfc-index="' + (start + j) + '" ');
+      }
       start += count;
     }
     grid.style.top = (startRow * stride) + 'px';
     grid.innerHTML = html;
+    updateRevealed(false);
   }
 
   function resize() {
@@ -281,17 +297,26 @@ function chestBindResultGrid(viewport, rewards) {
     viewport.classList.remove('is-dragging');
   });
   viewport.addEventListener('scroll', function () {
-    grid.classList.remove('is-revealing');
     render();
   }, { passive: true });
   resize();
-  var visible = Math.min(total, Math.ceil(viewport.clientHeight / stride) * columns);
-  var step = Math.min(55, 1800 / Math.max(1, visible - 1));
-  for (var i = 0; i < visible; i++) grid.children[i].style.setProperty('--nfc-reveal-delay', (i * step) + 'ms');
-  grid.classList.add('is-revealing');
+  function reveal() {
+    if (stopped) return;
+    var elapsed = performance.now() - started;
+    revealed = Math.min(total, 1 + Math.floor(elapsed / CHEST_REVEAL_STEP_MS));
+    updateRevealed(true);
+    if (revealed < total) revealTimer = setTimeout(reveal, revealed * CHEST_REVEAL_STEP_MS - elapsed);
+    else revealTimer = null;
+  }
+  reveal();
   var observer = new ResizeObserver(resize);
   observer.observe(viewport);
-  return observer;
+  return { disconnect: function () {
+    stopped = true;
+    clearTimeout(revealTimer);
+    observer.disconnect();
+    if (drag && viewport.hasPointerCapture(drag.id)) viewport.releasePointerCapture(drag.id);
+  } };
 }
 
 function chestShowResult(res) {
@@ -305,33 +330,65 @@ function chestShowResult(res) {
   var rewards = chestResultSlots(res.rewards);
   var el = document.createElement('dialog');
   el.id = 'nfc-result';
-  el.className = 'nfc-result';
+  var quality = Object.hasOwn(CHEST_ART_FILES, def.quality) ? def.quality : 'common';
+  el.className = 'nfc-result q-' + quality;
+  el.style.setProperty('--nfc-opening-time', CHEST_OPENING_MS + 'ms');
   el.setAttribute('aria-label', summary.join(' '));
-  el.innerHTML = '<div class="nfc-res-content"><div class="nfc-res-art">' +
-    chestResultImage('images/chests/' + (CHEST_ART_FILES[def.quality] || CHEST_ART_FILES.common) + '.webp') + '</div>' +
-    '<div class="nfc-res-scroll" tabindex="0"' + (rewards.total ? '' : ' hidden') + '><div class="nfc-res-track">' +
+  var art = chestResultImage('images/chests/' + CHEST_ART_FILES[quality] + '.webp');
+  el.innerHTML = '<div class="nfc-res-content"><div class="nfc-res-art" aria-hidden="true">' +
+    '<div class="nfc-res-fx"><i class="nfc-res-halo"></i><i class="nfc-res-rays"></i></div>' +
+    '<div class="nfc-res-chest"><i class="nfc-res-inner"></i>' +
+    '<div class="nfc-res-base">' + art + '</div><div class="nfc-res-lid">' + art + '</div></div></div>' +
+    '<div class="nfc-res-scroll" tabindex="0" hidden><div class="nfc-res-track">' +
     '<ul class="nfc-res-list" role="list"></ul></div></div>' +
-    '<button type="button" class="btn primary nfc-res-confirm" autofocus>' + chestUiEsc(STR(149)) + '</button></div>';
+    '<button type="button" class="btn primary nfc-res-confirm" hidden disabled>' + chestUiEsc(STR(149)) + '</button></div>';
   hideTooltip();
   ($id('ui-stage') || document.body).appendChild(el);
   el.showModal();
-  var observer = rewards.total ? chestBindResultGrid(el.querySelector('.nfc-res-scroll'), rewards) : null;
+  var observer = null, openingTimer = null, ready = false, dismissed = false;
+  var confirm = el.querySelector('.nfc-res-confirm');
+  function opened() {
+    if (dismissed) return;
+    openingTimer = null;
+    ready = true;
+    el.classList.remove('is-opening');
+    el.classList.add('is-opened');
+    var viewport = el.querySelector('.nfc-res-scroll');
+    viewport.hidden = !rewards.total;
+    if (rewards.total) observer = chestBindResultGrid(viewport, rewards);
+    confirm.hidden = false;
+    confirm.disabled = false;
+    confirm.focus({ preventScroll: true });
+  }
+  // 冷快取時等箱圖解碼完成才開始計時，避免空白畫面吃掉開箱演出。
+  Promise.all(Array.from(el.querySelectorAll('.nfc-res-chest img')).map(function (img) {
+    return img.decode().catch(function () {});
+  })).then(function () {
+    if (dismissed) return;
+    el.classList.add('is-opening');
+    openingTimer = setTimeout(opened, CHEST_OPENING_MS);
+  });
   function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
+    clearTimeout(openingTimer);
     if (observer) observer.disconnect();
-    el.close();
+    el.getAnimations({ subtree: true }).forEach(function (animation) { animation.cancel(); });
+    CHEST_UI.results.length = 0;
+    if (el.open) el.close();
     el.remove();
-    if (CHEST_UI.results.length) chestShowResult(CHEST_UI.results.shift());
   }
   el.addEventListener('cancel', function (e) {
     e.preventDefault();
-    dismiss();
+    if (ready) dismiss();
   });
   el.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     e.preventDefault();
-    if (!e.repeat && !e.isComposing) dismiss();
+    if (ready && !e.repeat && !e.isComposing) dismiss();
   });
-  el.querySelector('.nfc-res-confirm').addEventListener('click', dismiss);
+  confirm.addEventListener('click', function () { if (ready) dismiss(); });
+  el.addEventListener('close', dismiss);
 }
 
 /* ---- 事件委派（容器本身不重建，只綁一次） ---- */

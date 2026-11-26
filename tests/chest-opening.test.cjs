@@ -1,0 +1,224 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const root = path.resolve(__dirname, '..');
+
+function harness() {
+  let now = 0, seq = 0, current = null, columns = 10;
+  const timers = new Map(), observers = [];
+  class Node {
+    constructor() {
+      this.listeners = {};
+      this.attrs = {};
+      this.children = [];
+      this.style = { setProperty(k, v) { this[k] = v; } };
+      const classes = new Set();
+      this.classList = {
+        add: (...names) => names.forEach(n => classes.add(n)),
+        remove: (...names) => names.forEach(n => classes.delete(n)),
+        contains: n => classes.has(n),
+        toggle(n, on = !classes.has(n)) { if (on) classes.add(n); else classes.delete(n); }
+      };
+    }
+    setAttribute(k, v) { this.attrs[k] = String(v); }
+    getAttribute(k) { return this.attrs[k]; }
+    addEventListener(k, f) { (this.listeners[k] ||= []).push(f); }
+    emit(k, props = {}) {
+      const e = { preventDefault() { this.defaultPrevented = true; }, ...props };
+      (this.listeners[k] || []).forEach(f => f(e));
+      return e;
+    }
+    set innerHTML(html) {
+      this.html = html;
+      this.children = Array.from(html.matchAll(/<li data-nfc-index="(\d+)"/g), m => {
+        const n = new Node(); n.setAttribute('data-nfc-index', m[1]); return n;
+      });
+    }
+    get innerHTML() { return this.html; }
+    focus() { this.focused = true; }
+    setPointerCapture(id) { this.capture = id; }
+    hasPointerCapture(id) { return this.capture === id; }
+    releasePointerCapture() { this.capture = null; this.emit('lostpointercapture'); }
+  }
+  function gridNodes() {
+    const viewport = new Node(), grid = new Node(), track = new Node();
+    viewport.querySelector = () => grid;
+    viewport.clientHeight = 112;
+    viewport.scrollHeight = 56000;
+    viewport.scrollTop = 0;
+    grid.parentNode = track;
+    return { viewport, grid, track };
+  }
+  const stage = { appendChild(n) { current = n; } };
+  const c = {
+    console, window: {}, performance: { now: () => now },
+    setTimeout(f, delay) { const id = ++seq; timers.set(id, { f, at: now + Math.max(0, delay) }); return id; },
+    clearTimeout(id) { timers.delete(id); },
+    getComputedStyle: () => ({ rowGap: '6', gridAutoRows: '50', gridTemplateColumns: Array(columns).fill('50px').join(' ') }),
+    ResizeObserver: class {
+      constructor(fn) { this.fn = fn; this.active = true; observers.push(this); }
+      observe() {}
+      disconnect() { this.active = false; }
+    },
+    hideTooltip() {}, itemFrameColor: () => '#fff', itemRarityEffectClass: () => '', ancientStarBadgeHTML: () => '',
+    document: {
+      body: stage,
+      getElementById: id => id === 'ui-stage' ? stage : current,
+      querySelectorAll: () => [],
+      createElement() {
+        const el = new Node(), nodes = gridNodes(), confirm = new Node();
+        el.nodes = nodes; el.confirm = confirm;
+        confirm.hidden = confirm.disabled = true;
+        nodes.viewport.hidden = true;
+        el.querySelector = q => q === '.nfc-res-confirm' ? confirm : nodes.viewport;
+        el.querySelectorAll = () => [{ decode: () => c.decode() }];
+        el.showModal = () => { el.open = true; };
+        el.close = () => { el.open = false; el.emit('close'); };
+        el.remove = () => { if (current === el) current = null; };
+        el.getAnimations = () => [{ cancel() { el.animationsCancelled = true; } }];
+        return el;
+      }
+    },
+    decode: () => Promise.resolve()
+  };
+  c.window = c;
+  vm.createContext(c);
+  for (const file of ['util', 'strings_data', 'strings', 'data', 'chest_data', 'chest', 'ui-chest']) {
+    vm.runInContext(fs.readFileSync(path.join(root, 'js', file + '.js'), 'utf8'), c, { filename: file });
+  }
+  return {
+    c, timers, observers, gridNodes, current: () => current,
+    columns(n) { columns = n; observers.filter(o => o.active).forEach(o => o.fn()); },
+    async flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); },
+    advance(ms) {
+      const until = now + ms;
+      while (true) {
+        const next = [...timers].sort((a, b) => a[1].at - b[1].at)[0];
+        if (!next || next[1].at > until) break;
+        now = next[1].at;
+        timers.delete(next[0]); next[1].f();
+      }
+      now = until;
+    }
+  };
+}
+
+function result(c, n = 40, chestId = c.CHESTS[0].id) {
+  return { chestId, opened: 1, rewards: n ? [{ k: 'equip', r: 1, n, items: [{ n, level: 12, ancientCount: 0, icon: 'equipment/icon_chest.png' }] }] : [] };
+}
+const visible = grid => grid.children.filter(n => !n.classList.contains('is-pending')).map(n => Number(n.getAttribute('data-nfc-index')));
+
+test('開箱滿2.5秒才同時出現獎勵、品質光效與可操作確認，Esc及點擊不可提早跳過', async () => {
+  const h = harness(), c = h.c;
+  c.chestShowResult(result(c));
+  const el = h.current();
+  assert.equal(el.confirm.hidden, true);
+  assert.equal(el.nodes.grid.children.length, 0);
+  await h.flush();
+  assert.equal(el.style['--nfc-opening-time'], '2500ms');
+  assert.ok(el.classList.contains('is-opening'));
+  h.advance(2499);
+  el.emit('cancel'); el.confirm.emit('click'); el.emit('keydown', { key: 'Escape' });
+  assert.equal(h.current(), el);
+  assert.equal(el.confirm.hidden, true);
+  h.advance(1);
+  assert.ok(el.classList.contains('is-opened'));
+  assert.equal(el.nodes.viewport.hidden, false);
+  assert.equal(el.confirm.hidden, false);
+  assert.equal(el.confirm.disabled, false);
+  assert.equal(el.confirm.focused, true);
+  assert.deepEqual(visible(el.nodes.grid), [0]);
+  h.advance(99); assert.deepEqual(visible(el.nodes.grid), [0]);
+  h.advance(1); assert.deepEqual(visible(el.nodes.grid), [0, 1]);
+  h.advance(800); assert.deepEqual(visible(el.nodes.grid), Array.from({ length: 10 }, (_, i) => i));
+  h.advance(100); assert.equal(visible(el.nodes.grid).length, 11);
+});
+
+test('虛擬格捲動或縮放不會提前顯示尚未揭示的物品，離屏物品仍依全域次序揭示', () => {
+  const h = harness(), { viewport, grid } = h.gridNodes();
+  const ctrl = h.c.chestBindResultGrid(viewport, { total: 100000, slots: [{ end: 100000, html: '<li class="nfc-res-slot">item</li>' }] });
+  assert.ok(grid.children.length <= 40);
+  viewport.scrollTop = 5600; viewport.emit('scroll');
+  assert.deepEqual(visible(grid), []);
+  h.advance(1000); assert.deepEqual(visible(grid), []);
+  h.columns(5); assert.deepEqual(visible(grid), []);
+  viewport.scrollTop = 0; viewport.emit('scroll');
+  assert.deepEqual(visible(grid), Array.from({ length: 11 }, (_, i) => i));
+  assert.equal(grid.children[11].getAttribute('aria-hidden'), 'true');
+  viewport.emit('pointerdown', { pointerType: 'mouse', button: 0, pointerId: 7, clientY: 50 });
+  assert.equal(viewport.hasPointerCapture(7), true);
+  ctrl.disconnect();
+  assert.equal(viewport.hasPointerCapture(7), false);
+  assert.equal(h.timers.size, 0);
+});
+
+for (const event of ['click', 'cancel', 'keydown', 'close']) {
+  test(`${event}中止未播完獎勵、旋轉光效、觀察器及排隊演出，後續開箱重新計時`, async () => {
+    const h = harness(), c = h.c;
+    c.chestShowResult(result(c)); await h.flush(); h.advance(2500);
+    const el = h.current();
+    c.chestShowResult(result(c)); assert.equal(c.CHEST_UI.results.length, 1);
+    if (event === 'click') el.confirm.emit('click');
+    else if (event === 'keydown') el.emit('keydown', { key: 'Escape', repeat: false, isComposing: false });
+    else if (event === 'close') el.close();
+    else el.emit(event);
+    assert.equal(h.current(), null);
+    assert.equal(h.timers.size, 0);
+    assert.ok(h.observers.every(o => !o.active));
+    assert.equal(c.CHEST_UI.results.length, 0);
+    assert.equal(el.animationsCancelled, true);
+    h.advance(50000); assert.equal(h.current(), null);
+    c.chestShowResult(result(c)); await h.flush();
+    assert.equal(h.current().confirm.hidden, true);
+    h.advance(2500); assert.deepEqual(visible(h.current().nodes.grid), [0]);
+  });
+}
+
+test('冷圖解碼前不耗用開箱時長，解碼失敗仍可完成，外部提前關閉不殘留計時', async () => {
+  const h = harness(), c = h.c;
+  let complete;
+  c.decode = () => new Promise(r => { complete = r; });
+  c.chestShowResult(result(c)); h.advance(10000);
+  assert.equal(h.timers.size, 0);
+  complete(); await h.flush();
+  h.advance(2499); assert.equal(h.current().confirm.hidden, true);
+  h.current().close(); assert.equal(h.timers.size, 0);
+  c.decode = () => Promise.reject(new Error('missing image'));
+  c.chestShowResult(result(c, 0)); await h.flush(); h.advance(2500);
+  assert.equal(h.current().confirm.hidden, false);
+  h.current().close();
+  c.decode = () => new Promise(r => { complete = r; });
+  c.chestShowResult(result(c)); h.current().close(); complete(); await h.flush();
+  assert.equal(h.timers.size, 0); assert.equal(h.current(), null);
+});
+
+test('五種品質依配置選擇色系與箱圖，空獎勵仍有確認，所有格完成後停止計時', async () => {
+  const h = harness(), c = h.c;
+  for (const def of c.CHESTS) {
+    c.chestShowResult(result(c, 0, def.id));
+    assert.equal(h.current().className, 'nfc-result q-' + def.quality);
+    assert.ok(h.current().innerHTML.includes('images/chests/' + c.CHEST_ART_FILES[def.quality] + '.webp'));
+    await h.flush(); h.advance(2500);
+    assert.equal(h.current().nodes.viewport.hidden, true);
+    assert.equal(h.current().confirm.disabled, false);
+    assert.equal(h.timers.size, 0);
+    h.current().confirm.emit('click');
+  }
+  c.chestShowResult(result(c, 2)); await h.flush(); h.advance(2600);
+  assert.deepEqual(visible(h.current().nodes.grid), [0, 1]);
+  assert.equal(h.timers.size, 0);
+});
+
+test('品質光效共用卡片顏色，只有開箱完成才開始持續旋轉，減少動態保留靜態光效', () => {
+  const css = fs.readFileSync(path.join(root, 'css/chest.css'), 'utf8');
+  for (const quality of ['rare', 'epic', 'legendary', 'mythic']) {
+    assert.match(css, new RegExp('\\.nfc-card\\.q-' + quality + ', \\.nfc-result\\.q-' + quality + ' \\{ --q:'));
+  }
+  assert.match(css, /\.is-opened \.nfc-res-halo \{ animation: nfc-light-spin 24s linear infinite/);
+  assert.match(css, /\.is-opened \.nfc-res-rays \{ animation: nfc-light-spin 18s linear infinite reverse/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /\.nfc-res-slot\.is-pending \{ visibility: hidden/);
+});

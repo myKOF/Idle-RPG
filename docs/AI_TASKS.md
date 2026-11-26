@@ -1,3 +1,16 @@
+## CHEST-OPENING-20261126 — 開箱時序與品質色光效
+
+- Owner：Codex；Done，單人處理。使用者要求約2～3秒開箱，播完才出現持續旋轉發散光暈／光束、獎勵與確認按鈕；獎勵左至右每秒10格，確認可立即中止全部演出。追加各品質使用對應品質色，完成後提供GIF預覽。
+- 前置：既有寶箱權威結算／虛擬獎勵格完整，fetch與逐檔衝突預檢無外部來源，工作區乾淨。允許js/ui-chest.js、css/chest.css、index.html必要快取、新tests/chest-opening.test.cjs、docs/CHEST_SYSTEM.md、LV_upgrade_system.md、VFX用途登記與本段。禁止改掉落／發獎／表格／存檔／協議、獨立素材、其他任務或工作區；不合併推送。
+- 實作：沿既有箱圖以CSS分層開蓋／蓄光，2.5秒後揭示，品質色共用卡片色；單一可清理的揭示時鐘配合虛擬格，捲動／縮放不提前揭示。確認或Esc清除視窗、動畫、計時器、觀察器及已排隊演出，獎勵已由Worker正常發放。減少動態保留時序與靜態光效。
+- 驗收：時序邊界、100ms逐格、各品質、空獎勵／大量物品／連續開箱、提前關閉與清理、捲動縮放；相關回歸、隔離靜音瀏覽器及Build／字串／VFX登記／Git差異檢查。完成後自我Review並Commit，交使用者整合。
+- 完成／修改8檔：ui-chest開箱與可中止揭示流程、chest.css箱圖分層／晃動／開蓋及品質色程序光暈／光束、index兩個快取、新開箱回歸、CHEST_SYSTEM／LV／VFX用途及本段。光暈24秒、光束18秒反向持續旋轉；不新增外部或獨立素材，沿既有自製箱圖，素材庫無變更／不建立空Commit。
+- 測試：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/task-chest-upgrade.test.cjs tests/task-chest-relic.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs tests/upgrade-success-feedback.test.cjs`84/84。新增9項覆蓋2499／2500ms邊界、99／100ms逐格、十萬物品虛擬化與離屏揭示、捲動縮放、確認／Esc／原生close、佇列清理、冷圖解碼／失敗、外部提前關閉與重開、空獎勵及各品質；最後增加拖曳捕捉釋放驗證後專項9/9再次通過。測試替身初輪缺字串DOM查詢／getElementById，補足後通過，未修改產品文字或契約。
+- Build：`npm.cmd run build`771檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0、`git diff --check`通過。唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、chest／chest_data／bridge／start-menu、headless管理及既有寶箱／任務／外框／字串／VFX回歸。自我Review確認發獎仍由Worker負責、顯示關閉不回滾獎勵、單一時鐘與各項回收完整。
+- 實機：暫存preview.cjs以launchHeadless管理隔離靜音Edge，正式新遊戲／GM給100箱／正式開箱按鈕。開箱前確認display:none、格數0、光效opacity0；開箱時長2519.7ms，完成才可確認，關閉後數量99。五品質銀白／藍／紫／橘／金皆轉動，42格尚只揭示19～20格即可關閉，所有動畫與排隊數歸0；700×500窄屏、捲至未揭示處仍隱藏、減少動態靜態光效及Esc通過，頁面例外0。擷取腳本曾在選單完成初始化前點擊，等待正確初始化後完成；未改遊戲啟動流程。
+- 預覽：使用實際CSS／DOM與相同ui-chest原碼，在隔離擷取閉包控制時鐘，逐100ms定格以排除截圖耗時造成的快慢；每品質2.5秒開箱、1.9秒揭示及確認關閉，五品質依序展示。使用者指定保留的`tmp/chest-opening-20261126/chest-opening-preview.gif`為720×480、225幀、23.75秒，逐幀解碼／總長校驗通過；非新增遊戲素材。瀏覽器／伺服器已關閉，kill-test-browsers確認無殘留。自動核准審查以政策限制拒絕刪除該專用目錄內的原始影格與暫存腳本，未重試或繞過，與GIF一併保留、不納入Commit，列為清理例外。
+- 交接：本段所在`[Codex] feat: 加入寶箱開啟動畫與品質光效`Commit位於ai/codex，SHA見交付；未合併／推送。無本項未完成實作，可供Review／使用者合併，外觀由使用者看GIF驗收；未跑全庫／多瀏覽器／行動真機。下一步將本提交整合至實際啟動工作區後重新載入或重啟。
+
 ## TASK-CHEST-UPGRADE-20261126 — 接通新增寶箱與全身強化任務
 
 - Owner：Codex；Done，單人處理。使用者新增順序11青銅寶箱20級、12開任意寶箱1個、14全身強化+10，要求補參數並套用。兩個寶箱獎勵依使用者裁決以顯示文字為準，數量改1500／2000碎片。前置：Task.xlsx已保存且來源獨占存取確認成功。
