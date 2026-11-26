@@ -1,3 +1,14 @@
+## DESKTOP-WINDOW-BOUNDS-20261126 — 記住玩家自訂視窗大小
+
+- Owner：Codex；Done，單人處理。使用者要求手動拉伸的桌面遊戲視窗大小於下次啟動保留，不再每次放大到接近全螢幕。前置：既有顯示模式／解析度及獨立 userData 已完成。
+- 允許：electron/main.cjs、electron/window-bounds.cjs、js/display-settings-ui.js、index.html 對應快取、tests/desktop-window-bounds.test.cjs、tools/desktop/verify-window-bounds.cjs、LV_upgrade_system.md 及本段。禁止修改玩法、表格、素材、玩家存檔、預設顯示模式及其他任務，不合併推送。
+- 原因：原生視窗固定1600×900且未記錄bounds，顯示頁每次初始化又以設定解析度覆蓋視窗。方案：本機獨立記錄一般視窗bounds，啟動優先還原，初始化跳過尺寸覆寫；使用者主動改解析度仍套用。全螢幕／最小化／模式轉換不寫入錯誤尺寸，螢幕變動時限制於可用工作區。
+- 所有目標逐檔預檢無外部衝突，初始工作區乾淨。驗收：儲存／重讀、無檔／壞檔、縮放／多螢幕邊界、模式切換與初始化回歸，隔離原生Electron跨程序重開，相關桌面測試、Build及差異檢查。無素材變更，素材庫不需提交。
+- 完成／修改8檔：新增window-bounds控制器，本機userData/window-bounds.json原子保存DIP位置及大小、連續事件250ms合併寫入、關窗與切換模式前立即保存；主程式建窗使用已保存bounds並對目前工作區限位，忽略全螢幕／最大化／最小化／模式切換中的尺寸。顯示頁初始化僅無紀錄時套用原解析度，主動改解析度及恢復預設沿用既有流程；index更新對應JS快取、LV說明及本段同步，新增7項單測與可重跑原生三程序驗證工具。
+- 驗證：`node --test tests/desktop-window-bounds.test.cjs tests/settings-tabs.test.cjs tests/desktop-background.test.cjs tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs` 46/46；另跑`tests/desktop-app-protocol.test.cjs tests/desktop-saves.test.cjs tests/desktop-ship-rules.test.cjs tests/string-table.test.cjs` 44/44，全數通過。涵蓋壞檔／尺寸型別、寫入失敗、關窗立即落地、負座標／移除螢幕／DPI、初始化保留及主動解析度，未降低舊斷言。初次新增UI測試stub缺querySelector，補齊後全組通過。`npm.cmd run build` 768檔及`git diff --check`通過；原生測試亦實際載入主程式、新控制器與驗證工具。
+- 原生：`node tools/desktop/verify-window-bounds.cjs <聊天目錄>/window-bounds-report.json` 通過，三個真正Electron程序共用本輪隔離profile；第一輪設定1013×677後不等debounce直接關窗，第二輪完整還原且重載不放大、切borderless後關窗仍保存一般尺寸，第三輪以borderless開啟後回windowed還原1013×677，最小化不覆蓋紀錄、透過正式顯示頁change選1280×720成功調整。各輪頁面錯誤0，全程不開新遊戲、先設定靜音，原生視窗抑制顯示且不用截圖；測試程序結束、隔離profile已清理，報告留聊天目錄。
+- 唯讀檢查：共通規範／Workflow／Codex、electron/preload.cjs、mini-window.cjs、window-activity.cjs、js/game-settings.js、既有桌面／設定測試、打包與出貨規則、Electron官方BrowserWindow文件。既有模式／VSync、迷你視窗、存檔、玩法及素材不變，無素材庫提交。自我Review完成，無本輪未完成項目，可合併審閱；未合併／推送。已知限制：未在實體多螢幕／不同DPI硬體逐一實測，相關邊界採單測；未跑全庫測試。Commit為本段所在`[Codex] fix: 記住玩家自訂桌面視窗大小`；下一步重開新版桌面程式後拉伸一次，再關閉重開驗收。
+
 ## BOSS9-DEATH-20261126 — 四足獸失衡側倒死亡動作
 
 - Owner：Codex；Done，單人製作。使用者不提供GIF參考，授權自行設計四足野獸死亡動作，後續明確要求「做完直接commit」，最後追加提高仰頭幅度、仰天長嘯約1秒後才倒地，並再次要求「改好直接commit」。沿用模型／骨架／暫代材質及五個核准動作，驗證後直接雙倉庫提交並交GIF。v2為胸頸仰天張口、四肢撐地失力、後腿跪倒、身體側翻沉落，尾巴與四肢餘勢消退後保持屍體姿勢，完整4秒，不回Idle。

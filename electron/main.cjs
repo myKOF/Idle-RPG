@@ -54,6 +54,7 @@ var AppProtocol = require('./app-protocol.cjs');
 var SaveFiles = require('./save-files.cjs');
 var PlayLog = require('./play-log.cjs');
 var WindowActivity = require('./window-activity.cjs');
+var WindowBounds = require('./window-bounds.cjs');
 
 /* ---- 啟動參數 ---- */
 function argValue(name) {
@@ -343,9 +344,13 @@ function createWindow() {
   var lastFullscreenMode = OPTS.smoke || displayPrefs.mode === 'fullscreen' ? 'fullscreen' : 'borderless';
   var navigating = false, applyingMode = false, pendingWindowSize = null;
   var displayQueue = Promise.resolve();
+  var windowBounds = WindowBounds.create(path.join(app.getPath('userData'), 'window-bounds.json'), screen, log);
+  var initialBounds = windowBounds.initialBounds();
   var win = new BrowserWindow({
-    width: 1600,
-    height: 900,
+    x: initialBounds.x,
+    y: initialBounds.y,
+    width: initialBounds.width,
+    height: initialBounds.height,
     minWidth: 640,
     minHeight: 360,
     fullscreen: mode !== 'windowed',
@@ -368,6 +373,7 @@ function createWindow() {
     }
   });
   mainWindow = win;
+  var boundsTracking = windowBounds.bind(win, function () { return mode === 'windowed' && !applyingMode; });
   win.miniMonitor = require('./mini-window.cjs').create({
     owner: win, BrowserWindow: BrowserWindow, screen: screen, log: log,
     positionFile: path.join(app.getPath('userData'), 'mini-window-position.json')
@@ -378,7 +384,7 @@ function createWindow() {
   log('[desktop] 啟動', app.getVersion(), 'electron', process.versions.electron, '→', url, EDITION === 'demo' ? '（demo 版）' : '');
 
   function displayState() {
-    return { mode: mode, vsync: displayPrefs.vsync, activeVsync: activeVsync };
+    return { mode: mode, vsync: displayPrefs.vsync, activeVsync: activeVsync, hasWindowBounds: windowBounds.hasSaved() };
   }
   function publishDisplayState() {
     if (!wc.isDestroyed()) wc.send('display:change', displayState());
@@ -423,6 +429,7 @@ function createWindow() {
       var next = typeof requested === 'function' ? requested() : requested;
       if (DISPLAY_MODES.indexOf(next) < 0) throw new Error('Unsupported display mode');
       if (win.isDestroyed()) throw new Error('Display window closed');
+      boundsTracking.remember();
       applyingMode = true;
       try {
         if (next !== 'fullscreen' && mode === 'fullscreen') {

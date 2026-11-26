@@ -66,7 +66,10 @@ var DisplaySettingsUI = (function () {
     host = window.ApexHost && window.ApexHost.display;
     if (host) {
       host.onChange(readNativeState);
-      run(async function () { readNativeState(await host.get()); await applyResolution(); });
+      run(async function () {
+        readNativeState(await host.get());
+        if (!state.hasWindowBounds) await applyResolution();
+      });
     } else {
       document.addEventListener('fullscreenchange', paint);
       paint();
