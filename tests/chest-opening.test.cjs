@@ -214,6 +214,7 @@ test('冷圖解碼前不耗用開箱時長，解碼失敗仍可完成，外部�
   c.decode = () => Promise.reject(new Error('missing image'));
   c.chestShowResult(result(c, 0)); await h.flush(); h.advance(2500);
   assert.equal(h.current().confirm.hidden, false);
+  assert.ok(h.current().classList.contains('is-art-fallback'));
   h.current().close();
   c.decode = () => new Promise(r => { complete = r; });
   c.chestShowResult(result(c)); h.current().close(); complete(); await h.flush();
@@ -246,4 +247,38 @@ test('品質光效共用卡片顏色，只有開箱完成才開始持續旋轉�
   assert.match(css, /\.is-opened \.nfc-res-rays \{ animation: nfc-light-spin 18s linear infinite reverse/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /\.nfc-res-slot\.is-pending \{ visibility: hidden/);
+});
+
+test('五品質使用25幀透明立體開箱圖集，保留首幀、末幀及相同演出時鐘', () => {
+  const crypto = require('node:crypto');
+  const directory = path.join(root, 'images/chests/opening');
+  const manifest = JSON.parse(fs.readFileSync(path.join(directory, 'manifest.json')));
+  assert.equal(manifest.frames, 25);
+  assert.equal(manifest.columns, 5);
+  assert.equal(manifest.frameSize, 320);
+  assert.deepEqual(Object.keys(manifest.files).sort(), ['bronze.webp','epic.webp','fine.webp','legendary.webp','mythic.webp']);
+  for (const [name, sha] of Object.entries(manifest.files)) {
+    const bytes = fs.readFileSync(path.join(directory, name));
+    assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), sha, name);
+    assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
+    let found = false;
+    for (let offset = 12; offset + 8 < bytes.length;) {
+      const kind = bytes.toString('ascii', offset, offset + 4), size = bytes.readUInt32LE(offset + 4);
+      if (kind === 'VP8L') {
+        assert.equal(bytes[offset+8], 0x2f);
+        const bits = bytes.readUInt32LE(offset+9);
+        assert.equal((bits & 0x3fff)+1, 1600, name+' width');
+        assert.equal(((bits >>> 14) & 0x3fff)+1, 1600, name+' height');
+        found = true; break;
+      }
+      offset += 8 + size + (size % 2);
+    }
+    assert.ok(found, name+' lossless WebP');
+  }
+  const css = fs.readFileSync(path.join(root, 'css/chest.css'), 'utf8');
+  assert.match(css, /nfc-open-sheet var\(--nfc-opening-time\) steps\(1, end\) both/);
+  assert.match(css, /0%, 16% \{ transform: translate\(0, 0\)/);
+  assert.match(css, /100\.000000% \{ transform: translate\(-80%, -80%\)/);
+  assert.match(css, /\.is-opened \.nfc-res-sheet \{ transform: translate\(-80%, -80%\)/);
+  assert.doesNotMatch(css, /nfc-res-lid|rotateX\(/);
 });

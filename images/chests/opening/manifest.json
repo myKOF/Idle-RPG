@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "frameSize": 320,
+  "columns": 5,
+  "frames": 25,
+  "files": {
+    "bronze.webp": "e89cd52f7462342fd124323193dbca1bbb332b0c265dc8b0841dc9363517ccfa",
+    "fine.webp": "b15b6c7ab3029b8488de5f013f9b33a85b9be05dcb11c4e2207c0bd7e42c8268",
+    "epic.webp": "024d02aee5cb1dd053f58e91c4437fe8f228a074f3f5d411bbf4191400f3b924",
+    "legendary.webp": "95c278635bff3dda9c311b603fd96a985e9988913d9d7d371c2ddbad8e0902ad",
+    "mythic.webp": "d054472dbe85cc4459663d46ce3254824b172203ad2762bbb0c677bd76a3d2ea"
+  }
+}

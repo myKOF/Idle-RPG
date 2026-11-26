@@ -343,8 +343,9 @@ function chestShowResult(res) {
   var art = chestResultImage('images/chests/' + CHEST_ART_FILES[quality] + '.webp');
   el.innerHTML = '<div class="nfc-res-content"><div class="nfc-res-art" aria-hidden="true">' +
     '<div class="nfc-res-fx"><i class="nfc-res-halo"></i><i class="nfc-res-rays"></i></div>' +
-    '<div class="nfc-res-chest"><i class="nfc-res-cavity"></i><i class="nfc-res-inner"></i>' +
-    '<div class="nfc-res-base">' + art + '</div><div class="nfc-res-lid">' + art + '</div></div></div>' +
+    '<div class="nfc-res-chest"><div class="nfc-res-sprite"><img class="nfc-res-sheet" src="images/chests/opening/' +
+    CHEST_ART_FILES[quality] + '.webp?v=20261126-reference-v3" alt="" draggable="false" decoding="async"></div>' +
+    '<div class="nfc-res-fallback">' + art + '</div><i class="nfc-res-inner"></i></div></div>' +
     '<div class="nfc-res-rewards" aria-hidden="true" inert><div class="nfc-res-scroll" tabindex="0" hidden><div class="nfc-res-track">' +
     '<ul class="nfc-res-list" role="list"></ul></div></div>' +
     '<button type="button" class="btn primary nfc-res-confirm" hidden disabled>' + chestUiEsc(STR(149)) + '</button></div></div>';
@@ -373,7 +374,7 @@ function chestShowResult(res) {
   }
   // 冷快取時等箱圖解碼完成才開始計時，避免空白畫面吃掉開箱演出。
   Promise.all(Array.from(el.querySelectorAll('.nfc-res-chest img')).map(function (img) {
-    return img.decode().catch(function () {});
+    return img.decode().catch(function () { el.classList.add('is-art-fallback'); });
   })).then(function () {
     if (dismissed) return;
     el.classList.add('is-opening');
