@@ -13,7 +13,7 @@ visibly narrower, deeper 475-vertex curved lining. Different wall tones, depth
 shading and four highlighted corner edges distinguish the frame, slopes and
 recess. The lining's bands, motifs and rivets follow its curved surface. The
 60-degree presentation exposes both the outer barrel roof and the inside, with
-the two rear hinge vertices fixed. The body, floor and timing remain unchanged.
+the two rear hinge vertices fixed. The body and floor remain unchanged.
 The textured lining includes inset borders, corner leaves, paired scrolls,
 quality-specific central crests and studs. The floor has a stitched border and
 quilted diamond embossing. These patterns are procedural, self-authored geometry.
@@ -28,12 +28,13 @@ editable packed Blender scenes, 25 transparent renders per quality, lossless Web
 sheets, authoring/packing/export tools and a SHA-256 manifest.
 
 Each game sheet is 1600 × 1600, arranged in five rows and five columns of 320 × 320
-frames. Frame 0 is closed; frame 24 is fully open. The game holds the first frame
-while shaking for 1.5 seconds, then plays the opening in 0.3 seconds. Rewards,
-quality-coloured light and confirmation appear at 1.8 seconds. CSS holds the last
-frame until dismissal. Shaking returns to the starting position before the lid
-opens. Reduced motion
-holds frame 0 during the wait and switches to frame 24 when rewards appear.
+frames. Frame 0 is closed; frame 24 is fully open. The game plays these authored
+poses with CSS; shake/open durations and light,
+reward and confirmation timing are controlled by `js/ui-chest.js` and
+`css/chest.css`. See `docs/CHEST_SYSTEM.md` for the current sequence. CSS holds the
+last frame until dismissal. Shaking returns to the starting position before the
+lid opens. Reduced motion holds frame 0 during the wait and switches to frame 24
+when rewards appear.
 
 Rebuild (paths below are placeholders):
 

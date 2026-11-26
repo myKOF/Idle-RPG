@@ -133,7 +133,7 @@ test('預留完整獎勵格版面時不消耗揭示時間，開箱後啟動且�
   assert.equal(h.timers.size, 0);
 });
 
-test('開箱滿1.8秒才同時出現獎勵、品質光效與可操作確認，Esc及點擊不可提早跳過', async () => {
+test('搖晃結束1500ms先出光效，1650ms才出獎勵與確認，Esc及點擊不可提早跳過', async () => {
   const h = harness(), c = h.c;
   c.chestShowResult(result(c));
   const el = h.current();
@@ -141,14 +141,24 @@ test('開箱滿1.8秒才同時出現獎勵、品質光效與可操作確認，Es
   assert.deepEqual(visible(el.nodes.grid), []);
   assert.equal(el.panel.inert, true);
   await h.flush();
-  assert.equal(el.style['--nfc-opening-time'], '1800ms');
+  assert.equal(el.style['--nfc-shake-time'], '1500ms');
+  assert.equal(el.style['--nfc-lid-open-time'], '150ms');
   assert.ok(el.classList.contains('is-opening'));
-  h.advance(1799);
+  h.advance(1499);
+  assert.equal(el.classList.contains('has-opening-fx'), false);
+  assert.deepEqual(visible(el.nodes.grid), []);
+  h.advance(1);
+  assert.ok(el.classList.contains('has-opening-fx'));
+  assert.ok(el.classList.contains('is-opening'));
+  assert.equal(el.confirm.hidden, true);
+  assert.deepEqual(visible(el.nodes.grid), []);
+  h.advance(149);
   el.emit('cancel'); el.confirm.emit('click'); el.emit('keydown', { key: 'Escape' });
   assert.equal(h.current(), el);
   assert.equal(el.confirm.hidden, true);
   h.advance(1);
   assert.ok(el.classList.contains('is-opened'));
+  assert.ok(el.classList.contains('has-opening-fx'));
   assert.equal(el.nodes.viewport.hidden, false);
   assert.equal(el.confirm.hidden, false);
   assert.equal(el.confirm.disabled, false);
@@ -183,7 +193,7 @@ test('虛擬格捲動或縮放不會提前顯示尚未揭示的物品，離屏�
 for (const event of ['click', 'cancel', 'keydown', 'close']) {
   test(`${event}中止未播完獎勵、旋轉光效、觀察器及排隊演出，後續開箱重新計時`, async () => {
     const h = harness(), c = h.c;
-    c.chestShowResult(result(c)); await h.flush(); h.advance(1800);
+    c.chestShowResult(result(c)); await h.flush(); h.advance(1650);
     const el = h.current();
     c.chestShowResult(result(c)); assert.equal(c.CHEST_UI.results.length, 1);
     if (event === 'click') el.confirm.emit('click');
@@ -198,7 +208,7 @@ for (const event of ['click', 'cancel', 'keydown', 'close']) {
     h.advance(50000); assert.equal(h.current(), null);
     c.chestShowResult(result(c)); await h.flush();
     assert.equal(h.current().confirm.hidden, true);
-    h.advance(1800); assert.deepEqual(visible(h.current().nodes.grid), [0]);
+    h.advance(1650); assert.deepEqual(visible(h.current().nodes.grid), [0]);
   });
 }
 
@@ -209,10 +219,10 @@ test('冷圖解碼前不耗用開箱時長，解碼失敗仍可完成，外部�
   c.chestShowResult(result(c)); h.advance(10000);
   assert.equal(h.timers.size, 0);
   complete(); await h.flush();
-  h.advance(1799); assert.equal(h.current().confirm.hidden, true);
+  h.advance(1649); assert.equal(h.current().confirm.hidden, true);
   h.current().close(); assert.equal(h.timers.size, 0);
   c.decode = () => Promise.reject(new Error('missing image'));
-  c.chestShowResult(result(c, 0)); await h.flush(); h.advance(1800);
+  c.chestShowResult(result(c, 0)); await h.flush(); h.advance(1650);
   assert.equal(h.current().confirm.hidden, false);
   assert.ok(h.current().classList.contains('is-art-fallback'));
   h.current().close();
@@ -227,24 +237,24 @@ test('五種品質依配置選擇色系與箱圖，空獎勵仍有確認，所�
     c.chestShowResult(result(c, 0, def.id));
     assert.equal(h.current().className, 'nfc-result q-' + def.quality);
     assert.ok(h.current().innerHTML.includes('images/chests/' + c.CHEST_ART_FILES[def.quality] + '.webp'));
-    await h.flush(); h.advance(1800);
+    await h.flush(); h.advance(1650);
     assert.equal(h.current().nodes.viewport.hidden, true);
     assert.equal(h.current().confirm.disabled, false);
     assert.equal(h.timers.size, 0);
     h.current().confirm.emit('click');
   }
-  c.chestShowResult(result(c, 2)); await h.flush(); h.advance(1900);
+  c.chestShowResult(result(c, 2)); await h.flush(); h.advance(1750);
   assert.deepEqual(visible(h.current().nodes.grid), [0, 1]);
   assert.equal(h.timers.size, 0);
 });
 
-test('品質光效共用卡片顏色，只有開箱完成才開始持續旋轉，減少動態保留靜態光效', () => {
+test('品質光效共用卡片顏色，由提前光效狀態持續旋轉，減少動態保留靜態光效', () => {
   const css = fs.readFileSync(path.join(root, 'css/chest.css'), 'utf8');
   for (const quality of ['rare', 'epic', 'legendary', 'mythic']) {
     assert.match(css, new RegExp('\\.nfc-card\\.q-' + quality + ', \\.nfc-result\\.q-' + quality + ' \\{ --q:'));
   }
-  assert.match(css, /\.is-opened \.nfc-res-halo \{ animation: nfc-light-spin 24s linear infinite/);
-  assert.match(css, /\.is-opened \.nfc-res-rays \{ animation: nfc-light-spin 18s linear infinite reverse/);
+  assert.match(css, /\.has-opening-fx \.nfc-res-halo \{ animation: nfc-light-spin 24s linear infinite/);
+  assert.match(css, /\.has-opening-fx \.nfc-res-rays \{ animation: nfc-light-spin 18s linear infinite reverse/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /\.nfc-res-slot\.is-pending \{ visibility: hidden/);
 });
@@ -290,24 +300,54 @@ test('五品質使用25幀透明立體開箱圖集，保留首幀、末幀及相
     assert.ok(found, name+' lossless WebP');
   }
   const css = fs.readFileSync(path.join(root, 'css/chest.css'), 'utf8');
-  assert.match(css, /nfc-open-sheet var\(--nfc-opening-time\) steps\(1, end\) both/);
-  assert.match(css, /0%, 83.333333% \{ transform: translate\(0, 0\)/);
+  assert.match(css, /nfc-open-sheet var\(--nfc-lid-open-time\) steps\(1, end\) var\(--nfc-shake-time\) both/);
+  assert.match(css, /0\.000000% \{ transform: translate\(0, 0\)/);
   assert.match(css, /100\.000000% \{ transform: translate\(-80%, -80%\)/);
   assert.match(css, /\.is-opened \.nfc-res-sheet \{ transform: translate\(-80%, -80%\)/);
   assert.doesNotMatch(css, /nfc-res-lid|rotateX\(/);
 });
 
-test('抖動1.5秒後只用0.3秒開蓋，開蓋前不切圖幀且抖動必須歸位', () => {
+test('抖動維持1.5秒且幅度加倍，歸位後延遲播放0.15秒開蓋', () => {
   const h=harness();
   const css=fs.readFileSync(path.join(root,'css/chest.css'),'utf8');
+  assert.equal(h.c.CHEST_SHAKE_MS,1500);
+  assert.equal(h.c.CHEST_LID_OPEN_MS,150);
+  assert.equal(h.c.CHEST_OPENING_MS,1650);
+  assert.match(css,/nfc-chest-charge var\(--nfc-shake-time\) ease-in-out both/);
+  assert.match(css,/nfc-open-sheet var\(--nfc-lid-open-time\) steps\(1, end\) var\(--nfc-shake-time\) both/);
   const sheet=css.slice(css.indexOf('@keyframes nfc-open-sheet'),css.indexOf('@keyframes nfc-inner-opening'));
-  const hold=Number(/0%, ([\d.]+)%/.exec(sheet)[1]);
-  assert.ok(Math.abs(h.c.CHEST_OPENING_MS*hold/100-1500)<.01);
-  assert.equal(h.c.CHEST_OPENING_MS-1500,300);
   const points=[...sheet.matchAll(/([\d.]+)% \{ transform: translate\(/g)].map(m=>Number(m[1]));
   assert.equal(points.length,25);
-  assert.ok(points.slice(1).every(p=>p>hold&&p<=100));
+  assert.equal(points[0],0);
+  assert.equal(points.at(-1),100);
+  assert.ok(points.every((p,i)=>Math.abs(p-i*100/24)<.00001));
   const shake=css.slice(css.indexOf('@keyframes nfc-chest-charge'),css.indexOf('@keyframes nfc-open-sheet'));
-  assert.match(shake,/0%, 83\.333333%, 100% \{ transform: translate\(0, 0\) rotate\(0\)/);
-  assert.ok([...shake.matchAll(/rotate\(-?[\d.]+deg\)/g)].length>=16);
+  assert.match(shake,/0\.000000%, 100% \{ transform: translate\(0, 0\) rotate\(0\)/);
+  const rotations=[...shake.matchAll(/rotate\((-?[\d.]+)deg\)/g)].map(m=>Math.abs(Number(m[1])));
+  const moves=[...shake.matchAll(/translate\((-?[\d.]+)px, (-?[\d.]+)px\)/g)];
+  assert.ok(rotations.length>=16);
+  assert.equal(Math.max(...rotations),3.51);
+  assert.equal(Math.max(...moves.map(m=>Math.abs(Number(m[1])))),4.47);
+  assert.equal(Math.max(...moves.map(m=>Math.abs(Number(m[2])))),.7);
+  assert.match(css,/\.has-opening-fx \.nfc-res-fx \{ opacity: 1; \}/);
 });
+
+for (const ms of [1499,1500,1575]) {
+  test(`外部在${ms}ms關閉會清掉提前光效與開蓋計時，下一次開箱重置`, async () => {
+    const h=harness(), c=h.c;
+    c.chestShowResult(result(c)); await h.flush(); h.advance(ms);
+    const el=h.current();
+    assert.equal(el.classList.contains('has-opening-fx'),ms>=1500);
+    el.close();
+    assert.equal(h.timers.size,0);
+    assert.ok(h.observers.every(o=>!o.active));
+    h.advance(10000); assert.equal(h.current(),null);
+    c.chestShowResult(result(c)); await h.flush();
+    const next=h.current();
+    h.advance(1499); assert.equal(next.classList.contains('has-opening-fx'),false);
+    h.advance(1); assert.equal(next.classList.contains('has-opening-fx'),true);
+    assert.equal(next.confirm.hidden,true);
+    h.advance(150); assert.equal(next.confirm.hidden,false);
+    next.confirm.emit('click'); assert.equal(h.timers.size,0);
+  });
+}

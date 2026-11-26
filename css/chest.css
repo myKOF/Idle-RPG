@@ -265,8 +265,8 @@
   max-width: none;
   pointer-events: none;
 }
-.is-opening .nfc-res-chest { animation: nfc-chest-charge var(--nfc-opening-time) ease-in-out both; }
-.is-opening .nfc-res-sheet { animation: nfc-open-sheet var(--nfc-opening-time) steps(1, end) both; }
+.is-opening .nfc-res-chest { animation: nfc-chest-charge var(--nfc-shake-time) ease-in-out both; }
+.is-opening .nfc-res-sheet { animation: nfc-open-sheet var(--nfc-lid-open-time) steps(1, end) var(--nfc-shake-time) both; }
 .is-opened .nfc-res-sheet { transform: translate(-80%, -80%); }
 .is-art-fallback .nfc-res-sprite { display: none; }
 .is-art-fallback .nfc-res-fallback { display: block; }
@@ -277,7 +277,7 @@
   background: radial-gradient(ellipse, #fff9 0%, color-mix(in srgb, var(--q) 50%, transparent) 35%, transparent 72%);
   opacity: 0;
 }
-.is-opening .nfc-res-inner { animation: nfc-inner-opening var(--nfc-opening-time) ease-in both; }
+.is-opening .nfc-res-inner { animation: nfc-inner-opening var(--nfc-lid-open-time) ease-in var(--nfc-shake-time) both; }
 .is-opened .nfc-res-inner { opacity: .65; }
 .nfc-res-fx {
   position: absolute;
@@ -289,7 +289,7 @@
   transform: translateY(-50%);
   opacity: 0;
 }
-.is-opened .nfc-res-fx { opacity: 1; transition: opacity 300ms ease-out; }
+.has-opening-fx .nfc-res-fx { opacity: 1; }
 .nfc-res-halo, .nfc-res-rays { position: absolute; inset: 0; border-radius: 50%; }
 .nfc-res-halo {
   background: radial-gradient(circle, color-mix(in srgb, var(--q) 55%, white) 0%,
@@ -309,57 +309,57 @@
     color-mix(in srgb, var(--q) 50%, transparent) 24deg, transparent 29deg 40deg);
   mask-image: radial-gradient(circle, transparent 4%, #000 14%, #000b 30%, transparent 68%);
 }
-.is-opened .nfc-res-halo { animation: nfc-light-spin 24s linear infinite; }
-.is-opened .nfc-res-rays { animation: nfc-light-spin 18s linear infinite reverse; }
+.has-opening-fx .nfc-res-halo { animation: nfc-light-spin 24s linear infinite; }
+.has-opening-fx .nfc-res-rays { animation: nfc-light-spin 18s linear infinite reverse; }
 @keyframes nfc-chest-charge {
-  0%, 83.333333%, 100% { transform: translate(0, 0) rotate(0); filter: brightness(1); }
-  4.444444% { transform: translate(-1.355px, 0px) rotate(-0.715deg); filter: brightness(1.036); }
-  8.888889% { transform: translate(1.410px, 0px) rotate(0.780deg); filter: brightness(1.042); }
-  13.333333% { transform: translate(-1.465px, -0.35px) rotate(-0.845deg); filter: brightness(1.048); }
-  17.777778% { transform: translate(1.520px, 0px) rotate(0.910deg); filter: brightness(1.054); }
-  22.222222% { transform: translate(-1.575px, 0px) rotate(-0.975deg); filter: brightness(1.060); }
-  26.666667% { transform: translate(1.630px, -0.35px) rotate(1.040deg); filter: brightness(1.066); }
-  31.111111% { transform: translate(-1.685px, 0px) rotate(-1.105deg); filter: brightness(1.072); }
-  35.555556% { transform: translate(1.740px, 0px) rotate(1.170deg); filter: brightness(1.078); }
-  40.000000% { transform: translate(-1.795px, -0.35px) rotate(-1.235deg); filter: brightness(1.084); }
-  44.444444% { transform: translate(1.850px, 0px) rotate(1.300deg); filter: brightness(1.090); }
-  48.888889% { transform: translate(-1.905px, 0px) rotate(-1.365deg); filter: brightness(1.096); }
-  53.333333% { transform: translate(1.960px, -0.35px) rotate(1.430deg); filter: brightness(1.102); }
-  57.777778% { transform: translate(-2.015px, 0px) rotate(-1.495deg); filter: brightness(1.108); }
-  62.222222% { transform: translate(2.070px, 0px) rotate(1.560deg); filter: brightness(1.114); }
-  66.666667% { transform: translate(-2.125px, -0.35px) rotate(-1.625deg); filter: brightness(1.120); }
-  71.111111% { transform: translate(2.180px, 0px) rotate(1.690deg); filter: brightness(1.126); }
-  75.555556% { transform: translate(-2.235px, 0px) rotate(-1.755deg); filter: brightness(1.132); }
-  80% { transform: translate(-1px, 0) rotate(-.6deg); filter: brightness(1.16); }
+  0.000000%, 100% { transform: translate(0, 0) rotate(0); filter: brightness(1); }
+  5.333333% { transform: translate(-2.71px, 0px) rotate(-1.43deg); filter: brightness(1.036); }
+  10.666667% { transform: translate(2.82px, 0px) rotate(1.56deg); filter: brightness(1.042); }
+  16.000000% { transform: translate(-2.93px, -0.7px) rotate(-1.69deg); filter: brightness(1.048); }
+  21.333334% { transform: translate(3.04px, 0px) rotate(1.82deg); filter: brightness(1.054); }
+  26.666666% { transform: translate(-3.15px, 0px) rotate(-1.95deg); filter: brightness(1.060); }
+  32.000000% { transform: translate(3.26px, -0.7px) rotate(2.08deg); filter: brightness(1.066); }
+  37.333333% { transform: translate(-3.37px, 0px) rotate(-2.21deg); filter: brightness(1.072); }
+  42.666667% { transform: translate(3.48px, 0px) rotate(2.34deg); filter: brightness(1.078); }
+  48.000000% { transform: translate(-3.59px, -0.7px) rotate(-2.47deg); filter: brightness(1.084); }
+  53.333333% { transform: translate(3.7px, 0px) rotate(2.6deg); filter: brightness(1.090); }
+  58.666667% { transform: translate(-3.81px, 0px) rotate(-2.73deg); filter: brightness(1.096); }
+  64.000000% { transform: translate(3.92px, -0.7px) rotate(2.86deg); filter: brightness(1.102); }
+  69.333334% { transform: translate(-4.03px, 0px) rotate(-2.99deg); filter: brightness(1.108); }
+  74.666666% { transform: translate(4.14px, 0px) rotate(3.12deg); filter: brightness(1.114); }
+  80.000000% { transform: translate(-4.25px, -0.7px) rotate(-3.25deg); filter: brightness(1.120); }
+  85.333333% { transform: translate(4.36px, 0px) rotate(3.38deg); filter: brightness(1.126); }
+  90.666667% { transform: translate(-4.47px, 0px) rotate(-3.51deg); filter: brightness(1.132); }
+  96.000000% { transform: translate(-2px, 0) rotate(-1.2deg); filter: brightness(1.16); }
 }
 @keyframes nfc-open-sheet {
-  0%, 83.333333% { transform: translate(0, 0); }
-  84.027778% { transform: translate(-20%, 0%); }
-  84.722222% { transform: translate(-40%, 0%); }
-  85.416667% { transform: translate(-60%, 0%); }
-  86.111111% { transform: translate(-80%, 0%); }
-  86.805556% { transform: translate(0%, -20%); }
-  87.500000% { transform: translate(-20%, -20%); }
-  88.194444% { transform: translate(-40%, -20%); }
-  88.888889% { transform: translate(-60%, -20%); }
-  89.583333% { transform: translate(-80%, -20%); }
-  90.277778% { transform: translate(0%, -40%); }
-  90.972222% { transform: translate(-20%, -40%); }
-  91.666667% { transform: translate(-40%, -40%); }
-  92.361111% { transform: translate(-60%, -40%); }
-  93.055556% { transform: translate(-80%, -40%); }
-  93.750000% { transform: translate(0%, -60%); }
-  94.444444% { transform: translate(-20%, -60%); }
-  95.138889% { transform: translate(-40%, -60%); }
-  95.833333% { transform: translate(-60%, -60%); }
-  96.527778% { transform: translate(-80%, -60%); }
-  97.222222% { transform: translate(0%, -80%); }
-  97.916667% { transform: translate(-20%, -80%); }
-  98.611111% { transform: translate(-40%, -80%); }
-  99.305556% { transform: translate(-60%, -80%); }
+  0.000000% { transform: translate(0, 0); }
+  4.166667% { transform: translate(-20%, 0%); }
+  8.333333% { transform: translate(-40%, 0%); }
+  12.500000% { transform: translate(-60%, 0%); }
+  16.666667% { transform: translate(-80%, 0%); }
+  20.833333% { transform: translate(0%, -20%); }
+  25.000000% { transform: translate(-20%, -20%); }
+  29.166667% { transform: translate(-40%, -20%); }
+  33.333333% { transform: translate(-60%, -20%); }
+  37.500000% { transform: translate(-80%, -20%); }
+  41.666667% { transform: translate(0%, -40%); }
+  45.833333% { transform: translate(-20%, -40%); }
+  50.000000% { transform: translate(-40%, -40%); }
+  54.166667% { transform: translate(-60%, -40%); }
+  58.333333% { transform: translate(-80%, -40%); }
+  62.500000% { transform: translate(0%, -60%); }
+  66.666667% { transform: translate(-20%, -60%); }
+  70.833333% { transform: translate(-40%, -60%); }
+  75.000000% { transform: translate(-60%, -60%); }
+  79.166667% { transform: translate(-80%, -60%); }
+  83.333333% { transform: translate(0%, -80%); }
+  87.500000% { transform: translate(-20%, -80%); }
+  91.666667% { transform: translate(-40%, -80%); }
+  95.833333% { transform: translate(-60%, -80%); }
   100.000000% { transform: translate(-80%, -80%); }
 }
-@keyframes nfc-inner-opening { 0%, 83.333333% { opacity: 0; } 100% { opacity: .95; } }
+@keyframes nfc-inner-opening { 0% { opacity: 0; } 100% { opacity: .95; } }
 @keyframes nfc-light-spin { to { transform: rotate(360deg); } }
 .nfc-result [hidden] { display: none !important; }
 .nfc-res-rewards {

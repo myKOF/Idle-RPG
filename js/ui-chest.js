@@ -9,7 +9,9 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    寶箱圖依品質載入透明 WebP；未解鎖時本體置灰並疊上鎖鏈與掛鎖。 */
 
 var CHEST_UI = { bound: false, sig: '', results: [] };
-var CHEST_OPENING_MS = 1800;
+var CHEST_SHAKE_MS = 1500;
+var CHEST_LID_OPEN_MS = 150;
+var CHEST_OPENING_MS = CHEST_SHAKE_MS + CHEST_LID_OPEN_MS;
 var CHEST_REVEAL_STEP_MS = 100;
 
 var CHEST_ART_FILES = {
@@ -338,7 +340,8 @@ function chestShowResult(res) {
   el.id = 'nfc-result';
   var quality = Object.hasOwn(CHEST_ART_FILES, def.quality) ? def.quality : 'common';
   el.className = 'nfc-result q-' + quality;
-  el.style.setProperty('--nfc-opening-time', CHEST_OPENING_MS + 'ms');
+  el.style.setProperty('--nfc-shake-time', CHEST_SHAKE_MS + 'ms');
+  el.style.setProperty('--nfc-lid-open-time', CHEST_LID_OPEN_MS + 'ms');
   el.setAttribute('aria-label', summary.join(' '));
   var art = chestResultImage('images/chests/' + CHEST_ART_FILES[quality] + '.webp');
   el.innerHTML = '<div class="nfc-res-content"><div class="nfc-res-art" aria-hidden="true">' +
@@ -356,7 +359,7 @@ function chestShowResult(res) {
   viewport.hidden = !rewards.total;
   // 先以隱藏內容量好完整版面，獎勵出現時箱體不會因整組重新置中而向上跳。
   var observer = rewards.total ? chestBindResultGrid(viewport, rewards, true) : null;
-  var openingTimer = null, ready = false, dismissed = false;
+  var openingTimer = null, effectTimer = null, ready = false, dismissed = false;
   var confirm = el.querySelector('.nfc-res-confirm');
   function opened() {
     if (dismissed) return;
@@ -378,12 +381,17 @@ function chestShowResult(res) {
   })).then(function () {
     if (dismissed) return;
     el.classList.add('is-opening');
+    effectTimer = setTimeout(function () {
+      effectTimer = null;
+      if (!dismissed) el.classList.add('has-opening-fx');
+    }, CHEST_SHAKE_MS);
     openingTimer = setTimeout(opened, CHEST_OPENING_MS);
   });
   function dismiss() {
     if (dismissed) return;
     dismissed = true;
     clearTimeout(openingTimer);
+    clearTimeout(effectTimer);
     if (observer) observer.disconnect();
     el.getAnimations({ subtree: true }).forEach(function (animation) { animation.cancel(); });
     CHEST_UI.results.length = 0;
