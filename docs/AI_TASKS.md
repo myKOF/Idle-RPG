@@ -1,3 +1,15 @@
+## OFFHAND-TYPE-LABEL-20261126 — 副手裝備種類加上副手前綴
+
+- Owner：Codex；Done，單人處理。使用者截圖指定裝備提示的部位／種類名稱須加「副手」，例如副手盾牌。前置：itemTypeLabel共用於裝備詳情與tips，已有offHand分類。
+- 允許：String.xlsx／CSV／strings_data、data.js的itemTypeLabel、必要首頁／bridge／Worker快取、tests/item-type-label.test.cjs、LV與本段。禁止改物品基底名稱、武器分類／可裝部位、屬性／存檔／協議、其他表格及素材，不合併推送。
+- 設計：String新增2579「副手{0}」模板；僅offHand四種類型顯示副手盾牌／副手法器／副手魔法書／副手水晶球，保留既有STR928同時用於水晶球基底名稱的來源。全部目標預檢無外部來源，初始工作區乾淨。
+- 驗收：Excel獨占、原生編修／正常重開、完整值與既有格式保持、CSV及runtime同步；現有種類標籤／詳情／tooltip與裝備邏輯回歸，快取／字串稽核／Build／Git差異檢查。無素材修改，素材庫不需提交。
+- 完成／修改10檔：String.xlsx／CSV／strings_data.js新增2579模板；data.js僅在itemTypeLabel對offHand使用模板；index、bridge及Worker更新對應data快取，VFX編輯器首頁只同步共用字串快取f7286d47；LV及本段。未修改測試或新增低影響文字邏輯的鏡像測試，未改物品產生、基底名、分類、圖像或裝配規則。素材庫無變更，不建立空提交。
+- Excel：來源獨占存取通過，以tools/excel-update-sheets.ps1原生編修，寫5格、正常重開兩次一致、繪圖物件0保留。前後試算表技能渲染目視檢視；完整2563個原始列逐格相同，只追加2579一列，原儲存格樣式、styles.xml、欄寬與檢視保持。以xlsx_to_csv指定String單表匯出，再apply_strings產生2563條及更新首頁hash；`apply_strings.cjs --check`同步，未匯出其他工作簿。
+- 驗證：`node --test tests/item-type-label.test.cjs tests/equipment-detail-layout.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-tooltip-compare.test.cjs`15/15；`tests/string-table.test.cjs`14/14；`tests/vfx-editor-cache-versions.test.cjs`3/3，相關共32項通過。模擬引擎以四種真實makeEquipment產物直接呼叫itemHeaderHTML，標籤逐一相符，物品名稱與basenames不變；STR928仍水晶球，副手欄匕首／雙手武器不誤加專用分類前綴。`npm.cmd run build`771檔、Git差異檢查通過。
+- 限制／唯讀：另跑two-hand-weapon-scaling8項中5過3失敗，皆為既有雙手鑲孔數期待1／8／7而目前0／5／4。以記憶體替換讀入HEAD原data.js、未改磁碟，完整重跑同3項失敗，未放寬斷言或修改鑲孔。共用字串版本首次檢核發現編輯器漏升，追加預檢乾淨後同步並重跑3/3。唯讀檢查共通規範／Workflow／Codex、item.js裝備標頭、ui.js呼叫、strings機制、武器基底／裝配、String來源與既有回歸；未實機操作完整遊戲或全庫測試。
+- 交接：自我Review通過，可供合併審閱，本輪顯示修改無未完成項目。Commit為本段所在`[Codex] fix: 副手裝備種類加上副手前綴`，未合併／推送。下一步重新載入遊戲；若VFX編輯器仍開著，先保留未存內容再重新載入共用字串，本輪未改編輯器儲存結構／Preset。進行中鑲嵌操作任務與本輪共用index／LV／任務檔，但只改不同CSS快取／文件區段，分段暫存並以各自獨立差異三方試合；不納入對方CSS／紀錄。預覽PNG、來源副本與臨時腳本已清除；自動核准審查以政策限制拒絕刪除聊天offhand-label-20261126的node_modules連結與空工作資料夾，未重試或繞過，列清理例外、不納入提交。孤兒瀏覽器檢查無殘留。
+
 ## CHEST-OPENING-20261126 — 開箱時序與品質色光效
 
 - Owner：Codex；Done，單人處理。使用者要求約2～3秒開箱，播完才出現持續旋轉發散光暈／光束、獎勵與確認按鈕；獎勵左至右每秒10格，確認可立即中止全部演出。追加各品質使用對應品質色，完成後提供GIF預覽。

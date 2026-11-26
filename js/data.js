@@ -685,10 +685,10 @@ function ensureWeaponMeta(it, preferType) {
   if (it.weaponAbility === undefined) it.weaponAbility = null;
   return it;
 }
-// 物品種類顯示名：武器顯示具體類型，其餘用部位名
+// 物品種類顯示名：副手專用武器標明副手，其餘武器用具體類型、非武器用部位名。
 function itemTypeLabel(it) {
   var wd = weaponDef(it);
-  if (wd) return wd.name;
+  if (wd) return wd.cat === 'offHand' ? STR(2579, wd.name) : wd.name;
   return (SLOT_INFO[it.slot] || {}).name || it.slot;
 }
 

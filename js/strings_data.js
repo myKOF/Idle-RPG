@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = '35726e38';
+var STRING_DATA_VERSION = 'f7286d47';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -2565,5 +2565,6 @@ var STRING_DATA = {
   "2575": ["自動推進關卡啟動中"],
   "2576": ["自動推進關卡關閉中"],
   "2577": ["點擊取消"],
-  "2578": ["點擊開啟"]
+  "2578": ["點擊開啟"],
+  "2579": ["副手{0}"]
 };
