@@ -4775,6 +4775,16 @@
 - 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
 - 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
 
+## GEM-DROP-CONFIG-20261126 — 接通寶石表內掉落等級限制
+
+- Owner：Codex；Done，單人處理。使用者授權將 Gems「開放等級」的設定接到「掉落等級」，驗證後 Commit。來源設定與正式掉落讀欄不一致的問題已修正。
+- 修改9檔：config/Excel/Gems.xlsx、config/CSV/Gems.csv、js/data.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/gem-drop-level.test.cjs、LV_upgrade_system.md 及本段。49種原設定完整遷移並移除無效舊欄，主頁／Worker／bridge 快取為20261126-gem-drop-config-v1；掉落總機率、寶石能力、其他取得規則與存檔／協議保持。
+- Excel：來源獨占檢查通過，原生 API 刪欄與寫入、正常重開兩次後再重算儲存重開；驗證發現既有更新工具因浮點數字串差異將一格公式誤寫為文字，已依原本數字格式與公式以原生 API 恢復。最終兩工作表1750格及784個公式逐一對應原檔相同，僅49格新掉落設定與其文字格式／垂直置中、移除舊欄及掉落欄寬32為預期變更。渲染檢查通過、公式錯誤0，CSV以既有config_tables的readXlsxRows／csvStringify匯出，apply Gems試跑語意變更0。未手改XLSX封裝。
+- 驗證：新增3項回歸先重現錯欄及200級仍掉地抗寶石，遷移後全部通過；逐種類檢查區間前後邊界，元素核心51級、單元素抗性及對元素敵人傷害201級起掉，全屬性抗性維持1級、停用種類仍不掉。正式野外／強化怪物及離線引擎驗證200級不掉、201級掉，離線使用可容納該關卡的swamp地圖並確認實際結算關卡，未替換種類篩選器。
+- `node --test tests/gem-drop-level.test.cjs tests/gem-enabled.test.cjs tests/field-gem-drop-table.test.cjs tests/loot-event-accounting.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 最終38/38通過；`npm.cmd run build`767檔通過。擴大包含gem-shop及mystery-merchant的8檔測試69項中67通過，2項商店既有設定斷言失敗，唯讀載入HEAD原data.js重跑同兩項均重現；Store表／CSV／程式未修改，不擴大處理。Git差異檢查通過。
+- 唯讀檢查：共通規範／Agent／Workflow／Codex、config_tables／xlsx_to_csv／Excel更新器、item／combat／save正式掉落流程、tower／factory與商人／停用／快取回歸。無素材變更，素材庫無需提交。沒有本輪未完成修改；未跑全庫或另做實機畫面，正式結算以模擬器驗證。
+- 衝突與交接：起始逐檔預檢無外部來源；期間同副本其他聊天新增桌面背景與鎖定技能樣式修改，共用index／LV／任務檔均為不同區段，獨立三方試合乾淨、無語意相依，只暫存本輪hunk。任務紀錄移至此獨立位置避免同在檔頭插入。其他聊天修改完整保留。Commit為本段所在`[Codex] fix: 接通寶石表內掉落等級限制`，位於ai/codex，可供合併審閱；未合併或推送develop／main。下一步重新載入後驗收前期掉落。
+
 ## GEM-ENABLED-20261015 — 寶石開放欄與停用操作限制
 
 - Owner：Codex；Done，單一開發者。使用者已修改 Gems.xlsx，授權匯出 CSV 並接入「開放」1／0；前置已滿足，後續使用者審閱合併。
