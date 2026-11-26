@@ -21,4 +21,12 @@ test('native gait measures grounded foot travel, ignores fast lifted swing, and 
  model.scale.setScalar(2);
  assert.ok(Math.abs(context.measureLocomotion(THREE,model,clip)-4)<1e-5);
  assert.equal(context.measureLocomotion(THREE,new THREE.Group(),clip),0);
+ // Named non-Mixamo feet use the same measurement and restoration path.
+ left.name='rearFootL';right.name='rearFootR';
+ const custom=new THREE.AnimationClip('Walk',1,tracks.map(t=>{
+  const track=t.clone();track.name=track.name.replace('mixamorigLeftToeBase','rearFootL').replace('mixamorigRightToeBase','rearFootR');return track;
+ }));
+ assert.equal(context.measureLocomotion(THREE,model,custom),0);
+ assert.ok(Math.abs(context.measureLocomotion(THREE,model,custom,{feet:['rearFoot.L','rearFoot.R'],hips:'hips'})-4)<1e-5);
+ assert.equal(left.position.z,3);assert.equal(right.position.z,4);
 });

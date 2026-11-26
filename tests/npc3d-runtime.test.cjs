@@ -12,15 +12,17 @@ const def = { file: 'images/models/npc3d/boss1.glb', clips: {
 function fixture(clips = ['Walk', 'Attack1', 'Attack2', 'Attack3', 'Die'], scriptUrl) {
   const calls = [], destroyed = { ctrl: 0, texture: 0, outline: 0 };
   const ctrl = { clips, pxPerMeter: 100, duration: key => key === 'Attack1' ? 6 : 3,
+    pose: null, drawn: false, time: 0, play: cfg => { ctrl.pose = cfg; },
+    update: dt => { ctrl.time += dt; ctrl.drawn = true; },
     dispose: () => destroyed.ctrl++ };
   const body = { texture: {destroy: () => destroyed.texture++},
     hero3dOutlineTex: {destroy: () => destroyed.outline++},
     hero3dPlay: cfg => { body.animationSpeed = .5; calls.push(cfg); } };
-  let options;
-  const context = { Hero3D: {create: async opts => { options = opts; return ctrl; }, makeBody: () => body} };
+  let options, adopted;
+  const context = { Hero3D: {create: async opts => { options = opts; return ctrl; }, makeBody: () => { adopted = {pose:ctrl.pose,drawn:ctrl.drawn,time:ctrl.time}; return body; }} };
   if (scriptUrl) context.document = { currentScript: { src: scriptUrl } };
   vm.runInNewContext(source, context);
-  return { api: context.Npc3D, body, ctrl, calls, destroyed, get options() { return options; } };
+  return { api: context.Npc3D, body, ctrl, calls, destroyed, get options() { return options; }, get adopted() { return adopted; } };
 }
 test('only explicitly configured NPCs request a model and share the approved material renderer', async () => {
   const f = fixture();
@@ -37,6 +39,13 @@ test('the script cache version refreshes the model request and preserves its oth
   const f = fixture(undefined, 'http://localhost/js/npc3d.js?v=next-models&other=1');
   await f.api.create({ ...def, file: def.file + '?mode=test' });
   assert.equal(f.options.model, def.file + '?mode=test&v=next-models');
+});
+
+test('the canvas adopted by Pixi already contains the held idle, without advancing time or consuming an attack', async () => {
+  const f=fixture(); await f.api.create(def);
+  assert.equal(f.adopted.drawn,true);assert.equal(f.adopted.time,0);
+  assert.equal(f.adopted.pose.clip,'Walk');assert.equal(f.adopted.pose.still,true);
+  assert.equal(f.api.play(f.body,'attack',2).clip,'Attack1');
 });
 test('idle holds Walk first pose, movement resumes Walk, all three attacks cycle, death holds', async () => {
   const f = fixture(); await f.api.create(def);

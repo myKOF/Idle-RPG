@@ -2889,7 +2889,11 @@ var BattleRenderer = (function () {
       if (!d || !d.floatSel) continue;
       var alive = d.hp > 0;
       var dyingHold = !alive && d._rewarded && Number(d._deathClearCd) > 0;
-      if (!alive && !dyingHold) continue;
+      // Tower keeps its defeated boss in the result snapshot without the
+      // field-only reward/clear timer. Consume that hp=0 update as a death,
+      // rather than treating the still-positive previous snapshot as a switch.
+      var towerDeath = !alive && field.towerView && d.towerBoss;
+      if (!alive && !dyingHold && !towerDeath) continue;
       seen[d.floatSel] = true;
       if (alive) anyLive = true;
 
@@ -2935,7 +2939,7 @@ var BattleRenderer = (function () {
       /* 保險絲：垂死動畫由 rAF 推進，分頁被節流時可能停在半路——
          reconcile 這條路不受節流，超時就直接清，杜絕實體堆積。
          例外：玩家主動暫停且分頁可見時屍體是刻意凍結的，不算堆積。 */
-      if (e.state === 'dying' && nowMs() - e.dieAt > 3000 &&
+      if (e.state === 'dying' && nowMs() - e.dieAt > deathCleanupTimeoutMs(e) &&
           (!S.paused || documentHidden())) {
         destroyEntity(id);
         continue;
@@ -3106,6 +3110,12 @@ var BattleRenderer = (function () {
      只延後真正的死亡（realDeath）；換關／切地圖的淡出不延後。延後期間敵人維持原樣，
      deathPending 擋掉 reconcile 每次重複呼叫。 */
   var DEATH_ANIM_DELAY_MS = 500;
+  function deathCleanupTimeoutMs(ent) {
+    var seconds = ent && ent.realDeath && ent.sprDie ? Number(ent.dieDur) : 0;
+    // The normal path fades for .3 s after the clip. Leave another .5 s for
+    // scheduling before the stalled-animation fuse may reclaim its renderer.
+    return Math.max(3000, isFinite(seconds) && seconds > 0 ? (seconds + .3 + .5) * 1000 : 0);
+  }
   function startDeath(ent, realDeath, noDelay) {
     if (ent.deathPending) return;
     if (realDeath && !noDelay && !documentHidden() && DEATH_ANIM_DELAY_MS > 0) {

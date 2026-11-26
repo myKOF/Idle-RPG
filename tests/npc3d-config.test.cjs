@@ -18,7 +18,7 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
   for (let i = 0; i < result.length; i++) {
     if (i === 1 || i === 11 || i === 21) {
       const suffix = i === 1 ? '' : '_lv' + (i === 11 ? 2 : 3);
-      assert.equal(result[i].name, i === 1 ? '樹人' : i === 11 ? '樹人Ⅱ' : '樹人Ⅲ');
+      assert.equal(result[i].name, current[i].name, 'round-trip preserves the current authoritative NPC name');
       assert.equal(result[i].img, 'sprites/boss/boss_treant' + suffix + '.png');
       assert.equal(result[i].model3d.file, 'images/models/npc3d/boss2' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
@@ -58,7 +58,7 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
     } else if (i === 6 || i === 16 || i === 26) {
       const suffix = i === 6 ? '' : '_lv' + (i === 16 ? 2 : 3);
-      assert.equal(result[i].name, '岩石怪');
+      assert.equal(result[i].name, current[i].name, 'round-trip preserves the current authoritative NPC name');
       assert.equal(result[i].img, 'sprites/boss/boss7_rock' + suffix + '.png');
       assert.equal(result[i].model3d.file, 'images/models/npc3d/boss7' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
@@ -68,6 +68,12 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
       assert.equal(result[i].img, 'sprites/boss/boss8_gargoyle' + suffix + '.png');
       assert.equal(result[i].model3d.file, 'images/models/npc3d/boss8' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
+    } else if (i === 8 || i === 18 || i === 28) {
+      const suffix = { 8: '', 18: '_lv2', 28: '_lv3' }[i];
+      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss9' + suffix + '.glb');
+      assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
+      assert.equal(result[i].img, 'sprites/boss/boss9_lizard' + suffix + '.png');
+      assert.equal(result[i].atkSpeed, 3);
     } else if (i === 9 || i === 19 || i === 29) {
       const suffix = { 9: '', 19: '_lv2', 29: '_lv3' }[i];
       assert.equal(result[i].name, '熔岩巨人');
@@ -199,10 +205,11 @@ test('every tower boss 3D binding uses bossN[_lvM].glb and the standard clip nam
   assert.ok(bound.length >= 16);
   for (const b of bound) {
     assert.match(b.model3d.file, /^images\/models\/npc3d\/boss\d+(_lv[23])?\.glb$/, b.id);
-    assert.deepEqual(b.model3d.clips, { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' }, b.id);
+    const expected = { idle: 'Walk', walk: 'Walk', attack1: 'Attack1', attack2: 'Attack2', attack3: 'Attack3', die: 'Die' };
+    assert.deepEqual(b.model3d.clips, expected, b.id);
     const bytes = fs.readFileSync(path.join(root, b.model3d.file));
     const names = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12))).animations.map(a => a.name).sort();
-    assert.deepEqual(names, ['Attack1', 'Attack2', 'Attack3', 'Die', 'Walk'], b.model3d.file);
+    assert.deepEqual(names, [...new Set(Object.values(expected))].sort(), b.model3d.file);
   }
   const files = fs.readdirSync(path.join(root, 'images/models/npc3d')).filter(f => f.endsWith('.glb'));
   for (const f of files) assert.match(f, /^boss\d+(_lv[23])?\.glb$/, 'no old-style model name is left: ' + f);
