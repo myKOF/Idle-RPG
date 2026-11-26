@@ -1,3 +1,12 @@
+## SKILL-LOCKED-DIM-20261126 — 加深未解鎖技能的顯示區隔
+
+- Owner：Codex；Done，單人處理。依使用者截圖將技能左側列表未解鎖項目的名稱、圖示及資訊進一步調暗；前置依賴為既有 is-locked 狀態，已滿足。
+- 允許：css/ashen-forge.css 鎖定項目樣式、index.html 對應 CSS 快取、LV_upgrade_system.md 技能顯示說明及本段。禁止變更技能解鎖、學習、裝配、數值、字串、素材與其他聊天修改，不合併或推送。
+- 預檢：四檔無外部副本／分支來源；本副本寶石掉落任務進行中，僅修改不同區段並分開暫存。驗收：正式樣式實際渲染，比對未解鎖／可學習／已裝配／選中狀態，相關既有回歸、Build 及 Git 差異檢查。無素材變更，素材庫無需提交。
+- 完成／修改4檔：ashen-forge.css 將鎖定列 opacity 由 .6 降至 .45，圖示追加 grayscale(.6) brightness(.7)；index.html 更新該 CSS 快取，LV 文件同步顯示規格及本段紀錄。唯讀檢查共通規範／Workflow／prompts/codex、js/ui.js 的狀態判讀與列表／圖示輸出、其餘疊加主題、既有技能測試及瀏覽器工具。未新增或修改美術素材，沒有外部素材引入。
+- 驗證：`node --test tests/skill-equipped-style.test.cjs tests/skill2-ui.test.cjs` 30/30 通過；`npm.cmd run build` 767 檔通過；`git diff --check` 通過。隔離 Edge 使用正式列表產生函式、真實圖示及首頁全套 CSS 渲染九項技能，比對前後截圖；未鎖定 opacity=1／filter=none，未解鎖含選中列 opacity=.45／圖示濾鏡正確，全部圖片成功載入、白色裝配外框保留。既有測試確認鎖定技能可查看且不出現升級鈕，沒有新增產品邏輯或測試。
+- 交接：自我 Review 通過，本輪無未完成項目，可合併審閱；未合併／推送。Commit 為本段所在 `[Codex] fix: 加深未解鎖技能的名稱與圖示`。僅驗證列表渲染及相關回歸，未跑完整遊戲流程或全庫測試。瀏覽器正常關閉，孤兒瀏覽器檢查無殘留；專用預覽暫存於檢視後清理。下一步重新載入遊戲驗收視覺深淺。
+
 ## SYNC-DEVELOP-20261125 — 整合桌面遊玩記錄、Demo 法力與配樂
 
 - Owner：Codex；待控制器暫存及建立合併提交。合併基底 `0f39548b`，原 HEAD `0eea3bb2`，傳入 `0d85dad4`。
