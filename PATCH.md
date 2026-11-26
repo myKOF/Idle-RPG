@@ -1,5 +1,30 @@
 # PATCH.md
 
+## 序章第三部終章（Shot 04 + Shot 05）電影級復刻分鏡手冊與參考圖包（Antigravity 2026-11-26）
+
+- **新增 [`opening_animation/CINEMATIC_PART3_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_PART3_STORYBOARD.md) 與 `opening_animation/cinematic_part3_pack/`**：
+  - 涵蓋原片 [`shots-01-05-replay.mp4`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/shots-01-05-replay.mp4) 完整 Shot 04 與 Shot 05（`01:09.5 – 01:54.4`），拆分為 4 段（Clip 09 ～ Clip 12：右手鎧甲撐地特寫、單膝半跪蓄力、起身握劍白光升騰、荒漠孤身迎戰古石拱門與聖劍白光終章）。
+  - 擷取 4 張原片構圖基準圖並自製生成 4 張無黑邊 AAA 3D CGI 電影風格基準圖（`ref_hand_sand.png`、`ref_kneel.png`、`ref_rise_sword.png`、`ref_finale_arch.png`），直接內嵌於分鏡手冊並納入 Git 追蹤。
+  - 新增一鍵合成腳本 [`assemble_part3.mjs`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/cinematic_part3_pack/assemble_part3.mjs)，自動對齊 1920×1080 30 fps（34.0 秒）、平滑跨溶解與 3 秒終幕淡黑淡出，並混入原片終章雙音軌。
+
+
+## 序章第二段（00:34–01:09.5 / Shot 03）電影級復刻分鏡手冊與參考圖包（Antigravity 2026-11-25）
+
+- **新增 [`opening_animation/CINEMATIC_PART2_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_PART2_STORYBOARD.md) 與 `opening_animation/cinematic_part2_pack/`**：
+  - 依原片 [`shots-01-05-replay.mp4`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/shots-01-05-replay.mp4) 完整 Shot 03（`00:34.000 – 01:09.500`，35.500 秒 / 1065 幀）拆分為 4 段（Clip 05 ～ Clip 08：薩爾維恩大陸與紫霧蔓延、天降希望神光並俯衝荒漠、煙塵散去顯現倒臥大天使長、焦羽落胸星芒爆發）。
+  - 擷取 4 張原片構圖基準圖並自製生成 3 張 AAA 3D CGI 電影風格基準圖（`ref_map.png`、`ref_desert_fallen.png`、`ref_feather_glow.png`），直接內嵌於分鏡手冊並納入 Git 追蹤。
+  - 新增一鍵合成腳本 [`assemble_part2.mjs`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/cinematic_part2_pack/assemble_part2.mjs)，自動對齊 1920×1080 30 fps、跨溶解銜接並同步混入原片 `00:34.00 – 01:09.50` 音效與 `desert-ascendant.mp3` BGM。
+
+
+## 序章前 30 秒分鏡手冊補齊參考圖與直接投餵格式（Antigravity 2026-11-25）
+
+- **補齊 6 張參考圖與一鍵合成腳本並納入 Git 追蹤（`opening_animation/cinematic_30s_pack/`）**：
+  - 從原片 `opening_animation/shots-01-05-replay.mp4` 重新擷取 4 張原片構圖基準圖（`orig_01_00s50.png`、`orig_02_08s00.png`、`orig_04_17s20.png`、`orig_05_23s00.png`），並重新生成 2 張 AAA 3D CGI 電影風格基準圖（`ref_battle.png`、`ref_fall.png`），移出被 `.gitignore` 忽略的 `review/` 改置於受 Git 追蹤的 `opening_animation/cinematic_30s_pack/refs/`。
+  - 補上 30 秒幀級精準合成腳本 `opening_animation/cinematic_30s_pack/assemble_30s.mjs` 與 `clips_input/.gitkeep`。
+- **更新 [`opening_animation/CINEMATIC_30S_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_30S_STORYBOARD.md)**：
+  - 於各段落直接以 Markdown 表格嵌入對應的 2 張參考圖預覽，並將內文改寫為「直接面向 Gemini 的執行指示與生成指令」，讓使用者整份文件連同參考圖傳給 Gemini 即可直接依序執行。
+
+
 ## 序章前 30 秒電影級復刻分鏡製作手冊（Antigravity 2026-11-25）
 
 - **新增序章前 30 秒電影級復刻分鏡手冊（[`opening_animation/CINEMATIC_30S_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_30S_STORYBOARD.md)）**：
