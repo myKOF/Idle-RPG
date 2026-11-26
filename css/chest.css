@@ -312,39 +312,54 @@
 .is-opened .nfc-res-halo { animation: nfc-light-spin 24s linear infinite; }
 .is-opened .nfc-res-rays { animation: nfc-light-spin 18s linear infinite reverse; }
 @keyframes nfc-chest-charge {
-  0%, 100% { filter: brightness(1); }
-  8% { filter: brightness(1.18); }
-  16% { filter: brightness(1.30); }
-  28% { filter: brightness(1.08); }
+  0%, 83.333333%, 100% { transform: translate(0, 0) rotate(0); filter: brightness(1); }
+  4.444444% { transform: translate(-1.355px, 0px) rotate(-0.715deg); filter: brightness(1.036); }
+  8.888889% { transform: translate(1.410px, 0px) rotate(0.780deg); filter: brightness(1.042); }
+  13.333333% { transform: translate(-1.465px, -0.35px) rotate(-0.845deg); filter: brightness(1.048); }
+  17.777778% { transform: translate(1.520px, 0px) rotate(0.910deg); filter: brightness(1.054); }
+  22.222222% { transform: translate(-1.575px, 0px) rotate(-0.975deg); filter: brightness(1.060); }
+  26.666667% { transform: translate(1.630px, -0.35px) rotate(1.040deg); filter: brightness(1.066); }
+  31.111111% { transform: translate(-1.685px, 0px) rotate(-1.105deg); filter: brightness(1.072); }
+  35.555556% { transform: translate(1.740px, 0px) rotate(1.170deg); filter: brightness(1.078); }
+  40.000000% { transform: translate(-1.795px, -0.35px) rotate(-1.235deg); filter: brightness(1.084); }
+  44.444444% { transform: translate(1.850px, 0px) rotate(1.300deg); filter: brightness(1.090); }
+  48.888889% { transform: translate(-1.905px, 0px) rotate(-1.365deg); filter: brightness(1.096); }
+  53.333333% { transform: translate(1.960px, -0.35px) rotate(1.430deg); filter: brightness(1.102); }
+  57.777778% { transform: translate(-2.015px, 0px) rotate(-1.495deg); filter: brightness(1.108); }
+  62.222222% { transform: translate(2.070px, 0px) rotate(1.560deg); filter: brightness(1.114); }
+  66.666667% { transform: translate(-2.125px, -0.35px) rotate(-1.625deg); filter: brightness(1.120); }
+  71.111111% { transform: translate(2.180px, 0px) rotate(1.690deg); filter: brightness(1.126); }
+  75.555556% { transform: translate(-2.235px, 0px) rotate(-1.755deg); filter: brightness(1.132); }
+  80% { transform: translate(-1px, 0) rotate(-.6deg); filter: brightness(1.16); }
 }
 @keyframes nfc-open-sheet {
-  0%, 16% { transform: translate(0, 0); }
-  19.500000% { transform: translate(-20%, 0%); }
-  23.000000% { transform: translate(-40%, 0%); }
-  26.500000% { transform: translate(-60%, 0%); }
-  30.000000% { transform: translate(-80%, 0%); }
-  33.500000% { transform: translate(0%, -20%); }
-  37.000000% { transform: translate(-20%, -20%); }
-  40.500000% { transform: translate(-40%, -20%); }
-  44.000000% { transform: translate(-60%, -20%); }
-  47.500000% { transform: translate(-80%, -20%); }
-  51.000000% { transform: translate(0%, -40%); }
-  54.500000% { transform: translate(-20%, -40%); }
-  58.000000% { transform: translate(-40%, -40%); }
-  61.500000% { transform: translate(-60%, -40%); }
-  65.000000% { transform: translate(-80%, -40%); }
-  68.500000% { transform: translate(0%, -60%); }
-  72.000000% { transform: translate(-20%, -60%); }
-  75.500000% { transform: translate(-40%, -60%); }
-  79.000000% { transform: translate(-60%, -60%); }
-  82.500000% { transform: translate(-80%, -60%); }
-  86.000000% { transform: translate(0%, -80%); }
-  89.500000% { transform: translate(-20%, -80%); }
-  93.000000% { transform: translate(-40%, -80%); }
-  96.500000% { transform: translate(-60%, -80%); }
+  0%, 83.333333% { transform: translate(0, 0); }
+  84.027778% { transform: translate(-20%, 0%); }
+  84.722222% { transform: translate(-40%, 0%); }
+  85.416667% { transform: translate(-60%, 0%); }
+  86.111111% { transform: translate(-80%, 0%); }
+  86.805556% { transform: translate(0%, -20%); }
+  87.500000% { transform: translate(-20%, -20%); }
+  88.194444% { transform: translate(-40%, -20%); }
+  88.888889% { transform: translate(-60%, -20%); }
+  89.583333% { transform: translate(-80%, -20%); }
+  90.277778% { transform: translate(0%, -40%); }
+  90.972222% { transform: translate(-20%, -40%); }
+  91.666667% { transform: translate(-40%, -40%); }
+  92.361111% { transform: translate(-60%, -40%); }
+  93.055556% { transform: translate(-80%, -40%); }
+  93.750000% { transform: translate(0%, -60%); }
+  94.444444% { transform: translate(-20%, -60%); }
+  95.138889% { transform: translate(-40%, -60%); }
+  95.833333% { transform: translate(-60%, -60%); }
+  96.527778% { transform: translate(-80%, -60%); }
+  97.222222% { transform: translate(0%, -80%); }
+  97.916667% { transform: translate(-20%, -80%); }
+  98.611111% { transform: translate(-40%, -80%); }
+  99.305556% { transform: translate(-60%, -80%); }
   100.000000% { transform: translate(-80%, -80%); }
 }
-@keyframes nfc-inner-opening { 0%, 60% { opacity: 0; } 100% { opacity: .95; } }
+@keyframes nfc-inner-opening { 0%, 83.333333% { opacity: 0; } 100% { opacity: .95; } }
 @keyframes nfc-light-spin { to { transform: rotate(360deg); } }
 .nfc-result [hidden] { display: none !important; }
 .nfc-res-rewards {

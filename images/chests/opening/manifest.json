@@ -1,13 +1,50 @@
 {
-  "version": 1,
+  "version": 2,
   "frameSize": 320,
   "columns": 5,
   "frames": 25,
+  "geometry": {
+    "bronze": {
+      "minShellThickness": 0.07396612899707827,
+      "maxShellThickness": 0.23189047149024888,
+      "liningRecessDepth": 0.6370289782353211,
+      "edgeWalls": 4,
+      "innerSurfaceVertices": 475
+    },
+    "fine": {
+      "minShellThickness": 0.07396612899707827,
+      "maxShellThickness": 0.23189047149024888,
+      "liningRecessDepth": 0.6370289782353211,
+      "edgeWalls": 4,
+      "innerSurfaceVertices": 475
+    },
+    "epic": {
+      "minShellThickness": 0.07396612899707827,
+      "maxShellThickness": 0.23189047149024888,
+      "liningRecessDepth": 0.6370289782353211,
+      "edgeWalls": 4,
+      "innerSurfaceVertices": 475
+    },
+    "legendary": {
+      "minShellThickness": 0.07396612899707827,
+      "maxShellThickness": 0.23189047149024888,
+      "liningRecessDepth": 0.6370289782353211,
+      "edgeWalls": 4,
+      "innerSurfaceVertices": 475
+    },
+    "mythic": {
+      "minShellThickness": 0.07396612899707827,
+      "maxShellThickness": 0.23189047149024888,
+      "liningRecessDepth": 0.6370289782353211,
+      "edgeWalls": 4,
+      "innerSurfaceVertices": 475
+    }
+  },
   "files": {
-    "bronze.webp": "e89cd52f7462342fd124323193dbca1bbb332b0c265dc8b0841dc9363517ccfa",
-    "fine.webp": "b15b6c7ab3029b8488de5f013f9b33a85b9be05dcb11c4e2207c0bd7e42c8268",
-    "epic.webp": "024d02aee5cb1dd053f58e91c4437fe8f228a074f3f5d411bbf4191400f3b924",
-    "legendary.webp": "95c278635bff3dda9c311b603fd96a985e9988913d9d7d371c2ddbad8e0902ad",
-    "mythic.webp": "d054472dbe85cc4459663d46ce3254824b172203ad2762bbb0c677bd76a3d2ea"
+    "bronze.webp": "bbd1dff499f4f44a53c25e2246315c752ef3e12965e64f9871d28d9a7fc06bfc",
+    "fine.webp": "dd931d69f1f68c39e5c442c7d9ecb8df4e5e728970a295fe7d8b981ab738dd7a",
+    "epic.webp": "e15e6faf7063ae45062151ae6f5dcd86eb15fa35b839399eec939413f4bdaa32",
+    "legendary.webp": "536422b4c738f3e31a26d6a03c3525bc3cd7350680cf89d5e5f7c68441006798",
+    "mythic.webp": "e2a25ecc580eccc09fcc9b06c36d7389d53a1f6329403265850b8557b6dc98e4"
   }
 }

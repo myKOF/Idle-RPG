@@ -31,6 +31,15 @@ scene.render.image_settings.color_mode = 'RGBA'
 scene.view_settings.view_transform = 'Standard'
 scene.view_settings.look = 'None'
 scene.world.color = (.18,.18,.18)
+for name, location, energy, size in (
+    ('InsideKey',(-3,5,7),450,5),('InsideFill',(4,1,5),180,4)):
+    bpy.ops.object.light_add(type='AREA',location=location)
+    light=bpy.context.object
+    light.name=name
+    light.rotation_euler=(Vector((0,1.4,0))-light.location).to_track_quat('-Z','Y').to_euler()
+    light.data.energy=energy
+    light.data.shape='DISK'
+    light.data.size=size
 bpy.ops.object.camera_add(location=(0,1.4,10))
 camera = bpy.context.object
 camera.name = 'ChestCamera'
@@ -55,15 +64,18 @@ def mesh(name, vertices, faces, material, parent=None, projected=False):
         obj.matrix_parent_inverse = parent.matrix_world.inverted()
     return obj
 
-def color_material(name, color, front_only=False):
+def color_material(name, color, front_only=False, lit=False, metallic=0):
     mat = bpy.data.materials.new(name)
     mat.diffuse_color = color
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     nodes.clear()
     out = nodes.new('ShaderNodeOutputMaterial')
-    emission = nodes.new('ShaderNodeEmission')
-    emission.inputs['Color'].default_value = color
+    emission = nodes.new('ShaderNodeBsdfPrincipled' if lit else 'ShaderNodeEmission')
+    emission.inputs['Base Color' if lit else 'Color'].default_value = color
+    if lit:
+        emission.inputs['Roughness'].default_value=.58
+        emission.inputs['Metallic'].default_value=metallic
     if front_only:
         geom = nodes.new('ShaderNodeNewGeometry')
         mix = nodes.new('ShaderNodeMixShader')
@@ -105,6 +117,17 @@ W = Vector((2.22,-.06,.15))
 V = Vector((-.52,-.39,.90))
 H = Vector((.06,.825,.15))
 axis = W.normalized()
+INNER_SIDE = .055
+INNER_END = .075
+INNER_ARCH = .78
+
+def lining_point(u,t,offset=0):
+    theta=math.pi*t
+    f=INNER_END+(1-2*INNER_END)*(.5-.5*math.cos(theta))
+    p=A+W*(INNER_SIDE+(1-2*INNER_SIDE)*u)+V*f+H*(INNER_ARCH*math.sin(theta))
+    tangent=V*((1-2*INNER_END)*.5*math.pi*math.sin(theta))+H*(INNER_ARCH*math.pi*math.cos(theta))
+    inward=W.cross(tangent).normalized()
+    return p+inward*offset
 
 def rod(name, a, b, radius, mat, parent=None):
     delta = b-a
@@ -128,7 +151,7 @@ def engraving(name, coords, material, parent, normal, radius=.006, origin=None):
     spline=curve.splines.new('POLY')
     spline.points.add(len(coords)-1)
     for p,(u,t) in zip(spline.points,coords):
-        v=(A if origin is None else origin)+W*u+V*t+normal*.026
+        v=lining_point(u,t,.018) if parent and origin is None else (A if origin is None else origin)+W*u+V*t+normal*.026
         p.co=(*v,1)
     obj=bpy.data.objects.new(name,curve)
     scene.collection.objects.link(obj)
@@ -147,7 +170,8 @@ def lining_texture(material, color):
     ramp.color_ramp.elements[0].color=tuple(c*.55 for c in color[:3])+(1,)
     ramp.color_ramp.elements[1].color=tuple(c*1.5 for c in color[:3])+(1,)
     links.new(noise.outputs['Fac'],ramp.inputs[0])
-    links.new(ramp.outputs['Color'],next(n for n in nodes if n.type=='EMISSION').inputs['Color'])
+    shader=next(n for n in nodes if n.type in ('EMISSION','BSDF_PRINCIPLED'))
+    links.new(ramp.outputs['Color'],shader.inputs['Base Color' if shader.type=='BSDF_PRINCIPLED' else 'Color'])
 
 def decorate_lining(name, quality, parent, normal, metal, accent):
     def line(label, pts, radius=.006, material=metal):
@@ -179,7 +203,7 @@ def decorate_lining(name, quality, parent, normal, metal, accent):
     line('CrestCore',[(.5+.026*math.cos(a),.5+.052*math.sin(a)) for a in [i*math.tau/32 for i in range(33)]],.009,accent)
     # Small studs catch the light at the inset corners and band joins.
     for u,t in ((.075,.075),(.925,.075),(.075,.925),(.925,.925)):
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,radius=.018,location=A+W*u+V*t+normal*.030)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,radius=.018,location=lining_point(u,t,.022))
         obj=bpy.context.object
         obj.name=name+'_InsetStud'
         obj.data.materials.append(metal)
@@ -189,17 +213,19 @@ def decorate_lining(name, quality, parent, normal, metal, accent):
 report = []
 for quality, name in enumerate(NAMES[:1] if preview else NAMES):
     for obj in list(scene.objects):
-        if obj != camera:
+        if obj != camera and obj.type!='LIGHT':
             bpy.data.objects.remove(obj,do_unlink=True)
     illustration = image_material(name+'_Original',source/(name+'.png'))
     interior = color_material(name+'_Interior',(.012,.009,.008,1))
     wall = color_material(name+'_InteriorWalls',(.028,.022,.018,1))
     lining_color=((.045,.032,.022,1),(.017,.029,.050,1),(.030,.018,.045,1),(.050,.018,.009,1),(.025,.021,.012,1))[quality]
-    lining = color_material(name+'_LidLining',lining_color,True)
+    lining = color_material(name+'_LidLining',lining_color,True,True)
     lining_texture(lining,lining_color)
-    trim = color_material(name+'_Metal',tuple(c*.24 for c in COLORS[quality][:3])+(1,))
-    highlight = color_material(name+'_TrimHighlight',tuple(c*.45+.025 for c in COLORS[quality][:3])+(1,))
-    accent = color_material(name+'_Engraving',tuple(c*.65+.045 for c in COLORS[quality][:3])+(1,))
+    next(n for n in lining.node_tree.nodes if n.type=='BSDF_PRINCIPLED').inputs['Roughness'].default_value=.85
+    trim = color_material(name+'_Metal',tuple(c*.24 for c in COLORS[quality][:3])+(1,),lit=True,metallic=.5)
+    highlight = color_material(name+'_TrimHighlight',tuple(c*.45+.025 for c in COLORS[quality][:3])+(1,),lit=True,metallic=.6)
+    accent = color_material(name+'_Engraving',tuple(c*.65+.045 for c in COLORS[quality][:3])+(1,),lit=True,metallic=.45)
+    edge = color_material(name+'_ThickEdge',tuple(c*.30+.035 for c in COLORS[quality][:3])+(1,),lit=True,metallic=.3)
     # The original front and right walls remain completely stationary.
     poly = [(0,112),(242,118),(300,78),(320,78),(320,220),(0,220)]
     body=mesh(name+'_FixedBody',[point(x,y,1.04) for x,y in poly],[tuple(range(len(poly)))],illustration,projected=True)
@@ -232,19 +258,31 @@ for quality, name in enumerate(NAMES[:1] if preview else NAMES):
         for t in range(nt):
             i=u*(nt+1)+t
             faces.append((i,i+1,i+nt+2,i+nt+1))
-    mesh(name+'_CurvedLid',vertices,faces,illustration,hinge,True)
-    for u in (0,nu):
-        ring = [vertices[u*(nt+1)+t] for t in range(nt+1)]
-        mesh(name+'_LidEnd_'+str(u),ring,[tuple(range(len(ring)))],illustration,hinge,True)
-    # Underside and frame share exactly the same rear hinge vertices as the body.
-    inside=mesh(name+'_InsideLid',corners,[(0,1,2,3)],lining,hinge)
+    outer=mesh(name+'_CurvedLid',vertices,faces,illustration,hinge,True)
+    inner_vertices=[lining_point(u/nu,t/nt) for u in range(nu+1) for t in range(nt+1)]
+    inner_faces=[tuple(reversed(face)) for face in faces]
+    inside=mesh(name+'_InsideLid',inner_vertices,inner_faces,lining,hinge)
+    for polygon in inside.data.polygons:
+        polygon.use_smooth=True
+    # Seal all four edges between the outer barrel and recessed inner barrel.
+    # End walls are curved solid crescents, not transparent illustration caps.
+    for label,indices in (
+        ('Left',[t for t in range(nt+1)]),
+        ('Right',[nu*(nt+1)+t for t in range(nt+1)]),
+        ('Rear',[u*(nt+1) for u in range(nu+1)]),
+        ('Front',[u*(nt+1)+nt for u in range(nu+1)])):
+        wall_vertices=[vertices[i] for i in indices]+[inner_vertices[i] for i in indices]
+        count=len(indices)
+        wall_faces=[(i,i+1,i+1+count,i+count) for i in range(count-1)]
+        mesh(name+'_LidWall_'+label,wall_vertices,wall_faces,edge,hinge)
     normal = W.cross(V).normalized()
     for u in (.18,.82):
-        band = [A+W*(u-.014)+normal*.012,A+W*(u+.014)+normal*.012,
-                A+W*(u+.014)+V+normal*.012,A+W*(u-.014)+V+normal*.012]
-        mesh(name+'_LiningBand',band,[(0,1,2,3)],trim,hinge)
+        band=[lining_point(u+side*.014,t/24,.012) for t in range(25) for side in (-1,1)]
+        ribbon=mesh(name+'_LiningBand',band,[(2*t,2*t+1,2*t+3,2*t+2) for t in range(24)],trim,hinge)
+        for polygon in ribbon.data.polygons:
+            polygon.use_smooth=True
         for t in (.10,.90):
-            bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,radius=.023,location=A+W*u+V*t+normal*.025)
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,radius=.023,location=lining_point(u,t,.025))
             rivet=bpy.context.object
             rivet.name=name+'_LiningRivet'
             rivet.data.materials.append(highlight)
@@ -268,8 +306,8 @@ for quality, name in enumerate(NAMES[:1] if preview else NAMES):
     for frame in range(25):
         scene.frame_set(frame+1)
         bpy.context.view_layer.update()
-        for index,expected in ((0,A),(1,A+W)):
-            actual=inside.matrix_world@inside.data.vertices[index].co
+        for index,expected in ((0,A),(nu*(nt+1),A+W)):
+            actual=outer.matrix_world@outer.data.vertices[index].co
             max_hinge_error=max(max_hinge_error,(actual-expected).length)
         for v,expected in zip(body.data.vertices,body_vertices):
             assert ((body.matrix_world@v.co)-expected).length<1e-7
@@ -283,5 +321,9 @@ for quality, name in enumerate(NAMES[:1] if preview else NAMES):
         scene.frame_set(frame+1)
         scene.render.filepath = str(target/(str(frame).zfill(2)+'.png'))
         bpy.ops.render.render(write_still=True)
-    report.append({'name':name,'frames':len(frames),'axis':list(axis),'hingeA':list(A),'hingeB':list(A+W),'endDegrees':110,'maxHingeError':max_hinge_error,'fixedBodySamples':25})
+    thicknesses=[(Vector(vertices[i])-Vector(inner_vertices[i])).length for i in range(len(vertices))]
+    mouth_normal=W.cross(V).normalized()
+    recess=abs((lining_point(.5,.5)-(A+W*.5+V*.5)).dot(mouth_normal))
+    assert min(thicknesses)>.04 and recess>.3
+    report.append({'name':name,'frames':len(frames),'axis':list(axis),'hingeA':list(A),'hingeB':list(A+W),'endDegrees':110,'maxHingeError':max_hinge_error,'fixedBodySamples':25,'minShellThickness':min(thicknesses),'maxShellThickness':max(thicknesses),'liningRecessDepth':recess,'edgeWalls':4,'innerSurfaceVertices':len(inner_vertices)})
 (output/'build-report.json').write_bytes(json.dumps(report,indent=2).encode('utf-8'))
