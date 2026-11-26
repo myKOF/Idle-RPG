@@ -21,7 +21,8 @@ test('單次施放一支金刀、普通刀維持原色，初次命中不加傷',
  const h=setup(),a=h.enemy(100,1e9,'A');h.cfg.pool=[a];const s=soul(h);
  const damage=[];h.c.sgKnifeHit=(cfg,e,d)=>{damage.push(d);return null;};
  advance(h,2);assert.ok(damage.length>=3);assert.equal(damage[0],100);
- assert.ok(Math.abs(damage[1]-104.4)<1e-8);assert.ok(Math.abs(damage[2]-108.8)<1e-8);
+ assert.ok(Math.abs(damage[1]-100*(1+s.gain/100))<1e-8);
+ assert.ok(Math.abs(damage[2]-100*(1+2*s.gain/100))<1e-8);
  assert.equal(h.c.SKILL2_RT.projectiles.filter(p=>p.soulController).length,1);
  assert.equal(s.until,10);assert.equal(s.range,h.c.bfMeterPx(40));
  assert.ok(h.events.filter(e=>e.area?.soulId).every(e=>e.vfx.projectile==='proj-knife-gold'));
@@ -59,12 +60,13 @@ test('Runtime 同身份僅保留一支，環繞隨玩家移動，到期及死亡
  rt.update(10);assert.equal(rt.stats().soulOrbits,0);rt.tryPlay(event);rt.clearFields();assert.equal(rt.stats().soulOrbits,0);
 });
 test('完整施放多把普通刀時只有一支金刀，普通彈射與受擊不繼承金色',()=>{
- const h=setup();h.c.FIELD.player=h.p;h.c.G.player.skills2.levels.knife=[10,10,10,10,10,10,10];
+ const h=setup();h.p.mp=10000;h.c.FIELD.player=h.p;h.c.G.player.skills2.levels.knife=[10,10,10,10,10,10,10];
  h.c.G.player.skills2.ult={knife:{pick:h.c.sgUltIndexOfId('knife','soulhunterBlade'),lv:10}};
  h.cfg.pool=Array.from({length:7},(_,i)=>h.enemy(50+i*10,1e9,'E'+i));
  h.c.castSkill2(h.p,h.cfg.pool,'knife','mv-float');
  assert.equal(h.events.filter(e=>e.vfx.projectile==='proj-knife-gold').length,1);
- assert.ok(h.events.filter(e=>e.vfx.projectile==='proj-knife').length>=6);
+ const expected=h.c.sgVal(h.c.SKILLS2.knife.tiers[4].fx,'count',10);
+ assert.equal(h.events.filter(e=>e.vfx.projectile==='proj-knife').length,Math.floor(expected));
  advance(h,2);
  assert.ok(h.events.some(e=>e.variant==='knife-bounce'&&e.vfx.projectile==='proj-knife'));
  assert.ok(h.events.some(e=>e.fxKind==='impact'&&e.vfx.hit==='hit-phys'));
@@ -81,4 +83,16 @@ test('Runtime 返回空目標環繞、再出發都替換同一金刀，死亡清
  rt.tryPlay(h.events.find(e=>e.area?.soulMode==='orbit'));assert.equal(rt.stats().projectiles,0);assert.equal(rt.stats().soulOrbits,1);
  rt.tryPlay(h.events[0]);assert.equal(rt.stats().projectiles,1);assert.equal(rt.stats().soulOrbits,0);
  rt.clearFields();assert.equal(rt.stats().projectiles,0);
+});
+test('金刀途中目標死亡重鎖新敵，不加彈射層數、不重置期限，無候選返回待機',()=>{
+ const h=setup(),a=h.enemy(100,1000,'A'),b=h.enemy(160,1000,'B'),far=h.enemy(1000,1000,'far');
+ h.cfg.pool=[a];const s=soul(h),p=h.c.SKILL2_RT.projectiles.find(p=>p.knifeFlight);
+ const damage=p.dmg,until=s.until,bounces=s.bounces,attacks=s.attacks;
+ a.hp=0;h.cfg.pool=[b,far];h.tick(.25);
+ assert.equal(p.target,b);assert.equal(p.dmg,damage);assert.equal(s.bounces,bounces);assert.equal(s.attacks,attacks);assert.equal(s.until,until);
+ assert.equal(h.events.at(-1).area.soulId,s.id);assert.equal(h.hits.length,0);
+ h.tick(p.endAt);assert.equal(h.hits[0].target,b);
+ b.hp=0;h.cfg.pool=[far];advance(h,8);
+ assert.equal(s.mode,'orbit');assert.equal(far.hp,1000);assert.equal(s.until,until);
+ h.tick(until);assert.equal(h.c.SKILL2_RT.projectiles.length,0);assert.equal(h.cfg.out._pendingProjectiles,0);
 });

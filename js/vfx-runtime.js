@@ -1243,6 +1243,7 @@ var VFXRuntime = (function () {
         brake: !!(spec.area && spec.area.brake), holdAngle: spec.area && spec.area.holdAngle,
         dimensions: dimensions, knifeFlight: knifeFlight, knifeTail: spec.variant === 'elite-missile-flight' || /^knife(?:-|$)/.test(spec.variant || '') || presetId === 'proj-dragon-devour' || !!flightOrbit, control: knifeControl, lastTo: to,
         settleTail: spec.fxKind === 'rain' && (spec.variant === 'meteor' || spec.variant === 'thunder-fall'),
+        knifeId: spec.area && spec.area.knifeId,
         soulId: spec.area && spec.area.soulId, soulLife: spec.area && spec.area.soulLife,
         soulReturn: spec.area && spec.area.soulReturn, orbitAngle: spec.area && spec.area.orbitAngle, orbitR: spec.area && spec.area.orbitR
       });
@@ -1911,6 +1912,12 @@ var VFXRuntime = (function () {
       }
       /* 延後的事件到期會再進來一次，所以換座標放在延後之後；換過的帶 _screenSpace，不會換第二次 */
       spec = screenSpaceSpec(spec, groundScale);
+      if(spec.area && spec.area.knifeId) {
+        for(var ki=projectiles.length-1;ki>=0;ki--)if(projectiles[ki].knifeId===spec.area.knifeId) {
+          finishRef(projectiles[ki].ref);projectiles.splice(ki,1);
+        }
+        if(spec.area.knifeStop)return true;
+      }
       if(spec.area && spec.area.soulId) {
         stopSoul(spec.area.soulId, true);
         if(spec.area.soulMode==='stop')return true;

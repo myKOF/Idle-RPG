@@ -1,3 +1,16 @@
+## KNIFE-RETARGET-20261126 — 飛刀途中失去目標立即重新鎖敵
+
+- Owner：Codex；Done，單人處理。使用者回報飛刀在仍有敵人時朝螢幕邊緣飛走，要求途中目標死亡時重新尋找目標。追加說明常見兩把直接出畫、附近20敵亦頻繁，並確認已學第5階迴旋飛刀。前置：現有飛刀權威飛行及VFX路徑已接通。
+- 允許：js/skills2.js、js/vfx-runtime.js、js/worker/protocol.js／shim.js、docs/WORKER_PROTOCOL.md、主頁／bridge／sim.worker及編輯器必要快取、tests/knife-flight.test.cjs／soulhunter.test.cjs／worker-protocol.test.cjs、LV_upgrade_system.md與本段。禁止改表格、傷害數值、解鎖、存檔、素材及其他聊天修改，不合併推送。
+- 預檢：git fetch origin及逐檔check-conflicts無外部來源；本副本既有NPC／Task／Zones／掉落／參數與data／formula修改保留，不納入提交。方案：死亡／離場即從當前飛行位置重鎖，保留傷害與彈射預算，回呼使用實際抵達目標；唯一飛刀身份讓畫面換路徑時結束舊刀身並保留尾跡，無候選清理，追魂刃維持範圍與待機。
+- 驗收：途中死亡／離場、新生成目標、連續失效、多刀競殺、實際彈射起點與次數、範圍／追魂期限、計算與Runtime軌跡及Worker事件相符，相關回歸／Build／快取與Git差異檢查；完成自我Review並Commit，交使用者整合。
+- 根因：第5階全圓起飛直接從完整戰場pool抽敵，未沿用施放距離，所以附近有人仍會抽到遠處、兩刀一起向場外飛；並非僅死亡座標問題。以HEAD舊skills2只在記憶體替換，同一固定種子、20隻周圍敵＋20隻場外敵、100次施放／200刀：舊版84刀選場外、18次兩刀一起場外；修正後皆0。另20敵混合距離的固定亂數掃描40次／80刀，舊39刀場外、12次兩刀一起場外，修正後皆0。最初驗證器錯取helper內的test字串、以及跳階fixture被正規化成未學第5階，修正驗證器後才取得上述有效比較，未以錯誤樣本宣稱重現。
+- 完成／14檔：skills2限制迴旋起飛候選為同施放距離、保留完整pool供表定彈射；死亡／離場當拍沿舊路徑掃描後，以刀刃位置及切線重鎖，沿用傷害／已掃敵人／彈射預算，四種來源回呼皆改用真正抵達目標。VFX依knifeId替換刀身並保留自然尾跡，knifeStop只結束指定刀。發現Worker漏傳原preserveDeadTargets／loopReturn，補齊以免死亡起點彈射畫面被守門誤擋。Protocol升84並定義舊事件退化，主頁／Worker／編輯器快取20261126-knife-retarget-v1；LV與協議／本紀錄同步。無素材或表格變更，不需素材庫空提交。
+- 專項測試：`node --test tests/knife-flight.test.cjs tests/soulhunter.test.cjs tests/skill2-knife-range.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`40/40通過。含20近＋20遠連續100次起飛、20敵混合距離仍可彈射到起飛圈外、競殺後重鎖、連續失效與下一跳起點、當拍暴雨掃描及不重複命中、Runtime30幀曲線／縱向投影逐幀一致、單刀替換與尾跡／獨立停止、追魂傷害層數／範圍／10秒期限及pending清零、Worker保留旗標、快取一致。既有soulhunter測試的4.4%寫死值改讀表定gain，完整高階施放fixture補足魔力且刀數依表計算，未更改產品數值或降低斷言。
+- 擴大回歸：`node --test --test-concurrency=2 tests/skill2-vfx.test.cjs tests/vfx-runtime.test.cjs tests/vfx-core.test.cjs tests/skills2-flight-speed.test.cjs tests/skills2-geometry.test.cjs`327項310過17失敗；再以HEAD舊skills2／vfx-runtime／shim只在記憶體替換，失敗名稱與數量完全一致（火球／施法距離／舊靜態渲染斷言、雷殞／場域／layout／雷鏈／星落素材、冰箭與雷鏈速度配置）。未改無關測試或放寬需求。兩組合計367項350過17既有失敗；`npm.cmd run build`773檔通過，Git差異檢查通過。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、battlefield的距離／選敵、combat敵人可交戰名單與唯一floatSel、util定址、battle-renderer起飛／緩衝／死亡起點守門／投影、飛刀四種Preset、既有飛行速度／幾何／VFX／Worker及模擬引擎。未修改這些檔案或新增美術／顯示文字。自我Review確認來源與實際命中點、有限彈射、追魂到期、陣列與pending、舊事件相容與版本同步。
+- 交接：程式與自動回歸無未完成項；限制為未實機啟動完整遊戲／桌面包或跑全庫，另有上述17項既有擴大回歸失敗。未建立瀏覽器或桌面擷取，kill-test-browsers確認無測試瀏覽器。遊戲Commit為本段所在`[Codex] fix: 限制迴旋飛刀起飛範圍並補上途中重鎖`，SHA見交付，ai/codex可供使用者審閱合併，未合併或推送develop／main。下一步整合至啟動工作區後重載／重啟遊戲驗收；VFX編輯器若仍開著，先備份未存內容再重載共用Runtime。本輪開始的既有表格／data／formula已由其他工作獨立提交2f477143，本輪未暫存其內容。
+
 ## TASK-TOWER-BOSS-20261126 — 接入封魔塔首層與二十層通關任務
 
 - Owner：Codex；Done，單人處理。使用者在Task新增順序20「封魔塔第1層BOSS成功」、35「第20層BOSS成功」，要求補正確參數並接入。來源已儲存且獨占存取確認；既有towerFloor讀真正勝利結算的G.tower.highest，前置已完成。
