@@ -451,7 +451,7 @@ function npcSkillNote(type, sk, catalog) {
 }
 /* 封魔塔 BOSS 的外觀名稱（使用者 2026-11-18）：改成新版 3D 模型（images/models/npc3d/bossN[_lvM].glb）的列，
    備註最前面寫「外觀：名稱＋第幾套材質｜」，例如 骷髏王1、樹人3；同一模型的 _lv2／_lv3 是第 2／3 套材質。 */
-const NPC_MODEL_LOOK = { boss1: '骷髏王', boss2: '樹人', boss3: '雷霆巨獸', boss4: '半人馬', boss5: '鬼面', boss6: '深淵領主', boss7: '岩石怪', boss8: '石像鬼', boss10: '熔岩巨人' };
+const NPC_MODEL_LOOK = { boss1: '骷髏王', boss2: '樹人', boss3: '雷霆巨獸', boss4: '半人馬', boss5: '鬼面', boss6: '深淵領主', boss7: '岩石怪', boss8: '石像鬼', boss9: '四足蜥蜴獸', boss10: '熔岩巨人' };
 function npcLookNote(b) {
   const m = /npc3d\/(boss\d+)(?:_lv(\d+))?\.glb$/.exec((b && b.model3d && b.model3d.file) || '');
   return m && NPC_MODEL_LOOK[m[1]] ? '外觀：' + NPC_MODEL_LOOK[m[1]] + (m[2] || '1') + '｜' : '';

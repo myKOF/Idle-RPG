@@ -446,14 +446,20 @@
 
   /* 接地腳掌相對身體向後滑行的速度，就是原速動作對應的地面移速。
      只在NPC要求時量測；獨立mixer還原綁定，玩家3D不增加載入成本。 */
-  function measureLocomotion(THREE, model, clip) {
+  function measureLocomotion(THREE, model, clip, rig) {
     if (!clip || !(clip.duration > 0)) return 0;
     var toes = [], feet = [], hips = null;
+    // GLTFLoader sanitizes source names (rearFoot.R becomes rearFootR).
+    var namedFeet = rig && Array.isArray(rig.feet) && rig.feet.length === 2
+      ? rig.feet.map(function (name) { return THREE.PropertyBinding.sanitizeNodeName(name); }) : null;
+    var namedHips = rig && rig.hips ? THREE.PropertyBinding.sanitizeNodeName(rig.hips) : null;
     model.traverse(function (node) {
       if (!node.isBone) return;
-      if (/(Left|Right)ToeBase$/i.test(node.name)) toes.push(node);
+      if (namedFeet) {
+        if (namedFeet.indexOf(node.name) >= 0) feet.push(node);
+      } else if (/(Left|Right)ToeBase$/i.test(node.name)) toes.push(node);
       else if (/(Left|Right)Foot$/i.test(node.name)) feet.push(node);
-      if (/Hips$/i.test(node.name)) hips = node;
+      if (namedHips ? node.name === namedHips : /Hips$/i.test(node.name)) hips = node;
     });
     var contacts = toes.length === 2 ? toes : feet;
     if (contacts.length !== 2) return 0;
@@ -565,7 +571,7 @@
     var mixer = new THREE.AnimationMixer(gltf.scene);
     var actions = {};
     var locomotion = opts.locomotionClip ? measureLocomotion(THREE, gltf.scene,
-      gltf.animations.filter(function (clip) { return clip.name === opts.locomotionClip; })[0]) : 0;
+      gltf.animations.filter(function (clip) { return clip.name === opts.locomotionClip; })[0], modelStyle.locomotion) : 0;
     gltf.animations.forEach(function (c) { actions[c.name] = mixer.clipAction(c); });
 
     var ctrl = {

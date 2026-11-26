@@ -17870,3 +17870,19 @@ Worker 存活且頁面正常完成載入。
 - 原生遊戲：首輪量測暴露CSS起播落後，未以失敗結果宣稱通過。修正後CSS動畫duration150ms／delay1500ms，實際RAF觀測到9個開蓋中間姿勢，第一個中間姿勢起已見光效，確認可立即關閉，例外0；ready觀測後1635.3ms完成（已扣CSS在ready前播放約一幀的時間），未再只跳末幀。初版同步仍有一幀光效落後，因此改成掀蓋起播事件同步並保留備援，最終實測通過。測試stub初版取消時誤建未處理拒絕Promise，改為惰性ready getter，未降低產品／測試要求。
 - 測試：`node --test tests/chest-opening.test.cjs tests/chest-preview.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`81/81；`npm.cmd run build`773檔；`node --check tools/chest-opening/preview.cjs`、`node --check js/ui-chest.js`及Git差異檢查通過。未跑全庫。自我Review覆蓋Promise取消、延後起播、CSS已過時間、雙計時清理、減少動態備援及GIF完成邊界。
 - 交付：本聊天chest-gif-speed-v7/chest-fast-preview-v7.gif與編碼／播放器／原生QA JSON、old-new-at-1700ms.png。瀏覽器與伺服器已關閉，孤兒檢查無殘留；新增探測暫存在上輪已被政策拒絕清理的tmp/chest-timing-v6，未重試刪除。素材庫無變更，不需空提交；唯讀檢查規範／Workflow、既有CSS／圖集／製作匯出、GameClock／headless工具／原開箱回歸，未改表格／資料／公式／Worker／Bridge／存檔或其他聊天成果。無未完成實作，可供合併，未合併或推送；限制為只驗本機Edge，其他GIF播放器與實體裝置未測。遊戲Commit為本段所在`[Codex] fix: 修正開箱起播同步與GIF預覽速度`，SHA見交付；下一步重新載入遊戲並看新版GIF驗收。
+
+## BOSS9-GAME-20261127 — 核准蜥蜴獸模型與六動作接入封魔塔
+
+- Owner：Codex；Done，單人處理。使用者核准死亡v2，要求將這版模型、移動、三攻擊與死亡接入封魔塔BOSS9；已明確選擇保留NPC表攻速3次／秒，動作隨攻速加快，死亡維持原4秒。
+- 前置：死亡包c57322ea／素材庫7f346584已提交，含核准五個舊動作與新死亡；本副本初始乾淨，逐檔衝突預檢無其他副本或分支來源。沿用Npc3D／Hero3D／塔ACT及死亡生命週期，不另設傷害、音效或VFX。
+- 範圍：新增tools/boss9-lizard/game四檔、正式GLB／頭像、專用說明與boss9資產回歸；NPC.xlsx單列及CSV／data衍生、config_tables外觀註記、Hero3D後腳量測／回歸、battle-renderer死亡快照與清理保險、必要首頁／Worker快取、npc3d-config回歸、LV與本段；素材庫新增boss9-lizard-game-20261127包及來源紀錄。只接tower_boss_9（9／59／109層），其他獨立列、名稱／屬性／數值／技能保持，不合併或推送。
+- 驗收：六動作及材質／蒙皮保持、必要外層座標轉換與接地、三攻擊輪替和表定加速、四秒死亡播完側躺／淡出；NPC來源原生編修／正常重開、來源／CSV／runtime一致，實際渲染及戰場播放、既有塔王／Npc3D／Worker／快取相關回歸與Build。完成後先素材庫再專案Commit，提供兩庫SHA與測試結果。
+- 接入：NPC第490列僅12格內容有差異：四個圖像欄、外觀備註、GLB與六個動作。使用者模型／暫代材質、73骨及原二進位完整保留（SHA b190ad68c1e9a4eb1f22893bfae12832eb3e1933a9f89326cac57cb81b5cf9e2），只附加統一縮放1.31593／後腳置中／地面歸零的父節點，六動畫不重採樣。原生／GLB各54姿態與來源經同一靜態轉換後的表面差最多2.05e-6，原死亡與第三招製作包保持。
+- 必要相容修正：模型宣告後腳及hips，Hero3D依GLTFLoader規則處理含點骨名再沿用接地步幅量測，本版為2.44678米／秒；原Mixamo量測與姿勢還原回歸保持。塔王hp=0快照不帶野外_rewarded／_deathClearCd，原碼跳過導致誤走0.25秒換場淡出，現正確送進真正死亡；原固定3秒保險會截斷4秒動作，改依片長＋0.3秒淡出＋0.5秒餘裕，短死亡仍至少3秒，原暫停／背景／場景清理保留。補足兩項針對實際原函式的回歸。
+- Excel：獨占確認後用excel-update-sheets.ps1原生編修，寫16格、正常重開兩次與全部目標值一致，7個繪圖物件保留；前後逐欄確認僅第490列12格內容與七個新動作儲存格的文字格式改變。欄寬小幅量化及預設列高14.25→13.8為本機Excel正常重存行為，另以未修改的原始控制副本原生存檔／正常重開驗證，columns／views／filter／drawing與成品完全一致，未手工改XML。試算表技能渲染前後三列並目視；僅NPC單表匯出531列×34欄，config_tables --apply --write NPC只變BOSS_LIST一項，重跑乾跑0語意差異。
+- 實機：內建IAB無可連線後端，改沿專案launchHeadless隔離Chrome與看門狗，無使用者存檔變更。真正頁面的Npc3D／Hero3D六動作×四向×九姿態共216張可見且未裁切；實際三擊各約0.283334秒完成，死亡原速4秒後保持。seed=9固定步新局，GM鎖血／零傷害觀察Walk／Idle及三攻擊，改100%測試傷害後實際擊殺；測試局關閉自動續層，最後存活約4.12秒、約4.23秒淡出回收，例外／警告／Worker錯誤皆0。必要證據保存素材庫qa，瀏覽器／伺服器finally關閉。正式撤退、確認結算或自動續層換場仍可依原流程中止演出，不延遲獎勵或下一場。
+- 測試：boss9／Npc3D／Hero3D、塔動作／移攻／進場／戰場、Worker協議、快取與桌面模型縮圖共63項62通過；唯一TBMA-5仍期待參數表只有「控制抵抗」，目前來源沿用已支援的「攻速 / 控制抵抗」舊列。以HEAD原data只在記憶體替換後同項失敗，原表／公式未改；另跑apply-params-tower-control六項全通過，證明新／舊列的控制抵抗讀取及不覆蓋NPC攻速。合計69項68過1既有失敗，未放寬該斷言。npc3d-config原寫死的舊NPC名稱改比對目前權威來源，仍完整核對列／模型／數值／技能及全部往返；新BOSS9保留自有六段clip名稱。
+- 唯讀／界限：檢查共通規範／Workflow／Codex、核准死亡／第三招、Npc3D／Hero3D、塔王／戰場／ACT／Worker協議、原生Excel及表格生成、其他BOSS製作匯出／回歸與素材庫解析。沒有新玩家文字、VFX來源或戰鬥數值／技能更動，不需String／VFX登記，LV已同步；未驗全庫、多瀏覽器／實體裝置。自我Review確認變更範圍、二進位保留、骨名相容、死亡／換場區別與清理上限，製作與整合無剩餘項目，可供審閱合併。
+- Build／歸檔：npm.cmd run build通過774檔，Python AST兩檔、工具語法與Git差異檢查通過。game/export.cjs歸檔及正式核對17項manifest通過（綁定實機QA的正式GLB SHA），舊death25項與attack3-ref36項包純核對仍通過。提交僅保留可重建來源、正式資產與必要QA；本輪tmp/boss9-game-20261127的Excel控制副本、前後預覽、一次性稽核／基準腳本與node_modules連結，刪除前有明確絕對路徑與連結檢查，但執行整段清理命令時被自動核准審查以政策限制拒絕，未執行、未重試或改用其他工具，暫存保持且不納入提交。
+- 同副本其他修改：執行期間另有冰原掉落來源／CSV及data.js的ZONE_STAGE_DROP_PROFILES修改，與BOSS_LIST第9列不同區段、沒有語意相依。分別以HEAD建構本案／其餘修改，git merge-file三方試跑乾淨且結果逐位元等於共享工作檔；只暫存本案data.js hunk，其他表格／掉落修改保留，不順帶提交或還原。
+- 雙倉庫／交接：素材庫先提交ec9d21d8113db7a2e65d6e66df2c659053d78085，提交後乾淨；遊戲專案ai/codex為本段所在「[Codex] feat: 將核准蜥蜴獸六動作接入封魔塔BOSS9」提交，共21檔，SHA見交付／Git log。未合併或推送；下一步由使用者審閱合併至實際啟動分支後重載／重啟遊戲，其他尚未提交的表格修改保持。
