@@ -1211,7 +1211,7 @@
                     <option value="reincarnation">🌀 轉生次數 (0~10 轉生進程)</option>
                     <option value="tower_floor">🗼 高塔通關樓層 (1~150 層 BOSS)</option>
                     <option value="stage">🚩 目前所在關卡 (會隨換圖、轉生歸 1)</option>
-                    <option value="stage_best">🏔️ 歷史最高關卡 (取樣點累計最大值，只升不降)</option>
+                    <option value="stage_best">🏔️ 最高場景的最高關卡 (例：冰原 120/150；解鎖新場景後改看新場景)</option>
                     <option value="godforge_count">👑 神鑄裝備件數 (Godforged Count)</option>
                     <option value="rerolls">🎲 裝備洗詞條總次數 (Affix Rerolls)</option>
                     <option value="gem_syntheses">💎 寶石合成總次數 (Gem Syntheses)</option>
@@ -1615,11 +1615,17 @@
                 const ancientEssence = parseFloat(s.ancientEssence || 0);
                 const reinc = parseFloat(s.reincarnations || 0);
                 const tower = parseFloat(s.towerFloor || 0);
+                /* 最高場景的最高關卡（run_sim 的 topZoneProgress）。舊資料沒有這三欄，topZone 為 null，下面退回舊算法。 */
+                const tzIdx = parseFloat(s.stageTopZone);
+                const topZone = (Number.isFinite(tzIdx) && tzIdx >= 0)
+                    ? { idx: tzIdx, best: parseFloat(s.stageTopBest) || 0, max: parseFloat(s.stageTopMax) || 0 }
+                    : null;
 
                 const wrap = (val) => ({ mean: val, median: val, p10: val, p90: val });
 
                 return {
                     hour: h,
+                    topZone: topZone,
                     stage: wrap(st),
                     level: wrap(lv),
                     reincarnation: wrap(reinc),
@@ -1670,13 +1676,18 @@
                 timeSeries[n].kill_rate = { mean: rate, median: rate, p10: rate, p90: rate };
             }
 
-            /* 歷史最高關卡：CSV 的 stage 是「當下所在關卡」，換圖或轉生會掉回 1，折線呈鋸齒，
-               看不出推進了多少。這裡取到該取樣點為止的最大值（只升不降）。
-               ⚠️ 只看取樣點，取樣間隔內短暫到過的更高關卡不會計入，所以是下限。 */
+            /* 最高場景的最高關卡：以「已解鎖場景中最後一張」的最高關為準（例：冰原 120/150）。
+               一旦解鎖冰原就看冰原，不再拿荒漠的關卡當最高——荒漠 100 關和冰原 1 關不能比大小，
+               所以解鎖新場景的那一刻折線會從前一張的上限掉回新場景的關卡，這是刻意的。
+               值直接取遊戲的 zoneBestProgress（run_sim 寫進 CSV），不是取樣點的累計最大值。
+               舊資料沒有這三欄：退回舊算法（當下關卡的累計最大值、不分場景），圖例會標「舊資料」。 */
+            const hasTopZone = timeSeries.some(pt => pt.topZone);
             let bestSoFar = 0;
             timeSeries.forEach(pt => {
-                bestSoFar = Math.max(bestSoFar, pt.stage.mean);
-                pt.stage_best = { mean: bestSoFar, median: bestSoFar, p10: bestSoFar, p90: bestSoFar };
+                const v = hasTopZone
+                    ? (pt.topZone ? pt.topZone.best : 0)
+                    : (bestSoFar = Math.max(bestSoFar, pt.stage.mean));
+                pt.stage_best = { mean: v, median: v, p10: v, p90: v };
             });
             currentSimResult = currentSimResult || {};
             currentSimResult.time_series = timeSeries;
@@ -2856,6 +2867,27 @@
             yDataP90 = yDataP90.map(v => v > 0 ? Math.log10(v) : 0);
         }
 
+        /* 最高場景的最高關卡：每個點都知道是哪個場景、上限多少。折線依場景換色，
+           圖例寫出最後一點（例：冰原 72/150），游標停在點上顯示「冰原 72/150」。 */
+        const topZoneMode = (yKey === 'stage_best') && series.some(s => s.topZone);
+        const ZONE_COLORS = ['#f59e0b', '#38bdf8', '#34d399', '#f87171', '#a78bfa', '#facc15', '#94a3b8', '#fb7185', '#c084fc', '#f0abfc'];
+        const topZoneText = (tz) => {
+            if (!tz) return '—';
+            const key = (typeof ZONE_LIST !== 'undefined') ? ZONE_LIST[tz.idx] : null;
+            const name = key ? batchZoneName(key) : ('場景 ' + (tz.idx + 1));
+            return `${name} ${tz.best}/${tz.max}`;
+        };
+        const zoneColorAt = (i) => {
+            const tz = series[i] && series[i].topZone;
+            return tz ? ZONE_COLORS[tz.idx % ZONE_COLORS.length] : '#818cf8';
+        };
+        let mainLabel = yKey.toUpperCase() + ' (' + (statType === 'mean' ? '平均值' : '中位數') + ')';
+        if (yKey === 'stage_best') {
+            mainLabel = topZoneMode
+                ? '最高場景的最高關卡（最後：' + topZoneText(series[series.length - 1].topZone) + '）'
+                : '歷史最高關卡（舊資料：不分場景，取樣點累計最大值）';
+        }
+
         const ctx = document.getElementById('mcChartCanvas').getContext('2d');
         if (chartInstance) chartInstance.destroy();
 
@@ -2865,13 +2897,19 @@
                 labels: xLabels,
                 datasets: [
                     {
-                        label: yKey.toUpperCase() + ' (' + (statType === 'mean' ? '平均值' : '中位數') + ')',
+                        label: mainLabel,
                         data: yDataMean,
                         borderColor: '#818cf8',
                         backgroundColor: 'rgba(129, 140, 248, 0.1)',
                         borderWidth: 3,
                         tension: 0.2,
-                        fill: false
+                        fill: false,
+                        ...(topZoneMode ? {
+                            tension: 0,
+                            segment: { borderColor: (c) => zoneColorAt(c.p1DataIndex) },
+                            pointBackgroundColor: series.map((s, i) => zoneColorAt(i)),
+                            pointBorderColor: series.map((s, i) => zoneColorAt(i))
+                        } : {})
                     },
                     {
                         label: 'P90 (上限)',
@@ -2910,12 +2948,15 @@
                 },
                 plugins: {
                     legend: { labels: { color: '#f8fafc', font: { size: 13 } } },
-                    tooltip: { 
-                        mode: 'index', 
+                    tooltip: {
+                        mode: 'index',
                         intersect: false,
+                        filter: (item) => !topZoneMode || item.datasetIndex === 0,
                         callbacks: {
                             label: function(context) {
                                 const val = context.raw;
+                                /* P10/P90 兩條由上面的 filter 濾掉（單場資料三條線相同，不重複列） */
+                                if (topZoneMode) return '最高場景的最高關卡: ' + topZoneText(series[context.dataIndex].topZone);
                                 return context.dataset.label + ': ' + (isLogDps ? '10^' + val.toFixed(2) : formatGameNumber(val));
                             }
                         }

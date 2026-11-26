@@ -454,6 +454,20 @@ const SNAP_VIEW_KEYS = ['level', 'stage', 'gold', 'scrap', 'dust', 'essence',
   'hp', 'hpMax', 'mp', 'mpMax', 'xp', 'xpMax'];
 const snapRows = [];
 
+/* 「最高場景的最高關卡」：已解鎖場景中排最後的那一張（ZONE_LIST 順序），以及它的最高關與關卡上限。
+   一旦解鎖冰原就以冰原的最高關為準，不再拿荒漠的關卡當成最高——荒漠 100 關跟冰原 1 關不能比大小。
+   全部用遊戲自己的函式回答（isZoneUnlocked 含 demo 開放範圍，zoneBestProgress、zoneMaxStage）。
+   CSV 只放數字，場景存成 ZONE_LIST 的索引，儀表板再查 ZONES 取名稱。 */
+function topZoneProgress() {
+  const c = engine.ctx;
+  const list = c.ZONE_LIST || [];
+  let idx = -1;
+  for (let i = 0; i < list.length; i++) if (c.isZoneUnlocked && c.isZoneUnlocked(list[i])) idx = i;
+  if (idx < 0) return { stageTopZone: -1, stageTopBest: 0, stageTopMax: 0 };
+  const key = list[idx];
+  return { stageTopZone: idx, stageTopBest: c.zoneBestProgress(key), stageTopMax: c.zoneMaxStage(key) };
+}
+
 /* 場上存活敵人數的診斷：數量分佈，以及「最近 60 秒最小平方斜率」（隻／分鐘）的分佈。
    用途是替策略的戰場負載目標（slopePerMin／windowAvg）挑門檻——門檻要看健康狀態下的分佈，
    不能憑感覺。純診斷，策略看不到，不影響模擬。 */
@@ -644,7 +658,8 @@ function snapshot() {
     /* 目前穿的是第幾套（0＝第 1 套）。結尾存檔的「使用中裝備」是這一套，不一定是主力的第 1 套。 */
     equipActive: (G && G.equipActive) || 0,
     fieldLive: engine.ctx.liveFieldEnemies ? engine.ctx.liveFieldEnemies().length : 0,
-    fieldCap: engine.ctx.fieldMaxLiveEnemiesFor ? engine.ctx.fieldMaxLiveEnemiesFor() : 0
+    fieldCap: engine.ctx.fieldMaxLiveEnemiesFor ? engine.ctx.fieldMaxLiveEnemiesFor() : 0,
+    ...topZoneProgress()
   };
   for (const k of SNAP_VIEW_KEYS) row[k] = view[k];
   snapRows.push(row);
@@ -932,6 +947,9 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
     equipActive: 'G.equipActive（目前使用中的裝備組，0＝第 1 套）',
     fieldLive: 'liveFieldEnemies().length（場上存活敵人數）',
     fieldCap: 'fieldMaxLiveEnemiesFor()（戰場容量）',
+    stageTopZone: '已解鎖場景中最後一張的 ZONE_LIST 索引（isZoneUnlocked，含 demo 開放範圍）',
+    stageTopBest: 'zoneBestProgress(最高場景)（該場景的最高關）',
+    stageTopMax: 'zoneMaxStage(最高場景)（該場景的關卡上限）',
     ...Object.fromEntries(SNAP_VIEW_KEYS.map((k) => [k, `buildView().${k}（目前持有，非累積）`]))
   },
   提醒: [
