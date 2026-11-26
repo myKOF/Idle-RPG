@@ -17514,3 +17514,16 @@ Worker 存活且頁面正常完成載入。
 - `node --test` 執行 13 支封魔塔、3D 角色與快取相關測試檔，65 項中 61 項通過，4 項為既有的 BOSS7、妖樹首領及惡魔首領名稱斷言。BOSS10 專項全數通過。`node tmp/boss10-v3/verify_ingame.cjs tmp/boss10-v3/game 30` 驗證五個動作、三攻連續輪替、第 30 層實戰移動、出招與兩種頭像尺寸，無執行期錯誤。
 - `npm.cmd run build` 通過 762 檔語法與空檔檢查，兩支 Python 工具通過語法剖析，Git 差異檢查通過。
 - 素材庫提交 `8b7e8f427b80612aaef18308b6d55868432a53b2`。遊戲提交訊息 `[Codex] feat: 接入熔岩巨人第三套材質與五動作`，位於 `ai/codex`，可合併。工作區內的驗證暫存與瀏覽器程序已清理。自動審查以政策限制拒絕刪除工作區外的 Blender 重建驗證圖，該圖留在 `C:/tmp/boss10-v3/rebuild-2/boss10_lava_lv2.png`。
+
+## DESKTOP-BLUR-RENDER-20261126 — 桌面視窗失焦時持續繪圖
+
+- Owner：Codex；Done，單人修正。使用者回報遊戲仍顯示於螢幕上，但切到檔案總管後戰鬥畫面停住，取回焦點才恢復。前置：已確認 window-activity 將失焦與最小化／隱藏合併為 background，導致 GameVisibility 停止顯示層，Worker 原本仍在運作。
+- 允許：electron/window-activity.cjs、tests/desktop-background.test.cjs、tools/desktop/verify_background.cjs、LV_upgrade_system.md 及本段。禁止改戰鬥／收益／存檔／協議、配置表、素材及其他聊天進行中修改；不合併或推送。沿用 background 欄位與現有顯示機制，僅最小化或隱藏時降載；桌面主行程 CJS 不經 index script 載入，無需前端快取變更。
+- 預檢：所有目標無外部來源；同副本寶石／技能任務的 LV 與任務紀錄位於不同區段，僅暫存本項差異。驗收包含可見失焦持續繪圖／特效、Worker 收益與自動存檔、最小化與隱藏停止繪圖、未取回焦點即還原顯示，以及選單暫停／網頁 visibility／迷你視窗相容。執行相關回歸、Build 與隔離靜音 Electron 實測，完成後自我 Review、Commit，交使用者重啟驗收。
+- 完成／修改5檔：window-activity 僅依 isVisible／isMinimized 判定顯示降載；desktop-background 回歸新增原生活動到 GameVisibility／ticker 的整合驗證；verify_background 實測區分失焦持續繪圖、最小化及隱藏降載，補上 showInactive 無焦點還原；同步 LV 與本段。未改前端 JS、表格、Worker 或素材，素材庫無變更。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、electron/main.cjs／preload.cjs／mini-window.cjs、js/game-visibility.js／bridge.js／ui.js／battle-renderer.js／worker/sim.worker.js、package.json、index.html、既有時鐘／迷你／選單背景／存檔／事件佇列與快取測試。自我 Review 確認 IPC 格式與來源限制、選單暫停及網頁分頁行為沿用。
+- 回歸指令：`node --test tests/desktop-background.test.cjs tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs tests/game-clock.test.cjs tests/start-menu-background.test.cjs tests/ui-containment-and-visual-flush.test.cjs tests/worker-protocol.test.cjs tests/desktop-saves.test.cjs tests/vfx-editor-cache-versions.test.cjs`，80/80通過。最終測試替身補齊 isFocused 後專項6/6再次通過。`npm.cmd run build` 767檔通過；`node --check tools/desktop/verify_background.cjs` 與本項 Git 差異檢查通過。
+- 舊測試原本把 bridge／ui／battle-renderer 快取限定為20261119背景任務名稱，後續正常升版即誤報。以HEAD原測試搭配HEAD首頁重現相同失敗後，改驗帶版本、日期不早於背景修正、同日必須為原背景版本，並補查 game-visibility；不回退現行快取或降低功能要求。
+- Electron實測：`node tools/desktop/verify_background.cjs tmp/desktop-blur-20261126` 通過，正常模式無smoke、獨立profile、新遊戲及靜音。失焦18秒幀112→1141、GT 3.228→21.436、金幣52106→57177、自動存檔0→1，前後focused皆false、特效啟用、結束視覺佇列0。最小化18秒幀1212保持、GT增加17.996秒、金幣57542→61467、存檔2→3；隱藏18秒幀1283保持、GT增加17.902秒、金幣61862→64803、存檔4→6。showInactive後仍無焦點、ticker恢復並增加15幀。選單暫停經最小化／還原GT保持62.526，解除後前進，磁碟存檔存在，頁面／Worker／存檔錯誤與重啟皆0。
+- 實測腳本首輪把最小化後isFocused也強制視為false，Windows實際仍回傳true，與降載判斷無關；修正為僅在可見失焦區間要求無焦點，再完整重跑通過。測試視窗與隔離profile已關閉／清理；`node tools/kill-test-browsers.cjs` 無殘留。自動核准審查以政策限制拒絕清除本次專用tmp/desktop-blur-20261126，未繞過；報告與截圖保留為清理例外。
+- 交接：Commit為本段所在`[Codex] fix: 修正桌面視窗失焦時畫面停住`，位於ai/codex，可供合併；未合併／推送develop或main。本輪無未完成修正，其他聊天的寶石／技能未提交修改保持。已知限制為未跑全庫、OS睡眠及安裝包實測；沿用現有恢復補算。下一步整合至實際啟動的工作區後退出重啟桌面版，既有安裝包須重新打包。
