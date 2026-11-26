@@ -24,8 +24,9 @@
 #ui-shell #btn-hero3d[hidden] { display: none; }
 #ui-shell #btn-hero3d[aria-pressed="true"] { color: #e6bd7c !important; border-color: #9f7c46 !important; }
 #ui-shell #btn-world-map { width: 85.1px; min-height: 34.5px; padding: 3.45px 9px; font-size: 16px; }
-#ui-shell #st-auto { min-width: 54px; letter-spacing: .06em; }
-#ui-shell #st-auto[aria-pressed="true"] { color: #c9e4a7 !important; border-color: #829864 !important; box-shadow: inset 0 0 8px #9fb87733 !important; }
+#ui-shell #st-auto { min-width: 54px; letter-spacing: .06em; background: #505052 !important; color: #e0ded9 !important; border-color: #77777a !important; box-shadow: inset 0 0 8px #ffffff0d !important; }
+#ui-shell #st-auto[aria-pressed="true"] { background: #3e653b !important; color: #e1efcf !important; border-color: #829864 !important; box-shadow: inset 0 0 8px #9fb87733 !important; }
+#sk-tooltip .stage-auto-tip-action { display: block; color: #aaa !important; font-size: 12px; font-weight: normal; }
 #btn-battle-mute .sound-muted, #btn-battle-mute[aria-pressed="true"] .sound-waves { display: none; }
 #btn-battle-mute[aria-pressed="true"] .sound-muted { display: block; }
 #ui-shell #btn-battle-mute[aria-pressed="true"] { color: #e6bd7c !important; border-color: #9f7c46 !important; }

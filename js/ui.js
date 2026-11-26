@@ -4473,11 +4473,14 @@ function refreshStageAutoButton(on) {
   if (!button) return;
   button.setAttribute('aria-pressed', on ? 'true' : 'false');
   button.classList.toggle('active', !!on);
+  button.setAttribute('data-tt-title', STR(on ? 2575 : 2576));
+  button.setAttribute('data-tt-desc', '<span class="stage-auto-tip-action">' + STR(on ? 2577 : 2578) + '</span>');
 }
 
 function initStageAutoButton() {
   var button = $id('st-auto');
   if (!button) return;
+  refreshStageAutoButton(button.getAttribute('aria-pressed') === 'true');
   button.setAttribute('data-ui-pending-key', nodePendingKey('stage-auto'));
   button.addEventListener('click', function () {
     if (isUiCommandPending(nodePendingKey('stage-auto'))) return;

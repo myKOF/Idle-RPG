@@ -4904,6 +4904,15 @@
 - 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
 - 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
 
+## AUTO-STAGE-TIP-20261126 — 自動推關底色與兩行提示
+
+- Owner：Codex；Done，單人處理。使用者指定啟動綠底、關閉灰底，tips 第一行顯示「自動推進關卡啟動中／關閉中」，第二行以較小淺灰字顯示「點擊取消／點擊開啟」。沿用既有 Worker 指令與 header 樂觀狀態同步，初始化、點擊、在途及失敗恢復時同步提示。
+- 修改10檔：js/ui.js、css/world-map.css、config/Excel/String.xlsx／CSV/String.csv、js/strings_data.js、index.html、tools/vfx/editor/index.html、tests/battle-toolbar.test.cjs、LV_upgrade_system.md 及本段。底色開啟#3e653b／關閉#505052，第二行12px／#aaa；String新增2575～2578，資料版本35726e38，主頁及共用編輯器字串快取同步，ui／world-map快取20261126-auto-stage-tip-v1。推關規則、Worker協議與其他tips維持。
+- 逐檔衝突預檢無外部來源；本副本轉生法力任務在 index／LV／任務檔為不同區段，分段修改／暫存並三方試合乾淨，無語意相依。String來源獨占檢查後以Excel原生API新增4列／16格非空值、正常重開兩次驗證；原40944格資料及有效字型／填色／邊框／對齊／保護／數字格式保持，凍結及驗證規則相同。新文字已渲染檢視；未手工改XLSX封裝。無素材變更，素材庫無需提交。
+- `node --test tests/battle-toolbar.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`最終21/21通過；`node tools/string-table/apply_strings.cjs --check`同步，字串稽核寫死0；`npm.cmd run build`770檔通過，Git差異檢查通過。沿用既有工具列回歸並增加真String資料的初始化、切換、舊快照等待與拒絕恢復提示斷言；測試載入util後重設DOM查詢stub，未修改產品契約。
+- 隔離靜音Edge以正式CSS、String資料、按鈕HTML及原生refresh／click／statTooltipHTML函式驗證。實際點擊後綠底rgb(62,101,59)切灰底rgb(80,80,82)，兩行文字完全符合要求，標題15px、操作提示12px／rgb(170,170,170)，提示第二行位置在標題下方；畫面已目視檢查，頁面例外0。既有CSS過渡等待350ms後檢查最終色，瀏覽器finally關閉，孤兒瀏覽器檢查無殘留。未做完整遊戲長時間操作或全庫回歸。
+- 唯讀檢查：共通規範／Workflow／Codex、String管線與Excel更新器、工具列指令與快照／tooltip刷新、共用按鈕主題CSS及快取測試。無本輪未完成項目，自我Review通過，可審閱合併；Commit為本段所在`[Codex] fix: 調整自動推關按鈕底色與提示`，未合併或推送。其他聊天法力／派生公式修改保留未提交。下一步重新載入此版本確認開關及tips。
+
 ## GEM-DROP-CONFIG-20261126 — 接通寶石表內掉落等級限制
 
 - Owner：Codex；Done，單人處理。使用者授權將 Gems「開放等級」的設定接到「掉落等級」，驗證後 Commit。來源設定與正式掉落讀欄不一致的問題已修正。
