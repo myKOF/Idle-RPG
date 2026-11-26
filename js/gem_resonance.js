@@ -125,7 +125,7 @@ function gemResonanceUnlockedAt(level, reincarnations) {
   return progressReached(level, reincarnations, GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION);
 }
 function gemResonanceLockedMessage() {
-  return STR(2131, GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION);
+  return STR(2131, progressRequirementText(GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION));
 }
 function gemResonanceUnlocked() {
   return !!G.player && gemResonanceUnlockedAt(G.player.level, G.player.reincarnations);

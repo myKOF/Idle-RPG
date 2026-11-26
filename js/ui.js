@@ -6107,12 +6107,7 @@ function renderDetail() {
   } else {
     var runeAttrs = '';
     if (!equipRuneUiUnlocked(headerSnapshot)) {
-      var unlockProgress = STR(2101, RUNE_UNLOCK_REINCARNATION);
-      if (RUNE_UNLOCK_LEVEL > 1) {
-        unlockProgress = STR(680, STR(679, RUNE_UNLOCK_REINCARNATION) + ' ' + RUNE_UNLOCK_LEVEL, '') +
-          ' / ' + STR(2101, RUNE_UNLOCK_REINCARNATION + 1);
-      }
-      runeAttrs = ' disabled data-tip="' + esc(STR(2103, unlockProgress)) + '"';
+      runeAttrs = ' disabled data-tip="' + esc(STR(2580, progressRequirementText(RUNE_UNLOCK_LEVEL, RUNE_UNLOCK_REINCARNATION))) + '"';
     }
     actionsHtml += '<button class="btn' + (runeMode ? ' btn-primary' : '') + '" data-act="toggle-rune" aria-pressed="' + (matMode === 'rune') + '"' + runeAttrs + '>' + STR(150) + '</button>';
   }
@@ -9977,6 +9972,9 @@ function showEnemyTooltip(anchorEl) {
 
     var rewardLines = [];
     rewardLines.push(STR(106, fmt(m.xp)));
+    towerEquipDropRows(floor).forEach(function (row) {
+      rewardLines.push('⚔️ <span style="color:' + row.color + '; font-weight:bold;">' + esc(row.name) + '</span> <span style="color:var(--dim)">(' + esc(row.rate) + ')</span>');
+    });
     rewardLines.push(STR(650, rw.gemLevel));
     rewardLines.push(STR(652, rw.essence, ''));
     if (dustRate > 0) rewardLines.push(divineStoneTextHTML(STR(653, fmt1(dustRate))));
@@ -10306,7 +10304,7 @@ function renderGems() {
       resonanceTab.removeAttribute('data-tt-desc');
     } else {
       setAttrIfChanged(resonanceTab, 'data-tt-title', STR(2130));
-      setAttrIfChanged(resonanceTab, 'data-tt-desc', STR(2131, GEM_RESONANCE_UNLOCK_LEVEL, GEM_RESONANCE_UNLOCK_REINCARNATION));
+      setAttrIfChanged(resonanceTab, 'data-tt-desc', gemResonanceLockedMessage());
     }
   }
   if (!resonanceOpen && UI.gemBrowse.tool === 'resonance') { UI.gemBrowse.tool = 'compose'; setGemTool('compose'); return; }

@@ -9,6 +9,10 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    寶箱圖依品質載入透明 WebP；未解鎖時本體置灰並疊上鎖鏈與掛鎖。 */
 
 var CHEST_UI = { bound: false, sig: '', results: [] };
+var CHEST_SHAKE_MS = 1500;
+var CHEST_LID_OPEN_MS = 150;
+var CHEST_OPENING_MS = CHEST_SHAKE_MS + CHEST_LID_OPEN_MS;
+var CHEST_REVEAL_STEP_MS = 100;
 
 var CHEST_ART_FILES = {
   common: 'bronze',
@@ -222,12 +226,24 @@ function chestResultSlots(rewards) {
 }
 
 /* 只建立捲動位置附近的格子，全開也能逐件查看。 */
-function chestBindResultGrid(viewport, rewards) {
+function chestBindResultGrid(viewport, rewards, deferReveal) {
   var grid = viewport.querySelector('.nfc-res-list');
   var track = grid.parentNode;
   var slots = rewards.slots, total = rewards.total;
   var columns = 1, stride = 1, first = -1, last = -1;
+  var revealed = 0, revealTimer = null, stopped = false;
+  var started = 0, revealing = false;
   viewport.style.setProperty('--nfc-count', Math.max(1, total));
+
+  function updateRevealed(animate) {
+    Array.from(grid.children).forEach(function (node) {
+      var pending = Number(node.getAttribute('data-nfc-index')) >= revealed;
+      var entering = !pending && node.classList.contains('is-pending');
+      node.classList.toggle('is-pending', pending);
+      node.setAttribute('aria-hidden', pending ? 'true' : 'false');
+      if (entering && animate) node.classList.add('is-entering');
+    });
+  }
 
   function render() {
     var startRow = Math.max(0, Math.floor(viewport.scrollTop / stride) - 1);
@@ -236,17 +252,19 @@ function chestBindResultGrid(viewport, rewards) {
     if (start === first && end === last) return;
     first = start;
     last = end;
-    grid.classList.remove('is-revealing');
     var html = '';
     for (var i = 0; i < slots.length && start < end; i++) {
       var slot = slots[i];
       var count = Math.min(end, slot.end) - start;
       if (count <= 0) continue;
-      html += slot.html.repeat(count);
+      for (var j = 0; j < count; j++) {
+        html += slot.html.replace('<li ', '<li data-nfc-index="' + (start + j) + '" ');
+      }
       start += count;
     }
     grid.style.top = (startRow * stride) + 'px';
     grid.innerHTML = html;
+    updateRevealed(false);
   }
 
   function resize() {
@@ -281,17 +299,32 @@ function chestBindResultGrid(viewport, rewards) {
     viewport.classList.remove('is-dragging');
   });
   viewport.addEventListener('scroll', function () {
-    grid.classList.remove('is-revealing');
     render();
   }, { passive: true });
   resize();
-  var visible = Math.min(total, Math.ceil(viewport.clientHeight / stride) * columns);
-  var step = Math.min(55, 1800 / Math.max(1, visible - 1));
-  for (var i = 0; i < visible; i++) grid.children[i].style.setProperty('--nfc-reveal-delay', (i * step) + 'ms');
-  grid.classList.add('is-revealing');
+  function reveal() {
+    if (stopped) return;
+    var elapsed = performance.now() - started;
+    revealed = Math.min(total, 1 + Math.floor(elapsed / CHEST_REVEAL_STEP_MS));
+    updateRevealed(true);
+    if (revealed < total) revealTimer = setTimeout(reveal, revealed * CHEST_REVEAL_STEP_MS - elapsed);
+    else revealTimer = null;
+  }
+  function start() {
+    if (stopped || revealing) return;
+    revealing = true;
+    started = performance.now();
+    reveal();
+  }
+  if (!deferReveal) start();
   var observer = new ResizeObserver(resize);
   observer.observe(viewport);
-  return observer;
+  return { start: start, disconnect: function () {
+    stopped = true;
+    clearTimeout(revealTimer);
+    observer.disconnect();
+    if (drag && viewport.hasPointerCapture(drag.id)) viewport.releasePointerCapture(drag.id);
+  } };
 }
 
 function chestShowResult(res) {
@@ -305,33 +338,93 @@ function chestShowResult(res) {
   var rewards = chestResultSlots(res.rewards);
   var el = document.createElement('dialog');
   el.id = 'nfc-result';
-  el.className = 'nfc-result';
+  var quality = Object.hasOwn(CHEST_ART_FILES, def.quality) ? def.quality : 'common';
+  el.className = 'nfc-result q-' + quality;
+  el.style.setProperty('--nfc-shake-time', CHEST_SHAKE_MS + 'ms');
+  el.style.setProperty('--nfc-lid-open-time', CHEST_LID_OPEN_MS + 'ms');
   el.setAttribute('aria-label', summary.join(' '));
-  el.innerHTML = '<div class="nfc-res-content"><div class="nfc-res-art">' +
-    chestResultImage('images/chests/' + (CHEST_ART_FILES[def.quality] || CHEST_ART_FILES.common) + '.webp') + '</div>' +
-    '<div class="nfc-res-scroll" tabindex="0"' + (rewards.total ? '' : ' hidden') + '><div class="nfc-res-track">' +
+  var art = chestResultImage('images/chests/' + CHEST_ART_FILES[quality] + '.webp');
+  el.innerHTML = '<div class="nfc-res-content"><div class="nfc-res-art" aria-hidden="true">' +
+    '<div class="nfc-res-fx"><i class="nfc-res-halo"></i><i class="nfc-res-rays"></i></div>' +
+    '<div class="nfc-res-chest"><div class="nfc-res-sprite"><img class="nfc-res-sheet" src="images/chests/opening/' +
+    CHEST_ART_FILES[quality] + '.webp?v=20261126-caps-v5" alt="" draggable="false" decoding="async"></div>' +
+    '<div class="nfc-res-fallback">' + art + '</div><i class="nfc-res-inner"></i></div></div>' +
+    '<div class="nfc-res-rewards" aria-hidden="true" inert><div class="nfc-res-scroll" tabindex="0" hidden><div class="nfc-res-track">' +
     '<ul class="nfc-res-list" role="list"></ul></div></div>' +
-    '<button type="button" class="btn primary nfc-res-confirm" autofocus>' + chestUiEsc(STR(149)) + '</button></div>';
+    '<button type="button" class="btn primary nfc-res-confirm" hidden disabled>' + chestUiEsc(STR(149)) + '</button></div></div>';
   hideTooltip();
   ($id('ui-stage') || document.body).appendChild(el);
   el.showModal();
-  var observer = rewards.total ? chestBindResultGrid(el.querySelector('.nfc-res-scroll'), rewards) : null;
+  var viewport = el.querySelector('.nfc-res-scroll');
+  viewport.hidden = !rewards.total;
+  // 先以隱藏內容量好完整版面，獎勵出現時箱體不會因整組重新置中而向上跳。
+  var observer = rewards.total ? chestBindResultGrid(viewport, rewards, true) : null;
+  var openingTimer = null, effectTimer = null, ready = false, dismissed = false;
+  var confirm = el.querySelector('.nfc-res-confirm');
+  function lightEffects() {
+    clearTimeout(effectTimer);
+    effectTimer = null;
+    if (!dismissed) el.classList.add('has-opening-fx');
+  }
+  el.addEventListener('animationstart', function (e) {
+    if (e.animationName === 'nfc-open-sheet') lightEffects();
+  });
+  function opened() {
+    if (dismissed) return;
+    openingTimer = null;
+    ready = true;
+    el.classList.remove('is-opening');
+    el.classList.add('is-opened');
+    var panel = el.querySelector('.nfc-res-rewards');
+    panel.inert = false;
+    panel.setAttribute('aria-hidden', 'false');
+    if (observer) observer.start();
+    confirm.hidden = false;
+    confirm.disabled = false;
+    confirm.focus({ preventScroll: true });
+  }
+  // 冷快取時等箱圖解碼完成才開始計時，避免空白畫面吃掉開箱演出。
+  Promise.all(Array.from(el.querySelectorAll('.nfc-res-chest img')).map(function (img) {
+    return img.decode().catch(function () { el.classList.add('is-art-fallback'); });
+  })).then(function () {
+    if (dismissed) return;
+    el.classList.add('is-opening');
+    // CSS的startTime要等首個渲染影格才確定；避免主執行緒忙碌時倒數先跑。
+    return Promise.all(el.getAnimations({ subtree: true }).map(function (animation) {
+      return Promise.resolve(animation.ready).catch(function () {});
+    }));
+  }).then(function () {
+    if (dismissed) return;
+    var charge = el.getAnimations({ subtree: true }).find(function (animation) {
+      return animation.animationName === 'nfc-chest-charge';
+    });
+    var elapsed = charge ? Math.max(0, Number(charge.currentTime) || 0) : 0;
+    // ready可能在起播後才回呼；扣掉CSS已播放時間，保留同一演出時間軸。
+    effectTimer = setTimeout(lightEffects, Math.max(0, CHEST_SHAKE_MS - elapsed));
+    openingTimer = setTimeout(opened, Math.max(0, CHEST_OPENING_MS - elapsed));
+  });
   function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
+    clearTimeout(openingTimer);
+    clearTimeout(effectTimer);
     if (observer) observer.disconnect();
-    el.close();
+    el.getAnimations({ subtree: true }).forEach(function (animation) { animation.cancel(); });
+    CHEST_UI.results.length = 0;
+    if (el.open) el.close();
     el.remove();
-    if (CHEST_UI.results.length) chestShowResult(CHEST_UI.results.shift());
   }
   el.addEventListener('cancel', function (e) {
     e.preventDefault();
-    dismiss();
+    if (ready) dismiss();
   });
   el.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     e.preventDefault();
-    if (!e.repeat && !e.isComposing) dismiss();
+    if (ready && !e.repeat && !e.isComposing) dismiss();
   });
-  el.querySelector('.nfc-res-confirm').addEventListener('click', dismiss);
+  confirm.addEventListener('click', function () { if (ready) dismiss(); });
+  el.addEventListener('close', dismiss);
 }
 
 /* ---- 事件委派（容器本身不重建，只綁一次） ---- */

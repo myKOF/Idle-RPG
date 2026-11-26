@@ -161,6 +161,76 @@ test('兩端共算的費用與上限：背包、強化碎片、洗煉精華、�
   assert.equal(c.towerTimeLimitWithTalents(10), base.tower + v('towerBossTime'));
 });
 
+test('高等遺物折扣達到或超過100%時，付費需求仍至少1', () => {
+  const c = loadGameContext();
+  const effects = ['inventoryExpandDiscount', 'upgradeScrapDiscount', 'rerollEssenceDiscount', 'merchantDiscount'];
+  for (const lv of [1, 20, 40, 50, 67, 100]) {
+    effects.forEach(key => setLevel(c, key, lv));
+    for (let rarity = 0; rarity < c.RARITIES.length; rarity++) {
+      const it = { rarity, level: 1, upgrade: 0 };
+      const cost = c.upgradeCost(it);
+      assert.ok(cost.gold >= 1 && cost.scrap >= 1);
+      assert.ok(c.rerollCost(it).essence >= 1);
+    }
+    assert.ok(c.inventoryExpandCost(0) >= 1);
+    assert.ok(c.merchantItemPrice({ kind: 'gem', price: 1 }) >= 1);
+  }
+  assert.equal(c.upgradeCost({ rarity: 0, level: 1 }).scrap, 1);
+  assert.equal(c.inventoryExpandCost(0), 1);
+  assert.equal(c.merchantItemPrice({ kind: 'gem', price: 10000 }), 1);
+  assert.equal(c.merchantItemPrice(null), Infinity, '無效商品仍不可購買');
+});
+
+test('最低強化碎片需求：不足時拒絕，成功與失敗都實扣1', () => {
+  const c = loadGameContext();
+  setLevel(c, 'upgradeScrapDiscount', 100);
+  const it = { level: 1, rarity: 1, upgrade: 0 };
+  const cost = c.upgradeCost(it);
+  c.G.player.gold = cost.gold;
+  c.G.player.scrap = 0;
+  assert.equal(c.tryUpgrade(it), 'poor');
+  assert.equal(c.G.player.gold, cost.gold);
+  for (const success of [true, false]) {
+    it.upgrade = 0;
+    c.chance = () => success;
+    c.G.player.gold = cost.gold;
+    c.G.player.scrap = 1;
+    assert.equal(c.tryUpgrade(it), success ? 'ok' : 'fail');
+    assert.equal(c.G.player.scrap, 0);
+  }
+});
+
+test('滿級折扣下背包擴充與商人正式指令皆須有1金幣並實際扣款', () => {
+  const { createEngine } = require('../scripts/sim/engine.js');
+  const e = createEngine({ seed: 31 }).boot(), c = e.ctx, p = c.G.player;
+  for (const effect of ['inventoryExpandDiscount', 'merchantDiscount']) {
+    const def = c.RELIC_BY_EFFECT[effect];
+    p.relics[def.id] = { lv: def.levels.length, n: 0 };
+  }
+  p.gold = 0;
+  const oldUpgrades = p.invUpgrades || 0;
+  assert.ok(e.cmd('player.buyInvUpgrade').result.err);
+  assert.equal(p.invUpgrades || 0, oldUpgrades);
+  p.gold = 1;
+  assert.equal(e.cmd('player.buyInvUpgrade').result.cost, 1);
+  assert.equal(p.gold, 0);
+  assert.equal(p.invUpgrades, oldUpgrades + 1);
+  c.addMerchantInvitations(1);
+  assert.equal(e.cmd('merchant.open').result, null);
+  const item = { kind: 'gem', type: Object.keys(c.GEM_TYPES)[0], lv: 1, price: 10000, sold: false };
+  c.gemShop().items = [item];
+  const count = c.gemCount(item.type, 1);
+  assert.equal(c.merchantItemPrice(item), 1);
+  assert.equal(typeof e.cmd('gem.shopBuy', { index: 0 }).result, 'string');
+  assert.equal(item.sold, false);
+  assert.equal(c.gemCount(item.type, 1), count);
+  p.gold = 1;
+  assert.equal(e.cmd('gem.shopBuy', { index: 0 }).result, null);
+  assert.equal(p.gold, 0);
+  assert.equal(item.sold, true);
+  assert.equal(c.gemCount(item.type, 1), count + 1);
+});
+
 test('神祕商人：售價打折；高級品權重只放大符合條件的那幾項', () => {
   const c = loadGameContext();
   const item = { kind: 'gem', type: 'ruby', lv: 3, price: 10000, sold: false };

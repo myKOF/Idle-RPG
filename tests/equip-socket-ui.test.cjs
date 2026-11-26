@@ -306,18 +306,18 @@ test('裝備符文入口：零轉200級開放，轉生後低等級仍開放；�
     const c=mount();Object.assign(c.player,{level,reincarnations});c.it.level=500;c.renderDetail();
     const button=c.elements['equip-action-bar'].innerHTML.match(/<button[^>]*data-act="toggle-rune"[^>]*>/)[0];
     assert.equal(/\sdisabled\b/.test(button),!unlocked,level+'級／'+reincarnations+'轉');
-    assert.equal(button.match(/data-tip="([^"]+)"/)?.[1],unlocked?undefined:'解鎖條件：0 轉 200 級 / 達到 1 轉');
+    assert.equal(button.match(/data-tip="([^"]+)"/)?.[1],unlocked?undefined:'200 級開放');
     c.click({act:'toggle-rune'});assert.equal(!!c.UI.equipMatMode,unlocked,'繞過disabled的事件仍受門檻保護');
     assert.equal(c.commands.length,0);
   }
 });
 test('符文入口提示會依配置更新角色等級與轉生條件',()=>{
   const c=mount();
-  c.RUNE_UNLOCK_LEVEL=50;c.RUNE_UNLOCK_REINCARNATION=2;c.player.reincarnations=1;
+  c.RUNE_UNLOCK_LEVEL=400;c.RUNE_UNLOCK_REINCARNATION=2;c.player.reincarnations=1;
   c.renderDetail();
-  assert.match(c.elements['equip-action-bar'].innerHTML,/data-act="toggle-rune"[^>]*disabled data-tip="解鎖條件：2 轉 50 級 \/ 達到 3 轉"/);
+  assert.match(c.elements['equip-action-bar'].innerHTML,/data-act="toggle-rune"[^>]*disabled data-tip="2 轉 400 級開放"/);
   c.RUNE_UNLOCK_LEVEL=1;c.renderDetail();
-  assert.match(c.elements['equip-action-bar'].innerHTML,/data-act="toggle-rune"[^>]*disabled data-tip="解鎖條件：達到 2 轉"/);
+  assert.match(c.elements['equip-action-bar'].innerHTML,/data-act="toggle-rune"[^>]*disabled data-tip="2 轉開放"/);
 });
 test('未達符文門檻仍可用寶石；缺少角色快照鎖入口，舊符文草稿不可刻印',()=>{
   const c=mount();c.player.level=199;c.renderDetail();c.click({act:'toggle-socket'});

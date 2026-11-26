@@ -34,8 +34,11 @@
 }
 
 /* ---- 卡片 ---- */
-#tab-newforge .nfc-card {
+#tab-newforge .nfc-card,
+.nfc-result {
   --q: #d2d7de;
+}
+#tab-newforge .nfc-card {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -46,10 +49,10 @@
   border-radius: 7px;
   background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--q) 16%, transparent), transparent 70%), #111317;
 }
-#tab-newforge .nfc-card.q-rare { --q: #38bdf8; }
-#tab-newforge .nfc-card.q-epic { --q: #c084fc; }
-#tab-newforge .nfc-card.q-legendary { --q: #fb923c; }
-#tab-newforge .nfc-card.q-mythic { --q: #f5c542; }
+#tab-newforge .nfc-card.q-rare, .nfc-result.q-rare { --q: #38bdf8; }
+#tab-newforge .nfc-card.q-epic, .nfc-result.q-epic { --q: #c084fc; }
+#tab-newforge .nfc-card.q-legendary, .nfc-result.q-legendary { --q: #fb923c; }
+#tab-newforge .nfc-card.q-mythic, .nfc-result.q-mythic { --q: #f5c542; }
 #tab-newforge .nfc-card.is-locked {
   border-color: #2a2d34;
   background: #101114;
@@ -233,14 +236,145 @@
   max-height: 100%;
   min-height: 0;
 }
-.nfc-res-art { flex: none; height: clamp(44px, calc(18 * var(--ui-vh, 1vh)), 130px); }
-.nfc-res-art img {
-  display: block;
-  height: 100%;
-  max-width: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 0 15px #50bded);
+.nfc-res-art {
+  position: relative;
+  isolation: isolate;
+  flex: none;
+  height: clamp(44px, calc(18 * var(--ui-vh, 1vh)), 130px);
+  aspect-ratio: 1.4;
+  margin-top: clamp(12px, calc(4 * var(--ui-vh, 1vh)), 32px);
+  pointer-events: none;
 }
+.nfc-res-chest { position: relative; width: 100%; height: 100%; }
+.nfc-res-fallback { display: none; position: absolute; inset: 0; }
+.nfc-res-fallback img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.nfc-res-sprite {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -6%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--q) 35%, transparent));
+}
+.nfc-res-sheet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 500%;
+  height: 500%;
+  max-width: none;
+  pointer-events: none;
+}
+.is-opening .nfc-res-chest { animation: nfc-chest-charge var(--nfc-shake-time) ease-in-out both; }
+.is-opening .nfc-res-sheet { animation: nfc-open-sheet var(--nfc-lid-open-time) steps(1, end) var(--nfc-shake-time) both; }
+.is-opened .nfc-res-sheet { transform: translate(-80%, -80%); }
+.is-art-fallback .nfc-res-sprite { display: none; }
+.is-art-fallback .nfc-res-fallback { display: block; }
+.nfc-res-inner {
+  position: absolute;
+  inset: 37% 24% 40%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #fff9 0%, color-mix(in srgb, var(--q) 50%, transparent) 35%, transparent 72%);
+  opacity: 0;
+}
+.is-opening .nfc-res-inner { animation: nfc-inner-opening var(--nfc-lid-open-time) ease-in var(--nfc-shake-time) both; }
+.is-opened .nfc-res-inner { opacity: .65; }
+.nfc-res-fx {
+  position: absolute;
+  z-index: -1;
+  width: 290%;
+  aspect-ratio: 1;
+  left: -95%;
+  top: 45%;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+.has-opening-fx .nfc-res-fx { opacity: 1; }
+.nfc-res-halo, .nfc-res-rays { position: absolute; inset: 0; border-radius: 50%; }
+.nfc-res-halo {
+  background: radial-gradient(circle, color-mix(in srgb, var(--q) 55%, white) 0%,
+    color-mix(in srgb, var(--q) 50%, transparent) 18%, transparent 66%);
+}
+.nfc-res-halo::after {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: conic-gradient(from 12deg, transparent, var(--q), transparent 28%, var(--q) 48%, transparent 70%, var(--q), transparent);
+  mask-image: radial-gradient(circle, transparent 10%, #0008 30%, transparent 68%);
+}
+.nfc-res-rays {
+  background: repeating-conic-gradient(from 4deg, transparent 0deg 17deg,
+    color-mix(in srgb, var(--q) 60%, transparent) 20deg, #ffffffb0 22deg,
+    color-mix(in srgb, var(--q) 50%, transparent) 24deg, transparent 29deg 40deg);
+  mask-image: radial-gradient(circle, transparent 4%, #000 14%, #000b 30%, transparent 68%);
+}
+.has-opening-fx .nfc-res-halo { animation: nfc-light-spin 24s linear infinite; }
+.has-opening-fx .nfc-res-rays { animation: nfc-light-spin 18s linear infinite reverse; }
+@keyframes nfc-chest-charge {
+  0.000000%, 100% { transform: translate(0, 0) rotate(0); filter: brightness(1); }
+  5.333333% { transform: translate(-2.71px, 0px) rotate(-1.43deg); filter: brightness(1.036); }
+  10.666667% { transform: translate(2.82px, 0px) rotate(1.56deg); filter: brightness(1.042); }
+  16.000000% { transform: translate(-2.93px, -0.7px) rotate(-1.69deg); filter: brightness(1.048); }
+  21.333334% { transform: translate(3.04px, 0px) rotate(1.82deg); filter: brightness(1.054); }
+  26.666666% { transform: translate(-3.15px, 0px) rotate(-1.95deg); filter: brightness(1.060); }
+  32.000000% { transform: translate(3.26px, -0.7px) rotate(2.08deg); filter: brightness(1.066); }
+  37.333333% { transform: translate(-3.37px, 0px) rotate(-2.21deg); filter: brightness(1.072); }
+  42.666667% { transform: translate(3.48px, 0px) rotate(2.34deg); filter: brightness(1.078); }
+  48.000000% { transform: translate(-3.59px, -0.7px) rotate(-2.47deg); filter: brightness(1.084); }
+  53.333333% { transform: translate(3.7px, 0px) rotate(2.6deg); filter: brightness(1.090); }
+  58.666667% { transform: translate(-3.81px, 0px) rotate(-2.73deg); filter: brightness(1.096); }
+  64.000000% { transform: translate(3.92px, -0.7px) rotate(2.86deg); filter: brightness(1.102); }
+  69.333334% { transform: translate(-4.03px, 0px) rotate(-2.99deg); filter: brightness(1.108); }
+  74.666666% { transform: translate(4.14px, 0px) rotate(3.12deg); filter: brightness(1.114); }
+  80.000000% { transform: translate(-4.25px, -0.7px) rotate(-3.25deg); filter: brightness(1.120); }
+  85.333333% { transform: translate(4.36px, 0px) rotate(3.38deg); filter: brightness(1.126); }
+  90.666667% { transform: translate(-4.47px, 0px) rotate(-3.51deg); filter: brightness(1.132); }
+  96.000000% { transform: translate(-2px, 0) rotate(-1.2deg); filter: brightness(1.16); }
+}
+@keyframes nfc-open-sheet {
+  0.000000% { transform: translate(0, 0); }
+  4.166667% { transform: translate(-20%, 0%); }
+  8.333333% { transform: translate(-40%, 0%); }
+  12.500000% { transform: translate(-60%, 0%); }
+  16.666667% { transform: translate(-80%, 0%); }
+  20.833333% { transform: translate(0%, -20%); }
+  25.000000% { transform: translate(-20%, -20%); }
+  29.166667% { transform: translate(-40%, -20%); }
+  33.333333% { transform: translate(-60%, -20%); }
+  37.500000% { transform: translate(-80%, -20%); }
+  41.666667% { transform: translate(0%, -40%); }
+  45.833333% { transform: translate(-20%, -40%); }
+  50.000000% { transform: translate(-40%, -40%); }
+  54.166667% { transform: translate(-60%, -40%); }
+  58.333333% { transform: translate(-80%, -40%); }
+  62.500000% { transform: translate(0%, -60%); }
+  66.666667% { transform: translate(-20%, -60%); }
+  70.833333% { transform: translate(-40%, -60%); }
+  75.000000% { transform: translate(-60%, -60%); }
+  79.166667% { transform: translate(-80%, -60%); }
+  83.333333% { transform: translate(0%, -80%); }
+  87.500000% { transform: translate(-20%, -80%); }
+  91.666667% { transform: translate(-40%, -80%); }
+  95.833333% { transform: translate(-60%, -80%); }
+  100.000000% { transform: translate(-80%, -80%); }
+}
+@keyframes nfc-inner-opening { 0% { opacity: 0; } 100% { opacity: .95; } }
+@keyframes nfc-light-spin { to { transform: rotate(360deg); } }
+.nfc-result [hidden] { display: none !important; }
+.nfc-res-rewards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: inherit;
+  width: 100%;
+  min-height: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.is-opened .nfc-res-rewards { visibility: visible; pointer-events: auto; }
+/* 保留確認按鈕高度，同時保持初始不可見、不可聚焦及不可操作。 */
+.nfc-result .nfc-res-confirm[hidden] { display: flex !important; visibility: hidden; }
 .nfc-res-scroll {
   --nfc-columns: min(16, var(--nfc-count, 1));
   width: min(100%, calc(var(--nfc-columns) * (var(--nfc-slot) + var(--nfc-gap)) - var(--nfc-gap)));
@@ -317,10 +451,9 @@
   font-variant-numeric: tabular-nums;
   text-shadow: 0 1px 2px #000, 0 0 3px #000;
 }
-.nfc-res-list.is-revealing .nfc-res-slot {
-  animation: nfc-reveal 120ms ease-out var(--nfc-reveal-delay, 0ms) backwards;
-}
-@keyframes nfc-reveal { from { opacity: 0; } }
+.nfc-res-slot.is-pending { visibility: hidden; }
+.nfc-res-slot.is-entering { animation: nfc-reveal 180ms ease-out; }
+@keyframes nfc-reveal { from { opacity: 0; transform: translateY(6px) scale(.85); } }
 .nfc-res-confirm {
   flex: none;
   min-width: 120px;
@@ -328,3 +461,8 @@
   text-align: center;
 }
 .nfc-res-scroll:focus-visible { outline: 2px solid var(--dialog-gold); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .nfc-result .nfc-res-chest, .nfc-result .nfc-res-sheet, .nfc-result .nfc-res-inner,
+  .nfc-result .nfc-res-halo, .nfc-result .nfc-res-rays, .nfc-result .nfc-res-slot { animation: none; }
+  .nfc-result .nfc-res-fx { transition: none; }
+}

@@ -117,7 +117,8 @@
 // v80：chest.open 的 equip 獎勵增加 icons＝{ images/ 下的相對圖檔路徑: 件數 }，供開箱逐件顯示。
 // v81：chest.open 的 equip 獎勵改帶 items＝[{ icon, level, ancientCount, n }]，區分等級與太古星數。
 // v83：tower.merchant.expiresAt 為實際時鐘截止毫秒，成功耗券重置會話時間。
-var WORKER_PROTOCOL_VERSION = 83;
+// v84：飛刀 area.knifeId 串接重鎖，knifeStop 結束刀身；保留 preserveDeadTargets／loopReturn。
+var WORKER_PROTOCOL_VERSION = 84;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {

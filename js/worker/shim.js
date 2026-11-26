@@ -306,6 +306,8 @@ function playCombatVfx(spec) {
   if (typeof spec.bodyLength === 'number' && isFinite(spec.bodyLength) && spec.bodyLength > 0) event.bodyLength = spec.bodyLength;
   if (spec.sourceId) event.sourceId = spec.sourceId;
   if (typeof spec.hit === 'boolean') event.hit = spec.hit;
+  if (spec.preserveDeadTargets) event.preserveDeadTargets = true;
+  if (spec.loopReturn) event.loopReturn = true;
   /* 協議 v26／v27（VFX Preset 化）：角色 → preset id 的對照表，以及
      「只有 Preset 端畫得出來」的旗標。少送它們，顯示層就永遠讀不到表格填的檔名，
      整批特效會安靜地維持舊畫法——沒有錯誤訊息，只有「改了表格卻沒反應」。

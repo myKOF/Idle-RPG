@@ -471,8 +471,8 @@ function tryUpgrade(it) {
     return 'ok';
   }
   // 失敗：消耗半數資源，強化等級不變
-  G.player.gold -= Math.floor(cost.gold / 2);
-  G.player.scrap -= Math.floor(cost.scrap / 2);
+  G.player.gold -= Math.max(1, Math.floor(cost.gold / 2));
+  G.player.scrap -= Math.max(1, Math.floor(cost.scrap / 2));
   G.factory.stats.upgradeFailed = (G.factory.stats.upgradeFailed || 0) + 1;
   UI.dirty.header = true;
   return 'fail';

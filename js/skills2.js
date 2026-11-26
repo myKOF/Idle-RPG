@@ -395,8 +395,7 @@ function sgTierUnlockedBy(unlock, level, reinc, towerHighest) {
 /* 解鎖門檻的顯示文字（升級失敗訊息與技能面板共用同一份措辭）。 */
 function sgUnlockText(unlock) {
   if (!unlock) return '';
-  var r = Math.max(0, Number(unlock.reinc) || 0);
-  return STR(680, (r > 0 ? STR(679, r) + ' ' : '') + Math.max(0, Number(unlock.lv) || 0), (unlock.tower > 0 ? STR(681, unlock.tower) : ''));
+  return progressRequirementText(unlock.lv, unlock.reinc) + (unlock.tower > 0 ? STR(681, unlock.tower) : '');
 }
 
 /* 解鎖進度來源：Worker 端讀 G；主執行緒沒有 G，由呼叫端傳面板快照的等級／轉生數／最高通關塔層。
@@ -3385,11 +3384,20 @@ function sgKnifeNextBounce(cfg, cur, visited, maxGapPx, poolOverride) {
   return (typeof bfRandomOther === 'function') ? bfRandomOther(cur, pool, maxGapPx, null) : null;
 }
 
-/* 每一段在既有飛行物佇列執行；死亡的目標仍保留實體最後座標。
+var SG_KNIFE_FLIGHT_SERIAL = 0;
+
+/* 每一段在既有飛行物佇列執行；重鎖沿用飛刀身份與未結算傷害。
    area 帶發射點與曲線控制點，Worker 與顯示層共用同一條路徑。 */
 function sgQueueKnifeFlight(cfg, from, target, dmg, bonus, derived, variant, arrival, enterAngle, loopReturn, soul) {
   if (!target) return;
-  var a = from ? bfPos(from) : bfPlayerPos(), b = bfPos(target);
+  var p={knifeFlight:true,id:'knife-'+(++SG_KNIFE_FLIGHT_SERIAL),cfg:cfg,out:cfg.out,target:target,from:from,
+    dmg:dmg,bonus:bonus,derived:derived,variant:variant,arrival:arrival,seen:[],soul:soul||null};
+  sgStartKnifeFlight(p,from?bfPos(from):bfPlayerPos(),enterAngle,loopReturn);
+  cfg.out._pendingProjectiles=(cfg.out._pendingProjectiles||0)+1;
+  SKILL2_RT.projectiles.push(p);
+}
+function sgStartKnifeFlight(p, a, enterAngle, loopReturn) {
+  var cfg=p.cfg,from=p.from,target=p.target,variant=p.variant,soul=p.soul,b=bfPos(target);
   a = a ? {x:a.x,y:a.y} : null;
   b = b ? {x:b.x,y:b.y} : null;
   var ctrl = null, distance = a && b ? Math.hypot(b.x-a.x,b.y-a.y) : 0;
@@ -3415,7 +3423,8 @@ function sgQueueKnifeFlight(cfg, from, target, dmg, bonus, derived, variant, arr
   var travel = a && b ? Math.max(0.05,distance/sgConfiguredFlightSpeed('knife',1,SG_FLYING_PROJECTILE_SPEED))
     : Math.max(0.05,sgConfiguredTravelSeconds('knife',target));
   var area=a && b ? {knifeFlight:true,sourceX:a.x,sourceY:a.y,x:b.x,y:b.y,
-    controlX:ctrl?ctrl.x:null,controlY:ctrl?ctrl.y:null} : null;
+    controlX:ctrl?ctrl.x:null,controlY:ctrl?ctrl.y:null} : {};
+  area.knifeId=p.id;
   var isSoul=variant==='knife-soulhunter';
   var roles=sgVfxRoles('knife',{vfxTier:from?3:0,vfxUlt:isSoul?'soulhunterBlade':'',
     vfxBase:!isSoul&&!!sgUlt('knife','soulhunterBlade')});
@@ -3424,17 +3433,18 @@ function sgQueueKnifeFlight(cfg, from, target, dmg, bonus, derived, variant, arr
     area.soulId=soul.id;area.soulMode='flight';area.soulLife=Math.max(0,soul.until-sgProjectileNow());
     if(target._soulAnchor){area.soulReturn=true;area.orbitAngle=target.orbitAngle;area.orbitR=soul.orbitR;}
   }
-  var eventTargets=target._soulAnchor?[]:from&&!loopReturn&&!from._soulAnchor?[from,target]:[target];
+  var eventTargets=target._soulAnchor?[]:from&&!p.retargeted&&!loopReturn&&!from._soulAnchor?[from,target]:[target];
   sgEmitVfx('knife',eventTargets,cfg.floatSel,{
     fxKind:from?'chain':'projectile',variant:variant||'knife',count:1,
     travelMs:eventTargets.length>=2?[0,travel*1000]:[travel*1000],area:area,loopReturn:!!loopReturn,
     preserveDeadTargets:true,hit:false,vfxRoles:roles
   });
-  cfg.out._pendingProjectiles=(cfg.out._pendingProjectiles||0)+1;
-  SKILL2_RT.projectiles.push({knifeFlight:true,cfg:cfg,out:cfg.out,target:target,from:from,
-    origin:a,lastPoint:a,to:b,control:ctrl,startAt:sgProjectileNow(),endAt:sgProjectileNow()+travel,
-    dmg:dmg,bonus:bonus,derived:derived,variant:variant,roles:roles,arrival:arrival,seen:[],lastK:0,
-    soul:soul||null});
+  p.origin=a;p.lastPoint=a;p.to=b;p.control=ctrl;p.lastK=0;p.roles=roles;
+  p.startAt=sgProjectileNow();p.endAt=p.startAt+travel;
+}
+function sgStopKnifeFlight(p) {
+  sgEmitVfx('knife',[],p.cfg.floatSel,{fxKind:'projectile',variant:p.variant||'knife',hit:false,
+    vfxRoles:p.roles,area:{knifeId:p.id,knifeStop:true}});
 }
 function sgKnifeFlightPoint(p,to,k) {
   if (!p.control) return {x:p.origin.x+(to.x-p.origin.x)*k,y:p.origin.y+(to.y-p.origin.y)*k};
@@ -3455,15 +3465,16 @@ function sgKnifeFlightHit(p,target,damage,derived,ctx,bonus,isArea) {
   return res;
 }
 function sgTickKnifeFlight(p,now,ctx) {
-  if (!(p.cfg.pEnt.hp>0) || (p.soul && now>=p.soul.until)) return true;
+  if (!(p.cfg.pEnt.hp>0) || (p.soul && now>=p.soul.until)) {sgStopKnifeFlight(p);return true;}
+  var pool=ctx.getEnemies?ctx.getEnemies():p.cfg.pool;
+  p.cfg.pool=pool;
+  var targetValid=p.target._soulAnchor || (p.target.hp>0&&pool.indexOf(p.target)>=0);
   if(p.target._soulAnchor) {
     var centre=bfPlayerPos();
     p.target.pos={x:centre.x+Math.cos(p.target.orbitAngle)*p.soul.orbitR,y:centre.y+Math.sin(p.target.orbitAngle)*p.soul.orbitR};
   }
   var k=Math.max(0,Math.min(1,(now-p.startAt)/(p.endAt-p.startAt)));
-  var to=bfPos(p.target)||p.to, killed=false;
-  var pool=ctx.getEnemies?ctx.getEnemies():p.cfg.pool;
-  p.cfg.pool=pool;
+  var to=targetValid?(bfPos(p.target)||p.to):p.to, killed=false;
   if (p.origin && to && p.cfg.pathPct>0) {
     // 小段掃描同一條貝茲曲線，沿途敵人到刀刃經過時才受傷，每段每敵一次。
     for (var step=1;step<=4;step++) {
@@ -3480,14 +3491,41 @@ function sgTickKnifeFlight(p,now,ctx) {
       p.lastPoint=point;
     }
   }
+  if(p.origin&&to)p.lastPoint=sgKnifeFlightPoint(p,to,k);
+  p.to=to;
   p.lastK=k;
+  if(!targetValid) {
+    // 使用上一拍仍有效的終點推進至本拍，再從刀刃位置接續曲線，不追蹤死亡／離場實體。
+    var point=p.lastPoint;
+    var left=p.control?{x:p.origin.x+(p.control.x-p.origin.x)*k,
+      y:p.origin.y+(p.control.y-p.origin.y)*k}:p.origin;
+    var right=p.control?{x:p.control.x+(to.x-p.control.x)*k,
+      y:p.control.y+(to.y-p.control.y)*k}:to;
+    var heading=left&&right?Math.atan2(right.y-left.y,right.x-left.x):NaN;
+    var source={hp:1,pos:point};
+    var candidates=pool.filter(function(e){
+      if(!e||!(e.hp>0)||(!p.soul&&e===p.from))return false;
+      if(p.soul)return !(bfEntityDistance(e)>p.soul.range);
+      var pos=bfPos(e),range=p.cfg.bounceRangePx;
+      return !(range>0)||!point||!pos||Math.hypot(pos.x-point.x,pos.y-point.y)-bfEntityRadius(e)<=range;
+    });
+    var next=sgKnifeNextBounce(p.cfg,source,[],0,candidates);
+    if(killed&&ctx.onDeaths)ctx.onDeaths();
+    if(!next) {
+      sgStopKnifeFlight(p);
+      if(p.soul)sgSoulIdle(p.soul,point?source:null,heading);
+      return true;
+    }
+    p.target=next;p.retargeted=true;
+    sgStartKnifeFlight(p,point,heading,false);
+    return false;
+  }
   if(k>=1) {
     var res=sgKnifeFlightHit(p,p.target,p.dmg,p.derived,ctx);
     if(res&&res.killed)killed=true;
     var tail=p.control||p.origin;
     var angle=tail&&to?Math.atan2(to.y-tail.y,to.x-tail.x):NaN;
-    // 即使目標在途中被別人殺死，仍抵達其最後位置，再決定下一跳。
-    if(p.arrival)p.arrival(res,angle);
+    if(p.arrival)p.arrival(res,angle,p.target);
   }
   if(killed&&ctx.onDeaths)ctx.onDeaths();
   return k>=1;
@@ -3503,10 +3541,11 @@ function sgKnifeBounceChain(cfg, cur, dmgVal, startDelay, bounces, chainMax, cha
       typeof poolOverride==='function'?poolOverride():poolOverride);
     if(!next||next===origin||next.hp<=0)return;
     visited.push(next);
-    sgQueueKnifeFlight(cfg,origin,next,dmgVal,cfg.execPct,derived,vfxVariant||'knife-bounce',function(res,heading){
+    sgQueueKnifeFlight(cfg,origin,next,dmgVal,cfg.execPct,derived,vfxVariant||'knife-bounce',function(res,heading,reached){
       var left=remaining-1;
       if(res&&!res.miss&&chained<chainMax&&chainChance>0&&chance(chainChance)){left++;chained++;}
-      nextHop(next,left,heading);
+      if(visited.indexOf(reached)<0)visited.push(reached);
+      nextHop(reached,left,heading);
     },angle);
   }
   nextHop(cur,bounces,enterAngle);
@@ -3521,8 +3560,8 @@ function sgKnifeSplit(cfg, from, delayMs) {
   var near=bfRandomOthers(from,cfg.pool,count,0,null);
   if(!near.length)return;
   for(var i=0;i<count;i++)(function(target){
-    sgQueueKnifeFlight(cfg,from,target,dmg,cfg.execPct,true,'knife-bounce',function(res,angle){
-      sgKnifeBounceChain(cfg,target,dmg,0,bounces,0,0,true,undefined,undefined,undefined,angle);
+    sgQueueKnifeFlight(cfg,from,target,dmg,cfg.execPct,true,'knife-bounce',function(res,angle,reached){
+      sgKnifeBounceChain(cfg,reached,dmg,0,bounces,0,0,true,undefined,undefined,undefined,angle);
     });
   })(near[i%near.length]);
 }
@@ -3584,8 +3623,8 @@ function sgSoulLaunch(s,from,angle) {
   if(s.attacks>0)s.bounces++;
   s.attacks++;s.mode='flight';
   var damage=s.cfg.dmgVal*(1+s.gain*s.bounces/100);
-  sgQueueKnifeFlight(s.cfg,from,next,damage,s.cfg.execPct,false,'knife-soulhunter',function(res,heading){
-    sgSoulLaunch(s,next,heading);
+  sgQueueKnifeFlight(s.cfg,from,next,damage,s.cfg.execPct,false,'knife-soulhunter',function(res,heading,reached){
+    sgSoulLaunch(s,reached,heading);
   },angle,next===from,s);
 }
 function sgTickSoulhunter(s,now,ctx) {
@@ -3629,7 +3668,9 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (lvs[4] > 0) {
     // 迴旋飛刀：全圓形範圍鎖敵；敘述是「向周圍的 N 個敵人丟出飛刀」，沒有指定最近＝隨機
     kCount = Math.max(1, sgRollCount(sgVal(t[4].fx, 'count', lvs[4])) + countAdd);
-    targets = bfRandomOthers(null, pool, kCount, 0, null);
+    // 全圓只改選敵方向，起飛仍受同一施放距離限制；完整 pool 留給後續彈射。
+    var openingPool=pool.filter(skills2ReachTester('knife',lvs));
+    targets = bfRandomOthers(null, openingPool, kCount, 0, null);
   } else {
     kCount = Math.max(1, Math.floor(Number(t[0].fx.count) || 3) + countAdd);
     if (geomOk) {
@@ -3686,14 +3727,14 @@ function sgCastKnife(pEnt, st, g, lvs, pool, primary, floatSel, out) {
   if (waltz) sgKnifeWaltz(pEnt, st, cfg, waltz);
 
   for(var ki=waltz?1:0;ki<knives.length;ki++)(function(target){
-    sgQueueKnifeFlight(cfg,null,target,dmgVal,0,false,'knife',function(res,angle){
+    sgQueueKnifeFlight(cfg,null,target,dmgVal,0,false,'knife',function(res,angle,reached){
       // 閃避只取消本段傷害；抵達後仍照剩餘次數彈射。
       if(bouncePct<=0)return;
       var bounces=bounceBase+
         (lvs[3]>0?sgRollCount(sgVal(t[3].fx,'add',lvs[3])):0)+((lg.knifeBounceProc&&chance(Number(lg.knifeBounceProc.chance)||0))?sgLegendCount(lg.knifeBounceProc):0);  // 傳奇【連鎖】：每把飛刀各擲一次機率
       var chainMax=lvs[5]>0?Math.max(0,Math.floor(Number(t[5].fx.max)||4)):0;
       var chainChance=lvs[5]>0?sgVal(t[5].fx,'chance',lvs[5]):0;
-      sgKnifeBounceChain(cfg,target,dmgVal*bouncePct/100,0,bounces,chainMax,chainChance,false,
+      sgKnifeBounceChain(cfg,reached,dmgVal*bouncePct/100,0,bounces,chainMax,chainChance,false,
         undefined,undefined,undefined,angle);
     });
   })(knives[ki]);

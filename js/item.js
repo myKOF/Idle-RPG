@@ -443,7 +443,7 @@ function merchantItemPrice(it) {
   var price = it && Number.isFinite(it.price) && it.price >= 0 ? it.price : (it && !it.kind ? gemShopPrice(it.lv) : Infinity);
   // 遺物「優惠金卡」：購買價 -N%（標價不變，結帳與顯示都讀這支；兩端共載）
   if (Number.isFinite(price) && typeof relicDiscount === 'function') price = Math.round(relicDiscount('merchantDiscount', price));
-  return price;
+  return Math.max(1, price);
 }
 function buyShopGem(idx) {
   if (!mysteryMerchantActive()) return STR(2441);

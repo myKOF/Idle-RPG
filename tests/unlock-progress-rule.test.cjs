@@ -89,3 +89,22 @@ test('技能欄鎖定提示與參數表同源（不得再寫死 (i-4+1)*50）', 
   const ui = fs.readFileSync(path.join(root, 'js/ui.js'), 'utf8');
   assert.doesNotMatch(ui, /\(i - 4 \+ 1\) \* 50/);
 });
+
+test('解鎖提示統一省略0轉與正轉數的1級，技能塔層條件與共鳴指令提示保持完整', () => {
+  const c = loadGameContext(['js/gem_resonance.js', 'js/skills2.js']);
+  for (const [level, reinc, expected] of [[200, 0, '200 級'], [1, 0, '1 級'], [1, 6, '6 轉'], [400, 2, '2 轉 400 級']]) {
+    assert.equal(c.progressRequirementText(level, reinc), expected);
+    assert.equal(c.STR(2580, c.progressRequirementText(level, reinc)), expected + '開放');
+    assert.equal(c.sgUnlockText({ lv: level, reinc }), expected);
+    assert.equal(c.sgUnlockText({ lv: level, reinc, tower: 19 }), expected + c.STR(681, 19));
+    c.GEM_RESONANCE_UNLOCK_LEVEL = level;
+    c.GEM_RESONANCE_UNLOCK_REINCARNATION = reinc;
+    assert.equal(c.gemResonanceLockedMessage(), '寶石共鳴' + expected + '開放');
+    assert.doesNotMatch(c.gemResonanceLockedMessage(), /0 轉|Lv\.|且角色|\/ 達到/);
+  }
+  assert.equal(c.progressReached(199, 0, 200, 0), false);
+  assert.equal(c.progressReached(1, 1, 200, 0), true);
+  assert.equal(c.progressReached(399, 2, 400, 2), false);
+  assert.equal(c.progressReached(400, 2, 400, 2), true);
+  assert.equal(c.progressReached(1, 3, 400, 2), true);
+});

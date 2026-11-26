@@ -107,6 +107,47 @@ test('附魔開關兩種狀態均不再顯示附魔書獎勵，其他材料仍�
   assert.ok(c.towerRewardRows(35).every(r => r.label !== '附魔書' && r.label !== '符文'));
 });
 
+test('BOSS三個提示入口列出當層裝備品質與機率，支援必掉加餘數並省略零機率', () => {
+  const c = uiContext(), tooltip = { style: {} };
+  const snapshot = { tower: { highest: 150 }, runtime: { floor: 1, boss: c.makeBoss(1) } };
+  c.$id = () => tooltip;
+  c.viewState = () => ({ towerActive: true });
+  c.uiHeaderPanelSnapshot = () => ({});
+  c.uiTowerPanelSnapshot = () => snapshot;
+  c.towerViewActive = () => true;
+  c.positionSkTooltip = () => {};
+  const start = ui.indexOf('function showEnemyTooltip(');
+  vm.runInContext(ui.slice(start, ui.indexOf('\n}', start) + 2), c);
+  const anchors = ['btn-boss-tip', 'btn-tower-result-boss-tip', 'btn-enemy-tip'].map(id => ({ id }));
+  // 刻意讓瀏覽選中的樓層不同，掉落提示必須使用正在戰鬥的runtime樓層。
+  c.UI.towerBrowse.sel = 150;
+  for (const floor of [1, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26, 30, 31, 51, 101, 150]) {
+    snapshot.runtime.floor = floor;
+    snapshot.runtime.boss = c.makeBoss(floor);
+    const rows = c.towerEquipDropRows(floor);
+    for (const anchor of anchors) {
+      c.showEnemyTooltip(anchor);
+      const text = tooltip.innerHTML.replace(/<[^>]*>/g, '');
+      const drops = tooltip.innerHTML.split('【可能掉落】')[1];
+      assert.equal((drops.match(/⚔️/g) || []).length, rows.length, anchor.id + ' 第' + floor + '層');
+      for (const row of rows) assert.ok(text.includes(row.name + ' (' + row.rate + ')'), row.name + ' 第' + floor + '層');
+      assert.match(text, /經驗|附魔精華/);
+    }
+  }
+  const rates = Array(c.RARITIES.length).fill(0);
+  rates[0] = 250; rates[1] = 100; rates[2] = 12.5;
+  c.BOSS_DROP_TABLE = [{ min: 1, rates }];
+  c.showEnemyTooltip(anchors[0]);
+  let text = tooltip.innerHTML.replace(/<[^>]*>/g, '');
+  assert.ok(text.includes(c.RARITIES[0].name + '裝備 (必定 2 件 + 50% 再 1 件)'));
+  assert.ok(text.includes(c.RARITIES[1].name + '裝備 (必定 1 件)'));
+  assert.ok(text.includes(c.RARITIES[2].name + '裝備 (12.5%)'));
+  rates.fill(0);
+  c.showEnemyTooltip(anchors[0]);
+  assert.doesNotMatch(tooltip.innerHTML.split('【可能掉落】')[1], /⚔️/);
+  assert.match(tooltip.innerHTML, /附魔精華/);
+});
+
 test('塔層獎勵和BOSS提示使用相同邀請券機率，零機率時隱藏', () => {
   const c = uiContext();
   c.MERCHANT_INVITATION_DROP_RANGES = [[1, 50, 20]];

@@ -1,4 +1,6 @@
-# Worker 協議 v83
+# Worker 協議 v84
+
+v84（2026-11-26 飛刀重鎖）：`vfx.area.knifeId` 為每把飛刀的唯一暫態身份。同身份的新起飛事件以權威 sourceX/Y、x/y、controlX/Y 及 travelMs 替換原段；`area.knifeStop=true` 只結束該刀身，既有尾粒子自然消退，不造成傷害。目標死亡／離場時由模擬層在飛刀當前位置重新選敵，未命中不消耗彈射次數，回呼與下一跳以真正抵達的敵人為準。無候選結束，追魂刃依既有範圍／期限返回待機。Worker 另保留既有 `preserveDeadTargets`／`loopReturn` 旗標，避免致死命中後的彈射起點被顯示端誤擋；舊事件缺少 knifeId 時沿用獨立段播放，缺少 knifeStop 時不取消其他飛刀。指令與存檔格式不變。
 
 v83（2026-11-19 神祕商人限時會話）：`tower.merchant` 新增 `expiresAt`（Unix實際時鐘毫秒，關閉為0）。每次成功消耗邀請券的召喚／刷新後，依Store「存在時間(秒)」重置期限，預設600秒；重複open冪等、購買／金幣升級及失敗操作不延長。切換功能不close；手動close或到期結束，Worker loop在選單暫停前檢查期限，面板及全部商店指令亦檢查到期。到期標記tower dirty並發tick，客戶端返回塔列表；期限本身不存檔，boot／load重設。指令數與存檔格式維持。
 
@@ -77,7 +79,7 @@ v53（2026-10-17 寶石共鳴）：新增指令`gem.resonanceSocket {region,hole
 v52（2026-10-14 Esc全遊戲暫停）：新增主端訊息`MENU_PAUSE: menuPause {paused:bool}`，BOOT可攜帶`menuPaused`以維持Worker重啟時的菜單狀態。暫停整體loop與決定論loop，不改原combat paused；暫停時間不進catchup，既有欠帳保留，神鑄startedAt在恢復及暫停存檔時排除菜單時間。背景遊戲指令排隊，恢復後依序執行；save／settings／stats、面板與PING仍回應。Worker的分批timeout透過GameClock暫停，離線結算chunk也不繼續；主端同時暫停Pixi／DOM特效／遊戲計時器，WebGL以暫存單幀保持原畫面，恢復時釋放；設定返回菜單保持暫停，重啟先保存暫停快照再刷新。指令仍94條，存檔格式不變。
 
 v51（2026-10-14 Esc菜單）：新增`save.auto`（無參數，指令93→94），Worker從權威G產生auto_current快照，PERSIST.kind新增`autoNow`，ACK.result回傳persist token。主執行緒WorkerBridge.saveAutoNow()僅在該token的IndexedDB交易成功後resolve，寫入失敗／逾時reject，支援PERSIST完成早於ACK。不建立手動存檔、不要求資料夾，沿原自動存檔格式；此明確玩家操作不受測試模式的未要求自動寫入抑制。Esc離開必須先await成功，失敗不離開；定期資料夾同步沿原流程。
-> 協議版本：`WORKER_PROTOCOL_VERSION = 83`　最後更新：2026-11-19
+> 協議版本：`WORKER_PROTOCOL_VERSION = 84`　最後更新：2026-11-26
 
 v50（2026-10-08 BOSS 戰配置鎖）：新增共用判定 `bossFightBlocksCommand(name)`。`G.tower.active` 期間（含登場、暫停、結算未退出）既有換裝／換套、裝備強化／洗煉／附魔、寶石鑲卸與融合寶石、符文刻印／抹除、技能裝載與排序、技能降級／重置／超神進化切換、威能與潛力變更指令，均以既有錯誤封包 `{ok:false,error:'BOSS 戰中不可變更戰鬥配置'}` 拒絕，在解析物件與扣資源前守門。UI 共用同一判定並置灰入口；自動穿裝在戰中暫停。退出後恢復；純瀏覽、庫存素材合成、一般技能升級保留。指令仍 93 條，參數、快照、存檔格式不變。
 
@@ -536,7 +538,7 @@ VFX 事件新增可選 `arcM`，為大於零的有限數，單位米，表示弧
 
 ### v32：飛刀逐段飛行與到達命中
 
-飛刀起飛事件 hit=false，不提前排受擊；到達才送 impact。area.knifeFlight=true 時，sourceX/sourceY 是不受起點死亡影響的發射座標，x/y 是目標初始座標備援；controlX/controlY 是二次貝茲控制點（null 表示直線）。目標存活時追蹤位置，消失後保留最後位置，抵達後才尋找下一跳。area.knifeImpact=true 表示 x/y 為實際命中位置，即使擊殺目標亦可播放。travelMs 為每段權威時長；舊事件缺少旗標時維持原行為。v31 的 cleave-ring 圓心／半徑與擴張時長語意維持不變。
+飛刀起飛事件 hit=false，不提前排受擊；到達才送 impact。area.knifeFlight=true 時，sourceX/sourceY 是不受起點死亡影響的發射座標，x/y 是目標初始座標備援；controlX/controlY 是二次貝茲控制點（null 表示直線）。目標存活時追蹤位置，死亡／離場後依v84立即重鎖並替換同knifeId的路徑，無候選則送knifeStop。area.knifeImpact=true 表示 x/y 為實際命中位置，即使擊殺目標亦可播放。travelMs 為每段權威時長；舊事件缺少旗標時維持原行為。v31 的 cleave-ring 圓心／半徑與擴張時長語意維持不變。
 
 ### v33：無限追魂刃生命週期
 

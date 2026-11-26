@@ -1845,6 +1845,19 @@ html *::-webkit-scrollbar-corner {
 #tab-equip #detail-pane .socket-remove:hover { border-color: #a8322c; }
 #tab-equip #detail-pane :is(.socket-pick, .socket-remove):disabled { cursor: default; opacity: 0.6; }
 
+/* 淡黃底只作用於裝備鑲孔列內的卸下／抹除／取消操作。 */
+#ui-shell #tab-equip #detail-pane .socket-remove {
+  background: #e6d9ad !important;
+  border-color: #b6a371 !important;
+  color: #3c321d !important;
+  text-shadow: none !important;
+}
+#ui-shell #tab-equip #detail-pane .socket-remove:is(:hover, :focus-visible):not(:disabled) {
+  background: #f4e8bf !important;
+  border-color: #927536 !important;
+}
+#tab-equip #detail-pane .socket-pick .sk-val { transform: translateX(-5px); }
+
 .equip-socket-gems { margin-top: 12px; }
 
 /* 四模式共用固定外框；長鑲嵌內容在詳情區捲動，不推動操作列及背包。 */

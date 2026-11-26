@@ -1,3 +1,72 @@
+## SYNC-ALL-AI-20261126 — 合併並同步本輪 AI 成果
+
+- Owner：Codex，整合。使用者輸入 `1`，將 `develop` 原 `97e9284e` 與 Codex 最新 `6c86105f` 的 17 筆提交整合。Claude、Antigravity 與各可同步遠端任務來源將沿正常同步流程核對祖先關係並對齊。本次合併無內容衝突，原合併樹與 Codex 提交樹完全一致。
+- 保留飛刀途中重鎖、封魔塔任務、開箱動畫及新手數值調整。20 份測試合計 171 項，167 通過；`task-chest-relic` 與 `task-tower` 的四項固定索引／獎勵預期，在未變更的 Codex 原分支同樣重現（8/12）。相關測試與來源值保留。驗證檔案位於 `logs/merge-20261126/`，來源基準在 Codex 的 `logs/baseline-sync-20261126.tap`。
+- 開箱素材匯出工具核對 145 個來源雜湊及五張遊戲圖集通過。字串生成檔同步，Task／NPC 生成器乾跑 0 語意差異，632 個遊戲參數一致、0 待套變更／錨點問題。`npm.cmd run build` 通過 773 檔，Git 差異檢查通過。檢查規範、原始提交／工作區、隔離設定與來源素材。合併與來源表不另新增玩法。實際同步結果見本次交付。
+- 保留明確隔離分支 `codex/background-catchup`（`08013b4db0e3f03f336810a128cd801547f89f6d`）與 `codex/boss8-animation-preview`（`86326b984b40c086844b28608de739bea9d01db6`）。
+
+## KNIFE-RETARGET-20261126 — 飛刀途中失去目標立即重新鎖敵
+
+- Owner：Codex；Done，單人處理。使用者回報飛刀在仍有敵人時朝螢幕邊緣飛走，要求途中目標死亡時重新尋找目標。追加說明常見兩把直接出畫、附近20敵亦頻繁，並確認已學第5階迴旋飛刀。前置：現有飛刀權威飛行及VFX路徑已接通。
+- 允許：js/skills2.js、js/vfx-runtime.js、js/worker/protocol.js／shim.js、docs/WORKER_PROTOCOL.md、主頁／bridge／sim.worker及編輯器必要快取、tests/knife-flight.test.cjs／soulhunter.test.cjs／worker-protocol.test.cjs、LV_upgrade_system.md與本段。禁止改表格、傷害數值、解鎖、存檔、素材及其他聊天修改，不合併推送。
+- 預檢：git fetch origin及逐檔check-conflicts無外部來源；本副本既有NPC／Task／Zones／掉落／參數與data／formula修改保留，不納入提交。方案：死亡／離場即從當前飛行位置重鎖，保留傷害與彈射預算，回呼使用實際抵達目標；唯一飛刀身份讓畫面換路徑時結束舊刀身並保留尾跡，無候選清理，追魂刃維持範圍與待機。
+- 驗收：途中死亡／離場、新生成目標、連續失效、多刀競殺、實際彈射起點與次數、範圍／追魂期限、計算與Runtime軌跡及Worker事件相符，相關回歸／Build／快取與Git差異檢查；完成自我Review並Commit，交使用者整合。
+- 根因：第5階全圓起飛直接從完整戰場pool抽敵，未沿用施放距離，所以附近有人仍會抽到遠處、兩刀一起向場外飛；並非僅死亡座標問題。以HEAD舊skills2只在記憶體替換，同一固定種子、20隻周圍敵＋20隻場外敵、100次施放／200刀：舊版84刀選場外、18次兩刀一起場外；修正後皆0。另20敵混合距離的固定亂數掃描40次／80刀，舊39刀場外、12次兩刀一起場外，修正後皆0。最初驗證器錯取helper內的test字串、以及跳階fixture被正規化成未學第5階，修正驗證器後才取得上述有效比較，未以錯誤樣本宣稱重現。
+- 完成／14檔：skills2限制迴旋起飛候選為同施放距離、保留完整pool供表定彈射；死亡／離場當拍沿舊路徑掃描後，以刀刃位置及切線重鎖，沿用傷害／已掃敵人／彈射預算，四種來源回呼皆改用真正抵達目標。VFX依knifeId替換刀身並保留自然尾跡，knifeStop只結束指定刀。發現Worker漏傳原preserveDeadTargets／loopReturn，補齊以免死亡起點彈射畫面被守門誤擋。Protocol升84並定義舊事件退化，主頁／Worker／編輯器快取20261126-knife-retarget-v1；LV與協議／本紀錄同步。無素材或表格變更，不需素材庫空提交。
+- 專項測試：`node --test tests/knife-flight.test.cjs tests/soulhunter.test.cjs tests/skill2-knife-range.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`40/40通過。含20近＋20遠連續100次起飛、20敵混合距離仍可彈射到起飛圈外、競殺後重鎖、連續失效與下一跳起點、當拍暴雨掃描及不重複命中、Runtime30幀曲線／縱向投影逐幀一致、單刀替換與尾跡／獨立停止、追魂傷害層數／範圍／10秒期限及pending清零、Worker保留旗標、快取一致。既有soulhunter測試的4.4%寫死值改讀表定gain，完整高階施放fixture補足魔力且刀數依表計算，未更改產品數值或降低斷言。
+- 擴大回歸：`node --test --test-concurrency=2 tests/skill2-vfx.test.cjs tests/vfx-runtime.test.cjs tests/vfx-core.test.cjs tests/skills2-flight-speed.test.cjs tests/skills2-geometry.test.cjs`327項310過17失敗；再以HEAD舊skills2／vfx-runtime／shim只在記憶體替換，失敗名稱與數量完全一致（火球／施法距離／舊靜態渲染斷言、雷殞／場域／layout／雷鏈／星落素材、冰箭與雷鏈速度配置）。未改無關測試或放寬需求。兩組合計367項350過17既有失敗；`npm.cmd run build`773檔通過，Git差異檢查通過。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、battlefield的距離／選敵、combat敵人可交戰名單與唯一floatSel、util定址、battle-renderer起飛／緩衝／死亡起點守門／投影、飛刀四種Preset、既有飛行速度／幾何／VFX／Worker及模擬引擎。未修改這些檔案或新增美術／顯示文字。自我Review確認來源與實際命中點、有限彈射、追魂到期、陣列與pending、舊事件相容與版本同步。
+- 交接：程式與自動回歸無未完成項；限制為未實機啟動完整遊戲／桌面包或跑全庫，另有上述17項既有擴大回歸失敗。未建立瀏覽器或桌面擷取，kill-test-browsers確認無測試瀏覽器。遊戲Commit為本段所在`[Codex] fix: 限制迴旋飛刀起飛範圍並補上途中重鎖`，SHA見交付，ai/codex可供使用者審閱合併，未合併或推送develop／main。下一步整合至啟動工作區後重載／重啟遊戲驗收；VFX編輯器若仍開著，先備份未存內容再重載共用Runtime。本輪開始的既有表格／data／formula已由其他工作獨立提交2f477143，本輪未暫存其內容。
+
+## TASK-TOWER-BOSS-20261126 — 接入封魔塔首層與二十層通關任務
+
+- Owner：Codex；Done，單人處理。使用者在Task新增順序20「封魔塔第1層BOSS成功」、35「第20層BOSS成功」，要求補正確參數並接入。來源已儲存且獨占存取確認；既有towerFloor讀真正勝利結算的G.tower.highest，前置已完成。
+- 允許：Task.xlsx／CSV、data.js衍生任務、save-schema.js、quest-guide.js、必要首頁／bridge／Worker快取、任務／存檔相關回歸及新task-tower測試、LV／ONE_TIME_MIGRATIONS及本段。禁止改塔戰／掉落／獎勵公式、其他來源表、素材及其他聊天內容，不合併推送。來源另有荒漠50關獎勵調整，原樣套用。
+- 方案：兩任務type=towerFloor、param空、count=1／20，保留使用者獎勵設定。導引切封魔塔並選對應樓層；格式4依插入點19及34平移舊46項表的下一個可領索引，恰到插入位置者接新任務、已越過者略過，全部完成為48，重複讀檔不再移動。
+- 預檢：fetch及全部目標無外部來源，初始只有使用者Task.xlsx修改。驗收：Excel原生寫入／正常重開、只兩格變更且格式保持、單表匯出／runtime同步；進塔／失敗／逃跑不算、勝利達成、門檻／重複領取／導航，全部舊索引及歷史遷移鏈、新局／存讀、相關回歸／Build／Git差異檢查。無素材修改，素材庫不需提交。
+- 完成／修改16檔：Task來源與CSV、data衍生TASKS、save-schema格式4、quest-guide塔入口與選層、index／bridge／Worker快取、新task-tower回歸及四支既有任務／格式回歸、LV／ONE_TIME_MIGRATIONS及本段。保留兩項裝備獎勵：首層史詩1級1太古×1、二十層傳奇150級2太古×1；使用者荒漠50關獎勵調整原樣匯出，不改其他玩法或塔戰結算。
+- Excel：試算表技能渲染前後兩列並目視核對，原生excel-update-sheets.ps1只寫C21／C36兩格，正常模式重開兩次及全部值一致；來源獨占確認後才更新。原生Excel正常儲存會合併重複General樣式（14款變13款），以未編輯控制副本另行原生保存驗證，與成品styles.xml／欄寬／列高／檢視／公式完全相符；僅新C21／C36有文字內容與文字格式，其他工作表的解析後值／公式／格式一致。沒有改寫XML。xlsx_to_csv以環境變數指定Task單表匯出49列×11欄，apply --write Task只重建TASKS，重跑--apply Task語意差異0；Excel／CSV／runtime逐欄回歸通過。
+- 測試：`node --test tests/task-tower.test.cjs tests/task-chest-upgrade.test.cjs tests/task-evolution.test.cjs tests/task-chest-relic.test.cjs tests/task-skills.test.cjs tests/task-system.test.cjs tests/save-schema.test.cjs`61/61；另跑`tests/tower-battlefield.test.cjs tests/tower-auto-advance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs tests/gm-task.test.cjs tests/quest-guide-input.test.cjs`50/50，合計111項通過。新增7項以實際startTowerFight／endTowerFight及task.claim驗證進塔／三種失敗不達成、勝利達成、裝備品質／等級／太古數、領取防重與存讀、47個格式3索引、格式2／0／1歷史串接、新局與導航選層／鎖定入口。原格式2、3遷移保留隔離驗證，更新現行48項序號；導航測試初輪缺event及提示stub，補齊後7/7及全組通過，未改產品鎖定行為。
+- Build與界限：`npm.cmd run build`772檔、Git差異檢查通過，字串回歸及主頁／Worker協議檢核通過。唯讀檢查規範／Workflow／Codex、tasks／tower勝負結算、player／save、UI選層、config_tables與Excel工具及既有相關測試。未啟動完整遊戲實機或跑全庫，正式模擬結算與來源同步已驗證；無素材或新增顯示字串，素材庫無需提交。
+- 衝突／交接：執行期間同副本解鎖提示任務修改String、data的提示函式、skills2／UI及共用快取。使用者已明確同意統一共享data／bridge／Worker資產快取，保留雙方功能並分開提交。解鎖提示先以ee053570提交共享v1，為避免該提交的46項任務曾被同URL快取，本輪最終快取順增20261126-task-tower-unlock-v2；schema／quest為20261126-task-tower-boss-v1。其餘獨立區段採分段暫存及三方試合，不納入另一聊天功能或來源表；其後另一輪開箱只改獨立CSS／UI快取與文件區段，亦保留不提交。自我Review通過，本輪無未完成製作，可供合併審閱；Commit為本段所在`[Codex] feat: 接入封魔塔首層與二十層任務`，未合併／推送。下一步重新載入遊戲，已越過插入點的舊玩家依既有政策略過新項。QA的值／樣式JSON留聊天目錄；預覽／副本／一次性腳本清理，驗證套件連結依本聊天既有刪除審查限制保留不重試，不納入提交。孤兒瀏覽器檢查無殘留。
+
+## REROLL-MIN-COST-20261126 — 洗煉資源費用不得為零
+
+- Owner：Codex；Done，單人修正。使用者回報洗練tips附魔精華需求0，要求資源需求不得為0。前置：已定位rerollCost的等級縮放與遺物折扣捨去均可能產生0；顯示與實際扣款共用該函式。
+- 允許：js/formula.js／item.js／factory.js、tests/reroll-cost.test.cjs／reroll-count-cost.test.cjs／equip-reroll-ui.test.cjs／relics.test.cjs、必要index／bridge／Worker快取、game_formula.md／LV及本段。禁止改配置數值、存檔／協議、素材或其他工作區，不合併推送。既有公式、品質／次數倍率與折扣照算，洗煉最終各資源需求至少1；檢查其他付費入口是否有同樣取整歸零問題，表定不使用的幣種及滿級不可操作回傳值不算需求。
+- 同類檢查：滿級遺物的強化碎片／洗煉精華折扣150%、背包250%、商人200%，relicDiscount夾至0後，其他三項付費需求亦會變0；同樣修正最終需求至少1。強化失敗的半價取整同步至少扣1，避免最低需求時實扣0。三項追加檔案預檢無外部來源。
+- 預檢：fetch後全部目標無外部來源，遠端待納入提交對目標檔無差異，初始工作區乾淨。驗收：低等級／所有品質、等級縮放邊界、折扣後下限、整件與單詞條實際拒絕／扣款、UI費用及不足攔截，相關回歸、快取、Build與Git差異檢查；自我Review並Commit，交使用者整合。
+- 完成／修改13檔：formula增加強化、洗煉與背包擴充最終下限；item的商人售價最少1；factory的失敗半價最少各扣1。四支測試新增低等／全品質／次數、真實滿級遺物、正式版與Demo Worker拒絕及足額扣款、tips與操作攔截。index／bridge／Worker快取同步20261126-reroll-min-cost-v1，game_formula／LV與本段同步；未改配置表、存檔、協議或素材，無素材庫提交。
+- 測試：`node --test --test-concurrency=2 --test-reporter=tap tests/reroll-cost.test.cjs tests/reroll-count-cost.test.cjs tests/equip-reroll-ui.test.cjs tests/reroll-ancient-cost.test.cjs tests/relics.test.cjs tests/upgrade-feedback.test.cjs tests/upgrade-success-multiplier.test.cjs tests/merchant-cards-ui.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`77/77通過。另以正式Worker共載環境、全部遺物滿級驗證1072組強化／背包／封魔塔／零件升級與格數／商人費用，均至少1；`node tools/apply_params.cjs`632項一致、變更0、錨點問題0，未變更參數接線。`npm.cmd run build`771檔通過，Git差異檢查通過。
+- 擴大回歸限制：equipment-rarity-order原17項有2項失敗（舊品質倍率及R8掉落率斷言），affix-reroll-bias原3項有1項失敗（期待42、現34），mystery-merchant有1項Store工作簿／CSV空列差異。全部用git show HEAD原formula／item／factory僅在記憶體替換讀入後重現，未改磁碟或放寬斷言。新增Worker測試初輪誤把傳輸ok當功能成功，已依正式result契約修正，後續全數通過。本輪未跑全庫或啟動完整瀏覽器UI。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、data與配置CSV、relic／relic_data、UI費用與攔截、Worker指令／協議、runeword／gem_resonance／chest／skills2／talents的費用、既有品質／詞條／商人測試及sim引擎。表定不使用幣種、已滿級／無效項目回傳0不當作實際需求；目前其他檢查的付費入口未發現同型歸零。自我Review確認最終下限、折扣順序、半價扣款及主執行緒／Worker版本同步。
+- 交接：Commit為本段所在`[Codex] fix: 確保洗煉與折扣後資源需求至少為一`，位於ai/codex，可供合併審閱；未合併／推送develop或main。功能修正無未完成項目；已知限制為上述4項既有回歸失敗與未跑全庫／完整實機。下一步整合至實際啟動工作區後重新載入／重啟遊戲。作業後段同副本CHEST-REFERENCE新增素材／工具並修改index兩個寶箱快取及任務檔尾，與本項不同區段、無語意相依，index與任務檔以git merge-file --object-id -p三方試合乾淨、結果等於目前共享檔，分段暫存本項差異並保留對方未提交內容。
+
+## OFFHAND-TYPE-LABEL-20261126 — 副手裝備種類加上副手前綴
+
+- Owner：Codex；Done，單人處理。使用者截圖指定裝備提示的部位／種類名稱須加「副手」，例如副手盾牌。前置：itemTypeLabel共用於裝備詳情與tips，已有offHand分類。
+- 允許：String.xlsx／CSV／strings_data、data.js的itemTypeLabel、必要首頁／bridge／Worker快取、tests/item-type-label.test.cjs、LV與本段。禁止改物品基底名稱、武器分類／可裝部位、屬性／存檔／協議、其他表格及素材，不合併推送。
+- 設計：String新增2579「副手{0}」模板；僅offHand四種類型顯示副手盾牌／副手法器／副手魔法書／副手水晶球，保留既有STR928同時用於水晶球基底名稱的來源。全部目標預檢無外部來源，初始工作區乾淨。
+- 驗收：Excel獨占、原生編修／正常重開、完整值與既有格式保持、CSV及runtime同步；現有種類標籤／詳情／tooltip與裝備邏輯回歸，快取／字串稽核／Build／Git差異檢查。無素材修改，素材庫不需提交。
+- 完成／修改10檔：String.xlsx／CSV／strings_data.js新增2579模板；data.js僅在itemTypeLabel對offHand使用模板；index、bridge及Worker更新對應data快取，VFX編輯器首頁只同步共用字串快取f7286d47；LV及本段。未修改測試或新增低影響文字邏輯的鏡像測試，未改物品產生、基底名、分類、圖像或裝配規則。素材庫無變更，不建立空提交。
+- Excel：來源獨占存取通過，以tools/excel-update-sheets.ps1原生編修，寫5格、正常重開兩次一致、繪圖物件0保留。前後試算表技能渲染目視檢視；完整2563個原始列逐格相同，只追加2579一列，原儲存格樣式、styles.xml、欄寬與檢視保持。以xlsx_to_csv指定String單表匯出，再apply_strings產生2563條及更新首頁hash；`apply_strings.cjs --check`同步，未匯出其他工作簿。
+- 驗證：`node --test tests/item-type-label.test.cjs tests/equipment-detail-layout.test.cjs tests/equipment-two-hand-display.test.cjs tests/equipment-tooltip-compare.test.cjs`15/15；`tests/string-table.test.cjs`14/14；`tests/vfx-editor-cache-versions.test.cjs`3/3，相關共32項通過。模擬引擎以四種真實makeEquipment產物直接呼叫itemHeaderHTML，標籤逐一相符，物品名稱與basenames不變；STR928仍水晶球，副手欄匕首／雙手武器不誤加專用分類前綴。`npm.cmd run build`771檔、Git差異檢查通過。
+- 限制／唯讀：另跑two-hand-weapon-scaling8項中5過3失敗，皆為既有雙手鑲孔數期待1／8／7而目前0／5／4。以記憶體替換讀入HEAD原data.js、未改磁碟，完整重跑同3項失敗，未放寬斷言或修改鑲孔。共用字串版本首次檢核發現編輯器漏升，追加預檢乾淨後同步並重跑3/3。唯讀檢查共通規範／Workflow／Codex、item.js裝備標頭、ui.js呼叫、strings機制、武器基底／裝配、String來源與既有回歸；未實機操作完整遊戲或全庫測試。
+- 交接：自我Review通過，可供合併審閱，本輪顯示修改無未完成項目。Commit為本段所在`[Codex] fix: 副手裝備種類加上副手前綴`，未合併／推送。下一步重新載入遊戲；若VFX編輯器仍開著，先保留未存內容再重新載入共用字串，本輪未改編輯器儲存結構／Preset。進行中鑲嵌操作任務與本輪共用index／LV／任務檔，但只改不同CSS快取／文件區段，分段暫存並以各自獨立差異三方試合；不納入對方CSS／紀錄。預覽PNG、來源副本與臨時腳本已清除；自動核准審查以政策限制拒絕刪除聊天offhand-label-20261126的node_modules連結與空工作資料夾，未重試或繞過，列清理例外、不納入提交。孤兒瀏覽器檢查無殘留。
+
+## CHEST-OPENING-20261126 — 開箱時序與品質色光效
+
+- Owner：Codex；Done，單人處理。使用者要求約2～3秒開箱，播完才出現持續旋轉發散光暈／光束、獎勵與確認按鈕；獎勵左至右每秒10格，確認可立即中止全部演出。追加各品質使用對應品質色，完成後提供GIF預覽。
+- 前置：既有寶箱權威結算／虛擬獎勵格完整，fetch與逐檔衝突預檢無外部來源，工作區乾淨。允許js/ui-chest.js、css/chest.css、index.html必要快取、新tests/chest-opening.test.cjs、docs/CHEST_SYSTEM.md、LV_upgrade_system.md、VFX用途登記與本段。禁止改掉落／發獎／表格／存檔／協議、獨立素材、其他任務或工作區；不合併推送。
+- 實作：沿既有箱圖以CSS分層開蓋／蓄光，2.5秒後揭示，品質色共用卡片色；單一可清理的揭示時鐘配合虛擬格，捲動／縮放不提前揭示。確認或Esc清除視窗、動畫、計時器、觀察器及已排隊演出，獎勵已由Worker正常發放。減少動態保留時序與靜態光效。
+- 驗收：時序邊界、100ms逐格、各品質、空獎勵／大量物品／連續開箱、提前關閉與清理、捲動縮放；相關回歸、隔離靜音瀏覽器及Build／字串／VFX登記／Git差異檢查。完成後自我Review並Commit，交使用者整合。
+- 完成／修改8檔：ui-chest開箱與可中止揭示流程、chest.css箱圖分層／晃動／開蓋及品質色程序光暈／光束、index兩個快取、新開箱回歸、CHEST_SYSTEM／LV／VFX用途及本段。光暈24秒、光束18秒反向持續旋轉；不新增外部或獨立素材，沿既有自製箱圖，素材庫無變更／不建立空Commit。
+- 測試：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/task-chest-upgrade.test.cjs tests/task-chest-relic.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs tests/upgrade-success-feedback.test.cjs`84/84。新增9項覆蓋2499／2500ms邊界、99／100ms逐格、十萬物品虛擬化與離屏揭示、捲動縮放、確認／Esc／原生close、佇列清理、冷圖解碼／失敗、外部提前關閉與重開、空獎勵及各品質；最後增加拖曳捕捉釋放驗證後專項9/9再次通過。測試替身初輪缺字串DOM查詢／getElementById，補足後通過，未修改產品文字或契約。
+- Build：`npm.cmd run build`771檔通過；`node tools/string-table/build_string_csv.cjs --check`寫死0、`git diff --check`通過。唯讀檢查AI_RULES／AGENTS／Workflow／prompts/codex、chest／chest_data／bridge／start-menu、headless管理及既有寶箱／任務／外框／字串／VFX回歸。自我Review確認發獎仍由Worker負責、顯示關閉不回滾獎勵、單一時鐘與各項回收完整。
+- 實機：暫存preview.cjs以launchHeadless管理隔離靜音Edge，正式新遊戲／GM給100箱／正式開箱按鈕。開箱前確認display:none、格數0、光效opacity0；開箱時長2519.7ms，完成才可確認，關閉後數量99。五品質銀白／藍／紫／橘／金皆轉動，42格尚只揭示19～20格即可關閉，所有動畫與排隊數歸0；700×500窄屏、捲至未揭示處仍隱藏、減少動態靜態光效及Esc通過，頁面例外0。擷取腳本曾在選單完成初始化前點擊，等待正確初始化後完成；未改遊戲啟動流程。
+- 預覽：使用實際CSS／DOM與相同ui-chest原碼，在隔離擷取閉包控制時鐘，逐100ms定格以排除截圖耗時造成的快慢；每品質2.5秒開箱、1.9秒揭示及確認關閉，五品質依序展示。使用者指定保留的`tmp/chest-opening-20261126/chest-opening-preview.gif`為720×480、225幀、23.75秒，逐幀解碼／總長校驗通過；非新增遊戲素材。瀏覽器／伺服器已關閉，kill-test-browsers確認無殘留。自動核准審查以政策限制拒絕刪除該專用目錄內的原始影格與暫存腳本，未重試或繞過，與GIF一併保留、不納入Commit，列為清理例外。
+- 交接：本段所在`[Codex] feat: 加入寶箱開啟動畫與品質光效`Commit位於ai/codex，SHA見交付；未合併／推送。無本項未完成實作，可供Review／使用者合併，外觀由使用者看GIF驗收；未跑全庫／多瀏覽器／行動真機。下一步將本提交整合至實際啟動工作區後重新載入或重啟。
+
 ## TASK-CHEST-UPGRADE-20261126 — 接通新增寶箱與全身強化任務
 
 - Owner：Codex；Done，單人處理。使用者新增順序11青銅寶箱20級、12開任意寶箱1個、14全身強化+10，要求補參數並套用。兩個寶箱獎勵依使用者裁決以顯示文字為準，數量改1500／2000碎片。前置：Task.xlsx已保存且來源獨占存取確認成功。
@@ -4903,6 +4972,41 @@
 - 瀏覽器：computer-use／CUA獨立127.0.0.1:13742、拋棄式IndexedDB測試存檔，正式index／UI／Bridge／真Worker／Pixi。最高29層時幻影八方陣鎖定、橘色13px及無學習鈕；塔30獎勵黃色16px獨立框在通關獎勵後，塔1完全隱藏。最高30層、已保留Lv.3的存檔正常載入生效並顯示灰色11px「已通行封魔塔第30層」；兩次Console error／warning均0。截圖tower-skill-unlock.png／skill-tower-cleared.png存本聊天visualizations；分頁、服務及臨時腳本／日誌清理，未讀真人存檔。同層多技能以正式HTML回歸注入第二條門檻驗證。
 - 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
 - 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
+
+## UNLOCK-TIP-FORMAT-20261126 — 統一等級與轉生解鎖提示
+
+- Owner：Codex；Done，單人處理。使用者要求符文只顯示200級開放，全面檢查其他tips：0轉省略轉數，只顯示等級；只需轉生者省略1級；2轉400級等有實質等級門檻者保留轉數與等級，移除「或下一轉」冗長敘述。解鎖判斷與配置維持。
+- 允許：data.js純顯示formatter、ui.js符文／共鳴提示、gem_resonance.js及skills2.js解鎖文字、String.xlsx／CSV／strings_data、必要index／bridge／Worker及編輯器快取、既有unlock-progress-rule／equip-socket-ui／gem-resonance-ui測試、LV及本段。禁止改進度／門檻／戰鬥規則、其他表格、存檔／協議、其他聊天修改或素材，不合併推送。
+- 盤點：符文拼接0轉與下一轉、共鳴固定同列轉數與Lv.1、技能positive轉數加1級、融合舊提示Lv.1及說明頁符文「200級或轉生後」需調整。世界地圖目前只顯示正轉數前置、神鑄／威能只顯示轉數，維持。1976舊神鑄說明未被程式／HTML引用；熔爐「0轉2座」為容量規則，不是等級門檻，保持。
+- 預檢：全部目標無外部來源；同副本開箱／Task來源修改保留。String獨占確認後以Excel原生API編修，正常重開／原值與格式驗證及渲染。驗收：200級、6轉、2轉400級及轉生後仍解鎖，技能封魔塔複合門檻保留，主端／共鳴指令提示一致；字串／解鎖／快取回歸與Build、Git檢查後提交。無素材修改。
+- 已完成實作：新增data.js純顯示progressRequirementText，符文用String2580「{0}開放」，共鳴前端與指令共用gemResonanceLockedMessage，技能共用相同門檻格式並保留塔層條件。String196／1534移除Lv.1，2131改用格式化門檻，2363說明改200級開放；新增2580。Excel原生寫10格，正常重開兩次，唯讀比對只有5個原儲存格及1新列不同，既有樣式／欄寬／列高／凍結／驗證保持；渲染已核對。主頁／Worker／bridge對應資產快取20261126-unlock-tip-format-v1，字串資料與編輯器共用快取bb5f6d90。
+- 驗證：unlock-progress-rule、equip-socket-ui、string-table、vfx-editor-cache-versions、worker-protocol共62/62；共鳴頁籤鎖定／開放專項1/1。擴大skill2-tower-unlock共10項中9通過，唯一舊超神耗魔斷言期待3000、現值1250；用記憶體載入HEAD原data／skills2／ui／gem_resonance／strings_data重跑同項仍失敗，未改其斷言或耗魔規則。Build772檔通過，String同步檢查通過、程式顯示字串稽核寫死0。隔離靜音Edge以正式renderDetail產出符文按鈕，200級／6轉／2轉400級提示與共鳴指令文字逐一一致，無裁切／頁面例外，截圖已目視核對；瀏覽器已關閉，孤兒檢查無殘留。未跑全庫或完整遊戲長時間操作。
+- 確認與提交：使用者已回覆「commit吧」，同意保留兩邊修改並提交本輪解鎖提示。另一個同副本Task任務的save-schema快取與本輪sim.worker.js匯入快取相鄰，LV亦同在檔頭新增獨立段落；三方試合有文字衝突但無語意相依，依本次授權保留兩邊工作檔，僅暫存本輪快取與文件段落。共享data／bridge／Worker資產版本保留另一任務協調後的20261126-task-tower-unlock-v1，gem_resonance／skills2／ui仍為本輪版本，字串hash維持bb5f6d90；首頁逐支選取本輪對應腳本快取，其他save-schema／quest-guide快取留原任務。data／任務紀錄獨立三方試合乾淨；Task.xlsx、TASKS、存檔遷移、導引及測試等其他任務修改保留未提交。
+- 交付16檔：data／ui／gem_resonance／skills2、String.xlsx／CSV／strings_data、index／bridge／Worker／VFX編輯器字串快取、equip-socket-ui／gem-resonance-ui／unlock-progress-rule測試、LV及本段。無新素材，素材庫無需提交。自我Review完成，無本輪未完成修改，可審閱合併；Commit為本段所在`[Codex] fix: 統一等級與轉生解鎖提示`，未合併或推送。下一步重新載入，確認符文顯示200級開放。
+
+## TOWER-BOSS-EQUIP-TIP-20261126 — BOSS提示補上裝備掉落
+
+- Owner：Codex；Done，單人處理。使用者要求封魔塔BOSS的「可能掉落」也列裝備。已直接沿用塔樓層詳情的towerEquipDropRows，以BOSS_DROP_TABLE的基礎品質／機率與超過100%的必掉件數口徑顯示，不新增計算來源或改掉寶率加成。
+- 修改5檔：js/ui.js的showEnemyTooltip塔分支加入品質色裝備列、index UI快取20261126-tower-boss-equip-tip-v1、tests/tower-rewards-ui.test.cjs新增1項回歸、LV及本段。未改掉落表、實際結算、原獎勵／野外提示、存檔／Worker。目標逐檔預檢無外部來源；同副本洗煉／開箱任務的index／LV／任務檔為不同區段，分開暫存，三方試合乾淨且無語意相依，保留對方修改。
+- `node --test tests/tower-rewards-ui.test.cjs tests/boss-tooltip.test.cjs tests/tower-info-during-fight.test.cjs tests/enchant-book-retirement.test.cjs`23/23通過。新增回歸先重現第1層缺4種裝備，修正後驗戰鬥BOSS／結果BOSS／塔戰敵人三入口、16個樓層與表格分段邊界；刻意讓瀏覽樓層不同，確認使用runtime當場樓層。250%顯示必定2件再50%一件、100%顯示必定1件、小數12.5%保持、全零不列裝備而材料仍在。初輪計數誤含BOSS攻擊圖示，改為只檢查「可能掉落」區域後通過，未改產品邏輯或放寬條件。
+- `npm.cmd run build`771檔通過，`node tools/string-table/build_string_csv.cjs --check`寫死0條，Git差異檢查通過。隔離靜音Edge以正式showEnemyTooltip／共用掉落helper及完整CSS渲染第1／31層，品質色、機率及必掉加餘數逐列顯示，無裁切與頁面例外，兩張提示截圖已目視確認。瀏覽器finally關閉，孤兒檢查僅保留仍在運行的其他聊天開箱測試瀏覽器，未干預。
+- 唯讀檢查：共通規範／Workflow／Codex、tower.js正式發獎、formula.js的dropRatesFor／towerRewardFor、BOSS_DROP_TABLE、既有String45／1870／1871及塔詳情／tooltip／材料回歸。無新字串、素材或資料表，素材庫無需提交。未做完整遊戲長時間操作或全庫測試；本輪無未完成項目，自我Review通過，可審閱合併。Commit為本段所在`[Codex] fix: 補上封魔塔BOSS裝備掉落提示`，未合併推送。下一步重新載入，在BOSS資訊的可能掉落清單確認裝備。
+
+## SOCKET-ACTION-SCOPE-20261126 — 還原誤改的寶石與符文入口
+
+- Owner：Codex；Done。使用者指出前次只要求裝備鑲孔列內操作，未授權修改下方寶石／符文入口。已修正前次範圍誤判，移除入口與刻印的淺黃覆寫，只保留鑲孔列卸下／抹除／取消與效果左移5px。
+- 修改4檔：css/ashen-forge.css的淡黃規則只選取#detail-pane .socket-remove，移除下方操作列及選中狀態覆寫；index CSS快取20261126-socket-action-scope-v2；LV修正正式範圍及本段。未改遊戲邏輯、表格、其他樣式與素材。起始工作區乾淨，逐檔預檢無外部來源。
+- `node --test tests/equip-socket-ui.test.cjs tests/gem-socket-height-compact.test.cjs`29/29通過。隔離靜音Edge以正式itemSocketHTML／itemRuneHTML及完整CSS，對比a8107bf0之前的樣式：下方寶石／符文入口與刻印的底色／字色逐一完全相同，孔列卸下／抹除／取消仍淺黃，效果文字精確左移5px，列與按鈕邊界不變，hover／停用／按鈕命中通過，頁面例外0，兩頁截圖已目視核對。瀏覽器finally關閉，孤兒瀏覽器檢查無殘留；Git差異檢查通過。無JS變更，未重跑只檢查JS語法的全專案Build或全庫測試。
+- 唯讀檢查：共通規範／Workflow／Codex、前次CSS與鑲孔產生器／操作列、既有鑲嵌與高度回歸。無新字串或素材，素材庫無需提交。自我Review完成，本輪無未完成項目，可供審閱合併；Commit為本段所在`[Codex] fix: 將淺黃操作樣式限定於裝備鑲孔`，未合併或推送。下一步重新載入，確認下方入口恢復原外觀。
+
+## SOCKET-ACTION-CONTRAST-20261126 — 鑲嵌操作淺黃底與效果文字左移
+
+- Owner：Codex；Done，單人處理。使用者要求寶石／符文鑲嵌與卸下操作更顯眼，採淡淺黃底；鑲孔列的效果文字（如吸血+7）向左移5px。沿既有共用鑲嵌頁及socket-remove樣式完成。
+- 修改4檔：css/ashen-forge.css、index.html、LV_upgrade_system.md及本段。寶石／符文入口、刻印及孔列卸下／抹除／取消採#e6d9ad淺黃底、#3c321d深色字，hover／選中略加亮；原停用透明度及一般箭頭保持。效果span以translateX(-5px)位移，只作用於鑲嵌頁；CSS快取20261126-socket-action-contrast-v1。未改文字、費用、暫放／鑲嵌規則、資料表／存檔／Worker或素材。
+- 逐檔預檢無外部來源；本副本開箱／副手標籤任務共用index／LV／任務檔為不同區段，分段修改及暫存，三方試合乾淨且無語意相依。未納入其他聊天修改。
+- `node --test tests/equip-socket-ui.test.cjs tests/gem-socket-height-compact.test.cjs`29/29通過，涵蓋選孔／卸下／符文抹除二次確認／暫放刻印／等待與失敗恢復、唯讀孔位與原列高。`npm.cmd run build`771檔與Git差異檢查通過；本輪為可逆CSS微調，沿用既有測試，未新增只鏡像CSS的測試。
+- 隔離靜音Edge以正式itemSocketHTML／itemRuneHTML產出寶石與符文孔，載入完整正式CSS，比對HEAD原樣式與本輪樣式。兩頁效果文字x各精確減5px，列及操作鈕的x／y／寬／高完全相同；淺黃底rgb(230,217,173)、深色字rgb(60,50,29)、hover rgb(244,232,191)，停用opacity0.6／cursor default，卸下／抹除按鈕中心命中原按鈕，頁面例外0；兩頁截圖已目視確認。初輪QA漏設固定畫布容器高度導致內容被clip，補齊fixture容器後完整重跑通過，未改產品布局。瀏覽器finally關閉，孤兒瀏覽器檢查無殘留。
+- 唯讀檢查：共通規範／Workflow／Codex、js/item.js與ui.js鑲孔／操作列產生器、符文共用樣式及Brass主題、既有鑲嵌／高度回歸。無新字串或素材，素材庫不需提交。本輪無未完成項目，自我Review通過，可審閱合併；未做完整遊戲長時間操作或全庫回歸。Commit為本段所在`[Codex] fix: 加強鑲嵌操作辨識與調整效果文字`，未合併或推送。下一步重新載入此版本檢視兩種鑲嵌頁；其他聊天修改保留。
 
 ## AUTO-STAGE-TIP-20261126 — 自動推關底色與兩行提示
 
@@ -17691,3 +17795,78 @@ Worker 存活且頁面正常完成載入。
 - 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、來源兩頁及目前參數、js/player.js轉生與升級、ui.js屬性面板、worker/protocol.js與header/buildView、skills2.js耗魔、原生Excel工具、sim engine、既有派生／經驗／預覽／Demo／快取測試與headless管理。素材未修改，無素材庫提交。自我Review確認所有派生共用入口、實際戰鬥等級保留及b/c接線，未接觸其他任務功能。
 - 交接：Commit為本段所在`[Codex] feat: 調整法力公式與轉生屬性派生等級`，位於ai/codex，供合併審閱；未合併／推送develop或main。功能實作、來源套用、專項回歸及介面驗收完成；全庫尚未通過，需另行處理其失敗與未完成案例。QA與報告保存在本聊天mana-qa，瀏覽器／伺服器已關閉；其他聊天當時的任務修改各自提交，本輪僅暫存本項13檔。下一步整合至實際啟動工作區後重新載入／重啟，既有存檔自動按新規則計算。
 - 建置與清理：最終 `npm.cmd run build` 通過770個檔案語法／空檔檢查，`git diff --check`通過；`node tools/kill-test-browsers.cjs`確認沒有測試用無畫面瀏覽器。
+
+
+## CHEST-HINGE-20261126 — 固定開箱位置與後掀箱蓋
+
+- Owner：Codex；Done，單人處理。使用者要求寶箱從一開始就在原開啟後的較上方位置，開啟時不整體上移；箱蓋繞後側鉸鏈後掀，不可平移浮空；修改後提供GIF。前置：CHEST-OPENING已提交。允許ui-chest、chest.css、首頁對應快取、chest-opening回歸、CHEST_SYSTEM／LV／VFX用途及本段；不改獎勵結算／表格／協議／存檔或獨立素材，不合併推送。
+- 預檢無外部衝突。同副本副手種類任務修改index的String／data／bridge行、LV裝備養成段及AI_TASKS檔首；本項僅改兩個寶箱快取、寶箱段及檔尾，保留並分段提交。方案為預留獎勵與確認的版面、揭示時鐘延後到2.5秒後才啟動，箱體固定、後緣旋轉開蓋。驗收含開箱前後座標、鉸鏈固定、各品質／空獎勵／窄屏／中止、既有時序回歸、Build及實際CSS／DOM GIF。
+- 完成／修改8檔：ui-chest新增可延後啟動的揭示控制器，先建立隱藏且inert的獎勵區並保留確認高度，2.5秒後才啟動揭示；CSS箱體只蓄光不作位移／縮放，箱蓋以後緣18%為固定軸旋轉後掀，末段顯示程序內襯與箱內深度；主頁兩個寶箱快取升為opening-v2，回歸及三份系統文件與本段同步。既有品質光效／獎勵時序／立即中止保持，無表格或素材庫修改，不建空素材Commit。
+- 測試：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`72/72；新增預量版面但不消耗揭示時間、重複start／stop、inert與ARIA揭示驗證。`npm.cmd run build`771檔與Git差異檢查通過。唯讀檢查規範／Workflow／Codex、原有箱圖、既有開箱及headless／GIF工具；未改chest結算／資料、Bridge、Worker、String或其他聊天內容。
+- 實機：隔離靜音Edge載入正式頁及相同ui-chest原碼，捕捉閉包控制時鐘、按實際CSS動畫逐100ms定格。五品質在0／1500／2000／2400／2500／4300ms的箱體x／y完全相同（1280×900：x579.333374、y329.46875），鉸鏈固定91px／23.4px，變換矩陣只有旋轉、無平移。0～2400ms按鈕隱藏，2500ms起可確認，物品正常揭示；末段目視確認箱蓋內襯與後掀。另跑6組桌面／700×500窄屏、空／2格／十萬格、減少動態組合，開箱前後座標誤差小於0.01px、DOM不超過80格、inert與清理皆通過，頁面例外0。初輪搬移擷取腳本的Windows路徑格式不同導致測試服403，改用path.resolve後完成；產品流程未改。
+- GIF：本聊天chest-hinge-v2/chest-opening-hinge-v2.gif，720×480、225幀、23.75秒，銀白／藍／紫／橘／金依序演示，逐幀解碼與總長通過。沿用既有自製箱圖、內襯／箱內深度為CSS程序圖形，不引用外部素材。保留本聊天驗證報告；瀏覽器及伺服器於finally關閉，收尾檢查無殘留。
+- 交接：自我Review通過；本項實作及GIF完成，外觀交使用者驗收，未跑全庫／其他瀏覽器。Commit為本段所在`[Codex] fix: 固定寶箱位置並改為後掀開蓋`，位於ai/codex，可供合併審閱，未合併推送。只stage本項8檔增量，副手與裝備按鈕對比任務保留；下一步看新版GIF，整合後重新載入／重啟遊戲。
+
+
+## CHEST-REFERENCE-20261126 — 依動作參考重製斜角開箱
+
+- Owner：Codex；Done，單人製作與整合。使用者否決前兩版並提供GIF作動作參考，補充保留本遊戲斜角造型即可；持續沿用前輪2.5秒、品質光效、每秒10格與立即關閉需求。只分析參考的掀蓋／內側／相連動態，不複製其畫面、配色或素材。
+- 前置：工作區與素材庫乾淨，fetch／逐檔預檢無外部來源。允許ui-chest／chest.css／必要首頁快取／chest-opening回歸、tools/chest-opening製作及匯出、images/chests/opening動畫與來源文件、CHEST_SYSTEM／LV／VFX用途及本段；素材庫新建codex-authored/chest-opening-20261126-v3專用來源包。禁止掉落／結算／表格／協議／存檔、既有五張箱圖及其他素材或工作區，不合併推送。
+- 方案：依AI_RULES 8.7.1以Blender製作獨立箱蓋、內襯、箱口與固定後緣軸；使用既有自製箱圖作投影貼圖，保留五品質斜角造型，烘為透明逐幀圖集。以同一演出時長播放，替換平面CSS裁圖旋轉；箱體位置保持。預覽必須來自實際成品，驗收閉合／中段／全開的鉸鏈連接與內側、原有時序與中止、各品質、資源載入／減少動態／大量物品、Build與雙庫雜湊／提交。先目視逐幀，再交GIF。
+- 追加需求：使用者看製作聯絡圖後指定內襯不可素面，增加細紋、邊框、角花、捲草與品質中央徽紋；已於Blender以自製曲線／幾何製作，五品質各有不同星形徽紋與內襯色，箱底另有襯墊縫線／菱形壓紋。原平面CSS蓋片與偽箱內平面移除，圖集共用原時鐘，失敗保留原箱圖。
+- 完成／修改18檔：ui-chest與CSS以五品質25幀透明圖集取代平面裁圖翻蓋，共用2.5秒時鐘（0.4秒蓄光、2.1秒開蓋），保留固定位置、品質光效、每0.1秒一格、確認立即清理；新增5圖集／manifest／SOURCE、Blender製作／打包／匯出3工具，更新首頁2個快取、開箱回歸、CHEST_SYSTEM／LV／VFX登記及本段。減少動態保留首幀等待、完成切末幀；解碼失敗退回舊箱圖。
+- Blender：五份可編輯來源正常重開，所有貼圖已打包；每品質逐25幀檢查固定箱體與兩個後緣端點，最大鉸鏈誤差1.686e-7模型單位、箱體誤差0。原自製箱圖無損解碼成來源PNG投影至曲面外殼，獨立內襯與箱內壁／底板形成深度；程序細紋、邊框、角花、捲草、四／六／五／八芒徽紋、鉚釘及底部襯墊菱紋自製。逐幀目視閉合／半開／全開與五品質，使用者GIF只參考動態，不納入兩庫素材。
+- 素材驗證：25張320×320透明PNG／品質打成1600×1600無損WebP；125個解碼tile與原PNG逐位元一致。`node tools/chest-opening/export.cjs --check`145份來源SHA與5組遊戲／素材圖集一致；另從Git index實際blob逐份核對145個SHA通過，確保來源報告LF換行不破壞跨機雜湊。素材庫先提交`ec76e19`，新包146檔，無其他素材修改。
+- 測試：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`73/73；最終蓄光／開箱分段調整後開箱專項11/11再次通過。新增25幀尺寸／SHA／CSS首末幀與共用時鐘、移除平面旋轉、載入失敗退化斷言。`npm.cmd run build`771檔通過；export.cjs額外node --check、兩Python工具AST與Git差異檢查通過。未跑全庫。
+- 實機與GIF：以launchHeadless管理隔離靜音Edge，正式新遊戲／GM及共用頁面；同一ui-chest原碼以擷取閉包控時、實際CSS／DOM拍攝。五品質在0／2000／2500／4300ms箱體x579.333374／y329.46875不變，圖集1600×1600解碼成功、未走退化，完成前物品0／確認停用，完成後順序揭示／可確認。另以原生時鐘驗700×500、減少動態、十萬件虛擬格、捲至未揭示區、Esc、空獎勵，皆通過、例外0。窄屏驗證器初輪在縮放完成前讀座標及用全頁li計數，補正等待與作用域後通過，未為測試改產品。
+- 預覽保留本聊天chest-reference-v3/chest-opening-patterns-preview.gif（720×480、260幀、23.75秒，五品質），以及lining-details.png與驗證JSON。GIF從實際遊戲畫面以原時序編碼，逐幀解碼／總長通過；Blender、瀏覽器與伺服器已關閉，孤兒檢查無殘留。唯讀未改規範／Workflow／Codex、chest結算與資料、原五張箱圖、Bridge／Worker／存檔／String；其他聊天洗煉／BOSS提示修改各自提交，本項只提交自身增量。
+- 交接：自我Review完成，功能與花紋製作無未完成項，外觀交使用者看GIF驗收；未驗多瀏覽器／行動真機長時間播放。遊戲Commit為本段所在`[Codex] feat: 重製斜角開箱動畫並加入內襯花紋`，SHA見交付，ai/codex可供合併，未合併／推送develop或main。下一步兩庫正常整合後重新載入／重啟遊戲。
+
+
+## CHEST-VOLUME-20261126 — 抖動快開與厚壁凹陷箱蓋
+
+- Owner：Codex；Done，單人處理。使用者要求先約1.5秒抖動，再約0.3秒突然打開，修復全開箱蓋厚度消失與內側平板。最新明確時序取代舊2.5秒，總開箱1.8秒，獎勵／確認仍完成後才出現。保留原斜角、品質色、花紋與立即中止。
+- 前置：既有V3已提交，素材庫乾淨；fetch與逐檔預檢無外部來源。同副本另有塔任務／解鎖提示工作，共用首頁／LV／任務紀錄但不同區段；只改寶箱快取、寶箱規則與檔尾，分段提交保留對方修改。允許原製作／匯出工具、圖集與來源manifest、ui-chest／CSS／首頁對應快取／開箱回歸、CHEST_SYSTEM／LV／VFX用途與本段；素材庫新包chest-opening-20261126-v4保存V3來源，禁止玩法／表格／存檔／協議或其他任務，不合併推送。
+- 方案：Blender將平內襯改為隨外蓋弧度的內凹曲面，四周厚壁封合外殼與內殼、保留後緣鉸鏈和曲面花紋；以材質、照明與截面驗證厚度／深度。重新烘製五品質25幀。CSS1.5秒左右抖動後歸位，最後0.3秒快速開啟；共用1.8秒時鐘。驗收模型重開、鉸鏈／體積／凹陷、逐幀與實機節奏、首末位置／減少動態／揭示／中止、相關回歸／Build／雙庫雜湊，給新版GIF。
+- 完成／修改17檔：Blender改成475頂點內凹弧形內殼，與外殼之間由左／右／前／後四面厚壁封合；內襯花紋、邊帶與鉚釘沿凹面彎曲，使用平滑法線、受光材質與雙Area照明呈現深度。五品質重烘125張PNG／5個圖集與manifest；CSS先1.5秒漸強左右抖動及小幅旋轉，歸位後0.3秒播完開蓋，ui-chest總長1800ms，首頁／圖集快取volume-v4；來源、匯出工具、回歸及系統文件同步。未改表格／結算／Worker／存檔或其他聊天內容，V3素材包保留。
+- 幾何／來源驗收：五個Blend重新開啟，貼圖全打包，四面實體側壁均存在；每品質25幀獨立量測鉸鏈誤差最大1.686e-7、固定箱體頂點誤差0，內外殼最小厚度0.073966、最大0.231890、內凹弧面到蓋口平面深度0.637029模型單位。圖集manifest由來源報告匯出這些量測值，回歸禁止退回零厚度或四頂點平內襯。125張WebP tile解碼與PNG逐位元一致，145個來源SHA及五對遊戲／素材庫圖集一致。
+- 測試指令：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`74/74通過，含1799／1800ms邊界、1500ms首幀停留與後300ms分段、抖動歸位、內殼頂點／厚度／凹深／四壁、原有立即中止／冷圖／退化／大量物品。`npm.cmd run build`772檔通過；export.cjs額外node --check、兩Python AST、雙庫Git差異檢查通過。未跑全庫。
+- 實機：隔離靜音Edge及正式頁面，以同一ui-chest原碼和實際CSS逐幀擷取；五品質0～1450ms實際抖動且不切圖，1500ms歸位／保持閉蓋、1600ms已開、1780ms未到末幀、1800ms全開並出現首格／確認，後續保持原位。原生時鐘另驗700×500、減少動態、十萬物品虛擬格／捲動／Esc與空獎勵，總長1814.4ms、例外0，提前Esc不可跳過，完成後即關。
+- GIF：本聊天chest-volume-v4/chest-shake-open-v4.gif，720×480、325幀、20.25秒，五品質依序展示；lid-depth-details.png為全開厚壁／凹陷特寫。GIF逐幀解碼、總長校驗與目視通過；驗證JSON保留，原始擷取／腳本／試作清理，模型及正式製作工具保存素材庫。瀏覽器／伺服器／Blender已關閉，孤兒檢查無殘留。
+- 雙庫：素材庫先提交20e88e1，Git index來源SHA核對發現export.cjs的CRLF會被Git正規化；該輪shell未因Python失敗中止而仍提交，未宣稱該輪通過。隨後匯出器改為在建立manifest前統一工具及說明LF，重新逐份驗145個Git index blob SHA全數通過，再以獨立提交1dbf09c修正，素材庫最終乾淨。遊戲提交為本段所在`[Codex] fix: 修正開箱節奏與箱蓋厚度凹陷`，實際SHA見交付，僅包含本項17檔增量，不合併或推送。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／Codex、原V3幾何／來源與匯出、ui-scale、headless／GIF流程、chest結算／資料、既有時序與快取／VFX／字串回歸；新形狀及紋理皆自製，無外部素材。自我Review完成，三項修改與驗證無未完成內容，可供合併與使用者看GIF驗收；限制為未驗其他瀏覽器／實體裝置長播放。其他聊天的塔任務／提示變更在獨立區段且各自提交，保留其成果；下一步兩庫正常整合後重載／重啟遊戲。
+
+
+## CHEST-CAPS-20261126 — 側蓋貼圖與可辨識深凹內襯
+
+- Owner：Codex；Done，單人處理。使用者三張截圖指出V4側蓋貼圖缺失、全開厚度不清楚、內凹仍像平板；追加內凹要更明顯。保留1.5秒抖動＋0.3秒快開、斜角造型、品質光效／花紋、揭示與立即關閉。
+- 前置：V4已提交，遊戲／素材庫乾淨；fetch及逐檔預檢無外部來源。允許原Blender製作／匯出工具、五圖集／manifest／來源、ui-chest／首頁快取／必要CSS、開箱回歸、CHEST_SYSTEM／LV／VFX登記及本段；素材庫新包chest-opening-20261126-v5，保存舊版。禁止玩法／表格／Worker／存檔／協議／其他工作區，不合併推送。
+- 診斷與方案：V4側面只有連接內外弧面的薄環帶，缺完整外端蓋；正交鏡頭下，原弧面主要向鏡頭深處凹，僅靠數值／陰影仍不易辨識。補完整貼圖外端蓋與實體底材，做有明確前緣厚框、內收斜壁與更深且更窄花紋內襯的空間，驗證關閉／半開／全開放大畫面後才烘製全品質；幾何／貼圖與實機時序／回歸／雙庫SHA／Build／GIF一併驗收。
+- 使用者續指四角交界太暗、全開看不到外頂：新增四條角落連接亮邊與深處邊緣，兩個完整側蓋使用原右側無透明區域的圖紋，外殼以自身邊緣色延展為不透明材質防止內壁透出；內襯深處收窄、四面斜壁分色，展示角度改為同時可見外頂與內凹。已目視傳說關閉／半開／全開放大圖，再開始全品質製作；1.5秒抖動／0.3秒快開保持。
+- 完成／修改16檔：tools/chest-opening/build.py、export.cjs，images/chests/opening五個WebP／manifest／SOURCE，js/ui-chest.js與index.html只換圖集／腳本快取，tests/chest-opening.test.cjs，CHEST_SYSTEM／LV／VFX登記及本段。補完整雙端蓋、端面弧肋與鉚釘、實體口框、四面內收斜壁、較窄深處內襯、四角及深處亮邊；以60度末幀同時呈現外頂和內襯。CSS與時序未變，舊素材包保留。
+- 幾何／來源：五份Blend重開、貼圖全打包，逐25幀驗後緣鉸鏈最大誤差1.794e-7、箱體誤差0；各有2個完整貼圖端面、4斜壁、4口框面及4角邊。最小殼厚0.062570、凹深0.665066模型單位；深處中央寬為口寬68.5%，全開外頂投影露出19.60像素（320圖）。端面UV來源區alpha最小大於0.95，外殼延展圖alpha全1，無透明缺口。125個WebP tile與來源PNG逐位元相同；145來源SHA及五對遊戲／素材圖集核對通過，另逐份驗Git index blob SHA通過後才獨立提交素材庫`2d97451c9eb3cf877866f7c85caf8616ef8a4ed5`（新包146檔）。
+- 測試：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`74/74；`npm.cmd run build`772檔；`node tools/chest-opening/export.cjs --check`、`node --check tools/chest-opening/export.cjs`、兩Python工具AST及Git差異檢查通過，未跑全庫。新增完整端面／斜壁／口框／角邊／內收比例／可見外頂的manifest守衛。驗證器曾誤用Blender像素步進切片、跨品質圖片計數及把退化圖當圖集，已修正驗證器後通過，未為此更動成品。
+- 實機：隔離靜音Edge，以同一ui-chest原碼／實際CSS控時擷取五品質。0～1450ms抖動、1500ms歸位且閉蓋、1600ms切到開蓋中、1780ms尚未末幀、1800ms全開且首格／確認同時可用；1500ms後箱體x579.333374／y329.46875固定，圖集1600×1600且未退化，例外0。原生時鐘另驗700×500、減少動態、十萬件虛擬格／捲動、提前Esc不跳過、完成Esc立即關閉及空獎勵；冷圖解碼與輪詢在內的開啟到觀測完成2205.5ms，通過，未改1.8秒演出時鐘。
+- 預覽：本聊天chest-caps-v5/chest-corners-roof-v5.gif（720×480、325幀、20.25秒、約3.93MB，五品質）；lid-corners-roof-details.png為青銅／傳說放大，closed-half-open-details.png為五品質三姿勢。逐幀解碼／時長、放大姿勢與遊戲畫面目視通過，瀏覽器／Blender／伺服器已關閉，孤兒檢查無殘留；保留預覽與QA JSON。自動核准審查以政策限制拒絕刪除工作區外本輪擷取／試作，未重試，暫存留在本聊天chest-caps-v5，不影響成品。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／Codex、原五張箱圖及V3／V4包、pack.py、chest.css／ui-scale、chest結算／資料／Bridge／Worker／存檔／String、headless工具。其他聊天Task表變更保留、不納入本項。自我Review完成，程式／素材／預覽無未完成項，外觀交使用者看GIF驗收；未驗多瀏覽器／實體裝置長時間播放。遊戲Commit為本段所在`[Codex] fix: 補全寶箱側蓋與內凹層次`，SHA見交付，可供合併，未合併或推送develop／main。下一步正常整合兩庫後重載／重啟遊戲。
+
+## CHEST-TIMING-20261126 — 加倍搖晃、加速掀蓋與提前光效
+
+- Owner：Codex；Done，單人處理。使用者要求搖晃幅度再加倍、打開速度再加倍，光暈／光束在搖晃最後一幀、打開之前出現。沿用1.5秒搖晃，位移與旋轉均為V5兩倍；掀蓋由0.3秒縮至0.15秒，總長1.65秒；1500ms開光效，1650ms才揭示獎勵／確認，保留五品質及立即中止。
+- 前置：V5已提交，fetch及8檔預檢無外部分支／副本來源；同副本其他聊天的配置表／data／formula修改保留。允許js/ui-chest.js、css/chest.css、index.html對應快取、tests/chest-opening.test.cjs、CHEST_SYSTEM／LV／VFX登記及本段；不改素材圖集／模型、表格、結算／Worker／存檔／協議。計畫以搖晃／掀蓋兩段時間共用JS常數及CSS變數，提前光效定時器跟開箱清理；驗收1499／1500／1649／1650ms、動畫幅度／首末幀／時序／中止、減少動態、相關回歸／Build與實機GIF。圖集／模型無變更；額外預檢SOURCE後同步來源說明與素材庫V5 README／manifest，將易過期的播放時間改引用系統文件，不重烘或另建素材包；兩庫分別提交，不合併推送。
+- 完成／修改9檔：ui-chest以CHEST_SHAKE_MS／CHEST_LID_OPEN_MS共用JS與CSS分段時間，新增可清理的提前光效定時器；chest.css保留搖晃節拍並將全部位移／旋轉乘2，0.15秒圖集延遲至1.5秒起播，光暈／光束改由has-opening-fx立即顯示且持續旋轉，完成不重啟；index同步兩個快取timing-v6；chest-opening回歸、SOURCE、CHEST_SYSTEM、LV、VFX登記與本段同步。最大位移4.47px／垂直0.7px／旋轉3.51度；五品質圖集／模型未改。
+- 測試指令與結果：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`77/77；開箱專項15/15，新增1499／1500／1649／1650ms光效與獎勵邊界、兩段CSS時間及幅度、三個提前外部關閉時點清理／重開驗證。`npm.cmd run build`772檔、`node tools/chest-opening/export.cjs --check`145來源SHA與五對圖集、雙庫Git差異檢查通過，未跑全庫。
+- 實機：隔離靜音Edge，實際CSS與相同ui-chest原碼控時拍五品質；1500ms閉蓋／歸位且光效opacity=1，1649ms仍未全開／無獎勵與確認，1650ms全開／首格／確認同時可用，旋轉跨完成持續。80ms量得-2.71px／-1.43度，1360ms量得-4.47px／-3.51度，均為前版兩倍。1500ms後箱體位置固定，圖集未退化、例外0。另原生時鐘700×500／減少動態／十萬件／捲動／提前與完成Esc／空獎勵通過，MutationObserver量得光效1510.3ms、開完1681.3ms，屬瀏覽器排程誤差；靜態光效先於末幀／獎勵可見。
+- 素材庫僅V5 README及manifest改版，將播放規格改引用遊戲系統文件；145個Git index實際blob SHA全數核對後，先提交`6e2cfb3a8233d7404d7c08d3e71752e9d2927c4a`，無像素／模型／圖集變更。GIF是本輪實際遊戲擷取，五品質720×480／325幀／19.5秒／約4.84MB，逐幀解碼、時長及1500ms閉蓋有光目視通過；成品及QA JSON在本聊天chest-timing-v6/chest-faster-open-v6.gif，原始擷取在獨立tmp/chest-timing-v6。已核對絕對路徑／非連結後嘗試清理此輪自身暫存，自動核准審查以政策限制拒絕刪除，未重試並保留；上輪被拒的工作區外目錄未動。瀏覽器／伺服器已關閉，孤兒檢查無殘留。
+- 唯讀未改：規範／Workflow／Codex、來源製作與匯出工具、所有箱圖／Blender／manifest、chest結算／資料／Worker／Bridge／存檔／String、headless工具；其他聊天配置與formula／data變更不暫存。自我Review完成，三項要求與GIF無未完成項；未驗其他瀏覽器／實體裝置長時間播放。遊戲Commit為本段所在`[Codex] fix: 加倍開箱搖晃並提前品質光效`，實際SHA見交付，可供合併，未合併或推送develop／main；下一步重新載入遊戲驗收新版節奏。
+
+## CHEST-GIF-SPEED-20261126 — 修正預覽播放器的開蓋減速
+
+- Owner：Codex；Done，單人處理。使用者回報加速後反而更慢；檢查遊戲仍是150ms掀蓋，但上一份GIF有連續15個10ms短幀，需驗證播放器是否將其延長。保留加倍搖晃、1500ms光效、1650ms獎勵／確認，先量測實際GIF，修正預覽並重新交付，不盲目再改已縮短的遊戲時間。
+- 前置：fetch及preview.cjs／chest-preview.test.cjs／本文件預檢無外部來源，其他聊天表格／data／formula變更保留。允許新增tools/chest-opening/preview.cjs、tests/chest-preview.test.cjs與本段；必要時追加預檢再修執行時檔案。不改圖集／模型／玩法／表格／協議／存檔，不合併推送。計畫建立禁止10ms短幀且保持原總時長的GIF編碼工具，以真實播放器比較舊／新預覽，並核對原生開蓋時間；預覽為臨時交付，無新必要素材則不建立素材庫空提交。
+- 原生追加發現：首次及暖機後均可能因首幀渲染延遲，CSS動畫時間比JS倒數晚200～350ms，導致還沒播到掀蓋就被完成計時切到末幀。追加預檢ui-chest／chest-opening回歸／index／CHEST_SYSTEM／LV／VFX文件後，在圖片解碼後等待CSS Animation.ready再開始兩個倒數；時長1500＋150ms維持，補等待及提前關閉的回歸，並重新量測原生CSS進度。
+- 完成／修改9檔：新增preview.cjs將連續10ms短幀合併為至少20ms，餘10ms併回前幀，保持150ms掀蓋與1650ms獎勵邊界；新增chest-preview回歸。ui-chest等待CSS ready並扣除已播放時間後排程，掀蓋animationstart同步顯示光效（減少動態保留計時備援），中途關閉與動畫取消後不殘留計時；chest-opening補兩項起播／取消／已播放時間／事件同步測試，index只更新ui-chest快取start-v7，CHEST_SYSTEM／LV／VFX及本段同步。CSS／時長／圖像／模型無改。
+- 根因驗證：隔離Edge同頁同時原生播放舊V6與新GIF。約1700～1850ms擷取視窗中，舊GIF仍顯示檔案1530ms的開蓋初段，新GIF已是1750ms全開與獎勵；2700ms舊仍只到1630ms開蓋末段。Pillow對截圖胸口區與GIF幀逐一比對，八組舊／新樣本像素平均誤差皆0，確認短幀被播放器延長；先前只驗檔案標示時長不足。新GIF285幀、720×480、19.5秒、最短20ms且無10ms幀，完整逐幀解碼／總長通過；素材／CSS未變，重編上輪實際CSS／DOM受控時鐘畫面，保持五品質演出時間。
+- 原生遊戲：首輪量測暴露CSS起播落後，未以失敗結果宣稱通過。修正後CSS動畫duration150ms／delay1500ms，實際RAF觀測到9個開蓋中間姿勢，第一個中間姿勢起已見光效，確認可立即關閉，例外0；ready觀測後1635.3ms完成（已扣CSS在ready前播放約一幀的時間），未再只跳末幀。初版同步仍有一幀光效落後，因此改成掀蓋起播事件同步並保留備援，最終實測通過。測試stub初版取消時誤建未處理拒絕Promise，改為惰性ready getter，未降低產品／測試要求。
+- 測試：`node --test tests/chest-opening.test.cjs tests/chest-preview.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`81/81；`npm.cmd run build`773檔；`node --check tools/chest-opening/preview.cjs`、`node --check js/ui-chest.js`及Git差異檢查通過。未跑全庫。自我Review覆蓋Promise取消、延後起播、CSS已過時間、雙計時清理、減少動態備援及GIF完成邊界。
+- 交付：本聊天chest-gif-speed-v7/chest-fast-preview-v7.gif與編碼／播放器／原生QA JSON、old-new-at-1700ms.png。瀏覽器與伺服器已關閉，孤兒檢查無殘留；新增探測暫存在上輪已被政策拒絕清理的tmp/chest-timing-v6，未重試刪除。素材庫無變更，不需空提交；唯讀檢查規範／Workflow、既有CSS／圖集／製作匯出、GameClock／headless工具／原開箱回歸，未改表格／資料／公式／Worker／Bridge／存檔或其他聊天成果。無未完成實作，可供合併，未合併或推送；限制為只驗本機Edge，其他GIF播放器與實體裝置未測。遊戲Commit為本段所在`[Codex] fix: 修正開箱起播同步與GIF預覽速度`，SHA見交付；下一步重新載入遊戲並看新版GIF驗收。
