@@ -18,6 +18,7 @@ var QuestGuide = (function () {
     forgeParts: { tab: 'newforge', target: '[data-nf-partsopen]' },
     forgeFineAuto: { tab: 'newforge', target: 'label:has([data-nf-qual="1"]:enabled)' },
     chestOpenCount: { tab: 'newforge', target: '[data-chest-open][data-chest-count="1"]' },
+    chestLevel: { tab: 'newforge', target: '[data-chest-upgrade]' },
     composeCount: { tab: 'gems', target: '#fuse-btn' },
     relicCount: { tab: 'relics' },
     maxHp: { tab: 'char' }

@@ -1,3 +1,15 @@
+## TASK-CHEST-UPGRADE-20261126 — 接通新增寶箱與全身強化任務
+
+- Owner：Codex；Done，單人處理。使用者新增順序11青銅寶箱20級、12開任意寶箱1個、14全身強化+10，要求補參數並套用。兩個寶箱獎勵依使用者裁決以顯示文字為準，數量改1500／2000碎片。前置：Task.xlsx已保存且來源獨占存取確認成功。
+- 允許：Task.xlsx／CSV、js/tasks.js、data.js、save-schema.js、quest-guide.js、tools/config_tables.cjs說明、必要首頁／bridge／Worker快取、任務與存檔相關回歸、LV／ONE_TIME_MIGRATIONS及本段。禁止擅改使用者其他任務內容、其他表格、素材、玩法與獎勵數值，不合併推送；其餘Task既有使用者變更原樣匯出套用。
+- 設計：chestLevel（參數=寶箱ID1、數量20）、chestOpenCount（參數空、數量1）、equipSlots（參數0|0|10、數量13）；新增第三段最低強化條件並沿用雙手武器佔兩格、目前啟用裝備方案規則。新增寶箱等級判讀及導航。使用者把舊順序14熔爐精良設定前移至新順序6，需格式3遷移一併處理重排與三個插入，避免重領既有任務；已越過的新／前移項目依既有政策略過。
+- 全部修改目標預檢無外部來源；唯一初始修改是本輪使用者Task.xlsx。驗收：Excel原生編修及正常重開、全表值／格式差異與CSV/runtime同步；新任務進度邊界、領獎／拒絕／存讀／導航、全部舊索引遷移與冪等、相關回歸、快取、Build及Git差異檢查。無素材變更，素材庫不需提交。
+- 完成／修改20檔：Task.xlsx／CSV、data.js、tasks.js、save-schema.js、quest-guide.js、config_tables.cjs、index／bridge／Worker快取、6支既有任務／格式測試與新task-chest-upgrade測試、LV／ONE_TIME_MIGRATIONS及本段。新增chestLevel唯讀判斷，equipSlots第三段強化門檻向後相容；格式3登錄重排／插入遷移，46項任務按來源完整套用。未增加Worker協議或素材。
+- Excel：先以試算表技能渲染檢視既有表，再透過Excel原生COM在副本改10格、正常重開兩次核對後確認來源hash與獨占存取才更新。主表只有C12／D12／E12／H12／C13／E13／H13／C15／D15／E15不同；第二頁只改A18裝備參數說明、增加A70寶箱等級說明。全部既有儲存格樣式、styles.xml、主表列高／欄寬／預設格式／檢視完全相同；說明頁僅追加一列，原列內容與格式保留。未改寫封裝XML。原生寫入初輪Int32 COM型別不符，來源未覆蓋，改用Excel數字Value後完整流程通過。修改前後渲染已目視確認，機讀差異報告留聊天QA目錄。
+- 套用：`node tools/config_tables.cjs --sync Task`實際會同步所有表CSV，檢查其他匯出只有NPC／Zones換行差異，逐位核對正規化後與HEAD一致才還原這兩份本輪匯出副作用。`node tools/config_tables.cjs --apply --write Task`只重建TASKS；再次`--apply Task`語意差異0，Excel／CSV／runtime逐欄一致。其餘Task使用者調整（含熔爐任務前移與既有獎勵）保持來源內容；進行中另一項game_parameters.xlsx修改保留未提交，未套用該表。
+- 測試：`node --test tests/task-chest-upgrade.test.cjs tests/task-system.test.cjs tests/task-skills.test.cjs tests/task-evolution.test.cjs tests/task-chest-relic.test.cjs tests/save-schema.test.cjs`54/54；`tests/chest.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`44/44；`tests/quest-guide-input.test.cjs tests/gm-task.test.cjs tests/sim-equip-set-roles.test.cjs`11項最終全通過（GM舊第16項假設依新表改19後單檔4/4）。共109項，新增8項覆蓋真正模擬指令升箱／開箱／領獎、門檻失敗、其他寶箱／未解鎖、雙手武器／啟用方案、存讀／導航、全部44個格式2索引與格式0／1各41個索引串接、已領防重及新局冪等。新測試初輪錯以為寶箱指令回true／err物件，依既有null／錯誤字串契約修正後通過；未改產品契約或放寬達成條件。
+- 驗證及交接：`npm.cmd run build`769檔、字串稽核寫死0、Git差異檢查通過；歷史飛刀遷移保留格式2隔離測試，舊任務回歸按來源重排更新序號，任務3獎勵200改500的斷言源於使用者既有Task變更。唯讀檢查共通規範／Workflow／Codex、chest／player／item／save／protocol、模擬引擎／既有任務及參數管線，無素材變更。未實機操作完整遊戲／跑全庫；既有其他任務仍有獎勵文字與實發不一致（如順序5、10、21、25、28、31及裝備獎勵8），本輪依授權只修新寶箱兩項，不擅改其餘來源。自我Review通過，本輪製作與驗證無未完成項目，可合併審閱；Commit為本段所在`[Codex] feat: 套用寶箱與全身強化任務參數`，未合併／推送。下一步重新載入遊戲驗收；已越過插入點的舊玩家依既有政策略過新項。QA JSON保留聊天目錄；自動核准審查以政策限制拒絕刪除task-params-qa內兩份Excel副本、兩PNG、三支腳本及node_modules連結，未重試或繞過，列為清理例外，不納入專案提交。孤兒瀏覽器檢查無殘留。
+
 ## DESKTOP-WINDOW-BOUNDS-20261126 — 記住玩家自訂視窗大小
 
 - Owner：Codex；Done，單人處理。使用者要求手動拉伸的桌面遊戲視窗大小於下次啟動保留，不再每次放大到接近全螢幕。前置：既有顯示模式／解析度及獨立 userData 已完成。

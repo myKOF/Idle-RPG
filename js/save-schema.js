@@ -23,7 +23,7 @@
 
    本檔三種環境都會載入：主執行緒 <script>、Worker importScripts、Node vm 測試。 */
 
-var SAVE_SCHEMA_VERSION = 2;
+var SAVE_SCHEMA_VERSION = 3;
 
 /* 上市後的遷移登錄，依 to 由小到大。每筆：
      { to: 2, name: 'xxxV1', date: 'YYYY-MM-DD', migrate: function (data) { ... } }
@@ -38,6 +38,19 @@ var SAVE_SCHEMA_MIGRATIONS = [{
     if (idx > 4) idx++;
     if (idx > 9) idx++;
     if (idx > 26) idx++;
+    data.taskState.idx = idx;
+  }
+}, {
+  to: 3, name: 'taskInsertChestUpgradeV1', date: '2026-11-26',
+  migrate: function (data) {
+    if (!data.taskState || typeof data.taskState !== 'object') data.taskState = { idx: 0 };
+    var idx = Math.max(0, Math.min(43, Math.floor(Number(data.taskState.idx) || 0)));
+    // 舊順序14前移至6；已越過新位置者略過前移項，避免重領其他已完成任務。
+    if (idx > 5) idx++;
+    if (idx > 14) idx--;
+    // 新順序11、12與14：恰在插入點者接著做，已越過者略過。
+    if (idx > 10) idx += 2;
+    if (idx > 13) idx++;
     data.taskState.idx = idx;
   }
 }];

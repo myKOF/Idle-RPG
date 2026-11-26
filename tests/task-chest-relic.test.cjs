@@ -63,13 +63,13 @@ test('relicCount：解鎖 1 件＋各級升級數量＋手上件數；升級不�
 
 test('任務表：開啟寶箱與獲得遺物兩個任務使用新類型、有目標數量', () => {
   const c = loadContext();
-  const chest = c.TASKS.find((t) => t.type === 'chestOpenCount');
+  const chest = c.TASKS.find((t) => t.type === 'chestOpenCount' && t.count === 10);
   const relic = c.TASKS.find((t) => t.type === 'relicCount');
   assert.ok(chest && chest.count > 0, '任務表要有 chestOpenCount 任務');
   assert.ok(relic && relic.count > 0, '任務表要有 relicCount 任務');
-  // 原遷移仍處理當時的40項表；格式2再平移三個技能任務，現行位置因此後移。
-  assert.equal(c.TASKS.indexOf(chest), 18);
-  assert.equal(c.TASKS.indexOf(relic), 35);
+  // 格式2插入技能任務，格式3再插入寶箱與全身強化任務。
+  assert.equal(c.TASKS.indexOf(chest), 21);
+  assert.equal(c.TASKS.indexOf(relic), 38);
 });
 
 /* 遷移前的存檔＝沒有完成旗標；其餘遷移旗標保留，只測這一支。 */
@@ -92,7 +92,7 @@ test('taskInsertChestRelicV1：未走到插入點的接著做新任務，走過�
     assert.equal(data.taskState.idx, want, '舊索引 ' + idx);
     assert.equal(data.taskInsertChestRelicV1, true);
   });
-  assert.equal(c.TASKS.length, 43);
+  assert.equal(c.TASKS.length, 46);
 });
 
 test('taskInsertChestRelicV1：重複讀檔不再平移；新局不觸發', () => {

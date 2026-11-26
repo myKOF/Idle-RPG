@@ -28,9 +28,9 @@ function taskState() {
 
 /* ---- 狀態檢查輔助 ---- */
 
-// 身上滿足「品質 ≥ minR 且 裝備等級 ≥ minLv」的部位數。
+// 身上滿足「品質 ≥ minR、裝備等級 ≥ minLv、強化 ≥ minUpgrade」的部位數。
 // 副手欄被雙手武器連帶佔用時，以主手那把雙手武器計入（穿滿 13 部位才可能達成）。
-function taskCountEquipSlots(minR, minLv) {
+function taskCountEquipSlots(minR, minLv, minUpgrade) {
   var eq = (typeof activeEquipment === 'function') ? activeEquipment() : G.equipment;
   if (!eq) return 0;
   var n = 0;
@@ -38,7 +38,8 @@ function taskCountEquipSlots(minR, minLv) {
     var key = SLOT_LIST[i];
     var it = eq[key];
     if (!it && typeof slotBlockedByTwoHand === 'function' && slotBlockedByTwoHand(eq, key)) it = eq.weapon;
-    if (it && (Number(it.rarity) || 0) >= minR && (Number(it.level) || 0) >= minLv) n++;
+    if (it && (Number(it.rarity) || 0) >= minR && (Number(it.level) || 0) >= minLv &&
+        (Number(it.upgrade) || 0) >= (minUpgrade || 0)) n++;
   }
   return n;
 }
@@ -127,13 +128,20 @@ function taskProgressFor(def) {
   switch (def.type) {
     case 'equipSlots':
       parts = String(def.param || '0|0').split('|');
-      return taskCountEquipSlots(Math.floor(Number(parts[0]) || 0), Math.floor(Number(parts[1]) || 0));
+      return taskCountEquipSlots(Math.floor(Number(parts[0]) || 0), Math.floor(Number(parts[1]) || 0),
+        Math.floor(Number(parts[2]) || 0));
     case 'upgradeCount': return Math.floor(Number(stats.upgraded) || 0);
     case 'rerollCount': return Math.floor(Number(stats.rerolled) || 0);
     case 'enchantCount': return Math.floor(Number(stats.enchanted) || 0);   // 附魔功能已關閉（data.js ENCHANT_ENABLED），此類型不再被任何任務使用
     case 'runeSocketCount': return Math.floor(Number(stats.runeSocketed) || 0);   // 累計鑲入符文次數（socketRune 計）
     case 'composeCount': return Math.floor(Number(stats.gemComposed) || 0);
     case 'chestOpenCount': return Math.floor(Number(stats.chestOpened) || 0);   // 累計開啟寶箱個數（chestOpen 計，任何寶箱皆算）
+    case 'chestLevel': {
+      var chestDef = typeof CHEST_BY_ID !== 'undefined' && CHEST_BY_ID[String(def.param || '')];
+      if (!chestDef || typeof chestEntry !== 'function') return 0;
+      var chest = chestEntry(chestDef, (G.player.chests || {})[chestDef.id]);
+      return chest.on ? chest.lv : 0;
+    }
     case 'relicCount': return taskCountRelicPieces();   // 累計獲得遺物件數（重複件也算）
     case 'skillEquipCount': {
       var equipped = 0;
