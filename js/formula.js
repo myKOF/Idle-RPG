@@ -86,6 +86,11 @@ function basePrimaryFor(level) {
   return { str: v, agi: v, int: v, vit: v };
 }
 
+// 轉生後僅屬性派生固定視為此等級，角色實際等級仍供升級與戰鬥結算使用。
+function attributeDerivationLevel(level, reincarnations) {
+  return Number(reincarnations) >= 1 ? 1000 : level;
+}
+
 /* ============================================================
    §2 玩家屬性彙總（50+ 屬性系統核心）
    流程：等級基礎四維 → 累加裝備詞條 / 被動技能 / 鑲嵌寶石
@@ -135,7 +140,8 @@ function computeStats(equipmentOverride) {
   // equipmentOverride：計算指定裝備套的屬性（屬性面板預覽「檢視中」那套用）；省略＝穿著中 G.equipment。
   var equipment = equipmentOverride || G.equipment;
   var p = G.player;
-  var prim = basePrimaryFor(p.level);
+  var lv = attributeDerivationLevel(p.level, reincarnationCount());
+  var prim = basePrimaryFor(lv);
   // 聚合桶（詞條 key 與桶名一致；特例：aspd → aspdPct、resX → resist）
   var A = {
     str: prim.str, agi: prim.agi, int: prim.int, vit: prim.vit,
@@ -293,13 +299,12 @@ function computeStats(equipmentOverride) {
   // 生命/護盾/物抗/魔抗/全屬性(七元素)抗性/敵種傷害/敵種抗性/全局減傷的「額外」天賦皆為乘算，於派生段套用。
 
   /* ---- 派生公式（st.base = 純等級/四維的基礎值，供屬性面板拆解顯示） ---- */
-  var lv = p.level;
   // 轉生最終倍率：生命／法力／四維各自一欄（參數表「1-轉生對照表」a／b／c）
   var reincHpMult = reincarnationHpMultiplier(), reincMpMult = reincarnationMpMultiplier();
   var reincStatMult = reincarnationStatMultiplier();
   var rawStr = Math.round(A.str), rawAgi = Math.round(A.agi);
   var rawInt = Math.round(A.int), rawVit = Math.round(A.vit);
-  var st = { level: lv, reincarnationHpMultiplier: reincHpMult, reincarnationMpMultiplier: reincMpMult,
+  var st = { level: p.level, reincarnationHpMultiplier: reincHpMult, reincarnationMpMultiplier: reincMpMult,
     reincarnationStatMultiplier: reincStatMult };
   // 四維主屬性：原始總值完成後，再套用轉生四維倍率。
   st.str = Math.round(rawStr * reincStatMult); st.agi = Math.round(rawAgi * reincStatMult);
@@ -318,8 +323,8 @@ function computeStats(equipmentOverride) {
     // 符文真言的最大生命乘區（正負皆可；負值是代價，如血月、時之沙），下限 0.1
     ((rwAgg && rwAgg.fx.maxHpPct) ? Math.max(0.1, 1 + rwAgg.fx.maxHpPct / 100) : 1));
   st.hpRegen = A.hpRegen + st.str * PRIMARY_STAT_EFFECTS.strHpRegen + st.vit * PRIMARY_STAT_EFFECTS.vitHpRegen; // 額外生命恢復/秒（野外另加 BASE_HP_REGEN 定值基礎回復）
-  // 法力 =（基底 + 原始智力×intMp + 定值）×轉生法力倍率；法力恢復另依原有公式計算
-  st.base.mp = DERIVED_COEF.mpBase + rawInt * PRIMARY_STAT_EFFECTS.intMp;
+  // 法力 =（基底 +（派生等級-1）×每級 + 原始智力×每智力係數 + 定值）×轉生法力倍率
+  st.base.mp = DERIVED_COEF.mpBase + (lv - 1) * DERIVED_COEF.mpPerLevel + rawInt * PRIMARY_STAT_EFFECTS.intMp;
   var rawMp = st.base.mp + A.mpFlat;
   st.mp = Math.round(rawMp * reincMpMult);
   st.mpRegen = DERIVED_COEF.mpRegenBase + st.int * PRIMARY_STAT_EFFECTS.intMpRegen + st.vit * PRIMARY_STAT_EFFECTS.vitMpRegen + A.mpRegen;

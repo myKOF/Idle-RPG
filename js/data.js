@@ -750,7 +750,7 @@ var PRIMARY_STAT_EFFECTS = {
   agiAspdPct: 0,
   agiEvasion: 0.02,
   agiHit: 0.02,     // 命中率每點敏捷
-  intMp: 2,
+  intMp: 1.5,
   intMpRegen: 0.01,
   intMatk: 1,
   intMdef: 0,
@@ -771,15 +771,15 @@ var DERIVED_COEF = {
   /* 以下原本是 computeStats 裡的內嵌字面值，套用參數表時靠「錨定程式碼片段」改寫
      （例如錨點 'st.base.mp = '）。那種錨點綁的是程式碼長相，任何一次重構都可能讓它
      0 命中，而套用參數只會安靜地少套幾個值。收進這裡之後錨點改綁欄位名。 */
-  hpBase: 400, hpPerLevel: 30,
-  mpBase: 100,
+  hpBase: 500, hpPerLevel: 30,
+  mpBase: 200, mpPerLevel: 10,
   mpRegenBase: 1,
   critRateBase: 5, critDmgBase: 150,
   hitBase: 100
 };
 /* 升級所需經驗 = 係數 × 等級^次方 + 常數（再乘轉生倍率、加轉生基礎值）。
    參數表「1-成長經驗／升級所需經驗」的 a / b / c。 */
-var XP_LEVEL_COEF = { a: 20, b: 2.6, c: 40 };
+var XP_LEVEL_COEF = { a: 10, b: 2.6, c: 40 };
 /* 等級基礎四維 = 基底 +（等級-1）× 每級增加。參數表「1-成長經驗／等級基礎四維」的 a / b。 */
 var PRIMARY_STAT_GROWTH = { base: 5, perLevel: 2 };
 // 連擊數係數（參數表「2-屬性派生／連擊數」：a＝觸發率 b＝暴擊 c＝攻速 d＝冷卻縮減）：
