@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 序章第三部終章（Shot 04 + Shot 05）電影級復刻分鏡手冊與參考圖包（Antigravity 2026-11-26）
+
+- **新增 [`opening_animation/CINEMATIC_PART3_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_PART3_STORYBOARD.md) 與 `opening_animation/cinematic_part3_pack/`**：
+  - 涵蓋原片 [`shots-01-05-replay.mp4`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/shots-01-05-replay.mp4) 完整 Shot 04 與 Shot 05（`01:09.5 – 01:54.4`），拆分為 4 段（Clip 09 ～ Clip 12：右手鎧甲撐地特寫、單膝半跪蓄力、起身握劍白光升騰、荒漠孤身迎戰古石拱門與聖劍白光終章）。
+  - 擷取 4 張原片構圖基準圖並自製生成 4 張無黑邊 AAA 3D CGI 電影風格基準圖（`ref_hand_sand.png`、`ref_kneel.png`、`ref_rise_sword.png`、`ref_finale_arch.png`），直接內嵌於分鏡手冊並納入 Git 追蹤。
+  - 新增一鍵合成腳本 [`assemble_part3.mjs`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/cinematic_part3_pack/assemble_part3.mjs)，自動對齊 1920×1080 30 fps（34.0 秒）、平滑跨溶解與 3 秒終幕淡黑淡出，並混入原片終章雙音軌。
+
+
 ## 序章第二段（00:34–01:09.5 / Shot 03）電影級復刻分鏡手冊與參考圖包（Antigravity 2026-11-25）
 
 - **新增 [`opening_animation/CINEMATIC_PART2_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_PART2_STORYBOARD.md) 與 `opening_animation/cinematic_part2_pack/`**：
