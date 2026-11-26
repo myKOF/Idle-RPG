@@ -4929,6 +4929,13 @@
 - 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
 - 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
 
+## SOCKET-ACTION-SCOPE-20261126 — 還原誤改的寶石與符文入口
+
+- Owner：Codex；Done。使用者指出前次只要求裝備鑲孔列內操作，未授權修改下方寶石／符文入口。已修正前次範圍誤判，移除入口與刻印的淺黃覆寫，只保留鑲孔列卸下／抹除／取消與效果左移5px。
+- 修改4檔：css/ashen-forge.css的淡黃規則只選取#detail-pane .socket-remove，移除下方操作列及選中狀態覆寫；index CSS快取20261126-socket-action-scope-v2；LV修正正式範圍及本段。未改遊戲邏輯、表格、其他樣式與素材。起始工作區乾淨，逐檔預檢無外部來源。
+- `node --test tests/equip-socket-ui.test.cjs tests/gem-socket-height-compact.test.cjs`29/29通過。隔離靜音Edge以正式itemSocketHTML／itemRuneHTML及完整CSS，對比a8107bf0之前的樣式：下方寶石／符文入口與刻印的底色／字色逐一完全相同，孔列卸下／抹除／取消仍淺黃，效果文字精確左移5px，列與按鈕邊界不變，hover／停用／按鈕命中通過，頁面例外0，兩頁截圖已目視核對。瀏覽器finally關閉，孤兒瀏覽器檢查無殘留；Git差異檢查通過。無JS變更，未重跑只檢查JS語法的全專案Build或全庫測試。
+- 唯讀檢查：共通規範／Workflow／Codex、前次CSS與鑲孔產生器／操作列、既有鑲嵌與高度回歸。無新字串或素材，素材庫無需提交。自我Review完成，本輪無未完成項目，可供審閱合併；Commit為本段所在`[Codex] fix: 將淺黃操作樣式限定於裝備鑲孔`，未合併或推送。下一步重新載入，確認下方入口恢復原外觀。
+
 ## SOCKET-ACTION-CONTRAST-20261126 — 鑲嵌操作淺黃底與效果文字左移
 
 - Owner：Codex；Done，單人處理。使用者要求寶石／符文鑲嵌與卸下操作更顯眼，採淡淺黃底；鑲孔列的效果文字（如吸血+7）向左移5px。沿既有共用鑲嵌頁及socket-remove樣式完成。

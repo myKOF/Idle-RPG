@@ -1845,18 +1845,14 @@ html *::-webkit-scrollbar-corner {
 #tab-equip #detail-pane .socket-remove:hover { border-color: #a8322c; }
 #tab-equip #detail-pane :is(.socket-pick, .socket-remove):disabled { cursor: default; opacity: 0.6; }
 
-/* 寶石／符文鑲嵌入口、刻印與孔列取下操作共用淡黃底。 */
-#ui-shell #tab-equip :is(#detail-pane .socket-remove, #equip-action-bar [data-act="toggle-socket"], #equip-action-bar [data-act="toggle-rune"], #equip-action-bar [data-act="engrave-rune"]) {
+/* 淡黃底只作用於裝備鑲孔列內的卸下／抹除／取消操作。 */
+#ui-shell #tab-equip #detail-pane .socket-remove {
   background: #e6d9ad !important;
   border-color: #b6a371 !important;
   color: #3c321d !important;
   text-shadow: none !important;
 }
-#ui-shell #tab-equip :is(#detail-pane .socket-remove, #equip-action-bar [data-act="toggle-socket"], #equip-action-bar [data-act="toggle-rune"], #equip-action-bar [data-act="engrave-rune"]):is(:hover, :focus-visible):not(:disabled) {
-  background: #f4e8bf !important;
-  border-color: #927536 !important;
-}
-#ui-shell #tab-equip #equip-action-bar :is([data-act="toggle-socket"], [data-act="toggle-rune"])[aria-pressed="true"] {
+#ui-shell #tab-equip #detail-pane .socket-remove:is(:hover, :focus-visible):not(:disabled) {
   background: #f4e8bf !important;
   border-color: #927536 !important;
 }
