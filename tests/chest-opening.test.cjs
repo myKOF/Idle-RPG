@@ -81,11 +81,12 @@ function harness() {
         el.showModal = () => { el.open = true; };
         el.close = () => { el.open = false; el.emit('close'); };
         el.remove = () => { if (current === el) current = null; };
-        el.getAnimations = () => [{ cancel() { el.animationsCancelled = true; } }];
+        el.getAnimations = () => [{ animationName: 'nfc-chest-charge', currentTime: c.animationTime, get ready() { return c.animationReady(); }, cancel() { el.animationsCancelled = true; } }];
         return el;
       }
     },
-    decode: () => Promise.resolve()
+    decode: () => Promise.resolve(),
+    animationReady: () => Promise.resolve(), animationTime: 0
   };
   c.window = c;
   vm.createContext(c);
@@ -95,7 +96,7 @@ function harness() {
   return {
     c, timers, observers, gridNodes, current: () => current,
     columns(n) { columns = n; observers.filter(o => o.active).forEach(o => o.fn()); },
-    async flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); },
+    async flush() { for (let i = 0; i < 16; i++) await Promise.resolve(); },
     advance(ms) {
       const until = now + ms;
       while (true) {
@@ -229,6 +230,53 @@ test('冷圖解碼前不耗用開箱時長，解碼失敗仍可完成，外部�
   c.decode = () => new Promise(r => { complete = r; });
   c.chestShowResult(result(c)); h.current().close(); complete(); await h.flush();
   assert.equal(h.timers.size, 0); assert.equal(h.current(), null);
+});
+
+test('CSS首幀尚未起播不消耗倒數，提前關閉／取消ready後不殘留光效計時', async () => {
+  const h = harness(), c = h.c;
+  let begin;
+  c.animationReady = () => new Promise(resolve => { begin = resolve; });
+  c.chestShowResult(result(c)); await h.flush();
+  const el = h.current();
+  h.advance(300);
+  assert.equal(h.timers.size, 0);
+  assert.equal(el.classList.contains('has-opening-fx'), false);
+  assert.equal(el.confirm.hidden, true);
+  begin(); await h.flush();
+  h.advance(1499); assert.equal(el.classList.contains('has-opening-fx'), false);
+  h.advance(1); assert.equal(el.classList.contains('has-opening-fx'), true);
+  h.advance(149); assert.equal(el.confirm.hidden, true);
+  h.advance(1); assert.equal(el.confirm.hidden, false);
+  el.confirm.emit('click');
+  c.chestShowResult(result(c)); await h.flush();
+  const complete = begin;
+  h.current().close(); complete(); await h.flush();
+  assert.equal(h.timers.size, 0); assert.equal(h.current(), null);
+  c.animationReady = () => Promise.reject(new Error('animation cancelled'));
+  c.chestShowResult(result(c)); await h.flush(); h.advance(1650);
+  assert.equal(h.current().confirm.hidden, false);
+  h.current().close();
+});
+
+test('CSS ready回呼延遲時扣除已播放時間，掀蓋起播事件保證光效先可見', async () => {
+  const h = harness(), c = h.c;
+  c.animationTime = 20;
+  c.chestShowResult(result(c)); await h.flush();
+  const el = h.current();
+  h.advance(1479); assert.equal(el.classList.contains('has-opening-fx'), false);
+  h.advance(1); assert.equal(el.classList.contains('has-opening-fx'), true);
+  h.advance(149); assert.equal(el.confirm.hidden, true);
+  h.advance(1); assert.equal(el.confirm.hidden, false);
+  el.close();
+  c.animationTime = 0;
+  c.chestShowResult(result(c)); await h.flush();
+  const next = h.current();
+  next.emit('animationstart', { animationName: 'nfc-chest-charge' });
+  assert.equal(next.classList.contains('has-opening-fx'), false);
+  next.emit('animationstart', { animationName: 'nfc-open-sheet' });
+  assert.equal(next.classList.contains('has-opening-fx'), true);
+  assert.equal(next.confirm.hidden, true);
+  next.close(); assert.equal(h.timers.size, 0);
 });
 
 test('五種品質依配置選擇色系與箱圖，空獎勵仍有確認，所有格完成後停止計時', async () => {

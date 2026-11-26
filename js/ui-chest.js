@@ -361,6 +361,14 @@ function chestShowResult(res) {
   var observer = rewards.total ? chestBindResultGrid(viewport, rewards, true) : null;
   var openingTimer = null, effectTimer = null, ready = false, dismissed = false;
   var confirm = el.querySelector('.nfc-res-confirm');
+  function lightEffects() {
+    clearTimeout(effectTimer);
+    effectTimer = null;
+    if (!dismissed) el.classList.add('has-opening-fx');
+  }
+  el.addEventListener('animationstart', function (e) {
+    if (e.animationName === 'nfc-open-sheet') lightEffects();
+  });
   function opened() {
     if (dismissed) return;
     openingTimer = null;
@@ -381,11 +389,19 @@ function chestShowResult(res) {
   })).then(function () {
     if (dismissed) return;
     el.classList.add('is-opening');
-    effectTimer = setTimeout(function () {
-      effectTimer = null;
-      if (!dismissed) el.classList.add('has-opening-fx');
-    }, CHEST_SHAKE_MS);
-    openingTimer = setTimeout(opened, CHEST_OPENING_MS);
+    // CSS的startTime要等首個渲染影格才確定；避免主執行緒忙碌時倒數先跑。
+    return Promise.all(el.getAnimations({ subtree: true }).map(function (animation) {
+      return Promise.resolve(animation.ready).catch(function () {});
+    }));
+  }).then(function () {
+    if (dismissed) return;
+    var charge = el.getAnimations({ subtree: true }).find(function (animation) {
+      return animation.animationName === 'nfc-chest-charge';
+    });
+    var elapsed = charge ? Math.max(0, Number(charge.currentTime) || 0) : 0;
+    // ready可能在起播後才回呼；扣掉CSS已播放時間，保留同一演出時間軸。
+    effectTimer = setTimeout(lightEffects, Math.max(0, CHEST_SHAKE_MS - elapsed));
+    openingTimer = setTimeout(opened, Math.max(0, CHEST_OPENING_MS - elapsed));
   });
   function dismiss() {
     if (dismissed) return;
