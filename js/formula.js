@@ -2378,11 +2378,11 @@ var UPGRADE_COST_SCRAP = { coef: 8, base: 1.232, perLevel: 0.04, perRarity: 1 };
 function upgradeCost(it) {
   var lv = it.upgrade || 0;
   return {
-    gold: Math.round(UPGRADE_COST_GOLD.coef * Math.pow(UPGRADE_COST_GOLD.base, lv) * (1 + it.level * UPGRADE_COST_GOLD.perLevel)),
+    gold: Math.max(1, Math.round(UPGRADE_COST_GOLD.coef * Math.pow(UPGRADE_COST_GOLD.base, lv) * (1 + it.level * UPGRADE_COST_GOLD.perLevel))),
     // 遺物「碎片再生爐」：碎片 -N%（兩端共載，強化按鈕顯示的費用與實際扣款同一支）
-    scrap: Math.round((typeof relicDiscount === 'function' ? relicDiscount('upgradeScrapDiscount', 1) : 1) *
+    scrap: Math.max(1, Math.round((typeof relicDiscount === 'function' ? relicDiscount('upgradeScrapDiscount', 1) : 1) *
       UPGRADE_COST_SCRAP.coef * Math.pow(UPGRADE_COST_SCRAP.base, lv) * (1 + it.level * UPGRADE_COST_SCRAP.perLevel) *
-      (1 + (it.rarity || 0) * UPGRADE_COST_SCRAP.perRarity))
+      (1 + (it.rarity || 0) * UPGRADE_COST_SCRAP.perRarity)))
   };
 }
 // 實際強化成功率 = 基礎 × (1 + 「強化成功率」屬性%)（夾在 100% 內）；失敗損失半數材料
@@ -2398,7 +2398,7 @@ function upgradeSuccessChance(it) {
    品質倍率：稀有度編號 R6 起每高一階多 2 倍（R6＝2 倍…R11＝12 倍），先乘品質倍率再套次數加成。
    次數加成：每件裝備記 it.rerollCount（整件洗煉與單詞條洗煉共用一個計數），
    金幣與精華都再乘 min(maxMult, 1 + perCount% × 已洗煉次數)，乘完無條件捨去；
-   遺物「節約瓶」折扣在次數加成之後套用。 */
+   遺物「節約瓶」折扣在次數加成之後套用，最終各項資源費用至少為 1。 */
 var REROLL_COST_GOLD = { coef: 40, base: 1.7, perLevel: 0.15 };
 var REROLL_COUNT_COST = { perCount: 1, maxMult: 100 };
 /* 品質倍率：稀有度編號 R ≥ from 時，金幣與精華都再乘 perTier × (R − from + 1)；
@@ -2425,8 +2425,8 @@ function rerollCost(it) {
   // 遺物「節約瓶」：精華 -N%（無條件捨去，與原本取整方向一致）
   if (typeof relicDiscount === 'function') essence = Math.floor(relicDiscount('rerollEssenceDiscount', essence));
   return {
-    gold: rerollCountScale(Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, costTier) * (1 + it.level * REROLL_COST_GOLD.perLevel)) * rarityMult, it.rerollCount),
-    essence: essence
+    gold: Math.max(1, rerollCountScale(Math.round(REROLL_COST_GOLD.coef * Math.pow(REROLL_COST_GOLD.base, costTier) * (1 + it.level * REROLL_COST_GOLD.perLevel)) * rarityMult, it.rerollCount)),
+    essence: Math.max(1, essence)
   };
 }
 
@@ -2442,7 +2442,7 @@ function inventoryExpandCost(upg) {
   var cost = INVENTORY_EXPAND_COST_BASE + INVENTORY_EXPAND_COST_MULT * Math.pow(INVENTORY_EXPAND_COST_RATE, n);
   // 遺物「鍍金鈕扣」：費用 -N%（js/relic.js；兩端共載，主執行緒讀 header 面板的遺物等級）
   if (typeof relicDiscount === 'function') cost = relicDiscount('inventoryExpandDiscount', cost);
-  return Math.round(cost);
+  return Math.max(1, Math.round(cost));
 }
 // 背包擴充上限（含基礎容量）＝參數表 INVENTORY_MAX ＋ 遺物「次元行囊」。擴充按鈕、Worker 指令與面板一律讀這支。
 function inventoryExpandMax() {

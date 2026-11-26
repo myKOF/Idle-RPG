@@ -1140,7 +1140,8 @@ BOSS 裝備實際機率 = 表值 × `(1 + 有效掉寶率% / 100)`；每個品�
 | 死亡復活 | 3 秒；野外死亡退 10 階，最低第 1 階 | `data.js` `REVIVE_DELAY`、`FIELD_DEATH_STAGE_RETREAT` |
 | 高塔限時 / 狂暴檢查 / 狂暴倍率 / 蓄力周期 | 三塔各自獨立（目前皆為 60 秒 / 40 秒 / ×3 / 8 秒） | `data.js` `TOWER_BOSS_TRIAL / TOWER_BOSS_HELL / TOWER_BOSS_PURGATORY` |
 | 附魔精華費用 | 5 / 次 | `data.js` `ENCHANT_ESSENCE_COST` |
-| 洗煉精華費用 | 基礎精華費用 × `裝備等級 / 50`，結果無條件捨去；普通～傳說基礎費用 `1～6`，神話 `9`、創世 `14`、神鑄創世 `20`、混沌 `27`、神鑄混沌 `36` | `formula.js` `rerollCost`、`data.js` `REROLL_ESSENCE_COST`、`REROLL_ESSENCE_LEVEL_DIVISOR` |
+| 洗煉精華費用 | 基礎精華費用 × `裝備等級 / 50`，結果無條件捨去；普通～傳說基礎費用 `1～6`，神話 `9`、創世 `14`、神鑄創世 `20`、混沌 `27`、神鑄混沌 `36`。套用品質／次數倍率及遺物折扣並取整後，最終至少收 `1` 份；洗煉金幣最終亦至少 `1` | `formula.js` `rerollCost`、`data.js` `REROLL_ESSENCE_COST`、`REROLL_ESSENCE_LEVEL_DIVISOR` |
+| 折扣後付費需求下限（2026-11-26） | 強化金幣／碎片、洗煉金幣／精華、背包擴充金幣、商人商品售價，原公式及遺物折扣取整後各至少為 `1`。強化失敗仍收半價，但各資源最少扣 `1`；不變更表內折扣強度 | `formula.js` `upgradeCost`／`rerollCost`／`inventoryExpandCost`、`item.js` `merchantItemPrice`、`factory.js` `tryUpgrade` |
 | 生產線處理間隔 | 2 秒/件 | `data.js` `FACTORY_BASE_INTERVAL` |
 | 零件槽 / 零件階級上限 | （舊分解槽已退役，零件格改為各熔爐 3~8 格，見 §12.3）合成 2 格；零件階級上限 T10 | `formula.js` `salvageSlotCount`（相容保留）、`data.js` `slotsForNode`、`PART_MAX_TIER` |
 | 零件種類 | 分解槽 10 種（見 §7.3）＋合成 2 種（幸運核心 +8%/階、重骰模組 +15%/階） | `data.js` `PART_TYPES` |

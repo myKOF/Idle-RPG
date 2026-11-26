@@ -81,6 +81,65 @@ test('每件裝備各自記次數；整件與單詞條洗煉共用同一個計�
   assert.equal(a.rerollCount, 101);
 });
 
+test('低等裝備整件與單詞條洗煉皆拒絕0精華，足額才扣1並增加次數', () => {
+  for (const single of [false, true]) {
+    const c = loadContext();
+    c.G = { player: { gold: 1e6, essence: 0 } };
+    c.getStats = () => ({ luck: 0, affixCap: 0 });
+    c.markStatsDirty = () => {};
+    const it = c.makeEquipment(1, { rarity: 1, level: 1, slot: 'ring', ancientCount: 0 });
+    assert.ok(it.affixes.length > 0);
+    const reroll = () => single ? c.rerollSingleAffix(it, it.affixes[0].key) : c.rerollItemAffixes(it);
+    const before = JSON.stringify(it);
+    const gold = c.G.player.gold;
+    assert.equal(reroll(), c.STR(1130, c.STR(1129, 1)));
+    assert.equal(c.G.player.gold, gold);
+    assert.equal(c.G.player.essence, 0);
+    assert.equal(JSON.stringify(it), before, '拒絕時不改詞條或次數');
+    const cost = c.rerollCost(it);
+    assert.equal(cost.essence, 1);
+    c.G.player.gold = cost.gold;
+    c.G.player.essence = 1;
+    assert.equal(reroll(), null);
+    assert.equal(c.G.player.gold, 0);
+    assert.equal(c.G.player.essence, 0);
+    assert.equal(it.rerollCount, 1);
+    assert.notEqual(reroll(), null);
+    assert.equal(it.rerollCount, 1, '不能資源耗盡後繼續免費洗煉');
+  }
+});
+
+test('正式Worker指令使用同一最低費用，真實節約瓶折扣不產生免費洗煉', () => {
+  const { createEngine } = require('../scripts/sim/engine.js');
+  for (const edition of ['full', 'demo']) {
+    const e = createEngine({ seed: 11, edition }).boot();
+    const c = e.ctx;
+    const relic = c.RELIC_BY_EFFECT.rerollEssenceDiscount;
+    c.G.player.relics[relic.id] = { lv: relic.levels.length, n: 0 };
+    const it = c.makeEquipment(50, { rarity: 1, level: 1, slot: 'ring', ancientCount: 0 });
+    c.G.inventory.push(it);
+    c.G.player.gold = 1e6;
+    c.G.player.essence = 0;
+    const args = { itemId: it.id, affixKey: it.affixes[0].key };
+    const denied = e.cmd('item.rerollAffix', args);
+    assert.equal(denied.ok, true, '指令格式合法，資源不足由結果回報');
+    assert.equal(denied.result, c.STR(1130, c.STR(1129, 1)));
+    assert.equal(it.rerollCount, 0);
+    // 原始1份精華經實際滿級遺物折扣後小於1，仍收1份。
+    it.level = 25;
+    const cost = c.rerollCost(it);
+    assert.equal(cost.essence, 1);
+    c.G.player.gold = cost.gold;
+    c.G.player.essence = 1;
+    const accepted = e.cmd('item.rerollAffix', args);
+    assert.equal(accepted.ok, true, edition);
+    assert.equal(accepted.result, null);
+    assert.equal(c.G.player.gold, 0);
+    assert.equal(c.G.player.essence, 0);
+    assert.equal(it.rerollCount, 1);
+  }
+});
+
 test('洗煉品質倍率：R0～R5 不變，R6 起每高一階多 2 倍（R6＝2 倍…R11＝12 倍），金幣與精華同步', () => {
   const c = loadContext();
   c.REROLL_RARITY_EXTRA.mult = 1;   // R8 的 1.4 加價另有測試，這裡只驗品質階梯

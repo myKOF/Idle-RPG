@@ -127,6 +127,28 @@ test('洗煉按鈕保留普通／太古說明、費用與不足提示；未知�
   assert.doesNotMatch(c.elements['equip-action-bar'].innerHTML, /fca5a5/);
 });
 
+test('低等洗煉tips顯示至少1份精華，0庫存攔截、1份庫存可送指令', () => {
+  const c = mount();
+  c.it.rarity = 1;
+  c.it.level = 1;
+  c.player.essence = 0;
+  c.click('toggle-reroll');
+  const html = c.elements['equip-action-bar'].innerHTML;
+  assert.match(html, /icon_essence\.png[^]*? 1&lt;\/span&gt;/);
+  assert.match(html, /color:#fca5a5[^]*?icon_essence\.png/);
+  c.advance(1000);
+  c.click('reroll-affix');
+  assert.equal(c.commands.length, 0);
+  assert.deepEqual(c.floats, ['材料不足']);
+  c.player.essence = 1;
+  c.renderDetail();
+  assert.doesNotMatch(c.elements['equip-action-bar'].innerHTML, /fca5a5/);
+  c.advance(1000);
+  c.click('reroll-affix');
+  assert.equal(c.commands.length, 1);
+  assert.equal(c.commands[0].name, 'item.rerollAffix');
+});
+
 test('沒有可洗詞條禁用按鈕，下架詞條會改選有效位置，換件不能使用舊選取', () => {
   const c = mount();
   c.it.affixes = [{ key: 'removed-affix', roll: 1 }];

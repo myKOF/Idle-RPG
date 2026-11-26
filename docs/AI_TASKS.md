@@ -1,3 +1,15 @@
+## REROLL-MIN-COST-20261126 — 洗煉資源費用不得為零
+
+- Owner：Codex；Done，單人修正。使用者回報洗練tips附魔精華需求0，要求資源需求不得為0。前置：已定位rerollCost的等級縮放與遺物折扣捨去均可能產生0；顯示與實際扣款共用該函式。
+- 允許：js/formula.js／item.js／factory.js、tests/reroll-cost.test.cjs／reroll-count-cost.test.cjs／equip-reroll-ui.test.cjs／relics.test.cjs、必要index／bridge／Worker快取、game_formula.md／LV及本段。禁止改配置數值、存檔／協議、素材或其他工作區，不合併推送。既有公式、品質／次數倍率與折扣照算，洗煉最終各資源需求至少1；檢查其他付費入口是否有同樣取整歸零問題，表定不使用的幣種及滿級不可操作回傳值不算需求。
+- 同類檢查：滿級遺物的強化碎片／洗煉精華折扣150%、背包250%、商人200%，relicDiscount夾至0後，其他三項付費需求亦會變0；同樣修正最終需求至少1。強化失敗的半價取整同步至少扣1，避免最低需求時實扣0。三項追加檔案預檢無外部來源。
+- 預檢：fetch後全部目標無外部來源，遠端待納入提交對目標檔無差異，初始工作區乾淨。驗收：低等級／所有品質、等級縮放邊界、折扣後下限、整件與單詞條實際拒絕／扣款、UI費用及不足攔截，相關回歸、快取、Build與Git差異檢查；自我Review並Commit，交使用者整合。
+- 完成／修改13檔：formula增加強化、洗煉與背包擴充最終下限；item的商人售價最少1；factory的失敗半價最少各扣1。四支測試新增低等／全品質／次數、真實滿級遺物、正式版與Demo Worker拒絕及足額扣款、tips與操作攔截。index／bridge／Worker快取同步20261126-reroll-min-cost-v1，game_formula／LV與本段同步；未改配置表、存檔、協議或素材，無素材庫提交。
+- 測試：`node --test --test-concurrency=2 --test-reporter=tap tests/reroll-cost.test.cjs tests/reroll-count-cost.test.cjs tests/equip-reroll-ui.test.cjs tests/reroll-ancient-cost.test.cjs tests/relics.test.cjs tests/upgrade-feedback.test.cjs tests/upgrade-success-multiplier.test.cjs tests/merchant-cards-ui.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`77/77通過。另以正式Worker共載環境、全部遺物滿級驗證1072組強化／背包／封魔塔／零件升級與格數／商人費用，均至少1；`node tools/apply_params.cjs`632項一致、變更0、錨點問題0，未變更參數接線。`npm.cmd run build`771檔通過，Git差異檢查通過。
+- 擴大回歸限制：equipment-rarity-order原17項有2項失敗（舊品質倍率及R8掉落率斷言），affix-reroll-bias原3項有1項失敗（期待42、現34），mystery-merchant有1項Store工作簿／CSV空列差異。全部用git show HEAD原formula／item／factory僅在記憶體替換讀入後重現，未改磁碟或放寬斷言。新增Worker測試初輪誤把傳輸ok當功能成功，已依正式result契約修正，後續全數通過。本輪未跑全庫或啟動完整瀏覽器UI。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、data與配置CSV、relic／relic_data、UI費用與攔截、Worker指令／協議、runeword／gem_resonance／chest／skills2／talents的費用、既有品質／詞條／商人測試及sim引擎。表定不使用幣種、已滿級／無效項目回傳0不當作實際需求；目前其他檢查的付費入口未發現同型歸零。自我Review確認最終下限、折扣順序、半價扣款及主執行緒／Worker版本同步。
+- 交接：Commit為本段所在`[Codex] fix: 確保洗煉與折扣後資源需求至少為一`，位於ai/codex，可供合併審閱；未合併／推送develop或main。功能修正無未完成項目；已知限制為上述4項既有回歸失敗與未跑全庫／完整實機。下一步整合至實際啟動工作區後重新載入／重啟遊戲。作業後段同副本CHEST-REFERENCE新增素材／工具並修改index兩個寶箱快取及任務檔尾，與本項不同區段、無語意相依，index與任務檔以git merge-file --object-id -p三方試合乾淨、結果等於目前共享檔，分段暫存本項差異並保留對方未提交內容。
+
 ## OFFHAND-TYPE-LABEL-20261126 — 副手裝備種類加上副手前綴
 
 - Owner：Codex；Done，單人處理。使用者截圖指定裝備提示的部位／種類名稱須加「副手」，例如副手盾牌。前置：itemTypeLabel共用於裝備詳情與tips，已有offHand分類。
