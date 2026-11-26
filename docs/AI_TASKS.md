@@ -1,3 +1,26 @@
+## TASK-CHEST-UPGRADE-20261126 — 接通新增寶箱與全身強化任務
+
+- Owner：Codex；Done，單人處理。使用者新增順序11青銅寶箱20級、12開任意寶箱1個、14全身強化+10，要求補參數並套用。兩個寶箱獎勵依使用者裁決以顯示文字為準，數量改1500／2000碎片。前置：Task.xlsx已保存且來源獨占存取確認成功。
+- 允許：Task.xlsx／CSV、js/tasks.js、data.js、save-schema.js、quest-guide.js、tools/config_tables.cjs說明、必要首頁／bridge／Worker快取、任務與存檔相關回歸、LV／ONE_TIME_MIGRATIONS及本段。禁止擅改使用者其他任務內容、其他表格、素材、玩法與獎勵數值，不合併推送；其餘Task既有使用者變更原樣匯出套用。
+- 設計：chestLevel（參數=寶箱ID1、數量20）、chestOpenCount（參數空、數量1）、equipSlots（參數0|0|10、數量13）；新增第三段最低強化條件並沿用雙手武器佔兩格、目前啟用裝備方案規則。新增寶箱等級判讀及導航。使用者把舊順序14熔爐精良設定前移至新順序6，需格式3遷移一併處理重排與三個插入，避免重領既有任務；已越過的新／前移項目依既有政策略過。
+- 全部修改目標預檢無外部來源；唯一初始修改是本輪使用者Task.xlsx。驗收：Excel原生編修及正常重開、全表值／格式差異與CSV/runtime同步；新任務進度邊界、領獎／拒絕／存讀／導航、全部舊索引遷移與冪等、相關回歸、快取、Build及Git差異檢查。無素材變更，素材庫不需提交。
+- 完成／修改20檔：Task.xlsx／CSV、data.js、tasks.js、save-schema.js、quest-guide.js、config_tables.cjs、index／bridge／Worker快取、6支既有任務／格式測試與新task-chest-upgrade測試、LV／ONE_TIME_MIGRATIONS及本段。新增chestLevel唯讀判斷，equipSlots第三段強化門檻向後相容；格式3登錄重排／插入遷移，46項任務按來源完整套用。未增加Worker協議或素材。
+- Excel：先以試算表技能渲染檢視既有表，再透過Excel原生COM在副本改10格、正常重開兩次核對後確認來源hash與獨占存取才更新。主表只有C12／D12／E12／H12／C13／E13／H13／C15／D15／E15不同；第二頁只改A18裝備參數說明、增加A70寶箱等級說明。全部既有儲存格樣式、styles.xml、主表列高／欄寬／預設格式／檢視完全相同；說明頁僅追加一列，原列內容與格式保留。未改寫封裝XML。原生寫入初輪Int32 COM型別不符，來源未覆蓋，改用Excel數字Value後完整流程通過。修改前後渲染已目視確認，機讀差異報告留聊天QA目錄。
+- 套用：`node tools/config_tables.cjs --sync Task`實際會同步所有表CSV，檢查其他匯出只有NPC／Zones換行差異，逐位核對正規化後與HEAD一致才還原這兩份本輪匯出副作用。`node tools/config_tables.cjs --apply --write Task`只重建TASKS；再次`--apply Task`語意差異0，Excel／CSV／runtime逐欄一致。其餘Task使用者調整（含熔爐任務前移與既有獎勵）保持來源內容；進行中另一項game_parameters.xlsx修改保留未提交，未套用該表。
+- 測試：`node --test tests/task-chest-upgrade.test.cjs tests/task-system.test.cjs tests/task-skills.test.cjs tests/task-evolution.test.cjs tests/task-chest-relic.test.cjs tests/save-schema.test.cjs`54/54；`tests/chest.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`44/44；`tests/quest-guide-input.test.cjs tests/gm-task.test.cjs tests/sim-equip-set-roles.test.cjs`11項最終全通過（GM舊第16項假設依新表改19後單檔4/4）。共109項，新增8項覆蓋真正模擬指令升箱／開箱／領獎、門檻失敗、其他寶箱／未解鎖、雙手武器／啟用方案、存讀／導航、全部44個格式2索引與格式0／1各41個索引串接、已領防重及新局冪等。新測試初輪錯以為寶箱指令回true／err物件，依既有null／錯誤字串契約修正後通過；未改產品契約或放寬達成條件。
+- 驗證及交接：`npm.cmd run build`769檔、字串稽核寫死0、Git差異檢查通過；歷史飛刀遷移保留格式2隔離測試，舊任務回歸按來源重排更新序號，任務3獎勵200改500的斷言源於使用者既有Task變更。唯讀檢查共通規範／Workflow／Codex、chest／player／item／save／protocol、模擬引擎／既有任務及參數管線，無素材變更。未實機操作完整遊戲／跑全庫；既有其他任務仍有獎勵文字與實發不一致（如順序5、10、21、25、28、31及裝備獎勵8），本輪依授權只修新寶箱兩項，不擅改其餘來源。自我Review通過，本輪製作與驗證無未完成項目，可合併審閱；Commit為本段所在`[Codex] feat: 套用寶箱與全身強化任務參數`，未合併／推送。下一步重新載入遊戲驗收；已越過插入點的舊玩家依既有政策略過新項。QA JSON保留聊天目錄；自動核准審查以政策限制拒絕刪除task-params-qa內兩份Excel副本、兩PNG、三支腳本及node_modules連結，未重試或繞過，列為清理例外，不納入專案提交。孤兒瀏覽器檢查無殘留。
+
+## DESKTOP-WINDOW-BOUNDS-20261126 — 記住玩家自訂視窗大小
+
+- Owner：Codex；Done，單人處理。使用者要求手動拉伸的桌面遊戲視窗大小於下次啟動保留，不再每次放大到接近全螢幕。前置：既有顯示模式／解析度及獨立 userData 已完成。
+- 允許：electron/main.cjs、electron/window-bounds.cjs、js/display-settings-ui.js、index.html 對應快取、tests/desktop-window-bounds.test.cjs、tools/desktop/verify-window-bounds.cjs、LV_upgrade_system.md 及本段。禁止修改玩法、表格、素材、玩家存檔、預設顯示模式及其他任務，不合併推送。
+- 原因：原生視窗固定1600×900且未記錄bounds，顯示頁每次初始化又以設定解析度覆蓋視窗。方案：本機獨立記錄一般視窗bounds，啟動優先還原，初始化跳過尺寸覆寫；使用者主動改解析度仍套用。全螢幕／最小化／模式轉換不寫入錯誤尺寸，螢幕變動時限制於可用工作區。
+- 所有目標逐檔預檢無外部衝突，初始工作區乾淨。驗收：儲存／重讀、無檔／壞檔、縮放／多螢幕邊界、模式切換與初始化回歸，隔離原生Electron跨程序重開，相關桌面測試、Build及差異檢查。無素材變更，素材庫不需提交。
+- 完成／修改8檔：新增window-bounds控制器，本機userData/window-bounds.json原子保存DIP位置及大小、連續事件250ms合併寫入、關窗與切換模式前立即保存；主程式建窗使用已保存bounds並對目前工作區限位，忽略全螢幕／最大化／最小化／模式切換中的尺寸。顯示頁初始化僅無紀錄時套用原解析度，主動改解析度及恢復預設沿用既有流程；index更新對應JS快取、LV說明及本段同步，新增7項單測與可重跑原生三程序驗證工具。
+- 驗證：`node --test tests/desktop-window-bounds.test.cjs tests/settings-tabs.test.cjs tests/desktop-background.test.cjs tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs` 46/46；另跑`tests/desktop-app-protocol.test.cjs tests/desktop-saves.test.cjs tests/desktop-ship-rules.test.cjs tests/string-table.test.cjs` 44/44，全數通過。涵蓋壞檔／尺寸型別、寫入失敗、關窗立即落地、負座標／移除螢幕／DPI、初始化保留及主動解析度，未降低舊斷言。初次新增UI測試stub缺querySelector，補齊後全組通過。`npm.cmd run build` 768檔及`git diff --check`通過；原生測試亦實際載入主程式、新控制器與驗證工具。
+- 原生：`node tools/desktop/verify-window-bounds.cjs <聊天目錄>/window-bounds-report.json` 通過，三個真正Electron程序共用本輪隔離profile；第一輪設定1013×677後不等debounce直接關窗，第二輪完整還原且重載不放大、切borderless後關窗仍保存一般尺寸，第三輪以borderless開啟後回windowed還原1013×677，最小化不覆蓋紀錄、透過正式顯示頁change選1280×720成功調整。各輪頁面錯誤0，全程不開新遊戲、先設定靜音，原生視窗抑制顯示且不用截圖；測試程序結束、隔離profile已清理，報告留聊天目錄。
+- 唯讀檢查：共通規範／Workflow／Codex、electron/preload.cjs、mini-window.cjs、window-activity.cjs、js/game-settings.js、既有桌面／設定測試、打包與出貨規則、Electron官方BrowserWindow文件。既有模式／VSync、迷你視窗、存檔、玩法及素材不變，無素材庫提交。自我Review完成，無本輪未完成項目，可合併審閱；未合併／推送。已知限制：未在實體多螢幕／不同DPI硬體逐一實測，相關邊界採單測；未跑全庫測試。Commit為本段所在`[Codex] fix: 記住玩家自訂桌面視窗大小`；下一步重開新版桌面程式後拉伸一次，再關閉重開驗收。
+
 ## BOSS9-DEATH-20261126 — 四足獸失衡側倒死亡動作
 
 - Owner：Codex；Done，單人製作。使用者不提供GIF參考，授權自行設計四足野獸死亡動作，後續明確要求「做完直接commit」，最後追加提高仰頭幅度、仰天長嘯約1秒後才倒地，並再次要求「改好直接commit」。沿用模型／骨架／暫代材質及五個核准動作，驗證後直接雙倉庫提交並交GIF。v2為胸頸仰天張口、四肢撐地失力、後腿跪倒、身體側翻沉落，尾巴與四肢餘勢消退後保持屍體姿勢，完整4秒，不回Idle。
@@ -4880,6 +4903,15 @@
 - 瀏覽器：computer-use／CUA獨立127.0.0.1:13742、拋棄式IndexedDB測試存檔，正式index／UI／Bridge／真Worker／Pixi。最高29層時幻影八方陣鎖定、橘色13px及無學習鈕；塔30獎勵黃色16px獨立框在通關獎勵後，塔1完全隱藏。最高30層、已保留Lv.3的存檔正常載入生效並顯示灰色11px「已通行封魔塔第30層」；兩次Console error／warning均0。截圖tower-skill-unlock.png／skill-tower-cleared.png存本聊天visualizations；分頁、服務及臨時腳本／日誌清理，未讀真人存檔。同層多技能以正式HTML回歸注入第二條門檻驗證。
 - 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
 - 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
+
+## AUTO-STAGE-TIP-20261126 — 自動推關底色與兩行提示
+
+- Owner：Codex；Done，單人處理。使用者指定啟動綠底、關閉灰底，tips 第一行顯示「自動推進關卡啟動中／關閉中」，第二行以較小淺灰字顯示「點擊取消／點擊開啟」。沿用既有 Worker 指令與 header 樂觀狀態同步，初始化、點擊、在途及失敗恢復時同步提示。
+- 修改10檔：js/ui.js、css/world-map.css、config/Excel/String.xlsx／CSV/String.csv、js/strings_data.js、index.html、tools/vfx/editor/index.html、tests/battle-toolbar.test.cjs、LV_upgrade_system.md 及本段。底色開啟#3e653b／關閉#505052，第二行12px／#aaa；String新增2575～2578，資料版本35726e38，主頁及共用編輯器字串快取同步，ui／world-map快取20261126-auto-stage-tip-v1。推關規則、Worker協議與其他tips維持。
+- 逐檔衝突預檢無外部來源；本副本轉生法力任務在 index／LV／任務檔為不同區段，分段修改／暫存並三方試合乾淨，無語意相依。String來源獨占檢查後以Excel原生API新增4列／16格非空值、正常重開兩次驗證；原40944格資料及有效字型／填色／邊框／對齊／保護／數字格式保持，凍結及驗證規則相同。新文字已渲染檢視；未手工改XLSX封裝。無素材變更，素材庫無需提交。
+- `node --test tests/battle-toolbar.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`最終21/21通過；`node tools/string-table/apply_strings.cjs --check`同步，字串稽核寫死0；`npm.cmd run build`770檔通過，Git差異檢查通過。沿用既有工具列回歸並增加真String資料的初始化、切換、舊快照等待與拒絕恢復提示斷言；測試載入util後重設DOM查詢stub，未修改產品契約。
+- 隔離靜音Edge以正式CSS、String資料、按鈕HTML及原生refresh／click／statTooltipHTML函式驗證。實際點擊後綠底rgb(62,101,59)切灰底rgb(80,80,82)，兩行文字完全符合要求，標題15px、操作提示12px／rgb(170,170,170)，提示第二行位置在標題下方；畫面已目視檢查，頁面例外0。既有CSS過渡等待350ms後檢查最終色，瀏覽器finally關閉，孤兒瀏覽器檢查無殘留。未做完整遊戲長時間操作或全庫回歸。
+- 唯讀檢查：共通規範／Workflow／Codex、String管線與Excel更新器、工具列指令與快照／tooltip刷新、共用按鈕主題CSS及快取測試。無本輪未完成項目，自我Review通過，可審閱合併；Commit為本段所在`[Codex] fix: 調整自動推關按鈕底色與提示`，未合併或推送。其他聊天法力／派生公式修改保留未提交。下一步重新載入此版本確認開關及tips。
 
 ## GEM-DROP-CONFIG-20261126 — 接通寶石表內掉落等級限制
 
@@ -17643,3 +17675,19 @@ Worker 存活且頁面正常完成載入。
 - Electron實測：`node tools/desktop/verify_background.cjs tmp/desktop-blur-20261126` 通過，正常模式無smoke、獨立profile、新遊戲及靜音。失焦18秒幀112→1141、GT 3.228→21.436、金幣52106→57177、自動存檔0→1，前後focused皆false、特效啟用、結束視覺佇列0。最小化18秒幀1212保持、GT增加17.996秒、金幣57542→61467、存檔2→3；隱藏18秒幀1283保持、GT增加17.902秒、金幣61862→64803、存檔4→6。showInactive後仍無焦點、ticker恢復並增加15幀。選單暫停經最小化／還原GT保持62.526，解除後前進，磁碟存檔存在，頁面／Worker／存檔錯誤與重啟皆0。
 - 實測腳本首輪把最小化後isFocused也強制視為false，Windows實際仍回傳true，與降載判斷無關；修正為僅在可見失焦區間要求無焦點，再完整重跑通過。測試視窗與隔離profile已關閉／清理；`node tools/kill-test-browsers.cjs` 無殘留。自動核准審查以政策限制拒絕清除本次專用tmp/desktop-blur-20261126，未繞過；報告與截圖保留為清理例外。
 - 交接：Commit為本段所在`[Codex] fix: 修正桌面視窗失焦時畫面停住`，位於ai/codex，可供合併；未合併／推送develop或main。本輪無未完成修正，其他聊天的寶石／技能未提交修改保持。已知限制為未跑全庫、OS睡眠及安裝包實測；沿用現有恢復補算。下一步整合至實際啟動的工作區後退出重啟桌面版，既有安裝包須重新打包。
+
+## ATTRIBUTE-DERIVATION-20261126 — 法力等級成長與轉生固定派生等級
+
+- Owner：Codex；Done，單人處理。使用者要求法力上限改為(a+(等級-1)×b+智力×c+法力定值)，套用目前game_parameters；補充所有屬性派生公式中角色等級，0轉用實際等級、1轉以上固定視為1000級，不隨實際等級增減。前置：來源已保存、獨占存取確認成功，法力a/b/c目前200/10/1.5，生命a目前500。
+- 允許：game_parameters.xlsx／CSV、js/formula.js／data.js、tools/apply_params.cjs、tests/mana-max-formula.test.cjs與reincarnation-mana-cost.test.cjs、必要首頁／bridge／Worker快取、game_formula.md／LV及本段。保留並套用來源目前全部參數，包含作業期間來源新增的升級經驗a=10；禁止改實際角色等級／升級經驗算法／轉生門檻／戰鬥等級差、其他表格、存檔／協議、素材、其他聊天任務，不合併推送。
+- 設計：在屬性彙總入口統一使用派生等級，等級基礎四維、生命與法力均走同一規則；st.level仍提供角色實際等級供命中／防禦等戰鬥結算。新增mpPerLevel具名欄位綁參數b，intMp改綁c；沿用轉生生命／法力／四維倍率及裝備／寶石／天賦／符文。來源只更新必要說明，不改使用者數值，正常Excel重開／格式校驗再匯出套用。
+- 預檢：全部目標無外部來源。同副本TASK-CHEST-UPGRADE在data.js的TASKS區段與本項派生常數不同；文件分段記錄，快取最後統一更新並保留對方其他內容。驗收涵蓋0轉成長、1轉至最高轉固定派生等級、全屬性／裝備預覽、實際等級保留、面板／Worker／存讀一致、參數錨點及必要全庫測試、Build；完成自我Review與Commit後交使用者整合。
+- 完成／修改13檔：formula新增attributeDerivationLevel並統一等級基礎四維、生命及法力使用；data新增mpPerLevel並套用來源，apply_params把b綁每級、c綁每智力。新增7項法力／轉生派生回歸，同步既有轉生耗魔測試的新法力基礎要求；來源工作簿／CSV、主頁／bridge／Worker的data與formula快取、game_formula／LV及本段同步。快取為20261126-derived-level-mana-v1，無協議或存檔格式變更。
+- Excel：沿用原生API正常儲存／重開，保留game_parameters對「計算表」的原始公式連結，在計算表F10／F55／F56修改四維／生命／法力說明，主表僅對應快取文字改變。既有通用寫入器初輪把三個說明參照替換成文字及文字格式，提交前已透過原生Excel恢復原公式與General格式，再完整驗證。兩頁11191格的其餘公式、有效樣式、列高欄寬、凍結／篩選／驗證／列印結構保持；來源另保存的G9經驗a由20改10及計算表選取／捲動位置變化均保留，未以較早副本覆蓋。Artifact匯入檢查及局部前後渲染正常，沒有手改xlsx XML。
+- 套用：`node tools/xlsx_to_csv.cjs`匯出307列×18欄；`node tools/apply_params.cjs --write`先套生命a500、法力a200／b10／c1.5四項，再依最新來源套經驗a10。最終`node tools/apply_params.cjs`632項一致、將變更0、錨點問題0（原631，新增1）；`node tools/apply_params.cjs --check-anchors`擾動576值後632錨點各命中一次。
+- 回歸：`node --test --test-concurrency=2 tests/mana-max-formula.test.cjs tests/reincarnation-mana-cost.test.cjs tests/demo-edition.test.cjs tests/equip-set-preview-stats.test.cjs tests/xp-formula.test.cjs tests/apply-params.test.cjs tests/apply-params-anchor-independence.test.cjs tests/apply-params-scientific.test.cjs tests/params-direct-edit.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`最終59/59通過。包含0轉成長、小數取整、1～最高轉全部派生屬性在實級1／2／50／999／1000／2000及回1時相同、定值與原始智力的轉生乘區、b/c獨立調整及0值、裝備預覽／Worker快照／實際轉生／full與demo存讀／經驗表一致。首輪BAT在全庫併跑時逾時，已於隔離重跑通過；Demo來源一致性在來源a更新後重新匯出並通過，未降低斷言。
+- 實機：聊天mana-qa/verify-game.cjs使用既有launchHeadless管理隔離Edge、本機暫存埠及靜音，正式主頁啟動新遊戲、正式GM與combat.setPaused指令。0轉Lv.1法力208、Lv.50法力845；1轉實級1／500／1000的生命60728、法力19792、智力3005皆相同；2轉Lv.1生命101213、法力32986、智力5008。角色實級、Worker mpMax、header.stats及DOM statFmt顯示一致，頁面例外0。QA首輪誤把19.7K縮寫當純數字，修正驗證器以正式格式比對後完整重跑通過，產品UI未為測試修改。
+- 全庫限制：依錨點規範已執行`node --test --test-concurrency=4 --test-timeout=30000 --test-reporter=tap "tests/*.test.cjs"`。長時間執行及資源壅塞後核對本次PID29136／命令，停止其測試程序樹；最後輸出3707通過、602失敗，另有尚未執行完的案例，不宣稱全部失敗均為既有問題或全庫全綠。停止時兩個子PID曾回報無法終止，稍後核對9700／32840／29136均已不存在；不影響使用者Excel／其他聊天程序。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、來源兩頁及目前參數、js/player.js轉生與升級、ui.js屬性面板、worker/protocol.js與header/buildView、skills2.js耗魔、原生Excel工具、sim engine、既有派生／經驗／預覽／Demo／快取測試與headless管理。素材未修改，無素材庫提交。自我Review確認所有派生共用入口、實際戰鬥等級保留及b/c接線，未接觸其他任務功能。
+- 交接：Commit為本段所在`[Codex] feat: 調整法力公式與轉生屬性派生等級`，位於ai/codex，供合併審閱；未合併／推送develop或main。功能實作、來源套用、專項回歸及介面驗收完成；全庫尚未通過，需另行處理其失敗與未完成案例。QA與報告保存在本聊天mana-qa，瀏覽器／伺服器已關閉；其他聊天當時的任務修改各自提交，本輪僅暫存本項13檔。下一步整合至實際啟動工作區後重新載入／重啟，既有存檔自動按新規則計算。
+- 建置與清理：最終 `npm.cmd run build` 通過770個檔案語法／空檔檢查，`git diff --check`通過；`node tools/kill-test-browsers.cjs`確認沒有測試用無畫面瀏覽器。

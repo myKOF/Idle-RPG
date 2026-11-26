@@ -147,17 +147,21 @@ test('技能標頭／反擊完整提示使用UI快照耗魔，轉生確認只加
   assert.doesNotMatch(text, /技能法力消耗增加[^<・]*(?:%|倍|\d)/);
 });
 
-test('真Worker轉生指令與讀檔：法力及技能耗魔同比改變，skills面板同步真實轉數', () => {
+test('真Worker轉生指令與讀檔：法力按1000級基礎套倍率，技能耗魔與面板同步真實轉數', () => {
   const { createEngine } = require('../scripts/sim/engine.js');
   const e = createEngine({ seed: 20261105 }).boot(null), c = e.ctx, p = e.state().player;
-  const cost0 = c.skills2ManaCost('knife'), mp0 = c.getStats().mp;
+  const cost0 = c.skills2ManaCost('knife');
   p.level = c.REINCARNATION_LEVEL;
+  c.markStatsDirty();
+  const before = c.getStats();
+  const expectedMp = Math.round((before.base.mp + before.A.mpFlat) * 1.5);
   assert.equal(e.cmd('player.reincarnate').ok, true);
   assert.equal(p.reincarnations, 1); assert.equal(p.level, 1);
-  assert.equal(c.getStats().mp, Math.round(mp0 * 1.5));
+  assert.equal(c.getStats().mp, expectedMp);
   assert.equal(c.skills2ManaCost('knife'), cost0 * 1.5);
   assert.equal(e.panel('skills').skills2.progress.reinc, 1);
   const restored = createEngine({ seed: 20261105 }).boot(JSON.parse(e.saveJson()));
+  assert.equal(restored.ctx.getStats().mp, expectedMp);
   assert.equal(restored.ctx.skills2ManaCost('knife'), cost0 * 1.5);
   assert.equal(restored.panel('skills').skills2.progress.reinc, 1);
 });

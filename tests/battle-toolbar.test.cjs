@@ -37,7 +37,7 @@ function stageSetup() {
   const button = node(); button.attrs['aria-pressed'] = 'true';
   const state = { pending: false, autoAdvance: true }, calls = [], errors = [];
   let resolve, reject;
-  const c = { $id: id => id === 'st-auto' ? button : null, STR: id => String(id),
+  const c = { $id: id => id === 'st-auto' ? button : null,
     nodePendingKey: id => 'node:' + id, isUiCommandPending: () => state.pending,
     UI: { stageHold: {} }, _stagePendingStage: null,
     peekUiPanelData: () => ({ stage: state }), uiCurrentZoneDef() {}, zoneIconHtml() {},
@@ -48,6 +48,8 @@ function stageSetup() {
   };
   const ui = read('js/ui.js');
   vm.createContext(c);
+  for (const file of ['js/util.js', 'js/strings_data.js', 'js/strings.js']) vm.runInContext(read(file), c, { filename: file });
+  c.$id = id => id === 'st-auto' ? button : null;
   vm.runInContext(ui.slice(ui.indexOf('function refreshStageAutoButton('), ui.indexOf('function refreshCombatPauseButton(')), c);
   c.initStageAutoButton();
   return { c, button, state, calls, errors, resolve: () => resolve(), reject: () => reject() };
@@ -55,21 +57,30 @@ function stageSetup() {
 
 test('AUTO 使用既有 Worker 指令、等待 header 期間擋重複與舊快照，完成後依權威狀態更新', async () => {
   const s = stageSetup();
+  assert.equal(s.button.attrs['data-tt-title'], '自動推進關卡啟動中');
+  assert.equal(s.button.attrs['data-tt-desc'], '<span class="stage-auto-tip-action">點擊取消</span>');
   s.button.listeners.click.call(s.button);
   assert.equal(s.button.attrs['aria-pressed'], 'false');
+  assert.equal(s.button.attrs['data-tt-title'], '自動推進關卡關閉中');
+  assert.equal(s.button.attrs['data-tt-desc'], '<span class="stage-auto-tip-action">點擊開啟</span>');
   assert.deepEqual(JSON.parse(JSON.stringify(s.calls[0])), ['stage.setAutoAdvance', { on: false }, { keys: ['node:stage-auto'], panels: ['battle', 'header'] }]);
   s.c.refreshStageDisplay(); s.button.listeners.click.call(s.button);
   assert.equal(s.button.attrs['aria-pressed'], 'false'); assert.equal(s.calls.length, 1);
+  assert.equal(s.button.attrs['data-tt-title'], '自動推進關卡關閉中');
   s.state.autoAdvance = false; s.resolve(); await Promise.resolve(); s.c.refreshStageDisplay();
   assert.equal(s.button.classes.has('active'), false);
   s.button.listeners.click.call(s.button);
   s.state.autoAdvance = true; s.resolve(); await Promise.resolve(); s.c.refreshStageDisplay();
   assert.equal(s.button.attrs['aria-pressed'], 'true'); assert.ok(s.button.classes.has('active'));
+  assert.equal(s.button.attrs['data-tt-title'], '自動推進關卡啟動中');
+  assert.equal(s.button.attrs['data-tt-desc'], '<span class="stage-auto-tip-action">點擊取消</span>');
 });
 
 test('AUTO 指令失敗會恢復 header 狀態並回報原錯誤', async () => {
   const s = stageSetup(); s.button.listeners.click.call(s.button); s.reject(); await Promise.resolve();
   assert.equal(s.button.attrs['aria-pressed'], 'true'); assert.equal(s.errors.length, 1);
+  assert.equal(s.button.attrs['data-tt-title'], '自動推進關卡啟動中');
+  assert.equal(s.button.attrs['data-tt-desc'], '<span class="stage-auto-tip-action">點擊取消</span>');
 });
 
 test('靜音快捷鍵與設置雙向同步、音量停用及本機持久化，取消靜音保留音量', () => {

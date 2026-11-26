@@ -1049,13 +1049,14 @@ const TASK_GLOSSARY_ROWS = [
   [''],
   ['── 目標類型（與目標參數格式） ──'],
   ['equipSlots＝身上部位數：計算身上滿足條件的部位數（共 13 部位；雙手武器視同佔用主手＋副手兩格）。'],
-  ['　　目標參數＝最低品質|最低等級。例：0|0＝任意裝備、2|0＝稀有(含)以上、4|50＝史詩(含)以上且裝備等級 50(含)以上。品質索引見下方對照表。'],
+  ['　　目標參數＝最低品質|最低等級|最低強化（第三段可省略，預設0）。例：0|0＝任意裝備、2|0＝稀有(含)以上、4|50＝史詩(含)以上且裝備等級50(含)以上、0|0|10＝強化+10(含)以上。品質索引見下方對照表。'],
   ['upgradeCount＝累計強化成功次數（失敗不計）。目標參數留空。'],
   ['rerollCount＝累計洗煉次數（整件洗與單條洗各計 1 次）。目標參數留空。'],
   ['enchantCount＝累計附魔成功次數（被拒不計）。目標參數留空。⚠️ 附魔功能已關閉（由符文取代），目前沒有任務使用此類型。'],
   ['runeSocketCount＝累計鑲入符文的次數（成功才計；拆下再鑲會再計一次）。目標參數留空。'],
   ['composeCount＝累計寶石合成次數（「全部合成」一次合 N 組計 N）。目標參數留空。'],
   ['chestOpenCount＝累計開啟寶箱的個數（任何品質的寶箱皆算；一次開 N 個計 N）。目標參數留空。'],
+  ['chestLevel＝指定寶箱目前等級（必須已解鎖）；目標參數＝Chest表寶箱編號，目標數量＝等級。例：參數1、數量20＝青銅寶箱達20級。'],
   ['relicCount＝累計獲得的遺物件數（任何遺物皆算，重複件也算；拿去升級用掉的件數不會扣回）。目標參數留空。'],
   ['socketCount＝身上目前同時鑲嵌的寶石數（拔下即減，重複拔裝不累加）。目標參數留空。'],
   ['skillEquipCount＝目前技能欄已裝配且可用的技能數（卸下即減，重複裝卸不累加）。目標參數留空。'],
@@ -1104,8 +1105,8 @@ const TASK_GLOSSARY_ROWS = [
 ];
 
 /* ---- Task ← TASKS（js/data.js）主線任務表（2026-08-05 任務系統） ----
-   目標類型：equipSlots（參數=最低品質|最低等級）/ upgradeCount / rerollCount /
-   enchantCount / composeCount / chestOpenCount / relicCount / socketCount / forgeParts / forgePartLevel /
+   目標類型：equipSlots（參數=最低品質|最低等級|最低強化；第三段可省略）/ upgradeCount / rerollCount /
+   enchantCount / composeCount / chestOpenCount / chestLevel（參數=寶箱ID）/ relicCount / socketCount / forgeParts / forgePartLevel /
    skillEquipCount / skillUpgradeCount / skillTier（參數=群組ID、數量=普通階數）/
    skillUlt（參數=群組ID:超神ID、數量=最低等級）/ ancientCount / maxHp / stageClear（參數=地圖識別碼）/ towerFloor。
    獎勵類型：gold / scrap / essence / skillXp / merchantInvitation（參數留空、數量=張數）/ gem（參數=寶石等級）/

@@ -108,7 +108,7 @@ test('socketCount / ancientCount / forgeParts 依現況計算', () => {
 /* ---- 4 + 5. 累計型進度與領獎流程 ---- */
 test('taskClaim：未達成拒絕；達成發獎、idx 前進、日誌', () => {
   const c = loadContext();
-  // 跳到任務 3（強化裝備10次，獎勵 裝備碎片+200）
+  // 跳到任務 3（強化裝備10次，使用者Task來源設定獎勵500碎片）
   c.G.taskState.idx = 2;
   c.G.factory.stats.upgraded = 9;
   assert.equal(c.taskQuickView().ready, false);
@@ -120,7 +120,7 @@ test('taskClaim：未達成拒絕；達成發獎、idx 前進、日誌', () => {
   const scrapBefore = c.G.player.scrap;
   r = c.taskClaim();
   assert.equal(r.claimed, 3);
-  assert.equal(c.G.player.scrap, scrapBefore + 200);
+  assert.equal(c.G.player.scrap, scrapBefore + 500);
   assert.equal(c.G.taskState.idx, 3);
   assert.equal(c.UI.dirty.task, true);
 });
