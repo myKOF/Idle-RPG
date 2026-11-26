@@ -41,12 +41,13 @@ function loadGame() {
 
 /* ---- 1. 登錄表 ---- */
 
-test('目前格式3含飛刀、寶箱及全身強化任務遷移，登錄表自我檢查通過', () => {
+test('目前格式4含飛刀、寶箱、全身強化及封魔塔任務遷移，登錄表自我檢查通過', () => {
   const s = loadSchemaOnly();
-  assert.equal(s.SAVE_SCHEMA_VERSION, 3);
-  assert.equal(s.SAVE_SCHEMA_MIGRATIONS.length, 2);
+  assert.equal(s.SAVE_SCHEMA_VERSION, 4);
+  assert.equal(s.SAVE_SCHEMA_MIGRATIONS.length, 3);
   assert.equal(s.SAVE_SCHEMA_MIGRATIONS[0].name, 'taskInsertSkillEvolutionV1');
   assert.equal(s.SAVE_SCHEMA_MIGRATIONS[1].name, 'taskInsertChestUpgradeV1');
+  assert.equal(s.SAVE_SCHEMA_MIGRATIONS[2].name, 'taskInsertTowerBossV1');
   assert.equal(s.saveSchemaRegistryErrors(s.SAVE_SCHEMA_MIGRATIONS, s.SAVE_SCHEMA_VERSION).length, 0);
 });
 

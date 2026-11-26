@@ -23,7 +23,7 @@
 
    本檔三種環境都會載入：主執行緒 <script>、Worker importScripts、Node vm 測試。 */
 
-var SAVE_SCHEMA_VERSION = 3;
+var SAVE_SCHEMA_VERSION = 4;
 
 /* 上市後的遷移登錄，依 to 由小到大。每筆：
      { to: 2, name: 'xxxV1', date: 'YYYY-MM-DD', migrate: function (data) { ... } }
@@ -51,6 +51,16 @@ var SAVE_SCHEMA_MIGRATIONS = [{
     // 新順序11、12與14：恰在插入點者接著做，已越過者略過。
     if (idx > 10) idx += 2;
     if (idx > 13) idx++;
+    data.taskState.idx = idx;
+  }
+}, {
+  to: 4, name: 'taskInsertTowerBossV1', date: '2026-11-26',
+  migrate: function (data) {
+    if (!data.taskState || typeof data.taskState !== 'object') data.taskState = { idx: 0 };
+    var idx = Math.max(0, Math.min(46, Math.floor(Number(data.taskState.idx) || 0)));
+    // 新順序20及35：恰在插入點者接著做，已越過者略過，避免重領既有獎勵。
+    if (idx > 19) idx++;
+    if (idx > 34) idx++;
     data.taskState.idx = idx;
   }
 }];

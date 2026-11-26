@@ -1,3 +1,15 @@
+## TASK-TOWER-BOSS-20261126 — 接入封魔塔首層與二十層通關任務
+
+- Owner：Codex；Done，單人處理。使用者在Task新增順序20「封魔塔第1層BOSS成功」、35「第20層BOSS成功」，要求補正確參數並接入。來源已儲存且獨占存取確認；既有towerFloor讀真正勝利結算的G.tower.highest，前置已完成。
+- 允許：Task.xlsx／CSV、data.js衍生任務、save-schema.js、quest-guide.js、必要首頁／bridge／Worker快取、任務／存檔相關回歸及新task-tower測試、LV／ONE_TIME_MIGRATIONS及本段。禁止改塔戰／掉落／獎勵公式、其他來源表、素材及其他聊天內容，不合併推送。來源另有荒漠50關獎勵調整，原樣套用。
+- 方案：兩任務type=towerFloor、param空、count=1／20，保留使用者獎勵設定。導引切封魔塔並選對應樓層；格式4依插入點19及34平移舊46項表的下一個可領索引，恰到插入位置者接新任務、已越過者略過，全部完成為48，重複讀檔不再移動。
+- 預檢：fetch及全部目標無外部來源，初始只有使用者Task.xlsx修改。驗收：Excel原生寫入／正常重開、只兩格變更且格式保持、單表匯出／runtime同步；進塔／失敗／逃跑不算、勝利達成、門檻／重複領取／導航，全部舊索引及歷史遷移鏈、新局／存讀、相關回歸／Build／Git差異檢查。無素材修改，素材庫不需提交。
+- 完成／修改16檔：Task來源與CSV、data衍生TASKS、save-schema格式4、quest-guide塔入口與選層、index／bridge／Worker快取、新task-tower回歸及四支既有任務／格式回歸、LV／ONE_TIME_MIGRATIONS及本段。保留兩項裝備獎勵：首層史詩1級1太古×1、二十層傳奇150級2太古×1；使用者荒漠50關獎勵調整原樣匯出，不改其他玩法或塔戰結算。
+- Excel：試算表技能渲染前後兩列並目視核對，原生excel-update-sheets.ps1只寫C21／C36兩格，正常模式重開兩次及全部值一致；來源獨占確認後才更新。原生Excel正常儲存會合併重複General樣式（14款變13款），以未編輯控制副本另行原生保存驗證，與成品styles.xml／欄寬／列高／檢視／公式完全相符；僅新C21／C36有文字內容與文字格式，其他工作表的解析後值／公式／格式一致。沒有改寫XML。xlsx_to_csv以環境變數指定Task單表匯出49列×11欄，apply --write Task只重建TASKS，重跑--apply Task語意差異0；Excel／CSV／runtime逐欄回歸通過。
+- 測試：`node --test tests/task-tower.test.cjs tests/task-chest-upgrade.test.cjs tests/task-evolution.test.cjs tests/task-chest-relic.test.cjs tests/task-skills.test.cjs tests/task-system.test.cjs tests/save-schema.test.cjs`61/61；另跑`tests/tower-battlefield.test.cjs tests/tower-auto-advance.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs tests/gm-task.test.cjs tests/quest-guide-input.test.cjs`50/50，合計111項通過。新增7項以實際startTowerFight／endTowerFight及task.claim驗證進塔／三種失敗不達成、勝利達成、裝備品質／等級／太古數、領取防重與存讀、47個格式3索引、格式2／0／1歷史串接、新局與導航選層／鎖定入口。原格式2、3遷移保留隔離驗證，更新現行48項序號；導航測試初輪缺event及提示stub，補齊後7/7及全組通過，未改產品鎖定行為。
+- Build與界限：`npm.cmd run build`772檔、Git差異檢查通過，字串回歸及主頁／Worker協議檢核通過。唯讀檢查規範／Workflow／Codex、tasks／tower勝負結算、player／save、UI選層、config_tables與Excel工具及既有相關測試。未啟動完整遊戲實機或跑全庫，正式模擬結算與來源同步已驗證；無素材或新增顯示字串，素材庫無需提交。
+- 衝突／交接：執行期間同副本解鎖提示任務修改String、data的提示函式、skills2／UI及共用快取。使用者已明確同意統一共享data／bridge／Worker資產快取，保留雙方功能並分開提交。解鎖提示先以ee053570提交共享v1，為避免該提交的46項任務曾被同URL快取，本輪最終快取順增20261126-task-tower-unlock-v2；schema／quest為20261126-task-tower-boss-v1。其餘獨立區段採分段暫存及三方試合，不納入另一聊天功能或來源表；其後另一輪開箱只改獨立CSS／UI快取與文件區段，亦保留不提交。自我Review通過，本輪無未完成製作，可供合併審閱；Commit為本段所在`[Codex] feat: 接入封魔塔首層與二十層任務`，未合併／推送。下一步重新載入遊戲，已越過插入點的舊玩家依既有政策略過新項。QA的值／樣式JSON留聊天目錄；預覽／副本／一次性腳本清理，驗證套件連結依本聊天既有刪除審查限制保留不重試，不納入提交。孤兒瀏覽器檢查無殘留。
+
 ## REROLL-MIN-COST-20261126 — 洗煉資源費用不得為零
 
 - Owner：Codex；Done，單人修正。使用者回報洗練tips附魔精華需求0，要求資源需求不得為0。前置：已定位rerollCost的等級縮放與遺物折扣捨去均可能產生0；顯示與實際扣款共用該函式。

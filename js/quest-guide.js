@@ -19,6 +19,7 @@ var QuestGuide = (function () {
     forgeFineAuto: { tab: 'newforge', target: 'label:has([data-nf-qual="1"]:enabled)' },
     chestOpenCount: { tab: 'newforge', target: '[data-chest-open][data-chest-count="1"]' },
     chestLevel: { tab: 'newforge', target: '[data-chest-upgrade]' },
+    towerFloor: { tab: 'tower', target: '[data-tower-floor]' },
     composeCount: { tab: 'gems', target: '#fuse-btn' },
     relicCount: { tab: 'relics' },
     maxHp: { tab: 'char' }
@@ -143,6 +144,7 @@ var QuestGuide = (function () {
       }
     }
     switchTab(destination.tab);
+    if (def.type === 'towerFloor' && typeof towerSelectFloor === 'function') towerSelectFloor(def.count);
     if (def.type === 'composeCount') setGemTool('compose');
     tabButton.focus({ preventScroll: true });
     highlight($id('tab-' + destination.tab), destination.target);

@@ -23,7 +23,7 @@ function fill(c, upgrade = 10) {
 
 test('Task新增三筆的類型、門檻與獎勵精確符合來源及使用者裁決', () => {
   const {c} = setup();
-  assert.equal(c.TASKS.length,46);
+  assert.equal(c.TASKS.length,48);
   assert.deepEqual(plain(c.TASKS.filter(t=>[11,12,14].includes(t.order)).map(t=>
     [t.order,t.type,t.param||'',t.count,t.rewardType,t.rewardQty,t.rewardLabel])),[
     [11,'chestLevel','1',20,'scrap',1500,'裝備碎片+1500'],
@@ -107,26 +107,29 @@ test('雙手武器強化門檻同時計主副手，品質與等級條件仍可�
   assert.equal(c.taskProgressFor(def),11);
 });
 
-test('格式2全部44個舊索引依任務身份遷移，已領既有項目不重領，重載及新局冪等', () => {
+test('歷史格式3寶箱任務遷移的44個舊索引依任務身份保持正確，已領項目不重領', () => {
   const {c}=setup();
-  const old=Array.from(c.TASKS).filter(t=>![11,12,14].includes(t.order));
+  const previous=Array.from(c.TASKS).filter(t=>t.type!=='towerFloor');
+  const old=previous.filter(t=>![11,12,14].includes(t.order));
   old.splice(13,0,old.splice(5,1)[0]);
+  const options={version:3,migrations:c.SAVE_SCHEMA_MIGRATIONS.filter(m=>m.to<=3)};
   for(let idx=0;idx<=43;idx++){
     const data=c.newGameState();data.saveSchema=2;data.taskState.idx=idx;
     const gold=data.player.gold,scrap=data.player.scrap;
-    const out=c.migrateSave(data);
+    c.applySaveSchemaMigrations(data,2,options);
+    const out=data;
     let want;
     if(idx===43)want=46;
     else if(idx===5)want=5; // 尚未到達前移任務的新位置
     else if(idx===9)want=10; // 恰在兩個寶箱插入點
     else if(idx===10)want=13; // 恰在全身強化插入點
-    else if(idx===13)want=c.TASKS.findIndex(t=>t.name===old[14].name); // 舊下一個為已前移的任務
-    else want=c.TASKS.findIndex(t=>t.name===old[idx].name);
+    else if(idx===13)want=previous.findIndex(t=>t.name===old[14].name); // 舊下一個為已前移的任務
+    else want=previous.findIndex(t=>t.name===old[idx].name);
     assert.equal(out.taskState.idx,want,'舊索引'+idx);
     assert.equal(out.saveSchema,3);
-    for(const claimed of old.slice(0,idx))assert.ok(c.TASKS.findIndex(t=>t.name===claimed.name)<want,'不可重領：'+claimed.name);
+    for(const claimed of old.slice(0,idx))assert.ok(previous.findIndex(t=>t.name===claimed.name)<want,'不可重領：'+claimed.name);
     assert.equal(out.player.gold,gold);assert.equal(out.player.scrap,scrap);
-    assert.equal(c.migrateSave(out).taskState.idx,want);
+    c.applySaveSchemaMigrations(out,3,options);assert.equal(out.taskState.idx,want);
   }
   for(const idx of [0,5,10,11,13,14,46]){
     const fresh=c.newGameState();fresh.taskState.idx=idx;
@@ -134,7 +137,7 @@ test('格式2全部44個舊索引依任務身份遷移，已領既有項目不�
   }
 });
 
-test('格式0／1的全部41個索引依序串接格式2與3，最舊38項已完成者成為46', () => {
+test('格式0／1的全部41個索引依序串接格式2、3與4，最舊38項已完成者成為48', () => {
   const {c}=setup();
   for(const schema of [0,1])for(let idx=0;idx<=40;idx++){
     const data=c.newGameState();data.saveSchema=schema;data.taskState.idx=idx;
@@ -142,10 +145,10 @@ test('格式0／1的全部41個索引依序串接格式2與3，最舊38項已完
     c.applySaveSchemaMigrations(sequential,schema,{version:2,migrations:c.SAVE_SCHEMA_MIGRATIONS.slice(0,1)});
     c.applySaveSchemaMigrations(sequential,2);
     const out=c.migrateSave(data);
-    assert.equal(out.taskState.idx,sequential.taskState.idx);assert.equal(out.saveSchema,3);
+    assert.equal(out.taskState.idx,sequential.taskState.idx);assert.equal(out.saveSchema,4);
   }
   const legacy=c.newGameState();delete legacy.saveSchema;delete legacy.taskInsertChestRelicV1;legacy.taskState.idx=38;
-  assert.equal(c.migrateSave(legacy).taskState.idx,46);
+  assert.equal(c.migrateSave(legacy).taskState.idx,48);
 });
 
 test('三個新增任務的導引分別前往熔爐寶箱與裝備頁', () => {
