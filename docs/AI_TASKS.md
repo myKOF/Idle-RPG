@@ -17704,3 +17704,14 @@ Worker 存活且頁面正常完成載入。
 - 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、來源兩頁及目前參數、js/player.js轉生與升級、ui.js屬性面板、worker/protocol.js與header/buildView、skills2.js耗魔、原生Excel工具、sim engine、既有派生／經驗／預覽／Demo／快取測試與headless管理。素材未修改，無素材庫提交。自我Review確認所有派生共用入口、實際戰鬥等級保留及b/c接線，未接觸其他任務功能。
 - 交接：Commit為本段所在`[Codex] feat: 調整法力公式與轉生屬性派生等級`，位於ai/codex，供合併審閱；未合併／推送develop或main。功能實作、來源套用、專項回歸及介面驗收完成；全庫尚未通過，需另行處理其失敗與未完成案例。QA與報告保存在本聊天mana-qa，瀏覽器／伺服器已關閉；其他聊天當時的任務修改各自提交，本輪僅暫存本項13檔。下一步整合至實際啟動工作區後重新載入／重啟，既有存檔自動按新規則計算。
 - 建置與清理：最終 `npm.cmd run build` 通過770個檔案語法／空檔檢查，`git diff --check`通過；`node tools/kill-test-browsers.cjs`確認沒有測試用無畫面瀏覽器。
+
+
+## CHEST-HINGE-20261126 — 固定開箱位置與後掀箱蓋
+
+- Owner：Codex；Done，單人處理。使用者要求寶箱從一開始就在原開啟後的較上方位置，開啟時不整體上移；箱蓋繞後側鉸鏈後掀，不可平移浮空；修改後提供GIF。前置：CHEST-OPENING已提交。允許ui-chest、chest.css、首頁對應快取、chest-opening回歸、CHEST_SYSTEM／LV／VFX用途及本段；不改獎勵結算／表格／協議／存檔或獨立素材，不合併推送。
+- 預檢無外部衝突。同副本副手種類任務修改index的String／data／bridge行、LV裝備養成段及AI_TASKS檔首；本項僅改兩個寶箱快取、寶箱段及檔尾，保留並分段提交。方案為預留獎勵與確認的版面、揭示時鐘延後到2.5秒後才啟動，箱體固定、後緣旋轉開蓋。驗收含開箱前後座標、鉸鏈固定、各品質／空獎勵／窄屏／中止、既有時序回歸、Build及實際CSS／DOM GIF。
+- 完成／修改8檔：ui-chest新增可延後啟動的揭示控制器，先建立隱藏且inert的獎勵區並保留確認高度，2.5秒後才啟動揭示；CSS箱體只蓄光不作位移／縮放，箱蓋以後緣18%為固定軸旋轉後掀，末段顯示程序內襯與箱內深度；主頁兩個寶箱快取升為opening-v2，回歸及三份系統文件與本段同步。既有品質光效／獎勵時序／立即中止保持，無表格或素材庫修改，不建空素材Commit。
+- 測試：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`72/72；新增預量版面但不消耗揭示時間、重複start／stop、inert與ARIA揭示驗證。`npm.cmd run build`771檔與Git差異檢查通過。唯讀檢查規範／Workflow／Codex、原有箱圖、既有開箱及headless／GIF工具；未改chest結算／資料、Bridge、Worker、String或其他聊天內容。
+- 實機：隔離靜音Edge載入正式頁及相同ui-chest原碼，捕捉閉包控制時鐘、按實際CSS動畫逐100ms定格。五品質在0／1500／2000／2400／2500／4300ms的箱體x／y完全相同（1280×900：x579.333374、y329.46875），鉸鏈固定91px／23.4px，變換矩陣只有旋轉、無平移。0～2400ms按鈕隱藏，2500ms起可確認，物品正常揭示；末段目視確認箱蓋內襯與後掀。另跑6組桌面／700×500窄屏、空／2格／十萬格、減少動態組合，開箱前後座標誤差小於0.01px、DOM不超過80格、inert與清理皆通過，頁面例外0。初輪搬移擷取腳本的Windows路徑格式不同導致測試服403，改用path.resolve後完成；產品流程未改。
+- GIF：本聊天chest-hinge-v2/chest-opening-hinge-v2.gif，720×480、225幀、23.75秒，銀白／藍／紫／橘／金依序演示，逐幀解碼與總長通過。沿用既有自製箱圖、內襯／箱內深度為CSS程序圖形，不引用外部素材。保留本聊天驗證報告；瀏覽器及伺服器於finally關閉，收尾檢查無殘留。
+- 交接：自我Review通過；本項實作及GIF完成，外觀交使用者驗收，未跑全庫／其他瀏覽器。Commit為本段所在`[Codex] fix: 固定寶箱位置並改為後掀開蓋`，位於ai/codex，可供合併審閱，未合併推送。只stage本項8檔增量，副手與裝備按鈕對比任務保留；下一步看新版GIF，整合後重新載入／重啟遊戲。

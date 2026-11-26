@@ -69,11 +69,14 @@ function harness() {
       getElementById: id => id === 'ui-stage' ? stage : current,
       querySelectorAll: () => [],
       createElement() {
-        const el = new Node(), nodes = gridNodes(), confirm = new Node();
+        const el = new Node(), nodes = gridNodes(), confirm = new Node(), panel = new Node();
+        panel.inert = true;
+        panel.setAttribute('aria-hidden', 'true');
+        el.panel = panel;
         el.nodes = nodes; el.confirm = confirm;
         confirm.hidden = confirm.disabled = true;
         nodes.viewport.hidden = true;
-        el.querySelector = q => q === '.nfc-res-confirm' ? confirm : nodes.viewport;
+        el.querySelector = q => q === '.nfc-res-confirm' ? confirm : q === '.nfc-res-rewards' ? panel : nodes.viewport;
         el.querySelectorAll = () => [{ decode: () => c.decode() }];
         el.showModal = () => { el.open = true; };
         el.close = () => { el.open = false; el.emit('close'); };
@@ -111,12 +114,32 @@ function result(c, n = 40, chestId = c.CHESTS[0].id) {
 }
 const visible = grid => grid.children.filter(n => !n.classList.contains('is-pending')).map(n => Number(n.getAttribute('data-nfc-index')));
 
+test('預留完整獎勵格版面時不消耗揭示時間，開箱後啟動且重複啟動不重置', () => {
+  const h = harness(), { viewport, grid } = h.gridNodes();
+  const ctrl = h.c.chestBindResultGrid(viewport, { total: 40, slots: [{ end: 40, html: '<li class="nfc-res-slot">item</li>' }] }, true);
+  assert.ok(grid.children.length > 0, '先量好格位和完整高度');
+  h.advance(5000);
+  assert.deepEqual(visible(grid), []);
+  assert.equal(h.timers.size, 0);
+  ctrl.start();
+  assert.deepEqual(visible(grid), [0]);
+  h.advance(100);
+  ctrl.start();
+  assert.deepEqual(visible(grid), [0, 1]);
+  h.advance(100);
+  assert.deepEqual(visible(grid), [0, 1, 2]);
+  ctrl.disconnect();
+  ctrl.start();
+  assert.equal(h.timers.size, 0);
+});
+
 test('開箱滿2.5秒才同時出現獎勵、品質光效與可操作確認，Esc及點擊不可提早跳過', async () => {
   const h = harness(), c = h.c;
   c.chestShowResult(result(c));
   const el = h.current();
   assert.equal(el.confirm.hidden, true);
-  assert.equal(el.nodes.grid.children.length, 0);
+  assert.deepEqual(visible(el.nodes.grid), []);
+  assert.equal(el.panel.inert, true);
   await h.flush();
   assert.equal(el.style['--nfc-opening-time'], '2500ms');
   assert.ok(el.classList.contains('is-opening'));
@@ -130,6 +153,8 @@ test('開箱滿2.5秒才同時出現獎勵、品質光效與可操作確認，Es
   assert.equal(el.confirm.hidden, false);
   assert.equal(el.confirm.disabled, false);
   assert.equal(el.confirm.focused, true);
+  assert.equal(el.panel.inert, false);
+  assert.equal(el.panel.getAttribute('aria-hidden'), 'false');
   assert.deepEqual(visible(el.nodes.grid), [0]);
   h.advance(99); assert.deepEqual(visible(el.nodes.grid), [0]);
   h.advance(1); assert.deepEqual(visible(el.nodes.grid), [0, 1]);

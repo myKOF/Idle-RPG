@@ -224,13 +224,13 @@ function chestResultSlots(rewards) {
 }
 
 /* 只建立捲動位置附近的格子，全開也能逐件查看。 */
-function chestBindResultGrid(viewport, rewards) {
+function chestBindResultGrid(viewport, rewards, deferReveal) {
   var grid = viewport.querySelector('.nfc-res-list');
   var track = grid.parentNode;
   var slots = rewards.slots, total = rewards.total;
   var columns = 1, stride = 1, first = -1, last = -1;
   var revealed = 0, revealTimer = null, stopped = false;
-  var started = performance.now();
+  var started = 0, revealing = false;
   viewport.style.setProperty('--nfc-count', Math.max(1, total));
 
   function updateRevealed(animate) {
@@ -308,10 +308,16 @@ function chestBindResultGrid(viewport, rewards) {
     if (revealed < total) revealTimer = setTimeout(reveal, revealed * CHEST_REVEAL_STEP_MS - elapsed);
     else revealTimer = null;
   }
-  reveal();
+  function start() {
+    if (stopped || revealing) return;
+    revealing = true;
+    started = performance.now();
+    reveal();
+  }
+  if (!deferReveal) start();
   var observer = new ResizeObserver(resize);
   observer.observe(viewport);
-  return { disconnect: function () {
+  return { start: start, disconnect: function () {
     stopped = true;
     clearTimeout(revealTimer);
     observer.disconnect();
@@ -337,15 +343,19 @@ function chestShowResult(res) {
   var art = chestResultImage('images/chests/' + CHEST_ART_FILES[quality] + '.webp');
   el.innerHTML = '<div class="nfc-res-content"><div class="nfc-res-art" aria-hidden="true">' +
     '<div class="nfc-res-fx"><i class="nfc-res-halo"></i><i class="nfc-res-rays"></i></div>' +
-    '<div class="nfc-res-chest"><i class="nfc-res-inner"></i>' +
+    '<div class="nfc-res-chest"><i class="nfc-res-cavity"></i><i class="nfc-res-inner"></i>' +
     '<div class="nfc-res-base">' + art + '</div><div class="nfc-res-lid">' + art + '</div></div></div>' +
-    '<div class="nfc-res-scroll" tabindex="0" hidden><div class="nfc-res-track">' +
+    '<div class="nfc-res-rewards" aria-hidden="true" inert><div class="nfc-res-scroll" tabindex="0" hidden><div class="nfc-res-track">' +
     '<ul class="nfc-res-list" role="list"></ul></div></div>' +
-    '<button type="button" class="btn primary nfc-res-confirm" hidden disabled>' + chestUiEsc(STR(149)) + '</button></div>';
+    '<button type="button" class="btn primary nfc-res-confirm" hidden disabled>' + chestUiEsc(STR(149)) + '</button></div></div>';
   hideTooltip();
   ($id('ui-stage') || document.body).appendChild(el);
   el.showModal();
-  var observer = null, openingTimer = null, ready = false, dismissed = false;
+  var viewport = el.querySelector('.nfc-res-scroll');
+  viewport.hidden = !rewards.total;
+  // 先以隱藏內容量好完整版面，獎勵出現時箱體不會因整組重新置中而向上跳。
+  var observer = rewards.total ? chestBindResultGrid(viewport, rewards, true) : null;
+  var openingTimer = null, ready = false, dismissed = false;
   var confirm = el.querySelector('.nfc-res-confirm');
   function opened() {
     if (dismissed) return;
@@ -353,9 +363,10 @@ function chestShowResult(res) {
     ready = true;
     el.classList.remove('is-opening');
     el.classList.add('is-opened');
-    var viewport = el.querySelector('.nfc-res-scroll');
-    viewport.hidden = !rewards.total;
-    if (rewards.total) observer = chestBindResultGrid(viewport, rewards);
+    var panel = el.querySelector('.nfc-res-rewards');
+    panel.inert = false;
+    panel.setAttribute('aria-hidden', 'false');
+    if (observer) observer.start();
     confirm.hidden = false;
     confirm.disabled = false;
     confirm.focus({ preventScroll: true });
