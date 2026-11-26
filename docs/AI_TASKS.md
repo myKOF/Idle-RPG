@@ -89,6 +89,20 @@
 - 畫面：browser技能IAB無可用backend，改專案launchHeadless看門狗管理的隔離靜音Edge。以正式Npc3D／Hero3D／Pixi及當前renderer遮罩／同步函式，載boss3.glb，比較Walk兩幀及Attack1一幀×野外紅／塔藍紫紅共12組。不透明本體像素每組7,999～9,930個，與無覆光原模型逐RGBA差異0，外暈像素均存在，本體alpha=1、tint=白、內層隱藏；死亡立即隱藏內外層。首次比對曾發現外暈柔邊蓋入本體，調整前後順序後重驗全部通過，未放寬像素斷言。截圖目視原色與三區外暈保持，Console錯誤／警告0。
 - 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex.md、既有任務、js/npc3d.js／hero3d.js／data.js、tools/apply_params.cjs／boss8/verify_ingame.cjs／lib/headless-browser.cjs、既有死亡UI／3D／快取測試與BOSS3模型。未改Worker、協議、模型材質、配置或戰鬥數值；同副本其他聊天的NPC.xlsx／NPC.csv／data.js進行中修改不納入本次提交。
 - 交接：本項無未完成實作，可審閱合併；限制為未跑完整塔戰勝敗、全庫、多瀏覽器及桌面包，另有上述3項既有死亡UI測試失敗。BOSS9第三招在本輪期間已獨立提交，本段與其不同區段且無語意相依；僅提交本項6檔。瀏覽器／伺服器關閉，kill-test-browsers確認無測試瀏覽器，無桌面擷取工作階段。自動核准審查以政策限制拒絕刪除專用tmp/boss-outer-glow-20261125，內含驗證腳本／PNG／JSON，保留於磁碟且不提交，未換方式重試。Commit為本段所在「[Codex] fix: BOSS僅保留外層漸層光暈」，SHA見交付；未合併或推送任何分支。下一步重新載入遊戲驗收。
+## SKILL-LOCKED-DIM-20261126 — 加深未解鎖技能的顯示區隔
+
+- Owner：Codex；Done，單人處理。依使用者截圖將技能左側列表未解鎖項目的名稱、圖示及資訊進一步調暗；前置依賴為既有 is-locked 狀態，已滿足。
+- 允許：css/ashen-forge.css 鎖定項目樣式、index.html 對應 CSS 快取、LV_upgrade_system.md 技能顯示說明及本段。禁止變更技能解鎖、學習、裝配、數值、字串、素材與其他聊天修改，不合併或推送。
+- 預檢：四檔無外部副本／分支來源；本副本寶石掉落任務進行中，僅修改不同區段並分開暫存。驗收：正式樣式實際渲染，比對未解鎖／可學習／已裝配／選中狀態，相關既有回歸、Build 及 Git 差異檢查。無素材變更，素材庫無需提交。
+- 完成／修改4檔：ashen-forge.css 將鎖定列 opacity 由 .6 降至 .45，圖示追加 grayscale(.6) brightness(.7)；index.html 更新該 CSS 快取，LV 文件同步顯示規格及本段紀錄。唯讀檢查共通規範／Workflow／prompts/codex、js/ui.js 的狀態判讀與列表／圖示輸出、其餘疊加主題、既有技能測試及瀏覽器工具。未新增或修改美術素材，沒有外部素材引入。
+- 驗證：`node --test tests/skill-equipped-style.test.cjs tests/skill2-ui.test.cjs` 30/30 通過；`npm.cmd run build` 767 檔通過；`git diff --check` 通過。隔離 Edge 使用正式列表產生函式、真實圖示及首頁全套 CSS 渲染九項技能，比對前後截圖；未鎖定 opacity=1／filter=none，未解鎖含選中列 opacity=.45／圖示濾鏡正確，全部圖片成功載入、白色裝配外框保留。既有測試確認鎖定技能可查看且不出現升級鈕，沒有新增產品邏輯或測試。
+- 交接：自我 Review 通過，本輪無未完成項目，可合併審閱；未合併／推送。Commit 為本段所在 `[Codex] fix: 加深未解鎖技能的名稱與圖示`。僅驗證列表渲染及相關回歸，未跑完整遊戲流程或全庫測試。瀏覽器正常關閉，孤兒瀏覽器檢查無殘留；專用預覽暫存於檢視後清理。下一步重新載入遊戲驗收視覺深淺。
+
+## SYNC-DEVELOP-20261126 — 整合桌面失焦、寶石掉落等級與技能鎖定顯示
+
+- Owner：Codex；待控制器暫存並建立合併提交。合併基底 `7bf4dafa`，原 HEAD `c95f01db`，傳入 `76365ee9`；本次整合依序包含 `d4b4e621` 桌面視窗失焦持續繪圖、`a4596d1a` 寶石表掉落等級限制及 `76365ee9` 未解鎖技能顯示加深。
+- 衝突：唯一原始衝突為本文件頂端的任務紀錄並列新增；保留原 HEAD 的 BOSS9 死亡／第三招及外暈紀錄，也保留傳入的技能鎖定顯示紀錄，未以任一整側覆蓋。其餘傳入檔案無內容衝突，包含權威 `config/Excel/Gems.xlsx` 及其 CSV／runtime 產物，工作簿位元未由整合器修改。
+- 驗證：`node tools/config_tables.cjs --apply Gems` 試跑重建1個字面值、語意變更0且未寫檔；桌面背景、寶石掉落等級、技能顯示、Worker與快取共54/54通過。`npm.cmd run build` 與完整 `git diff HEAD --check` 通過。HEAD 與 MERGE_HEAD 保持不變，未操作 Git 索引、提交、推送或其他工作區。
 
 ## SYNC-DEVELOP-20261125 — 整合桌面遊玩記錄、Demo 法力與配樂
 
@@ -4866,6 +4880,16 @@
 - 瀏覽器：computer-use／CUA獨立127.0.0.1:13742、拋棄式IndexedDB測試存檔，正式index／UI／Bridge／真Worker／Pixi。最高29層時幻影八方陣鎖定、橘色13px及無學習鈕；塔30獎勵黃色16px獨立框在通關獎勵後，塔1完全隱藏。最高30層、已保留Lv.3的存檔正常載入生效並顯示灰色11px「已通行封魔塔第30層」；兩次Console error／warning均0。截圖tower-skill-unlock.png／skill-tower-cleared.png存本聊天visualizations；分頁、服務及臨時腳本／日誌清理，未讀真人存檔。同層多技能以正式HTML回歸注入第二條門檻驗證。
 - 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
 - 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
+
+## GEM-DROP-CONFIG-20261126 — 接通寶石表內掉落等級限制
+
+- Owner：Codex；Done，單人處理。使用者授權將 Gems「開放等級」的設定接到「掉落等級」，驗證後 Commit。來源設定與正式掉落讀欄不一致的問題已修正。
+- 修改9檔：config/Excel/Gems.xlsx、config/CSV/Gems.csv、js/data.js、index.html、js/bridge.js、js/worker/sim.worker.js、tests/gem-drop-level.test.cjs、LV_upgrade_system.md 及本段。49種原設定完整遷移並移除無效舊欄，主頁／Worker／bridge 快取為20261126-gem-drop-config-v1；掉落總機率、寶石能力、其他取得規則與存檔／協議保持。
+- Excel：來源獨占檢查通過，原生 API 刪欄與寫入、正常重開兩次後再重算儲存重開；驗證發現既有更新工具因浮點數字串差異將一格公式誤寫為文字，已依原本數字格式與公式以原生 API 恢復。最終兩工作表1750格及784個公式逐一對應原檔相同，僅49格新掉落設定與其文字格式／垂直置中、移除舊欄及掉落欄寬32為預期變更。渲染檢查通過、公式錯誤0，CSV以既有config_tables的readXlsxRows／csvStringify匯出，apply Gems試跑語意變更0。未手改XLSX封裝。
+- 驗證：新增3項回歸先重現錯欄及200級仍掉地抗寶石，遷移後全部通過；逐種類檢查區間前後邊界，元素核心51級、單元素抗性及對元素敵人傷害201級起掉，全屬性抗性維持1級、停用種類仍不掉。正式野外／強化怪物及離線引擎驗證200級不掉、201級掉，離線使用可容納該關卡的swamp地圖並確認實際結算關卡，未替換種類篩選器。
+- `node --test tests/gem-drop-level.test.cjs tests/gem-enabled.test.cjs tests/field-gem-drop-table.test.cjs tests/loot-event-accounting.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs` 最終38/38通過；`npm.cmd run build`767檔通過。擴大包含gem-shop及mystery-merchant的8檔測試69項中67通過，2項商店既有設定斷言失敗，唯讀載入HEAD原data.js重跑同兩項均重現；Store表／CSV／程式未修改，不擴大處理。Git差異檢查通過。
+- 唯讀檢查：共通規範／Agent／Workflow／Codex、config_tables／xlsx_to_csv／Excel更新器、item／combat／save正式掉落流程、tower／factory與商人／停用／快取回歸。無素材變更，素材庫無需提交。沒有本輪未完成修改；未跑全庫或另做實機畫面，正式結算以模擬器驗證。
+- 衝突與交接：起始逐檔預檢無外部來源；期間同副本其他聊天新增桌面背景與鎖定技能樣式修改，共用index／LV／任務檔均為不同區段，獨立三方試合乾淨、無語意相依，只暫存本輪hunk。任務紀錄移至此獨立位置避免同在檔頭插入。其他聊天修改完整保留。Commit為本段所在`[Codex] fix: 接通寶石表內掉落等級限制`，位於ai/codex，可供合併審閱；未合併或推送develop／main。下一步重新載入後驗收前期掉落。
 
 ## GEM-ENABLED-20261015 — 寶石開放欄與停用操作限制
 
@@ -17606,3 +17630,16 @@ Worker 存活且頁面正常完成載入。
 - `node --test` 執行 13 支封魔塔、3D 角色與快取相關測試檔，65 項中 61 項通過，4 項為既有的 BOSS7、妖樹首領及惡魔首領名稱斷言。BOSS10 專項全數通過。`node tmp/boss10-v3/verify_ingame.cjs tmp/boss10-v3/game 30` 驗證五個動作、三攻連續輪替、第 30 層實戰移動、出招與兩種頭像尺寸，無執行期錯誤。
 - `npm.cmd run build` 通過 762 檔語法與空檔檢查，兩支 Python 工具通過語法剖析，Git 差異檢查通過。
 - 素材庫提交 `8b7e8f427b80612aaef18308b6d55868432a53b2`。遊戲提交訊息 `[Codex] feat: 接入熔岩巨人第三套材質與五動作`，位於 `ai/codex`，可合併。工作區內的驗證暫存與瀏覽器程序已清理。自動審查以政策限制拒絕刪除工作區外的 Blender 重建驗證圖，該圖留在 `C:/tmp/boss10-v3/rebuild-2/boss10_lava_lv2.png`。
+
+## DESKTOP-BLUR-RENDER-20261126 — 桌面視窗失焦時持續繪圖
+
+- Owner：Codex；Done，單人修正。使用者回報遊戲仍顯示於螢幕上，但切到檔案總管後戰鬥畫面停住，取回焦點才恢復。前置：已確認 window-activity 將失焦與最小化／隱藏合併為 background，導致 GameVisibility 停止顯示層，Worker 原本仍在運作。
+- 允許：electron/window-activity.cjs、tests/desktop-background.test.cjs、tools/desktop/verify_background.cjs、LV_upgrade_system.md 及本段。禁止改戰鬥／收益／存檔／協議、配置表、素材及其他聊天進行中修改；不合併或推送。沿用 background 欄位與現有顯示機制，僅最小化或隱藏時降載；桌面主行程 CJS 不經 index script 載入，無需前端快取變更。
+- 預檢：所有目標無外部來源；同副本寶石／技能任務的 LV 與任務紀錄位於不同區段，僅暫存本項差異。驗收包含可見失焦持續繪圖／特效、Worker 收益與自動存檔、最小化與隱藏停止繪圖、未取回焦點即還原顯示，以及選單暫停／網頁 visibility／迷你視窗相容。執行相關回歸、Build 與隔離靜音 Electron 實測，完成後自我 Review、Commit，交使用者重啟驗收。
+- 完成／修改5檔：window-activity 僅依 isVisible／isMinimized 判定顯示降載；desktop-background 回歸新增原生活動到 GameVisibility／ticker 的整合驗證；verify_background 實測區分失焦持續繪圖、最小化及隱藏降載，補上 showInactive 無焦點還原；同步 LV 與本段。未改前端 JS、表格、Worker 或素材，素材庫無變更。
+- 唯讀檢查：AI_RULES／AGENTS／AI_WORKFLOW／prompts/codex、electron/main.cjs／preload.cjs／mini-window.cjs、js/game-visibility.js／bridge.js／ui.js／battle-renderer.js／worker/sim.worker.js、package.json、index.html、既有時鐘／迷你／選單背景／存檔／事件佇列與快取測試。自我 Review 確認 IPC 格式與來源限制、選單暫停及網頁分頁行為沿用。
+- 回歸指令：`node --test tests/desktop-background.test.cjs tests/desktop-mini-window.test.cjs tests/desktop-mini-shortcut.test.cjs tests/game-clock.test.cjs tests/start-menu-background.test.cjs tests/ui-containment-and-visual-flush.test.cjs tests/worker-protocol.test.cjs tests/desktop-saves.test.cjs tests/vfx-editor-cache-versions.test.cjs`，80/80通過。最終測試替身補齊 isFocused 後專項6/6再次通過。`npm.cmd run build` 767檔通過；`node --check tools/desktop/verify_background.cjs` 與本項 Git 差異檢查通過。
+- 舊測試原本把 bridge／ui／battle-renderer 快取限定為20261119背景任務名稱，後續正常升版即誤報。以HEAD原測試搭配HEAD首頁重現相同失敗後，改驗帶版本、日期不早於背景修正、同日必須為原背景版本，並補查 game-visibility；不回退現行快取或降低功能要求。
+- Electron實測：`node tools/desktop/verify_background.cjs tmp/desktop-blur-20261126` 通過，正常模式無smoke、獨立profile、新遊戲及靜音。失焦18秒幀112→1141、GT 3.228→21.436、金幣52106→57177、自動存檔0→1，前後focused皆false、特效啟用、結束視覺佇列0。最小化18秒幀1212保持、GT增加17.996秒、金幣57542→61467、存檔2→3；隱藏18秒幀1283保持、GT增加17.902秒、金幣61862→64803、存檔4→6。showInactive後仍無焦點、ticker恢復並增加15幀。選單暫停經最小化／還原GT保持62.526，解除後前進，磁碟存檔存在，頁面／Worker／存檔錯誤與重啟皆0。
+- 實測腳本首輪把最小化後isFocused也強制視為false，Windows實際仍回傳true，與降載判斷無關；修正為僅在可見失焦區間要求無焦點，再完整重跑通過。測試視窗與隔離profile已關閉／清理；`node tools/kill-test-browsers.cjs` 無殘留。自動核准審查以政策限制拒絕清除本次專用tmp/desktop-blur-20261126，未繞過；報告與截圖保留為清理例外。
+- 交接：Commit為本段所在`[Codex] fix: 修正桌面視窗失焦時畫面停住`，位於ai/codex，可供合併；未合併／推送develop或main。本輪無未完成修正，其他聊天的寶石／技能未提交修改保持。已知限制為未跑全庫、OS睡眠及安裝包實測；沿用現有恢復補算。下一步整合至實際啟動的工作區後退出重啟桌面版，既有安裝包須重新打包。

@@ -22,7 +22,7 @@ function ticker() {
     start() { this.started = true; this.starts++; }, stop() { this.started = false; this.stops++; } };
 }
 
-test('桌面失焦／最小化／隱藏獨立於 Chromium visibility，還原後才恢復顯示', () => {
+test('桌面可見但失焦時維持顯示，最小化／隱藏才暫停，還原無須取得焦點', () => {
   const win = new EventEmitter(); const sent = [];
   let visible = true, focused = true, minimized = false;
   Object.assign(win, { isVisible: () => visible, isFocused: () => focused, isMinimized: () => minimized,
@@ -30,13 +30,36 @@ test('桌面失焦／最小化／隱藏獨立於 Chromium visibility，還原後
   const activity = bindWindowActivity(win);
   assert.equal(activity.get().background, false);
   focused = false; win.emit('blur');
+  assert.equal(activity.get().background, false);
   minimized = true; win.emit('minimize');
   minimized = false; win.emit('restore');
-  focused = true; win.emit('focus');
   visible = false; win.emit('hide');
+  focused = true; win.emit('focus');
   visible = true; win.emit('show');
-  assert.deepEqual(sent, [true, true, true, false, true, false]);
+  assert.deepEqual(sent, [false, true, false, true, true, false]);
+  visible = false;
   assert.equal(bindWindowActivity(win, { alwaysActive: true }).get().background, false);
+});
+
+test('原生活動事件接入 GameVisibility 後，失焦不停止 ticker，隱藏後可失焦還原', () => {
+  const h = harness(); const t = ticker();
+  const win = new EventEmitter(); let visible = true, minimized = false;
+  Object.assign(win, { isVisible: () => visible, isMinimized: () => minimized, isFocused: () => false,
+    isDestroyed: () => false, webContents: Object.assign(new EventEmitter(), {
+      isDestroyed: () => false, send: (_, state) => h.update(state)
+    }) });
+  const activity = bindWindowActivity(win);
+  h.update(activity.get()); h.c.GameVisibility.trackTicker(t);
+  win.emit('blur');
+  assert.equal(h.c.GameVisibility.isHidden(), false); assert.equal(t.started, true); assert.equal(t.stops, 0);
+  minimized = true; win.emit('minimize');
+  assert.equal(h.c.GameVisibility.isHidden(), true); assert.equal(t.started, false);
+  minimized = false; win.emit('restore');
+  assert.equal(h.c.GameVisibility.isHidden(), false); assert.equal(t.started, true);
+  visible = false; win.emit('hide');
+  assert.equal(t.started, false);
+  visible = true; win.emit('show');
+  assert.equal(h.c.GameVisibility.isHidden(), false); assert.equal(t.started, true);
 });
 
 test('較早的初始查詢不得覆蓋新的原生視窗事件，停止中的 ticker 不被喚醒', async () => {
@@ -80,7 +103,13 @@ test('桌面正式模式停用背景節流，活動 API 受既有來源守門且
   assert.match(main, /ipcMain.handle\('activity:get',[\s\S]*?if \(!trustedSender\(event\)\) throw/);
   const html = fs.readFileSync(require.resolve('../index.html'), 'utf8');
   assert.ok(html.indexOf('js/game-visibility.js?') < html.indexOf('js/battle-renderer.js?'));
-  for (const name of ['bridge', 'ui', 'battle-renderer', 'vfx', 'vfx-tower', 'sfx', 'start-menu-background']) {
-    assert.match(html, new RegExp('js/' + name + '\\.js\\?v=20261119-background(?:-mini)?-v[1-9]\\d*'));
+  for (const name of ['game-visibility', 'bridge', 'ui', 'battle-renderer', 'vfx', 'vfx-tower', 'sfx', 'start-menu-background']) {
+    const script = html.match(new RegExp('<script src="js/' + name + '\\.js\\?v=([^"&]+)"'));
+    assert.ok(script, name + ' 必須帶快取版本');
+    // 背景修正的版本是下限；之後其他任務正常升版也應保留這項檢查。
+    const version = script[1];
+    assert.match(version, /^\d{8}-.+/);
+    assert.ok(version.slice(0, 8) >= '20261119', name + ' 不可退回背景修正前版本');
+    if (version.startsWith('20261119-')) assert.match(version, /^20261119-background(?:-mini)?-v[1-9]\d*$/);
   }
 });

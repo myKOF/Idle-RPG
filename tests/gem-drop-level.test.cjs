@@ -47,3 +47,72 @@ test('GEMDROP-3 Gems 表「掉落等級」解析：格式錯誤中止、正確�
   set('掉落等級', '{30~20,0.1}');
   assert.throws(() => c.schema.rebuild([row], h), /掉落等級範圍/);
 });
+
+test('GEMDROP-4 正式 Excel、CSV 與遊戲種類權重一致，不再保留無效開放等級欄', () => {
+  const { readXlsxRows, csvParse, SCHEMAS } = require('../tools/config_tables.cjs');
+  const rows = readXlsxRows(path.join(ROOT, 'config/Excel/Gems.xlsx'));
+  const csv = csvParse(fs.readFileSync(path.join(ROOT, 'config/CSV/Gems.csv'), 'utf8'));
+  assert.deepEqual(csv, rows);
+  const header = rows[0], dropIndex = header.indexOf('掉落等級');
+  assert.ok(dropIndex >= 0);
+  assert.equal(header.includes('開放等級'), false, '避免再把限制填進不被讀取的欄位');
+  const rebuilt = {};
+  vm.runInNewContext(SCHEMAS.Gems.rebuild(rows.slice(1), header).GEM_TYPES, rebuilt);
+  const c = load();
+  assert.deepEqual(JSON.parse(JSON.stringify(c.GEM_TYPES)), JSON.parse(JSON.stringify(rebuilt.GEM_TYPES)));
+  for (const row of rows.slice(1)) {
+    assert.notEqual(row[dropIndex], '', row[0] + ' 的原設定應完整遷移');
+    const ranges = row[dropIndex].split('|').map(segment => {
+      const match = /^\{(\d+)~(\d+),([\d.]+)\}$/.exec(segment);
+      assert.ok(match, row[0] + ' 掉落等級格式');
+      return match.slice(1).map(Number);
+    });
+    const boundaries = new Set([1, ...ranges.flatMap(([lo, hi]) => [lo - 1, lo, hi, hi + 1])]);
+    for (const level of boundaries) {
+      if (level < 1) continue;
+      const expected = c.isGemEnabled(row[0]) ? ranges.reduce((sum, [lo, hi, weight]) =>
+        sum + (level >= lo && level <= hi ? weight : 0), 0) : 0;
+      assert.equal(c.gemDropWeight(row[0], level), expected, row[0] + ' Lv.' + level);
+    }
+  }
+});
+
+test('GEMDROP-5 元素抗性及對元素傷害201級起掉，元素核心51級起掉', () => {
+  const c = load();
+  for (const [type, def] of Object.entries(c.GEM_TYPES)) {
+    const threshold = /^(?:res(?:Fire|Ice|Lightning|Poison|Dark|Light|Earth|Wind)|dmgVs)/.test(def.stat) ? 201 :
+      /^elemDmg/.test(def.stat) ? 51 : 1;
+    assert.equal(c.gemDropWeight(type, 1), c.isGemEnabled(type) && threshold === 1 ? 1 : 0, type);
+    if (threshold > 1) {
+      assert.equal(c.gemDropWeight(type, threshold - 1), 0, type + ' 門檻前不得掉落');
+      assert.equal(c.gemDropWeight(type, threshold), 1, type + ' 門檻當級可掉落');
+    }
+  }
+});
+
+test('GEMDROP-6 正式野外及離線結算遵守地抗寶石門檻，強化怪物等級不提前解鎖', () => {
+  const { createEngine } = require('../scripts/sim/engine.js');
+  for (const level of [200, 201]) {
+    const e = createEngine({ seed: 19 }).boot(), c = e.ctx, g = e.state();
+    for (const [type, def] of Object.entries(c.GEM_TYPES)) def.enabled = type === 'wardEarth';
+    c.ZONE_STAGE_DROP_TABLE.swamp = [{ min: 1, max: 400, equipmentRates: [],
+      materials: { gemRates: [100], bookRate: 0, ancientEssenceRate: 0, dustRate: 0, partRate: 0 } }];
+    g.stage.zone = 'swamp'; g.stage.current = level;
+    g.player.gems = {};
+    const loot = [];
+    c.recordLootGem = (...args) => loot.push(args);
+    c.rollFieldDrops({ level });
+    assert.equal(c.gemCount('wardEarth', 1) > 0, level >= 201, '野外 Lv.' + level);
+    assert.equal(loot.length > 0, level >= 201, '只記錄實際掉落');
+    g.player.gems = {};
+    c.rollFieldDrops({ level: level + 100, _powerLevelBonus: 100 });
+    assert.equal(c.gemCount('wardEarth', 1) > 0, level >= 201, '強化後仍以原怪物等級判斷');
+    g.player.gems = {};
+    const offline = e.offlineFor(600);
+    assert.ok(offline && offline.kills > 0, '確實執行離線擊殺');
+    assert.equal(offline.stage, level, '使用可容納門檻等級的正式地圖');
+    assert.equal(c.gemCount('wardEarth', 1) > 0, level >= 201, '離線 Lv.' + level);
+    assert.equal(Object.values(offline.gems).some(count => count > 0), level >= 201);
+    assert.equal(c.randomGemType(), 'wardEarth', '不依怪物等級抽取的其他取得途徑保持開放');
+  }
+});
