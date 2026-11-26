@@ -1,0 +1,20 @@
+{
+  "id": "BOSS9_Attack3",
+  "version": 6,
+  "package": "boss9-lizard-attack3-ref-20261125",
+  "duration": 1.5,
+  "authorFPS": 480,
+  "ground": -0.744,
+  "sourceSHA256": "b00d2fd34dcd205368a449208dbb5de573a9a4d266a2060d426177a9baea5da8",
+  "referenceSHA256": "8b0cb23f9111faf0e8e3f62f9ffbe42e65ad2ec8b2843895991d1b633586d964",
+  "referenceDuration": 3.0,
+  "referenceClip": "BOSS9_Attack1",
+  "sourceClipDuration": 1.2,
+  "sourceFPS": 480,
+  "leftSupportDrop": 0.015,
+  "cycles": {"R": {"start": 0, "end": 0.85}, "L": {"start": 0.33, "end": 1.5}},
+  "strokes": {"R": {"start": 0.35, "end": 0.55}, "L": {"start": 0.64, "end": 0.81}},
+  "rootMotion": false,
+  "recoveryMode": "coordinatedLocalFK",
+  "previewOnly": true
+}
