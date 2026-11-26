@@ -334,7 +334,7 @@ test('共鳴頁籤未達解鎖條件：無法切入，頁籤以 tips 顯示條�
   assert.match(tab.className, /is-locked/);
   assert.equal(tab.attrs['aria-disabled'], 'true');
   assert.equal(tab.attrs['data-tt-title'], f.c.STR(2130));
-  assert.equal(tab.attrs['data-tt-desc'], f.c.STR(2131, requiredLevel, requiredTurn));
+  assert.equal(tab.attrs['data-tt-desc'], f.c.STR(2131, f.c.progressRequirementText(requiredLevel, requiredTurn)));
   f.c.G.player.reincarnations = requiredTurn;
   f.c.renderGems();
   assert.doesNotMatch(tab.className, /is-locked/);

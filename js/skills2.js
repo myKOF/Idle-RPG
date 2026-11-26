@@ -395,8 +395,7 @@ function sgTierUnlockedBy(unlock, level, reinc, towerHighest) {
 /* 解鎖門檻的顯示文字（升級失敗訊息與技能面板共用同一份措辭）。 */
 function sgUnlockText(unlock) {
   if (!unlock) return '';
-  var r = Math.max(0, Number(unlock.reinc) || 0);
-  return STR(680, (r > 0 ? STR(679, r) + ' ' : '') + Math.max(0, Number(unlock.lv) || 0), (unlock.tower > 0 ? STR(681, unlock.tower) : ''));
+  return progressRequirementText(unlock.lv, unlock.reinc) + (unlock.tower > 0 ? STR(681, unlock.tower) : '');
 }
 
 /* 解鎖進度來源：Worker 端讀 G；主執行緒沒有 G，由呼叫端傳面板快照的等級／轉生數／最高通關塔層。

@@ -979,6 +979,14 @@ function progressReached(level, reincarnations, needLevel, needReincarnations) {
   if (rc !== need) return rc > need;
   return Number(level) >= (Number(needLevel) || 0);
 }
+/* 解鎖門檻的純顯示文字：0轉只列等級，正轉數的1級門檻只列轉數。 */
+function progressRequirementText(level, reincarnations) {
+  var lv = Math.max(1, Math.floor(Number(level) || 1));
+  var rc = Math.max(0, Math.floor(Number(reincarnations) || 0));
+  if (!rc) return STR(680, lv, '');
+  if (lv <= 1) return STR(679, rc);
+  return STR(680, STR(679, rc) + ' ' + lv, '');
+}
 /* 換算成「0 轉等級」：給只認等級的規則（詞條門檻、保底窗口）用。
    轉生過（≥1 轉）一律大於可轉生等級，等於已越過所有 0 轉等級門檻；0 轉時原樣回傳（含 NaN，維持「不擋」）。 */
 function zeroRebirthLevel(level, reincarnations) {

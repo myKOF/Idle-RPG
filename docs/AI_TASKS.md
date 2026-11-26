@@ -4941,6 +4941,17 @@
 - 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
 - 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
 
+## UNLOCK-TIP-FORMAT-20261126 — 統一等級與轉生解鎖提示
+
+- Owner：Codex；Done，單人處理。使用者要求符文只顯示200級開放，全面檢查其他tips：0轉省略轉數，只顯示等級；只需轉生者省略1級；2轉400級等有實質等級門檻者保留轉數與等級，移除「或下一轉」冗長敘述。解鎖判斷與配置維持。
+- 允許：data.js純顯示formatter、ui.js符文／共鳴提示、gem_resonance.js及skills2.js解鎖文字、String.xlsx／CSV／strings_data、必要index／bridge／Worker及編輯器快取、既有unlock-progress-rule／equip-socket-ui／gem-resonance-ui測試、LV及本段。禁止改進度／門檻／戰鬥規則、其他表格、存檔／協議、其他聊天修改或素材，不合併推送。
+- 盤點：符文拼接0轉與下一轉、共鳴固定同列轉數與Lv.1、技能positive轉數加1級、融合舊提示Lv.1及說明頁符文「200級或轉生後」需調整。世界地圖目前只顯示正轉數前置、神鑄／威能只顯示轉數，維持。1976舊神鑄說明未被程式／HTML引用；熔爐「0轉2座」為容量規則，不是等級門檻，保持。
+- 預檢：全部目標無外部來源；同副本開箱／Task來源修改保留。String獨占確認後以Excel原生API編修，正常重開／原值與格式驗證及渲染。驗收：200級、6轉、2轉400級及轉生後仍解鎖，技能封魔塔複合門檻保留，主端／共鳴指令提示一致；字串／解鎖／快取回歸與Build、Git檢查後提交。無素材修改。
+- 已完成實作：新增data.js純顯示progressRequirementText，符文用String2580「{0}開放」，共鳴前端與指令共用gemResonanceLockedMessage，技能共用相同門檻格式並保留塔層條件。String196／1534移除Lv.1，2131改用格式化門檻，2363說明改200級開放；新增2580。Excel原生寫10格，正常重開兩次，唯讀比對只有5個原儲存格及1新列不同，既有樣式／欄寬／列高／凍結／驗證保持；渲染已核對。主頁／Worker／bridge對應資產快取20261126-unlock-tip-format-v1，字串資料與編輯器共用快取bb5f6d90。
+- 驗證：unlock-progress-rule、equip-socket-ui、string-table、vfx-editor-cache-versions、worker-protocol共62/62；共鳴頁籤鎖定／開放專項1/1。擴大skill2-tower-unlock共10項中9通過，唯一舊超神耗魔斷言期待3000、現值1250；用記憶體載入HEAD原data／skills2／ui／gem_resonance／strings_data重跑同項仍失敗，未改其斷言或耗魔規則。Build772檔通過，String同步檢查通過、程式顯示字串稽核寫死0。隔離靜音Edge以正式renderDetail產出符文按鈕，200級／6轉／2轉400級提示與共鳴指令文字逐一一致，無裁切／頁面例外，截圖已目視核對；瀏覽器已關閉，孤兒檢查無殘留。未跑全庫或完整遊戲長時間操作。
+- 確認與提交：使用者已回覆「commit吧」，同意保留兩邊修改並提交本輪解鎖提示。另一個同副本Task任務的save-schema快取與本輪sim.worker.js匯入快取相鄰，LV亦同在檔頭新增獨立段落；三方試合有文字衝突但無語意相依，依本次授權保留兩邊工作檔，僅暫存本輪快取與文件段落。共享data／bridge／Worker資產版本保留另一任務協調後的20261126-task-tower-unlock-v1，gem_resonance／skills2／ui仍為本輪版本，字串hash維持bb5f6d90；首頁逐支選取本輪對應腳本快取，其他save-schema／quest-guide快取留原任務。data／任務紀錄獨立三方試合乾淨；Task.xlsx、TASKS、存檔遷移、導引及測試等其他任務修改保留未提交。
+- 交付16檔：data／ui／gem_resonance／skills2、String.xlsx／CSV／strings_data、index／bridge／Worker／VFX編輯器字串快取、equip-socket-ui／gem-resonance-ui／unlock-progress-rule測試、LV及本段。無新素材，素材庫無需提交。自我Review完成，無本輪未完成修改，可審閱合併；Commit為本段所在`[Codex] fix: 統一等級與轉生解鎖提示`，未合併或推送。下一步重新載入，確認符文顯示200級開放。
+
 ## TOWER-BOSS-EQUIP-TIP-20261126 — BOSS提示補上裝備掉落
 
 - Owner：Codex；Done，單人處理。使用者要求封魔塔BOSS的「可能掉落」也列裝備。已直接沿用塔樓層詳情的towerEquipDropRows，以BOSS_DROP_TABLE的基礎品質／機率與超過100%的必掉件數口徑顯示，不新增計算來源或改掉寶率加成。
