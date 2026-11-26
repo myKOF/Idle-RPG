@@ -344,7 +344,7 @@ function chestShowResult(res) {
   el.innerHTML = '<div class="nfc-res-content"><div class="nfc-res-art" aria-hidden="true">' +
     '<div class="nfc-res-fx"><i class="nfc-res-halo"></i><i class="nfc-res-rays"></i></div>' +
     '<div class="nfc-res-chest"><div class="nfc-res-sprite"><img class="nfc-res-sheet" src="images/chests/opening/' +
-    CHEST_ART_FILES[quality] + '.webp?v=20261126-volume-v4" alt="" draggable="false" decoding="async"></div>' +
+    CHEST_ART_FILES[quality] + '.webp?v=20261126-caps-v5" alt="" draggable="false" decoding="async"></div>' +
     '<div class="nfc-res-fallback">' + art + '</div><i class="nfc-res-inner"></i></div></div>' +
     '<div class="nfc-res-rewards" aria-hidden="true" inert><div class="nfc-res-scroll" tabindex="0" hidden><div class="nfc-res-track">' +
     '<ul class="nfc-res-list" role="list"></ul></div></div>' +

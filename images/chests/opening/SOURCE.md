@@ -2,12 +2,18 @@
 
 Self-authored in Blender 4.5.10. The existing five project illustrations from
 `images/chests/` are projected onto separate fixed body walls and a curved lid.
-The lid is a double-walled barrel shell: four sealed edge walls connect the outer
-shell to a 475-vertex concave inner barrel. The lining follows the curved recess,
-including its bands, motifs and rivets. Lit materials and area lights show the
-thick edge cross-sections and shaded cavity. Both rear hinge vertices stay
-connected throughout the 110-degree turn. The fixed body, floor and hinge remain
-the same as the earlier version.
+The lid is a double-walled barrel shell with two complete textured end caps.
+Transparent silhouette pixels in the original illustration are extended from
+their own edge colours for the solid shell, while the original transparent image
+remains unchanged for the body. Each end cap samples a fully painted region of
+the project's own right-side artwork and has metal ribs and studs.
+
+A forward solid mouth frame surrounds four sloped walls. They descend into a
+visibly narrower, deeper 475-vertex curved lining. Different wall tones, depth
+shading and four highlighted corner edges distinguish the frame, slopes and
+recess. The lining's bands, motifs and rivets follow its curved surface. The
+60-degree presentation exposes both the outer barrel roof and the inside, with
+the two rear hinge vertices fixed. The body, floor and timing remain unchanged.
 The textured lining includes inset borders, corner leaves, paired scrolls,
 quality-specific central crests and studs. The floor has a stitched border and
 quilted diamond embossing. These patterns are procedural, self-authored geometry.
@@ -17,7 +23,7 @@ code from that reference are included. Existing project art provenance is record
 in the `forge-chests-20261112` package.
 
 The source package is resolved through `tools/vfx/vfx-library-root.cjs`:
-`codex-authored/chest-opening-20261126-v4`. It contains the five source PNGs,
+`codex-authored/chest-opening-20261126-v5`. It contains the five source PNGs,
 editable packed Blender scenes, 25 transparent renders per quality, lossless WebP
 sheets, authoring/packing/export tools and a SHA-256 manifest.
 
@@ -38,5 +44,7 @@ Rebuild (paths below are placeholders):
 The packer verifies every decoded WebP tile byte-for-byte against its PNG render.
 The exporter verifies every source hash and each game/library sheet pair.
 The manifest also records measured shell thickness, recessed lining depth, sealed
-wall count and curved lining vertex count. The Blender build asserts positive
-thickness/recess and fixed hinge vertices across all 25 poses.
+wall count and curved lining vertex count, complete end caps, highlighted corners,
+mouth/recess widths, painted cap-source coverage and exposed roof height. The
+Blender build asserts positive thickness/recess, fixed hinge vertices across all
+25 poses, visible roof pixels and opaque source coverage for the side panels.

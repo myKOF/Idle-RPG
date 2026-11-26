@@ -256,7 +256,7 @@ test('五品質使用25幀透明立體開箱圖集，保留首幀、末幀及相
   assert.equal(manifest.frames, 25);
   assert.equal(manifest.columns, 5);
   assert.equal(manifest.frameSize, 320);
-  assert.equal(manifest.version, 2);
+  assert.equal(manifest.version, 3);
   assert.deepEqual(Object.keys(manifest.files).sort(), ['bronze.webp','epic.webp','fine.webp','legendary.webp','mythic.webp']);
   for (const [name, sha] of Object.entries(manifest.files)) {
     const geometry=manifest.geometry[path.basename(name,'.webp')];
@@ -264,6 +264,14 @@ test('五品質使用25幀透明立體開箱圖集，保留首幀、末幀及相
     assert.ok(geometry.liningRecessDepth>.3, name+' recessed curved cavity');
     assert.equal(geometry.edgeWalls, 4);
     assert.ok(geometry.innerSurfaceVertices>400, name+' curved lining, not a quad');
+    assert.equal(geometry.opaqueTexturedEndCaps, 2, name+' complete painted end caps');
+    assert.equal(geometry.slopedCavityWalls, 4, name+' visibly sloped cavity walls');
+    assert.ok(geometry.recessedCenterWidth/geometry.mouthWidth<.75, name+' narrower recessed lining');
+    assert.equal(geometry.mouthRimFaces, 4);
+    assert.equal(geometry.cornerHighlights, 4);
+    assert.ok(geometry.exposedRoofPixels>15, name+' outer roof remains in view');
+    assert.ok(geometry.capSourceAlphaMin>.95, name+' UVs sample opaque painted pixels');
+    assert.equal(geometry.endDegrees, 60);
     const bytes = fs.readFileSync(path.join(directory, name));
     assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), sha, name);
     assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');

@@ -1,50 +1,95 @@
 {
-  "version": 2,
+  "version": 3,
   "frameSize": 320,
   "columns": 5,
   "frames": 25,
   "geometry": {
     "bronze": {
-      "minShellThickness": 0.07396612899707827,
-      "maxShellThickness": 0.23189047149024888,
-      "liningRecessDepth": 0.6370289782353211,
+      "minShellThickness": 0.06257023749475087,
+      "maxShellThickness": 0.4697884583877295,
+      "liningRecessDepth": 0.6650656562342192,
       "edgeWalls": 4,
-      "innerSurfaceVertices": 475
+      "innerSurfaceVertices": 475,
+      "opaqueTexturedEndCaps": 2,
+      "slopedCavityWalls": 4,
+      "mouthWidth": 1.9810248565033393,
+      "recessedCenterWidth": 1.3577810814236368,
+      "mouthRimFaces": 4,
+      "cornerHighlights": 4,
+      "exposedRoofPixels": 19.601974487304688,
+      "capSourceAlphaMin": 0.988235354423523,
+      "endDegrees": 60
     },
     "fine": {
-      "minShellThickness": 0.07396612899707827,
-      "maxShellThickness": 0.23189047149024888,
-      "liningRecessDepth": 0.6370289782353211,
+      "minShellThickness": 0.06257023749475087,
+      "maxShellThickness": 0.4697884583877295,
+      "liningRecessDepth": 0.6650656562342192,
       "edgeWalls": 4,
-      "innerSurfaceVertices": 475
+      "innerSurfaceVertices": 475,
+      "opaqueTexturedEndCaps": 2,
+      "slopedCavityWalls": 4,
+      "mouthWidth": 1.9810248565033393,
+      "recessedCenterWidth": 1.3577810814236368,
+      "mouthRimFaces": 4,
+      "cornerHighlights": 4,
+      "exposedRoofPixels": 19.601974487304688,
+      "capSourceAlphaMin": 0.9843137860298157,
+      "endDegrees": 60
     },
     "epic": {
-      "minShellThickness": 0.07396612899707827,
-      "maxShellThickness": 0.23189047149024888,
-      "liningRecessDepth": 0.6370289782353211,
+      "minShellThickness": 0.06257023749475087,
+      "maxShellThickness": 0.4697884583877295,
+      "liningRecessDepth": 0.6650656562342192,
       "edgeWalls": 4,
-      "innerSurfaceVertices": 475
+      "innerSurfaceVertices": 475,
+      "opaqueTexturedEndCaps": 2,
+      "slopedCavityWalls": 4,
+      "mouthWidth": 1.9810248565033393,
+      "recessedCenterWidth": 1.3577810814236368,
+      "mouthRimFaces": 4,
+      "cornerHighlights": 4,
+      "exposedRoofPixels": 19.601974487304688,
+      "capSourceAlphaMin": 0.988235354423523,
+      "endDegrees": 60
     },
     "legendary": {
-      "minShellThickness": 0.07396612899707827,
-      "maxShellThickness": 0.23189047149024888,
-      "liningRecessDepth": 0.6370289782353211,
+      "minShellThickness": 0.06257023749475087,
+      "maxShellThickness": 0.4697884583877295,
+      "liningRecessDepth": 0.6650656562342192,
       "edgeWalls": 4,
-      "innerSurfaceVertices": 475
+      "innerSurfaceVertices": 475,
+      "opaqueTexturedEndCaps": 2,
+      "slopedCavityWalls": 4,
+      "mouthWidth": 1.9810248565033393,
+      "recessedCenterWidth": 1.3577810814236368,
+      "mouthRimFaces": 4,
+      "cornerHighlights": 4,
+      "exposedRoofPixels": 19.601974487304688,
+      "capSourceAlphaMin": 0.9843137860298157,
+      "endDegrees": 60
     },
     "mythic": {
-      "minShellThickness": 0.07396612899707827,
-      "maxShellThickness": 0.23189047149024888,
-      "liningRecessDepth": 0.6370289782353211,
+      "minShellThickness": 0.06257023749475087,
+      "maxShellThickness": 0.4697884583877295,
+      "liningRecessDepth": 0.6650656562342192,
       "edgeWalls": 4,
-      "innerSurfaceVertices": 475
+      "innerSurfaceVertices": 475,
+      "opaqueTexturedEndCaps": 2,
+      "slopedCavityWalls": 4,
+      "mouthWidth": 1.9810248565033393,
+      "recessedCenterWidth": 1.3577810814236368,
+      "mouthRimFaces": 4,
+      "cornerHighlights": 4,
+      "exposedRoofPixels": 19.601974487304688,
+      "capSourceAlphaMin": 0.9843137860298157,
+      "endDegrees": 60
     }
   },
   "files": {
-    "bronze.webp": "bbd1dff499f4f44a53c25e2246315c752ef3e12965e64f9871d28d9a7fc06bfc",
-    "fine.webp": "dd931d69f1f68c39e5c442c7d9ecb8df4e5e728970a295fe7d8b981ab738dd7a",
-    "epic.webp": "e15e6faf7063ae45062151ae6f5dcd86eb15fa35b839399eec939413f4bdaa32",
-    "legendary.webp": "536422b4c738f3e31a26d6a03c3525bc3cd7350680cf89d5e5f7c68441006798",
-    "mythic.webp": "e2a25ecc580eccc09fcc9b06c36d7389d53a1f6329403265850b8557b6dc98e4"
+    "bronze.webp": "9cf6c653e5a79cfe84e3f739fefaff3f0d7e8462d6f090f6d04be29b40c365aa",
+    "fine.webp": "b5759cc56d2eddaf4cf205de5c30b7b1f5e47f812c890d1ea92b4a28448807e9",
+    "epic.webp": "7f5b51af721a631071631dad30e246ea080364dda585daa65180076992924af0",
+    "legendary.webp": "1c228e52c563f23d23e553540228efad24b73e35a182ebe0a994b3d8201022ac",
+    "mythic.webp": "a9cc4dd706aca561fe3f13571284f129e3781719dac9c7d638d9ca738bfa28da"
   }
 }

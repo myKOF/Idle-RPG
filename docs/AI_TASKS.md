@@ -17815,3 +17815,17 @@ Worker 存活且頁面正常完成載入。
 - GIF：本聊天chest-volume-v4/chest-shake-open-v4.gif，720×480、325幀、20.25秒，五品質依序展示；lid-depth-details.png為全開厚壁／凹陷特寫。GIF逐幀解碼、總長校驗與目視通過；驗證JSON保留，原始擷取／腳本／試作清理，模型及正式製作工具保存素材庫。瀏覽器／伺服器／Blender已關閉，孤兒檢查無殘留。
 - 雙庫：素材庫先提交20e88e1，Git index來源SHA核對發現export.cjs的CRLF會被Git正規化；該輪shell未因Python失敗中止而仍提交，未宣稱該輪通過。隨後匯出器改為在建立manifest前統一工具及說明LF，重新逐份驗145個Git index blob SHA全數通過，再以獨立提交1dbf09c修正，素材庫最終乾淨。遊戲提交為本段所在`[Codex] fix: 修正開箱節奏與箱蓋厚度凹陷`，實際SHA見交付，僅包含本項17檔增量，不合併或推送。
 - 唯讀檢查：AI_RULES／AGENTS／Workflow／Codex、原V3幾何／來源與匯出、ui-scale、headless／GIF流程、chest結算／資料、既有時序與快取／VFX／字串回歸；新形狀及紋理皆自製，無外部素材。自我Review完成，三項修改與驗證無未完成內容，可供合併與使用者看GIF驗收；限制為未驗其他瀏覽器／實體裝置長播放。其他聊天的塔任務／提示變更在獨立區段且各自提交，保留其成果；下一步兩庫正常整合後重載／重啟遊戲。
+
+
+## CHEST-CAPS-20261126 — 側蓋貼圖與可辨識深凹內襯
+
+- Owner：Codex；Done，單人處理。使用者三張截圖指出V4側蓋貼圖缺失、全開厚度不清楚、內凹仍像平板；追加內凹要更明顯。保留1.5秒抖動＋0.3秒快開、斜角造型、品質光效／花紋、揭示與立即關閉。
+- 前置：V4已提交，遊戲／素材庫乾淨；fetch及逐檔預檢無外部來源。允許原Blender製作／匯出工具、五圖集／manifest／來源、ui-chest／首頁快取／必要CSS、開箱回歸、CHEST_SYSTEM／LV／VFX登記及本段；素材庫新包chest-opening-20261126-v5，保存舊版。禁止玩法／表格／Worker／存檔／協議／其他工作區，不合併推送。
+- 診斷與方案：V4側面只有連接內外弧面的薄環帶，缺完整外端蓋；正交鏡頭下，原弧面主要向鏡頭深處凹，僅靠數值／陰影仍不易辨識。補完整貼圖外端蓋與實體底材，做有明確前緣厚框、內收斜壁與更深且更窄花紋內襯的空間，驗證關閉／半開／全開放大畫面後才烘製全品質；幾何／貼圖與實機時序／回歸／雙庫SHA／Build／GIF一併驗收。
+- 使用者續指四角交界太暗、全開看不到外頂：新增四條角落連接亮邊與深處邊緣，兩個完整側蓋使用原右側無透明區域的圖紋，外殼以自身邊緣色延展為不透明材質防止內壁透出；內襯深處收窄、四面斜壁分色，展示角度改為同時可見外頂與內凹。已目視傳說關閉／半開／全開放大圖，再開始全品質製作；1.5秒抖動／0.3秒快開保持。
+- 完成／修改16檔：tools/chest-opening/build.py、export.cjs，images/chests/opening五個WebP／manifest／SOURCE，js/ui-chest.js與index.html只換圖集／腳本快取，tests/chest-opening.test.cjs，CHEST_SYSTEM／LV／VFX登記及本段。補完整雙端蓋、端面弧肋與鉚釘、實體口框、四面內收斜壁、較窄深處內襯、四角及深處亮邊；以60度末幀同時呈現外頂和內襯。CSS與時序未變，舊素材包保留。
+- 幾何／來源：五份Blend重開、貼圖全打包，逐25幀驗後緣鉸鏈最大誤差1.794e-7、箱體誤差0；各有2個完整貼圖端面、4斜壁、4口框面及4角邊。最小殼厚0.062570、凹深0.665066模型單位；深處中央寬為口寬68.5%，全開外頂投影露出19.60像素（320圖）。端面UV來源區alpha最小大於0.95，外殼延展圖alpha全1，無透明缺口。125個WebP tile與來源PNG逐位元相同；145來源SHA及五對遊戲／素材圖集核對通過，另逐份驗Git index blob SHA通過後才獨立提交素材庫`2d97451c9eb3cf877866f7c85caf8616ef8a4ed5`（新包146檔）。
+- 測試：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`74/74；`npm.cmd run build`772檔；`node tools/chest-opening/export.cjs --check`、`node --check tools/chest-opening/export.cjs`、兩Python工具AST及Git差異檢查通過，未跑全庫。新增完整端面／斜壁／口框／角邊／內收比例／可見外頂的manifest守衛。驗證器曾誤用Blender像素步進切片、跨品質圖片計數及把退化圖當圖集，已修正驗證器後通過，未為此更動成品。
+- 實機：隔離靜音Edge，以同一ui-chest原碼／實際CSS控時擷取五品質。0～1450ms抖動、1500ms歸位且閉蓋、1600ms切到開蓋中、1780ms尚未末幀、1800ms全開且首格／確認同時可用；1500ms後箱體x579.333374／y329.46875固定，圖集1600×1600且未退化，例外0。原生時鐘另驗700×500、減少動態、十萬件虛擬格／捲動、提前Esc不跳過、完成Esc立即關閉及空獎勵；冷圖解碼與輪詢在內的開啟到觀測完成2205.5ms，通過，未改1.8秒演出時鐘。
+- 預覽：本聊天chest-caps-v5/chest-corners-roof-v5.gif（720×480、325幀、20.25秒、約3.93MB，五品質）；lid-corners-roof-details.png為青銅／傳說放大，closed-half-open-details.png為五品質三姿勢。逐幀解碼／時長、放大姿勢與遊戲畫面目視通過，瀏覽器／Blender／伺服器已關閉，孤兒檢查無殘留；保留預覽與QA JSON。自動核准審查以政策限制拒絕刪除工作區外本輪擷取／試作，未重試，暫存留在本聊天chest-caps-v5，不影響成品。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／Codex、原五張箱圖及V3／V4包、pack.py、chest.css／ui-scale、chest結算／資料／Bridge／Worker／存檔／String、headless工具。其他聊天Task表變更保留、不納入本項。自我Review完成，程式／素材／預覽無未完成項，外觀交使用者看GIF驗收；未驗多瀏覽器／實體裝置長時間播放。遊戲Commit為本段所在`[Codex] fix: 補全寶箱側蓋與內凹層次`，SHA見交付，可供合併，未合併或推送develop／main。下一步正常整合兩庫後重載／重啟遊戲。
