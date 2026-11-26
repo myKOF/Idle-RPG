@@ -21,6 +21,12 @@
       ['idle', 'walk', 'attack1', 'attack2', 'attack3', 'die'].forEach(function (key) {
         if (clips[key] && ctrl.clips.indexOf(clips[key]) < 0) throw new Error('Missing NPC 3D animation: ' + key);
       });
+      // Upload the held pose and its skinning textures before Pixi adopts
+      // the canvas. A cold first animated draw can still contain stale GPU
+      // pixels; the second zero-time draw settles it without moving feet.
+      ctrl.play({ clip: clips.idle || clips.walk, loop: true, still: true }, 0);
+      ctrl.update(0);
+      ctrl.update(0);
       var body = global.Hero3D.makeBody(ctrl);
       body.npc3d = { controller: ctrl, attackIndex: 0, motionSpeed: 0, clips: {
         idle: { clip: clips.idle || clips.walk, loop: true, still: true },

@@ -68,10 +68,11 @@ test('NPC 3D metadata round-trips all tower rows and preserves their gameplay da
       assert.equal(result[i].img, 'sprites/boss/boss8_gargoyle' + suffix + '.png');
       assert.equal(result[i].model3d.file, 'images/models/npc3d/boss8' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
-    } else if (i === 8) {
-      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss9.glb');
+    } else if (i === 8 || i === 18 || i === 28) {
+      const suffix = { 8: '', 18: '_lv2', 28: '_lv3' }[i];
+      assert.equal(result[i].model3d.file, 'images/models/npc3d/boss9' + suffix + '.glb');
       assert.deepEqual(Object.values(result[i].model3d.clips), ['Walk', 'Walk', 'Attack1', 'Attack2', 'Attack3', 'Die']);
-      assert.equal(result[i].img, 'sprites/boss/boss9_lizard.png');
+      assert.equal(result[i].img, 'sprites/boss/boss9_lizard' + suffix + '.png');
       assert.equal(result[i].atkSpeed, 3);
     } else if (i === 9 || i === 19 || i === 29) {
       const suffix = { 9: '', 19: '_lv2', 29: '_lv3' }[i];

@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 function setup(){
- const ctrl={clips:['Walk','Attack1','Attack2','Attack3','Die'],locomotionMetersPerSecond:2,pxPerMeter:100,duration:()=>3};
+ const ctrl={clips:['Walk','Attack1','Attack2','Attack3','Die'],locomotionMetersPerSecond:2,pxPerMeter:100,duration:()=>3,play:()=>{},update:()=>{}};
  const body={scale:{x:.5},hero3dPlay:()=>{body.animationSpeed=.5;}};
  const c={Hero3D:{create:async()=>ctrl,makeBody:()=>body}};
  vm.runInNewContext(fs.readFileSync(require.resolve('../js/npc3d.js'),'utf8'),c);
