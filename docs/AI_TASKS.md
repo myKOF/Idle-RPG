@@ -4941,6 +4941,14 @@
 - 唯讀檢查：AI規範、prompts/codex.md、js/formula.js／save.js／storage.js／player.js／skills.js、Worker Protocol、scripts/sim/engine.js、xlsx_to_csv及excel-update-sheets工具、原塔戰／Worker／快取回歸；未修改上述檔案。保留開始前Gems／Talents及其他CSV未提交工作，本次只提交技能相關修改。
 - 交付：Commit為本紀錄所在[Codex] feat提交，編號見回覆；本需求無未完成項，可供審閱合併，未合併／推送。限制／已知風險：17項既有回歸失敗、未跑全庫與真人長時間戰鬥；新限制會使未達門檻的既有超神投資暫時失效，通關後恢復。下一步使用者整合後重新載入遊戲，使用更新快取驗收。
 
+## TOWER-BOSS-EQUIP-TIP-20261126 — BOSS提示補上裝備掉落
+
+- Owner：Codex；Done，單人處理。使用者要求封魔塔BOSS的「可能掉落」也列裝備。已直接沿用塔樓層詳情的towerEquipDropRows，以BOSS_DROP_TABLE的基礎品質／機率與超過100%的必掉件數口徑顯示，不新增計算來源或改掉寶率加成。
+- 修改5檔：js/ui.js的showEnemyTooltip塔分支加入品質色裝備列、index UI快取20261126-tower-boss-equip-tip-v1、tests/tower-rewards-ui.test.cjs新增1項回歸、LV及本段。未改掉落表、實際結算、原獎勵／野外提示、存檔／Worker。目標逐檔預檢無外部來源；同副本洗煉／開箱任務的index／LV／任務檔為不同區段，分開暫存，三方試合乾淨且無語意相依，保留對方修改。
+- `node --test tests/tower-rewards-ui.test.cjs tests/boss-tooltip.test.cjs tests/tower-info-during-fight.test.cjs tests/enchant-book-retirement.test.cjs`23/23通過。新增回歸先重現第1層缺4種裝備，修正後驗戰鬥BOSS／結果BOSS／塔戰敵人三入口、16個樓層與表格分段邊界；刻意讓瀏覽樓層不同，確認使用runtime當場樓層。250%顯示必定2件再50%一件、100%顯示必定1件、小數12.5%保持、全零不列裝備而材料仍在。初輪計數誤含BOSS攻擊圖示，改為只檢查「可能掉落」區域後通過，未改產品邏輯或放寬條件。
+- `npm.cmd run build`771檔通過，`node tools/string-table/build_string_csv.cjs --check`寫死0條，Git差異檢查通過。隔離靜音Edge以正式showEnemyTooltip／共用掉落helper及完整CSS渲染第1／31層，品質色、機率及必掉加餘數逐列顯示，無裁切與頁面例外，兩張提示截圖已目視確認。瀏覽器finally關閉，孤兒檢查僅保留仍在運行的其他聊天開箱測試瀏覽器，未干預。
+- 唯讀檢查：共通規範／Workflow／Codex、tower.js正式發獎、formula.js的dropRatesFor／towerRewardFor、BOSS_DROP_TABLE、既有String45／1870／1871及塔詳情／tooltip／材料回歸。無新字串、素材或資料表，素材庫無需提交。未做完整遊戲長時間操作或全庫測試；本輪無未完成項目，自我Review通過，可審閱合併。Commit為本段所在`[Codex] fix: 補上封魔塔BOSS裝備掉落提示`，未合併推送。下一步重新載入，在BOSS資訊的可能掉落清單確認裝備。
+
 ## SOCKET-ACTION-SCOPE-20261126 — 還原誤改的寶石與符文入口
 
 - Owner：Codex；Done。使用者指出前次只要求裝備鑲孔列內操作，未授權修改下方寶石／符文入口。已修正前次範圍誤判，移除入口與刻印的淺黃覆寫，只保留鑲孔列卸下／抹除／取消與效果左移5px。

@@ -9977,6 +9977,9 @@ function showEnemyTooltip(anchorEl) {
 
     var rewardLines = [];
     rewardLines.push(STR(106, fmt(m.xp)));
+    towerEquipDropRows(floor).forEach(function (row) {
+      rewardLines.push('⚔️ <span style="color:' + row.color + '; font-weight:bold;">' + esc(row.name) + '</span> <span style="color:var(--dim)">(' + esc(row.rate) + ')</span>');
+    });
     rewardLines.push(STR(650, rw.gemLevel));
     rewardLines.push(STR(652, rw.essence, ''));
     if (dustRate > 0) rewardLines.push(divineStoneTextHTML(STR(653, fmt1(dustRate))));
