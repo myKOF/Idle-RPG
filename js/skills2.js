@@ -68,7 +68,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 
    規則：
      - 每階上限 SG_TIER_MAX_LV 級，固定不隨轉生提高
-     - 前一階至少 Lv.1 才可投資下一階；第 1 階預設開啟（恆視為至少 Lv.1）
+     - 前一階至少 Lv.1 才可投資下一階；解鎖僅開放投資，不自動給予等級
 
    分工：
      - 數值 SSOT：下方 SKILLS2 純資料 literal
@@ -92,7 +92,7 @@ var SG_TIER_COUNT = 7;        // 每群組階數
    sgEffectiveLevels 的級聯、存檔正規化與參數表的階數校驗全部長出例外分支。
    因此資料放在群組層的 g.ult（三個選項），等級與選擇放在 G.player.skills2.ult，
    UI 只在「格位」這一層把它畫成第 8 格（ref 仍是 sg:<gid>:7）。
-   解鎖條件：該群組前 7 階全部練滿（目前不另設等級／轉生門檻）。 */
+   解鎖條件：普通階各至少一級，並達各選項配置的等級／轉生／封魔塔門檻。 */
 var SG_ULT_SLOT = SG_TIER_COUNT;   // 終極進化在技能面板的格位索引（第 8 格）
 var SG_ULT_OPTION_COUNT = 3;       // 三選一
 var SG_FLYING_PROJECTILE_SPEED = 240;
@@ -425,7 +425,7 @@ function sgUnlockProgress(prog) {
    raw ＝ 存檔的 levels 字典（G.player.skills2.levels 或面板快照），可為 null。
    prog ＝ 解鎖進度 { level, reinc, towerHighest }；主執行緒必須傳（面板快照的 skills2.progress），
           Worker 端可省略（自己讀 G）。
-   正規化：整數、夾 0..上限、第 1 階恆至少 Lv.1、未達解鎖門檻的階視為 0、
+   正規化：整數、夾 0..上限、缺項為 0、未達解鎖門檻的階視為 0、
    前一階未達 Lv.1 時後續階視為 0。
    ⚠️ 未解鎖只是「視為 Lv.0」，不會動到存檔裡已投入的等級：達到門檻就原樣回來。 */
 function sgEffectiveLevels(raw, gid, prog) {
@@ -438,9 +438,7 @@ function sgEffectiveLevels(raw, gid, prog) {
     if (!isFinite(v)) v = 0;
     out.push(Math.max(0, Math.min(SG_TIER_MAX_LV, v)));
   }
-  if (out[0] < 1) out[0] = 1; // 第 1 階預設開啟
-  /* 解鎖門檻先套：未解鎖的階一律歸 0，**含第 1 階的預設開啟**——
-     否則每個群組都是一開局就 Lv.1 可施放，表上「突刺 0|1、火狩 0|100」就沒有意義了。 */
+  /* 解鎖門檻先套：未解鎖的階一律視為零級，但不改寫原始投資。 */
   var prg = sgUnlockProgress(prog);
   if (prg) {
     for (i = 0; i < out.length; i++) {
@@ -531,7 +529,7 @@ function sgUltIndexOfId(gid, id) {
   for (var i = 0; list && i < list.length; i++) if (list[i].id === id) return i;
   return -1;
 }
-/* 終極進化共同前置：普通階全部練滿；各選項另套自己的配置門檻。 */
+/* 終極進化共同前置：普通階各至少學習一級；各選項另套自己的配置門檻。 */
 function sgUltUnlockedBy(gid, lvs) {
   if (typeof GM_TEST !== 'undefined' && GM_TEST && GM_TEST.skillUnlock) {
     var g0 = SKILLS2[gid];
@@ -539,7 +537,7 @@ function sgUltUnlockedBy(gid, lvs) {
   }
   var g = SKILLS2[gid];
   if (!g || !lvs || !sgUltDefs(gid)) return false;
-  for (var i = 0; i < g.tiers.length; i++) if ((lvs[i] || 0) < SG_TIER_MAX_LV) return false;
+  for (var i = 0; i < g.tiers.length; i++) if ((lvs[i] || 0) < 1) return false;
   return true;
 }
 function sgUltOptionUnlockedBy(gid, idx, lvs, prog) {
@@ -574,7 +572,7 @@ function sgUltPickOf(raw, gid) {
   if (!isFinite(lv) || lv < 1) return null;
   return { idx: idx, id: list[idx].id, def: list[idx], lv: Math.min(SG_TIER_MAX_LV, lv) };
 }
-/* 生效中的終極進化：已選、普通階全滿、選項進度門檻達標；失效時保留存檔投資。 */
+/* 生效中的終極進化：已選、普通階全學習、選項進度門檻達標；失效時保留存檔投資。 */
 function sgEffectiveUlt(raw, gid, lvs, prog) {
   var pick = sgUltPickOf(raw, gid);
   return pick && sgUltOptionUnlockedBy(gid, pick.idx, lvs, prog) ? pick : null;
@@ -683,7 +681,7 @@ function sgLegendCount(spec, key) {
    可裝欄位（js/data.js equipSlotsForItem）、副手佔用（slotBlockedByTwoHand）、
    穿戴互斥（js/player.js equipItem）與屬性聚合（js/formula.js computeStats）全部呼叫這一支。
    條件有二，缺一不可：
-     ・雙刀亂舞的終極進化選的是修羅亂舞且仍生效（前 7 階全滿，降級即自動失效）
+     ・雙刀亂舞的終極進化選的是修羅亂舞且仍生效（普通階各至少一級，退回零級即失效）
      ・雙刀亂舞**裝配在技能列上**——使用者決策 2026-08-20：卸下該技能後副手武器立刻不生效
    讀 G＝Worker 端權威。主執行緒沒有 G，面板一律自行以快照算好後傳參覆寫
   （js/data.js 的 asuraOverride 參數），不會出現「畫面說可以、Worker 說不行」。 */
@@ -697,7 +695,7 @@ function skills2AsuraAffixPct() {
 }
 
 /* ---- 新版技能狀態異動後的統一收尾 ----
-   為什麼屬性快取也要失效：終極進化【修羅亂舞】的生效條件是「選了它 ＋ 前 7 階全滿 ＋
+   為什麼屬性快取也要失效：終極進化【修羅亂舞】的生效條件是「選了它 ＋ 普通階全學習 ＋
    裝配在技能列上」，因此**任何**一階的升降、選擇的增刪都可能開關它，進而改變 computeStats
   （副手的雙手武器計不計入、雙手詞條要不要加成）。與其在每個異動點各自判斷是不是 dualdance，
    一律失效最便宜，也最不會漏——這裡少一個呼叫點，症狀是「面板數字停在舊值」而且沒有任何錯誤訊息。 */
@@ -712,7 +710,11 @@ function sgCurrentPlayerEnt() {
   return (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
 }
 
-function sgAfterSkillChange() {
+function sgAfterSkillChange(gid) {
+  // 退回未學習時，沿用卸下流程清掉狀態與場域，並解除快捷欄裝載。
+  if (gid && skills2StoredLevels(gid)[0] < 1 && typeof unequipSkillFromLoadout === 'function') {
+    unequipSkillFromLoadout(SG_PREFIX + gid);
+  }
   if (typeof markStatsDirty === 'function') markStatsDirty();
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.skills = true; UI.dirty.header = true; }
 }
@@ -1456,7 +1458,7 @@ function skills2StoredLevels(gid) {
   var src = G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[gid];
   return SKILLS2[gid].tiers.map(function (_, i) {
     var n = Math.floor(Number(src && src[i]) || 0);
-    return Math.max(i === 0 ? 1 : 0, Math.min(SG_TIER_MAX_LV, isFinite(n) ? n : 0));
+    return Math.max(0, Math.min(SG_TIER_MAX_LV, isFinite(n) ? n : 0));
   });
 }
 /* GM／舊存檔超額投資在成功退點前保留為額度，避免退款先被負餘額吞掉。
@@ -1472,18 +1474,19 @@ function skills2PointView() {
   var spent = 0;
   for (var gid in SKILLS2) {
     var lvs = skills2StoredLevels(gid);
-    for (var i = 0; i < lvs.length; i++) spent += Math.max(0, lvs[i] - (i === 0 ? 1 : 0));
+    for (var i = 0; i < lvs.length; i++) spent += lvs[i];
     var ult = sgUltPickOf(p.skills2 && p.skills2.ult, gid);
     if (ult) spent += ult.lv;
   }
   return { total: total, spent: spent, available: Math.max(0, total - spent) };
 }
 
-/* 任務用成功升級累計。舊存檔沒有歷史計數，以現有投資（扣除免費第一階）為最低值；
+/* 任務用成功升級累計。沒有歷史計數時以現有投資推導；新局明確為零，初始技能不算升級；
    只讀查詢不建存檔欄位。降級前保留累計，之後降級／重選不會扣除已完成次數。 */
 function skills2UpgradeCount() {
-  var count = Math.floor(Number(G.player.skills2 && G.player.skills2.upgradeCount) || 0);
-  return Math.max(isFinite(count) ? count : 0, skills2PointView().spent);
+  var raw = G.player.skills2 && G.player.skills2.upgradeCount;
+  var count = Math.floor(Number(raw));
+  return raw !== undefined && isFinite(count) ? Math.max(0, count) : skills2PointView().spent;
 }
 function skills2RecordUpgrade() {
   var count = skills2UpgradeCount();
@@ -1635,19 +1638,18 @@ function skills2Downgrade(group, tier) {
   tier = Math.floor(Number(tier));
   if (sgIsUltSlot(group, tier)) return skills2UltDowngrade(group);
   if (!(tier >= 0 && tier < g.tiers.length)) return STR(92);
-  var lvs = skills2Levels(group);
-  if (tier === 0 && lvs[0] <= 1) return STR(695);
+  var lvs = skills2StoredLevels(group);
   if (lvs[tier] <= 0) return STR(696);
   if (lvs[tier] === 1 && tier + 1 < lvs.length && lvs[tier + 1] > 0) return STR(697);
-  /* 前 7 階任何一階離開滿級，終極進化就失去解鎖條件（sgEffectiveUlt 會自動失效）；
-     等級與選擇一律保留在存檔裡，練回滿級就原樣回來——與各階「未達門檻視為 Lv.0」同一條規則。 */
+  /* 普通階任何一階退到零級，終極進化就失去共同前置（sgEffectiveUlt 會自動失效）；
+     等級與選擇一律保留，再次學會各普通階就原樣回來。 */
   lvs = skills2StoredLevels(group);
   skills2PreservePointCredit();
   lvs[tier]--;
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
   if (!G.player.skills2.levels) G.player.skills2.levels = {};
   G.player.skills2.levels[group] = lvs;
-  sgAfterSkillChange();
+  sgAfterSkillChange(group);
   return null;
 }
 
@@ -8952,7 +8954,7 @@ function sgDropThunderfall(pEnt, st, spec, n, pool, primary, floatSel, out) {
 /* 超神【雷殞天地碎】：雷殞石不再只在施放時降下，而是每 gap 秒不斷再落下 1 顆。
    「不斷落下」＝只要雷球還裝配在技能列上就一直跑（比照【雷霆天劫】那道永久雷電），
    因此節拍記在 RT、由 tickSkill2 驅動，而不是綁在某一次施放上。
-   超神要前 7 階全滿才選得起，所以這裡不必再確認【雷殞天落】有沒有點出來。 */
+   終極進化要求普通階全部學習，所以這裡不必再確認【雷殞天落】有沒有點出來。 */
 function sgTickThunderfallShatter(ctx, dt) {
   var u = sgUlt('thunderorb', 'thunderfallShatter');
   if (!u || !skills2Equipped('thunderorb')) { SKILL2_RT.thunderfallAt = 0; return; }

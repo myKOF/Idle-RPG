@@ -2,7 +2,7 @@
 
 /* 技能頁（2026-10 改版）：左清單＋右「進化之路」的技能瀏覽器，取代逐列方格與群組升級彈窗。
    守住：
-     1. 未解鎖的階只能查看、不產生升級鈕；滿級只剩降級／重置；第 1 階不能降到 0
+     1. 未解鎖的階只能查看、不產生升級鈕；滿級只剩降級／重置；第 1 階可降到 0
      2. 終極進化：未開放→顯示還差幾階；未選→三選一按鈕；已選→升級走 SG_ULT_SLOT
      3. 主動型被動仍有裝備鈕與類型標籤（需裝配才生效）
      4. 清單與詳情分開快取（金幣變動只重繪詳情，清單捲動位置不跳）
@@ -308,8 +308,11 @@ test('有效超神為最高已學階，預設展開已選項；失效保留的�
   assert.doesNotMatch(initial, /class="sgb-tier-detail"/);
   snap.skills2.levels.thrust[6] = 9;
   c.sgbSelectGroup('thrust', snap);
+  assert.equal(c.UI.sgBrowse.focus, 'ult', '七階未滿級仍保持已選終極');
+  snap.skills2.levels.thrust[6] = 0;
+  c.sgbSelectGroup('thrust', snap);
   assert.equal(c.UI.sgBrowse.focus, 'tier');
-  assert.equal(c.UI.sgBrowse.tier, 6);
+  assert.equal(c.UI.sgBrowse.tier, 5);
   assert.equal(c.UI.sgBrowse.ultFocus, null);
 });
 
@@ -349,21 +352,24 @@ test('投資中的階有升級與一鍵滿級；滿級只剩降級與重置', ()
   assert.match(poor, /data-skill2-learn="thrust:1"[^>]*disabled/);
 });
 
-test('第 1 階恆為至少 Lv.1，不能降到 0', () => {
+test('第 1 階Lv.1可以降到0或重置；零級不可裝載', () => {
   const c = loadContext();
   const h = detail(c, 'thrust', snapshot({ thrust: [1, 0, 0, 0, 0, 0, 0] }), 0);
-  assert.doesNotMatch(h, /data-skill2-downgrade="thrust:0"/);
-  assert.doesNotMatch(h, /data-skill2-delete="thrust:0"/);
+  assert.match(h, /data-skill2-downgrade="thrust:0"/);
+  assert.match(h, /data-skill2-delete="thrust:0"/);
   assert.match(h, /學習|升級/);
+  const zero = detail(c, 'thrust', snapshot({ thrust: [0, 0, 0, 0, 0, 0, 0] }), 0);
+  assert.doesNotMatch(zero, /data-skill-equip="sg:thrust"|data-skill2-downgrade="thrust:0"|data-skill2-delete="thrust:0"/);
+  assert.match(zero, /data-skill2-learn="thrust:0"/);
 });
 
 test('終極進化：未開放顯示還差幾階，未選三選一，已選升級走 SG_ULT_SLOT', () => {
   const c = loadContext();
-  const locked = detail(c, 'thrust', snapshot({ thrust: [10, 10, 10, 10, 10, 10, 5] }), 0, undefined, 'ult');
-  assert.match(locked, /前 7 階需全部滿級（目前 6／7 階已滿級）/);
+  const locked = detail(c, 'thrust', snapshot({ thrust: [1, 1, 1, 1, 1, 1, 0] }), 0, undefined, 'ult');
+  assert.match(locked, /前 7 階需各至少 1 級（目前 6／7 階已學習）/);
   assert.doesNotMatch(locked, /data-skill2-ultpick/);
 
-  const open = detail(c, 'thrust', snapshot({ thrust: Array(7).fill(10) }), 0, undefined, 'ult');
+  const open = detail(c, 'thrust', snapshot({ thrust: Array(7).fill(1) }), 0, undefined, 'ult');
   assert.match(open, /第 8 階 · 終極進化/);
   assert.doesNotMatch(open, /超神進化/);
   assert.match(open, /data-skill2-ultpick="thrust:0"/);
@@ -384,6 +390,8 @@ test('終極進化：未開放顯示還差幾階，未選三選一，已選升�
   const poor = c.sgbDetailHTML('thrust', snap, { player: { gold: 0 } });
   assert.match(poor, /data-skill2-ultswitch="thrust:0"[^>]*disabled/);
   snap.skills2.levels.thrust[6] = 9;
+  assert.match(c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } }), /data-skill2-ultswitch/);
+  snap.skills2.levels.thrust[6] = 0;
   assert.doesNotMatch(c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } }), /data-skill2-ultswitch/);
 });
 
@@ -474,7 +482,7 @@ test('同一時間只展開一段說明：看某一階時超神說明收起，�
 
 test('降級保留的超神明確標示未生效，且不亮起選擇卡與連線', () => {
   const c = loadContext();
-  const snap = snapshot({ thrust: [10, 10, 10, 10, 10, 10, 9] });
+  const snap = snapshot({ thrust: [1, 1, 1, 1, 1, 1, 0] });
   snap.skills2.ult = { thrust: { pick: 1, lv: 10 } };
   const h = detail(c, 'thrust', snap, 0, undefined, 'ult');
   assert.match(h, /未生效 · 已保留 · Lv.10 \/ 10/);
@@ -488,10 +496,11 @@ test('舊重置殘留可從第 1 階保底再重置，清除後總級數與超�
   snap.skills2.ult = { thrust: { pick: 1, lv: 10 } };
   const residual = detail(c, 'thrust', snap, 0);
   assert.match(residual, /data-skill2-delete="thrust:0"/);
-  assert.doesNotMatch(residual, /data-skill2-downgrade="thrust:0"/);
+  assert.match(residual, /data-skill2-downgrade="thrust:0"/);
   delete snap.skills2.ult.thrust;
+  snap.skills2.levels.thrust[0] = 0;
   const reset = detail(c, 'thrust', snap, 0);
-  assert.equal(c.sgbTotals('thrust', snap.skills2.levels.thrust, snap).total, 1);
+  assert.equal(c.sgbTotals('thrust', snap.skills2.levels.thrust, snap).total, 0);
   assert.equal((reset.match(/未開放/g) || []).length, 3);
   assert.doesNotMatch(reset, /已選擇|已保留|sgb-ult-card is-chosen|data-skill2-delete="thrust:0"/);
 });

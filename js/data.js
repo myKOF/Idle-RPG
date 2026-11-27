@@ -783,7 +783,7 @@ var XP_LEVEL_COEF = { a: 10, b: 2.6, c: 40 };
 /* 等級基礎四維 = 基底 +（等級-1）× 每級增加。參數表「1-成長經驗／等級基礎四維」的 a / b。 */
 var PRIMARY_STAT_GROWTH = { base: 5, perLevel: 2 };
 // 連擊數係數（參數表「2-屬性派生／連擊數」：a＝觸發率 b＝暴擊 c＝攻速 d＝冷卻縮減）：
-// 每次攻擊命中有 trigger% 機率追加「連擊數」次；連擊數 = crit·ln(暴擊溢出%) + aspd·ln(攻速溢出%) + cdr·ln(冷卻縮減溢出%)（formula.js comboHitsTotal）。
+// 每次攻擊命中有 trigger% 機率追加「連擊數」次；三項有效溢出各取 max(0.01, 係數·ln(溢出%)) 後相加（formula.js comboHitsTotal）。
 // critAt＝暴擊門檻（完全爆擊 100%，不在參數表）；aspdAt／cdrAt 只在 ASPD_CAP／STAT_CAPS.cdr 為 0（無上限）時當門檻。
 var COMBO_HITS_COEF = { trigger: 25, crit: 0.5, aspd: 0.65, cdr: 0.8, critAt: 100, aspdAt: 5, cdrAt: 60 };
 var ASPD_BASE = 0.86;
@@ -2430,14 +2430,16 @@ function gemShopPrice(lv) { // 商店標價：查上方 GEM_SHOP_TABLE。
 
 /* ---- 高塔物品掉落表 ----
    野外裝備與材料掉落統一由 ZONE_STAGE_DROP_PROFILES／Zone_Stage_Drops.csv 管理。 */
-var BOSS_DROP_TABLE = [    // 高塔 BOSS：依樓層 7 檔（與掉落表加總列逐欄核對：165/232/256/323/538/700/715）
-  { min: 31, rates: [0, 0, 0, 0, 400, 250, 100, 25, 0, 0, 0, 0] },   // 30級含以上（715%）
-  { min: 26, rates: [0, 0, 0, 0, 350, 200, 50, 10, 0, 0, 0, 0] },   // 26~30（700%）
-  { min: 21, rates: [0, 0, 0, 0, 200, 150, 25, 2, 0, 0, 0, 0] },    // 21~25（538%）
-  { min: 16, rates: [0, 0, 0, 150, 150, 100, 10, 0, 0, 0, 0, 0] },  // 16~20（322.5%）
-  { min: 11, rates: [0, 0, 0, 100, 100, 50, 2, 0, 0, 0, 0, 0] },    // 11~15（256%）
-  { min: 6, rates: [0, 0, 100, 100, 20, 10, 0, 0, 0, 0, 0, 0] },    // 6~10（232%）
-  { min: 1, rates: [0, 0, 100, 50, 10, 0, 0, 0, 0, 0, 0, 0] }     // 1~5（165%）
+var BOSS_DROP_TABLE = [
+  { min: 121, rates: [0, 0, 0, 0, 400, 250, 100, 100, 0, 0, 25, 0] },
+  { min: 101, rates: [0, 0, 0, 0, 400, 250, 100, 100, 0, 0, 5, 0] },
+  { min: 76, rates: [0, 0, 0, 0, 400, 250, 100, 25, 0, 0, 1, 0] },
+  { min: 51, rates: [0, 0, 0, 0, 350, 200, 50, 10, 0, 0, 0, 0] },
+  { min: 41, rates: [0, 0, 0, 0, 200, 150, 25, 2, 0, 0, 0, 0] },
+  { min: 31, rates: [0, 0, 0, 150, 150, 100, 10, 0, 0, 0, 0, 0] },
+  { min: 21, rates: [0, 0, 0, 100, 100, 50, 2, 0, 0, 0, 0, 0] },
+  { min: 11, rates: [0, 0, 100, 100, 20, 10, 0, 0, 0, 0, 0, 0] },
+  { min: 1, rates: [0, 0, 100, 50, 10, 0, 0, 0, 0, 0, 0, 0] }
 ];
 /* 掉落表取用/擲骰公式（dropRatesFor、rollDropCount）→ js/formula.js §5
    怪物成長曲線 monsterStatsFor → js/formula.js §4
@@ -2630,7 +2632,7 @@ var STAT_GROUPS = [
       [STR(247), function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, STR(248), '物理攻擊', 'atk', 'atkPct'); }],
       [STR(249), function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, STR(250), '魔法攻擊', 'matk', 'matkPct'); }],
       [STR(251), function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, STR(252, capText(STAT_CAPS.critRate, '%'))],
-      [STR(253), function (st) { return (st.comboHits || 0) > 0 ? STR(254, fmt1(st.comboHits)) : '—'; }, STR(255)],
+      [STR(253), function (st) { return (st.comboHits || 0) > 0 ? STR(254, Math.round(st.comboHits * 100) / 100) : '—'; }, STR(255)],
       [STR(256), function (st) { return Math.round(st.critDmg) + '%'; }, STR(257)],
       [STR(258), function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, function (st) { return penetrationDesc(st, 'pPen', STR(40)); }],
       [STR(259), function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, function (st) { return penetrationDesc(st, 'mPen', STR(12)); }],

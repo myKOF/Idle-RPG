@@ -163,6 +163,33 @@ test('刷新提示將剩餘邀請券放在黃色第二行，餘量隨投影更�
   assert.ok('data-merchant-unavailable' in nodes['shop-refresh'].attrs);
 });
 
+test('商人入口提示底部顯示黃色目前邀請券數量，零張／耗券及停用時持續更新', () => {
+  const {ctx}=renderer(), source=fs.readFileSync(path.join(root,'js/ui.js'),'utf8');
+  const attrs={'data-tt-title':ctx.STR(2435)};
+  const anchor={setAttribute:(key,value)=>{attrs[key]=String(value);},getAttribute:key=>attrs[key]||null,closest:()=>null};
+  const button={parentNode:anchor,classList:{toggle(){}},setAttribute(){}};
+  const tip={style:{display:'block'},innerHTML:''},alert={hidden:true};
+  let active=false;
+  Object.assign(ctx,{$id:id=>({'mystery-merchant-open':button,'tower-merchant-alert':alert,'sk-tooltip':tip})[id],
+    UI:{tooltipAnchor:anchor},viewState:()=>({towerActive:active}),
+    document:{documentElement:{contains:()=>true}},setHtmlIfChanged:(node,html)=>{node.innerHTML=html;}});
+  const body=name=>{const start=source.indexOf('function '+name+'(');return source.slice(start,source.indexOf('\n}',start)+2);};
+  vm.runInContext(['updateMerchantEntry','statTooltipHTML','getAnchorRemainText','refreshOpenStatTooltip','refreshOpenResourceTooltip'].map(body).join('\n'),ctx);
+  for(const [tickets,towerActive]of [[12345,false],[12344,false],[0,false],[5,true]]){
+    active=towerActive;
+    ctx.updateMerchantEntry({consumables:{mystery_invitation:tickets}});
+    const desc=ctx.STR(tickets>0?2439:2437)+'<br><span class="merchant-ticket-remaining">當前擁有邀請券數量：'+tickets+'</span>';
+    assert.equal(attrs['data-tt-desc'],desc);
+    assert.ok(tip.innerHTML.includes(desc),'已開啟tips不必重新懸停即可更新');
+    assert.equal(button.disabled,tickets<1||towerActive);
+    assert.equal(alert.hidden,tickets<1);
+  }
+  ctx.updateMerchantEntry({});ctx.refreshOpenResourceTooltip();
+  assert.ok(tip.innerHTML.includes('當前擁有邀請券數量：0'));
+  const css=fs.readFileSync(path.join(root,'css/style.css'),'utf8');
+  assert.match(css,/\.merchant-ticket-remaining\s*\{\s*color:\s*#ffd700;/);
+});
+
 test('等待購買回覆不重建商品卡且只停用該商品；售出只替換變動卡片', () => {
   const {ctx,nodes,render}=renderer(),items=[
     {kind:'rune',runeId:'r01',price:100,sold:false},{kind:'rune',runeId:'r02',price:200,sold:false}];

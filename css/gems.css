@@ -23,6 +23,8 @@
 /* 轉換／拆解沿上方十階列選原料，九宮格與成品共用放大的資訊格。 */
 #tab-gems :is([data-gem-panel="convert"], [data-gem-panel="compose"], [data-gem-panel="dismantle"]) { position: relative; }
 #tab-gems [data-gem-panel="compose"] { padding-top: 42px; }
+#tab-gems [data-gem-panel="compose"] .gx-actions { flex-wrap: wrap; }
+#tab-gems [data-gem-panel="compose"] .gx-actions .btn { flex: 1 1 160px; min-width: 160px; white-space: nowrap; }
 #tab-gems .gem-holy-cell { position: relative; }
 #tab-gems .gconv-help { position: absolute; top: 12px; right: 12px; }
 #tab-gems .gconv-layout { width: min(580px, calc(100% - 20px)); gap: 36px; margin: 26px auto 16px; align-items: stretch; justify-content: center; }
@@ -68,7 +70,20 @@
   85% { opacity: .315; transform: scale(1.2); }
   100% { opacity: 0; transform: scale(1.4); }
 }
+/* 合成獨立光效：兩秒持續由小放大至最大，不在中途停住或縮回。 */
+#tab-gems [data-gem-panel="compose"] .is-converting .gem-holy-cell { animation-name: gem-compose-glow; animation-timing-function: linear; }
+#tab-gems [data-gem-panel="compose"] .is-converting .gem-holy-cell::after { animation-name: gem-compose-flash; animation-timing-function: linear; }
+@keyframes gem-compose-glow {
+  0% { opacity: 1; box-shadow: inset 0 0 3px #fff4d6b3; }
+  100% { opacity: 1; box-shadow: inset 0 0 24px #fff4d6b3, 0 0 26px 12px #ffe1a698; }
+}
+@keyframes gem-compose-flash {
+  0% { opacity: .12; transform: scale(.1); }
+  100% { opacity: .7; transform: scale(1.4); }
+}
 @media (prefers-reduced-motion: reduce) {
+  #tab-gems [data-gem-panel="compose"] .is-converting .gem-holy-cell,
+  #tab-gems [data-gem-panel="compose"] .is-converting .gem-holy-cell::after { animation: none; }
   #tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell) { animation: none; box-shadow: inset 0 0 12px #f5d47788; border-color: #fff7d6; }
   #tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell) .gem-ico { animation: none; }
   #tab-gems .is-converting :is(.gconv-slot.filled, .gem-holy-cell)::after { display: none; animation: none; }

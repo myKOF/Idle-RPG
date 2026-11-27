@@ -7,6 +7,20 @@
 .zone-bar-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 #btn-hero3d[hidden] { display: none; }
 #btn-world-map:hover, #btn-world-map:focus-visible { background: #f3e4b4 !important; border-color: #d6bf77 !important; color: #332a19 !important; }
+#ui-shell #game-layout #btn-world-map.unlock-tab-pending {
+  background: #ffe24b !important;
+  border-color: #ffef87 !important;
+  color: #000 !important;
+  text-shadow: none !important;
+  animation: world-map-first-clear-pulse 1.4s ease-in-out infinite !important;
+}
+@keyframes world-map-first-clear-pulse {
+  0%, 100% { opacity: .65; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #ui-shell #game-layout #btn-world-map.unlock-tab-pending { animation: none !important; }
+}
 .stage-navigation { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: nowrap; }
 #stage-label { font-size: 18px; }
 /* 所有操作列都在場景外，普通及全螢幕共用排列。 */

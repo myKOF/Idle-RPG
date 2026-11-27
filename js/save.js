@@ -343,6 +343,8 @@ function migrateSave(data) {
   var hadFieldBiomesV2 = !!data.fieldBiomesV2;
   var originalEquipment = (data.equipment && typeof data.equipment === 'object') ? data.equipment : null; // 保留真正裝備參照
   var def = newGameState();
+  // 新局贈送的兩項投資不屬於存檔缺項預設；退到零級／刪項後不能復活。
+  def.player.skills2 = { levels: {} };
   
   mergeDefaults(data, def);
   /* 地圖改名相容（2026-08-07）：
@@ -803,6 +805,7 @@ function migrateSave(data) {
   var spBase = 3; // 舊版預算轉熟練度的固定歷史基數
   if (!data.player.skillMastery || typeof data.player.skillMastery !== 'object') data.player.skillMastery = { level: 0, xp: 0 };
   var mgMastery = data.player.skillMastery;
+  if (!hadSkillMastery) mgMastery.level = 0;
   mgMastery.level = Math.max(0, Math.min(SKILL_MASTERY_MAX_LEVEL, Math.floor(Number(mgMastery.level) || 0)));
   mgMastery.xp = Math.max(0, Math.floor(Number(mgMastery.xp) || 0));
   if (!hadSkillMastery && hadSkillPointBudget) {
@@ -815,7 +818,7 @@ function migrateSave(data) {
   /* ---- 新版技能群組（skills2）結構常態化（2026-08-13，冪等）----
      等級一律整數並夾在 0..SG_TIER_MAX_LV；陣列長度補齊至階數；
      「前一階至少 Lv.1 才解鎖下一階」的門檻在讀檔時重新落實（手改存檔／未來調表防護）。
-     未知群組 id 保留不動（表改名時不吃資料）；裝載欄僅清掉指向未知群組的 'sg:' 鍵。 */
+     未知群組 id 保留不動（表改名時不吃資料）；未知群組先卸下，未學習項目在格式遷移後統一卸下。 */
   if (data.player.skills2 && data.player.skills2.levels && typeof SKILLS2 !== 'undefined') {
     var sgLevels = data.player.skills2.levels;
     for (var sgGid in sgLevels) {
@@ -829,7 +832,6 @@ function migrateSave(data) {
         sgArr[sgI] = Math.max(0, Math.min(sgMax, sgV));
       }
       sgArr.length = sgDef2.tiers.length;
-      if (sgArr[0] < 1) sgArr[0] = 1; // 第 1 階預設開啟（先保底，再做解鎖級聯）
       for (sgI = 1; sgI < sgDef2.tiers.length; sgI++) if (sgArr[sgI - 1] < 1) sgArr[sgI] = 0;
     }
     if (Array.isArray(data.player.loadout)) {
@@ -846,8 +848,8 @@ function migrateSave(data) {
      舊存檔沒有這個欄位＝還沒選過，不需要 migration（不建欄位，維持存檔精簡）。
      這裡只做防呆：未知群組、選項索引越界、等級非法一律整筆刪除
      （選項索引越界代表表格改過，留著會讓 UI 指向不存在的效果）。
-     ⚠️ 「前 7 階必須全滿」是**生效條件**不是存檔條件：降級只讓它暫時失效，
-     等級與選擇一律保留，練回滿級就原樣回來（規則同各階的解鎖門檻）。 */
+     ⚠️ 「普通階各至少一級」是生效條件而非存檔條件：退到零級會讓終極暫時失效，
+     等級與選擇一律保留，重新學會就恢復（規則同各階的解鎖門檻）。 */
   if (data.player.skills2 && data.player.skills2.ult && typeof SKILLS2 !== 'undefined') {
     var sgUltMap = data.player.skills2.ult;
     if (typeof sgUltMap !== 'object') delete data.player.skills2.ult;
@@ -943,6 +945,17 @@ function migrateSave(data) {
   /* 上市後的存檔遷移（js/save-schema.js 的登錄表）：排在所有既有相容處理之後、依版本號依序執行，
      最後把 saveSchema 標成目前版本。上市前的存檔（沒有 saveSchema）視為 0。 */
   if (typeof applySaveSchemaMigrations === 'function') applySaveSchemaMigrations(data, fromSchema);
+
+  // 遷移或退點後，未學習技能不能殘留在快捷欄；保留其他欄位位置。
+  if (Array.isArray(data.player.loadout) && typeof sgEffectiveLevels === 'function') {
+    var skillProgress = { level: data.player.level, reinc: data.player.reincarnations, towerHighest: data.tower && data.tower.highest };
+    data.player.loadout = data.player.loadout.map(function (id) {
+      if (typeof id !== 'string' || id.indexOf('sg:') !== 0) return id;
+      var levels = sgEffectiveLevels(data.player.skills2 && data.player.skills2.levels, id.slice(3), skillProgress);
+      return levels && levels[0] > 0 ? id : null;
+    });
+    while (data.player.loadout.length && !data.player.loadout[data.player.loadout.length - 1]) data.player.loadout.pop();
+  }
 
   return data;
 }

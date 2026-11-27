@@ -11,7 +11,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
    模擬層檔案一律原封不動載入，不得在此改寫其行為——那 17 支同時是 116 支
    既有測試的受測對象。 */
 
-  importScripts('protocol.js?v=20261126-knife-retarget-v1', '../game-clock.js?v=1.0.1', 'shim.js?v=20261126-knife-retarget-v1');
+  importScripts('protocol.js?v=20261127-gem-compose-max-v1', '../game-clock.js?v=1.0.1', 'shim.js?v=20261126-knife-retarget-v1');
 // 離線結算等分批工作亦共用暫停時鐘；訊息與loop仍能回應存檔及PING。
 if (typeof GameClock !== 'undefined') {
   globalThis.setTimeout = GameClock.setTimeout;
@@ -20,12 +20,12 @@ if (typeof GameClock !== 'undefined') {
 /* String 表：資料檔版本由主執行緒（bridge.js）以網址 sv= 傳入，改文字不必動本檔。 */
 var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]sv=(\w+)/.exec(self.location.search || '')) || [])[1] || '0';
 importScripts(
-  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../game-edition.js?v=1.0.0', '../data.js?v=20261127-boss9-final-variants-v3', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261114-oni-relic-sync-v1', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-sync-chest-v3', '../chest.js?v=20261118-demo-edition', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261126-reroll-min-cost-v1', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261120-integrated-v1', '../stats.js?v=20261109-mystery-merchant',
+  '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../game-edition.js?v=1.0.0', '../data.js?v=20261127-combo-overflow-min-v1', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261114-oni-relic-sync-v1', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-sync-chest-v3', '../chest.js?v=20261127-forge-chest-badge-v1', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261127-combo-overflow-min-v1', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261120-integrated-v1', '../stats.js?v=20261109-mystery-merchant',
   '../item.js?v=20261126-reroll-min-cost-v1', '../gem_resonance.js?v=20261126-unlock-tip-format-v1','../runeword.js?v=20261109-relics',
-  '../skills.js?v=20261120-integrated-v1', '../skills2.js?v=20261126-knife-retarget-v1', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
-  '../save-schema.js?v=20261126-task-tower-boss-v1', '../player.js?v=20261118-demo-edition', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
+  '../skills.js?v=20261127-skill-zero-level-v1', '../skills2.js?v=20261127-ult-learned-v1', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
+  '../save-schema.js?v=20261127-skill-zero-level-v1', '../player.js?v=20261127-skill-zero-level-v1', '../system-unlocks.js?v=20261127-world-map-first-clear-v1', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261119-develop-merge-1', '../elite.js?v=20261120-integrated-v1', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261127-tower-player-spawn-v1',
-  '../factory.js?v=20261126-reroll-min-cost-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261119-develop-merge-1',
+  '../factory.js?v=20261126-reroll-min-cost-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261127-ult-learned-v1',
   '../tasks.js?v=20261127-task-equip-slots-v1', '../achievements.js?v=20261120-integrated-v1'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1553,7 +1553,7 @@ var COMMAND_IMPL = {
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) return true;
     lvs = skills2StoredLevels(a.group);
-    var minLv = (tier === 0 ? 1 : 0);
+    var minLv = 0;
     var removedPoints = lvs[tier] - minLv;
     for (var refundTier = tier + 1; refundTier < lvs.length; refundTier++) removedPoints += lvs[refundTier];
     var refundUlt = sgUltPickOf(G.player.skills2 && G.player.skills2.ult, a.group);
@@ -1569,14 +1569,37 @@ var COMMAND_IMPL = {
        即使此階已在保底，也要清除舊重置留下的超神資料。 */
     if (G.player.skills2.ult) delete G.player.skills2.ult[a.group];
     /* 超神進化異動連帶開關【修羅亂舞】，需同步屬性及面板。 */
-    if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
+    if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange(a.group);
     else { UI.dirty.skills = true; UI.dirty.header = true; }
     return true;
   },
 
   /* ---- 寶石批次 ----
-     行為對齊 ui.js 的同步迴圈，上限也照抄：跨執行緒逐次往返不可行，一次跑完再回報。 */
+     同階保留原批次上限；toMax沿正式配方逐階處理完整庫存，一次跑完再回報。 */
   'gem.composeAll': function (a) {
+    if (a.toMax) {
+      var types = a.type === GEM_TYPE_ALL ? Object.keys(GEM_TYPES).filter(isGemEnabled) : [a.type];
+      if (types.some(function (type) {
+        for (var lv = 1; lv < GEM_FORGE_MAX_LEVEL; lv++) {
+          var n = gemCount(type, lv);
+          if (!Number.isSafeInteger(n) || n < 0) return true;
+        }
+        return false;
+      })) return { made: 0, err: STR(43) };
+      var total = 0, lastError = null;
+      for (var level = 1; level < GEM_FORGE_MAX_LEVEL; level++) {
+        var count = 0;
+        // 每次仍走正式配方，保留遺物節省、金幣與任務統計；產出接著參與下一階。
+        while (!(lastError = composeGems(a.type, level))) count++;
+        total += count;
+        if (count) {
+          var everyType = a.type === GEM_TYPE_ALL;
+          blog(STR(85, (everyType ? STR(1547, GEM_NAMES[level]) : gemLabel(a.type, level)), (count * gemComposeInputCount(level)), (everyType ? STR(1548, GEM_NAMES[level + 1]) : gemLabel(a.type, level + 1)), count), 'good', 'factory');
+        }
+      }
+      UI.dirty.gems = true;
+      return { made: total, err: total > 0 ? null : lastError };
+    }
     var made = 0, err = null;
     while (made < 2500 && !(err = composeGems(a.type, a.level))) made++;
     if (made > 0) {

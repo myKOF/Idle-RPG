@@ -204,3 +204,33 @@ test('正式Worker九宮格拆解指令回傳同源產出，非法整批不扣�
   assert.equal(gems.ruby[9], 6); assert.equal(gems.ruby[8], 8); assert.equal(gems.ruby[10], 0);
   assert.equal(engine.state().player.gold, gold);
 });
+
+test('合成至最高忽略選取的十級，由可合成階級開始，三按鈕全鎖且只送一次命令', async () => {
+  const { c, get, snapshot, timers } = uiFixture();
+  c.UI.gemBrowse.tool = 'compose'; c.UI.gemBrowse.fuseLv = 10;
+  c.renderGems(); assert.equal(get('fuse-max-btn').disabled, false);
+  let ack, resolve, calls = 0;
+  c.sendGemUiCommand = (cmd, args, ref, panels, done) => {
+    calls++; assert.equal(cmd, 'gem.composeAll');
+    assert.deepEqual(plain(args), { type: 'ruby', level: 1, toMax: true });
+    ack = done; return new Promise(r => { resolve = r; });
+  };
+  const p = c.runGemCompose(true, true);
+  for (const id of ['fuse-btn', 'fuse-all-btn', 'fuse-max-btn']) assert.equal(get(id).disabled, true);
+  assert.equal(timers[0].ms, 2000);
+  await c.runGemCompose(true, true); assert.equal(calls, 1);
+  timers[0].fn(); assert.ok(c.UI.gemComposeFx, '2秒到但ACK未來，不假報成功');
+  ack(); resolve(null); await p;
+  assert.equal(c.UI.gemComposeFx, null); assert.equal(get('fuse-status').textContent, '合成成功！');
+  c.renderGems(); assert.equal(get('fuse-max-btn').disabled, false);
+  snapshot.gems.ruby = { 1: 1, 3: 3 }; assert.equal(c.gemComposeToMaxStartLevel('ruby'), 3);
+});
+
+test('新增最高合成按鈕由String讀取，兩秒計時獨立於轉換演出設定', async () => {
+  const { c, timers } = uiFixture(); c.UI.gemBrowse.tool = 'compose';
+  c.GEM_CONVERT_FX_MS = 3000;
+  c.sendGemUiCommand = (cmd, args, ref, panels, done) => { done(); return Promise.resolve(true); };
+  await c.runGemCompose(false); assert.equal(timers[0].ms, 2000);
+  const html = readExpanded(path.join(ROOT, 'index.html'));
+  assert.match(html, /id="fuse-max-btn"[^>]*>全部合成至最高<\/button>/);
+});

@@ -1,4 +1,6 @@
-# Worker 協議 v84
+# Worker 協議 v85
+
+v85（2026-11-27 寶石全階合成）：`gem.composeAll({type,level,toMax?:boolean})`增加可選toMax。省略／false仍只處理level且上限2500次；true從1階依序合成至GEM_FORGE_MAX_LEVEL，逐次共用composeGems，保留金幣／配方／遺物節省與任務統計，庫存不足或金幣不足後仍檢查其他階可處理庫存，不混合種類。回傳既有`{made,err}`，有任意產出時err為null；每階成功另寫原有合成紀錄。只使用原始安全整數庫存，避免壞資料無限迴圈；不更改其他寶石種類／鑲嵌／融合／存檔。指令數不變，主端一次發送並共用兩秒演出，權威ACK成功與兩秒皆完成才顯示成功。
 
 v84（2026-11-26 飛刀重鎖）：`vfx.area.knifeId` 為每把飛刀的唯一暫態身份。同身份的新起飛事件以權威 sourceX/Y、x/y、controlX/Y 及 travelMs 替換原段；`area.knifeStop=true` 只結束該刀身，既有尾粒子自然消退，不造成傷害。目標死亡／離場時由模擬層在飛刀當前位置重新選敵，未命中不消耗彈射次數，回呼與下一跳以真正抵達的敵人為準。無候選結束，追魂刃依既有範圍／期限返回待機。Worker 另保留既有 `preserveDeadTargets`／`loopReturn` 旗標，避免致死命中後的彈射起點被顯示端誤擋；舊事件缺少 knifeId 時沿用獨立段播放，缺少 knifeStop 時不取消其他飛刀。指令與存檔格式不變。
 

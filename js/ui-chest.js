@@ -12,7 +12,7 @@ var CHEST_UI = { bound: false, sig: '', results: [] };
 var CHEST_SHAKE_MS = 1500;
 var CHEST_LID_OPEN_MS = 150;
 var CHEST_OPENING_MS = CHEST_SHAKE_MS + CHEST_LID_OPEN_MS;
-var CHEST_REVEAL_STEP_MS = 50;
+var CHEST_REVEAL_STEP_MS = 25;
 
 var CHEST_ART_FILES = {
   common: 'bronze',

@@ -102,14 +102,14 @@ test('skill_point：點數與技能升級/降級/重選交互運作', () => {
   // 升級 1 級
   const okLearn = c.skills2Learn('thrust', 0);
   assert.equal(okLearn, null);
-  assert.equal(c.skills2Levels('thrust')[0], 2);
+  assert.equal(c.skills2Levels('thrust')[0], 1);
   assert.equal(c.skills2PointView().available, 4);
   assert.equal(c.skills2PointView().spent, 1);
 
   // 降級 1 級返還 1 點
   const okDown = c.skills2Downgrade('thrust', 0);
   assert.equal(okDown, null);
-  assert.equal(c.skills2Levels('thrust')[0], 1);
+  assert.equal(c.skills2Levels('thrust')[0], 0);
   assert.equal(c.skills2PointView().available, 5);
   assert.equal(c.skills2PointView().spent, 0);
 });

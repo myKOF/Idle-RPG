@@ -1400,6 +1400,7 @@ function bindWorkerUiState() {
       delete UI_WORKER_STATE.panelQueued[msg.name];
       requestPanelData(msg.name, true, queuedParams);
     }
+    if (msg.name === 'header') updateForgeChestBadge(msg.data && msg.data.player);
     if (msg.name === 'talents') updateTalentTabVisibility();
     if (msg.name === 'inv' && UI.pendingItemTooltip) {
       var pendingTooltip = UI.pendingItemTooltip;
@@ -2880,6 +2881,18 @@ function refreshSettingsPanel() {
       renderSaveList();
       refreshSaveFolderFilesV2();
     }
+}
+
+/* 各品質未開寶箱持有總數；只讀常駐header快照，離開熔爐頁仍可更新。 */
+function updateForgeChestBadge(player) {
+  var badge = $id('forge-chest-badge');
+  if (!badge) return;
+  var store = (player && player.chests) || {};
+  var total = 0;
+  CHESTS.forEach(function (def) { total += chestEntry(def, store[def.id]).n; });
+  setTextIfChanged(badge, total >= 1000 ? STR(2583) : String(total));
+  setAttrIfChanged(badge, 'aria-label', STR(2584, fmtFull(total)));
+  badge.hidden = total === 0;
 }
 
 /* ---- 熔爐改版公告：頁籤閃爍＋一次性彈窗（合併版遷移，migrateSave 設旗標） ---- */
@@ -4512,7 +4525,7 @@ function refreshStageDisplay(stageOverride) {
       ? UI.stageHold.targetStage
       : (_stagePendingStage !== null ? _stagePendingStage : stg.current));
   setHtmlIfChanged(label, STR(629, zoneIconHtml(stg.zone || 'desert', znd), displayStage));
-  setTextIfChanged(best, STR(630, stg.best));
+  setTextIfChanged(best, STR(630, stg.best, zoneMaxStage(stg.zone)));
   if (!isUiCommandPending(nodePendingKey('stage-auto'))) refreshStageAutoButton(stg.autoAdvance);
 }
 
@@ -7376,7 +7389,11 @@ function updateMerchantEntry(player) {
     button.disabled = count < 1 || active;
     button.classList.toggle('is-ready', count > 0 && !active);
     button.setAttribute('aria-disabled', String(button.disabled));
-    if (button.parentNode) button.parentNode.setAttribute('data-tt-desc', STR(count > 0 ? 2439 : 2437));
+    if (button.parentNode) {
+      button.parentNode.setAttribute('data-tt-desc', STR(count > 0 ? 2439 : 2437) +
+        '<br><span class="merchant-ticket-remaining">' + esc(STR(2581, count)) + '</span>');
+      if (UI.tooltipAnchor === button.parentNode) refreshOpenResourceTooltip();
+    }
   }
   var alert = $id('tower-merchant-alert');
   if (alert) alert.hidden = count < 1;
@@ -9014,7 +9031,7 @@ function skillTowerUnlockHintHTML(row, skillsSnapshot, lockedOnly) {
 /* 終極進化【修羅亂舞】（雙刀亂舞，js/skills2.js）目前是否生效。
    主執行緒沒有 G，不能直接呼叫 skills2AsuraDualWield（那支讀 G，在這裡永遠回 false），
    因此以面板快照重算，條件逐項對齊 Worker 端：
-     ①選的是修羅亂舞 ②普通階全滿且選項門檻達標 ③雙刀亂舞裝配在技能列上。 */
+     ①選的是修羅亂舞 ②普通階全學習且選項門檻達標 ③雙刀亂舞裝配在技能列上。 */
 function uiAsuraDualWield() {
   var sk = uiSkillsPanelSnapshot();
   var pick = sgUiUltPick(sk, 'dualdance');
@@ -9028,8 +9045,8 @@ function sgUiIsUltSlot(gid, slot) {
 }
 
 /* 這一階能不能投資：前一階至少 Lv.1，加上配置的轉生／等級／塔層門檻。
-   未解鎖時 sgUiLevels 已經把該階算成 Lv.0，但第 1 階要靠這裡才擋得住（它的預設開啟）。
-   終極進化另要求普通階全滿及各選項自己的門檻。 */
+   未解鎖時 sgUiLevels 已經把該階算成 Lv.0，仍需在這裡阻擋尚未解鎖的第一階投資。
+   終極進化另要求普通階全學習及各選項自己的門檻。 */
 function sgStageUnlocked(gid, lvs, tierIndex, skillsSnapshot) {
   var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null;
   if (sgUiIsUltSlot(gid, tierIndex)) return sgUiUltUnlocked(gid, lvs, skillsSnapshot);
@@ -9255,12 +9272,12 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
     } else if (atCap) {
       h += STR(778);
     }
-    // 第 1 階預設開啟（恆為至少 Lv.1），所以降到 1 為止
-    var canDowngrade = (i === 0) ? (lv > 1) : (lv > 0);
+    // 所有階段均可退回未學習的零級。
+    var canDowngrade = lv > 0;
     if (canDowngrade) {
       h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + i + '" data-tip="' + STR(2140) + '"' + pendingAttrs + '>' + STR(165) + '</button>';
     }
-    // 已在第 1 階保底時，仍可重置以清除舊存檔殘留的超神投資。
+    // 即使普通階已歸零，仍可重置以清除殘留的超神投資。
     if (canDowngrade || (i === 0 && hasUltPick)) {
       h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="' + STR(2141) + '"' + pendingAttrs + '>' + STR(781) + '</button>';
     }
@@ -9310,9 +9327,9 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   }
   h += '<div class="sgb-actions">';
   if (!baseUnlocked) {
-    var maxed = 0;
-    for (var mi = 0; mi < g.tiers.length; mi++) if ((lvs[mi] || 0) >= tierMax) maxed++;
-    h += STR(790, g.tiers.length, maxed, g.tiers.length);
+    var learned = 0;
+    for (var mi = 0; mi < g.tiers.length; mi++) if ((lvs[mi] || 0) >= 1) learned++;
+    h += STR(790, g.tiers.length, learned, g.tiers.length);
   } else if (!unlocked) {
     h += STR(791, esc(sgUnlockText(list[f].unlock)));
   } else if (!pick) {
@@ -9360,7 +9377,7 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
   var equipBtn;
   if (inLoadout) {
     equipBtn = '<button class="btn sgb-btn-quiet" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>' + STR(74) + '</button>';
-  } else if (t.total > 0) {
+  } else if (lvs[0] > 0) {
     equipBtn = '<button class="btn sgb-btn-primary" data-skill-equip="' + ref + '"' + equipPendingAttrs +
       (isPassiveGroup ? ' data-tip="' + STR(803) + '">' + STR(804) : STR(805)) + '</button>';
   } else {
@@ -10381,6 +10398,8 @@ function renderFuseInfo(gemsSnapshot) {
     var b = $id(id);
     if (b && b.disabled !== !canCompose) b.disabled = !canCompose;
   });
+  var maxButton = $id('fuse-max-btn');
+  if (maxButton) maxButton.disabled = !isGemEnabled(t);
   if (!isGemEnabled(t)) {
     info.textContent = STR(1604);
     return;
@@ -12394,6 +12413,7 @@ function initUI() {
   if (fuseBtn) {
     fuseBtn.addEventListener('click', function () { if (typeof runGemCompose === 'function') runGemCompose(false); });
     $id('fuse-all-btn').addEventListener('click', function () { if (typeof runGemCompose === 'function') runGemCompose(true); });
+    $id('fuse-max-btn').addEventListener('click', function () { if (typeof runGemCompose === 'function') runGemCompose(true, true); });
   }
 
   // 符文頁（符文真言）：由 js/ui-runeword.js 綁定

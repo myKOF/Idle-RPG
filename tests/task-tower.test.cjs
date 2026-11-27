@@ -90,7 +90,7 @@ test('格式3全部47個合法索引保留既有任務身份與已領狀態，�
     assert.equal(out.taskState.idx,want,'舊索引'+idx);
     for(const claimed of previous.slice(0,idx))assert.ok(c.TASKS.findIndex(t=>t.name===claimed.name)<want,'不能重領'+claimed.name);
     assert.equal(out.player.gold,gold);assert.equal(out.player.scrap,scrap);assert.equal(out.tower.highest,highest);
-    assert.equal(out.saveSchema,4);assert.equal(c.migrateSave(out).taskState.idx,want);
+    assert.equal(out.saveSchema,c.SAVE_SCHEMA_VERSION);assert.equal(c.migrateSave(out).taskState.idx,want);
   }
   for(const idx of [0,19,20,33,34,35,48]){
     const data=c.newGameState();data.taskState.idx=idx;
@@ -106,7 +106,7 @@ test('格式2全部舊索引先轉3再轉4，與完整讀檔一致，最舊已�
     c.applySaveSchemaMigrations(expected,2,{version:3,migrations:c.SAVE_SCHEMA_MIGRATIONS.slice(0,2)});
     c.applySaveSchemaMigrations(expected,3);
     const out=c.migrateSave(data);
-    assert.equal(out.taskState.idx,expected.taskState.idx);assert.equal(out.saveSchema,4);
+    assert.equal(out.taskState.idx,expected.taskState.idx);assert.equal(out.saveSchema,c.SAVE_SCHEMA_VERSION);
   }
   const legacy=c.newGameState();delete legacy.saveSchema;delete legacy.taskInsertChestRelicV1;legacy.taskState.idx=38;
   assert.equal(c.migrateSave(legacy).taskState.idx,48);

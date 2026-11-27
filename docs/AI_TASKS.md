@@ -1,3 +1,73 @@
+## FORGE-CHEST-BADGE-20261127 — 熔爐圖示顯示未開啟寶箱總數
+
+- Owner：Codex；Done，單人處理。使用者要求熔爐icon右上角顯示未開寶箱總數、文字清楚、1000個起顯示999+。前置：header已投影player.chests，chestEntry與CHESTS為數量權威，開箱已dirty header；工作區乾淨，fetch逐檔預檢無外部來源，String獨占可用。
+- 允許：index角標與CSS／UI／寶箱必要快取、ui角標及header回覆掛點、chest取得箱數變更時通知header、style角標、String.xlsx原生API及CSV／strings_data與編輯器共用快取、新forge-chest-badge回歸、Bridge／Worker快取、LV與本段。禁止改寶箱經驗／獎勵／機率／上限／開箱方式、存檔／協議、其他配置／玩法／素材或其他工作，不合併推送。
+- 方案：加總CHESTS各種由chestEntry正規化的持有n，不計經驗或歷史已開數；0隱藏，1～999完整數字，>=1000走String2583「999+」，String2584提供讀屏完整未開數量。header面板抵達即更新，不持續訂閱大型熔爐佇列；拆解經驗實際令持有箱數改變才dirty header，純經驗不增加header刷新。深紅實底、粗白字與淺邊，位於nav-tab-icon右上，點擊仍由原熔爐按鈕承接。
+- 驗收：五種／多種總數、0／1／999／1000／上限、舊檔／非法／未知ID、存讀純讀、真正拆解累積／開箱扣減與header通知、不在熔爐頁仍更新；原生Excel重開與全格比較、相關回歸／快取／Build、正式CSS隔離瀏覽器小圖示／999+完整顯示及清理，自我Review後Commit，後續使用者整合重載。
+
+- 完成／修改13檔：index角標／快取、style角標、ui加總與header回覆掛點、chest只在持有箱數增加時dirty header、Bridge／sim.worker快取、String.xlsx／CSV／strings_data及編輯器共用快取、新forge-chest-badge回歸、LV及本段。0隱藏、1～999數字、1000起999+，可及說明提供完整總數；取得、開箱、初次載入及非熔爐頁均沿權威header更新，不新增面板常駐訂閱或修改寶箱玩法。
+- 測試指令：`node --test tests/forge-chest-badge.test.cjs tests/chest.test.cjs tests/chest-opening.test.cjs tests/header-resources.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`55/55；新增非熔爐頁真正bindWorkerUiState／PANEL回覆回歸後，`node --test tests/forge-chest-badge.test.cjs tests/ui-worker-panels.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs`28/28。五品質加總、0／1／999／1000／各箱上限、異常與舊資料／未知ID、只讀快照、實際拆解換箱及開箱扣減／header通知、純經驗與滿箱不增header刷新皆通過。`apply_strings.cjs --check`、`build_string_csv.cjs --check`與`git diff --check`通過；`npm.cmd run build`777檔通過。
+- Excel：原生Excel updater寫入9格並正常重開兩輪逐格驗證；既有2567列與原本備份完全相同，只追加2583／2584兩列，其餘語言空白不填。styles.xml位元組一致，drawing清單不變；技能唯讀匯入並渲染前後指定區域目視，未以預覽器覆寫來源。String產出2568條／2955ee18，主頁與編輯器快取相同。
+- 畫面：launchHeadless隔離profile／靜音／看門狗、正式全部19支CSS及原nav／圖片／String／chest純讀函式，1400與700px視窗驗0／1／999／1000／12，數字完整在導覽列內、白字／不透明深紅底、hidden不佔位；999+截圖直接內嵌目視清楚，角標處真實滑鼠點擊由熔爐按鈕承接、頁面例外0。第一輪隔離頁缺畫布尺寸，補齊正式CSS變數後通過；finally關閉瀏覽器與伺服器，kill-test-browsers確認無殘留。
+- 清理限制：自動核准審查以政策限制拒絕刪除本輪`tmp/forge-chest-badge-20261127`（含來源備份／更新JSON／唯讀預覽／驗證腳本／依賴junction），未重試或換工具；目錄保留且不提交。上輪被拒清理的merchant暫存未動。
+- 唯讀未改：規範／Workflow／Codex、Chest來源表／chest_data、header投影與協議／存檔／取得與結算呼叫點、相關既有回歸／headless／build及配置工具；無新增素材。其他聊天CHEST-REVEAL40的ui-chest、chest-opening、CHEST_SYSTEM／VFX及index對應快取／LV既有開箱段／AI_TASKS末段不納入本提交；分段暫存保留。無未完成實作／已知新增風險，未測全庫／完整遊戲長時／其他瀏覽器與裝置。
+- 交付：FORGE-CHEST-BADGE-20261127，ai/codex本段所在「[Codex] feat: 在熔爐圖示顯示未開寶箱數量」提交，SHA見Git log與回報。可審閱合併；未合併或推送develop／main。下一步整合後重載遊戲驗收。
+
+## MERCHANT-SOLD-OPAQUE-20261127 — 已購買商品改不透明灰色停用卡
+
+- Owner：Codex；Done，單人處理。使用者要求神祕商店商品買後不要半透明，改置灰不可用且不透後方木盤。前置：既有sold狀態／已購買文字／購買按鈕移除可用，工作區乾淨，fetch後逐檔衝突預檢無外部來源。
+- 允許：css/style.css商人已售卡專用規則、index.html對應CSS快取、LV與本段；禁止改交易／價格／存檔／Worker／配置表／玩家字串／素材或其他工作，不合併推送。
+- 方案／驗收：只針對#mystery-merchant-panel的.shop-card.sold覆寫opacity1、實色灰底／灰邊及文字、圖示灰階，關閉售出卡品質偽元素／動畫；仍沿既有sold渲染移除購買按鈕與保留資訊tips，不阻擋檢視。檢查遺物／寶石／符文／各裝備品質的售出／未售、hover及窄桌面，瀏覽器全CSS實際樣式與不透底、相關回歸／Build、自我Review後Commit交使用者整合重載。
+
+- 完成／修改4檔：style商人售出卡專用17行、index的style快取20261127-merchant-sold-opaque-v1、LV與本段。覆寫原全域sold opacity0.4為1，實色#242424灰底與#626262邊框、灰階圖示／#b8b8b8文字，售出卡不播放品質偽元素或動畫；以專用重要背景／邊框壓過混沌及神話／創世原品質樣式。未售出、空位、其他視窗卡片及購買邏輯保持。
+- 測試：`node --test tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs`40/40，守既有排序／購買索引／售出按鈕移除／防重買／庫存與資源；`npm.cmd run build`776檔通過，Git差異檢查及自我Review通過。本項為CSS低影響調整，未另新增鏡像樣式測試，樣式驗證以真瀏覽器為準。
+- 瀏覽器：launchHeadless隔離profile／靜音與看門狗，依正式index順序載全部19支CSS、正式renderGemShop與商品圖示／String／資料生成，8種商品共16張售出／未售配對（遺物、神話／混沌／創世／神鑄創世／史詩裝備、符文、寶石）。售出卡computed opacity皆1、背景rgb(36,36,36)、backgroundImage none、filter grayscale(1)、文字rgb(184,184,184)，雙偽元素display none、只有已購買標示而無購買按鈕；未售出filter none且有購買按鈕。hover仍保持灰底；1000px與700px視窗／650px商品區均通過，截圖內嵌目視配對清楚、灰卡不透木盤。
+- 不透底證據：同一售出卡內距邊框4px的1×1截圖，分別將背後木盤切為純紅／純綠後擷取，PNG內容完全相同。頁面例外0，沒有啟動完整遊戲局或載入使用者存檔；finally關閉瀏覽器／HTTP伺服器，kill-test-browsers確認無殘留。截圖直接由工具回傳預覽，未寫本機暫存或建立桌面擷取，無待清理產物。
+- 唯讀未改：規範／Workflow／Codex、ui商品渲染／售出與tips、item交易及相關回歸、全部品質／灰階相關CSS（ashen-forge／flat／brass-and-slate／equipment-chaos）、首頁全CSS順序、Store／String／配置與Worker／存檔、build與headless工具。無新增玩家文字或素材，不需改Excel／CSV／String或素材庫Commit；本項無未完成實作／已知新增風險，未跑全庫／完整遊戲長時／其他瀏覽器與裝置。
+- 交付：ai/codex本段所在「[Codex] fix: 將商店已購買商品改為不透明灰色」提交，SHA見Git log／回報；可供審閱合併，未合併或推送develop／main。下一步使用者整合後重新載入遊戲以取得新版CSS。
+
+## COMBO-OVERFLOW-MIN-20261127 — 屬性溢出連擊至少0.01並顯示兩位精度
+
+- Owner：Codex；Done，單人處理。使用者看到104.4%暴擊仍無連擊，要求僅溢出1%也有至少0.01連擊，並明確選擇「所有溢出至少0.01；200%以上沿舊公式但仍保底0.01」。前置：三屬性共用comboOverflowHits、STAT_GROUPS數值格式及既有真正追加攻擊流程；逐檔衝突預檢無外部來源。前一測試任務已獨立提交0bcdbc87。
+- 允許：js/formula.js共用溢出函式及註解、js/data.js連擊數顯示／說明註解、tests/combo-hits.test.cjs、index／Bridge／sim.worker必要快取、game_formula.md／LV及本段。禁止改來源Excel／CSV／String、三類上限／係數／25%觸發率、技能／VFX／協議／存檔、其他聊天及素材，不合併推送。
+- 方案：每項有效溢出且係數>0回傳max(0.01,a×ln(溢出百分點/100))，未溢出或停用項為0，三項相加；因此暴擊101／104.4／200／200.1均至少0.01，較高值按原對數曲線，不在200%掉回0。欄位顯示至小數第2位、保留既有數量String及0時「—」。沿用權威快照與小數機率追加攻擊，不新增動畫或不同傷害來源。
+- 驗收：三類門檻／極小正溢出／1%／200%兩側／保底銜接／舊高區間／係數停用／上限0退回、真正computeStats與面板投影及0.01顯示、觸發／小數追加規則不變；相關回歸、主／Worker快取同步、Build與自我Review，必要隔離瀏覽器驗證後Commit，交使用者整合重載。
+
+- 完成／修改9檔：formula溢出保底與說明、data連擊欄位精度／係數說明、combo-hits回歸、index／Bridge／sim.worker快取及game_formula／LV／本段。三項共用max(0.01,n)，係數<=0或未溢出不給保底；沒有改配置表／25%觸發／基礎上限或高區間的原對數值。連擊面板以Math.round至兩位數字代入既有String254，不新增玩家字串。
+- 測試指令：`node --test tests/combo-hits.test.cjs tests/basic-melee.test.cjs tests/bloodfeast-asura-rework.test.cjs tests/stat-cap-unlimited.test.cjs tests/equip-set-preview-stats.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/header-resources.test.cjs tests/mystery-merchant.test.cjs`73/73；`npm.cmd run build`776檔通過。覆蓋100.0001／101／104.4／150／199.99／200／200.01／201的0.01保底、203／250／高值原曲線、三項各1百分點相加0.03、未溢出0、係數0／負／NaN停用、CDR自訂上限／0退回與舊高區間。
+- 權威與表現：隔離正式Worker模擬引擎將基礎暴擊設104.4並清空裝備，真正getStats／equip面板投影都為comboHits0.01；STAT_GROUPS輸出0.01次、0仍「—」、0.203顯示0.2、2.57維持。控制獨立隨機數驗25%觸發與1%小數追加，0.01不代表每次必中追加；真正doPlayerAttack命中追加時，兩段實際傷害合計＝扣血量＝兩筆傷害浮字，主擊／melee-extra的特效與浮字延遲皆0／130ms。既有霸王拳及近戰同步回歸全過，未改戰鬥／VFX事件。
+- 真瀏覽器：透過launchHeadless與看門狗、全靜音的隔離Chrome，在正式CSS／data／formula／renderAttrPanel的獨立頁，以同一權威投影建立完整屬性面板；DOM實際顯示暴擊104.4%、連擊0.01次，650px欄寬可見、未隱藏，頁面例外0。沒有載入玩家存檔或進行遊戲局、沒有新增截圖或QA暫存；finally關閉瀏覽器與伺服器，kill-test-browsers無殘留，無桌面擷取工作階段。
+- 快取與Review：主頁data／formula／Bridge、Worker入口與data／formula匯入均20261127-combo-overflow-min-v1，逐項核對一致，協議未改。自我Review確認保底只作用有效溢出且在三項相加前套用、未將顯示四捨五入寫回戰鬥、舊對數大於保底後完全保持；零係數停用及無溢出保持0。唯讀未改共通規範／Workflow／Codex、util、item／playerPanelStats／快照與ui的屬性渲染、combat／skills2／VFX、apply_params的原係數錨點與全部來源Excel／CSV／String、其他模組／素材。沒有更動參數接線，不需重跑參數錨點全庫；本輪不跑全庫或長時實玩。
+- 交付：本項無未完成實作／已知新增風險，可供使用者審閱合併；未合併或推送develop／main，素材庫無變更／不需Commit。先前4項既有測試修復已獨立為0bcdbc87（70/70與Build通過）；本項為本段所在「[Codex] fix: 讓屬性溢出至少產生0.01連擊數」提交，SHA見Git log／交付。下一步使用者整合至啟動工作區，重新載入／重啟遊戲重算屬性；104.4%暴擊將顯示0.01次。同副本另有地圖解鎖提示工作，只保留不同模組及共享文件獨立段，不納入本項。index與Worker只動data／formula／Bridge相關快取，LV說明放回既有屬性溢出段附近以避開雙方檔首插入；四支共享檔以HEAD拆出本案／其餘修改，git merge-file三方試跑皆0且結果逐位元等於工作檔，只stage本案差異。
+
+## MERCHANT-BASELINE-TESTS-20261127 — 更新名稱與商人品質／Store回歸
+
+- Owner：Codex；Done，單人處理。使用者要求將前輪4項既有失敗更新至目前遊戲名稱、商人品質上限與Store設定，空白列忽略，不改表，測試後Commit。前置：共通規範／Workflow／Agent已讀，ai/codex逐檔預檢無外部來源；本副本常駐減傷提示任務只修改String及文件尾端，完整保留。
+- 允許：tests/header-resources.test.cjs、tests/mystery-merchant.test.cjs與本段。禁止改來源Excel／CSV、data／item／公式／UI／字串／快取、其他進行中工作／素材，不合併推送。Store與game_parameters來源、data與item先記SHA，完成後保持。
+- 方案／驗收：名稱預期改為現行「神力之巔：放置暗黑／放置暗黑」；商人品質上限按目前樓層掉落區間驗各邊界（1～10史詩、11～20傳說、21起神話、後段創世及混沌），保留最高通關而非選取／角色等級、設定上下限夾限及真實商品驗證；商店升級先以最高通關1層驗史詩胸甲4太古，再驗進度提升才突破品質上限。Store只過濾兩端全空白列，仍逐格逐列核對全部有效值及非法配置拒絕。跑相關回歸／Build、自我Review與來源SHA核對後Commit，交使用者審閱合併。
+- 使用者追加詢問：暴擊率104.4%為何連擊仍「—」。唯讀確認comboOverflowHits為a×ln((value-threshold)/100)，非正歸0；因此104.4%溢出4.4點仍0，現公式須超過200%暴擊才有正連擊數。已於聊天說明提示未交代實際門檻的落差；本項不修改公式或提示。
+
+- 完成／修改3檔：header-resources／mystery-merchant兩支測試與本段；不改任何來源表或產品執行器。品質上限驗22種最高通關值，包含0及全部分界前後，另守商店預設2／11與高進度仍受設定最高品質限制。升級商品仍逐件驗部位／太古數，增加非空候選檢查，通關41層後才可產生表指定品質7。
+- Store忽略空白列後182列有效資料逐格一致；原生Excel207列含25空列，沒有修改或匯出來源。首輪29/30，揭露舊非法符文fixture仍字串搜尋目前Lv.1已不存在的20=5；改按本列實際兩個候選構造超界34與重複編號，保留七類非法配置拒絕及原有權重驗證，沒有刪斷言或放寬合法性。
+- 驗證指令：`node --test tests/header-resources.test.cjs tests/mystery-merchant.test.cjs tests/merchant-cards-ui.test.cjs tests/resource-tooltip.test.cjs tests/tooltip-modal-close.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/tower-equipment-drop-table.test.cjs`70/70；`npm.cmd run build`776檔通過；Git差異檢查與自我Review通過。Store／game_parameters的Excel及CSV、data與item六檔SHA前後完全一致。
+- 唯讀未改：規範／Workflow／Agent、String現行名稱、Store與game_parameters來源／CSV、data掉落區間／商店設定及item的merchantEquipmentRarityRange／商品生成、其他商人／高塔／tooltip／字串回歸。其他聊天常駐減傷已獨立提交5a891236；本案文件前段與其尾段不同，保留其成果。本次不改玩法，不需LV／String／快取或素材庫提交。
+- 本項無未完成／已知新增風險；未跑全庫或實機，現行設定相關回歸全過，可供使用者審閱合併，不合併或推送。Commit為本段所在「[Codex] test: 更新遊戲名稱與商人配置回歸」，SHA見Git log／交付。使用者另已確認溢出連擊至少0.01、200%後舊公式仍保底0.01，將另項處理公式與顯示，不混入本測試提交。沒有新增暫存或瀏覽器，既有其他任務拒刪tmp不動。
+
+## MERCHANT-ENTRY-TICKET-TIP-20261127 — 神祕商人券數與三項屬性溢出提示
+
+- Owner：Codex；Done，單人處理。使用者要求神祕商人入口tips底部以黃色顯示「當前擁有邀請券數量：XXXX」。前置：header投影已有邀請券、updateMerchantEntry與通用提示刷新可用；fetch後逐檔預檢無外部來源，String來源獨占確認通過。追加使用者要求：暴擊率／攻擊速度／冷卻縮減tips各補溢出轉增加連擊數說明，只改String252／264／266及其標記參數說明，不改三項計算或門檻；原暴擊提示已含轉換資訊，整理至黃色末行避免重複。
+- 允許：js/ui.js入口提示、tests/merchant-cards-ui.test.cjs、String.xlsx原生API及CSV／strings_data生成、index與必要編輯器共用快取、LV與本段。保留同副本封魔塔掉落／強化設定任務的data／formula／Bridge／Worker／index及文件不同段；禁止改邀請券獲得／消耗／召喚／解鎖、存檔／協議、Task與其他配置、素材及其他工作，不合併推送。
+- 方案／驗收：新增String2581「當前擁有邀請券數量：{0}」，每次header刷新由merchantInvitationCount(player)更新入口描述末行，沿用merchant-ticket-remaining黃色樣式與既有通用開啟提示刷新；0張／有券／耗券／塔戰停用及不重新懸停更新、既有召喚說明保持。原生Excel重開與全格比較、表格／快取同步、相關回歸／Build、必要隔離瀏覽器目視、自我Review後只提交本案，交使用者整合重載。
+
+- 完成／修改9檔：ui入口提示／merchant-cards-ui回歸、String.xlsx／CSV／strings_data、首頁ui及String快取與編輯器共用String快取、LV與本段。商人入口以既有黃色class顯示整數完整券數；若該錨點正開啟，立即沿既有內容刷新，不移動位置。三屬性只改String252／264／266，保留效果與{0}上限，將轉連擊數放黃色末行；原暴擊既有轉換句整理避免重複。沒有data／formula或Worker／協議／存檔改動，沒有新素材或素材庫Commit。
+- 表格：Excel獨占確認後兩次使用excel-update-sheets.ps1，正常重開各兩次。第一輪只新增2581的5格；第二輪只改252／264／266的D／E共6格。最終全工作簿既有2565列逐格比較只這6格變動，另末列新增5值；styles.xml SHA256完全相同（54a10af0c503a4dea5ab8c6142b55abe5affc11939dcbb1ec4309db33ee04f7e），0個drawing保持，其他語言均空白未填。試算表技能唯讀匯入、前後指定區域渲染並目視；既有空D欄被預覽器誤讀438的限制以來源逐格比較與原生重開為準，未匯出覆蓋來源。單表xlsx_to_csv→apply_strings生成2565條／0eccb8bf，主頁及編輯器快取一致。
+- 驗證指令：`node --test tests/merchant-cards-ui.test.cjs tests/resource-tooltip.test.cjs tests/tooltip-modal-close.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/combo-hits.test.cjs tests/stat-cap-unlimited.test.cjs`，51/51；新入口回歸涵蓋12345→12344→0、塔戰停用仍顯示、舊投影缺欄回0、已懸停內容刷新、黃色class與原禁用規則。連擊數回歸守住暴擊／攻速／冷卻溢出實際公式與邊界，沒有改算式迎合提示。
+- 擴大回歸另含header-resources／mystery-merchant，共64項60過4既有失敗。以HEAD的ui.js透過fs讀取攔截僅替換到測試記憶體、略過新增案例，63項59過同4失敗：品牌舊fixture、最高通關塔層品質上限、召喚／升級品質表fixture、Store原生Excel與CSV同步斷言。未修改這些測試／來源表或放寬條件。第一次工具串接後續check使shell最末碼為0，仍按實際test子程序1與明確失敗數記錄，不宣稱全組通過。
+- 實際瀏覽器：launchHeadless隔離Chrome與看門狗、靜音，正式CSS／String／STAT_GROUPS／UI提示函式的獨立頁，以真正mouseover顯示四個tips。商人懸停內12345→12344→0即時更新；三屬性末行文字正確，全部computed color為rgb(255,215,0)，1000×650下四個提示皆完整在畫內無裁切，截圖逐一目視；頁面例外0。無遊戲局／玩家存檔或音效，finally關閉瀏覽器／伺服器，kill-test-browsers確認無殘留，未建立桌面擷取。
+- Build／交付界限：`npm.cmd run build`776檔通過；最後String變更再由字串回歸／VM與node --check檢查生成JS，apply_strings --check同步、build_string_csv --check仍寫死0條，Git差異與自我Review通過。唯讀未改規範／Workflow／Codex、item券數／消耗、header投影／uiTick／tooltip生命週期／CSS、data的STAT_GROUPS與上限／COMBO參數、formula連擊衍生、Task與其他配置、既有回歸／Excel與字串工具。封魔塔掉落與強化設定工作已由另一聊天獨立提交ed7551eb，本案首頁與文件增量只包含本項，不重提其內容。
+- 清理限制：本輪tmp/merchant-invite-tip-20261127僅含來源前後副本、Excel更新JSON、只讀渲染／提示截圖、隔離QA腳本／日誌及依賴junction。以絕對路徑確認位於工作區tmp、驗證junction及普通檔後，嘗試非遞迴清理，整段命令被自動核准審查以政策限制拒絕，未執行、未重試或換工具；原位保留，不納入提交。功能交付完成，暫存清理尚受此限制。
+- 本項無未完成實作，可供使用者審閱合併，未合併或推送develop／main；限制為隔離提示頁驗證，未做完整遊戲長時／多瀏覽器／實體裝置。下一步整合後重新載入遊戲；VFX編輯器共用String快取有更新，仍開著時須先備份未存內容再重載，不由本案自動刷新或保存。遊戲Commit為本段所在「[Codex] feat: 補充商人邀請券與屬性溢出提示」，SHA見Git log／交付。
+
 ## TASK-TABLE-TEST-AUDIT-20261127 — 更新任務表回歸並唯讀核對說明
 
 - Owner：Codex；Done，單人處理。使用者授權更新前輪4項失敗測試、驗證後Commit，並唯讀盤點Task任務／獎勵說明與實際條件／發放差異，不改其表。
@@ -17909,6 +17979,15 @@ Worker 存活且頁面正常完成載入。
 - 素材庫僅V5 README及manifest改版，將播放規格改引用遊戲系統文件；145個Git index實際blob SHA全數核對後，先提交`6e2cfb3a8233d7404d7c08d3e71752e9d2927c4a`，無像素／模型／圖集變更。GIF是本輪實際遊戲擷取，五品質720×480／325幀／19.5秒／約4.84MB，逐幀解碼、時長及1500ms閉蓋有光目視通過；成品及QA JSON在本聊天chest-timing-v6/chest-faster-open-v6.gif，原始擷取在獨立tmp/chest-timing-v6。已核對絕對路徑／非連結後嘗試清理此輪自身暫存，自動核准審查以政策限制拒絕刪除，未重試並保留；上輪被拒的工作區外目錄未動。瀏覽器／伺服器已關閉，孤兒檢查無殘留。
 - 唯讀未改：規範／Workflow／Codex、來源製作與匯出工具、所有箱圖／Blender／manifest、chest結算／資料／Worker／Bridge／存檔／String、headless工具；其他聊天配置與formula／data變更不暫存。自我Review完成，三項要求與GIF無未完成項；未驗其他瀏覽器／實體裝置長時間播放。遊戲Commit為本段所在`[Codex] fix: 加倍開箱搖晃並提前品質光效`，實際SHA見交付，可供合併，未合併或推送develop／main；下一步重新載入遊戲驗收新版節奏。
 
+## CHEST-REVEAL40-20261127 — 每秒四十件開箱物品
+
+- Owner：Codex；Done，單人處理。使用者要求物品出現速度改為每秒40個，即每25ms一格；六行、捲動、原開蓋／光效／確認時序保持。允許ui-chest、開箱回歸、index對應快取、CHEST_SYSTEM／LV／VFX及本段7檔；禁止修改其他聊天角標、玩法／表格／存檔／Worker／協議／素材，不合併推送。
+- 前置：fetch及逐檔預檢無外部來源，同副本FORGE-CHEST-BADGE修改index熔爐角標、AI_TASKS開頭與chest／ui／style；本項只改ui-chest快取、本文既有寶箱段前插入紀錄，數量dirty header與揭示速度無語意相依。三方merge-file乾跑驗收後分段修改／暫存；驗收24／25ms與999／1000ms揭示邊界、虛擬格／中止、實際DOM速率與相關回歸／Build。無新必要素材。
+- 完成／修改7檔：js/ui-chest.js只將CHEST_REVEAL_STEP_MS從50改25；tests/chest-opening.test.cjs改驗24／25ms、999ms共40件與1000ms第41件，將案例資料及虛擬視口擴至可驗41格，保留捲動／縮放／關閉清理。index只升ui-chest快取reveal40-v1；CHEST_SYSTEM、LV寶箱段、VFX揭示登記與本段同步。六行CSS、箱蓋／光效／結算皆未改。
+- 驗證：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`最終79/79通過；`npm.cmd run build`776檔與Git差異檢查通過。早輪遇到其他聊天新增STR2583／2584與編輯器字串版號尚在更新的中間狀態，未修改對方檔案，待其更新後原五檔回歸全數重跑通過。未跑全庫。
+- UI實測限制：正式新局與獨立正式CSS／DOM頁兩次隔離Edge皆未回應Runtime.evaluate，沒有宣稱瀏覽器驗證通過。依各自精確PID／命令列確認後只結束本項Node，交headless看門狗與孤兒清理器關閉關聯瀏覽器；伺服器隨進程結束釋放。上輪六行實測保留，本輪25ms速率與中止以正式原函式的控時回歸驗收。未另試其他瀏覽器／真機。
+- 協作／交付：index、LV、AI_TASKS以HEAD加本項修改重建暫存，逐檔三方試合乾淨且結果等於含雙方內容的完整工作檔；保留角標／String／UI／Bridge／Worker／style在工作區，不順帶暫存或覆蓋。素材庫無本項變更，不建空提交；唯讀檢查規範／Workflow、chest揭示／六行CSS與前輪驗證、對方chest的header dirty及首頁／任務差異、headless工具，未改表格／獎勵／存檔／素材。自我Review完成，程式與文件無未完成項，UI實測限制如上，可供合併。Commit為本段所在`[Codex] feat: 開箱物品揭示改為每秒四十件`，SHA見交付，未合併或推送；下一步重載遊戲驗收速度。
+
 ## CHEST-REWARDS6-20261127 — 六行獎勵與每秒二十件
 
 - Owner：Codex；Done，單人處理。使用者指定開箱物品最多同時顯示六行、揭示改為每秒20個；沿用滿版置中、原格位與順序、超量捲動、開蓋後才揭示及立即確認關閉。
@@ -18010,3 +18089,115 @@ Worker 存活且頁面正常完成載入。
 - 回歸證據：只在記憶體以git show HEAD的Worker替換，新四項全部如預期失敗（manual種類、決定論自動落地、兩平台各12筆手動記錄）；舊分解四項在修改前也因fixture缺timer而失敗。補齊fixture後四項原有品質／等級／太古／鎖定斷言全過，沒有放寬規則。新測試完整載入正式Worker與模擬依賴，存檔前含待拆裝備／原材料且savedAt扣補進度欠帳，落地失敗回退時間；兩平台串真正Storage寫入器，桌面只用一個自動檔名，真正主動另存仍獨立。既有桌面回歸另驗原子寫檔／bak／開機讀回。
 - 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、save.js／protocol.js／ui.js存檔與分解入口、electron/save-files.cjs、既有桌面／選單／刷新／檔名／時間戳／壓縮／分解／Worker及快取回歸、build工具。自我Review完成：快照在修改背包／材料前產生，沿用既有AUTO排程與覆寫，未改分解篩選／獎勵或舊檔掃描。未啟動遊戲或碰使用者存檔，未跑全庫／實體裝置；kill-test-browsers確認無測試瀏覽器，無桌面擷取或新增暫存產物。
 - 交接／風險：遊戲ai/codex的本段所在「[Codex] fix: 將分解前備份歸入自動存檔」提交，SHA見Git log／交付，可供合併；未合併或推送develop／main。沒有本案未完成實作。自動存檔會按原本週期持續覆寫，分解前快照不再是永久歷史副本；既有IC_manual_before_bulk_salvage仍保持可讀、不自動刪除。同副本既有NPC／Task／掉落CSV、Task.xlsx及data未暫存或還原；下一步使用者整合至實際啟動工作區並重載／重啟遊戲驗收。
+## TOWER-CHAOS-DROPS-20261127 — 接入混沌裝備並修正塔戰樓層區間
+
+- Owner：Codex；Done，單人處理。使用者在game_parameters新增混沌裝備列，要求接入；追加指出第6層提示傳說10%與表定1～10層0%不符。已定位套用器只取前八品質／七欄，將第6層錯讀第二欄11～20層，亦忽略創世101+與混沌列。既有grantTowerBossRewards及towerEquipDropRows共讀BOSS_DROP_TABLE。
+- 前置：Excel／CSV混沌列內容一致；原有強化成功率與碎片費用兩項已在同一來源／formula修改，保持使用者原值並隨來源完整交付。允許tools/apply_params.cjs、來源game_parameters.xlsx／CSV、js/data.js衍生及原有formula兩項、index／bridge／sim.worker必要快取、tests/tower-equipment-drop-table.test.cjs、LV及本段。禁止另改來源設定、無關表格／公式／掉落或素材、存檔／協議，不合併推送。
+- 方案：以每品質明訂的{min~max=rate}／{min+=rate}解析並校驗連續無重疊區間，合併所有分界重建命名BOSS_DROP_TABLE；混沌映射正式R10，神鑄品質維持0。既有擲骰、有效掉寶率、部分／離線獎勵與顯示共同讀表。
+- 驗收：Excel／CSV逐值一致且來源SHA保持、全部150層逐品質對照、6／10／11及75／76／100／101／120／121邊界、真正勝利發獎與提示、>100%及掉寶率／部分獎勵、無效範圍拒絕與重複套用、參數錨點／總數（七條舊塔表錨點改一條，預期632→626）、全庫測試及Build。自我Review並Commit，交使用者整合重載；預檢無外部來源。
+- 完成／修改11檔：apply_params以各品質真正區間產出BOSS_DROP_TABLE，data九段與12品質完整接線、game_parameters來源／CSV、使用者既有formula強化兩項、index／bridge／Worker快取、tower-equipment-drop-table六項回歸、LV及本段。第6／10層傳說0%、11層10%；混沌76～100層1%、101～120層5%、121+25%，創世101+100%；其他品質同樣依原表，神鑄品質R8／R9／R11自然掉落仍0。grantTowerBossRewards／towerEquipDropRows本身已共讀權威表，不需另寫第二套掉落或提示。
+- 來源：只讀取使用者Excel，沒有編修／另存活頁簿，因此無本案原生重存／格式風險。xlsx_to_csv重新匯出308×18；全部儲存格與來源一致（4格僅Excel浮點尾數經既有最短往返規則清理），九個掉落品質逐格完全一致。來源SHA256 c708f596b62580893d6d67122f2dff6ca06cf8afa0267849534d6bc837567093保持。CSV主要增量為新增混沌與後續編號順移，以及使用者原有兩項強化值，未改其數值；formula原有保證成功至0／成功率下限30%、碎片指數底1.35／品質係數0隨來源完整保留並更新快取及LV。
+- 套用：`node tools/xlsx_to_csv.cjs`、`node tools/apply_params.cjs --write`只套用BOSS_DROP_TABLE一項；`node tools/apply_params.cjs`626項一致、將變更0／錨點問題0；`node tools/apply_params.cjs --check-anchors`擾動576個數值，626錨點各命中一次。總數632→626只因七個舊逐段錨點合成一個具名陣列錨點，並非遺漏參數。主頁與Worker的data／formula、Bridge資產快取統一20261127-tower-chaos-drops-v1，協議未變。
+- 專項指令：`node --test tests/tower-equipment-drop-table.test.cjs tests/tower-rewards-ui.test.cjs tests/apply-params.test.cjs`17/17。新六項覆蓋Excel／CSV／全部150層12品質、6／10／11及混沌／創世各分界、真正start／end勝利產出正式混沌裝備／掉落記錄／第6層不發傳說、有效掉寶率及部分獎勵乘區、250%必掉加餘數、共用提示、任意新分界與重疊／缺口／壞資料拒絕、重複套用。
+- 測試修正紀錄：初輪裝備等級期待忘了沿用equipmentTierLevel分段，已改守正式350級結果；試跑VM的process.exit空替身讓流程續入寫入區，曾觸發嘗試寫入／還原，立即核對Git差異及dry-run確認所有工作檔內容保持（僅本案data與原有formula差異）。已改用中止哨兵並加writeFileSync一律拒絕，後續測試不寫原檔。沒有以修改來源或放寬掉落斷言解決。
+- 全庫：`node --test --test-concurrency=2 "tests/*.test.cjs"`6326項，5608通過、716失敗、2略過，約1365.8秒；耗時主要是全部通過的真Git／Excel同步工具情境，沒有操作正式分支。針對188份失敗檔，以只讀preload在記憶體替換修改前HEAD的data與apply_params，保留任務開始時使用者已修改的Excel／CSV／formula，重跑2536項，1818通過、717失敗、1略過，約134.8秒。當前716個失敗名稱全部存在基準，新失敗0；基準另一次火鏈移動案例失敗、本輪通過，未宣稱修復該無關項。保留原有失敗斷言，不越界修復戰鬥／技能／素材／表格等其他缺陷。證據在logs/tower-chaos-20261127/full.tap、baseline.tap及baseline-comparison.json；比較腳本最後stdout遇到cp950無法輸出ℹ，但JSON已完整落地並以Node讀回核對。
+- Build／Review：`npm.cmd run build`776檔通過，Git差異檢查與自我Review通過。唯讀檢查共通規範／Workflow／Codex、Excel／CSV／RARITIES、tower實際獎勵／部分與離線共用、UI樓層與BOSS提示、formula取表／擲骰／強化、表格讀寫／參數錨點及相關回歸。沒有新增美術、VFX或玩家顯示文字，素材庫無變更、不需空提交。未另行啟動完整遊戲作視覺驗收，真正結算及顯示函式已驗；全庫既有716項失敗仍保留。一次性baseline preload確認不再執行後清理，測試日誌作回歸證據保留；背景測試瀏覽器檢查按規範執行。
+- 交接：Commit為本段所在「[Codex] fix: 接入高塔混沌掉落並修正樓層區間」，SHA見Git log／交付；本案無未完成實作，可供使用者審閱合併。未合併或推送develop／main；下一步整合至實際啟動分支後重新載入遊戲，檢查第6層傳說欄已省略及76／101／121層混沌機率。已掉落的既有裝備不做遷移或刪除。
+## PASSIVE-DAMAGE-TIP-20261127 — 釐清常駐技能減傷提示
+
+- Owner：Codex；Done，單人處理。使用者要求明確說明是技能提供的減傷，刪除「不是全局減傷屬性點數」整句。前置：String313與STAT_GROUPS既有讀取機制；來源獨占確認及逐檔衝突預檢通過，起始ai/codex乾淨。
+- 允許：String.xlsx原生Excel編修、CSV／strings_data衍生、首頁與編輯器共用字串快取、LV及本段；禁止修改技能效果／公式／裝配／解鎖、其他字串與素材，不合併推送。提示改「技能裝配後持續提供的減傷，與其他減傷乘算。」。
+- 驗收：原生Excel正常重開、全表僅313繁中一格變更且格式保持、單表匯出與字串同步、既有字串／常駐面板／快取回歸及Git差異檢查，自我Review後Commit；交使用者整合重載。
+- 完成7檔：String來源／CSV／strings_data、首頁及VFX編輯器共用String快取d01c2f4b、LV及本段。原生Excel正常重開兩次，全工作簿逐格核對僅E313改動，styles.xml內容完全一致、0個繪圖物件保持；技能效果／公式／裝配與解鎖皆未改。試算表技能唯讀匯入前後渲染目視，預覽僅在記憶體放寬欄位以看全文，不匯出覆蓋原格式。無素材修改，不需素材庫提交。
+- 驗證：`node --test tests/string-table.test.cjs tests/passive-stat-panel.test.cjs tests/vfx-editor-cache-versions.test.cjs`共22項19過3既有失敗；三項均為生命／法力回復舊倍率期待（210/315、140/210、160/240），以HEAD舊strings_data只在記憶體替換重跑面板5項，同樣2過3失敗。沒有改測試或數值。`node tools/string-table/apply_strings.cjs --check`同步2565條、`node tools/string-table/build_string_csv.cjs --check`寫死0條；Build與Git差異檢查另於提交前確認。
+- 唯讀未改：AI規範／Workflow／Codex、STAT_GROUPS與playerPanelStats、減傷函式／Skills2與Worker字串sv快取機制、三支回歸與Excel／字串生成工具。自我Review確認只有指定繁中一格與必要資料／快取／紀錄差異；無未完成實作，可審閱合併，未合併或推送develop／main。未另跑全庫或完整遊戲實機。Commit為本段所在`[Codex] fix: 釐清常駐技能減傷提示`，SHA見交付。下一步整合後重載遊戲；若VFX編輯器仍開啟，先備份未存內容再重載共用字串，不由本案自動刷新／儲存。
+- 同副本另一聊天於本輪新增MERCHANT-BASELINE-TESTS任務（文件開頭）與兩支測試修改，與本案尾端紀錄及String無語意相依；只分段暫存本案尾端，不納入其內容。一次性Excel副本／渲染／更新JSON／baseline preload及依賴junction已按確切絕對路徑非遞迴清理。
+- `npm.cmd run build`776檔通過、生成JS語法與Git差異檢查通過。分段暫存初次讀取大型任務檔超出Node子程序預設緩衝而中止，未寫入該檔索引；提高明確讀取上限後重做並核對暫存只含本段。
+
+## WORLD-MAP-FIRST-CLEAR-20261127 — 荒漠首通後世界地圖黃色閃爍
+
+- Owner：Codex；Done，單人處理。使用者要求首次真正通關荒漠100關後，世界地圖按鈕變黃色並持續閃爍，直到點擊該按鈕。前置：既有systemUnlockEntries／ui.markUnlockSeen／uiUnlockSeen存檔機制；fetch及逐檔預檢無外部來源。
+- 允許：js/system-unlocks.js、js/ui-unlock-notices.js、css/world-map.css、index及Worker／Bridge必要快取、tests/system-unlocks.test.cjs、LV與本段。沿用既有已讀命令與存檔欄位，新增全域且僅點擊解除的提示，不更改Protocol／地圖解鎖／戰鬥／文字／配置／素材；其他聊天修改保留，不合併推送。
+- 驗收：到達100未勝不亮、真正通關亮、持續刷新／其他操作／自動導航不清、任何主面板皆可點擊解除、失敗可重試、已讀存讀／換存檔／新局隔離；相關地圖與提示回歸、Build、自我Review及隔離靜音瀏覽器驗證，Commit後交使用者整合重載。COMBO任務僅共用不同快取行／文件區段，分段提交；Bridge共用版本待其提交後更新。
+
+- 完成／修改9檔：system-unlocks新增全域worldMap.firstClear（荒漠cleared≥100）、ui-unlock-notices允許全域入口跨主頁點擊並排除任意操作已讀、world-map的亮黃與1.4秒無限透明度閃爍、index／Bridge／Worker必要快取、system-unlocks三項新回歸、LV及本段。沿用現成ui.markUnlockSeen與uiUnlockSeen，沒有新增存檔欄位／Protocol／玩家文字／美術，無素材庫變更或素材庫Commit。減少動態偏好下保留黃色、不閃爍；舊存檔已通關且沒有此已讀旗標時補提示一次。
+- 測試指令：`node --test tests/system-unlocks.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`45/45；`npm.cmd run build`776檔通過。涵蓋真正completeFieldWave勝利與header髒標記、到達100未勝、已讀命令未解鎖拒絕、JSON存讀與新局／換存檔、重複末關不復活、四主頁其他操作／程式事件／停用不清、命令失敗重試、既有所有地圖操作／轉場／協議與快取。Git差異及自我Review通過。
+- 瀏覽器：launchHeadless隔離profile、預設靜音，以正式HTML地圖／JS及主題CSS測試；真正滑鼠點擊解除並正常開圖，任務openForQuest與100次刷新不清；computedStyle確認RGB(255,226,75)、world-map-first-clear-pulse與不同時間透明度變化、減少動態none仍黃；頁面例外0。未啟動完整遊戲或碰使用者存檔。初輪fixture祖先結構未按正式ui-shell／combat-area安排而無法點擊，修正測試頁並確認正式按鈕位於workspace兄弟combat-area，提示樣式選擇器已對應正式結構；另等主題背景transition完成後才驗最終色，不放寬顏色斷言。finally關閉瀏覽器與HTTP伺服器，臨時QA腳本／截圖清除；未建立桌面擷取session。
+- 同副本保護：COMBO任務已獨立提交8d7ff04e，本案不同index／Worker快取行與文件首尾，base0bcdbc87／本案／COMBO四個共享檔逐一git merge-file -p退出0且輸出等於完整工作檔，無語意相依；Bridge版本待COMBO提交完成後才更新。只提交本案9檔。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、player的已讀初始值、save／save-schema存讀、Worker的header投影／既有已讀命令、uiTick／戰鬥標頭、combat真正通關與髒標記、ui-world-map及任務導航、既有地圖／協議／快取測試、主題CSS與建置／瀏覽器工具。無本案未完成實作；未跑全庫、完整遊戲長時掛機或實體裝置。
+- 交接：Commit為本段所在`[Codex] feat: 荒漠首通後閃爍提示世界地圖入口`，SHA見Git log／交付，可供使用者審閱合併；未合併／推送develop或main。下一步整合至實際啟動工作區後重載驗收；已讀與其他提示同樣於既有自動／手動存檔落地。
+
+## WORLD-MAP-HINT-TEXT-20261127 — 黃色提示時改黑字
+
+- Owner：Codex；Done，使用者追加要求世界地圖黃色閃爍時改黑字。前置：7f0bd5b3與既有提示機制，逐檔衝突預檢無外部來源。允許css/world-map.css、index對應CSS快取、LV與本段；不改提示判定／存檔／其他聊天或素材。驗收正式主題CSS下普通／hover／focus與減少動態黑字且無陰影，提示解除恢復原樣；Git差異、自我Review與Commit後交使用者整合重載。
+
+- 完成4檔：提示樣式加color:#000及text-shadow:none的!important、CSS快取、LV與本段。launchHeadless隔離靜音瀏覽器載入正式五份主題CSS與正式祖先結構，computedStyle確認普通／強制hover／focus-visible為rgb(0,0,0)、文字陰影none，減少動態黑字保持且animation:none；finally關閉瀏覽器，無桌面擷取／暫存產物。未修改但檢查既有提示JS與主題覆寫。低影響CSS修正未另跑全庫／Build，Git差異檢查及自我Review通過，無未完成／素材庫變更；Commit為本段所在[Codex] fix: 世界地圖黃色提示使用黑色文字，SHA見交付，可供合併，未合併推送，下一步整合重載。寶石合成任務持續進行。
+
+## GEM-COMPOSE-MAX-20261127 — 兩秒合成特效與同類全階合成
+
+- Owner：Codex；Done，單人處理。使用者要求合成2秒內光效由小到最大，增加「全部合成至最高」按鈕，一次將所選類型庫存從低至高依配方／金幣合成。前置：既有兩秒GEM_CONVERT_FX_MS、原生Worker composeGems及同階composeAll；fetch與逐檔預檢無外部來源。
+- 允許：js/ui.js／ui-gem-workshop.js、css/gems.css、index、Worker／protocol／Bridge快取、String.xlsx原生Excel及CSV／strings_data與tools/vfx/editor/index.html共用字串快取、WORKER_PROTOCOL／VFX用途／LV／本段、gem-compose-all／gem-workshop與必要協議回歸；禁止改其他來源表、配方／費用／遺物／存檔、戰鬥及素材，不合併推送。
+- 方案：gem.composeAll增加可選toMax布林，省略維持同級最多2500次；toMax一個Worker命令自1至9階沿用composeGems逐次處理、保留餘數／原成本／遺物節省與任務統計，原子同步結算不跨類型混料。新按鈕不受目前所選階級限制，三顆按鈕共用防重與兩秒ACK雙重完成；合成獨立線性放大光效不更改轉換／拆解效果。
+- 驗收：逐階連鎖至10、現有高階一起參與、金幣停止／保留餘數／其他類型與鑲嵌不動、>2500完整處理、遺物與任務統計、非法／關閉拒絕、舊命令保持；UI十階可點新按鈕、單次命令／2秒／晚ACK／失敗／切頁，正式CSS時序與按鈕實際操作；String全表僅新增一列且原生Excel兩次正常重開、相關回歸／Build／自我Review後Commit，交使用者整合重載。
+
+- 完成／修改18檔：ui／ui-gem-workshop、gems.css、首頁、protocol／sim.worker／bridge、String.xlsx／CSV／strings_data與編輯器共用快取、WORKER_PROTOCOL／VFX用途／LV／本段、gem-compose-all／gem-workshop／worker-protocol三支回歸。合成獨立GEM_COMPOSE_FX_MS=2000、CSS光效由scale(0.1)線性長至1.4，三按鈕共用防重／權威成功且兩秒完成門檻。新按鈕toMax不受選中階級限制；Worker從1至9階逐次調用原composeGems，保留原費用／餘數／遺物抽樣／統計，不另建公式，壞庫存安全整數預檢避免無限迴圈。Protocol85，指令數不變；主線與Worker協議快取／Bridge、UI與CSS快取同步。
+- String來源：獨占存取後，使用tools/excel-update-sheets.ps1由Excel原生API新增2582「全部合成至最高」；正常重開兩次，寫4格、繪圖0個保持。openpyxl僅唯讀比較，所有既有儲存格完全一致，styles.xml位元內容完全一致；共2567列×16欄。xlsx_to_csv僅匯出String，apply_strings同步2566條／34f2c1e6，build_string_csv --check寫死0。使用綁定artifact-tool唯讀匯入前後尾端範圍，渲染目視新增一列完整可讀、原列格式保持，沒有匯出覆蓋來源。
+- 測試指令：`node --test --test-reporter=tap tests/gem-compose-all.test.cjs tests/gem-workshop.test.cjs tests/gem-enabled.test.cjs tests/gem-convert-shift.test.cjs tests/gem-fused-removed.test.cjs tests/ui-worker-panels.test.cjs tests/worker-protocol.test.cjs tests/combat-log.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`，83項80過3既有失敗。用只讀preload在記憶體替換HEAD舊ui／ui-gem-workshop重跑ui-worker-panels，8項5過、同樣3項失敗：裝備／背包靜態gem.socket搜尋、item.upgrade fixture缺UI、熔爐fixture缺makeUpgradeSuccessFeedback。本案新增6項全部通過，未降低斷言或越界修改。初輪有編輯器字串快取／協議版本期待未同步，補齊必要版本後通過；新增型別檢查初把validateCommand誤當ok物件，改按其既有null／錯誤字串契約驗證，產品驗證未放寬。
+- 新案例覆蓋9階既有庫存接力產10級、原有10級合併、各階成本及任務統計、其他種類保持、保留餘數／金幣不足只做可負擔部分、原同階命令不跨級、超過3000次及L1等值守恆、遺物節省、關閉／未知／非有限／非安全整數拒絕、真Worker型別與BOSS素材合成仍開放、新按鈕選10級仍有效、三按鈕同鎖與晚ACK／兩秒、改轉換計時不影響合成、String讀取。`npm.cmd run build`776檔全過，Git差異檢查及自我Review通過。
+- 瀏覽器：launchHeadless隔離profile／靜音，以真正寶石HTML、全部正式CSS／顯示JS／正式三按鈕綁定，HTTP命令串原樣Worker engine；實際連點新按鈕只送1條toMax，9階庫存完成9次合成得到紅寶石10級3顆，藍寶石9顆保持。演出量測2014.8ms，CSS動畫duration2000；約46／461／870／1271／1673ms對應scale0.1／0.349／0.619／0.879／1.139，成功文字於兩秒後出現，減少動態無光層。三按鈕排版目視完整，頁面例外0。首輪fixture未載入gem_resonance依賴，補齊正式載入；另一次動畫樣本遇到非嚴格遞增而測試中止，重跑完整時序／真命令通過，未放寬動畫斷言。未載入使用者存檔或完整遊戲掛機。finally關閉伺服器／瀏覽器，無桌面擷取；臨時腳本／PNG／表格副本／日誌與依賴junction按確切路徑清理。
+- 唯讀未改：共通規範／Workflow／Codex、item composeGems／addGem、data配方／費用／開放表、UI原快照／計時與工坊流程、GameClock、原Worker指令處理與BOSS限制／engine、String工具／Excel原生更新工具、既有寶石／顯示／字串／協議／快取測試、build與隔離瀏覽器工具。無美術／戰場Preset或素材庫變更，不需素材庫Commit。沒有本案未完成實作，未跑全庫／實體裝置；上述3個既有回歸缺陷保持。
+- 交接：Commit為本段所在`[Codex] feat: 新增寶石全階合成與兩秒放大光效`，SHA見Git log／交付，可供使用者審閱合併，未合併／推送develop或main。下一步整合後重載遊戲；VFX編輯器共用字串快取有更新，若仍開啟請先備份／另存未存內容再重載，本案不自動刷新或用舊頁覆蓋。世界地圖黑字已另交6b34c93f。
+
+## UI-PANEL-TEST-BASELINE-20261127 — 修正三項既有面板回歸失敗
+
+- Owner：Codex；Done，單人處理。使用者明確要求修正前輪3項既有失敗，測試通過後Commit。前置：775015cb及目前正式ui.js，fetch／tests與任務文件逐檔衝突預檢無外部來源，ai/codex工作區乾淨。
+- 允許：tests/ui-worker-panels.test.cjs與本段；不改產品執行器、來源表／配置／字串／素材或其他任務，不合併推送。把寶石鑲嵌斷言接到正式sendSlotSocketCommand轉送路徑，升級及熔爐測試載入真正成功回饋函式並補UI／畫布／幾何／動畫依賴，保留原浮字與錯誤分類驗證。
+- 驗收：3項失敗全部修正，普通與融合鑲嵌指令確實轉送及面板更新、裝備升級ok／fail／poor正確浮字與金幣不足不誤報成功、熔爐缺金保持浮字與silentResultError；本檔及前輪83項、相關升級回饋／鑲嵌回歸、Build、Git差異與自我Review後Commit，交使用者審閱合併。
+
+- 完成／修改2檔：ui-worker-panels測試與本段。普通／融合寶石鑲嵌改分別驗socketSelectedGem→sendSlotSocketCommand→sendUiCommand轉送，其他原有指令／投影／虛擬捲動斷言完整保留。升級與熔爐兩個fixture共用真實hasOwnUiState／uiCommandResultError／isSuccessfulUpgradeResult／makeUpgradeSuccessFeedback，補UI、window／UiCanvas、按鈕幾何與數值動畫依賴；仍逐一驗ok／fail／poor浮字文字／顏色／按鈕、僅成功數值動畫、升級追蹤狀態清理、正確指令／itemId／furnaceId及silentResultError。沒有用空函式取代成功判斷，也沒有修改遊戲以遷就測試。
+- 驗證：`node --test --test-reporter=tap tests/ui-worker-panels.test.cjs`8/8；`node --test --test-reporter=tap tests/gem-compose-all.test.cjs tests/gem-workshop.test.cjs tests/gem-enabled.test.cjs tests/gem-convert-shift.test.cjs tests/gem-fused-removed.test.cjs tests/ui-worker-panels.test.cjs tests/worker-protocol.test.cjs tests/combat-log.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/upgrade-feedback.test.cjs tests/equip-socket-ui.test.cjs tests/socket-target.test.cjs`123/123，包含前輪83項全部通過，額外驗成功／缺金／滿級／切頁／遲到回覆與普通／融合鑲嵌選孔、防重／失敗不跳孔／原庫存不錯扣。自我Review及Git差異檢查通過。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex及前輪任務；js/ui.js的裝備與背包投影／socketSelectedGem／sendSlotSocketCommand／detailAction／成功浮字／熔爐綁定；upgrade-feedback、equip-socket-ui、socket-target及前輪寶石／協議／字串／快取回歸、原Worker engine及Build工具。無產品功能／解鎖／存檔／字串／Excel／素材變更，不需LV／快取或素材庫Commit。沒有啟動瀏覽器或桌面擷取，kill-test-browsers確認無殘留；本項無未完成實作，未跑全庫或實機遊玩。
+
+- Build／交接：`npm.cmd run build`776檔全數通過，臨時兩份TAP日誌按確切路徑刪除，最終Git差異／自我Review通過。Commit為本段所在`[Codex] test: 修正面板投影與升級回饋的三項舊測試`，SHA見Git log／交付，可供審閱合併；未合併／推送develop或main。無已知本案風險或未完成項；下一步由使用者整合本測試提交，不需為本案重新載入遊戲。
+
+- 同副本保護：收尾另一聊天新增MERCHANT-SOLD-OPAQUE任務與CSS／首頁／LV，與本案僅共用任務文件首尾不同段落、無產品語意相依。提交檢查發現其開頭紀錄一度隨整檔暫存；立即以原父提交與本案尾段重建索引並修正尚未推送的本案提交，工作檔完整保留對方內容。git merge-file三方試合退出0且輸出等於完整工作檔；本案只含測試與自己的任務尾段，其他未提交內容不暫存或還原。
+
+## STAGE-BEST-TOTAL-20261127 — 最高關卡顯示目前場景上限
+
+- Owner：Codex；Done，單人處理。使用者要求戰鬥列「最高X關」改為「最高XX/YY關」，YY為目前場景上限。前置：header.stage.best與共載zoneMaxStage權威配置，工作區乾淨、fetch後逐檔預檢無外部來源。
+- 允許：js/ui.js、String630原生Excel編修／CSV／strings_data、index必要快取及移除stage-best舊靜態初始文字、tools/vfx/editor/index.html共用字串快取、tests/stage-jump-ui.test.cjs、LV與本段；禁止改最高進度／通關／切關／解鎖／配置／存檔／Worker協議或素材，不合併推送。
+- 驗收：各場景分母動態取zoneMaxStage、XX維持最高到達值而非目前關卡、換圖／退關／長按預覽正確、配置上限更動即同步；String全表只改630繁中與參數說明、原生Excel重開及前後格式／目視比較，相關關卡／地圖／字串／快取回歸、Build與自我Review後Commit，交使用者整合重載。
+
+- 完成／修改9檔：ui.js新增zoneMaxStage(stg.zone)顯示參數、String.xlsx／CSV／strings_data更新630與必要參數說明、index移除579舊靜態文字並更新UI／String快取、VFX編輯器共用字串快取、stage-jump-ui回歸、LV與本段。正式格式最高{0}/{1}關，原最高進度與直達最高操作保持。
+- Excel：取得獨占後以tools/excel-update-sheets.ps1原生更新2格，兩輪正常重開、所有值一致、繪圖0個保留。逐格只差D633參數說明與E633繁中（String630），其餘2569列與styles.xml位元內容完全保持；以artifact-tool唯讀匯入渲染前後A632:G634目視，未匯出覆蓋來源。String單表匯出2569×16，apply_strings同步2568條／2aafbc80、build_string_csv --check寫死0，主頁及編輯器快取一致。
+- 測試：`node --test --test-reporter=tap tests/stage-jump-ui.test.cjs tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/ui-worker-panels.test.cjs`56/56；新增真正refreshStageDisplay執行涵蓋所有10張地圖、退關仍保留best、長按與指定預覽不改best、修改Icefield上限150→175後即顯示新分母且不寫入header。初輪新fixture的$id被util正式函式覆蓋，補document.getElementById後通過。另同檔2項過期斷言（滑鼠按住→正式文案左鍵按住、舊定位字串已重構為函式參數）以HEAD基準只讀替換重跑，兩項同樣失敗；更新文案期待、把定位靜態斷言改成真正positionSkTooltip左／右／底部翻上方座標驗證，保留全部長按行為斷言，不改產品提示或定位。
+- Build／目視：npm.cmd run build777檔通過，Git差異檢查及自我Review通過。launchHeadless隔離profile靜音，正式全主題CSS／UI函式與原關卡導覽HTML，實測100/100、3/150及600/600，截圖確認最高3/150關可讀，頁面例外0；finally關閉瀏覽器，kill-test-browsers無殘留。未載入使用者存檔或建立桌面擷取，未跑全庫／完整遊戲長時或實體裝置；沒有本案未完成／已知新增風險。
+- 唯讀未改：共通規範／Workflow／Codex、ZONES／zoneMaxStage與關卡上限來源、原stage.best／最高到達規則、UI快照／切關／長按／提示定位、既有地圖／字串／快取／面板與Excel更新／匯出工具、headless及Build。無美術／戰場Preset或素材庫修改，不需素材庫Commit。新暫存目錄內來源備份／JSON／PNG／日誌／腳本與依賴junction按確切路徑清理；其他聊天被拒清理的舊暫存目錄未動。
+- 交接：Commit為本段所在`[Codex] feat: 關卡列顯示最高進度與場景上限`，SHA見Git log／交付，可供審閱合併，未合併／推送develop或main。下一步整合至啟動工作區後重載；VFX編輯器仍開著時先備份／另存未存內容再重載共用字串，不自動刷新或儲存舊頁覆蓋。
+
+## SKILL-ZERO-LEVEL-20261127 — 技能由零級學習與完整退點
+
+- Owner：Codex；Done，單人處理。使用者要求解鎖不送等級、所有技能可退0級、至少1級才可裝載；開局飛刀／火球各1級、熟練2級。使用者最新確認初始熟練2級／總點數=熟練等級，上限480點供六組技能；舊存檔一次性重置退還原投資、保留兩個初始技能。追加盤點23組×(7普通階+1超神選項)×10=1840級；使用者最新確認六組各80點，維持上限480。
+- 前置：fetch與逐檔衝突預檢乾淨。允許skills／skills2／player／save／save-schema／ui／Worker重置、String來源與衍生／必要快取、相關技能／存檔回歸、LV／遷移登錄及本段；禁止改技能數值／門檻／費用／其他配置／素材或其他聊天，不合併推送。
+- 驗收：新局兩技能明確保存且可退0、解鎖與GM開門不送級、學習0→1扣1點與原金幣、降級／重置清理快捷與狀態、0級存讀不復活、舊檔含GM額度與滿熟練投資全退且重讀冪等、任務計數保持，UI與Worker一致；Excel原生正常重開／全表差異及目視、相關回歸／Build／自我Review後Commit。後續使用者整合重載。
+- 完成／修改：skills2移除隱含第一階／免費點數豁免、降至0卸下與狀態清理；player明確存兩初始技能及upgradeCount=0；save不深補新局投資、零級不復活、清理未學快捷；save-schema格式5重置普通／超神，原付費預算完整釋出後由同一預算支付初始兩級。熟練保持（不足2補至2），正常480級存檔總480／已投2／剩478，僅既有GM額度及超支投資保留legacyPointCredit；不把舊免費23級換成點數。UI提供第一階1→0／0級不可裝載，Worker重置所有階底限0。skills共用註解、index／bridge／Worker快取、String.xlsx／CSV／strings_data與編輯器字串快取、LV與遷移登錄同步；協議未變。
+- 回歸：`node --test --test-reporter=tap tests/skill2-zero-level.test.cjs tests/skill2-points.test.cjs tests/skill2-reset.test.cjs tests/save-schema.test.cjs tests/gm-skill-point.test.cjs tests/skill2-ui.test.cjs tests/task-skills.test.cjs tests/skills2-levels-memo.test.cjs tests/skill2-unequip-status.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-row-max-dev.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/new-game-default-resources.test.cjs tests/task-evolution.test.cjs tests/task-tower.test.cjs tests/loadout-cap-migration.test.cjs`164/164；其後新增無熟練欄位／歷史預算案例，zero-level全11/11、必要語法再次通過。新增檔涵蓋六組技能以真正Worker升級／超神命令花完480點、全退及重複重置仍480；新局初始技能／門檻／GM／學習費用／存讀缺項／古老存檔、五種熟練舊檔與GM額度、23個免費初級不兌點、真增益與RT撤除及其他快捷保持。既有測試依新規則更新首級與退款、任務計數／明確已學戰鬥fixture及當前schema期待，未降低產品正確性。
+- 擴大驗證：skill2-system19項、skill-mastery2項、skill2-tower-unlock1項、legacy-skill-removal1項，共23個既有失敗。透過唯讀preload以HEAD程式只在記憶體替換重跑，相同失敗名稱／值重現（另兩個已更新的新制斷言在舊程式失敗屬預期，不列既有缺陷）；涉及舊技能數值／幾何／耗魔／經驗及新局loadout空陣列期待。未改無關配置或放寬斷言。`npm.cmd run build`778檔通過；`build_string_csv.cjs --check`仍寫死0、`apply_strings.cjs --check`2568條／a33800ab同步，Git差異檢查與自我Review通過。
+- Excel：取得獨占存取後以原生excel-update-sheets.ps1修改String829重置說明、正常重開兩輪；最終openpyxl唯讀逐格／型別核對僅E843差異，其餘2569×16保持，所有格格式／列高／欄寬及styles.xml位元內容完全一致，繪圖0個保持。artifact-tool僅用於匯入／前後預覽，發現其空字串sharedStrings讀值異常導致初次目標資料不準，已改以原始備份唯讀解析還原非本案值，再由同一Excel原生API正常保存與重開，沒有手改封裝XML；未以artifact匯出覆蓋來源。目視確認最終說明完整可讀，CSV及生成字串只改829。
+- 瀏覽器：launchHeadless隔離profile／預設靜音，以正式全部主題CSS及技能顯示函式、HTTP原樣轉送實際Worker引擎命令。實際滑鼠點飛刀／火球1→0，餘額依次1／2且快捷移除、裝載鈕消失，再點突刺0→1餘額1且裝載鈕出現；頁面例外0，截圖目視正常。未載入使用者存檔或完整遊戲掛機，finally關閉瀏覽器及伺服器，kill-test-browsers無殘留；無桌面擷取session。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、Skills2與game_parameters來源配置／公式及六格上限、Worker協議、GM設級與加點、combat施法入口／狀態／卸下流程、模擬引擎／原存檔與任務、既有熟練／塔解鎖／舊技移除回歸、Excel及字串／Build與headless工具。無素材修改，不需素材庫Commit；本案實作無剩餘項，未跑全庫／完整遊戲長時或實體裝置，上述既有失敗保持。
+- 交接：本段所在`[Codex] fix: 技能從零級學習並完整退還技能點`提交（SHA見交付），可供審閱合併，未合併／推送develop或main。下一步整合後重載遊戲，舊存檔依核准政策重置一次；VFX編輯器若仍開著，先備份／另存未存內容再重載共用字串，不自動刷新或儲存舊頁覆蓋。
+- 清理例外：自動核准審查以「blocked by policy」拒絕刪除本輪`tmp/skill-zero-level-20261127`（原始表備份／更新JSON／讀值副本／PNG／TAP日誌／baseline preload／一次性腳本與依賴junction）。已停止清理，不改用其他工具或重試，目錄維持原位且不提交；先前其他任務暫存未動。最終Git差異檢查通過，僅提交本案26檔。
+## ULT-LEARNED-GATE-20261127 — 終極進化只需普通階全學習
+
+- Owner：Codex；Done，單人處理。使用者要求取消第1～7階全滿前置，改為各至少1級且達終極選項自身解鎖條件，即可學習。前置：ad6ceab6零級制與既有共用sgUltUnlockedBy；fetch／逐檔預檢乾淨，ai/codex工作區乾淨。
+- 允許：skills2共同前置／相關註解、ui已學階數提示、save相容註解、String來源原生Excel與CSV／strings_data、index／Bridge／Worker與編輯器必要快取、LV及本段、終極／重選／點數／重置／修羅與UI回歸及新ult-learned專項。禁止改技能效果數值／費用／點數預算、配置解鎖進度／存檔格式／協議／素材及其他工作，不合併推送。
+- 驗收：七階各1可選／升級／重選並生效；缺任一階拒絕，普通10→9仍生效、1→0失效但保存投資且恢復後重新生效；選項等級／轉生／塔門檻仍擋，Worker／UI／修羅屬性／耗魔一致；Excel原生重開及全表／格式差異與目視、相關回歸／Build／快取／字串／Git差異、自我Review後Commit，後續使用者整合重載。
+- 完成／20檔：skills2共用sgUltUnlockedBy門檻由SG_TIER_MAX_LV改為1，同時套用首選／升級／重選／生效／耗魔／修羅屬性；UI統計已學階數、鎖定與已選卡／預設焦點沿共用判定；save只同步註解、格式仍5，不再觸發前輪重置。String683／687／691／731／763／790與790參數說明更新；主頁／Bridge／Worker及編輯器共用字串快取同步。LV更新共同前置及反擊／霸王拳條件，相關七支既有回歸更新零級邊界及9級仍可操作，新ult-learned專項5項涵蓋23組低等普通階各1的首選／升級／重選與184點總投資、七個缺階拒絕且資源不變、10→9及1→0與存讀恢復、各種進度門檻與無G的UI快照。
+- 測試指令：`node --test --test-reporter=tap tests/skill2-ult-learned.test.cjs tests/skill2-ui.test.cjs tests/skill2-reset.test.cjs tests/skill2-ult-switch.test.cjs tests/skill2-points.test.cjs tests/skill2-asura-dualwield.test.cjs tests/skill2-zero-level.test.cjs tests/skills2-levels-memo.test.cjs tests/task-skills.test.cjs tests/task-evolution.test.cjs tests/save-schema.test.cjs tests/worker-protocol.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs tests/vfx-editor-cache-versions.test.cjs`158/158；`npm.cmd run build`779檔通過，最後註解與相關耗魔回歸調整另做語法檢查。build_string_csv --check寫死0、apply_strings --check同步2568條／c0900690。初輪另有三項測試仍以9級視失效／要求G為undefined，修正為0級邊界且UI實際G=null的快照模式，產品判定沒有放寬。
+- 擴大回歸：skill2-ult-evolution74項46過28失敗、skills2-mana-cost4項2過2失敗，共30項既有失敗。使用前輪保留的唯讀preload以HEAD產品程式在記憶體替換，28個同名效果／配置失敗與2個耗魔失敗完全重現；舊版另在本輪低級前置的新增期待失敗屬預期。未改戰鬥／技能數值或修無關fixture；耗魔測試內原有9級應失效的後段期待仍依新規則改為終極費用、退0才回最高有效普通階費用，不放寬最前方既有紅燈。
+- Excel：獨占確認後以tools/excel-update-sheets.ps1原生寫7格並正常重開兩輪，繪圖0個保持；唯讀原始備份逐格／型別比較僅E697／E701／E705／E745／E777／D804／E804變更，所有格格式與styles.xml位元內容一致。artifact-tool僅匯入前後來源與渲染790所在列目視，更新JSON由openpyxl唯讀來源產生，沒有artifact匯出／手寫XML；單表匯出與生成JS只改6條顯示文字及一格參數說明。
+- 瀏覽器：launchHeadless隔離profile／預設靜音、正式全部主題CSS／UI函式與HTTP原樣Worker命令。先確認七階[1,1,1,1,1,1,0]顯示6/7已學且無選擇鈕；補最後一階為1後真正滑鼠選幻影八方陣，普通階全部仍1、終極Lv1生效、投資8點／餘472，畫面卡片亮起與升級鈕可用。再次歸零末階只失效且保存終極；頁面例外0，前後截圖目視正常。finally關閉瀏覽器／伺服器，kill-test-browsers無殘留，無桌面擷取，未讀使用者存檔或完整遊戲掛機。
+- 唯讀未改：共通規範／Workflow／Codex、Skills2與game_parameters等來源／數值、角色初始與save-schema格式5、Worker協議／指令轉送、普通階解鎖與點數費用／GM規則、原生engine與Excel／字串／Build／headless工具。無素材庫修改或素材庫Commit。自我Review確認所有入口共用判定、主執行緒／Worker快取與提示一致；本案實作無未完成，未跑全庫／實體裝置，上述既有回歸保持。
+- 交接：本段所在`[Codex] feat: 終極進化改為普通七階學習即可解鎖`提交（SHA見交付），可審閱合併，未合併／推送develop或main。整合後重載遊戲即可依新條件生效，不另重置技能；若VFX編輯器仍開著，先備份／另存未存內容再重載共用字串，不自動刷新或儲存舊頁覆蓋。
+- 清理例外：自動核准審查以blocked by policy拒絕刪除本輪`tmp/ult-learned-20261127`（來源備份／JSON／預覽PNG／驗證腳本／TAP與Build日誌／依賴junction），已停止清理、保留不提交，未重試或改用其他工具；前輪被拒的暫存路徑未修改或刪除。最終Git差異／暫存檔名核對通過，只提交本案20檔。

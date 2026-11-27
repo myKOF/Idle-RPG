@@ -91,9 +91,11 @@ test('判定入口：必須「選了修羅亂舞」且「雙刀亂舞裝配在�
   assert.equal(c.skills2AsuraDualWield(), false, '只有選了、沒裝配在技能列上');
   equipSkill(c);
   assert.equal(c.skills2AsuraDualWield(), true);
-  // 前 7 階掉出滿級 → 超神進化自動失效，裝備規則也跟著失效
+  // 普通階未滿級仍生效；退至零級才失效。
   c.G.player.skills2.levels.dualdance = [10, 10, 10, 10, 10, 10, 9];
-  assert.equal(c.skills2AsuraDualWield(), false, '前 7 階不再全滿就失效');
+  assert.equal(c.skills2AsuraDualWield(), true, '普通階降到9級仍生效');
+  c.G.player.skills2.levels.dualdance[6]=0;
+  assert.equal(c.skills2AsuraDualWield(), false, '第七階退到零級才失效');
 });
 
 test('穿戴互斥：生效時兩把雙手武器可以並存；沒生效時仍互斥', () => {

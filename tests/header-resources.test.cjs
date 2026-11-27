@@ -56,11 +56,11 @@ test('game branding is consistent in header, document titles, welcome and battle
   vm.createContext(context);
   for (const file of ['strings_data.js', 'strings.js'])
     vm.runInContext(fs.readFileSync(path.join(root, 'js', file), 'utf8'), context);
-  assert.equal(context.STR(48), '神力之巔：無限征途');
+  assert.equal(context.STR(48), '神力之巔：放置暗黑');
   assert.equal(context.STR(50), '⚔️ 神力之巔');
-  assert.equal(context.STR(51), '無限征途');
-  assert.equal(context.STR(90), '⚔️ 歡迎來到《神力之巔：無限征途》！');
-  assert.equal(context.STR(2412), '無限征途');
+  assert.equal(context.STR(51), '放置暗黑');
+  assert.equal(context.STR(90), '⚔️ 歡迎來到《神力之巔：放置暗黑》！');
+  assert.equal(context.STR(2412), '放置暗黑');
   assert.equal(context.STR(181, 'Lv.1'), 'Lv.1｜神力之巔');
   assert.equal(context.STR(565), '神力之巔');
   assert.equal(context.STR(2066), '神力之巔：戰況監控');

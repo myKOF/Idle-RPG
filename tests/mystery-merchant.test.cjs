@@ -103,9 +103,13 @@ test('全買略過滿包裝備仍能購買寶石符文；不足金幣不扣款',
 test('最高已通關層決定裝備品質上限，選取／當前層及高玩家等級不會越過',()=>{
   const e=game(),c=e.ctx,g=e.state();
   c.MERCHANT_CATEGORY_TABLE[0]=[['equipment',100]];
+  assert.deepEqual([c.MYSTERY_MERCHANT_SETTINGS.equipmentMinRarity,c.MYSTERY_MERCHANT_SETTINGS.equipmentMaxRarity],[2,11]);
   c.MYSTERY_MERCHANT_SETTINGS.equipmentMaxRarity=11;
   g.player.level=1000;
-  for(const [highest,cap] of [[0,5],[5,5],[6,6],[16,6],[21,7],[150,7]]) {
+  // 依目前BOSS掉落表驗證每個區間兩端；未通關沿用首層，76層起含混沌。
+  for(const [highest,cap] of [[0,4],[1,4],[5,4],[6,4],[10,4],[11,5],[16,5],[20,5],
+    [21,6],[30,6],[31,6],[40,6],[41,7],[50,7],[51,7],[75,7],
+    [76,10],[100,10],[101,10],[120,10],[121,10],[150,10]]) {
     g.tower.highest=highest;g.tower.floor=150;
     assert.equal(c.merchantEquipmentRarityRange().max,cap);
     for(let i=0;i<10;i++){
@@ -114,7 +118,9 @@ test('最高已通關層決定裝備品質上限，選取／當前層及高玩�
     }
   }
   c.MYSTERY_MERCHANT_SETTINGS.equipmentMinRarity=11;g.tower.highest=1;
-  assert.deepEqual(plain(c.merchantEquipmentRarityRange()),{min:5,max:5});
+  assert.deepEqual(plain(c.merchantEquipmentRarityRange()),{min:4,max:4});
+  c.MYSTERY_MERCHANT_SETTINGS.equipmentMaxRarity=3;g.tower.highest=150;
+  assert.deepEqual(plain(c.merchantEquipmentRarityRange()),{min:3,max:3},'商店設定上限仍可限制高塔進度上限');
 });
 
 test('商店裝備取全場景最高到達關卡，與玩家等級、目前低關及封魔塔無關',()=>{
@@ -307,8 +313,17 @@ test('召喚與升級各讀該商店等級的類別、裝備品質與部位、�
   assert.equal(c.gemShop().level,2);
   stock=c.gemShop().items;
   assert.deepEqual(Array.from(new Set(stock.map(it=>it.kind))),['gem','equipment','rune']);
-  assert.ok(stock.filter(it=>it.kind==='equipment').every(it=>it.equipment.rarity===5 && it.equipment.slot==='chest' && c.getItemAncientCount(it.equipment)===Math.min(4,it.equipment.affixes.length)));
+  const equipment=stock.filter(it=>it.kind==='equipment');
+  assert.ok(equipment.length>0);
+  assert.ok(equipment.every(it=>it.equipment.rarity===4 && it.equipment.slot==='chest' && c.getItemAncientCount(it.equipment)===Math.min(4,it.equipment.affixes.length)),
+    '只通關首層時，升級後的品質7候選仍受史詩上限限制');
   assert.ok(stock.filter(it=>it.kind==='rune').every(it=>it.runeId==='r33'));
+  g.tower.highest=41;
+  assert.equal(c.rollGemShop(),true);
+  const progressed=c.gemShop().items.filter(it=>it.kind==='equipment');
+  assert.ok(progressed.length>0);
+  assert.ok(progressed.every(it=>it.equipment.rarity===7 && it.equipment.slot==='chest' && c.getItemAncientCount(it.equipment)===Math.min(4,it.equipment.affixes.length)),
+    '通關41層後才可刷出商店等級2指定的品質7裝備');
 });
 
 test('重新讀檔保留券、商店等級、已買商品庫存，但不恢復會話',()=>{
@@ -435,9 +450,10 @@ test('掉落統計將邀請券顯示為道具名稱與數量',()=>{
   assert.ok(c.LOOT_MAT_DEFS.some(d=>d.key==='mystery_invitation'&&d.name===c.STR(2436)));
 });
 
-test('Store由原生Excel匯出，商店參數完整搬移且拒絕無效權重',()=>{
-  const excel=readXlsxRows(path.join(root,'config/Excel/Store.xlsx'),'Store');
-  const csv=csvParse(fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8'));
+test('Store忽略全空白列後與原生Excel逐格一致，商店參數完整搬移且拒絕無效權重',()=>{
+  const nonemptyRows=rows=>rows.filter(row=>row.some(value=>String(value).trim()!==''));
+  const excel=nonemptyRows(readXlsxRows(path.join(root,'config/Excel/Store.xlsx'),'Store'));
+  const csv=nonemptyRows(csvParse(fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8')));
   assert.deepEqual(excel.map(r=>r.map(String)),csv);
   assert.equal(csv.filter(r=>/^8-(?:寶(?:石商店|店刷出)|商品刷出數量)/.test(r[2])).length,42);
   assert.equal(csv.filter(r=>r[2]==='8-商品刷出數量').length,20);
@@ -454,6 +470,14 @@ test('Store由原生Excel匯出，商店參數完整搬移且拒絕無效權重'
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'merchant-invalid-'));
   const source=fs.readFileSync(path.join(root,'config/CSV/Store.csv'),'utf8');
   const file=path.join(temp,'Store.csv');
+  function invalidRuneTier(duplicate) {
+    const rows=plain(csv),row=rows.find(r=>r[2]==='8-商人符文階級'&&r[3]==='商店 Lv.1');
+    assert.ok(row);
+    const cells=row.map((value,index)=>index>=6&&/^\d+=/.test(value)?index:-1).filter(index=>index>=0);
+    assert.ok(cells.length>=2,'目前Lv.1符文列應有至少兩種候選');
+    row[cells[0]]=(duplicate?row[cells[1]].split('=')[0]:'34')+'='+row[cells[0]].split('=')[1];
+    return csvStringify(rows);
+  }
   try {
     const invalid = [
       [source.replace(/(神祕商人,存在時間\(秒\),[^\r\n]*?,)600,/, (_match, prefix) => prefix+'0,'),/存在時間/],
@@ -461,8 +485,8 @@ test('Store由原生Excel匯出，商店參數完整搬移且拒絕無效權重'
       [source.replace(/\{51,100,[\d.]+\}/,'{50,100,10}'),/邀請券掉落率樓層區間不得重疊/],
       [source.replace(/\{1,50,[\d.]+\}/,'{1,50,101}'),/邀請券掉落率樓層或百分比超出範圍/],
       [source.replace(/(8-商人刷出類別,商店 Lv\.1,[^\r\n]*?)裝備=30/, '$1裝備=-1'),/刷出類別.*有效項目/],
-      [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,34=5'),/符文階級.*有效項目/],
-      [source.replace(/(8-商人符文階級,商店 Lv\.1,[^\r\n]*?),20=5/, '$1,19=5'),/符文階級.*不得重複/]
+      [invalidRuneTier(false),/符文階級.*有效項目/],
+      [invalidRuneTier(true),/符文階級.*不得重複/]
     ];
     for (const [csvText, expected] of invalid) {
       assert.notEqual(csvText,source);

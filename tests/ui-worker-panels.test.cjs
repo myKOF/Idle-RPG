@@ -22,6 +22,26 @@ function functionBody(name) {
   assert.fail('unterminated function ' + name);
 }
 
+function feedbackButton(extra = {}) {
+  return {
+    getClientRects: () => [{}], closest: () => null,
+    ...extra
+  };
+}
+
+function feedbackContext(extra) {
+  const context = {
+    UI: { tab: 'equip' }, document: { hidden: false, addEventListener() {} },
+    UiCanvas: { rect: () => ({ left: 20, top: 80, width: 100, height: 30 }) },
+    hideTooltip() {}, ...extra
+  };
+  context.window = context;
+  vm.createContext(context);
+  vm.runInContext(['hasOwnUiState', 'uiCommandResultError', 'isSuccessfulUpgradeResult', 'makeUpgradeSuccessFeedback']
+    .map(functionBody).join('\n'), context);
+  return context;
+}
+
 test('寶石頁由 Worker panel 投影渲染並以 Command 修改狀態', () => {
   const renderGems = functionBody('renderGems');
   const renderShop = functionBody('renderGemShop');
@@ -66,8 +86,7 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
   for (const command of [
     'item.equip', 'item.unequip', 'item.setLock', 'item.salvage',
     'item.salvageBulk', 'item.upgrade', 'item.enchant',
-    'item.removeEnchant', 'item.rerollAffix', 'gem.socket',
-    'gem.socketFused', 'gem.unsocket', 'player.switchEquipSet',
+    'item.removeEnchant', 'item.rerollAffix', 'gem.unsocket', 'player.switchEquipSet',
     'player.setEquipView', 'player.renameEquipSet', 'player.buyInvUpgrade',
     'player.setInvSort', 'factory.setSalvageSettings'
   ]) {
@@ -76,6 +95,11 @@ test('裝備與背包頁由 Worker panel 投影渲染並以 Command 修改狀態
       new RegExp("(?:sendUiCommand\\(\\s*|commandName\\s*=\\s*)'" + command.replace('.', '\\.') + "'")
     );
   }
+  const socketSelection = functionBody('socketSelectedGem');
+  for (const command of ['gem.socket', 'gem.socketFused']) {
+    assert.match(socketSelection, new RegExp("sendSlotSocketCommand\\(it, mode, '" + command.replace('.', '\\.') + "'"));
+  }
+  assert.match(functionBody('sendSlotSocketCommand'), /sendUiCommand\(command, args,/);
 
   assert.match(detailAction, /if \(!it \|\| act === 'tosynth'\) return/);
   assert.match(detailAction, /uiCommandResultError\(result, commandName\)/);
@@ -137,21 +161,22 @@ test('item.upgrade status strings are not treated as UI command errors', () => {
 test('item.upgrade status results reach floating text feedback', async () => {
   const floatingTexts = [];
   const result = { value: 'ok' };
-  const button = {};
-  const context = {
+  const button = feedbackButton(), animations = [], requests = [];
+  const context = feedbackContext({
     findSelItem: () => ({ id: 'item-1' }),
     uiHeaderPanelSnapshot: () => ({ player: { gold: 1, scrap: 1 } }),
     upgradeCost: () => ({ gold: 0, scrap: 0 }),
     itemPendingKey: (id) => 'item:' + id,
-    sendUiCommand: () => Promise.resolve(result.value),
+    sendUiCommand: (name, args, options) => {
+      requests.push({ name, args, options });
+      return Promise.resolve(result.value);
+    },
     showFloatingText: (target, text, color) => floatingTexts.push({ target, text, color }),
-    hasOwnUiState: () => false,
+    triggerUpgradeNumberAnimation: id => animations.push(id),
     reportUiCommandFailure: () => { throw new Error('upgrade status was misclassified as an error'); }
-  };
-  vm.createContext(context);
+  });
   vm.runInContext(
-    functionBody('uiCommandResultError') + '\n' +
-      functionBody('detailAction') +
+    functionBody('detailAction') +
       '\nthis.detailAction = detailAction;',
     context
   );
@@ -166,17 +191,22 @@ test('item.upgrade status results reach floating text feedback', async () => {
     context.detailAction('upgrade', button);
     await new Promise((resolve) => setImmediate(resolve));
     assert.deepEqual(floatingTexts, [{ target: button, text, color }]);
+    assert.equal(context.UI._upgradingItemId, null);
+    assert.equal(requests.at(-1).name, 'item.upgrade');
+    assert.equal(requests.at(-1).args.itemId, 'item-1');
+    assert.equal(requests.at(-1).options.silentResultError, true);
   }
+  assert.deepEqual(animations, ['item-1'], '只有升級成功播放數值動畫');
 });
 
 test('熔爐零件格金幣不足時在按鈕上方顯示浮字', async () => {
   const floatingTexts = [];
   const calls = [];
-  const button = {
+  const button = feedbackButton({
     hasAttribute: (name) => name === 'data-nf-unlockslot',
     getAttribute: (name) => name === 'data-nf-fid' ? '1' : null,
     closest: (selector) => selector === 'button' ? button : null
-  };
+  });
   let clickHandler;
   const tab = {
     querySelector: () => null,
@@ -184,8 +214,7 @@ test('熔爐零件格金幣不足時在按鈕上方顯示浮字', async () => {
       if (name === 'click') clickHandler = handler;
     }
   };
-  const context = {
-    document: { addEventListener: () => {} },
+  const context = feedbackContext({
     $id: (id) => id === 'tab-newforge' ? tab : null,
     uiNewForgePanelSnapshot: () => ({}),
     newForgeViewFurnace: () => ({ id: 1 }),
@@ -195,11 +224,9 @@ test('熔爐零件格金幣不足時在按鈕上方顯示浮字', async () => {
       calls.push({ name, args, options });
       return Promise.resolve('金幣不足（需要 170000，持有 0）');
     },
-    uiCommandResultError: (result) => typeof result === 'string' ? result : null,
     showFloatingText: (target, text, color) => floatingTexts.push({ target, text, color }),
     reportUiCommandFailure: (label, error) => assert.fail(label + ': ' + error)
-  };
-  vm.createContext(context);
+  });
   vm.runInContext(functionBody('bindNewForgeEvents') + '\nthis.bindNewForgeEvents = bindNewForgeEvents;', context);
   context.bindNewForgeEvents();
   assert.equal(typeof clickHandler, 'function');
@@ -207,6 +234,8 @@ test('熔爐零件格金幣不足時在按鈕上方顯示浮字', async () => {
   await new Promise((resolve) => setImmediate(resolve));
 
   assert.deepEqual(floatingTexts, [{ target: button, text: '金幣不足', color: '#fca5a5' }]);
+  assert.equal(calls[0].name, 'newforge.unlockPartSlot');
+  assert.equal(calls[0].args.furnaceId, 1);
   assert.equal(calls[0].options.silentResultError, true);
 });
 

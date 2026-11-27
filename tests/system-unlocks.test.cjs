@@ -146,3 +146,104 @@ test('閃爍沒有時限；自主任意操作只清當前已查看頁，程式�
     assert.deepEqual(requests, ['forge.equip'], kind + ': 只清當頁，太古提示保留');
   }
 });
+
+test('世界地圖只在荒漠真正通關100關後提示，已讀隨存檔保留且新局獨立', () => {
+  const c = context(), s = state();
+  s.stage = { zone: 'desert', current: 100, best: 100 };
+  s.zoneProgress = { desert: { best: 100, cleared: 99 } };
+  const id = 'worldMap.firstClear';
+  assert.ok(!c.systemUnlockSnapshot(s).available.includes(id), '到達末關還不算勝利');
+  s.zoneProgress.desert.cleared = 100;
+  const original = JSON.stringify(s);
+  assert.ok(c.systemUnlockSnapshot(s).available.includes(id));
+  assert.equal(JSON.stringify(s), original, '共載索引不寫入狀態');
+  const worker = read('js/worker/sim.worker.js');
+  const start = worker.indexOf("'ui.markUnlockSeen': function (a) {") + "'ui.markUnlockSeen': ".length;
+  const end = worker.indexOf("  'settings.set':", start);
+  vm.runInContext('markSeen = (' + worker.slice(start, end).trim().replace(/,$/, '') + ')', c);
+  c.G = s;
+  c.markSeen({ id });
+  assert.equal(c.UI.dirty.header, true);
+  const restored = plain(c.G);
+  assert.ok(c.systemUnlockSnapshot(restored).seen.includes(id));
+  restored.stage.zone = 'Icefield';
+  assert.ok(c.systemUnlockSnapshot(restored).seen.includes(id), '換圖與重複通關不重置');
+  assert.ok(!c.systemUnlockSnapshot(plain(JSON.parse(original))).seen.includes(id), '另一未讀存檔保持提示');
+  assert.ok(!c.systemUnlockSnapshot(c.newGameState()).available.includes(id));
+  c.G = state();
+  assert.throws(() => c.markSeen({ id }), /not available/, '首通前點地圖不提前已讀');
+});
+
+test('荒漠末關實際勝利後產生地圖提示，重複刷關不復活已讀提示', () => {
+  const c = context();
+  c.blog = () => {};
+  for (const file of ['status', 'formula', 'battlefield', 'combat']) {
+    vm.runInContext(read('js/' + file + '.js'), c, { filename: file });
+  }
+  c.G = { ...state(), stage: { zone: 'desert', current: 100, best: 100, kills: 0, autoAdvance: true },
+    zoneProgress: { desert: { current: 100, best: 100, cleared: 99 } }, uiUnlockSeen: {} };
+  c.FIELD.player = null;
+  const id = 'worldMap.firstClear';
+  assert.ok(!c.systemUnlockSnapshot(c.G).available.includes(id));
+  c.FIELD._waveClearPending = true;
+  c.completeFieldWave({ hp: 100 });
+  assert.ok(c.systemUnlockSnapshot(c.G).available.includes(id));
+  assert.equal(c.UI.dirty.header, true, '勝利髒標記驅動header提示更新');
+  c.G.uiUnlockSeen[id] = true;
+  for (let i = 0; i < 3; i++) {
+    c.FIELD._waveClearPending = true;
+    c.completeFieldWave({ hp: 100 });
+    assert.ok(c.systemUnlockSnapshot(c.G).seen.includes(id));
+  }
+});
+
+test('世界地圖提示跨主面板，只能點擊按鈕解除，其他操作與刷新皆保持且失敗可重試', async () => {
+  const c = context(), listeners = {}, requests = [], classes = new Set();
+  const id = 'worldMap.firstClear';
+  // 即使世界地圖日後帶有選中狀態，也不得因滾輪／按鍵／點別處而清提示。
+  const button = { disabled: false, getAttribute: name => name === 'aria-pressed' ? 'true' : null,
+    classList: { contains: name => classes.has(name), toggle: (name, on) => on ? classes.add(name) : classes.delete(name) } };
+  const header = { systemUnlocks: { available: [id], seen: [] } };
+  c.document = {
+    querySelector: selector => selector === '#btn-world-map' ? button : null,
+    querySelectorAll: selector => selector === '#btn-world-map' ? [button] : [],
+    addEventListener: (name, fn) => { listeners[name] = fn; }
+  };
+  c.uiHeaderPanelSnapshot = () => header;
+  let fail = true;
+  c.sendUiCommand = (name, args) => {
+    requests.push([name, args.id]);
+    if (fail) return Promise.reject(new Error('offline'));
+    header.systemUnlocks.seen.push(args.id);
+    return Promise.resolve(true);
+  };
+  vm.runInContext(read('js/ui-unlock-notices.js'), c);
+  const unrelated = { isTrusted: true, target: { closest: () => null } };
+  const click = { isTrusted: true, target: { closest: selector => selector === '#btn-world-map' ? button : null } };
+  for (const tab of ['equip', 'skills', 'tower', 'char']) {
+    c.UI.tab = tab;
+    for (let i = 0; i < 100; i++) c.refreshSystemUnlockHints();
+    for (const kind of ['pointerdown', 'keydown', 'wheel', 'click']) listeners[kind](unrelated);
+    assert.ok(classes.has('unlock-tab-pending'));
+  }
+  assert.deepEqual(requests, [], '沒有計時解除或依主頁狀態自動已讀');
+  listeners.click({ ...click, isTrusted: false });
+  button.disabled = true;
+  listeners.click(click);
+  button.disabled = false;
+  assert.deepEqual(requests, [], '程式呼叫與停用按鈕不算點擊');
+  listeners.click(click);
+  await new Promise(resolve => setImmediate(resolve));
+  c.refreshSystemUnlockHints();
+  assert.ok(classes.has('unlock-tab-pending'), '命令失敗保留提示');
+  fail = false;
+  listeners.click(click);
+  await new Promise(resolve => setImmediate(resolve));
+  c.refreshSystemUnlockHints();
+  assert.ok(!classes.has('unlock-tab-pending'));
+  listeners.click(click);
+  assert.deepEqual(requests, [['ui.markUnlockSeen', id], ['ui.markUnlockSeen', id]]);
+  header.systemUnlocks.seen = [];
+  c.refreshSystemUnlockHints();
+  assert.ok(classes.has('unlock-tab-pending'), '載入另一未讀存檔再次提示');
+});

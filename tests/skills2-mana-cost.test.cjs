@@ -21,7 +21,9 @@ test('七階逐階取表定值，超神生效／失效及 UI 快照一致',()=>{
  c.G.player.skills2.ult.thrust={pick:0,lv:1};
  assert.equal(c.skills2ManaCost('thrust'),300);
  c.G.player.skills2.levels.thrust[0]=9;
- assert.equal(c.skills2ManaCost('thrust'),240);
+ assert.equal(c.skills2ManaCost('thrust'),c.SKILLS2.thrust.ult[0].cost,'普通階未滿級仍用已學終極耗魔');
+ c.G.player.skills2.levels.thrust[6]=0;
+ assert.equal(c.skills2ManaCost('thrust'),c.SKILLS2.thrust.tiers[5].cost,'普通階未學才退回最高有效普通階耗魔');
  assert.equal(c.skills2ManaCost('thrust',[10,0,0,0,0,0,0],{}),25);
 });
 test('不足魔力不能起手或建立冷卻，免費追加與 GM 鎖魔不扣魔',()=>{
