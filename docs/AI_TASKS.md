@@ -18110,3 +18110,17 @@ Worker 存活且頁面正常完成載入。
 - 瀏覽器：launchHeadless隔離profile／靜音，以真正寶石HTML、全部正式CSS／顯示JS／正式三按鈕綁定，HTTP命令串原樣Worker engine；實際連點新按鈕只送1條toMax，9階庫存完成9次合成得到紅寶石10級3顆，藍寶石9顆保持。演出量測2014.8ms，CSS動畫duration2000；約46／461／870／1271／1673ms對應scale0.1／0.349／0.619／0.879／1.139，成功文字於兩秒後出現，減少動態無光層。三按鈕排版目視完整，頁面例外0。首輪fixture未載入gem_resonance依賴，補齊正式載入；另一次動畫樣本遇到非嚴格遞增而測試中止，重跑完整時序／真命令通過，未放寬動畫斷言。未載入使用者存檔或完整遊戲掛機。finally關閉伺服器／瀏覽器，無桌面擷取；臨時腳本／PNG／表格副本／日誌與依賴junction按確切路徑清理。
 - 唯讀未改：共通規範／Workflow／Codex、item composeGems／addGem、data配方／費用／開放表、UI原快照／計時與工坊流程、GameClock、原Worker指令處理與BOSS限制／engine、String工具／Excel原生更新工具、既有寶石／顯示／字串／協議／快取測試、build與隔離瀏覽器工具。無美術／戰場Preset或素材庫變更，不需素材庫Commit。沒有本案未完成實作，未跑全庫／實體裝置；上述3個既有回歸缺陷保持。
 - 交接：Commit為本段所在`[Codex] feat: 新增寶石全階合成與兩秒放大光效`，SHA見Git log／交付，可供使用者審閱合併，未合併／推送develop或main。下一步整合後重載遊戲；VFX編輯器共用字串快取有更新，若仍開啟請先備份／另存未存內容再重載，本案不自動刷新或用舊頁覆蓋。世界地圖黑字已另交6b34c93f。
+
+## UI-PANEL-TEST-BASELINE-20261127 — 修正三項既有面板回歸失敗
+
+- Owner：Codex；Done，單人處理。使用者明確要求修正前輪3項既有失敗，測試通過後Commit。前置：775015cb及目前正式ui.js，fetch／tests與任務文件逐檔衝突預檢無外部來源，ai/codex工作區乾淨。
+- 允許：tests/ui-worker-panels.test.cjs與本段；不改產品執行器、來源表／配置／字串／素材或其他任務，不合併推送。把寶石鑲嵌斷言接到正式sendSlotSocketCommand轉送路徑，升級及熔爐測試載入真正成功回饋函式並補UI／畫布／幾何／動畫依賴，保留原浮字與錯誤分類驗證。
+- 驗收：3項失敗全部修正，普通與融合鑲嵌指令確實轉送及面板更新、裝備升級ok／fail／poor正確浮字與金幣不足不誤報成功、熔爐缺金保持浮字與silentResultError；本檔及前輪83項、相關升級回饋／鑲嵌回歸、Build、Git差異與自我Review後Commit，交使用者審閱合併。
+
+- 完成／修改2檔：ui-worker-panels測試與本段。普通／融合寶石鑲嵌改分別驗socketSelectedGem→sendSlotSocketCommand→sendUiCommand轉送，其他原有指令／投影／虛擬捲動斷言完整保留。升級與熔爐兩個fixture共用真實hasOwnUiState／uiCommandResultError／isSuccessfulUpgradeResult／makeUpgradeSuccessFeedback，補UI、window／UiCanvas、按鈕幾何與數值動畫依賴；仍逐一驗ok／fail／poor浮字文字／顏色／按鈕、僅成功數值動畫、升級追蹤狀態清理、正確指令／itemId／furnaceId及silentResultError。沒有用空函式取代成功判斷，也沒有修改遊戲以遷就測試。
+- 驗證：`node --test --test-reporter=tap tests/ui-worker-panels.test.cjs`8/8；`node --test --test-reporter=tap tests/gem-compose-all.test.cjs tests/gem-workshop.test.cjs tests/gem-enabled.test.cjs tests/gem-convert-shift.test.cjs tests/gem-fused-removed.test.cjs tests/ui-worker-panels.test.cjs tests/worker-protocol.test.cjs tests/combat-log.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/upgrade-feedback.test.cjs tests/equip-socket-ui.test.cjs tests/socket-target.test.cjs`123/123，包含前輪83項全部通過，額外驗成功／缺金／滿級／切頁／遲到回覆與普通／融合鑲嵌選孔、防重／失敗不跳孔／原庫存不錯扣。自我Review及Git差異檢查通過。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex及前輪任務；js/ui.js的裝備與背包投影／socketSelectedGem／sendSlotSocketCommand／detailAction／成功浮字／熔爐綁定；upgrade-feedback、equip-socket-ui、socket-target及前輪寶石／協議／字串／快取回歸、原Worker engine及Build工具。無產品功能／解鎖／存檔／字串／Excel／素材變更，不需LV／快取或素材庫Commit。沒有啟動瀏覽器或桌面擷取，kill-test-browsers確認無殘留；本項無未完成實作，未跑全庫或實機遊玩。
+
+- Build／交接：`npm.cmd run build`776檔全數通過，臨時兩份TAP日誌按確切路徑刪除，最終Git差異／自我Review通過。Commit為本段所在`[Codex] test: 修正面板投影與升級回饋的三項舊測試`，SHA見Git log／交付，可供審閱合併；未合併／推送develop或main。無已知本案風險或未完成項；下一步由使用者整合本測試提交，不需為本案重新載入遊戲。
+
+- 同副本保護：收尾另一聊天新增MERCHANT-SOLD-OPAQUE任務與CSS／首頁／LV，與本案僅共用任務文件首尾不同段落、無產品語意相依。提交檢查發現其開頭紀錄一度隨整檔暫存；立即以原父提交與本案尾段重建索引並修正尚未推送的本案提交，工作檔完整保留對方內容。git merge-file三方試合退出0且輸出等於完整工作檔；本案只含測試與自己的任務尾段，其他未提交內容不暫存或還原。
