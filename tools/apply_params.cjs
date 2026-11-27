@@ -727,15 +727,6 @@ scalar('data', 'FIELD_BOSS_DODGE_ADD', '4-野外BOSS', '數值倍率', 4);
 scalar('data', 'FIELD_BOSS_ASPD', '4-野外BOSS', '數值倍率', 5);
 scalar('data', 'FIELD_BOSS_DROP_MULT', '4-野外BOSS', '掉落倍率', 0);
 // 掉落表：重建每個 min 檔的 rates
-// 從 {下限~上限=值} 取出「值」；解析不出有效數字則中止（防 Excel 破壞後寫入垃圾）。
-function parseTuple(cell) {
-  cell = (cell == null ? '' : String(cell)).trim();
-  // 空格、或被 Excel 自動填成純數字 0 的「空 bracket」一律視為 0%（該區段不掉落）。
-  if (cell === '' || (/^-?[\d.]+$/.test(cell) && Number(cell) === 0)) return '0';
-  const m = /=(-?[\d.]+)\}/.exec(cell);
-  if (!m || !isFinite(Number(m[1]))) throw new Error('CSV 元組無法解析為數字（可能被 Excel 破壞）：「' + cell + '」');
-  return m[1];
-}
 // 命中／閃避：CSV 以 {下限~上限=每級增加值} 或 {下限+=每級增加值} 表示。
 function parseLevelGrowthBracket(cell) {
   cell = (cell == null ? '' : String(cell)).trim();
@@ -752,14 +743,35 @@ function levelGrowthContent(cat, name) {
   if (!brackets.length) throw new Error('CSV 缺少有效等級區間參數：' + cat + ' / ' + name);
   return brackets.join(',\n  ');
 }
-// 高塔裝備：CSV 每品質 7 bracket（1~5..31+）→ code min 1/6/11/16/21/26/31
+// 高塔裝備依每品質的實際樓層區間合併分界，不能用欄位序號代替樓層。
 {
-  const quals = ['普通', '精良', '稀有', '獨特', '史詩', '傳說', '神話', '創世'];
-  const minByIdx = [1, 6, 11, 16, 21, 26, 31];
-  minByIdx.forEach((min, bi) => {
-    const rates = quals.map(q => parseTuple(index['5-高塔裝備掉落'][q + '裝備'][bi]));
-    edits.push({ file: 'data', scopeVar: 'BOSS_DROP_TABLE', re: new RegExp('min: ' + min + ',\\s*rates:\\s*\\[([^\\]]*)\\]'), grp: 1, value: rates.concat([0, 0, 0, 0]).join(', '), label: 'BOSS_DROP min' + min, multiGroup: true });
+  const quals = ['普通', '精良', '稀有', '獨特', '史詩', '傳說', '神話', '創世', null, null, '混沌', null];
+  const bounds = new Set([1]);
+  const ranges = quals.map(q => {
+    if (!q) return null;
+    const cells = index['5-高塔裝備掉落'] && index['5-高塔裝備掉落'][q + '裝備'];
+    if (!cells) throw Error('高塔裝備掉落缺少品質：' + q);
+    const rows = cells.filter(cell => String(cell).trim() !== '' && Number(cell) !== 0).map(cell => {
+      const match = /^\{\s*(\d+)\s*(?:~\s*(\d+)|\+)\s*=\s*([\d.eE+-]+)\s*\}$/.exec(String(cell).trim());
+      if (!match) throw Error('高塔裝備掉落區間無法解析：' + q + ' ' + cell);
+      const min = Number(match[1]), max = match[2] ? Number(match[2]) : Infinity, rate = Number(match[3]);
+      if (!Number.isSafeInteger(min) || min < 1 || (max !== Infinity && !Number.isSafeInteger(max)) || max < min || !Number.isFinite(rate) || rate < 0) {
+        throw Error('高塔裝備掉落區間或機率無效：' + q + ' ' + cell);
+      }
+      return { min, max, rate };
+    }).sort((a, b) => a.min - b.min);
+    if (!rows.length || rows[0].min !== 1 || rows[rows.length - 1].max !== Infinity ||
+      rows.some((row, i) => i > 0 && row.min !== rows[i - 1].max + 1)) {
+      throw Error('高塔裝備掉落區間須由第1層連續至無上限，不得重疊或留空：' + q);
+    }
+    rows.forEach(row => { bounds.add(row.min); if (row.max !== Infinity) bounds.add(row.max + 1); });
+    return rows;
   });
+  const content = [...bounds].sort((a, b) => b - a).map(min => {
+    const rates = ranges.map(rows => rows ? rows.find(row => min >= row.min && min <= row.max).rate : 0);
+    return '  { min: ' + min + ', rates: [' + rates.join(', ') + '] }';
+  }).join(',\n');
+  arrayContent('data', 'BOSS_DROP_TABLE', '\n' + content + '\n');
 }
 // 寶石標價
 [1,2,3,4,5,6,7,8,9,10].forEach((lv, i) => {

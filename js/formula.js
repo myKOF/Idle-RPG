@@ -2363,7 +2363,7 @@ function salvageResult(it, ancientEssenceBonus, essenceBonus) {
    ============================================================ */
 
 /* 強化基礎成功率：低強化段必成（免費段），之後每級遞減固定百分點，並有下限。 */
-var UPGRADE_SUCCESS = { guaranteedUpTo: 5, full: 100, decayPerLevel: 6, floor: 10 };
+var UPGRADE_SUCCESS = { guaranteedUpTo: 0, full: 100, decayPerLevel: 6, floor: 30 };
 function upgradeSuccessBase(nextLevel) {
   if (nextLevel <= UPGRADE_SUCCESS.guaranteedUpTo) return UPGRADE_SUCCESS.full;
   return Math.max(UPGRADE_SUCCESS.floor,
@@ -2374,7 +2374,7 @@ function upgradeSuccessBase(nextLevel) {
    ⚠️ 這裡原本的註釋寫死了係數，而且與程式碼已經不一致（註釋 1.45／0.08，實際 1.3／0.2）——
       正是 AI_RULES 9.1 要防的情況：註釋看起來像權威來源，讀的人不會回頭核對。 */
 var UPGRADE_COST_GOLD = { coef: 25, base: 1.3, perLevel: 0.2 };
-var UPGRADE_COST_SCRAP = { coef: 8, base: 1.232, perLevel: 0.04, perRarity: 1 };
+var UPGRADE_COST_SCRAP = { coef: 8, base: 1.35, perLevel: 0.04, perRarity: 0 };
 function upgradeCost(it) {
   var lv = it.upgrade || 0;
   return {
