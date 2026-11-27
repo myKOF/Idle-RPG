@@ -118,7 +118,8 @@
 // v81：chest.open 的 equip 獎勵改帶 items＝[{ icon, level, ancientCount, n }]，區分等級與太古星數。
 // v83：tower.merchant.expiresAt 為實際時鐘截止毫秒，成功耗券重置會話時間。
 // v84：飛刀 area.knifeId 串接重鎖，knifeStop 結束刀身；保留 preserveDeadTargets／loopReturn。
-var WORKER_PROTOCOL_VERSION = 84;
+// v85：gem.composeAll可選toMax，一個命令將同種類自1階一路合成至最高階。
+var WORKER_PROTOCOL_VERSION = 85;
 
 /* ---- 訊息型別：主執行緒 → Worker ---- */
 var MSG_IN = {
@@ -368,9 +369,9 @@ var COMMANDS = {
   'gem.dismantleFused':    { fn: 'dismantleFusedGem', args: { fusedId: 'id' },                    dirty: ['gems', 'header'] },
   'gem.convert':           { fn: 'convertGems',      args: { slots: 'slots', targetType: 'str' }, dirty: ['gems'] },
   'gem.compose':           { fn: 'composeGems',      args: { type: 'str', level: 'int' },         dirty: ['gems'] },
-  /* 全部合成／全部拆解：現行 UI 是同步 while 迴圈（最多 2500 與 999 次）。
-     逐次跨執行緒往返不可行，必須在 Worker 內一次跑完再回報結果。 */
-  'gem.composeAll':        { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
+  /* 同階全部合成／全部拆解最多2500與999次；toMax逐階處理完整可合成庫存。
+     逐次跨執行緒往返不可行，必須在Worker內一次跑完再回報結果。 */
+  'gem.composeAll':        { fn: null,               args: { type: 'str', level: 'int', toMax: 'bool?' }, dirty: ['gems', 'header'] },
   'gem.dismantleAll':      { fn: null,               args: { type: 'str', level: 'int' },         dirty: ['gems', 'header'] },
   /* -- 符文（符文真言；js/runeword.js）--
      符文是 { 符文id: 數量 } 的計數，沒有實例 id，所以用 runeId（符文 id 字串）定位。

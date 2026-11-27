@@ -18095,3 +18095,18 @@ Worker 存活且頁面正常完成載入。
 - Owner：Codex；Done，使用者追加要求世界地圖黃色閃爍時改黑字。前置：7f0bd5b3與既有提示機制，逐檔衝突預檢無外部來源。允許css/world-map.css、index對應CSS快取、LV與本段；不改提示判定／存檔／其他聊天或素材。驗收正式主題CSS下普通／hover／focus與減少動態黑字且無陰影，提示解除恢復原樣；Git差異、自我Review與Commit後交使用者整合重載。
 
 - 完成4檔：提示樣式加color:#000及text-shadow:none的!important、CSS快取、LV與本段。launchHeadless隔離靜音瀏覽器載入正式五份主題CSS與正式祖先結構，computedStyle確認普通／強制hover／focus-visible為rgb(0,0,0)、文字陰影none，減少動態黑字保持且animation:none；finally關閉瀏覽器，無桌面擷取／暫存產物。未修改但檢查既有提示JS與主題覆寫。低影響CSS修正未另跑全庫／Build，Git差異檢查及自我Review通過，無未完成／素材庫變更；Commit為本段所在[Codex] fix: 世界地圖黃色提示使用黑色文字，SHA見交付，可供合併，未合併推送，下一步整合重載。寶石合成任務持續進行。
+
+## GEM-COMPOSE-MAX-20261127 — 兩秒合成特效與同類全階合成
+
+- Owner：Codex；Done，單人處理。使用者要求合成2秒內光效由小到最大，增加「全部合成至最高」按鈕，一次將所選類型庫存從低至高依配方／金幣合成。前置：既有兩秒GEM_CONVERT_FX_MS、原生Worker composeGems及同階composeAll；fetch與逐檔預檢無外部來源。
+- 允許：js/ui.js／ui-gem-workshop.js、css/gems.css、index、Worker／protocol／Bridge快取、String.xlsx原生Excel及CSV／strings_data與tools/vfx/editor/index.html共用字串快取、WORKER_PROTOCOL／VFX用途／LV／本段、gem-compose-all／gem-workshop與必要協議回歸；禁止改其他來源表、配方／費用／遺物／存檔、戰鬥及素材，不合併推送。
+- 方案：gem.composeAll增加可選toMax布林，省略維持同級最多2500次；toMax一個Worker命令自1至9階沿用composeGems逐次處理、保留餘數／原成本／遺物節省與任務統計，原子同步結算不跨類型混料。新按鈕不受目前所選階級限制，三顆按鈕共用防重與兩秒ACK雙重完成；合成獨立線性放大光效不更改轉換／拆解效果。
+- 驗收：逐階連鎖至10、現有高階一起參與、金幣停止／保留餘數／其他類型與鑲嵌不動、>2500完整處理、遺物與任務統計、非法／關閉拒絕、舊命令保持；UI十階可點新按鈕、單次命令／2秒／晚ACK／失敗／切頁，正式CSS時序與按鈕實際操作；String全表僅新增一列且原生Excel兩次正常重開、相關回歸／Build／自我Review後Commit，交使用者整合重載。
+
+- 完成／修改18檔：ui／ui-gem-workshop、gems.css、首頁、protocol／sim.worker／bridge、String.xlsx／CSV／strings_data與編輯器共用快取、WORKER_PROTOCOL／VFX用途／LV／本段、gem-compose-all／gem-workshop／worker-protocol三支回歸。合成獨立GEM_COMPOSE_FX_MS=2000、CSS光效由scale(0.1)線性長至1.4，三按鈕共用防重／權威成功且兩秒完成門檻。新按鈕toMax不受選中階級限制；Worker從1至9階逐次調用原composeGems，保留原費用／餘數／遺物抽樣／統計，不另建公式，壞庫存安全整數預檢避免無限迴圈。Protocol85，指令數不變；主線與Worker協議快取／Bridge、UI與CSS快取同步。
+- String來源：獨占存取後，使用tools/excel-update-sheets.ps1由Excel原生API新增2582「全部合成至最高」；正常重開兩次，寫4格、繪圖0個保持。openpyxl僅唯讀比較，所有既有儲存格完全一致，styles.xml位元內容完全一致；共2567列×16欄。xlsx_to_csv僅匯出String，apply_strings同步2566條／34f2c1e6，build_string_csv --check寫死0。使用綁定artifact-tool唯讀匯入前後尾端範圍，渲染目視新增一列完整可讀、原列格式保持，沒有匯出覆蓋來源。
+- 測試指令：`node --test --test-reporter=tap tests/gem-compose-all.test.cjs tests/gem-workshop.test.cjs tests/gem-enabled.test.cjs tests/gem-convert-shift.test.cjs tests/gem-fused-removed.test.cjs tests/ui-worker-panels.test.cjs tests/worker-protocol.test.cjs tests/combat-log.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs`，83項80過3既有失敗。用只讀preload在記憶體替換HEAD舊ui／ui-gem-workshop重跑ui-worker-panels，8項5過、同樣3項失敗：裝備／背包靜態gem.socket搜尋、item.upgrade fixture缺UI、熔爐fixture缺makeUpgradeSuccessFeedback。本案新增6項全部通過，未降低斷言或越界修改。初輪有編輯器字串快取／協議版本期待未同步，補齊必要版本後通過；新增型別檢查初把validateCommand誤當ok物件，改按其既有null／錯誤字串契約驗證，產品驗證未放寬。
+- 新案例覆蓋9階既有庫存接力產10級、原有10級合併、各階成本及任務統計、其他種類保持、保留餘數／金幣不足只做可負擔部分、原同階命令不跨級、超過3000次及L1等值守恆、遺物節省、關閉／未知／非有限／非安全整數拒絕、真Worker型別與BOSS素材合成仍開放、新按鈕選10級仍有效、三按鈕同鎖與晚ACK／兩秒、改轉換計時不影響合成、String讀取。`npm.cmd run build`776檔全過，Git差異檢查及自我Review通過。
+- 瀏覽器：launchHeadless隔離profile／靜音，以真正寶石HTML、全部正式CSS／顯示JS／正式三按鈕綁定，HTTP命令串原樣Worker engine；實際連點新按鈕只送1條toMax，9階庫存完成9次合成得到紅寶石10級3顆，藍寶石9顆保持。演出量測2014.8ms，CSS動畫duration2000；約46／461／870／1271／1673ms對應scale0.1／0.349／0.619／0.879／1.139，成功文字於兩秒後出現，減少動態無光層。三按鈕排版目視完整，頁面例外0。首輪fixture未載入gem_resonance依賴，補齊正式載入；另一次動畫樣本遇到非嚴格遞增而測試中止，重跑完整時序／真命令通過，未放寬動畫斷言。未載入使用者存檔或完整遊戲掛機。finally關閉伺服器／瀏覽器，無桌面擷取；臨時腳本／PNG／表格副本／日誌與依賴junction按確切路徑清理。
+- 唯讀未改：共通規範／Workflow／Codex、item composeGems／addGem、data配方／費用／開放表、UI原快照／計時與工坊流程、GameClock、原Worker指令處理與BOSS限制／engine、String工具／Excel原生更新工具、既有寶石／顯示／字串／協議／快取測試、build與隔離瀏覽器工具。無美術／戰場Preset或素材庫變更，不需素材庫Commit。沒有本案未完成實作，未跑全庫／實體裝置；上述3個既有回歸缺陷保持。
+- 交接：Commit為本段所在`[Codex] feat: 新增寶石全階合成與兩秒放大光效`，SHA見Git log／交付，可供使用者審閱合併，未合併／推送develop或main。下一步整合後重載遊戲；VFX編輯器共用字串快取有更新，若仍開啟請先備份／另存未存內容再重載，本案不自動刷新或用舊頁覆蓋。世界地圖黑字已另交6b34c93f。

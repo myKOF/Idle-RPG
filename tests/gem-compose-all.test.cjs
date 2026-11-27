@@ -211,3 +211,74 @@ test('Worker高階全部合成與全部類型合成使用實際配方、保留�
   assert.equal(gems.sapphire[lv+1],all?1:0);
  }
 });
+
+function maxComposeWorker(c) {
+  const src = fs.readFileSync(path.resolve(__dirname, '../js/worker/sim.worker.js'), 'utf8');
+  const key = "'gem.composeAll': ", start = src.indexOf(key) + key.length, end = src.indexOf('\n  },', start) + 4;
+  c.blog = () => {};
+  return vm.runInContext('(' + src.slice(start, end) + ')', c);
+}
+
+test('全部合成至最高串接既有每階庫存到十級，成本／統計正確且只處理所選種類', () => {
+  const c = loadGameContext(), gems = makeGemInventory(c.GEM_TYPES);
+  for (let lv = 1; lv < 10; lv++) gems.ruby[lv] = c.gemComposeInputCount(lv) - (lv === 1 ? 0 : 1);
+  gems.ruby[10] = 2; gems.sapphire[1] = 900;
+  c.G = { player: { gold: 1e9, gems }, factory: { stats: { gemComposed: 7 } } };
+  const cost = Array.from({ length: 9 }, (_, i) => c.FUSE_GOLD_COST[i + 1]).reduce((a, b) => a + b, 0);
+  const batch = maxComposeWorker(c), result = batch({ type: 'ruby', level: 10, toMax: true });
+  assert.equal(result.made, 9); assert.equal(result.err, null);
+  for (let lv = 1; lv < 10; lv++) assert.equal(gems.ruby[lv], 0, '階級' + lv);
+  assert.equal(gems.ruby[10], 3); assert.equal(gems.sapphire[1], 900);
+  assert.equal(c.G.player.gold, 1e9 - cost); assert.equal(c.G.factory.stats.gemComposed, 16);
+  assert.equal(c.UI.dirty.header, true); assert.equal(c.UI.dirty.gems, true);
+  assert.equal(batch({ type: 'ruby', level: 1, toMax: true }).made, 0, '完成後重按不重複發獎');
+});
+
+test('最高合成保留餘數與金幣不足部分成果，原同階全部仍不跨級', () => {
+  const c = loadGameContext(), gems = makeGemInventory(c.GEM_TYPES);
+  c.G = { player: { gold: c.FUSE_GOLD_COST[1], gems }, factory: { stats: {} } };
+  gems.ruby[1] = 8; gems.ruby[9] = 6;
+  const batch = maxComposeWorker(c);
+  const result = batch({ type: 'ruby', level: 9, toMax: true });
+  assert.equal(result.made, 1); assert.equal(result.err, null); assert.equal(c.G.player.gold, 0);
+  assert.equal(gems.ruby[1], 5); assert.equal(gems.ruby[2], 1); assert.equal(gems.ruby[9], 6);
+  c.G.player.gold = 1e9; gems.ruby[1] = 27; gems.ruby[2] = 0; gems.ruby[9] = 0;
+  assert.equal(batch({ type: 'ruby', level: 1 }).made, 9);
+  assert.equal(gems.ruby[2], 9); assert.equal(gems.ruby[3], 0);
+  assert.equal(batch({ type: 'ruby', level: 1, toMax: true }).made, 4);
+  assert.equal(gems.ruby[4], 1);
+});
+
+test('最高合成超過2500次仍完成，保留遺物節省與無效／關閉／壞庫存拒絕', () => {
+  const c = loadGameContext(), gems = makeGemInventory(c.GEM_TYPES);
+  c.G = { player: { gold: 1e12, gems }, factory: { stats: {} } };
+  const batch = maxComposeWorker(c); gems.ruby[1] = 9005;
+  const result = batch({ type: 'ruby', level: 1, toMax: true });
+  assert.ok(result.made > 3000); assert.equal(gems.ruby[1], 2);
+  assert.equal(Object.keys(gems.ruby).reduce((sum, lv) => sum + gems.ruby[lv] * c.gemL1Worth(+lv), 0), 9005);
+  gems.ruby = { 1: 3 }; c.relicRoll = name => { assert.equal(name, 'gemComposeSave'); return true; };
+  assert.equal(batch({ type: 'ruby', level: 1, toMax: true }).made, 1);
+  assert.equal(gems.ruby[1], 1); assert.equal(gems.ruby[2], 1);
+  for (const type of ['missing', 'turquoise']) {
+    gems.turquoise[1] = 100;
+    const before = JSON.stringify(c.G), rejected = batch({ type, level: 1, toMax: true });
+    assert.equal(rejected.made, 0); assert.equal(typeof rejected.err, 'string'); assert.equal(JSON.stringify(c.G), before);
+  }
+  for (const bad of [Infinity, NaN, 1e20, -1, 1.5]) {
+    gems.ruby[1] = bad;
+    assert.equal(batch({ type: 'ruby', level: 1, toMax: true }).made, 0);
+  }
+});
+
+test('正式Worker可用可選toMax，保持BOSS素材合成規則與指令型別檢查', () => {
+  const { createEngine } = require('../scripts/sim/engine');
+  const e = createEngine({ seed: 20261127 }).boot(null), g = e.state();
+  g.player.gold = 1e9; g.player.gems.ruby = { 1: 27 }; g.player.gems.sapphire = { 1: 9 };
+  const r = e.cmd('gem.composeAll', { type: 'ruby', level: 10, toMax: true });
+  assert.equal(r.ok, true); assert.equal(r.result.made, 13); assert.equal(g.player.gems.ruby[4], 1);
+  assert.equal(g.player.gems.sapphire[1], 9);
+  const protocol = require('../js/worker/protocol.js');
+  assert.equal(typeof protocol.validateCommand('gem.composeAll', { type: 'ruby', level: 1, toMax: 'true' }), 'string');
+  assert.equal(protocol.validateCommand('gem.composeAll', { type: 'ruby', level: 1, toMax: true }), null);
+  assert.equal(protocol.bossFightBlocksCommand('gem.composeAll'), false);
+});

@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="css/runeword.css?v=20261118-ui-palette">
   <link rel="stylesheet" href="css/relic.css?v=20261118-relic-temple-v4">
   <link rel="stylesheet" href="css/chest.css?v=20261127-rewards6-v1">
-  <link rel="stylesheet" href="css/gems.css?v=20261118-ui-palette">
+  <link rel="stylesheet" href="css/gems.css?v=20261127-gem-compose-max-v1">
   <link rel="stylesheet" href="css/dialogs.css?v=20261118-ui-palette">
   <link rel="stylesheet" href="css/achievements.css?v=20261118-ui-palette">
   <link rel="stylesheet" href="css/world-map.css?v=20261127-world-map-black-text-v1">
@@ -383,6 +383,7 @@
                 <div class="gx-actions">
                   <button id="fuse-btn" class="btn" data-str="1489"></button>
                   <button id="fuse-all-btn" class="btn" data-str="108"></button>
+                  <button id="fuse-max-btn" class="btn" data-str="2582"></button>
                 </div>
               </div>
 
@@ -1250,7 +1251,7 @@
          special_rules / legendary / factory / newforge / forge / gm_exec -->
   <script src="js/game-visibility.js?v=20261119-background-v1"></script>
   <script src="js/util.js?v=1.0.4"></script>
-  <script src="js/strings_data.js?v=d01c2f4b"></script>
+  <script src="js/strings_data.js?v=34f2c1e6"></script>
   <script src="js/strings.js?v=1.0.1"></script>
   <script src="js/game-settings.js?v=20261118-display-v1"></script>
   <script src="js/game-edition.js?v=1.0.0"></script>
@@ -1319,7 +1320,7 @@
   <script src="js/ui-inventory-skin.js?v=1.0.1"></script>
   <script src="js/ui-sound.js?v=20261120-tower-return-v1"></script>
   <script src="js/mini-monitor.js?v=20261119-desktop-mini-2"></script>
-  <script src="js/ui.js?v=20261127-merchant-entry-ticket-tip-v1"></script>
+  <script src="js/ui.js?v=20261127-gem-compose-max-v1"></script>
   <script src="js/ui-unlock-notices.js?v=20261127-world-map-first-clear-v1"></script>
   <script src="js/ui-world-map.js?v=20261118-quest-guide"></script>
   <script src="js/quest-guide.js?v=20261126-task-tower-boss-v1"></script>
@@ -1328,7 +1329,7 @@
   <script src="js/ui-chest.js?v=20261127-rewards6-v1"></script>
   <script src="js/ui-achievements.js?v=20261106-start-menu-v2"></script>
   <script src="js/ui-gem-resonance.js?v=20261120-upgrade-feedback-v1"></script>
-  <script src="js/ui-gem-workshop.js?v=1.0.3"></script>
+  <script src="js/ui-gem-workshop.js?v=20261127-gem-compose-max-v1"></script>
   <script src="js/ui-newforge-visuals.js?v=1.0.8"></script>
   <script src="js/param_autoreload.js"></script>
   <!-- GM 面板。指令執行層在 js/gm_exec.js，由 Worker importScripts 載入 -->
@@ -1337,7 +1338,7 @@
        正式遊玩是空殼。必須排在 ui.js（用它的 isInternalVersion）之後、VFX Runtime 建立（main 開機）之前。 -->
   <script src="js/battle-perf.js?v=1.0.3"></script>
   <!-- ?? Worker ???????? main.js ????????? -->
-  <script src="js/worker/protocol.js?v=20261126-knife-retarget-v1"></script>
+  <script src="js/worker/protocol.js?v=20261127-gem-compose-max-v1"></script>
   <script src="js/storage.js?v=1.0.4"></script>
   <script src="js/save_origin.js?v=20261117-fixed-canvas-save-schema-v1"></script>
   <!-- 多分頁鎖必須早於 bridge 與 main：那兩支的開機工作改由它決定何時執行 -->
@@ -1347,7 +1348,7 @@
   <script src="js/intro-scene.js?v=20261117-fixed-canvas-v1"></script>
   <script src="js/intro-audio.js?v=20261118-finale-fade"></script>
   <script src="js/intro-player.js?v=20261118-intro-width"></script>
-  <script src="js/bridge.js?v=20261127-world-map-first-clear-v1"></script>
+  <script src="js/bridge.js?v=20261127-gem-compose-max-v1"></script>
   <!-- 真人操作錄製器。必須排在 bridge 之後（它要訂閱 WorkerBridge 的訊息），
        且排在 main 之前（開機在 TabLock 授權後才發生，錄製器得先掛上）。
        只在本機 ?record=1 時才做事，正式遊玩是一個空殼。 -->

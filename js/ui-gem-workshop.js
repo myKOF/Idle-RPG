@@ -5,9 +5,11 @@ function gemWorkshopBusy(tool) {
   return !!((tool === 'compose' && UI.gemComposeFx) || (tool === 'dismantle' && UI.gemDismantleFx));
 }
 
-function gemWorkshopLight(el, active) {
+var GEM_COMPOSE_FX_MS = 2000;
+
+function gemWorkshopLight(el, active, kind) {
   if (!el) return;
-  if (el.style.setProperty) el.style.setProperty('--gconv-fx-duration', GEM_CONVERT_FX_MS + 'ms');
+  if (el.style.setProperty) el.style.setProperty('--gconv-fx-duration', (kind === 'compose' ? GEM_COMPOSE_FX_MS : GEM_CONVERT_FX_MS) + 'ms');
   el.classList.toggle('is-converting', !!active);
 }
 
@@ -32,7 +34,7 @@ function startGemWorkshop(kind, command, args, details) {
     if (UI[fxKey] !== fx) return;
     fx.elapsed = true;
     finish();
-  }, GEM_CONVERT_FX_MS);
+  }, kind === 'compose' ? GEM_COMPOSE_FX_MS : GEM_CONVERT_FX_MS);
   return sendGemUiCommand(command, args, 'gem-' + kind, ['gems', 'header'], function () {
     if (UI[fxKey] !== fx) return;
     fx.acknowledged = true;
@@ -58,17 +60,31 @@ function gemComposeShortage(type, lv) {
   return '';
 }
 
-function runGemCompose(all) {
+function gemComposeToMaxStartLevel(type) {
+  var snapshot = resolveGemsPanelSnapshot(), header = uiHeaderPanelSnapshot();
+  var gold = header && header.player ? Number(header.player.gold) || 0 : 0, first = 0;
+  for (var lv = 1; lv < GEM_FORGE_MAX_LEVEL; lv++) {
+    if (gemsViewCount(snapshot, type, lv) < gemComposeInputCount(lv)) continue;
+    if (!first) first = lv;
+    if (gold >= FUSE_GOLD_COST[lv]) return lv;
+  }
+  return first || 1;
+}
+
+function runGemCompose(all, toMax) {
   if (UI.gemComposeFx) return Promise.resolve(null);
   var type = UI.gemBrowse.sel, lv = UI.gemBrowse.fuseLv || 1;
+  if (toMax) lv = gemComposeToMaxStartLevel(type);
   if (!isGemEnabled(type) || !gemComposeInputCount(lv)) return Promise.resolve(null);
   var shortage = gemComposeShortage(type, lv);
   if (shortage) {
-    var btn = $id(all ? 'fuse-all-btn' : 'fuse-btn');
+    var btn = $id(toMax ? 'fuse-max-btn' : (all ? 'fuse-all-btn' : 'fuse-btn'));
     if (btn) showFloatingText(btn, shortage, '#fca5a5');
     return Promise.resolve(null);
   }
-  return startGemWorkshop('compose', all ? 'gem.composeAll' : 'gem.compose', { type: type, level: lv }, {
+  var args = { type: type, level: lv };
+  if (toMax) args.toMax = true;
+  return startGemWorkshop('compose', all ? 'gem.composeAll' : 'gem.compose', args, {
     type: type, lv: lv, recipe: fuseRecipeHTML(type, lv)
   });
 }
@@ -77,9 +93,9 @@ function runGemCompose(all) {
 function renderGemComposeWorkshop() {
   var fx = UI.gemComposeFx, recipe = $id('fuse-recipe'), status = $id('fuse-status');
   if (fx && recipe && recipe._lastH !== fx.recipe) { recipe._lastH = fx.recipe; recipe.innerHTML = fx.recipe; }
-  gemWorkshopLight(recipe, fx);
+  gemWorkshopLight(recipe, fx, 'compose');
   if (status) setTextIfChanged(status, UI.gemComposeSuccess ? STR(1578) : '');
-  if (fx) ['fuse-btn', 'fuse-all-btn'].forEach(function (id) { var el = $id(id); if (el) el.disabled = true; });
+  if (fx) ['fuse-btn', 'fuse-all-btn', 'fuse-max-btn'].forEach(function (id) { var el = $id(id); if (el) el.disabled = true; });
   return !!fx;
 }
 

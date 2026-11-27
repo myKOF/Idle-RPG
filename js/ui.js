@@ -10385,6 +10385,8 @@ function renderFuseInfo(gemsSnapshot) {
     var b = $id(id);
     if (b && b.disabled !== !canCompose) b.disabled = !canCompose;
   });
+  var maxButton = $id('fuse-max-btn');
+  if (maxButton) maxButton.disabled = !isGemEnabled(t);
   if (!isGemEnabled(t)) {
     info.textContent = STR(1604);
     return;
@@ -12398,6 +12400,7 @@ function initUI() {
   if (fuseBtn) {
     fuseBtn.addEventListener('click', function () { if (typeof runGemCompose === 'function') runGemCompose(false); });
     $id('fuse-all-btn').addEventListener('click', function () { if (typeof runGemCompose === 'function') runGemCompose(true); });
+    $id('fuse-max-btn').addEventListener('click', function () { if (typeof runGemCompose === 'function') runGemCompose(true, true); });
   }
 
   // 符文頁（符文真言）：由 js/ui-runeword.js 綁定
