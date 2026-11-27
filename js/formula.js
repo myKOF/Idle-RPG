@@ -640,22 +640,24 @@ function controlDecayFactor(cat, hits) {
 
 /* ---- 連擊數（暴擊率／攻速／冷卻縮減「溢出」衍生的多段攻擊） ----
    定義（2026-10-14 改版）：每次攻擊命中時有 trigger% 機率造成「連擊數」那麼多次額外攻擊。
-   連擊數 = 暴擊溢出 + 攻速溢出 + 冷卻縮減溢出，各項皆為 a·ln(溢出%)，溢出% ＝（數值 − 門檻）換成比例：
+   連擊數 = 暴擊溢出 + 攻速溢出 + 冷卻縮減溢出，各項有效溢出為 max(0.01, a·ln(溢出%))，溢出% ＝（數值 − 門檻）換成比例：
      暴擊：門檻 100%（完全爆擊）。例：暴擊率 250% → 溢出 150% → 0.5·ln(1.5)≈0.203     a = COMBO_HITS_COEF.crit
      攻速：用攻速加成%（裝備詞條上寫的那個值，未夾上限）。門檻＝攻速剛好到 ASPD_CAP（5 次/秒）所需的加成%＝(5÷ASPD_BASE − 1)×100≈481.4%，
            溢出% ＝ 攻速加成% − 門檻                                                          a = COMBO_HITS_COEF.aspd
      冷卻：門檻 STAT_CAPS.cdr（參數表「冷卻縮減 上限」，預設 60%），溢出% ＝ 原始冷卻縮減 − 門檻  a = COMBO_HITS_COEF.cdr
            用未夾上限的原始冷卻縮減
-   溢出% ≤ 100%（ln ≤ 0）時該項為 0，不會出現負的連擊數。
+   2026-11-27：只要超出門檻且係數 > 0，該項至少 0.01；200% 暴擊附近仍保底，不會因恢復對數曲線掉回 0。
+   未溢出或係數停用時為 0；舊對數曲線高於 0.01 的區段不變。
    觸發率與三個 a 由參數表「2-屬性派生／連擊數」（參數 a／b／c／d）控制；暴擊的 100% 門檻為程式常數（不在參數表），
    攻速與冷卻縮減的門檻跟著各自的上限（ASPD_CAP＋ASPD_BASE／STAT_CAPS.cdr；上限為 0＝無上限時退回 critAt／aspdAt／cdrAt 預設值）。
    僅作用於普攻與技能直接傷害，持續傷害不計。 */
-// 溢出% = (value − threshold) ÷ per；回傳 a·ln(溢出%)，不足以為正則 0
+// 溢出% = (value − threshold) ÷ per；有效溢出至少 0.01，否則不產生連擊。
 function comboOverflowHits(value, threshold, per, a) {
   var v = Number(value) || 0;
-  if (!(threshold > 0) || !(per > 0) || v <= threshold) return 0;
-  var n = (Number(a) || 0) * Math.log((v - threshold) / per);
-  return n > 0 ? n : 0;
+  var coefficient = Number(a) || 0;
+  if (!(threshold > 0) || !(per > 0) || v <= threshold || !(coefficient > 0)) return 0;
+  var n = coefficient * Math.log((v - threshold) / per);
+  return Math.max(0.01, n);
 }
 function comboHitsFor(critRate) {
   return comboOverflowHits(critRate, COMBO_HITS_COEF.critAt, 100, COMBO_HITS_COEF.crit);

@@ -783,7 +783,7 @@ var XP_LEVEL_COEF = { a: 10, b: 2.6, c: 40 };
 /* 等級基礎四維 = 基底 +（等級-1）× 每級增加。參數表「1-成長經驗／等級基礎四維」的 a / b。 */
 var PRIMARY_STAT_GROWTH = { base: 5, perLevel: 2 };
 // 連擊數係數（參數表「2-屬性派生／連擊數」：a＝觸發率 b＝暴擊 c＝攻速 d＝冷卻縮減）：
-// 每次攻擊命中有 trigger% 機率追加「連擊數」次；連擊數 = crit·ln(暴擊溢出%) + aspd·ln(攻速溢出%) + cdr·ln(冷卻縮減溢出%)（formula.js comboHitsTotal）。
+// 每次攻擊命中有 trigger% 機率追加「連擊數」次；三項有效溢出各取 max(0.01, 係數·ln(溢出%)) 後相加（formula.js comboHitsTotal）。
 // critAt＝暴擊門檻（完全爆擊 100%，不在參數表）；aspdAt／cdrAt 只在 ASPD_CAP／STAT_CAPS.cdr 為 0（無上限）時當門檻。
 var COMBO_HITS_COEF = { trigger: 25, crit: 0.5, aspd: 0.65, cdr: 0.8, critAt: 100, aspdAt: 5, cdrAt: 60 };
 var ASPD_BASE = 0.86;
@@ -2632,7 +2632,7 @@ var STAT_GROUPS = [
       [STR(247), function (st) { return statFmt(st.atk, null); }, function (st) { return statDesc(st, STR(248), '物理攻擊', 'atk', 'atkPct'); }],
       [STR(249), function (st) { return statFmt(st.matk, null); }, function (st) { return statDesc(st, STR(250), '魔法攻擊', 'matk', 'matkPct'); }],
       [STR(251), function (st) { return statFmt(st.critRate, STAT_CAPS.critRate, '%'); }, STR(252, capText(STAT_CAPS.critRate, '%'))],
-      [STR(253), function (st) { return (st.comboHits || 0) > 0 ? STR(254, fmt1(st.comboHits)) : '—'; }, STR(255)],
+      [STR(253), function (st) { return (st.comboHits || 0) > 0 ? STR(254, Math.round(st.comboHits * 100) / 100) : '—'; }, STR(255)],
       [STR(256), function (st) { return Math.round(st.critDmg) + '%'; }, STR(257)],
       [STR(258), function (st) { return statFmt(st.pPen, STAT_CAPS.pPen, '%'); }, function (st) { return penetrationDesc(st, 'pPen', STR(40)); }],
       [STR(259), function (st) { return statFmt(st.mPen, STAT_CAPS.mPen, '%'); }, function (st) { return penetrationDesc(st, 'mPen', STR(12)); }],

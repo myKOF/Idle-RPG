@@ -31,12 +31,13 @@ test('comboHitsFor：暴擊率 ≤ 100% 時連擊數為 0', () => {
   assert.equal(c.comboHitsFor(0), 0);
 });
 
-test('comboHitsFor：溢出% = 暴擊率 − 100（以比例代入）；溢出 ≤ 100%（ln ≤ 0）時為 0', () => {
+test('comboHitsFor：任何正溢出至少0.01，200%附近保底，較高暴擊沿用舊對數曲線', () => {
   const c = loadFormula();
   approx(c.comboHitsFor(250), 0.5 * Math.log(1.5), 1e-9, '暴擊 250% → 溢出 150% → 0.5·ln(1.5)≈0.203');
-  assert.equal(c.comboHitsFor(200), 0, '溢出恰 100%，ln(1)=0');
-  assert.equal(c.comboHitsFor(150), 0, '溢出 50%，ln 為負，夾到 0 不出現負連擊');
-  assert.equal(c.comboHitsFor(101), 0);
+  for (const crit of [100.0001, 101, 104.4, 150, 199.99, 200, 200.01, 201]) {
+    assert.equal(c.comboHitsFor(crit), 0.01, '暴擊率 ' + crit + '% 的溢出保底');
+  }
+  approx(c.comboHitsFor(203), 0.5 * Math.log(1.03), 1e-9, '原曲線超過保底後恢復原值');
 });
 
 test('comboHitsFor：更高暴擊率單調成長', () => {
@@ -56,7 +57,10 @@ test('comboHitsTotal：攻速（以攻速加成%計，門檻＝攻速到 5 次/�
   approx(c.comboHitsTotal(100, AT, 210), 0.8 * Math.log(1.5), 1e-9, '只有冷卻縮減溢出');
   approx(c.comboHitsTotal(250, AT + 150, 210),
     (0.5 + 0.65 + 0.8) * Math.log(1.5), 1e-9, '三項相加');
-  assert.equal(c.comboHitsTotal(100, AT + 50, 90), 0, '溢出未達 100% 的項為 0');
+  assert.equal(c.comboHitsTotal(100, AT + 50, 90), 0.02, '攻速與冷卻各自溢出，各保底0.01');
+  assert.equal(c.comboHitsTotal(101, AT + 1, 61), 0.03, '三項各溢出1個百分點，保底相加');
+  assert.equal(c.comboHitsTotal(100, AT + 1, 60), 0.01, '只有攻速溢出1個百分點');
+  assert.equal(c.comboHitsTotal(100, AT, 61), 0.01, '只有冷卻縮減溢出1個百分點');
   assert.equal(c.comboHitsTotal(100, 87.1, 60), 0, '攻速加成 87.1%（攻速約 1.6 次/秒）遠未到門檻');
 });
 
@@ -73,6 +77,61 @@ test('COMBO_HITS_COEF：預設值（觸發率 25%、暴擊 0.5、攻速 0.65、�
   const c = loadFormula();
   const k = c.COMBO_HITS_COEF;
   assert.deepEqual([k.trigger, k.crit, k.aspd, k.cdr], [25, 0.5, 0.65, 0.8]);
+});
+
+test('溢出保底不啟用零／負係數，無效門檻與未溢出仍為0', () => {
+  const c = loadFormula();
+  for (const coefficient of [0, -1, NaN]) assert.equal(c.comboOverflowHits(104.4, 100, 100, coefficient), 0);
+  assert.equal(c.comboOverflowHits(104.4, 0, 100, 0.5), 0);
+  assert.equal(c.comboOverflowHits(104.4, 100, 0, 0.5), 0);
+  c.COMBO_HITS_COEF.crit = 0;
+  assert.equal(c.comboHitsFor(104.4), 0);
+  c.STAT_CAPS.cdr = 80;
+  const at = (c.ASPD_CAP / c.ASPD_BASE - 1) * 100;
+  assert.equal(c.comboHitsTotal(100, at, 80), 0);
+  assert.equal(c.comboHitsTotal(100, at, 81), 0.01);
+  c.STAT_CAPS.cdr = 0;
+  assert.equal(c.comboHitsTotal(100, at, 61), 0.01);
+});
+
+test('104.4%暴擊的權威屬性與面板投影保留0.01，顯示兩位精度且實際仍按小數機率追加', () => {
+  const { createEngine } = require('../scripts/sim/engine');
+  const e = createEngine({ seed: 17 }).boot(), c = e.ctx;
+  c.DERIVED_COEF.critRateBase = 104.4;
+  c.PRIMARY_STAT_EFFECTS.agiCritRate = 0;
+  const empty = Object.fromEntries(Array.from(c.SLOT_LIST, slot => [slot, null]));
+  c.G.equipmentSets[c.G.equipActive] = empty;
+  c.G.equipment = empty;
+  c.markStatsDirty();
+  const stats = c.getStats(), projected = e.panel('equip').stats;
+  assert.equal(stats.critRate, 104.4);
+  assert.equal(stats.comboHits, 0.01);
+  assert.equal(projected.comboHits, 0.01);
+  const row = c.STAT_GROUPS.flatMap(group => group.rows).find(r => r[0] === c.STR(253));
+  assert.equal(row[1](projected), c.STR(254, 0.01));
+  assert.equal(row[1]({comboHits:0}), '—');
+  assert.equal(row[1]({comboHits:0.203}), c.STR(254, 0.2));
+  assert.equal(row[1]({comboHits:2.57}), c.STR(254, 2.57));
+  c.Math.random = () => 0;
+  assert.equal(c.rollComboHits(projected), 1, '通過25%觸發及1%小數機率才追加一次');
+  c.Math.random = () => 0.02;
+  assert.equal(c.rollComboHits(projected), 0, '通過25%觸發但未中1%小數機率，不保證每擊追加');
+  c.Math.random = () => 0.9;
+  assert.equal(c.rollComboHits(projected), 0, '未通過25%觸發率，不追加');
+  const floats = [], events = [], home = c.bfPlayerPos();
+  const enemy = { hp: 1e9, maxHp: 1e9, level: 1, def: 0, mdef: 0, dodge: 0,
+    resist: {}, ctrlRes: 0, effects: {}, buffs: {}, dots: [], pos: {x:home.x+20,y:home.y} };
+  c.floatEnemyEvent = (...args) => floats.push(args);
+  c.playCombatVfx = event => events.push(event);
+  c.Math.random = () => 0;
+  const before = enemy.hp, result = c.doPlayerAttack(c.FIELD.player, enemy, 'mv-float', 0);
+  const damageFloats = floats.filter(args => args[4] > 0);
+  assert.equal(damageFloats.length, 2, '命中小數機率後，真正普攻只有主擊與一段追加');
+  assert.equal(before - enemy.hp, result.dmg);
+  assert.equal(damageFloats.reduce((sum,args) => sum + args[4], 0), result.dmg);
+  assert.deepEqual(Array.from(events,event=>event.variant), ['melee','melee-extra']);
+  assert.deepEqual(Array.from(events,event=>event.delayMs), [0,130]);
+  assert.deepEqual(damageFloats.map(args=>args[5]), [0,130], '傷害浮字與追加命中特效仍同步');
 });
 
 test('rollComboHits：先過觸發率，整數固定追加、小數依機率', () => {

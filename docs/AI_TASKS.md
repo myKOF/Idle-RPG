@@ -1,3 +1,17 @@
+## COMBO-OVERFLOW-MIN-20261127 — 屬性溢出連擊至少0.01並顯示兩位精度
+
+- Owner：Codex；Done，單人處理。使用者看到104.4%暴擊仍無連擊，要求僅溢出1%也有至少0.01連擊，並明確選擇「所有溢出至少0.01；200%以上沿舊公式但仍保底0.01」。前置：三屬性共用comboOverflowHits、STAT_GROUPS數值格式及既有真正追加攻擊流程；逐檔衝突預檢無外部來源。前一測試任務已獨立提交0bcdbc87。
+- 允許：js/formula.js共用溢出函式及註解、js/data.js連擊數顯示／說明註解、tests/combo-hits.test.cjs、index／Bridge／sim.worker必要快取、game_formula.md／LV及本段。禁止改來源Excel／CSV／String、三類上限／係數／25%觸發率、技能／VFX／協議／存檔、其他聊天及素材，不合併推送。
+- 方案：每項有效溢出且係數>0回傳max(0.01,a×ln(溢出百分點/100))，未溢出或停用項為0，三項相加；因此暴擊101／104.4／200／200.1均至少0.01，較高值按原對數曲線，不在200%掉回0。欄位顯示至小數第2位、保留既有數量String及0時「—」。沿用權威快照與小數機率追加攻擊，不新增動畫或不同傷害來源。
+- 驗收：三類門檻／極小正溢出／1%／200%兩側／保底銜接／舊高區間／係數停用／上限0退回、真正computeStats與面板投影及0.01顯示、觸發／小數追加規則不變；相關回歸、主／Worker快取同步、Build與自我Review，必要隔離瀏覽器驗證後Commit，交使用者整合重載。
+
+- 完成／修改9檔：formula溢出保底與說明、data連擊欄位精度／係數說明、combo-hits回歸、index／Bridge／sim.worker快取及game_formula／LV／本段。三項共用max(0.01,n)，係數<=0或未溢出不給保底；沒有改配置表／25%觸發／基礎上限或高區間的原對數值。連擊面板以Math.round至兩位數字代入既有String254，不新增玩家字串。
+- 測試指令：`node --test tests/combo-hits.test.cjs tests/basic-melee.test.cjs tests/bloodfeast-asura-rework.test.cjs tests/stat-cap-unlimited.test.cjs tests/equip-set-preview-stats.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/header-resources.test.cjs tests/mystery-merchant.test.cjs`73/73；`npm.cmd run build`776檔通過。覆蓋100.0001／101／104.4／150／199.99／200／200.01／201的0.01保底、203／250／高值原曲線、三項各1百分點相加0.03、未溢出0、係數0／負／NaN停用、CDR自訂上限／0退回與舊高區間。
+- 權威與表現：隔離正式Worker模擬引擎將基礎暴擊設104.4並清空裝備，真正getStats／equip面板投影都為comboHits0.01；STAT_GROUPS輸出0.01次、0仍「—」、0.203顯示0.2、2.57維持。控制獨立隨機數驗25%觸發與1%小數追加，0.01不代表每次必中追加；真正doPlayerAttack命中追加時，兩段實際傷害合計＝扣血量＝兩筆傷害浮字，主擊／melee-extra的特效與浮字延遲皆0／130ms。既有霸王拳及近戰同步回歸全過，未改戰鬥／VFX事件。
+- 真瀏覽器：透過launchHeadless與看門狗、全靜音的隔離Chrome，在正式CSS／data／formula／renderAttrPanel的獨立頁，以同一權威投影建立完整屬性面板；DOM實際顯示暴擊104.4%、連擊0.01次，650px欄寬可見、未隱藏，頁面例外0。沒有載入玩家存檔或進行遊戲局、沒有新增截圖或QA暫存；finally關閉瀏覽器與伺服器，kill-test-browsers無殘留，無桌面擷取工作階段。
+- 快取與Review：主頁data／formula／Bridge、Worker入口與data／formula匯入均20261127-combo-overflow-min-v1，逐項核對一致，協議未改。自我Review確認保底只作用有效溢出且在三項相加前套用、未將顯示四捨五入寫回戰鬥、舊對數大於保底後完全保持；零係數停用及無溢出保持0。唯讀未改共通規範／Workflow／Codex、util、item／playerPanelStats／快照與ui的屬性渲染、combat／skills2／VFX、apply_params的原係數錨點與全部來源Excel／CSV／String、其他模組／素材。沒有更動參數接線，不需重跑參數錨點全庫；本輪不跑全庫或長時實玩。
+- 交付：本項無未完成實作／已知新增風險，可供使用者審閱合併；未合併或推送develop／main，素材庫無變更／不需Commit。先前4項既有測試修復已獨立為0bcdbc87（70/70與Build通過）；本項為本段所在「[Codex] fix: 讓屬性溢出至少產生0.01連擊數」提交，SHA見Git log／交付。下一步使用者整合至啟動工作區，重新載入／重啟遊戲重算屬性；104.4%暴擊將顯示0.01次。同副本另有地圖解鎖提示工作，只保留不同模組及共享文件獨立段，不納入本項。index與Worker只動data／formula／Bridge相關快取，LV說明放回既有屬性溢出段附近以避開雙方檔首插入；四支共享檔以HEAD拆出本案／其餘修改，git merge-file三方試跑皆0且結果逐位元等於工作檔，只stage本案差異。
+
 ## MERCHANT-BASELINE-TESTS-20261127 — 更新名稱與商人品質／Store回歸
 
 - Owner：Codex；Done，單人處理。使用者要求將前輪4項既有失敗更新至目前遊戲名稱、商人品質上限與Store設定，空白列忽略，不改表，測試後Commit。前置：共通規範／Workflow／Agent已讀，ai/codex逐檔預檢無外部來源；本副本常駐減傷提示任務只修改String及文件尾端，完整保留。
