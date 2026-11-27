@@ -308,8 +308,11 @@ test('有效超神為最高已學階，預設展開已選項；失效保留的�
   assert.doesNotMatch(initial, /class="sgb-tier-detail"/);
   snap.skills2.levels.thrust[6] = 9;
   c.sgbSelectGroup('thrust', snap);
+  assert.equal(c.UI.sgBrowse.focus, 'ult', '七階未滿級仍保持已選終極');
+  snap.skills2.levels.thrust[6] = 0;
+  c.sgbSelectGroup('thrust', snap);
   assert.equal(c.UI.sgBrowse.focus, 'tier');
-  assert.equal(c.UI.sgBrowse.tier, 6);
+  assert.equal(c.UI.sgBrowse.tier, 5);
   assert.equal(c.UI.sgBrowse.ultFocus, null);
 });
 
@@ -362,11 +365,11 @@ test('第 1 階Lv.1可以降到0或重置；零級不可裝載', () => {
 
 test('終極進化：未開放顯示還差幾階，未選三選一，已選升級走 SG_ULT_SLOT', () => {
   const c = loadContext();
-  const locked = detail(c, 'thrust', snapshot({ thrust: [10, 10, 10, 10, 10, 10, 5] }), 0, undefined, 'ult');
-  assert.match(locked, /前 7 階需全部滿級（目前 6／7 階已滿級）/);
+  const locked = detail(c, 'thrust', snapshot({ thrust: [1, 1, 1, 1, 1, 1, 0] }), 0, undefined, 'ult');
+  assert.match(locked, /前 7 階需各至少 1 級（目前 6／7 階已學習）/);
   assert.doesNotMatch(locked, /data-skill2-ultpick/);
 
-  const open = detail(c, 'thrust', snapshot({ thrust: Array(7).fill(10) }), 0, undefined, 'ult');
+  const open = detail(c, 'thrust', snapshot({ thrust: Array(7).fill(1) }), 0, undefined, 'ult');
   assert.match(open, /第 8 階 · 終極進化/);
   assert.doesNotMatch(open, /超神進化/);
   assert.match(open, /data-skill2-ultpick="thrust:0"/);
@@ -387,6 +390,8 @@ test('終極進化：未開放顯示還差幾階，未選三選一，已選升�
   const poor = c.sgbDetailHTML('thrust', snap, { player: { gold: 0 } });
   assert.match(poor, /data-skill2-ultswitch="thrust:0"[^>]*disabled/);
   snap.skills2.levels.thrust[6] = 9;
+  assert.match(c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } }), /data-skill2-ultswitch/);
+  snap.skills2.levels.thrust[6] = 0;
   assert.doesNotMatch(c.sgbDetailHTML('thrust', snap, { player: { gold: 1e15 } }), /data-skill2-ultswitch/);
 });
 
@@ -477,7 +482,7 @@ test('同一時間只展開一段說明：看某一階時超神說明收起，�
 
 test('降級保留的超神明確標示未生效，且不亮起選擇卡與連線', () => {
   const c = loadContext();
-  const snap = snapshot({ thrust: [10, 10, 10, 10, 10, 10, 9] });
+  const snap = snapshot({ thrust: [1, 1, 1, 1, 1, 1, 0] });
   snap.skills2.ult = { thrust: { pick: 1, lv: 10 } };
   const h = detail(c, 'thrust', snap, 0, undefined, 'ult');
   assert.match(h, /未生效 · 已保留 · Lv.10 \/ 10/);

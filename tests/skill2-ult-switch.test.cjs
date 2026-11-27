@@ -46,7 +46,7 @@ for (const reason of ['金幣不足', '未解鎖', '原等級已變', '原選擇
   test(`Worker ${reason}拒絕切換，原資料及金幣不變`, () => {
     const { e, c, args } = prepared();
     if (reason === '金幣不足') c.G.player.gold = args.cost - 1;
-    if (reason === '未解鎖') c.G.player.skills2.levels.frostnova[6] = 9;
+    if (reason === '未解鎖') c.G.player.skills2.levels.frostnova[6] = 0;
     if (reason === '原等級已變') c.G.player.skills2.ult.frostnova.lv = 9;
     if (reason === '原選擇已變') c.G.player.skills2.ult.frostnova.pick = 0;
     if (reason === '沒有原選擇') delete c.G.player.skills2.ult.frostnova;

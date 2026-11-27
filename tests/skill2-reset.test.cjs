@@ -68,9 +68,11 @@ test('直接重置超神只清除選擇與等級；無效群組／階級不更�
   assert.deepEqual(plain(c.G.player.skills2.ult.thrust), before.ult.thrust);
 });
 
-test('一般降級保留超神投資、暫時失效，升回滿級恢復原選擇與等級', () => {
+test('一般降級未歸零仍保留終極生效；歸零才失效，重新學習恢復', () => {
   const e = prepared(), c = e.ctx;
   assert.equal(c.skills2Downgrade('frostnova', 6), null);
+  assert.equal(c.skills2Ult('frostnova').lv, 10);
+  for(let i=0;i<9;i++)assert.equal(c.skills2Downgrade('frostnova',6),null);
   assert.equal(c.skills2Ult('frostnova'), null);
   assert.deepEqual(plain(c.skills2PanelView().ult.frostnova), { pick: 0, lv: 10 });
   assert.equal(c.skills2Learn('frostnova', 6), null);

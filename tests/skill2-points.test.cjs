@@ -140,7 +140,7 @@ test('超支重選的失敗請求不扣金幣、不發保留額度，也不更�
   const args = { group: 'thunderorb', opt: 2, fromOpt: 1, fromLv: 10, cost: c.skills2UltCost('thunderorb', 2, 0) };
   for (const reason of ['gold', 'unlock', 'quote']) {
     p.gold = reason === 'gold' ? args.cost - 1 : 1e12;
-    p.skills2.levels.thunderorb[6] = reason === 'unlock' ? 9 : 10;
+    p.skills2.levels.thunderorb[6] = reason === 'unlock' ? 0 : 10;
     const before = plain(p.skills2), gold = p.gold;
     assert.equal(typeof e.cmd('skill2.ultSwitch', { ...args, cost: args.cost + (reason === 'quote' ? 1 : 0) }).result, 'string');
     assert.deepEqual(plain(p.skills2), before);

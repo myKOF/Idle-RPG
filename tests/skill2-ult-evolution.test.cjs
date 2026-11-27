@@ -4,7 +4,7 @@
      1. 資料形狀：thrust／cleave／knife／gale／bloodblade／dualdance／counter／bloodrage
         各三個超神進化選項，desc 模板的 {鍵} 都在 fx 裡；50 個新傳奇特效只出現在指定武器類型，
         relatedSkill 指向新版技能群組
-     2. 解鎖與指令：前 7 階全滿才可三選一；選定＝Lv.1 並扣款；重複選擇被拒；
+     2. 解鎖與指令：前 7 階各至少一級才可三選一；選定＝Lv.1 並扣款；重複選擇被拒；
         降到 Lv.0 清除選擇（可重選）；某階降級後效果失效但存檔保留
      3. 施放行為：八個群組各三個超神效果、各五個傳奇特效都真的改變了戰鬥結果
      4. 傳奇特效：legendarySkill2Mods 只合併「同群組且已生效」的 fx，數字同鍵相加
@@ -132,7 +132,7 @@ function counterFirstTierOnly(c) {
   return p;
 }
 
-/* 超神進化要「前 7 階全滿」才解鎖，所以驗超神的案例不能只投資第 1 階。
+/* 終極進化要「普通階全部學習」才解鎖，所以驗終極的案例不能只投資第 1 階。
    滿階時 T6【二次反擊】與 T7【狂化反殺】都會追加斬擊，計數就不好數了，因此：
      ・機率替身只讓 35% 這種低機率過（T1 反擊 35 過；T6 滿階是 100，不過）
      ・場上先只放攻擊者一個（T7 的反殺目標排除攻擊者本身，挑不到人就不追加）
@@ -306,15 +306,15 @@ test('傳奇進化五十特效：各自只出現在指定武器類型，且關�
 
 /* ---- 2) 解鎖與指令 ---- */
 
-test('超神進化的唯一解鎖條件＝前 7 階全滿；未滿級時不可選也不可投資', () => {
+test('終極進化共同前置＝前7階各至少一級；缺階不可選也不可投資', () => {
   const c = loadContext();
-  setLevels(c, 'thrust', [10, 10, 10, 10, 10, 10, 9]);
+  setLevels(c, 'thrust', [10, 10, 10, 10, 10, 10, 0]);
   c.G.player.gold = 1e12;
   assert.equal(c.sgUltUnlockedBy('thrust', c.skills2Levels('thrust')), false);
-  assert.match(c.skills2UltPick('thrust', 0), /全部練滿/);
-  maxLevels(c, 'thrust');
+  assert.match(c.skills2UltPick('thrust', 0), /各學習至少 1 級/);
+  setLevels(c, 'thrust', Array(7).fill(1));
   assert.equal(c.sgUltUnlockedBy('thrust', c.skills2Levels('thrust')), true);
-  assert.equal(c.skills2UltPick('thrust', 0), null, '前 7 階全滿即可三選一');
+  assert.equal(c.skills2UltPick('thrust', 0), null, '前7階各至少一級即可三選一');
   // 尚未開放超神進化的群組一律拒絕（二十三組全開之後，控制組得自己造）
   delete c.SKILLS2.stormbarrier.ult;
   maxLevels(c, 'stormbarrier');
@@ -364,16 +364,16 @@ test('第 8 格走 skills2Learn／skills2Downgrade 的同一個入口（UI 只�
   assert.match(c.skills2Learn('stormbarrier', c.SG_ULT_SLOT), /未知階數/);
 });
 
-test('前 7 階任一階離開滿級：超神進化暫時失效，但存檔的選擇與等級原樣保留', () => {
+test('前7階任一階退到零級：終極進化暫時失效，但存檔的選擇與等級原樣保留', () => {
   const c = loadContext();
   maxLevels(c, 'thrust');
   setUlt(c, 'thrust', 'oneStrikeKill', 5);
   assert.ok(c.skills2Ult('thrust'), '滿級時生效');
-  setLevels(c, 'thrust', [10, 10, 10, 10, 10, 10, 9]);
-  assert.equal(c.skills2Ult('thrust'), null, '不再滿級就失效');
+  setLevels(c, 'thrust', [10, 10, 10, 10, 10, 10, 0]);
+  assert.equal(c.skills2Ult('thrust'), null, '第七階零級才失效');
   assert.deepEqual(JSON.parse(JSON.stringify(c.G.player.skills2.ult.thrust)).lv, 5, '存檔不得被清掉');
   maxLevels(c, 'thrust');
-  assert.equal(c.skills2Ult('thrust').lv, 5, '練回滿級就原樣回來');
+  assert.equal(c.skills2Ult('thrust').lv, 5, '重新學習就原樣回來');
 });
 
 test('面板快照帶上超神進化的選擇（主執行緒沒有 G，只能靠快照）', () => {
@@ -420,8 +420,8 @@ test('【幻影八方陣】：命中擴散到周圍範圍內的敵人，並給�
   stubHits(c); stubVfx(c);
   const derived = stubDerived(c);
   forceRolls(c, 0.999);
-  // 未滿級時不生效，先確認閘門
-  setLevels(c, 'thrust', [10, 10, 10, 10, 10, 10, 9]); equip(c, 'thrust');
+  // 缺少普通階時不生效，先確認閘門
+  setLevels(c, 'thrust', [10, 10, 10, 10, 10, 10, 0]); equip(c, 'thrust');
   setUlt(c, 'thrust', 'phantomOcta', 10);
   assert.equal(c.skills2Ult('thrust'), null);
   maxLevels(c, 'thrust');
@@ -473,12 +473,12 @@ test('【暗影絕殺者】：命中堆疊靈魂撕裂，層數直接進入「�
 
 /* ---- 4) 迴旋斬的三個超神進化 ---- */
 
-test('【虛空碎裂斬】：迴身四方斬的次數與傷害都再提高（前 7 階沒全滿時不生效）', () => {
+test('【虛空碎裂斬】：迴身四方斬的次數與傷害都再提高（前7階有未學習時不生效）', () => {
   const c = loadContext();
   stubHits(c); stubVfx(c);
   setLevels(c, 'cleave', [10, 10, 10, 10, 10, 0, 10]);
   setUlt(c, 'cleave', 'voidShatter', 10);
-  assert.equal(c.skills2Ult('cleave'), null, '第 6 階不滿級時整個超神進化失效');
+  assert.equal(c.skills2Ult('cleave'), null, '第6階未學習時整個終極進化失效');
 
   const c2 = loadContext();
   const calls2 = stubHits(c2); stubVfx(c2); stubDerived(c2);
@@ -1935,7 +1935,7 @@ test('【神聖之體】：每 N 次反擊射出一顆光彈，對目標周圍�
 
   setUlt(c, 'counter', 'holyBody');
   const ult = c.sgUlt('counter', 'holyBody');
-  assert.ok(ult, '前 7 階全滿才解鎖超神進化');
+  assert.ok(ult, '普通階全學習且選項門檻達標可用終極進化');
   const n = c.sgUltVal(ult, 'count');
   for (let i = 0; i < n - 1; i++) {
     c.skills2OnPlayerDamaged(m, p, 50, false, hitRes(), 'pv-float');
@@ -2390,7 +2390,7 @@ test('嗜血狂怒的五個傳奇特效：英勇氣概、血債償還、燃血�
 test('嗜血狂怒的三個超神進化：殺神降臨、戰神屠錄、阿修羅霸王拳', () => {
   const c = loadContext(['js/legendary.js']);
   stubHits(c); stubVfx(c);
-  maxLevels(c, 'bloodrage'); equip(c, 'bloodrage');   // 超神進化要前 7 階全滿
+  maxLevels(c, 'bloodrage'); equip(c, 'bloodrage');   // 固定滿級數值以驗證效果，並滿足普通階全學習
   const p = playerEnt(); p.mp = 1e9;
   c.FIELD = { player: p };
   const primary = enemy(1e12, 3 * M, 0);
@@ -2407,7 +2407,7 @@ test('嗜血狂怒的三個超神進化：殺神降臨、戰神屠錄、阿修�
 
   setUlt(c, 'bloodrage', 'slayerAdvent');
   const advent = c.sgUlt('bloodrage', 'slayerAdvent');
-  assert.ok(advent, '前 7 階全滿才解鎖超神進化');
+  assert.ok(advent, '普通階全學習且選項門檻達標可用終極進化');
   const gap = c.bfEntityGap(primary, mid);
   assert.ok(gap > c.bfMeterPx(c.BF_MELEE_METERS) && gap < c.bfMeterPx(c.sgUltVal(advent, 'm')),
     '前提：mid 必須落在近戰範圍外、殺神降臨範圍內（實測間距 ' + gap + '）');

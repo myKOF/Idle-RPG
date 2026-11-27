@@ -9031,7 +9031,7 @@ function skillTowerUnlockHintHTML(row, skillsSnapshot, lockedOnly) {
 /* 終極進化【修羅亂舞】（雙刀亂舞，js/skills2.js）目前是否生效。
    主執行緒沒有 G，不能直接呼叫 skills2AsuraDualWield（那支讀 G，在這裡永遠回 false），
    因此以面板快照重算，條件逐項對齊 Worker 端：
-     ①選的是修羅亂舞 ②普通階全滿且選項門檻達標 ③雙刀亂舞裝配在技能列上。 */
+     ①選的是修羅亂舞 ②普通階全學習且選項門檻達標 ③雙刀亂舞裝配在技能列上。 */
 function uiAsuraDualWield() {
   var sk = uiSkillsPanelSnapshot();
   var pick = sgUiUltPick(sk, 'dualdance');
@@ -9045,8 +9045,8 @@ function sgUiIsUltSlot(gid, slot) {
 }
 
 /* 這一階能不能投資：前一階至少 Lv.1，加上配置的轉生／等級／塔層門檻。
-   未解鎖時 sgUiLevels 已經把該階算成 Lv.0，但第 1 階要靠這裡才擋得住（它的預設開啟）。
-   終極進化另要求普通階全滿及各選項自己的門檻。 */
+   未解鎖時 sgUiLevels 已經把該階算成 Lv.0，仍需在這裡阻擋尚未解鎖的第一階投資。
+   終極進化另要求普通階全學習及各選項自己的門檻。 */
 function sgStageUnlocked(gid, lvs, tierIndex, skillsSnapshot) {
   var g = (typeof SKILLS2 !== 'undefined') ? SKILLS2[gid] : null;
   if (sgUiIsUltSlot(gid, tierIndex)) return sgUiUltUnlocked(gid, lvs, skillsSnapshot);
@@ -9327,9 +9327,9 @@ function sgbUltHTML(gid, lvs, skillsSnapshot, gold, pendingAttrs) {
   }
   h += '<div class="sgb-actions">';
   if (!baseUnlocked) {
-    var maxed = 0;
-    for (var mi = 0; mi < g.tiers.length; mi++) if ((lvs[mi] || 0) >= tierMax) maxed++;
-    h += STR(790, g.tiers.length, maxed, g.tiers.length);
+    var learned = 0;
+    for (var mi = 0; mi < g.tiers.length; mi++) if ((lvs[mi] || 0) >= 1) learned++;
+    h += STR(790, g.tiers.length, learned, g.tiers.length);
   } else if (!unlocked) {
     h += STR(791, esc(sgUnlockText(list[f].unlock)));
   } else if (!pick) {

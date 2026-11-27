@@ -848,8 +848,8 @@ function migrateSave(data) {
      舊存檔沒有這個欄位＝還沒選過，不需要 migration（不建欄位，維持存檔精簡）。
      這裡只做防呆：未知群組、選項索引越界、等級非法一律整筆刪除
      （選項索引越界代表表格改過，留著會讓 UI 指向不存在的效果）。
-     ⚠️ 「前 7 階必須全滿」是**生效條件**不是存檔條件：降級只讓它暫時失效，
-     等級與選擇一律保留，練回滿級就原樣回來（規則同各階的解鎖門檻）。 */
+     ⚠️ 「普通階各至少一級」是生效條件而非存檔條件：退到零級會讓終極暫時失效，
+     等級與選擇一律保留，重新學會就恢復（規則同各階的解鎖門檻）。 */
   if (data.player.skills2 && data.player.skills2.ult && typeof SKILLS2 !== 'undefined') {
     var sgUltMap = data.player.skills2.ult;
     if (typeof sgUltMap !== 'object') delete data.player.skills2.ult;
