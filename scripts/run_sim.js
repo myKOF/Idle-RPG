@@ -657,6 +657,8 @@ function snapshot() {
     /* 場上存活敵人數／戰場容量：堆到容量上限＝打怪速度追不上出怪速度。 */
     /* 目前穿的是第幾套（0＝第 1 套）。結尾存檔的「使用中裝備」是這一套，不一定是主力的第 1 套。 */
     equipActive: (G && G.equipActive) || 0,
+    /* 目前所在場景（沙漠、冰原……）。刷裝策略會在未通關的新地圖與已通關場景之間來回，看關卡數字要知道在哪張圖。 */
+    zone: (G && G.stage && G.stage.zone) || '',
     fieldLive: engine.ctx.liveFieldEnemies ? engine.ctx.liveFieldEnemies().length : 0,
     fieldCap: engine.ctx.fieldMaxLiveEnemiesFor ? engine.ctx.fieldMaxLiveEnemiesFor() : 0,
     ...topZoneProgress()
@@ -945,6 +947,7 @@ fs.writeFileSync(path.join(OUT_DIR, 'snapshots.meta.json'), JSON.stringify({
     totalDeaths: 'LOOT_STATS.deaths（累積）',
     cumGold: 'LOOT_STATS.gold（累積獲得，非持有）',
     equipActive: 'G.equipActive（目前使用中的裝備組，0＝第 1 套）',
+    zone: 'G.stage.zone（目前所在場景）',
     fieldLive: 'liveFieldEnemies().length（場上存活敵人數）',
     fieldCap: 'fieldMaxLiveEnemiesFor()（戰場容量）',
     stageTopZone: '已解鎖場景中最後一張的 ZONE_LIST 索引（isZoneUnlocked，含 demo 開放範圍）',

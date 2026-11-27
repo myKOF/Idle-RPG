@@ -186,10 +186,6 @@
       "類別": "redundant",
       "理由": "skill2.learn 逐級升已涵蓋，且要逐級檢查金幣餘裕"
     },
-    "stage.goMax": {
-      "類別": "noRule",
-      "理由": "『回到最高關』文件沒寫；退關用 stage.go 指定關卡"
-    },
     "stats.reset": {
       "類別": "never",
       "理由": "會清掉 LOOT_STATS，而報表的累積獲得全讀那裡"
@@ -217,10 +213,6 @@
     "tower.flee": {
       "類別": "noRule",
       "理由": "文件的塔策略是『打到失敗即停止』，沒有中途撤退"
-    },
-    "tower.setAutoAdvance": {
-      "類別": "redundant",
-      "理由": "遊戲預設開啟（新局與缺欄舊存檔皆是），策略要的行為就是預設；沒有關掉的情境"
     },
     "tower.startAuto": {
       "類別": "redundant",

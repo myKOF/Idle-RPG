@@ -21,7 +21,9 @@
     "talentPlan",
     "relicPlan",
     "merchantPlan",
-    "fieldLoad"
+    "fieldLoad",
+    "gearTier",
+    "towerFarm"
   ],
   "lists": {
     "talentStep1": [
@@ -216,6 +218,39 @@
       "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
     },
     {
+      "id": "farm-zone-return",
+      "everySec": 30,
+      "cmd": "stage.switchZone",
+      "args": {
+        "zoneKey": {
+          "$path": "ctx.farmZone"
+        }
+      },
+      "if": [
+        [
+          "ctx.farmZoneAway",
+          "truthy"
+        ]
+      ],
+      "why": "§9-1 退回刷裝：在未通關的新地圖推不動、掉落裝等又比較低時，切回已通關場景（掉落裝等最高者）的最高關卡刷裝"
+    },
+    {
+      "id": "farm-zone-goto-max",
+      "everySec": 60,
+      "cmd": "stage.goMax",
+      "if": [
+        [
+          "ctx.farmZoneNeedMax",
+          "truthy"
+        ],
+        [
+          "ctx.retryWaiting",
+          "falsy"
+        ]
+      ],
+      "why": "切回刷裝場景後回到它的最高關卡（通關後的最高關卡會變菁英關，掉落最好）。沿用卡關重試閘門：上一次在那裡打不過、時間沒到或沒變強就先待在較淺的關卡，不然會在最高關卡反覆送死（實測 2.5 小時送了 300 次）"
+    },
+    {
       "id": "switch-zone-when-cleared",
       "everySec": 60,
       "cmd": "stage.switchZone",
@@ -225,7 +260,13 @@
       },
       "why": "打通一張圖就換下一張。每張地圖都是有限關卡（沙漠 100／冰原 150／迷霧森林 200／熔岩山 250／沼澤 300／雷霆峰 350／亡靈山脈 400，之後是神界三張），打到頂之後遊戲會夾住 current 並停止出怪——推關指令照送、照回 ok，但關卡再也不動，AI 會永久停在那裡而且完全沒有徵兆。沙漠上限從 200 降到 100 之後，一般模擬跑 10 小時就會打到頂，而這條規則先前只有 ROI 策略有，其餘 6 份會卡死",
       "觸發時機_依據": "只有當前這張圖真的打通（best >= maxStage）才換。換過去是從第 1 關重新開始、怪物倍率更高、掉落裝等歸 1，短期必然退步；還推得動的時候換等於自己找罪受",
-      "目標選擇_依據": "取「已解鎖、且關卡上限比當前這張高」之中設計順序最小的那一張，照順序走一階不跳關。解鎖條件一律由遊戲的 isZoneUnlocked 回答，不在策略裡抄 Zones.csv"
+      "目標選擇_依據": "取「已解鎖、且關卡上限比當前這張高」之中設計順序最小的那一張，照順序走一階不跳關。解鎖條件一律由遊戲的 isZoneUnlocked 回答，不在策略裡抄 Zones.csv",
+      "if": [
+        [
+          "ctx.farmZone",
+          "falsy"
+        ]
+      ]
     },
     {
       "id": "equip-set-switch",
@@ -263,7 +304,10 @@
             }
           }
         },
-        "towerStartRule": "tower-auto"
+        "towerStartRule": [
+          "tower-auto",
+          "tower-farm"
+        ]
       },
       "why": "player_strategy.md §7：①實際碰到 BOSS／菁英／封魔塔才換（裝備可戰鬥中任意切換、不花資源，提前換沒意義）。②第 2、3 套有餘力才強化，練功效率最重要：每個決策點累積強化額度，滿 1 才切過去強化一次。第 2 套權重＝基礎 0.1 ＋ 野外 BOSS 卡關每分鐘 +0.005（上限 0.6）＋ 封魔塔層數停滯每分鐘 +0.002（上限 0.2）；第 3 套只有基礎 0.03。⚠️ 數字是詮釋，待設計者審。切過去的下一輪才強化、再下一輪切回（item.upgrade 只解析得到使用中那套）。⚠️ 封魔塔進行中遊戲會拒絕換裝與切套（只有塔戰有這個鎖），所以第 2 套要在進塔前穿好：塔的啟動規則（tower-auto）到期的那一輪，這條規則排在它前面先切過去"
     },
@@ -2897,6 +2941,69 @@
       "why": "商人開著時依序買：遺物 → 符文 → 寶石（同類先買高階），裝備不在規則內；實際售價（含遺物折扣）與能不能買由遊戲算好放在 panels.merchantPlan，同一輪扣掉已花的錢；買完關閉"
     },
     {
+      "id": "tower-farm",
+      "everySec": 60,
+      "cmd": "tower.start",
+      "args": {
+        "floor": {
+          "$path": "ctx.towerFarmFloor"
+        }
+      },
+      "if": [
+        [
+          "panels.tower.tower.active",
+          "falsy"
+        ],
+        [
+          "ctx.towerFarmFloor",
+          "truthy"
+        ],
+        [
+          "ctx.towerHitOk",
+          "truthy"
+        ]
+      ],
+      "why": "§9-5 封魔塔刷裝：全身裝備刷滿某個分段後，停在能掉出下一階裝備、且掉落裝等不低於身上最低裝等的最低樓層連續刷（例如全身 100 級史詩時要刷傳說，必須第 20 層以上；第 11~19 層的傳說只有 50 級，反而比 100 級史詩弱）。命中率一定要夠，沒達標就不打"
+    },
+    {
+      "id": "tower-farm-hold",
+      "everySec": 120,
+      "cmd": "tower.setAutoAdvance",
+      "args": {
+        "on": false
+      },
+      "if": [
+        [
+          "ctx.towerFarmFloor",
+          "truthy"
+        ],
+        [
+          "panels.tower.tower.active",
+          "falsy"
+        ]
+      ],
+      "why": "連續刷同一層就不能讓塔戰自動推進到下一層（會一路送死）"
+    },
+    {
+      "id": "tower-push-resume",
+      "everySec": 600,
+      "cmd": "tower.setAutoAdvance",
+      "args": {
+        "on": true
+      },
+      "if": [
+        [
+          "ctx.towerFarmFloor",
+          "falsy"
+        ],
+        [
+          "panels.tower.tower.active",
+          "falsy"
+        ]
+      ],
+      "why": "沒有刷裝樓層時恢復自動推進（打到失敗為止的原本玩法）"
+    },
+    {
       "id": "tower-auto",
       "everySec": 1200,
       "cmd": "tower.start",
@@ -2914,6 +3021,14 @@
         [
           "panels.tower.tower.active",
           "falsy"
+        ],
+        [
+          "ctx.towerFarmFloor",
+          "falsy"
+        ],
+        [
+          "ctx.towerHitOk",
+          "truthy"
         ]
       ],
       "why": "BOSS 高塔策略：每隔一段時間嘗試一次，打到失敗即停止。用 tower.start（吃自動推進）而不是 tower.startAuto"
@@ -3372,5 +3487,24 @@
     "farmSec": 1800,
     "farmBack": 10,
     "依據": "player_strategy.md §2 敗因表「同關卡死亡次數過多→生存瓶頸」。使用者補充：10 次只是觸發線，觸發後逐步加強生存屬性，不是一次全換；逐步替換中只要過一次就算成功。最高關卡停在同一關期間累計死 deathsAtStage 次觸發第 1 階（寶石的暴擊格換生命、首飾生存詞條列為可保留、ROI 敗因改判 EHP），再多死 stepDeaths 次且距上次升階至少 stepMinSec 秒升第 2 階（再換一格攻擊為物防／魔防、防具放掉暴擊／爆傷、技能末格換生存類——學得起才換）。最高關卡一前進＝成功：歸零回到輸出配置。第 2 階後再死 farmExtraDeaths 次仍無效：退 farmBack 關掛 farmSec 秒再試。只改鑲嵌、不轉換寶石庫存（轉換是兩顆換一顆，來回切換會把紅寶石耗光）。實測 24h × 15 seed（docs/SIM_HARNESS.md ⑧）：最多 2 階時過 50 關 11→13 個、死亡中位 577→360；開到 4 階時 0 個——換掉主攻擊寶石就推不動了"
+  },
+  "gearFarm": {
+    "zones": "panels.gearTier",
+    "equipment": "panels.inv.equipment",
+    "minRarity": 4,
+    "minFilled": 10,
+    "stallMin": 30,
+    "ancientPerItem": 1,
+    "ancientWaitMin": 60,
+    "tower": {
+      "plan": "panels.towerFarm",
+      "hitTarget": "hit",
+      "maxFails": 3,
+      "pauseMin": 60,
+      "stats": "panels.battle.lootStats.sources.tower",
+      "煞車_依據": "打不贏的樓層不要一直送：連續失敗 3 次就暫停 60 分鐘（再失敗加倍、上限 8 倍），贏一場歸零。實測 3 小時 23 次挑戰只贏 2 場"
+    },
+    "說明": "player_strategy.md §9：每張地圖的關卡各自從 1 重數，掉落裝等又是分段的（關卡 100~149 掉 100 級），所以在新地圖推不動時，退回已通關場景的最高關卡把該分段的裝備刷滿再回去推",
+    "依據": "stallMin（30 分鐘沒有新的最高關卡）與 ancientWaitMin（裝等與品質達標後最多再等 60 分鐘看太古）是初版數字，文檔沒有給"
   }
 }

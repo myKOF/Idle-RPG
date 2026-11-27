@@ -795,3 +795,157 @@ test('神祕商人面板與遊戲一致：開著狀態、券數、實際售價�
   const raw = vm.runInContext('gemShop().items.map(function (it) { return merchantItemPrice(it); })', c);
   P.items.forEach((it, i) => assert.equal(it.price, raw[i], '第 ' + i + ' 件的售價要等於遊戲的 merchantItemPrice'));
 });
+
+/* ---- player_strategy.md §9：場景推進與刷裝 ---- */
+
+function gearPolicy(extraTargets) {
+  return createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    targets: extraTargets || [],
+    gearFarm: { zones: 'panels.gearTier', equipment: 'panels.inv.equipment', minRarity: 4, minFilled: 3, stallMin: 30, ancientWaitMin: 60,
+      tower: { plan: 'panels.towerFarm', hitTarget: extraTargets && extraTargets.length ? 'hit' : undefined } },
+    rules: [
+      { id: 'ret', cmd: 'stage.switchZone', args: { zoneKey: { $path: 'ctx.farmZone' } }, if: [['ctx.farmZoneAway', 'truthy']] },
+      { id: 'max', cmd: 'stage.goMax', if: [['ctx.farmZoneNeedMax', 'truthy']] },
+      { id: 'tf', cmd: 'tower.start', args: { floor: { $path: 'ctx.towerFarmFloor' } }, if: [['ctx.towerFarmFloor', 'truthy'], ['ctx.towerHitOk', 'truthy']] }
+    ]
+  });
+}
+const zn = (key, index, maxStage, best, current, cleared) => ({
+  key, index, maxStage, best, current, unlocked: true, cleared,
+  tierAtBest: Math.max(1, Math.floor(best / 50) * 50), tierAtCurrent: Math.max(1, Math.floor(current / 50) * 50), tierAtMax: Math.floor(maxStage / 50) * 50
+});
+const gitem = (level, rarity, ancient) => ({ id: 'i' + level + rarity + (ancient ? 'a' : ''), level, rarity,
+  affixes: ancient ? [{ key: 'atkPct', ancient: true }] : [{ key: 'atkPct', ancient: false }] });
+function gearState(t, zones, curKey, level, rarity, ancient, towerPlan) {
+  const eq = {}; for (const s of ['weapon', 'helmet', 'chest', 'boots']) eq[s] = gitem(level, rarity, ancient);
+  return { gameTimeSec: t, view: {}, panels: { gearTier: { zone: curKey, zones }, inv: { equipment: eq }, towerFarm: towerPlan || null, tower: { tower: { active: false } } } };
+}
+const Z = (iceBest, iceCur, cur) => [zn('desert', 0, 100, 100, cur === 'desert' ? 60 : 100, true), zn('Icefield', 1, 150, iceBest, iceCur, false)];
+
+test('退回刷裝：新地圖卡住 30 分鐘、掉落裝等比已通關場景低 → 切回已通關場景最高關卡', () => {
+  const p = gearPolicy();
+  assert.equal(p.decide(gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 50, 4, false)).length, 0, '剛到不算卡住');
+  assert.equal(p.decide(gearState(1500, Z(75, 75, 'Icefield'), 'Icefield', 50, 4, false)).length, 0, '25 分鐘還沒滿 30');
+  const cmds = p.decide(gearState(1900, Z(75, 75, 'Icefield'), 'Icefield', 50, 4, false));
+  assert.deepEqual(cmds.map((c) => [c.name, c.args.zoneKey]), [['stage.switchZone', 'desert']], '75 關掉 50 級裝 < 荒漠 100 關的 100 級裝');
+  /* 已經切過去：不再送切換，但要回到最高關卡。 */
+  const there = p.decide(gearState(1960, Z(75, 75, 'desert'), 'desert', 50, 4, false));
+  assert.deepEqual(there.map((c) => c.name), ['stage.goMax']);
+});
+
+test('退回刷裝：最高關卡有進步就重新計時；已到 100 關（掉 100 級裝）也不退', () => {
+  const p = gearPolicy();
+  p.decide(gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 50, 4, false));
+  p.decide(gearState(1500, Z(78, 78, 'Icefield'), 'Icefield', 50, 4, false));          // 進步了 → 重新計時
+  assert.equal(p.decide(gearState(3000, Z(78, 78, 'Icefield'), 'Icefield', 50, 4, false)).length, 0, '距離上次進步才 25 分鐘');
+  const q = gearPolicy();
+  q.decide(gearState(0, Z(110, 110, 'Icefield'), 'Icefield', 50, 4, false));
+  assert.equal(q.decide(gearState(5000, Z(110, 110, 'Icefield'), 'Icefield', 50, 4, false)).length, 0, '冰原 110 關也掉 100 級裝，不必退');
+});
+
+test('刷滿標準：全身 100 級、史詩以上才算；太古補齊或多等 60 分鐘才離開', () => {
+  const p = gearPolicy();
+  p.decide(gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 50, 4, false));
+  assert.equal(p.decide(gearState(1900, Z(75, 75, 'Icefield'), 'Icefield', 50, 4, false)).length, 1, '進入刷裝');
+  /* 裝等與品質達標、但沒有太古：還要再等。 */
+  assert.equal(p.decide(gearState(2000, Z(75, 75, 'desert'), 'desert', 100, 4, false)).filter((c) => c.name === 'stage.switchZone').length, 0);
+  const still = p.decide(gearState(2100, Z(75, 75, 'Icefield'), 'Icefield', 100, 4, false));
+  assert.equal(still.filter((c) => c.name === 'stage.switchZone').length, 1, '還沒滿 60 分鐘、也沒太古：人在冰原就要被拉回荒漠');
+  /* 太古補齊：立刻放行。 */
+  const done = p.decide(gearState(2200, Z(75, 75, 'Icefield'), 'Icefield', 100, 4, true));
+  assert.equal(done.length, 0, '全身 100 級史詩＋太古：離開刷裝，回去推冰原');
+  /* 品質不夠（稀有）不算達標。 */
+  const r = gearPolicy();
+  r.decide(gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 100, 3, true));
+  assert.equal(r.decide(gearState(1900, Z(75, 75, 'Icefield'), 'Icefield', 100, 3, true)).length, 1, '100 級但只有稀有（R3）：還是要刷');
+});
+
+test('刷滿後多等的時間上限：裝等品質達標、沒太古，等滿 60 分鐘就走', () => {
+  const p = gearPolicy();
+  p.decide(gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 50, 4, false));
+  p.decide(gearState(1900, Z(75, 75, 'Icefield'), 'Icefield', 50, 4, false));          // 進入刷裝
+  p.decide(gearState(2000, Z(75, 75, 'desert'), 'desert', 100, 4, false));             // 達標，開始計 60 分鐘
+  assert.equal(p.decide(gearState(2000 + 3500, Z(75, 75, 'Icefield'), 'Icefield', 100, 4, false)).length, 1, '3500 秒還沒滿');
+  assert.equal(p.decide(gearState(2000 + 3700, Z(75, 75, 'Icefield'), 'Icefield', 100, 4, false)).length, 0, '超過 3600 秒：放行');
+});
+
+const TF = (highest) => {
+  const tier = [], rates = [];
+  for (let f = 1; f <= highest + 1; f++) {
+    tier.push(f < 10 ? 1 : f < 20 ? 50 : f < 30 ? 100 : 150);
+    rates.push(f < 6 ? [0, 0, 100, 50, 10, 0] : f < 11 ? [0, 0, 100, 100, 20, 10] : [0, 0, 0, 100, 100, 50]);   // 對照遊戲的 BOSS_DROP_TABLE：第 6~10 層傳說 10%、第 11 層起 50%
+  }
+  return { highest, itemTier: tier, rates };
+};
+
+test('封魔塔刷裝：全身 100 級史詩 → 要刷傳說得第 20 層以上（11~19 層傳說只有 50 級）', () => {
+  const cmds = gearPolicy().decide(gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 100, 4, false, TF(25)));
+  const tf = cmds.filter((c) => c.name === 'tower.start');
+  assert.deepEqual(tf.map((c) => c.args.floor), [20]);
+});
+
+test('封魔塔刷裝：全身 50 級史詩 → 第 11 層就掉 50 級傳說，不再往上', () => {
+  const tf = gearPolicy().decide(gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 50, 4, false, TF(25))).filter((c) => c.name === 'tower.start');
+  assert.deepEqual(tf.map((c) => c.args.floor), [11]);
+});
+
+test('封魔塔刷裝：還沒通關到那一層、或裝備不到史詩 → 不啟用（照舊推進）', () => {
+  assert.equal(gearPolicy().decide(gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 100, 4, false, TF(15))).filter((c) => c.name === 'tower.start').length, 0, '只通關到 15 層，第 20 層還沒解鎖');
+  assert.equal(gearPolicy().decide(gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 100, 3, false, TF(25))).filter((c) => c.name === 'tower.start').length, 0, '稀有裝不到史詩');
+});
+
+test('封魔塔刷裝：命中率目標沒達標就不打', () => {
+  const hit = [{ id: 'hit', kind: 'value', path: 'panels.stats.hit', atLeast: 95 }];
+  const p = gearPolicy(hit);
+  const st = (v) => { const s = gearState(0, Z(75, 75, 'Icefield'), 'Icefield', 100, 4, false, TF(25)); s.panels.stats = { hit: v }; return s; };
+  assert.equal(p.decide(st(80)).filter((c) => c.name === 'tower.start').length, 0, '命中 80 < 95');
+  assert.equal(p.decide(st(97)).filter((c) => c.name === 'tower.start').length, 1);
+});
+
+test('場景與塔面板與遊戲一致：分段裝等、是否通關、樓層掉落裝等與稀有度上限', () => {
+  const e = createEngine({ seed: 5 });
+  e.boot(null); e.step(20);
+  const c = e.ctx, vm = require('node:vm');
+  const P = e.panel('gearTier');
+  for (const z of P.zones) {
+    assert.equal(z.tierAtMax, vm.runInContext('equipmentTierLevel(' + z.maxStage + ')', c), z.key + ' 最高關卡的分段裝等要等於遊戲的');
+    assert.equal(z.tierAtBest, vm.runInContext('equipmentTierLevel(' + z.best + ')', c));
+  }
+  assert.equal(P.zones.find((z) => z.key === 'desert').tierAtMax, 100, '荒漠 100 關掉 100 級裝');
+  assert.equal(P.zones.find((z) => z.key === 'desert').cleared, false, '新角色沒有通關荒漠');
+  vm.runInContext('G.tower.highest = 25', c);
+  const T = e.panel('towerFarm');
+  assert.equal(T.itemTier[19], 100, '第 20 層掉 100 級裝'); assert.equal(T.itemTier[18], 50, '第 19 層掉 50 級裝');
+  assert.ok(T.rates[10][5] >= 50 && T.rates[9][5] <= 10, '第 6~10 層傳說只有 10%，第 11 層起 50%');
+});
+
+test('封魔塔刷裝煞車：連續失敗 3 次就暫停 60 分鐘，再失敗加倍，贏一場歸零', () => {
+  const p = createPolicy({
+    name: 't', decideEveryGameSec: 1, needPanels: [], lists: {},
+    gearFarm: { zones: 'panels.gearTier', equipment: 'panels.inv.equipment', minRarity: 4, minFilled: 3,
+      tower: { plan: 'panels.towerFarm', stats: 'panels.battle.lootStats.sources.tower', maxFails: 3, pauseMin: 60 } },
+    rules: [{ id: 'tf', cmd: 'tower.start', args: { floor: { $path: 'ctx.towerFarmFloor' } }, if: [['ctx.towerFarmFloor', 'truthy']] }]
+  });
+  const st = (t, kills, deaths) => {
+    const s = gearState(t, Z(75, 75, 'Icefield'), 'Icefield', 100, 4, false, TF(25));
+    s.panels.battle = { lootStats: { sources: { tower: { kills, deaths } } } };
+    return s;
+  };
+  const farming = (s) => p.decide(s).filter((c) => c.name === 'tower.start').length === 1;
+  assert.ok(farming(st(0, 0, 0)), '一開始照常刷');
+  assert.ok(farming(st(100, 0, 1)) && farming(st(200, 0, 2)), '失敗 1、2 次還繼續');
+  assert.ok(!farming(st(300, 0, 3)), '連續失敗 3 次：暫停');
+  assert.ok(!farming(st(300 + 3000, 0, 3)), '暫停期間（60 分鐘）不刷');
+  assert.ok(farming(st(300 + 3700, 0, 3)), '暫停期滿恢復');
+  /* 再連續失敗 3 次：這次暫停 120 分鐘。 */
+  farming(st(4100, 0, 4)); farming(st(4200, 0, 5));
+  assert.ok(!farming(st(4300, 0, 6)), '第二次暫停');
+  assert.ok(!farming(st(4300 + 5000, 0, 6)), '加倍：5000 秒（< 7200）還在暫停');
+  assert.ok(farming(st(4300 + 7300, 0, 6)), '加倍後的暫停期滿');
+  /* 贏一場：失敗計數與加倍都歸零。 */
+  assert.ok(farming(st(12000, 1, 6)), '贏了一場');
+  farming(st(12100, 1, 7)); farming(st(12200, 1, 8));
+  assert.ok(!farming(st(12300, 1, 9)), '重新累計 3 次才暫停');
+  assert.ok(farming(st(12300 + 3700, 1, 9)), '暫停回到 60 分鐘（不是 240）');
+});

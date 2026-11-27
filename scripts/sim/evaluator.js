@@ -1799,3 +1799,45 @@ function buildMerchantPlanPanel() {
   }
   return { active: !!v.active, tickets: Number(v.tickets) || 0, items: items };
 }
+
+/* ============ 場景掉落裝等面板（harness 專用） ============
+
+   player_strategy.md §9：野外掉落裝等 ＝ equipmentTierLevel(關卡)，而每張地圖的關卡各自從 1 重數，
+   所以「冰原第 70 關」掉 50 級裝、比「荒漠第 100 關」的 100 級裝還弱。遊戲的 battle 面板只給 best／current，
+   看不出「這個關卡掉幾級裝」「這張圖有沒有通關」。分段規則由遊戲函式回答，策略不抄 EQUIP_TIER_SIZE。唯讀。 */
+function buildGearTierPanel() {
+  if (typeof ZONES === 'undefined' || typeof equipmentTierLevel !== 'function') return null;
+  var keys = Object.keys(ZONES), zones = [];
+  var cur = (G.stage && G.stage.zone) || 'desert';
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i], max = zoneMaxStage(k);
+    var zp = (k === cur) ? { current: G.stage.current, best: G.stage.best } : ((G.zoneProgress && G.zoneProgress[k]) || {});
+    var best = Math.max(1, Math.floor(Number(zp.best) || 1));
+    var current = Math.max(1, Math.floor(Number(zp.current) || 1));
+    zones.push({
+      key: k, index: i, maxStage: max, best: best, current: current,
+      unlocked: !!isZoneUnlocked(k),
+      cleared: zoneClearedStage(k) >= max,
+      tierAtBest: equipmentTierLevel(best),
+      tierAtCurrent: equipmentTierLevel(current),
+      tierAtMax: equipmentTierLevel(max)
+    });
+  }
+  return { zone: cur, zones: zones };
+}
+
+/* ============ 高塔刷裝面板（harness 專用） ============
+
+   高塔 BOSS 的掉落裝等 ＝ equipmentTierLevel(towerRewardFor(樓層).itemLevel)，各品質的掉落機率（每場，%）看
+   BOSS_DROP_TABLE 該樓層的列。兩者都由遊戲函式算好，策略只做「選樓層」。唯讀。
+   第 i 筆對應第 i+1 層，只列到已通關最高層＋1。 */
+function buildTowerFarmPanel() {
+  if (typeof towerRewardFor !== 'function' || typeof BOSS_DROP_TABLE === 'undefined') return null;
+  var highest = Math.max(0, Math.floor(Number(G.tower && G.tower.highest) || 0));
+  var tier = [], rateList = [];
+  for (var f = 1; f <= highest + 1; f++) {
+    tier.push(equipmentTierLevel(towerRewardFor(f, false).itemLevel));
+    rateList.push(dropRatesFor(BOSS_DROP_TABLE, f).slice());
+  }
+  return { highest: highest, itemTier: tier, rates: rateList };
+}

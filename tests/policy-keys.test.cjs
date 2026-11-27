@@ -580,3 +580,22 @@ test('每份策略都有通關換圖規則', () => {
     assert.equal(rule.cmd, 'stage.switchZone');
   }
 });
+
+test('每份策略都有場景刷裝與封魔塔刷裝規則，且通關換圖規則會讓位給刷裝（player_strategy.md §9）', () => {
+  /* 少了「讓位」：退回荒漠刷裝時，通關換圖規則看到荒漠已通關又立刻往下一張圖切，兩條規則每分鐘互相拉扯。 */
+  for (const f of POLICY_FILES) {
+    const p = loadPolicy(f);
+    assert.ok(p.gearFarm, f + ' 沒有 gearFarm 設定');
+    for (const pn of ['gearTier', 'towerFarm']) assert.ok(p.needPanels.includes(pn), f + ' 的 needPanels 缺 ' + pn);
+    const byId = Object.fromEntries(p.rules.map((r) => [r.id, r]));
+    for (const id of ['farm-zone-return', 'farm-zone-goto-max', 'tower-farm', 'tower-farm-hold', 'tower-push-resume']) {
+      assert.ok(byId[id], f + ' 缺規則 ' + id);
+    }
+    const sz = byId['switch-zone-when-cleared'];
+    assert.ok(sz && JSON.stringify(sz.if || []).includes('ctx.farmZone'), f + ' 的通關換圖規則沒有在刷裝時讓位');
+    const ta = byId['tower-auto'];
+    assert.ok(ta && JSON.stringify(ta.if || []).includes('ctx.towerFarmFloor'), f + ' 的 tower-auto 沒有在刷裝時讓位');
+    const order = p.rules.map((r) => r.id);
+    assert.ok(order.indexOf('tower-farm') < order.indexOf('tower-auto'), f + '：tower-farm 要排在 tower-auto 前面');
+  }
+});

@@ -310,6 +310,8 @@ function createEngine(opts) {
       if (name === 'fieldLoad') return ctx.buildFieldLoadPanel();     // 戰場存活敵人／容量（harness 專用，見 evaluator.js）
       if (name === 'relicPlan') return ctx.buildRelicPlanPanel();       // 遺物等級／件數／可否升級（harness 專用，見 evaluator.js）
       if (name === 'merchantPlan') return ctx.buildMerchantPlanPanel(); // 神祕商人貨架與實際售價（harness 專用，見 evaluator.js）
+      if (name === 'gearTier') return ctx.buildGearTierPanel();         // 各場景掉落裝等與是否通關（harness 專用，見 evaluator.js）
+      if (name === 'towerFarm') return ctx.buildTowerFarmPanel();       // 高塔各樓層掉落裝等與稀有度上限（harness 專用，見 evaluator.js）
       if (name === 'gemRules') return ctx.buildGemRulesPanel();       // 寶石比例與停用種類（harness 專用，見 evaluator.js）
       if (name === 'equipSets') return ctx.buildEquipSetsPanel(params); // 三套裝備（harness 專用，見 evaluator.js）
       if (name === 'eval') return ctx.buildEvalPanel(params || evalParams);
