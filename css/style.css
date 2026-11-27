@@ -12957,6 +12957,23 @@ body.battle-canvas-mode #tower-fight .tower-canvas-note {
   text-shadow:0 1px 2px #000;
 }
 #mystery-merchant-panel .shop-card.eff-mythic .shop-stat { color:#d9c3a6; }
+#mystery-merchant-panel .shop-card.sold {
+  opacity:1;
+  background:#242424 !important;
+  border:1px solid #626262 !important;
+  box-shadow:inset 0 0 8px #111;
+  filter:grayscale(1);
+  animation:none;
+  cursor:default;
+}
+#mystery-merchant-panel .shop-card.sold::before,
+#mystery-merchant-panel .shop-card.sold::after { display:none; }
+#mystery-merchant-panel .shop-card.sold .shop-name,
+#mystery-merchant-panel .shop-card.sold .shop-stat,
+#mystery-merchant-panel .shop-card.sold .shop-sold {
+  color:#b8b8b8 !important;
+  text-shadow:none;
+}
 #mystery-merchant-panel .shop-emoji {
   display:flex;
   align-items:center;

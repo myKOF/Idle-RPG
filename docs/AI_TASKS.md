@@ -1,3 +1,16 @@
+## MERCHANT-SOLD-OPAQUE-20261127 — 已購買商品改不透明灰色停用卡
+
+- Owner：Codex；Done，單人處理。使用者要求神祕商店商品買後不要半透明，改置灰不可用且不透後方木盤。前置：既有sold狀態／已購買文字／購買按鈕移除可用，工作區乾淨，fetch後逐檔衝突預檢無外部來源。
+- 允許：css/style.css商人已售卡專用規則、index.html對應CSS快取、LV與本段；禁止改交易／價格／存檔／Worker／配置表／玩家字串／素材或其他工作，不合併推送。
+- 方案／驗收：只針對#mystery-merchant-panel的.shop-card.sold覆寫opacity1、實色灰底／灰邊及文字、圖示灰階，關閉售出卡品質偽元素／動畫；仍沿既有sold渲染移除購買按鈕與保留資訊tips，不阻擋檢視。檢查遺物／寶石／符文／各裝備品質的售出／未售、hover及窄桌面，瀏覽器全CSS實際樣式與不透底、相關回歸／Build、自我Review後Commit交使用者整合重載。
+
+- 完成／修改4檔：style商人售出卡專用17行、index的style快取20261127-merchant-sold-opaque-v1、LV與本段。覆寫原全域sold opacity0.4為1，實色#242424灰底與#626262邊框、灰階圖示／#b8b8b8文字，售出卡不播放品質偽元素或動畫；以專用重要背景／邊框壓過混沌及神話／創世原品質樣式。未售出、空位、其他視窗卡片及購買邏輯保持。
+- 測試：`node --test tests/merchant-cards-ui.test.cjs tests/mystery-merchant.test.cjs`40/40，守既有排序／購買索引／售出按鈕移除／防重買／庫存與資源；`npm.cmd run build`776檔通過，Git差異檢查及自我Review通過。本項為CSS低影響調整，未另新增鏡像樣式測試，樣式驗證以真瀏覽器為準。
+- 瀏覽器：launchHeadless隔離profile／靜音與看門狗，依正式index順序載全部19支CSS、正式renderGemShop與商品圖示／String／資料生成，8種商品共16張售出／未售配對（遺物、神話／混沌／創世／神鑄創世／史詩裝備、符文、寶石）。售出卡computed opacity皆1、背景rgb(36,36,36)、backgroundImage none、filter grayscale(1)、文字rgb(184,184,184)，雙偽元素display none、只有已購買標示而無購買按鈕；未售出filter none且有購買按鈕。hover仍保持灰底；1000px與700px視窗／650px商品區均通過，截圖內嵌目視配對清楚、灰卡不透木盤。
+- 不透底證據：同一售出卡內距邊框4px的1×1截圖，分別將背後木盤切為純紅／純綠後擷取，PNG內容完全相同。頁面例外0，沒有啟動完整遊戲局或載入使用者存檔；finally關閉瀏覽器／HTTP伺服器，kill-test-browsers確認無殘留。截圖直接由工具回傳預覽，未寫本機暫存或建立桌面擷取，無待清理產物。
+- 唯讀未改：規範／Workflow／Codex、ui商品渲染／售出與tips、item交易及相關回歸、全部品質／灰階相關CSS（ashen-forge／flat／brass-and-slate／equipment-chaos）、首頁全CSS順序、Store／String／配置與Worker／存檔、build與headless工具。無新增玩家文字或素材，不需改Excel／CSV／String或素材庫Commit；本項無未完成實作／已知新增風險，未跑全庫／完整遊戲長時／其他瀏覽器與裝置。
+- 交付：ai/codex本段所在「[Codex] fix: 將商店已購買商品改為不透明灰色」提交，SHA見Git log／回報；可供審閱合併，未合併或推送develop／main。下一步使用者整合後重新載入遊戲以取得新版CSS。
+
 ## COMBO-OVERFLOW-MIN-20261127 — 屬性溢出連擊至少0.01並顯示兩位精度
 
 - Owner：Codex；Done，單人處理。使用者看到104.4%暴擊仍無連擊，要求僅溢出1%也有至少0.01連擊，並明確選擇「所有溢出至少0.01；200%以上沿舊公式但仍保底0.01」。前置：三屬性共用comboOverflowHits、STAT_GROUPS數值格式及既有真正追加攻擊流程；逐檔衝突預檢無外部來源。前一測試任務已獨立提交0bcdbc87。
