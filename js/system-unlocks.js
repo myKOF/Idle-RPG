@@ -31,6 +31,9 @@ function systemUnlockEntries(state) {
   var highest = Number(state.tower && state.tower.highest) || 0;
   add('tower.hell', 'tower', '[data-tower-tier="hell"]', highest >= TOWER_TRIAL_MAX_FLOOR, false);
   add('tower.purgatory', 'tower', '[data-tower-tier="purgatory"]', highest >= TOWER_HELL_MAX_FLOOR, false);
+  // 全域入口：以真正通關紀錄判斷，僅點擊入口才已讀，不隨主面板操作清除。
+  var desert = state.zoneProgress && state.zoneProgress.desert;
+  add('worldMap.firstClear', null, '#btn-world-map', Number(desert && desert.cleared) >= 100, false);
   return entries;
 }
 

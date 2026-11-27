@@ -8,7 +8,7 @@ function refreshSystemUnlockHints() {
   var pendingTabs = Object.create(null);
   systemUnlockEntries().forEach(function (entry) {
     var unread = available.indexOf(entry.id) >= 0 && seen.indexOf(entry.id) < 0;
-    if (unread) pendingTabs[entry.tab] = true;
+    if (unread && entry.tab) pendingTabs[entry.tab] = true;
     document.querySelectorAll(entry.selector).forEach(function (button) {
       button.classList.toggle('unlock-tab-pending', unread);
     });
@@ -31,7 +31,7 @@ function markVisibleSystemUnlocksSeen(event) {
   var header = uiHeaderPanelSnapshot(), snapshot = header && header.systemUnlocks;
   if (!snapshot) return;
   systemUnlockEntries().forEach(function (entry) {
-    if (entry.tab !== UI.tab || snapshot.available.indexOf(entry.id) < 0 || snapshot.seen.indexOf(entry.id) >= 0) return;
+    if (!entry.tab || entry.tab !== UI.tab || snapshot.available.indexOf(entry.id) < 0 || snapshot.seen.indexOf(entry.id) >= 0) return;
     var button = document.querySelector(entry.selector);
     if (!button) return;
     var selected = button.getAttribute('aria-selected') === 'true' || button.getAttribute('aria-pressed') === 'true' ||
@@ -53,7 +53,7 @@ document.addEventListener('click', function (event) {
   if (!snapshot) return;
   systemUnlockEntries().some(function (entry) {
     var button = event.target.closest(entry.selector);
-    if (!button || button.disabled || button.getAttribute('aria-disabled') === 'true' || UI.tab !== entry.tab) return false;
+    if (!button || button.disabled || button.getAttribute('aria-disabled') === 'true' || (entry.tab && UI.tab !== entry.tab)) return false;
     if (snapshot.available.indexOf(entry.id) < 0 || snapshot.seen.indexOf(entry.id) >= 0) return false;
     markSystemUnlockSeen(entry.id);
     return true;

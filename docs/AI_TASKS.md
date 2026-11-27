@@ -18076,3 +18076,16 @@ Worker 存活且頁面正常完成載入。
 - 唯讀未改：AI規範／Workflow／Codex、STAT_GROUPS與playerPanelStats、減傷函式／Skills2與Worker字串sv快取機制、三支回歸與Excel／字串生成工具。自我Review確認只有指定繁中一格與必要資料／快取／紀錄差異；無未完成實作，可審閱合併，未合併或推送develop／main。未另跑全庫或完整遊戲實機。Commit為本段所在`[Codex] fix: 釐清常駐技能減傷提示`，SHA見交付。下一步整合後重載遊戲；若VFX編輯器仍開啟，先備份未存內容再重載共用字串，不由本案自動刷新／儲存。
 - 同副本另一聊天於本輪新增MERCHANT-BASELINE-TESTS任務（文件開頭）與兩支測試修改，與本案尾端紀錄及String無語意相依；只分段暫存本案尾端，不納入其內容。一次性Excel副本／渲染／更新JSON／baseline preload及依賴junction已按確切絕對路徑非遞迴清理。
 - `npm.cmd run build`776檔通過、生成JS語法與Git差異檢查通過。分段暫存初次讀取大型任務檔超出Node子程序預設緩衝而中止，未寫入該檔索引；提高明確讀取上限後重做並核對暫存只含本段。
+
+## WORLD-MAP-FIRST-CLEAR-20261127 — 荒漠首通後世界地圖黃色閃爍
+
+- Owner：Codex；Done，單人處理。使用者要求首次真正通關荒漠100關後，世界地圖按鈕變黃色並持續閃爍，直到點擊該按鈕。前置：既有systemUnlockEntries／ui.markUnlockSeen／uiUnlockSeen存檔機制；fetch及逐檔預檢無外部來源。
+- 允許：js/system-unlocks.js、js/ui-unlock-notices.js、css/world-map.css、index及Worker／Bridge必要快取、tests/system-unlocks.test.cjs、LV與本段。沿用既有已讀命令與存檔欄位，新增全域且僅點擊解除的提示，不更改Protocol／地圖解鎖／戰鬥／文字／配置／素材；其他聊天修改保留，不合併推送。
+- 驗收：到達100未勝不亮、真正通關亮、持續刷新／其他操作／自動導航不清、任何主面板皆可點擊解除、失敗可重試、已讀存讀／換存檔／新局隔離；相關地圖與提示回歸、Build、自我Review及隔離靜音瀏覽器驗證，Commit後交使用者整合重載。COMBO任務僅共用不同快取行／文件區段，分段提交；Bridge共用版本待其提交後更新。
+
+- 完成／修改9檔：system-unlocks新增全域worldMap.firstClear（荒漠cleared≥100）、ui-unlock-notices允許全域入口跨主頁點擊並排除任意操作已讀、world-map的亮黃與1.4秒無限透明度閃爍、index／Bridge／Worker必要快取、system-unlocks三項新回歸、LV及本段。沿用現成ui.markUnlockSeen與uiUnlockSeen，沒有新增存檔欄位／Protocol／玩家文字／美術，無素材庫變更或素材庫Commit。減少動態偏好下保留黃色、不閃爍；舊存檔已通關且沒有此已讀旗標時補提示一次。
+- 測試指令：`node --test tests/system-unlocks.test.cjs tests/world-map.test.cjs tests/world-map-ui.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`45/45；`npm.cmd run build`776檔通過。涵蓋真正completeFieldWave勝利與header髒標記、到達100未勝、已讀命令未解鎖拒絕、JSON存讀與新局／換存檔、重複末關不復活、四主頁其他操作／程式事件／停用不清、命令失敗重試、既有所有地圖操作／轉場／協議與快取。Git差異及自我Review通過。
+- 瀏覽器：launchHeadless隔離profile、預設靜音，以正式HTML地圖／JS及主題CSS測試；真正滑鼠點擊解除並正常開圖，任務openForQuest與100次刷新不清；computedStyle確認RGB(255,226,75)、world-map-first-clear-pulse與不同時間透明度變化、減少動態none仍黃；頁面例外0。未啟動完整遊戲或碰使用者存檔。初輪fixture祖先結構未按正式ui-shell／combat-area安排而無法點擊，修正測試頁並確認正式按鈕位於workspace兄弟combat-area，提示樣式選擇器已對應正式結構；另等主題背景transition完成後才驗最終色，不放寬顏色斷言。finally關閉瀏覽器與HTTP伺服器，臨時QA腳本／截圖清除；未建立桌面擷取session。
+- 同副本保護：COMBO任務已獨立提交8d7ff04e，本案不同index／Worker快取行與文件首尾，base0bcdbc87／本案／COMBO四個共享檔逐一git merge-file -p退出0且輸出等於完整工作檔，無語意相依；Bridge版本待COMBO提交完成後才更新。只提交本案9檔。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、player的已讀初始值、save／save-schema存讀、Worker的header投影／既有已讀命令、uiTick／戰鬥標頭、combat真正通關與髒標記、ui-world-map及任務導航、既有地圖／協議／快取測試、主題CSS與建置／瀏覽器工具。無本案未完成實作；未跑全庫、完整遊戲長時掛機或實體裝置。
+- 交接：Commit為本段所在`[Codex] feat: 荒漠首通後閃爍提示世界地圖入口`，SHA見Git log／交付，可供使用者審閱合併；未合併／推送develop或main。下一步整合至實際啟動工作區後重載驗收；已讀與其他提示同樣於既有自動／手動存檔落地。
