@@ -378,7 +378,7 @@
 .nfc-res-scroll {
   --nfc-columns: min(16, var(--nfc-count, 1));
   width: min(100%, calc(var(--nfc-columns) * (var(--nfc-slot) + var(--nfc-gap)) - var(--nfc-gap)));
-  max-height: calc(4 * var(--nfc-slot) + 3 * var(--nfc-gap));
+  max-height: calc(6 * var(--nfc-slot) + 5 * var(--nfc-gap));
   min-height: 0;
   overflow: hidden auto;
   overflow-anchor: none;

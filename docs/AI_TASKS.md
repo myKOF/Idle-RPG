@@ -1,3 +1,10 @@
+## SYNC-ALL-AI-20261127 — 整合六行開箱獎勵並恢復同步
+
+- Owner：Codex，整合。使用者輸入 `1`；將 develop `2f7d5e37` 與 Codex `5b49a5bd3b11afd0f072879150eebfef01becd55` 整合，保留六行獎勵、每50ms揭示一件及相關文件／測試。合併無內容衝突，新增本紀錄前的合併樹與來源樹完全一致。Claude、Antigravity、本地與遠端可同步任務來源均已核對在來源歷史內；三個固定工作區將循正常 BAT 推送及回同步，實際結果見本次報告。
+- 同步中斷原因：Codex 的 index 修復收據停在 prepared，原目標 `2f7d5e37` 已於 reflog 完成 fast-forward，後續新增功能提交使 HEAD 超出收據允許範圍。持有原 controller 鎖、確認無 Git 操作／鎖、無隱藏 index 旗標、工作區乾淨、index 樹等於 HEAD 樹且原目標為 HEAD 祖先後，只將 pending.json 封存至原備份目錄 `develop/.git/worktrees/codex/sync-index-recovery/9cf4afc4c9f4499e9bd0904a826561f2/pending.retired-20261127.json`，另存 verified-complete.json。原 index.before／record.json 保留；未重設 index 或工作檔，未修改同步程式。
+- 驗證：`node --test tests/chest.test.cjs tests/chest-opening.test.cjs tests/chest-preview.test.cjs tests/task-chest-upgrade.test.cjs tests/vfx-editor-cache-versions.test.cjs` 48/48；開箱匯出 `--check` 核對145個來源雜湊及五張遊戲圖集通過；`npm.cmd run build` 774檔及 Git 差異檢查通過。測試／建置紀錄位於 `logs/merge-20261127/`。本輪未重跑全庫或實機外觀驗收，未變更玩法來源表與素材；上輪四項任務固定索引／獎勵預期的既有失敗不在本輪修正範圍。
+- 檢查但未改：共通規範／Workflow／Codex、同步與 index 修復工具、各工作區／分支、素材庫及來源素材。僅追加本段任務紀錄與建立整合提交，無本輪新增功能。保留明確隔離分支 `codex/background-catchup`（`08013b4db0e3f03f336810a128cd801547f89f6d`）與 `codex/boss8-animation-preview`（`86326b984b40c086844b28608de739bea9d01db6`），不發布 main。下一步於 BAT 完成後核對本地／遠端 SHA、工作區乾淨與所有可同步來源祖先關係。
+
 ## SYNC-ALL-AI-20261126 — 合併並同步本輪 AI 成果
 
 - Owner：Codex，整合。使用者輸入 `1`，將 `develop` 原 `97e9284e` 與 Codex 最新 `6c86105f` 的 17 筆提交整合。Claude、Antigravity 與各可同步遠端任務來源將沿正常同步流程核對祖先關係並對齊。本次合併無內容衝突，原合併樹與 Codex 提交樹完全一致。
@@ -17859,6 +17866,16 @@ Worker 存活且頁面正常完成載入。
 - 實機：隔離靜音Edge，實際CSS與相同ui-chest原碼控時拍五品質；1500ms閉蓋／歸位且光效opacity=1，1649ms仍未全開／無獎勵與確認，1650ms全開／首格／確認同時可用，旋轉跨完成持續。80ms量得-2.71px／-1.43度，1360ms量得-4.47px／-3.51度，均為前版兩倍。1500ms後箱體位置固定，圖集未退化、例外0。另原生時鐘700×500／減少動態／十萬件／捲動／提前與完成Esc／空獎勵通過，MutationObserver量得光效1510.3ms、開完1681.3ms，屬瀏覽器排程誤差；靜態光效先於末幀／獎勵可見。
 - 素材庫僅V5 README及manifest改版，將播放規格改引用遊戲系統文件；145個Git index實際blob SHA全數核對後，先提交`6e2cfb3a8233d7404d7c08d3e71752e9d2927c4a`，無像素／模型／圖集變更。GIF是本輪實際遊戲擷取，五品質720×480／325幀／19.5秒／約4.84MB，逐幀解碼、時長及1500ms閉蓋有光目視通過；成品及QA JSON在本聊天chest-timing-v6/chest-faster-open-v6.gif，原始擷取在獨立tmp/chest-timing-v6。已核對絕對路徑／非連結後嘗試清理此輪自身暫存，自動核准審查以政策限制拒絕刪除，未重試並保留；上輪被拒的工作區外目錄未動。瀏覽器／伺服器已關閉，孤兒檢查無殘留。
 - 唯讀未改：規範／Workflow／Codex、來源製作與匯出工具、所有箱圖／Blender／manifest、chest結算／資料／Worker／Bridge／存檔／String、headless工具；其他聊天配置與formula／data變更不暫存。自我Review完成，三項要求與GIF無未完成項；未驗其他瀏覽器／實體裝置長時間播放。遊戲Commit為本段所在`[Codex] fix: 加倍開箱搖晃並提前品質光效`，實際SHA見交付，可供合併，未合併或推送develop／main；下一步重新載入遊戲驗收新版節奏。
+
+## CHEST-REWARDS6-20261127 — 六行獎勵與每秒二十件
+
+- Owner：Codex；Done，單人處理。使用者指定開箱物品最多同時顯示六行、揭示改為每秒20個；沿用滿版置中、原格位與順序、超量捲動、開蓋後才揭示及立即確認關閉。
+- 前置／範圍：fetch後逐檔預檢，ui-chest／CSS／開箱測試／CHEST_SYSTEM／VFX無外部來源；develop同HEAD有BOSS9工作，index只改NPC／data／renderer／bridge快取，LV與AI_TASKS只追加BOSS9紀錄。本項index只改寶箱JS／CSS快取、LV只改寶箱段，任務紀錄插入既有寶箱段前以避開共用檔尾；三方merge-file逐檔乾跑驗收後分段修改，無語意相依。允許上述8檔；不改BOSS9、表格／玩法／Worker／存檔／協議／素材，不合併推送。驗收50ms揭示邊界、滿六行／七行捲動／少量／小視窗／不提前揭示／立即清理、相關回歸與Build及實機畫面；無必要新素材。
+- 完成／修改8檔：js/ui-chest.js將CHEST_REVEAL_STEP_MS由100調成50；css/chest.css把物品區最大高度改為6個格高＋5個間距；index.html同步寶箱JS及CSS快取rewards6-v1；tests/chest-opening.test.cjs保留原驗收並改成49／50ms、999／1000ms節點；docs/CHEST_SYSTEM.md、LV_upgrade_system.md、VFX用途及本段同步六行／每秒20個規格。保留1.5秒搖晃＋0.15秒掀蓋、提前品質光效、虛擬格與即關清理。
+- 測試指令：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`79/79通過；開箱開始0ms第一格、49ms仍一格、50ms第二格、999ms共20格、1000ms第21格，虛擬格捲動／縮放及關閉清理皆通過。`npm.cmd run build`774檔語法／空檔檢查與Git差異檢查通過，未跑全庫。
+- 實機：隔離靜音瀏覽器／正式頁面，同一ui-chest原碼與實際CSS控時驗證。1499×708：每列16格，96件剛好6行不捲、112件顯示6行並可捲到第7行；列高58／間隔6／邏輯視口378px。3件只占1行。700×500／十萬件仍有6行與可用確認，DOM只112格；捲到未輪到的遠端物品仍隱藏，關閉後無計時／彈窗殘留。各案例確認0／49／50／999／1000ms、開箱前不提前顯示、箱圖位置前後固定、圖集正常，執行例外0。桌面及小視窗畫面已目視確認。
+- 同檔協作：index／LV／AI_TASKS對develop BOSS9修改的三方merge-file退出碼皆0；本項只改不同區段，語意不相依。期間其他自動整合更新HEAD，最終diff仍只含本項8檔及各自hunk，保留已整合的BOSS9快取與文件，不提交其工作內容。素材庫無本項變更，不建立空Commit。
+- 交付／限制：畫面與qa.json保留本聊天chest-rewards6-20261127，原始驗證及合併試跑在獨立tmp/chest-rewards6-20261127，不納提交；瀏覽器／伺服器finally關閉，孤兒檢查無殘留，未重試其他輪被政策拒絕的刪除。唯讀檢查規範／Workflow／Codex、既有格位／ui-scale、headless／舊開箱擷取、develop三檔差異及相關回歸，未改其他工作區／表格／結算／Worker／存檔／String／素材。自我Review完成，無未完成項，可供合併；未驗其他瀏覽器／實體裝置長時間播放。Commit為本段所在`[Codex] feat: 開箱獎勵改為六行與每秒二十件`，SHA見交付，未執行合併或推送；下一步重載遊戲驗收。
 
 ## CHEST-GIF-SPEED-20261126 — 修正預覽播放器的開蓋減速
 
