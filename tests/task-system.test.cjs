@@ -183,6 +183,78 @@ test('makeEquipment：opts.ancientCount 指定太古條數（超過詞條數自�
   }
 });
 
+test('任務裝備：5件100級史詩部位全不同，保留太古與直接入包，不可重領', () => {
+  const c = loadContext();
+  const itemsBefore = Array.from(c.ITEM_TYPES);
+  const def = { order: 1, name: 'test', type: 'upgradeCount', count: 1,
+    rewardType: 'equip', rewardParam: '4|100|2', rewardQty: 5, rewardLabel: 'test' };
+  c.TASKS = [def];
+  c.G.factory.stats.upgraded = 1;
+  c.G.inventory = [];
+  // 整數抽樣固定選下界仍不得重複；詞條浮點抽樣保持正常，不污染其他測試。
+  c.ri = (min, max) => min;
+  assert.equal(c.taskClaim().claimed, 1);
+  const reward = c.G.inventory;
+  assert.equal(reward.length, 5);
+  assert.equal(new Set(reward.map(it => it.slot)).size, 5);
+  for (const it of reward) {
+    assert.ok(itemsBefore.includes(it.slot));
+    assert.equal(it.rarity, 4);
+    assert.equal(it.level, 100);
+    assert.equal(c.getItemAncientCount(it), 2);
+  }
+  assert.equal(c.UI.dirty.inv, true);
+  assert.equal(c.UI.dirty.header, true);
+  assert.equal(c.UI.dirty.task, true);
+  assert.ok(c.taskClaim().err);
+  assert.equal(reward.length, 5);
+  assert.deepEqual(Array.from(c.ITEM_TYPES), itemsBefore);
+});
+
+test('任務裝備：全部11種部位用盡才重抽，超額仍發足且各次任務重新抽樣', () => {
+  const c = loadContext();
+  const slots = Array.from(c.ITEM_TYPES);
+  c.ri = (min, max) => max;
+  for (const qty of [0, 1, 5, slots.length, slots.length * 2 + 3]) {
+    c.G.inventory = [];
+    c.taskGrantReward({ rewardType: 'equip', rewardParam: '4|100|0', rewardQty: qty });
+    assert.equal(c.G.inventory.length, qty);
+    for (let offset = 0; offset < qty; offset += slots.length) {
+      const batch = c.G.inventory.slice(offset, offset + slots.length);
+      assert.equal(new Set(batch.map(it => it.slot)).size, batch.length);
+      if (batch.length === slots.length) {
+        assert.deepEqual(Array.from(batch, it => it.slot).sort(), [...slots].sort());
+      }
+    }
+    for (const it of c.G.inventory) assert.equal(c.getItemAncientCount(it), 0);
+    if (qty) assert.equal(c.G.inventory[0].slot, slots[slots.length - 1], '每次發放都重新建池');
+  }
+  assert.deepEqual(Array.from(c.ITEM_TYPES), slots);
+});
+
+test('任務裝備：零等級沿用當前關卡，省略太古時沿用自然生成', () => {
+  const c = loadContext();
+  c.G.stage.current = 175;
+  c.G.inventory = [];
+  const originalMakeEquipment = c.makeEquipment;
+  const options = [];
+  c.makeEquipment = (stage, opts) => {
+    options.push({ ...opts });
+    return originalMakeEquipment(stage, opts);
+  };
+  c.taskGrantReward({ rewardType: 'equip', rewardParam: '4|0', rewardQty: 5 });
+  assert.equal(c.G.inventory.length, 5);
+  assert.equal(new Set(c.G.inventory.map(it => it.slot)).size, 5);
+  for (const it of c.G.inventory) {
+    assert.equal(it.level, 150);
+    assert.equal(it.rarity, 4);
+  }
+  for (const opts of options) {
+    assert.equal(Object.hasOwn(opts, 'ancientCount'), false);
+    assert.equal(Object.hasOwn(opts, 'level'), false);
+  }
+});
+
 /* ---- 7. 舊存檔遷移 ---- */
 test('migrateSave：舊存檔補 taskState / 統計欄位；idx 夾限', () => {
   const c = loadContext();

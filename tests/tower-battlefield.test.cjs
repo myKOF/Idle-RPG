@@ -47,7 +47,7 @@ function setup() {
   } };
 }
 
-test('開場：雙方位於固定法陣中心兩側，BOSS 從玩家畫面右方之外跑入', () => {
+test('開場：玩家固定出生於法陣左側紅圈附近，BOSS 保留右側起點', () => {
   const { c } = setup();
   const home = c.bfPlayerPos();
   home.x = 1234; home.y = -56;     // 野外走到一半才進塔：沿用當下位置，鏡頭不跳
@@ -60,7 +60,7 @@ test('開場：雙方位於固定法陣中心兩側，BOSS 從玩家畫面右方
   assert.equal(arena.cx, 1234 + c.TOWER_BOSS_SPAWN_DIST / 2, '法陣不隨玩家左移或遠端生成點偏移');
   assert.equal(arena.cy, home.y);
   assert.ok(home.x < arena.cx && b.pos.x > arena.cx);
-  assert.equal(b.pos.x - home.x, arena.viewWidth);
+  assert.equal(home.x, arena.cx - 300, '玩家腳點位於法陣左側外緣附近');
   assert.equal(b.pos.y, -56);
   assert.ok(home.x >= arena.cx - arena.halfWidth + c.bfPlayerBodyRadius());
   assert.ok(b.pos.x <= arena.cx + arena.halfWidth - c.bfEntityRadius(b));
@@ -68,7 +68,7 @@ test('開場：雙方位於固定法陣中心兩側，BOSS 從玩家畫面右方
   assert.equal(b._alerted, true, '超出野外視野仍直接追向挑戰者');
 });
 
-test('不同移速／射程／體型的首領依原生追擊實際走到中央交手，法陣不跟著站位偏移', () => {
+test('不同移速／射程／體型不影響玩家起點，BOSS 原起點與原生接近保持', () => {
   for (const cfg of [
     { runSpeed: 120, atkRange: 320, _bodyR: 52, playerSpeed: 300 },
     { runSpeed: 210, atkRange: 50, _bodyR: 75, playerSpeed: 300 },
@@ -84,16 +84,36 @@ test('不同移速／射程／體型的首領依原生追擊實際走到中央�
     c.placeTowerCombatants(boss);
     const arena = { ...c.TOWER.arena };
     assert.equal(arena.cx, 1364);
+    assert.equal(c.TOWER.playerPos.x, 1064);
+    assert.equal(c.TOWER.playerPos.y, -56);
+    const contact = c.bfMeleeRange() + c.bfEntityRadius(boss);
+    const approach = Math.max(0, 800 - Math.max(contact, c.bfStopDistance(boss)));
+    const travel = approach * c.bfEnemyRunSpeed(boss) * c.bfEnemySpeedFactor(boss) /
+      (c.bfPlayerSpeed() * c.bfPlayerSpeedFactor(c.TOWER.player) + c.bfEnemyRunSpeed(boss) * c.bfEnemySpeedFactor(boss));
+    assert.equal(boss.pos.x, arena.cx + contact / 2 + travel + c.bfMeterPx(5), '首領位置沿用原計算');
     for (let i = 0; i < 600 && !c.bfPlayerCanReach(boss); i++) {
       c.GT += .01;
       c.bfTickPlayer([boss], .01, boss, c.TOWER.player);
       c.bfTickApproach([boss], .01);
     }
     assert.ok(c.bfPlayerCanReach(boss), JSON.stringify(cfg));
-    assert.ok(Math.abs((c.TOWER.playerPos.x + boss.pos.x) / 2 - (arena.cx + c.bfMeterPx(5))) <= 10, '整組站位右移五米後仍對齊接戰基準：' + JSON.stringify(cfg));
     assert.equal(c.TOWER.playerPos.y, arena.cy);
     assert.equal(boss.pos.y, arena.cy);
     assert.deepStrictEqual({ ...c.TOWER.arena }, arena);
+  }
+});
+
+test('三塔全部樓層的手動與連續挑戰均使用同一相對出生點', () => {
+  const { c } = setup();
+  c.G.tower.highest = 150;
+  for (let floor = 1; floor <= 150; floor++) {
+    c.bfPlayerPos().x = 1234; c.bfPlayerPos().y = -56;
+    if (floor % 2) c.startTowerFight(floor); else c.startTowerAuto(floor, 2);
+    assert.equal(c.G.tower.active, true);
+    assert.equal(c.TOWER.playerPos.x - c.TOWER.arena.cx, -300, 'floor ' + floor);
+    assert.equal(c.TOWER.playerPos.y, c.TOWER.arena.cy);
+    c.finishTowerFight();
+    c.TOWER.auto = null;
   }
 });
 
@@ -179,6 +199,7 @@ test('150 層：黑幕消失後首步雙方即依原速移動，入場不偷跑�
     c.startTowerFight(floor);
     const b = c.TOWER.boss, arena = JSON.stringify(c.TOWER.arena);
     const bossStart = b.pos.x, playerStart = c.TOWER.playerPos.x;
+    assert.equal(playerStart, c.TOWER.arena.cx - 300, 'floor ' + floor + ' 固定於法陣左側出生');
     for (let i = 0; i < 24; i++) {
       s.tick(.1);
       assert.equal(b.pos.x, bossStart);
@@ -192,7 +213,6 @@ test('150 層：黑幕消失後首步雙方即依原速移動，入場不偷跑�
     assert.ok(Math.abs(c.TOWER.playerPos.x - playerStart - c.bfPlayerSpeed() * .1) < 1e-7);
     for (let i = 0; i < 40 && !c.bfPlayerCanReach(b); i++) s.tick(.1);
     assert.ok(c.bfPlayerCanReach(b), 'floor ' + floor + ' 雙方主動接近後相遇');
-    assert.ok(Math.abs((c.TOWER.playerPos.x + b.pos.x) / 2 - (c.TOWER.arena.cx + c.bfMeterPx(5))) <= c.bfMeterPx(5), 'floor ' + floor + ' 首次交手位於右移後的中央附近');
     assert.ok(c.TOWER.playerPos.x > playerStart && c.TOWER.playerPos.x < bossStart);
     assert.ok(b.pos.x < bossStart && b.pos.x > playerStart);
     assert.equal(JSON.stringify(c.TOWER.arena), arena);

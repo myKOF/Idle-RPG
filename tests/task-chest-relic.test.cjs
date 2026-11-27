@@ -67,9 +67,12 @@ test('任務表：開啟寶箱與獲得遺物兩個任務使用新類型、有�
   const relic = c.TASKS.find((t) => t.type === 'relicCount');
   assert.ok(chest && chest.count > 0, '任務表要有 chestOpenCount 任務');
   assert.ok(relic && relic.count > 0, '任務表要有 relicCount 任務');
-  // 格式2插入技能任務，格式3再插入寶箱與全身強化任務。
-  assert.equal(c.TASKS.indexOf(chest), 22);
-  assert.equal(c.TASKS.indexOf(relic), 40);
+  // 目前Task表：開啟10個寶箱在第24項，獲得3件遺物在第41項。
+  assert.equal(chest.order, 24);
+  assert.equal(relic.order, 41);
+  assert.equal(relic.count, 3);
+  assert.equal(c.TASKS.indexOf(chest), chest.order - 1);
+  assert.equal(c.TASKS.indexOf(relic), relic.order - 1);
 });
 
 /* 遷移前的存檔＝沒有完成旗標；其餘遷移旗標保留，只測這一支。 */

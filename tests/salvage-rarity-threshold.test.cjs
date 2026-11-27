@@ -13,6 +13,8 @@ function loadWorker() {
     location: { search: '' },
     setInterval: () => 0,
     clearInterval,
+    setTimeout,
+    clearTimeout,
     Date, Math, JSON, URL, URLSearchParams
   };
   context.self = { postMessage() {} };

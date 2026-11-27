@@ -245,7 +245,12 @@ function taskGrantReward(def) {
       if (parts.length > 2 && String(parts[2]).trim() !== '') {
         opts.ancientCount = Math.max(0, Math.floor(Number(parts[2]) || 0));
       }
+      // 同批以實際物品部位不放回抽樣（雙武器／雙戒指不另算部位）。
+      // 超過全部部位數時，用完一輪才重新補池，仍發足表定件數。
+      var rewardSlots = [];
       for (var j = 0; j < qty; j++) {
+        if (!rewardSlots.length) rewardSlots = ITEM_TYPES.slice();
+        opts.slot = rewardSlots.splice(ri(0, rewardSlots.length - 1), 1)[0];
         var it = makeEquipment((G.stage && G.stage.current) || 1, opts);
         /* 直接入包，不走輸送帶：任務獎勵不可被熔爐自動拆解吃掉
            （保底發放比照 js/special_rules.js 的專屬裝備）。 */

@@ -24,9 +24,9 @@ importScripts(
   '../item.js?v=20261126-reroll-min-cost-v1', '../gem_resonance.js?v=20261126-unlock-tip-format-v1','../runeword.js?v=20261109-relics',
   '../skills.js?v=20261120-integrated-v1', '../skills2.js?v=20261126-knife-retarget-v1', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
   '../save-schema.js?v=20261126-task-tower-boss-v1', '../player.js?v=20261118-demo-edition', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261119-develop-merge-1', '../elite.js?v=20261120-integrated-v1', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261120-integrated-v1',
+  '../combat.js?v=20261119-develop-merge-1', '../elite.js?v=20261120-integrated-v1', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261127-tower-player-spawn-v1',
   '../factory.js?v=20261126-reroll-min-cost-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261119-develop-merge-1',
-  '../tasks.js?v=20261126-task-chest-upgrade-v1', '../achievements.js?v=20261120-integrated-v1'
+  '../tasks.js?v=20261127-task-equip-slots-v1', '../achievements.js?v=20261120-integrated-v1'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
@@ -1112,8 +1112,7 @@ function installStorageGuards() {
       'IC_manual_' + (tag ? tag + '_' : '') + saveStamp(Date.now()) + '.json');
   }
 
-  /* 一般手動存檔：未連接資料夾時仍要落地（舊路徑是寫進瀏覽器存檔記錄）。
-     一鍵分解前的保護存檔走的就是這條，不能因為沒接資料夾就靜靜消失。 */
+  /* 一般手動存檔：未連接資料夾時仍要落地（舊路徑是寫進瀏覽器存檔記錄）。 */
   self.manualSave = function (label) {
     if (offlineProgressPending()) return null;
     var meta = buildManualMeta(label);
@@ -1329,8 +1328,7 @@ var COMMAND_IMPL = {
     return res;
   },
 
-  /* 一鍵分解。整段邏輯原本寫在 ui.js:2119 salvageAllUnlocked，含分解前自動存檔。
-     分解前存檔是刻意的保護，搬過來時必須保留。 */
+  /* 一鍵分解前保存完整快照，覆寫既有自動存檔；系統保護不建立手動另存記錄。 */
   'item.salvageBulk': function (a) {
     var maxRarity = a.maxRarity, maxLevel = a.maxLevel, maxAncient = a.maxAncient;
     var hasRarityLimit = typeof maxRarity === 'number' && !isNaN(maxRarity) && maxRarity >= 0;
@@ -1347,7 +1345,7 @@ var COMMAND_IMPL = {
     });
 
     if (targets.length) {
-      var rec = manualSave('before_bulk_salvage'); // 已被 installStorageGuards 導向 persist
+      var rec = requestPersist(PERSIST_KINDS.AUTO);
       if (rec) flog(STR(2013, rec.fname), 'info');
     }
     targets.forEach(function (it) {

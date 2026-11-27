@@ -5,10 +5,11 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const {createEngine} = require('../scripts/sim/engine');
 const plain = value => JSON.parse(JSON.stringify(value));
-function setup(order = 20) {
+function setup(floor = 1) {
   const e = createEngine({seed: 151}).boot(null), c = e.ctx, p = c.G.player;
   p.level = 1000; p.gold = 1e12;
-  const def = c.TASKS.find(t => t.order === order);
+  const def = c.TASKS.find(t => t.type === 'towerFloor' && t.count === floor);
+  assert.ok(def, 'Task表應包含封魔塔第' + floor + '層任務');
   c.G.taskState.idx = c.TASKS.indexOf(def);
   return {e,c,p,def};
 }
@@ -18,10 +19,11 @@ test('新增兩個封魔塔任務的參數與獎勵符合Task來源，原荒漠�
   assert.equal(c.TASKS.length,48);
   assert.deepEqual(plain(c.TASKS.filter(t=>t.type==='towerFloor').map(t=>
     [t.order,t.param||'',t.count,t.rewardType,t.rewardParam,t.rewardQty])),[
-    [20,'',1,'equip','4|1|1',1],
+    [21,'',1,'equip','4|1|1',2],
     [35,'',20,'equip','5|150|2',1]
   ]);
-  const desert=c.TASKS.find(t=>t.order===21);
+  const desert=c.TASKS.find(t=>t.type==='stageClear'&&t.param==='desert'&&t.count===50);
+  assert.ok(desert);assert.equal(desert.order,22);
   assert.equal(desert.rewardParam,'4|50|2');assert.equal(desert.rewardQty,2);
 });
 
@@ -40,24 +42,28 @@ test('進入挑戰、逃跑、戰敗及逾時均不會完成BOSS通關任務', (
   }
 });
 
-test('實際勝利結算才更新通關進度，首層任務發1太古史詩1級裝備且不能重領', () => {
+test('實際勝利結算才更新通關進度，首層任務發2件不同部位的1太古史詩1級裝備且不能重領', () => {
   const {e,c,def}=setup();
+  const idx=c.TASKS.indexOf(def);
   c.startTowerFight(1);c.TOWER.boss.hp=0;c.endTowerFight(true);
   assert.equal(c.G.tower.highest,1);assert.equal(c.taskProgressFor(def),1);
-  assert.equal(e.panel('task').tasks[19].ready,true);
+  assert.equal(e.panel('task').tasks[idx].ready,true);
   const n=c.G.inventory.length;
-  assert.equal(e.cmd('task.claim').result.claimed,20);
+  assert.equal(e.cmd('task.claim').result.claimed,def.order);
   const rewards=c.G.inventory.slice(n);
-  assert.equal(rewards.length,1);
-  assert.equal(rewards[0].rarity,4);assert.equal(rewards[0].level,1);assert.equal(c.getItemAncientCount(rewards[0]),1);
+  assert.equal(rewards.length,2);
+  assert.equal(new Set(rewards.map(it=>it.slot)).size,2);
+  for(const it of rewards){
+    assert.equal(it.rarity,4);assert.equal(it.level,1);assert.equal(c.getItemAncientCount(it),1);
+  }
   assert.ok(e.cmd('task.claim').result.err);
-  assert.equal(c.G.inventory.length,n+1);
+  assert.equal(c.G.inventory.length,n+2);
   const loaded=createEngine({seed:151}).boot(JSON.parse(e.saveJson())).ctx;
-  assert.equal(loaded.G.taskState.idx,20);assert.equal(loaded.G.tower.highest,1);
+  assert.equal(loaded.G.taskState.idx,idx+1);assert.equal(loaded.G.tower.highest,1);
 });
 
 test('二十層門檻前不達成，通關後發2太古傳奇150級裝備，更高通關亦符合', () => {
-  const {e,c,def}=setup(35);
+  const {e,c,def}=setup(20);
   c.G.tower.highest=19;
   assert.equal(c.taskProgressFor(def),19);assert.ok(e.cmd('task.claim').result.err);
   c.startTowerFight(20);c.TOWER.boss.hp=0;c.endTowerFight(true);
@@ -114,9 +120,9 @@ test('任務導引選擇正確樓層並保留鎖定入口限制', () => {
     switchTab:value=>{tab=value},towerSelectFloor:value=>{selected=value},window:{addEventListener(){},removeEventListener(){}},
     MutationObserver:class{observe(){}disconnect(){}}};
   vm.runInNewContext(fs.readFileSync(require.resolve('../js/quest-guide.js'),'utf8'),ctx);
-  for(const [order,floor]of [[20,1],[35,20]]){
-    ctx.QuestGuide.follow(c.TASKS.find(t=>t.order===order));assert.equal(tab,'tower');assert.equal(selected,floor);
+  for(const floor of [1,20]){
+    ctx.QuestGuide.follow(c.TASKS.find(t=>t.type==='towerFloor'&&t.count===floor));assert.equal(tab,'tower');assert.equal(selected,floor);
   }
   tab=null;selected=null;locked=true;
-  ctx.QuestGuide.follow(c.TASKS.find(t=>t.order===20),null,{detail:0});assert.equal(tab,null);assert.equal(selected,null);assert.equal(blocked,1);
+  ctx.QuestGuide.follow(c.TASKS.find(t=>t.type==='towerFloor'&&t.count===1),null,{detail:0});assert.equal(tab,null);assert.equal(selected,null);assert.equal(blocked,1);
 });

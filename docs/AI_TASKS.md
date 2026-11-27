@@ -1,3 +1,45 @@
+## TASK-TABLE-TEST-AUDIT-20261127 — 更新任務表回歸並唯讀核對說明
+
+- Owner：Codex；Done，單人處理。使用者授權更新前輪4項失敗測試、驗證後Commit，並唯讀盤點Task任務／獎勵說明與實際條件／發放差異，不改其表。
+- 前置：既有taskClaim／塔戰／導航與來源讀取工具；fetch後目標逐檔衝突預檢無外部來源，ai/codex原有Task.xlsx／CSV／data及其他CSV未提交修改保持。允許tests/task-tower.test.cjs、tests/task-chest-relic.test.cjs、tests/task-evolution.test.cjs與本段；禁止修改／套用／提交來源表及衍生data、產品玩法／存檔／協議／快取、素材與其他工作，不合併推送。
+- 方案與驗收：以towerFloor的目標層數選任務，索引從該定義推算，明確驗目前首層順序21／2件與二十層35／1件；開10箱順序24、遺物順序41。保留真正勝利／失敗／防重領／存讀／導航鎖定與歷史遷移檢查。同輪確認第5項目前500碎片，更新兩處仍預期250的飛刀測試。唯讀比對Excel／CSV／TASKS全部48項及執行器、實際獎勵抽驗，列出不符但不修表；相關回歸／Build／Git差異與原表SHA核對、自我Review後Commit，後續由使用者審閱測試及盤點清單。
+
+- 完成／修改4檔：task-tower／task-chest-relic／task-evolution三支回歸及本段。首層領2件逐件驗1級／史詩／1太古且部位不同，依任務實際索引驗面板／保存；二十層、失敗／逃跑／逾時、鎖定導航與歷史遷移保留。第5項改驗500碎片而非250，未調整產品執行器或任何表。
+- 驗證：`node --test tests/task-system.test.cjs tests/task-tower.test.cjs tests/task-chest-upgrade.test.cjs tests/task-evolution.test.cjs tests/task-chest-relic.test.cjs tests/task-skills.test.cjs tests/gm-task.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/save-schema.test.cjs tests/quest-guide-input.test.cjs`，82/82；`npm.cmd run build`775檔通過。初次更新四項後65/67，另兩項是目前第5項改500碎片與舊測試250不符，已同步測試後全過。
+- 唯讀稽核：既有readXlsxRows／csvParse／Task.extract比對全部48項Excel／CSV／runtime逐欄一致；各項在隔離模擬狀態呼叫真正taskGrantReward，檢查資源差額、裝備品質／等級／太古數與寶石數量，並人工核對所有目標類型與名稱／備註。第16項另以當前175關發獎，仍為1級2件。沒有啟動使用者存檔或寫入來源，未建立報表工作簿或另存Excel，無外部素材。
+- 列出不修（以下全為Task順序，Excel列號＝順序+1）：第16項獎勵顯示3件、實發2件，備註稱依當前關卡、參數卻固定1級；第32項顯示5000碎片、實發1000；第47項顯示5太古、實發4太古；第45／46項顯示創世，但品質索引8現在是神鑄神話（創世為7）。第33／35／36／38項獎勵稱傳奇，實際品質名稱為傳說；第37／39項任務與備註稱傳奇，實際要求傳說(含)以上及指定150／200級。第23／27／29項備註仍稱獨特(含)以上，實際門檻是史詩(含)以上，第27／29並要求50級。第6項任務名要求設為自動分解，實際只點擊精良標籤就達成，取消也算；這與其備註一致，屬任務名語意差異而非未接線。
+- 風險／界限：僅修測試，不修上述說明／設定差異；沒有本案未完成內容。測試針對目前尚未提交的Task版本，後續整合必須配合這版來源及衍生資料；本提交不把原有使用者表格混入。未跑全庫或實機瀏覽器，不改玩法，因此不需LV／String／快取版本；來源Excel沒有修改，不涉及Excel重開驗收。
+- 原檔保護：Task.xlsx SHA256 a0371a084b1626d2315c0560db2d41242d81bacea4253391967667f2f8c9c7ed；Task.csv fdff85690272ff4aaf5b78b57e256dfe337dcfaebfb78096cd799d4011e1f599；data.js f2ebcdaeae32cdb63264ab19dd5f4f76869cee156441cd1ce93e4774e64c3932，前後保持。另兩份NPC／Zone_Stage_Drops CSV雜湊亦保持，無stage／還原。自我Review確認只更新來源已變動的期待與對應定位，原功能斷言保留，Git差異檢查通過。
+- 唯讀未改：共通規範／Workflow／Codex、Task來源／CSV／data／RARITIES／String名稱、tasks與item實際進度／發獎／太古／等級、Worker熔爐setQuality與協議、其他任務／技能／存檔／導引／快取回歸及build工具。kill-test-browsers確認無測試瀏覽器，沒有桌面擷取或新增暫存，素材庫無變更／不需Commit。
+- 交付：ai/codex本段所在「[Codex] test: 依目前Task表更新任務回歸並記錄說明差異」提交，SHA見Git log／回報；可供審閱合併，需搭配目前Task資料。未合併或推送develop／main；下一步由使用者決定盤點項目中的說明或數值應採哪一方，本案不代改。
+
+## TASK-EQUIP-SLOTS-20261127 — 任務裝備獎勵同批部位不重複
+
+- Owner：Codex；Done，單人處理。使用者要求任意N件裝備獎勵的部位不同，例如5件100級史詩裝備須為5個不同部位。前置：既有taskGrantReward與makeEquipment的slot選項可用，fetch後逐檔衝突預檢無外部來源。
+- 允許：js/tasks.js、tests/task-system.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js必要快取、LV_upgrade_system.md與本段。禁止修改來源表／data、裝備公式、掉落／熔爐、存檔／協議、素材與其他聊天修改，不合併推送。
+- 方案：每次發獎以ITEM_TYPES的11種實際部位不放回抽樣，武器／戒指各算一類，不把雙欄當不同部位。超過11件時每輪用完才補池，保留全數獎勵；各次任務重新抽樣。保持品質／等級／太古條數、直接入包及領取防重規則。
+- 驗收：5件史詩100級全不同、11種類覆蓋、超額循環不漏發、零／單件與跨次重置、實際taskClaim與防重、關卡等級／太古相容、共享常數不變、相關回歸／Build及自我Review後Commit。保留同副本Task表／data及終極提示修改，首頁只動bridge快取，文件在本段分段提交。後續交使用者審閱合併與重載驗收。
+
+- 完成：修改7檔：tasks發獎5行、task-system三項回歸、index／bridge／sim.worker快取、LV及本段。從ITEM_TYPES複製池再抽取，不改共享常數；僅任務裝備受影響，無顯示字串或素材變更，素材庫不需Commit。當前來源裝備獎勵最多2件，本測試另以指定5件與超過11件驗證通用行為。
+- 測試指令：`node --test tests/task-system.test.cjs tests/task-tower.test.cjs tests/task-chest-upgrade.test.cjs tests/task-evolution.test.cjs tests/task-chest-relic.test.cjs tests/task-skills.test.cjs tests/gm-task.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`，67項63通過／4既有失敗；修改前同組64項60通過／相同4項失敗。task-chest-relic的史詩任務預期順序22但現表23；task-tower仍預期首層任務在順序20且1件，現表21且2件，連帶勝利領取與導航兩項固定索引fixture失敗。未改來源表或放寬舊斷言，本次新增三項全部通過。
+- 新回歸驗證5件100級史詩／2太古、實際claim／重領拒絕／dirty旗標、固定整數抽樣上下界、0／1／5／11／25件、多輪及跨次重置、零等級沿用關卡175→150級、太古省略與指定0、ITEM_TYPES不變。初次測試將所有浮點亂數固定0使既有詞條抽樣無法產滿詞條，已改為只固定整數抽樣，保留正常詞條產出，產品詞條公式未動。
+- `npm.cmd run build`774檔通過，Git差異檢查與自我Review通過；`node tools/kill-test-browsers.cjs`確認無測試用無畫面瀏覽器。本次未建立瀏覽器或桌面擷取，未實機遊玩或跑全庫；本項沒有未完成實作，已知限制為11種部位用完才可重新抽樣，以及上述既有表格fixture失敗。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、item的makeEquipment／太古／詞條、data的ITEM_TYPES與TASKS、util亂數、Task.csv與其他任務／Worker回歸、player／save／protocol與build工具。其他聊天的開始選單及終極技能提示已獨立提交，index分別為start-menu／ui與本項bridge不同列，文件不同段，本項提交不含其增量；原有Task.xlsx／CSV／data與其他CSV保持未提交。
+- 交付：遊戲ai/codex的本段所在「[Codex] fix: 避免任務裝備獎勵部位重複」提交，SHA見Git log／交付。可供使用者審閱合併，未合併或推送develop／main；下一步整合到啟動工作區並重新載入／重啟遊戲。
+
+## DESKTOP-STARTUP-20261127 — 長時間掛機後刷新與開始選單卡頓
+
+- Owner：Codex；Done（已確認的背景等待問題），單人處理。使用者回報約12小時掛機後刷新卡1～2分鐘，補充可能是開始選單的繼續遊戲按鈕遲遲不能使用。先分開量測讀檔、背景準備、Worker與場景首畫，不能把session至boot的區間直接當成載入時間（含玩家停留選單）。
+- 前置：現有桌面／存檔／選單流程；已讀共通規範、Workflow、Codex與任務紀錄、fetch並逐檔預檢無外部來源。同副本既有NPC／Task／掉落表及data修改保留，不納入本案。
+- 允許：js/start-menu.js、必要的js/start-menu-background.js／storage.js、index.html快取、對應開始選單／背景／存檔回歸、tools/desktop/verify-startup.cjs、LV_upgrade_system.md與本段；若修改Worker共載檔再補必要Worker快取。禁止修改來源表、玩法／獎勵、存檔格式與協議、素材及其他任務，不合併推送。
+- 驗收：以隔離profile及只讀複製的真實掛機快照測試Electron冷啟動／刷新／繼續；人工延遲選單圖片確認按鈕不被無限等待，保留來源確認及新遊戲防護、不跳過讀檔或少算收益；相關回歸、Build、Git差異及自我Review後Commit。後續交使用者整合、重開桌面版驗收；未完成12小時實時重跑不得宣稱已完整重現。
+- 原因／完成：原prepare在讀檔成功後，仍無期限等待四張裝飾圖decode的Promise.all；已改成最多等一秒，讀檔未完成時不啟動倒數。背景正常完成取消timer，逾時與晚完成共用一次揭幕守門，避免進入遊戲後又重開選單／重啟音樂或收掉遊戲Loading。修改start-menu、首頁快取、專項回歸、Electron驗證工具、LV與本段共6檔；不動背景美術、存檔／離線結算、Worker或來源表。
+- 實機：verify-startup.cjs使用全新隔離profile，只讀複製玩家09:22的112級掛機快照，抑制原生視窗顯示且全靜音；先正常開選單，再刷新並讓四張裝飾圖的decode永久pending。修改前8秒等待逾時，Loading仍在、Worker未啟動、四圖pending；修改後正常選單2.772秒、四圖仍pending的選單3.082秒可操作，按繼續2.689秒進入完整遊戲首畫，Worker errors與頁面errors皆0。這是可控重現的阻塞路徑，不代表已證明玩家原本1～2分鐘的唯一原因。新工具先前缺Page.enable的首輪未成功注入，修正注入後才取得有效前後結果，沒有以無注入輪次宣稱修復。
+- 測試：node --test執行start-menu、start-menu-background、game-menu-save、save-origin-isolation、save-schema與vfx-editor-cache-versions，共53項51過2既有失敗；以git show HEAD的start-menu／index只在記憶體替換，save-origin-isolation同樣11過2失敗（舊fixture缺document.getElementById），未改其產品或斷言。新增兩項守背景無回覆／晚完成及讀檔不能被逾時跳過，12項選單測試全過。npm.cmd run build通過774檔；verify-startup另以node --check驗語法。
+- 唯讀檢查：規範／Workflow／Codex、main／bridge／storage／save／schema／origin／play-log、Electron外殼／protocol／背景活動／存檔適配、選單背景／遊戲首畫、renderer／Hero3D與模擬引擎、09:07／09:22／09:36掛機快照與遊玩記錄。原生引擎載入三份快照boot約4～14ms、JSON約22～65KB，沒有證據支持存檔膨脹或逐小時重播是這次主因。素材庫無修改，不需素材庫Commit。
+- 自我Review：只限制非必要背景等待，不繞過讀檔、來源／較新存檔攔截；保存正常背景完成、失敗、resume與新遊戲流程。未做12小時真實等待／多機測試，無法排除其他慢讀檔或資源瓶頸；本輪程式／回歸工作無剩餘項，可供審閱合併，未合併／推送。測試Electron與profile皆清理，無螢幕擷取，kill-test-browsers無殘留。遊戲Commit為本段所在「[Codex] fix: 避免開始選單被背景圖片載入卡住」，SHA見交付；下一步重新載入新版桌面版後驗收，若長掛後仍慢再依實際停留階段量測。
+- 共用檔保護：同副本另一項ULT-TOOLTIP任務修改index的ui.js快取與LV／任務檔尾端，本案只動start-menu快取與文件前段；沒有共用狀態或語意相依。提交前以HEAD拆出雙方差異，三方試跑並逐位元核對工作檔，只暫存本案hunk。其他表格／data／ui／技能提示回歸保持原位，不順帶提交。主要相關五份回歸再次40/40通過（另13項來源測試的2個既有fixture失敗照實保留）。
+
 ## SYNC-ALL-AI-20261127 — 整合六行開箱獎勵並恢復同步
 
 - Owner：Codex，整合。使用者輸入 `1`；將 develop `2f7d5e37` 與 Codex `5b49a5bd3b11afd0f072879150eebfef01becd55` 整合，保留六行獎勵、每50ms揭示一件及相關文件／測試。合併無內容衝突，新增本紀錄前的合併樹與來源樹完全一致。Claude、Antigravity、本地與遠端可同步任務來源均已核對在來源歷史內；三個固定工作區將循正常 BAT 推送及回同步，實際結果見本次報告。
@@ -17934,3 +17976,37 @@ Worker 存活且頁面正常完成載入。
 - 清理限制：本輪tmp/boss9-final-variants-20261127的13個表格／渲染／稽核暫存及素材包qa下4個早期idle-check診斷檔，在兩個明列絕對根目錄內逐項核對普通檔／非連結後，非遞迴刪除命令仍被自動核准審查以政策限制拒絕，整段未執行，未重試或換工具。17檔原位保留，不納Git；四個舊診斷不納必要素材manifest，日後focused輸出寫專案tmp。正式完整首幀／實戰／表格QA保留；前兩輪已拒絕刪除的舊tmp未動，不以ignore隱藏素材庫untracked。
 - 唯讀未改：共通規範／Workflow／Codex、舊核准death／game原檔與製作包、Hero3D／battle-renderer／塔戰ACT／公式／存檔／協議／技能／String／VFX、Excel更新器／CSV及config_tables、頭像UI與CSS。自我Review完成，角色／動作／表格接入無未完成項，可供合併；只驗本機Chrome，未驗其他瀏覽器或實體裝置，第一次模型載入仍為既有非同步方式。換機編修素材須同步LFS；下一步由使用者合併後重載遊戲，未合併／推送develop／main。雙庫SHA於後續交接補入。
 - 雙倉庫交接：素材庫先提交e5f03ff5e46759d02b0914ad269dcfd9a69f053c，共52檔；49份manifest的46個Git blob SHA與3個LFS原檔oid／size逐項通過，提交後git lfs fsck --objects HEAD成功。素材庫僅剩4個前述拒刪診斷untracked，無其他待提交修改。遊戲ai/codex提交為本段所在「[Codex] feat: 接入BOSS9三套正式外觀並同步使用者表單」，26檔含使用者兩個掉落表來源／衍生與data對應值，實際SHA見交付／Git log；沒有遺漏已授權的表單，也沒有另改其數值。
+
+## TOWER-PLAYER-SPAWN-20261127 — 玩家出生點對齊法陣左側紅圈
+
+- Owner：Codex；Done，單人處理。使用者指定封魔塔BOSS戰的玩家出生點移到截圖紅圈，即法陣左側外緣附近。前置：目前塔戰已有固定法陣幾何與權威玩家座標，工作區乾淨，fetch後逐檔衝突預檢無外部來源。
+- 允許：js/tower.js、tests/tower-battlefield.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js必要快取、LV_upgrade_system.md及本段。僅固定玩家起點為法陣中心左方基準畫寬37.5%（300世界單位），保留BOSS原起點與登場／原生追擊。禁止改配置表、傷害／射程／移速、存檔／協議、美術與其他任務，不合併推送。
+- 驗收：各種速度／射程及三塔樓層的玩家起點一致、法陣不偏移、BOSS原起點保持；真正start／tick的登場與接近／射程／場界、顯示沿用權威座標、Worker與主線快取同步、相關回歸及Build／自我Review後Commit。後續交使用者審閱合併及重載驗收。
+
+- 完成：7檔修改，包含tower玩家出生點、battlefield回歸、index／bridge／Worker快取及LV／本段。原中央交手測試預期已被使用者新出生點取代，改守固定左側起點；仍完整驗證原速、射程內出手、登場不偷跑、原BOSS起點及法陣不漂移。顯示層towerFieldView直接採權威playerPos、enterArena採權威arena，無第二套顯示座標；玩家鏡頭仍依既有規則跟隨。
+- 測試指令：`node --test tests/tower-battlefield.test.cjs tests/tower-opening-approach.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-auto-advance.test.cjs tests/tower-auto-result.test.cjs tests/tower-scene-intro.test.cjs tests/tower-action-motion.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`，49/49通過；涵蓋全部150層固定出生與登場／原速追擊、不同速度射程體型、場界、連挑／自動推進、Worker協議及快取。`npm.cmd run build`774檔通過；最終Git差異檢查通過。初輪1項舊中央交手斷言因需求改變失敗，已改成固定起點並保留原本的相遇與追擊檢查，最終全組通過。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、battlefield幾何及場界、battle-renderer權威座標／鏡頭投影／進場、battle-arena法陣尺寸、既有塔開場／動作／自動流程／Worker及快取回歸、build工具。自我Review完成，無程式未完成項；未啟動完整遊戲作目視驗收或跑全庫，紅圈以法陣相對位置對齊，仍建議重載後實際查看。沒有美術／VFX／顯示文字或素材庫修改，不需素材庫Commit；沒有建立瀏覽器或擷取工作階段，kill-test-browsers確認無測試瀏覽器。
+- 交接：遊戲Commit為本段所在「[Codex] fix: 將封魔塔玩家出生點移至法陣左側」，實際SHA見Git log／交付。可供審閱合併，未合併或推送develop／main；下一步由使用者整合至實際啟動分支後重新載入遊戲，確認法陣左側出生位置。
+
+## ULT-TOOLTIP-20261127 — 終極進化提示停留時不被刷新關閉
+
+- Owner：Codex；Done，單人處理。使用者回報終極進化技能tips顯示約兩秒就消失；已定位renderSkillBrowser在每次刷新無條件hideTooltip，且金幣變更會重建詳情卡片。前置：既有技能提示與快照流程可用，逐檔衝突預檢無外部分支／副本來源。
+- 允許：js/ui.js、index.html對應快取、tests/skill2-ui.test.cjs／tooltip-modal-close.test.cjs、LV_upgrade_system.md與本段；必要隔離瀏覽器驗證。改為未重繪時保留提示，重繪後只對游標仍指向的同群組同選項恢復提示；離開／切換選項仍正常關閉，不改數值、門檻、表格、Worker／存檔／素材，不合併推送。
+- 驗收：相同快照、金幣刷新／詳情重建、解鎖內容更新、滑出與群組／選項切換、過期節點事件；相關回歸、Build、隔離瀏覽器連續懸停與清理、自我Review後Commit交使用者整合。同副本既有Task／CSV／data及開始選單任務修改保留；共享index只動ui.js快取，LV／任務紀錄只追加本段，分段暫存。
+- 完成／修改6檔：ui.js的刷新／重建提示維持及過期mouseout守門、index對應快取20261127-ult-tooltip-v1、skill2-ui與tooltip-modal-close回歸、LV及本段。未重繪不碰提示，真正重建後以實際:hover及data-sk＋終極索引雙重確認同一選項再更新說明；不同群組／選項或離開則清理。
+- 測試指令：`node --test tests/skill2-ui.test.cjs tests/tooltip-modal-close.test.cjs tests/panel-scroll-hover-suppress.test.cjs tests/resource-tooltip.test.cjs tests/skill-equipped-style.test.cjs tests/skill-prerequisite.test.cjs tests/vfx-editor-cache-versions.test.cjs`，43/43通過。涵蓋20次相同快照、不足金幣重建、解鎖內容更新、換群組／選項、離開與舊mouseout、真實錨點移除／隱藏彈窗清理、既有技能／捲動／資源與快取行為。初輪新fixture技能點0導致金幣變化不會重建，已補足點數及足額金幣再驗證；原tooltip-modal-close還引用早已移除的舊技能／天賦彈窗函式，改守目前刷新／模態生命週期並補真正執行的清理驗證，未修改功能以遷就測試。
+- 瀏覽器：以launchHeadless看門狗及隔離profile，用真正JS／CSS與renderSkillBrowser建立獨立頁面，載入正式mouseover／mouseout委派；真實滑鼠懸停，12次每250ms相同快照共3秒，接著12次每250ms金幣交替重建共3秒，提示全程可見且錨點接回新節點。移到第二選項顯示對應提示、真正滑出關閉，頁面例外0；未啟動新遊戲／載入使用者存檔，瀏覽器啟動參數靜音，finally關閉瀏覽器與伺服器，kill-test-browsers確認無殘留。無桌面擷取或測試產物。
+- 驗證／界限：npm.cmd run build774檔通過，Git差異檢查及自我Review通過。唯讀檢查共通規範／Workflow／Codex、技能快照／HTML／三選一與tooltip事件／刷新、既有技能／資源／捲動／模態回歸、正式瀏覽器驗證與清理工具；無新增顯示字串、美術或素材庫變更，不需String／VFX或素材庫Commit。未跑全庫、完整遊戲長時掛機或實體裝置，已完成本次提示生命週期修復，無未完成實作。
+- 共用檔保護：與同副本DESKTOP-STARTUP任務共用index／LV／AI_TASKS，分別為ui與start-menu不同script標籤、文件頭尾不同段落，無語意相依；以HEAD／本案／其他修改做三方合併試跑並核對完整工作檔，只暫存本案區段。其他Task／CSV／data及開始選單來源／測試／工具不納本次提交、不還原。
+- 交接：Commit為本段所在「[Codex] fix: 保留終極進化技能的懸停提示」，實際SHA見Git log／交付；可供合併，未合併／推送develop或main。下一步使用者整合至實際啟動分支後重新載入遊戲驗收。
+
+## SALVAGE-AUTOSAVE-20261127 — 分解前自動存檔不再誤用手動另存
+
+- Owner：Codex；Done，單人處理。使用者回報未手動存檔卻大量出現IC_manual_before_bulk_salvage檔案，要求系統自動保存歸自動存檔。已定位一鍵分解誤呼叫manualSave；刷新／關閉原走自動存檔。前置：既有auto_current與桌面同檔覆寫流程，fetch後逐檔預檢無外部來源。
+- 允許：js/worker/sim.worker.js、js/storage.js過期註解、js/bridge.js與index.html必要快取、tests/bulk-salvage-autosave.test.cjs／salvage-rarity-threshold.test.cjs、LV_upgrade_system.md與本段。改走既有AUTO，仍在分解前序列化權威G；保留手動操作與舊檔相容。不改存檔格式／協議、配置表、戰鬥／分解獎勵、素材、其他聊天修改，不合併推送。
+- 驗收：分解前完整裝備快照、auto_current與固定自動檔名、多次分解不增手動檔、無目標不存檔、決定論測試不自動寫入、真正手動另存保持；既有落地／桌面／刷新／分解與快取回歸、Build及自我Review後Commit。舊保護檔不自動搬移或刪除；同副本配置表與data修改保留。後續交使用者整合重載驗收。
+- 完成／修改8檔：Worker分解前使用requestPersist(AUTO)、Worker／Storage過期註解、Bridge與首頁快取、bulk-salvage-autosave新增四項回歸、salvage-rarity-threshold測試環境補setTimeout／clearTimeout、LV及本段。沒有新增玩家字串、素材或存檔欄位，不需String或素材庫Commit。
+- 測試指令：`node --test tests/bulk-salvage-autosave.test.cjs tests/desktop-saves.test.cjs tests/game-menu-save.test.cjs tests/save-drain-refresh.test.cjs tests/manual-save-filename.test.cjs tests/save-folder-timestamps.test.cjs tests/save-compression.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`，57/57；`node --test tests/bulk-salvage-autosave.test.cjs tests/salvage-rarity-threshold.test.cjs`，8/8（四項重複，共61項獨立案例）。`npm.cmd run build`775檔通過；最終Git差異檢查通過。
+- 回歸證據：只在記憶體以git show HEAD的Worker替換，新四項全部如預期失敗（manual種類、決定論自動落地、兩平台各12筆手動記錄）；舊分解四項在修改前也因fixture缺timer而失敗。補齊fixture後四項原有品質／等級／太古／鎖定斷言全過，沒有放寬規則。新測試完整載入正式Worker與模擬依賴，存檔前含待拆裝備／原材料且savedAt扣補進度欠帳，落地失敗回退時間；兩平台串真正Storage寫入器，桌面只用一個自動檔名，真正主動另存仍獨立。既有桌面回歸另驗原子寫檔／bak／開機讀回。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、save.js／protocol.js／ui.js存檔與分解入口、electron/save-files.cjs、既有桌面／選單／刷新／檔名／時間戳／壓縮／分解／Worker及快取回歸、build工具。自我Review完成：快照在修改背包／材料前產生，沿用既有AUTO排程與覆寫，未改分解篩選／獎勵或舊檔掃描。未啟動遊戲或碰使用者存檔，未跑全庫／實體裝置；kill-test-browsers確認無測試瀏覽器，無桌面擷取或新增暫存產物。
+- 交接／風險：遊戲ai/codex的本段所在「[Codex] fix: 將分解前備份歸入自動存檔」提交，SHA見Git log／交付，可供合併；未合併或推送develop／main。沒有本案未完成實作。自動存檔會按原本週期持續覆寫，分解前快照不再是永久歷史副本；既有IC_manual_before_bulk_salvage仍保持可讀、不自動刪除。同副本既有NPC／Task／掉落CSV、Task.xlsx及data未暫存或還原；下一步使用者整合至實際啟動工作區並重載／重啟遊戲驗收。
