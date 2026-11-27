@@ -1,3 +1,18 @@
+## MERCHANT-ENTRY-TICKET-TIP-20261127 — 神祕商人券數與三項屬性溢出提示
+
+- Owner：Codex；Done，單人處理。使用者要求神祕商人入口tips底部以黃色顯示「當前擁有邀請券數量：XXXX」。前置：header投影已有邀請券、updateMerchantEntry與通用提示刷新可用；fetch後逐檔預檢無外部來源，String來源獨占確認通過。追加使用者要求：暴擊率／攻擊速度／冷卻縮減tips各補溢出轉增加連擊數說明，只改String252／264／266及其標記參數說明，不改三項計算或門檻；原暴擊提示已含轉換資訊，整理至黃色末行避免重複。
+- 允許：js/ui.js入口提示、tests/merchant-cards-ui.test.cjs、String.xlsx原生API及CSV／strings_data生成、index與必要編輯器共用快取、LV與本段。保留同副本封魔塔掉落／強化設定任務的data／formula／Bridge／Worker／index及文件不同段；禁止改邀請券獲得／消耗／召喚／解鎖、存檔／協議、Task與其他配置、素材及其他工作，不合併推送。
+- 方案／驗收：新增String2581「當前擁有邀請券數量：{0}」，每次header刷新由merchantInvitationCount(player)更新入口描述末行，沿用merchant-ticket-remaining黃色樣式與既有通用開啟提示刷新；0張／有券／耗券／塔戰停用及不重新懸停更新、既有召喚說明保持。原生Excel重開與全格比較、表格／快取同步、相關回歸／Build、必要隔離瀏覽器目視、自我Review後只提交本案，交使用者整合重載。
+
+- 完成／修改9檔：ui入口提示／merchant-cards-ui回歸、String.xlsx／CSV／strings_data、首頁ui及String快取與編輯器共用String快取、LV與本段。商人入口以既有黃色class顯示整數完整券數；若該錨點正開啟，立即沿既有內容刷新，不移動位置。三屬性只改String252／264／266，保留效果與{0}上限，將轉連擊數放黃色末行；原暴擊既有轉換句整理避免重複。沒有data／formula或Worker／協議／存檔改動，沒有新素材或素材庫Commit。
+- 表格：Excel獨占確認後兩次使用excel-update-sheets.ps1，正常重開各兩次。第一輪只新增2581的5格；第二輪只改252／264／266的D／E共6格。最終全工作簿既有2565列逐格比較只這6格變動，另末列新增5值；styles.xml SHA256完全相同（54a10af0c503a4dea5ab8c6142b55abe5affc11939dcbb1ec4309db33ee04f7e），0個drawing保持，其他語言均空白未填。試算表技能唯讀匯入、前後指定區域渲染並目視；既有空D欄被預覽器誤讀438的限制以來源逐格比較與原生重開為準，未匯出覆蓋來源。單表xlsx_to_csv→apply_strings生成2565條／0eccb8bf，主頁及編輯器快取一致。
+- 驗證指令：`node --test tests/merchant-cards-ui.test.cjs tests/resource-tooltip.test.cjs tests/tooltip-modal-close.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/combo-hits.test.cjs tests/stat-cap-unlimited.test.cjs`，51/51；新入口回歸涵蓋12345→12344→0、塔戰停用仍顯示、舊投影缺欄回0、已懸停內容刷新、黃色class與原禁用規則。連擊數回歸守住暴擊／攻速／冷卻溢出實際公式與邊界，沒有改算式迎合提示。
+- 擴大回歸另含header-resources／mystery-merchant，共64項60過4既有失敗。以HEAD的ui.js透過fs讀取攔截僅替換到測試記憶體、略過新增案例，63項59過同4失敗：品牌舊fixture、最高通關塔層品質上限、召喚／升級品質表fixture、Store原生Excel與CSV同步斷言。未修改這些測試／來源表或放寬條件。第一次工具串接後續check使shell最末碼為0，仍按實際test子程序1與明確失敗數記錄，不宣稱全組通過。
+- 實際瀏覽器：launchHeadless隔離Chrome與看門狗、靜音，正式CSS／String／STAT_GROUPS／UI提示函式的獨立頁，以真正mouseover顯示四個tips。商人懸停內12345→12344→0即時更新；三屬性末行文字正確，全部computed color為rgb(255,215,0)，1000×650下四個提示皆完整在畫內無裁切，截圖逐一目視；頁面例外0。無遊戲局／玩家存檔或音效，finally關閉瀏覽器／伺服器，kill-test-browsers確認無殘留，未建立桌面擷取。
+- Build／交付界限：`npm.cmd run build`776檔通過；最後String變更再由字串回歸／VM與node --check檢查生成JS，apply_strings --check同步、build_string_csv --check仍寫死0條，Git差異與自我Review通過。唯讀未改規範／Workflow／Codex、item券數／消耗、header投影／uiTick／tooltip生命週期／CSS、data的STAT_GROUPS與上限／COMBO參數、formula連擊衍生、Task與其他配置、既有回歸／Excel與字串工具。封魔塔掉落與強化設定工作已由另一聊天獨立提交ed7551eb，本案首頁與文件增量只包含本項，不重提其內容。
+- 清理限制：本輪tmp/merchant-invite-tip-20261127僅含來源前後副本、Excel更新JSON、只讀渲染／提示截圖、隔離QA腳本／日誌及依賴junction。以絕對路徑確認位於工作區tmp、驗證junction及普通檔後，嘗試非遞迴清理，整段命令被自動核准審查以政策限制拒絕，未執行、未重試或換工具；原位保留，不納入提交。功能交付完成，暫存清理尚受此限制。
+- 本項無未完成實作，可供使用者審閱合併，未合併或推送develop／main；限制為隔離提示頁驗證，未做完整遊戲長時／多瀏覽器／實體裝置。下一步整合後重新載入遊戲；VFX編輯器共用String快取有更新，仍開著時須先備份未存內容再重載，不由本案自動刷新或保存。遊戲Commit為本段所在「[Codex] feat: 補充商人邀請券與屬性溢出提示」，SHA見Git log／交付。
+
 ## TASK-TABLE-TEST-AUDIT-20261127 — 更新任務表回歸並唯讀核對說明
 
 - Owner：Codex；Done，單人處理。使用者授權更新前輪4項失敗測試、驗證後Commit，並唯讀盤點Task任務／獎勵說明與實際條件／發放差異，不改其表。

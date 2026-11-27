@@ -7376,7 +7376,11 @@ function updateMerchantEntry(player) {
     button.disabled = count < 1 || active;
     button.classList.toggle('is-ready', count > 0 && !active);
     button.setAttribute('aria-disabled', String(button.disabled));
-    if (button.parentNode) button.parentNode.setAttribute('data-tt-desc', STR(count > 0 ? 2439 : 2437));
+    if (button.parentNode) {
+      button.parentNode.setAttribute('data-tt-desc', STR(count > 0 ? 2439 : 2437) +
+        '<br><span class="merchant-ticket-remaining">' + esc(STR(2581, count)) + '</span>');
+      if (UI.tooltipAnchor === button.parentNode) refreshOpenResourceTooltip();
+    }
   }
   var alert = $id('tower-merchant-alert');
   if (alert) alert.hidden = count < 1;
