@@ -1,3 +1,16 @@
+## MERCHANT-BASELINE-TESTS-20261127 — 更新名稱與商人品質／Store回歸
+
+- Owner：Codex；Done，單人處理。使用者要求將前輪4項既有失敗更新至目前遊戲名稱、商人品質上限與Store設定，空白列忽略，不改表，測試後Commit。前置：共通規範／Workflow／Agent已讀，ai/codex逐檔預檢無外部來源；本副本常駐減傷提示任務只修改String及文件尾端，完整保留。
+- 允許：tests/header-resources.test.cjs、tests/mystery-merchant.test.cjs與本段。禁止改來源Excel／CSV、data／item／公式／UI／字串／快取、其他進行中工作／素材，不合併推送。Store與game_parameters來源、data與item先記SHA，完成後保持。
+- 方案／驗收：名稱預期改為現行「神力之巔：放置暗黑／放置暗黑」；商人品質上限按目前樓層掉落區間驗各邊界（1～10史詩、11～20傳說、21起神話、後段創世及混沌），保留最高通關而非選取／角色等級、設定上下限夾限及真實商品驗證；商店升級先以最高通關1層驗史詩胸甲4太古，再驗進度提升才突破品質上限。Store只過濾兩端全空白列，仍逐格逐列核對全部有效值及非法配置拒絕。跑相關回歸／Build、自我Review與來源SHA核對後Commit，交使用者審閱合併。
+- 使用者追加詢問：暴擊率104.4%為何連擊仍「—」。唯讀確認comboOverflowHits為a×ln((value-threshold)/100)，非正歸0；因此104.4%溢出4.4點仍0，現公式須超過200%暴擊才有正連擊數。已於聊天說明提示未交代實際門檻的落差；本項不修改公式或提示。
+
+- 完成／修改3檔：header-resources／mystery-merchant兩支測試與本段；不改任何來源表或產品執行器。品質上限驗22種最高通關值，包含0及全部分界前後，另守商店預設2／11與高進度仍受設定最高品質限制。升級商品仍逐件驗部位／太古數，增加非空候選檢查，通關41層後才可產生表指定品質7。
+- Store忽略空白列後182列有效資料逐格一致；原生Excel207列含25空列，沒有修改或匯出來源。首輪29/30，揭露舊非法符文fixture仍字串搜尋目前Lv.1已不存在的20=5；改按本列實際兩個候選構造超界34與重複編號，保留七類非法配置拒絕及原有權重驗證，沒有刪斷言或放寬合法性。
+- 驗證指令：`node --test tests/header-resources.test.cjs tests/mystery-merchant.test.cjs tests/merchant-cards-ui.test.cjs tests/resource-tooltip.test.cjs tests/tooltip-modal-close.test.cjs tests/string-table.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/tower-equipment-drop-table.test.cjs`70/70；`npm.cmd run build`776檔通過；Git差異檢查與自我Review通過。Store／game_parameters的Excel及CSV、data與item六檔SHA前後完全一致。
+- 唯讀未改：規範／Workflow／Agent、String現行名稱、Store與game_parameters來源／CSV、data掉落區間／商店設定及item的merchantEquipmentRarityRange／商品生成、其他商人／高塔／tooltip／字串回歸。其他聊天常駐減傷已獨立提交5a891236；本案文件前段與其尾段不同，保留其成果。本次不改玩法，不需LV／String／快取或素材庫提交。
+- 本項無未完成／已知新增風險；未跑全庫或實機，現行設定相關回歸全過，可供使用者審閱合併，不合併或推送。Commit為本段所在「[Codex] test: 更新遊戲名稱與商人配置回歸」，SHA見Git log／交付。使用者另已確認溢出連擊至少0.01、200%後舊公式仍保底0.01，將另項處理公式與顯示，不混入本測試提交。沒有新增暫存或瀏覽器，既有其他任務拒刪tmp不動。
+
 ## MERCHANT-ENTRY-TICKET-TIP-20261127 — 神祕商人券數與三項屬性溢出提示
 
 - Owner：Codex；Done，單人處理。使用者要求神祕商人入口tips底部以黃色顯示「當前擁有邀請券數量：XXXX」。前置：header投影已有邀請券、updateMerchantEntry與通用提示刷新可用；fetch後逐檔預檢無外部來源，String來源獨占確認通過。追加使用者要求：暴擊率／攻擊速度／冷卻縮減tips各補溢出轉增加連擊數說明，只改String252／264／266及其標記參數說明，不改三項計算或門檻；原暴擊提示已含轉換資訊，整理至黃色末行避免重複。
