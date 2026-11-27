@@ -310,7 +310,7 @@
 310,角色,文字｜data.js:2715 STAT_GROUPS,,🔰 魔法防禦,,,,,,,,,,,
 311,角色,文字｜data.js:2715 STAT_GROUPS,,降低受到的魔法傷害。由智力與體質派生。,,,,,,,,,,,
 312,角色,文字｜data.js:2716 STAT_GROUPS,,🌍 常駐技能減傷,,,,,,,,,,,
-313,角色,文字｜data.js:2716 STAT_GROUPS,,裝配後持續生效的技能傷害減免，與其他減傷乘算；不是全局減傷屬性點數。,,,,,,,,,,,
+313,角色,文字｜data.js:2716 STAT_GROUPS,,技能裝配後持續提供的減傷，與其他減傷乘算。,,,,,,,,,,,
 314,角色,文字｜data.js:2717 STAT_GROUPS,,🛡️ 全局減傷,,,,,,,,,,,
 315,角色,文字｜data.js:2719 STAT_GROUPS,{0}=代入參數：GLOBAL_DMG_RED_CAP,（減傷上限 {0}%）,,,,,,,,,,,
 316,角色,界面文字(含標記)｜data.js:2720 STAT_GROUPS,"{0}=代入參數：capNote；{1}=代入參數：pctStrFloor4GlobalDmgRed(reduction)（百分比）；<br>=換行；<span style=""color:#ffd700"">…</span>=變色(#ffd700)","降低受到的所有傷害{0}。<br><br><span style=""color:#ffd700"">目前實際減傷：{1}</span>",,,,,,,,,,,

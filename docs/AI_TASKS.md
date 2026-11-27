@@ -18039,3 +18039,13 @@ Worker 存活且頁面正常完成載入。
 - 全庫：`node --test --test-concurrency=2 "tests/*.test.cjs"`6326項，5608通過、716失敗、2略過，約1365.8秒；耗時主要是全部通過的真Git／Excel同步工具情境，沒有操作正式分支。針對188份失敗檔，以只讀preload在記憶體替換修改前HEAD的data與apply_params，保留任務開始時使用者已修改的Excel／CSV／formula，重跑2536項，1818通過、717失敗、1略過，約134.8秒。當前716個失敗名稱全部存在基準，新失敗0；基準另一次火鏈移動案例失敗、本輪通過，未宣稱修復該無關項。保留原有失敗斷言，不越界修復戰鬥／技能／素材／表格等其他缺陷。證據在logs/tower-chaos-20261127/full.tap、baseline.tap及baseline-comparison.json；比較腳本最後stdout遇到cp950無法輸出ℹ，但JSON已完整落地並以Node讀回核對。
 - Build／Review：`npm.cmd run build`776檔通過，Git差異檢查與自我Review通過。唯讀檢查共通規範／Workflow／Codex、Excel／CSV／RARITIES、tower實際獎勵／部分與離線共用、UI樓層與BOSS提示、formula取表／擲骰／強化、表格讀寫／參數錨點及相關回歸。沒有新增美術、VFX或玩家顯示文字，素材庫無變更、不需空提交。未另行啟動完整遊戲作視覺驗收，真正結算及顯示函式已驗；全庫既有716項失敗仍保留。一次性baseline preload確認不再執行後清理，測試日誌作回歸證據保留；背景測試瀏覽器檢查按規範執行。
 - 交接：Commit為本段所在「[Codex] fix: 接入高塔混沌掉落並修正樓層區間」，SHA見Git log／交付；本案無未完成實作，可供使用者審閱合併。未合併或推送develop／main；下一步整合至實際啟動分支後重新載入遊戲，檢查第6層傳說欄已省略及76／101／121層混沌機率。已掉落的既有裝備不做遷移或刪除。
+## PASSIVE-DAMAGE-TIP-20261127 — 釐清常駐技能減傷提示
+
+- Owner：Codex；Done，單人處理。使用者要求明確說明是技能提供的減傷，刪除「不是全局減傷屬性點數」整句。前置：String313與STAT_GROUPS既有讀取機制；來源獨占確認及逐檔衝突預檢通過，起始ai/codex乾淨。
+- 允許：String.xlsx原生Excel編修、CSV／strings_data衍生、首頁與編輯器共用字串快取、LV及本段；禁止修改技能效果／公式／裝配／解鎖、其他字串與素材，不合併推送。提示改「技能裝配後持續提供的減傷，與其他減傷乘算。」。
+- 驗收：原生Excel正常重開、全表僅313繁中一格變更且格式保持、單表匯出與字串同步、既有字串／常駐面板／快取回歸及Git差異檢查，自我Review後Commit；交使用者整合重載。
+- 完成7檔：String來源／CSV／strings_data、首頁及VFX編輯器共用String快取d01c2f4b、LV及本段。原生Excel正常重開兩次，全工作簿逐格核對僅E313改動，styles.xml內容完全一致、0個繪圖物件保持；技能效果／公式／裝配與解鎖皆未改。試算表技能唯讀匯入前後渲染目視，預覽僅在記憶體放寬欄位以看全文，不匯出覆蓋原格式。無素材修改，不需素材庫提交。
+- 驗證：`node --test tests/string-table.test.cjs tests/passive-stat-panel.test.cjs tests/vfx-editor-cache-versions.test.cjs`共22項19過3既有失敗；三項均為生命／法力回復舊倍率期待（210/315、140/210、160/240），以HEAD舊strings_data只在記憶體替換重跑面板5項，同樣2過3失敗。沒有改測試或數值。`node tools/string-table/apply_strings.cjs --check`同步2565條、`node tools/string-table/build_string_csv.cjs --check`寫死0條；Build與Git差異檢查另於提交前確認。
+- 唯讀未改：AI規範／Workflow／Codex、STAT_GROUPS與playerPanelStats、減傷函式／Skills2與Worker字串sv快取機制、三支回歸與Excel／字串生成工具。自我Review確認只有指定繁中一格與必要資料／快取／紀錄差異；無未完成實作，可審閱合併，未合併或推送develop／main。未另跑全庫或完整遊戲實機。Commit為本段所在`[Codex] fix: 釐清常駐技能減傷提示`，SHA見交付。下一步整合後重載遊戲；若VFX編輯器仍開啟，先備份未存內容再重載共用字串，不由本案自動刷新／儲存。
+- 同副本另一聊天於本輪新增MERCHANT-BASELINE-TESTS任務（文件開頭）與兩支測試修改，與本案尾端紀錄及String無語意相依；只分段暫存本案尾端，不納入其內容。一次性Excel副本／渲染／更新JSON／baseline preload及依賴junction已按確切絕對路徑非遞迴清理。
+- `npm.cmd run build`776檔通過、生成JS語法與Git差異檢查通過。分段暫存初次讀取大型任務檔超出Node子程序預設緩衝而中止，未寫入該檔索引；提高明確讀取上限後重做並核對暫存只含本段。

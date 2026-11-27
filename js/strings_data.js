@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = '0eccb8bf';
+var STRING_DATA_VERSION = 'd01c2f4b';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -315,7 +315,7 @@ var STRING_DATA = {
   "310": ["🔰 魔法防禦"],
   "311": ["降低受到的魔法傷害。由智力與體質派生。"],
   "312": ["🌍 常駐技能減傷"],
-  "313": ["裝配後持續生效的技能傷害減免，與其他減傷乘算；不是全局減傷屬性點數。"],
+  "313": ["技能裝配後持續提供的減傷，與其他減傷乘算。"],
   "314": ["🛡️ 全局減傷"],
   "315": ["（減傷上限 {0}%）"],
   "316": ["降低受到的所有傷害{0}。<br><br><span style=\"color:#ffd700\">目前實際減傷：{1}</span>"],
