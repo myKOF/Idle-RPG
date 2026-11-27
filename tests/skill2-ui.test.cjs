@@ -529,13 +529,90 @@ test('清單：鎖住的群組標出解鎖門檻，已裝配的標出已裝配�
   assert.match(eq, /is-sel/);
 });
 
-test('清單與詳情分開快取，重繪詳情前先收掉其中的提示框', () => {
+test('清單與詳情分開快取，未重繪時不關閉提示框', () => {
   const start = ui.indexOf('function renderSkillBrowser(');
   const block = ui.slice(start, ui.indexOf('\n}', start));
   assert.match(block, /items\._lastH !== itemsH/);
   assert.match(block, /detail\._lastH !== detailH/);
-  assert.match(block, /if \(UI\.tooltipAnchor && detail\.contains\(UI\.tooltipAnchor\)\) hideTooltip\(\);/);
+  assert.ok(block.indexOf('var oldTipAnchor') > block.indexOf('if (detail._lastH !== detailH'));
   assert.match(ui, /if \(typeof SKILLS2 !== 'undefined'\) renderSkillBrowser\(treesBox, skillsSnapshot, headerSnapshot\);/);
+});
+
+function browserTooltipHarness() {
+  const c = loadContext();
+  let snap = snapshot({ thrust: Array(7).fill(0) });
+  snap.skills2.points = { available: 10 };
+  let gold = 1e20, writes = 0, hovered = true, option = '0', gid = 'thrust', anchor;
+  const tip = { style: { display: 'none' }, innerHTML: '' };
+  const detail = {
+    contains(node) { return node === anchor && node.connected; },
+    set innerHTML(value) {
+      if (anchor) anchor.connected = false;
+      writes++;
+      const attrs = { 'data-sk': 'sg:' + gid + ':7', 'data-sgb-ult': option };
+      anchor = { connected: true, getAttribute: k => attrs[k] || null, hasAttribute: k => k in attrs };
+    },
+    querySelector() { return hovered ? anchor : null; }
+  };
+  const nodes = { 'sgb-chips': {}, 'sgb-items': {}, 'sgb-detail': detail, 'sk-tooltip': tip };
+  c.$id = id => nodes[id];
+  c.document.documentElement = { contains: node => !!node.connected };
+  c.uiSkillsPanelSnapshot = () => snap;
+  c.uiTalentPanelSnapshot = () => ({});
+  c.uiHeaderPanelSnapshot = () => ({ player: { gold } });
+  c.bossFightConfigLocked = () => false;
+  c.sgbSchedulePath = () => {};
+  c.syncBossConfigControls = () => {};
+  c.positionSkTooltip = () => {};
+  c.sgbSelectGroup('thrust', snap);
+  const render = () => c.renderSkillBrowser({ querySelector() { return {}; } }, snap, c.uiHeaderPanelSnapshot());
+  render(); c.showSkillTooltip('sg:thrust:7', anchor);
+  return { c, tip, render, detail, get anchor() { return anchor; }, get writes() { return writes; },
+    setGold(value) { gold = value; }, leave() { hovered = false; }, otherOption() { option = '1'; },
+    otherGroup() { gid = 'fireball'; snap.skills2.levels.fireball = Array(7).fill(0); c.sgbSelectGroup(gid, snap); },
+    unlock() { snap = snapshot({ thrust: Array(7).fill(10) }); } };
+}
+
+test('終極提示在重複快照及金幣導致詳情重建後持續顯示，並更新解鎖內容', () => {
+  const h = browserTooltipHarness(), oldAnchor = h.anchor;
+  const locked = h.tip.innerHTML;
+  for (let i = 0; i < 20; i++) h.render();
+  assert.equal(h.writes, 1);
+  assert.equal(h.tip.style.display, 'block');
+  assert.equal(h.c.UI.tooltipAnchor, oldAnchor);
+  h.setGold(0); h.render();
+  assert.equal(h.writes, 2);
+  assert.equal(oldAnchor.connected, false);
+  assert.equal(h.c.UI.tooltipAnchor, h.anchor);
+  assert.equal(h.tip.style.display, 'block');
+  h.unlock(); h.render();
+  assert.equal(h.tip.style.display, 'block');
+  assert.notEqual(h.tip.innerHTML, locked, '升級／解鎖後重新產生最新選項說明');
+});
+
+test('詳情重繪後滑鼠離開或落在不同終極選項時關閉舊提示', () => {
+  for (const change of ['leave', 'otherOption', 'otherGroup']) {
+    const h = browserTooltipHarness();
+    h[change](); h.setGold(0); h.render();
+    assert.equal(h.tip.style.display, 'none', change);
+    assert.equal(h.c.UI.tooltipAnchor, null);
+  }
+});
+
+test('重建後舊節點延遲送出的mouseout不關閉新提示，真正滑出仍會關閉', () => {
+  const h = browserTooltipHarness(), c = h.c, oldAnchor = h.anchor;
+  const start = ui.indexOf("  document.addEventListener('mouseout', function (e) {", ui.indexOf('// 懸停提示（事件委派）'));
+  const end = ui.indexOf('\n  });', start);
+  let mouseout;
+  c.document.addEventListener = (name, fn) => { mouseout = fn; };
+  c.panelScrollHoverSuppressed = () => false;
+  vm.runInContext(ui.slice(start, end + 6), c);
+  h.setGold(0); h.render();
+  const target = anchor => ({ closest: selector => selector === '[data-sk]' ? anchor : null });
+  mouseout({ target: target(oldAnchor), relatedTarget: null });
+  assert.equal(h.tip.style.display, 'block');
+  mouseout({ target: target(h.anchor), relatedTarget: null });
+  assert.equal(h.tip.style.display, 'none');
 });
 
 test('解鎖規則沿用 sgStageUnlocked：門檻＋前一階至少 Lv.1', () => {

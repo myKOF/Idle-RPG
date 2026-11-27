@@ -17958,3 +17958,15 @@ Worker 存活且頁面正常完成載入。
 - 測試指令：`node --test tests/tower-battlefield.test.cjs tests/tower-opening-approach.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-auto-advance.test.cjs tests/tower-auto-result.test.cjs tests/tower-scene-intro.test.cjs tests/tower-action-motion.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`，49/49通過；涵蓋全部150層固定出生與登場／原速追擊、不同速度射程體型、場界、連挑／自動推進、Worker協議及快取。`npm.cmd run build`774檔通過；最終Git差異檢查通過。初輪1項舊中央交手斷言因需求改變失敗，已改成固定起點並保留原本的相遇與追擊檢查，最終全組通過。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、battlefield幾何及場界、battle-renderer權威座標／鏡頭投影／進場、battle-arena法陣尺寸、既有塔開場／動作／自動流程／Worker及快取回歸、build工具。自我Review完成，無程式未完成項；未啟動完整遊戲作目視驗收或跑全庫，紅圈以法陣相對位置對齊，仍建議重載後實際查看。沒有美術／VFX／顯示文字或素材庫修改，不需素材庫Commit；沒有建立瀏覽器或擷取工作階段，kill-test-browsers確認無測試瀏覽器。
 - 交接：遊戲Commit為本段所在「[Codex] fix: 將封魔塔玩家出生點移至法陣左側」，實際SHA見Git log／交付。可供審閱合併，未合併或推送develop／main；下一步由使用者整合至實際啟動分支後重新載入遊戲，確認法陣左側出生位置。
+
+## ULT-TOOLTIP-20261127 — 終極進化提示停留時不被刷新關閉
+
+- Owner：Codex；Done，單人處理。使用者回報終極進化技能tips顯示約兩秒就消失；已定位renderSkillBrowser在每次刷新無條件hideTooltip，且金幣變更會重建詳情卡片。前置：既有技能提示與快照流程可用，逐檔衝突預檢無外部分支／副本來源。
+- 允許：js/ui.js、index.html對應快取、tests/skill2-ui.test.cjs／tooltip-modal-close.test.cjs、LV_upgrade_system.md與本段；必要隔離瀏覽器驗證。改為未重繪時保留提示，重繪後只對游標仍指向的同群組同選項恢復提示；離開／切換選項仍正常關閉，不改數值、門檻、表格、Worker／存檔／素材，不合併推送。
+- 驗收：相同快照、金幣刷新／詳情重建、解鎖內容更新、滑出與群組／選項切換、過期節點事件；相關回歸、Build、隔離瀏覽器連續懸停與清理、自我Review後Commit交使用者整合。同副本既有Task／CSV／data及開始選單任務修改保留；共享index只動ui.js快取，LV／任務紀錄只追加本段，分段暫存。
+- 完成／修改6檔：ui.js的刷新／重建提示維持及過期mouseout守門、index對應快取20261127-ult-tooltip-v1、skill2-ui與tooltip-modal-close回歸、LV及本段。未重繪不碰提示，真正重建後以實際:hover及data-sk＋終極索引雙重確認同一選項再更新說明；不同群組／選項或離開則清理。
+- 測試指令：`node --test tests/skill2-ui.test.cjs tests/tooltip-modal-close.test.cjs tests/panel-scroll-hover-suppress.test.cjs tests/resource-tooltip.test.cjs tests/skill-equipped-style.test.cjs tests/skill-prerequisite.test.cjs tests/vfx-editor-cache-versions.test.cjs`，43/43通過。涵蓋20次相同快照、不足金幣重建、解鎖內容更新、換群組／選項、離開與舊mouseout、真實錨點移除／隱藏彈窗清理、既有技能／捲動／資源與快取行為。初輪新fixture技能點0導致金幣變化不會重建，已補足點數及足額金幣再驗證；原tooltip-modal-close還引用早已移除的舊技能／天賦彈窗函式，改守目前刷新／模態生命週期並補真正執行的清理驗證，未修改功能以遷就測試。
+- 瀏覽器：以launchHeadless看門狗及隔離profile，用真正JS／CSS與renderSkillBrowser建立獨立頁面，載入正式mouseover／mouseout委派；真實滑鼠懸停，12次每250ms相同快照共3秒，接著12次每250ms金幣交替重建共3秒，提示全程可見且錨點接回新節點。移到第二選項顯示對應提示、真正滑出關閉，頁面例外0；未啟動新遊戲／載入使用者存檔，瀏覽器啟動參數靜音，finally關閉瀏覽器與伺服器，kill-test-browsers確認無殘留。無桌面擷取或測試產物。
+- 驗證／界限：npm.cmd run build774檔通過，Git差異檢查及自我Review通過。唯讀檢查共通規範／Workflow／Codex、技能快照／HTML／三選一與tooltip事件／刷新、既有技能／資源／捲動／模態回歸、正式瀏覽器驗證與清理工具；無新增顯示字串、美術或素材庫變更，不需String／VFX或素材庫Commit。未跑全庫、完整遊戲長時掛機或實體裝置，已完成本次提示生命週期修復，無未完成實作。
+- 共用檔保護：與同副本DESKTOP-STARTUP任務共用index／LV／AI_TASKS，分別為ui與start-menu不同script標籤、文件頭尾不同段落，無語意相依；以HEAD／本案／其他修改做三方合併試跑並核對完整工作檔，只暫存本案區段。其他Task／CSV／data及開始選單來源／測試／工具不納本次提交、不還原。
+- 交接：Commit為本段所在「[Codex] fix: 保留終極進化技能的懸停提示」，實際SHA見Git log／交付；可供合併，未合併／推送develop或main。下一步使用者整合至實際啟動分支後重新載入遊戲驗收。

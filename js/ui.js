@@ -9516,14 +9516,22 @@ function renderSkillBrowser(treesBox, skillsSnapshot, headerSnapshot) {
   if (items._lastH !== itemsH) { items.innerHTML = itemsH; items._lastH = itemsH; }
 
   var detail = $id('sgb-detail');
-  if (UI.tooltipAnchor && detail.contains(UI.tooltipAnchor)) hideTooltip();
   var detailH = gid ? sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) : '<div class="hint">' + STR(810) + '</div>';
   var fightLocked = bossFightConfigLocked();
   if (detail._lastH !== detailH || detail._bossFightLocked !== fightLocked) {
+    var oldTipAnchor = UI.tooltipAnchor && detail.contains(UI.tooltipAnchor) ? UI.tooltipAnchor : null;
     detail.innerHTML = detailH;
     detail._lastH = detailH;
     detail._bossFightLocked = fightLocked;
     sgbSchedulePath(detail);
+    // 金幣等快照重建卡片後，僅接回游標仍停留的同一個終極選項。
+    if (oldTipAnchor) {
+      var hoveredUlt = detail.querySelector('[data-sgb-ult][data-sk]:hover');
+      if (hoveredUlt && hoveredUlt.getAttribute('data-sk') === oldTipAnchor.getAttribute('data-sk') &&
+        hoveredUlt.getAttribute('data-sgb-ult') === oldTipAnchor.getAttribute('data-sgb-ult')) {
+        showSkillTooltip(hoveredUlt.getAttribute('data-sk'), hoveredUlt);
+      } else hideTooltip();
+    }
   }
   syncBossConfigControls();
 }
@@ -12347,6 +12355,8 @@ function initUI() {
       e.target.closest('[data-enemy-buff-tip]') ||
       e.target.closest('.battle-skill-slot')) {
       var outTipCell = e.target.closest('[data-sk]') || e.target.closest('.battle-skill-slot');
+      // 舊卡片的延遲 mouseout 不得關掉重繪後已接回新卡片的提示。
+      if (outTipCell && outTipCell !== UI.tooltipAnchor && !document.documentElement.contains(outTipCell)) return;
       if (outTipCell && e.relatedTarget && outTipCell.contains && outTipCell.contains(e.relatedTarget)) return;
       hideTooltip();
     }
