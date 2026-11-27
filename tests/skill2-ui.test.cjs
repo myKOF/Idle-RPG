@@ -2,7 +2,7 @@
 
 /* 技能頁（2026-10 改版）：左清單＋右「進化之路」的技能瀏覽器，取代逐列方格與群組升級彈窗。
    守住：
-     1. 未解鎖的階只能查看、不產生升級鈕；滿級只剩降級／重置；第 1 階不能降到 0
+     1. 未解鎖的階只能查看、不產生升級鈕；滿級只剩降級／重置；第 1 階可降到 0
      2. 終極進化：未開放→顯示還差幾階；未選→三選一按鈕；已選→升級走 SG_ULT_SLOT
      3. 主動型被動仍有裝備鈕與類型標籤（需裝配才生效）
      4. 清單與詳情分開快取（金幣變動只重繪詳情，清單捲動位置不跳）
@@ -349,12 +349,15 @@ test('投資中的階有升級與一鍵滿級；滿級只剩降級與重置', ()
   assert.match(poor, /data-skill2-learn="thrust:1"[^>]*disabled/);
 });
 
-test('第 1 階恆為至少 Lv.1，不能降到 0', () => {
+test('第 1 階Lv.1可以降到0或重置；零級不可裝載', () => {
   const c = loadContext();
   const h = detail(c, 'thrust', snapshot({ thrust: [1, 0, 0, 0, 0, 0, 0] }), 0);
-  assert.doesNotMatch(h, /data-skill2-downgrade="thrust:0"/);
-  assert.doesNotMatch(h, /data-skill2-delete="thrust:0"/);
+  assert.match(h, /data-skill2-downgrade="thrust:0"/);
+  assert.match(h, /data-skill2-delete="thrust:0"/);
   assert.match(h, /學習|升級/);
+  const zero = detail(c, 'thrust', snapshot({ thrust: [0, 0, 0, 0, 0, 0, 0] }), 0);
+  assert.doesNotMatch(zero, /data-skill-equip="sg:thrust"|data-skill2-downgrade="thrust:0"|data-skill2-delete="thrust:0"/);
+  assert.match(zero, /data-skill2-learn="thrust:0"/);
 });
 
 test('終極進化：未開放顯示還差幾階，未選三選一，已選升級走 SG_ULT_SLOT', () => {
@@ -488,10 +491,11 @@ test('舊重置殘留可從第 1 階保底再重置，清除後總級數與超�
   snap.skills2.ult = { thrust: { pick: 1, lv: 10 } };
   const residual = detail(c, 'thrust', snap, 0);
   assert.match(residual, /data-skill2-delete="thrust:0"/);
-  assert.doesNotMatch(residual, /data-skill2-downgrade="thrust:0"/);
+  assert.match(residual, /data-skill2-downgrade="thrust:0"/);
   delete snap.skills2.ult.thrust;
+  snap.skills2.levels.thrust[0] = 0;
   const reset = detail(c, 'thrust', snap, 0);
-  assert.equal(c.sgbTotals('thrust', snap.skills2.levels.thrust, snap).total, 1);
+  assert.equal(c.sgbTotals('thrust', snap.skills2.levels.thrust, snap).total, 0);
   assert.equal((reset.match(/未開放/g) || []).length, 3);
   assert.doesNotMatch(reset, /已選擇|已保留|sgb-ult-card is-chosen|data-skill2-delete="thrust:0"/);
 });

@@ -29,7 +29,7 @@ for (let tier = 0; tier < 7; tier++) {
     c._statsCache = { stale: true };
     assert.ok(c.skills2Ult('frostnova'));
     assert.deepEqual(plain(e.cmd('skill2.delete', { group: 'frostnova', tier })), { ok: true, result: true });
-    const expected = Array.from({ length: 7 }, (_, i) => i < tier ? 10 : (i === 0 ? 1 : 0));
+    const expected = Array.from({ length: 7 }, (_, i) => i < tier ? 10 : 0);
     assert.deepEqual(plain(c.G.player.skills2.levels.frostnova), expected);
     assert.equal(c.G.player.skills2.ult.frostnova, undefined);
     assert.equal(c.skills2Ult('frostnova'), null);
@@ -48,10 +48,10 @@ for (let tier = 0; tier < 7; tier++) {
 
 test('舊重置殘留：保底階級再次重置可清除超神，重複執行仍一致', () => {
   const e = prepared(), c = e.ctx;
-  c.G.player.skills2.levels.frostnova = [1, 0, 0, 0, 0, 0, 0];
+  c.G.player.skills2.levels.frostnova = [0, 0, 0, 0, 0, 0, 0];
   for (let n = 0; n < 2; n++) {
     assert.equal(e.cmd('skill2.delete', { group: 'frostnova', tier: 0 }).result, true);
-    assert.deepEqual(plain(c.G.player.skills2.levels.frostnova), [1, 0, 0, 0, 0, 0, 0]);
+    assert.deepEqual(plain(c.G.player.skills2.levels.frostnova), [0, 0, 0, 0, 0, 0, 0]);
     assert.equal(c.skills2PanelView().ult.frostnova, undefined);
   }
 });

@@ -52,7 +52,7 @@ test('裝配任務：預設已裝飛刀不算完成，需再自行裝配 1 個�
   assert.equal(c.taskProgressFor(goal), 0);
   assert.equal(c.equipSkillToLoadout('sg:knife'), null);
   assert.equal(c.taskProgressFor(goal), 1);
-  assert.equal(c.equipSkillToLoadout('sg:counter'), null);
+  assert.equal(c.equipSkillToLoadout('sg:fireball'), null);
   assert.equal(c.taskProgressFor(goal), 2);
   assert.equal(e.panel('task').tasks[6].ready, true);
   assert.equal(e.cmd('task.claim').result.claimed, 7);
@@ -61,7 +61,7 @@ test('裝配任務：預設已裝飛刀不算完成，需再自行裝配 1 個�
   assert.equal(p.gold, 201000);
 });
 test('升級任務由單次及一鍵滿級累計，失敗不計，5次領400000金幣', () => {
-  const {e,c,p} = setup(5);
+  const {e,c,p} = setup(7);
   const goal = select(c, 'skillUpgradeCount');
   assert.equal(goal.order, 19); assert.equal(goal.count, 5); assert.equal(goal.rewardQty, 400000);
   assert.equal(c.taskProgressFor(goal), 0, '免費初始技能不計');
@@ -75,7 +75,7 @@ test('升級任務由單次及一鍵滿級累計，失敗不計，5次領400000�
   assert.equal(c.skills2Learn('knife', 1), null);
   assert.equal(e.cmd('skill2.max', {group:'thrust',tier:0}).result, true);
   assert.equal(c.taskProgressFor(goal), 5);
-  assert.equal(c.skills2PointView().spent, 5);
+  assert.equal(c.skills2PointView().spent, 7);
   assert.ok(c.skills2Learn('thrust', 0), '點數不足拒絕');
   assert.equal(c.taskProgressFor(goal), 5);
   assert.equal(e.panel('task').tasks[18].ready, true);
@@ -103,28 +103,28 @@ test('舊存檔以實際儲存投資回推，包含暫鎖階與終極，純讀�
   p.skills2={levels:{knife:[2,1,3,0,0,0,0]},ult:{knife:{pick:0,lv:2}}};
   p.level=1; p.reincarnations=0;
   const before=plain(p.skills2);
-  assert.equal(c.skills2UpgradeCount(),7);
-  assert.equal(c.taskProgressFor({type:'skillUpgradeCount'}),7);
+  assert.equal(c.skills2UpgradeCount(),8);
+  assert.equal(c.taskProgressFor({type:'skillUpgradeCount'}),8);
   c.taskPanelData();
   assert.deepEqual(plain(p.skills2),before);
   assert.equal(c.skills2Downgrade('knife',0),null);
-  assert.equal(c.skills2UpgradeCount(),7);
+  assert.equal(c.skills2UpgradeCount(),8);
 });
 test('終極首選及升級各計一次；切換與降級不計，失敗不計', () => {
   const {c,p} = setup();
   p.skills2={levels:{thrust:Array(7).fill(10)},ult:{}};
-  assert.equal(c.skills2UpgradeCount(),69);
-  assert.equal(c.skills2UltPick('thrust',0),null);
   assert.equal(c.skills2UpgradeCount(),70);
-  assert.equal(c.skills2UltLearn('thrust'),null);
+  assert.equal(c.skills2UltPick('thrust',0),null);
   assert.equal(c.skills2UpgradeCount(),71);
+  assert.equal(c.skills2UltLearn('thrust'),null);
+  assert.equal(c.skills2UpgradeCount(),72);
   const cost=c.skills2UltCost('thrust',1,0);
   assert.equal(c.skills2UltSwitch('thrust',1,0,2,cost),null);
-  assert.equal(c.skills2UpgradeCount(),71);
+  assert.equal(c.skills2UpgradeCount(),72);
   assert.equal(c.skills2UltDowngrade('thrust'),null);
-  assert.equal(c.skills2UpgradeCount(),71);
+  assert.equal(c.skills2UpgradeCount(),72);
   assert.ok(c.skills2UltLearn('thrust'));
-  assert.equal(c.skills2UpgradeCount(),71);
+  assert.equal(c.skills2UpgradeCount(),72);
 });
 test('熔爐任務：只要點過精良標籤（勾選或取消皆算）即達成，點其他品質不算', () => {
   const {e,c} = setup();

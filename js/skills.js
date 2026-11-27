@@ -74,7 +74,7 @@ function equipSkillToLoadout(id) {
   var lo = G.player.loadout || [];
   if (lo.indexOf(id) >= 0) return STR(674);
 
-  // 新版技能群組（'sg:<群組id>'，js/skills2.js）：第 1 階預設開啟即可裝載。
+  // 新版技能群組（'sg:<群組id>'，js/skills2.js）：第一階至少學到一級才可裝載。
   if (typeof id === 'string' && id.indexOf('sg:') === 0) {
     var sgId = id.slice(3);
     if (typeof SKILLS2 === 'undefined' || !SKILLS2[sgId]) return STR(675);

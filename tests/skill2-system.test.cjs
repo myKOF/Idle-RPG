@@ -2,7 +2,7 @@ const table = require('./helpers/skill-table.cjs');
 /* 新版主動技能系統（2026-08-13 技能改造第一批，js/skills2.js）
    守住六件事：
      1. SKILLS2 定義表形狀正確，且與 config/CSV/Skills2.csv 完整往返
-     2. 等級正規化：第 1 階預設開啟、階層循序解鎖、上限夾限
+     2. 等級正規化：缺項零級、階層循序解鎖、上限夾限
      3. 升級／降級指令的驗證與金幣扣款
      4. 戰場幾何：米換算、直線貫穿、扇形、最近 N 敵
      5. 施放機制：次數合成、彈射鏈、冷卻寫入、爆擊縮冷卻、DoT 塗抹與零日感染、屍爆
@@ -32,6 +32,8 @@ function loadContext() {
   ['js/util.js', 'js/strings_data.js', 'js/strings.js', 'js/data.js', 'js/status.js', 'js/formula.js', 'js/battlefield.js', 'js/combat.js', 'js/skills.js', 'js/skills2.js']
     .forEach((file) => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file }));
   context.G = { player: { skillMastery: { level: 480, xp: 0 }, gold: 0, skills2: { levels: {} }, loadout: [] }, stage: { current: 1 } };
+  // 戰鬥案例明確建立已學習的第一階，不再依賴產品隱含贈送等級。
+  for (const gid of Object.keys(context.SKILLS2)) context.G.player.skills2.levels[gid] = [1, 0, 0, 0, 0, 0, 0];
   // 測試用固定屬性（getStats 為全域函式，直接覆蓋）
   context.getStats = () => ({
     atk: 1000, matk: 0, hp: 1000, mp: 100, level: 10, aspd: 2, cdr: 0,
@@ -288,10 +290,10 @@ test('突刺 1～7 階規格：數值、次數、距離與方向符合公開技�
 
 /* ---- 2) 等級正規化 ---- */
 
-test('sgEffectiveLevels：第 1 階預設開啟、上限夾限、前一階未達 Lv.1 時後續階視為 0', () => {
+test('sgEffectiveLevels：缺項零級、上限夾限、前一階未達 Lv.1 時後續階視為 0', () => {
   const c = loadContext();
-  // 沒有任何存檔資料：預設 [1,0,0,0,0,0,0]
-  assert.deepEqual(plain(c.sgEffectiveLevels(null, 'thrust')), [1, 0, 0, 0, 0, 0, 0]);
+  // 沒有任何存檔資料：尚未學習。
+  assert.deepEqual(plain(c.sgEffectiveLevels(null, 'thrust')), [0, 0, 0, 0, 0, 0, 0]);
   // 超上限夾到 10；小數取整
   assert.deepEqual(plain(c.sgEffectiveLevels({ thrust: [99, 3.7, 0, 0, 0, 0, 0] }, 'thrust')),
     [10, 3, 0, 0, 0, 0, 0]);
@@ -359,8 +361,9 @@ test('解鎖門檻：未達標時不可投資，訊息指出需要的進度', ()
 
 /* ---- 3) 升級／降級指令 ---- */
 
-test('skills2Learn：金幣不足拒絕、循序解鎖、扣款與寫入；skills2Downgrade：保底與依賴檢查', () => {
+test('skills2Learn：金幣不足拒絕、循序解鎖、扣款與寫入；skills2Downgrade：零級與依賴檢查', () => {
   const c = loadContext();
+  c.G.player.skills2.levels.thrust = [1, 0, 0, 0, 0, 0, 0];
   c.G.player.gold = 0;
   assert.match(c.skills2Learn('thrust', 0), /金幣不足/);
   assert.match(c.skills2Learn('thrust', 2), /前一階/); // 第 3 階要先有第 2 階 Lv.1
@@ -384,9 +387,10 @@ test('skills2Learn：金幣不足拒絕、循序解鎖、扣款與寫入；skill
   assert.equal(c.skills2Downgrade('thrust', 2), null);
   assert.equal(c.skills2Downgrade('thrust', 1), null);
   assert.match(c.skills2Downgrade('thrust', 1), /尚未投資/);
-  // 第 1 階至少保持 Lv.1
+  // 第 1 階也可退回零級。
   assert.equal(c.skills2Downgrade('thrust', 0), null); // 2 → 1
-  assert.match(c.skills2Downgrade('thrust', 0), /至少保持/);
+  assert.equal(c.skills2Downgrade('thrust', 0), null); // 1 → 0
+  assert.match(c.skills2Downgrade('thrust', 0), /尚未投資/);
 });
 
 test('升級費用＝基數 × 倍率^目前等級（取整）', () => {

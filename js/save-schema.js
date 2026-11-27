@@ -23,7 +23,7 @@
 
    本檔三種環境都會載入：主執行緒 <script>、Worker importScripts、Node vm 測試。 */
 
-var SAVE_SCHEMA_VERSION = 4;
+var SAVE_SCHEMA_VERSION = 5;
 
 /* 上市後的遷移登錄，依 to 由小到大。每筆：
      { to: 2, name: 'xxxV1', date: 'YYYY-MM-DD', migrate: function (data) { ... } }
@@ -62,6 +62,43 @@ var SAVE_SCHEMA_MIGRATIONS = [{
     if (idx > 19) idx++;
     if (idx > 34) idx++;
     data.taskState.idx = idx;
+  }
+}, {
+  to: 5, name: 'skillZeroLevelV1', date: '2026-11-27',
+  migrate: function (data) {
+    if (!data.player) return;
+    var p = data.player, skills = p.skills2 || {}, levels = skills.levels || {};
+    var max = typeof SG_TIER_MAX_LV === 'number' ? SG_TIER_MAX_LV : 10;
+    var spent = 0;
+    // 舊制每組第一階免費；只退還實際投入的普通階與所選超神等級。
+    if (typeof SKILLS2 !== 'undefined') {
+      for (var gid in SKILLS2) {
+        var arr = levels[gid] || [];
+        for (var i = 0; i < SKILLS2[gid].tiers.length; i++) {
+          var lv = Math.max(0, Math.min(max, Math.floor(Number(arr[i]) || 0)));
+          spent += Math.max(0, lv - (i === 0 ? 1 : 0));
+        }
+        var ult = skills.ult && skills.ult[gid];
+        if (ult) spent += Math.max(0, Math.min(max, Math.floor(Number(ult.lv) || 0)));
+      }
+    }
+    var masteryMax = typeof SKILL_MASTERY_MAX_LEVEL === 'number' ? SKILL_MASTERY_MAX_LEVEL : 480;
+    var mastery = p.skillMastery || { level: 0, xp: 0 };
+    var oldLevel = Math.max(0, Math.min(masteryMax, Math.floor(Number(mastery.level) || 0)));
+    var rawCredit = Math.floor(Number(skills.legacyPointCredit) || 0);
+    var oldCredit = isFinite(rawCredit) ? Math.max(0, rawCredit) : 0;
+    var oldTotal = Math.max(oldLevel + oldCredit, spent, 2);
+    // 重置先退回原投資，再由同一預算支付兩項初始技能；不將舊免費等級兌換成點數。
+    mastery.level = Math.min(masteryMax, Math.max(2, oldLevel));
+    p.skillMastery = mastery;
+    var credit = Math.max(0, oldTotal - mastery.level);
+    var count = Math.floor(Number(skills.upgradeCount) || 0);
+    skills.upgradeCount = Math.max(isFinite(count) ? count : 0, spent);
+    skills.levels = { knife: [1, 0, 0, 0, 0, 0, 0], fireball: [1, 0, 0, 0, 0, 0, 0] };
+    delete skills.ult;
+    if (credit > 0) skills.legacyPointCredit = credit;
+    else delete skills.legacyPointCredit;
+    p.skills2 = skills;
   }
 }];
 

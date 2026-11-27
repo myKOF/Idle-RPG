@@ -108,12 +108,12 @@ function newGameState() {
       gemShop: { level: 1, items: [] },
       books: books,
       invUpgrades: 0,
-      skillMastery: { level: 0, xp: 0 }, // 技能熟練度：打怪/道具給經驗，等級上限由參數表控制
-      loadout: ['sg:knife'],  // 裝載欄：'sg:<群組id>'（新版技能）；新角色預設裝上飛刀（第 1 階預設開啟）
+      skillMastery: { level: 2, xp: 0 }, // 初始兩技能各投入一點；總點數為熟練等級
+      loadout: ['sg:knife'],  // 裝載欄：'sg:<群組id>'；新角色預設裝上已學習的飛刀
       /* 新版技能群組（2026-08-13 技能改造，js/skills2.js）：
-         levels = { 群組id: [各階等級] }。空字典＝各群組採預設（第 1 階 Lv.1、其餘 0），
-         內容於升級時才建立——避免 mergeDefaults 深合併把玩家調過的值「復活」回預設。 */
-      skills2: { levels: {} }
+         levels = { 群組id: [各階等級] }。缺項為零級；只有新局明確給予初始技能。
+         migrateSave 不將初始投資當缺項預設，避免退點後讀檔復活。 */
+      skills2: { levels: { knife: [1, 0, 0, 0, 0, 0, 0], fireball: [1, 0, 0, 0, 0, 0, 0] }, upgradeCount: 0 }
 
     },
     equipmentSets: equipmentSets,   // 三套裝備

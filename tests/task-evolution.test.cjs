@@ -73,7 +73,7 @@ test('更高普通階符合前階目標，未領前重置／降級重新計算�
   assert.equal(c.taskQuickView().ready, false);
   assert.equal(c.taskProgressFor({type:'skillTier',param:'missing'}), 0);
   p.skills2.levels = {};
-  assert.equal(c.taskProgressFor(first), 1, '重置後仍保留免費初始飛刀');
+  assert.equal(c.taskProgressFor(first), 0, '重置後未學習，不再保留免費初始等級');
   assert.equal(c.taskQuickView().ready, false);
 });
 

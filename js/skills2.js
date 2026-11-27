@@ -68,7 +68,7 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 
    規則：
      - 每階上限 SG_TIER_MAX_LV 級，固定不隨轉生提高
-     - 前一階至少 Lv.1 才可投資下一階；第 1 階預設開啟（恆視為至少 Lv.1）
+     - 前一階至少 Lv.1 才可投資下一階；解鎖僅開放投資，不自動給予等級
 
    分工：
      - 數值 SSOT：下方 SKILLS2 純資料 literal
@@ -425,7 +425,7 @@ function sgUnlockProgress(prog) {
    raw ＝ 存檔的 levels 字典（G.player.skills2.levels 或面板快照），可為 null。
    prog ＝ 解鎖進度 { level, reinc, towerHighest }；主執行緒必須傳（面板快照的 skills2.progress），
           Worker 端可省略（自己讀 G）。
-   正規化：整數、夾 0..上限、第 1 階恆至少 Lv.1、未達解鎖門檻的階視為 0、
+   正規化：整數、夾 0..上限、缺項為 0、未達解鎖門檻的階視為 0、
    前一階未達 Lv.1 時後續階視為 0。
    ⚠️ 未解鎖只是「視為 Lv.0」，不會動到存檔裡已投入的等級：達到門檻就原樣回來。 */
 function sgEffectiveLevels(raw, gid, prog) {
@@ -438,9 +438,7 @@ function sgEffectiveLevels(raw, gid, prog) {
     if (!isFinite(v)) v = 0;
     out.push(Math.max(0, Math.min(SG_TIER_MAX_LV, v)));
   }
-  if (out[0] < 1) out[0] = 1; // 第 1 階預設開啟
-  /* 解鎖門檻先套：未解鎖的階一律歸 0，**含第 1 階的預設開啟**——
-     否則每個群組都是一開局就 Lv.1 可施放，表上「突刺 0|1、火狩 0|100」就沒有意義了。 */
+  /* 解鎖門檻先套：未解鎖的階一律視為零級，但不改寫原始投資。 */
   var prg = sgUnlockProgress(prog);
   if (prg) {
     for (i = 0; i < out.length; i++) {
@@ -712,7 +710,11 @@ function sgCurrentPlayerEnt() {
   return (typeof FIELD !== 'undefined' && FIELD && FIELD.player) ? FIELD.player : null;
 }
 
-function sgAfterSkillChange() {
+function sgAfterSkillChange(gid) {
+  // 退回未學習時，沿用卸下流程清掉狀態與場域，並解除快捷欄裝載。
+  if (gid && skills2StoredLevels(gid)[0] < 1 && typeof unequipSkillFromLoadout === 'function') {
+    unequipSkillFromLoadout(SG_PREFIX + gid);
+  }
   if (typeof markStatsDirty === 'function') markStatsDirty();
   if (typeof UI !== 'undefined' && UI.dirty) { UI.dirty.skills = true; UI.dirty.header = true; }
 }
@@ -1456,7 +1458,7 @@ function skills2StoredLevels(gid) {
   var src = G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[gid];
   return SKILLS2[gid].tiers.map(function (_, i) {
     var n = Math.floor(Number(src && src[i]) || 0);
-    return Math.max(i === 0 ? 1 : 0, Math.min(SG_TIER_MAX_LV, isFinite(n) ? n : 0));
+    return Math.max(0, Math.min(SG_TIER_MAX_LV, isFinite(n) ? n : 0));
   });
 }
 /* GM／舊存檔超額投資在成功退點前保留為額度，避免退款先被負餘額吞掉。
@@ -1472,18 +1474,19 @@ function skills2PointView() {
   var spent = 0;
   for (var gid in SKILLS2) {
     var lvs = skills2StoredLevels(gid);
-    for (var i = 0; i < lvs.length; i++) spent += Math.max(0, lvs[i] - (i === 0 ? 1 : 0));
+    for (var i = 0; i < lvs.length; i++) spent += lvs[i];
     var ult = sgUltPickOf(p.skills2 && p.skills2.ult, gid);
     if (ult) spent += ult.lv;
   }
   return { total: total, spent: spent, available: Math.max(0, total - spent) };
 }
 
-/* 任務用成功升級累計。舊存檔沒有歷史計數，以現有投資（扣除免費第一階）為最低值；
+/* 任務用成功升級累計。沒有歷史計數時以現有投資推導；新局明確為零，初始技能不算升級；
    只讀查詢不建存檔欄位。降級前保留累計，之後降級／重選不會扣除已完成次數。 */
 function skills2UpgradeCount() {
-  var count = Math.floor(Number(G.player.skills2 && G.player.skills2.upgradeCount) || 0);
-  return Math.max(isFinite(count) ? count : 0, skills2PointView().spent);
+  var raw = G.player.skills2 && G.player.skills2.upgradeCount;
+  var count = Math.floor(Number(raw));
+  return raw !== undefined && isFinite(count) ? Math.max(0, count) : skills2PointView().spent;
 }
 function skills2RecordUpgrade() {
   var count = skills2UpgradeCount();
@@ -1635,8 +1638,7 @@ function skills2Downgrade(group, tier) {
   tier = Math.floor(Number(tier));
   if (sgIsUltSlot(group, tier)) return skills2UltDowngrade(group);
   if (!(tier >= 0 && tier < g.tiers.length)) return STR(92);
-  var lvs = skills2Levels(group);
-  if (tier === 0 && lvs[0] <= 1) return STR(695);
+  var lvs = skills2StoredLevels(group);
   if (lvs[tier] <= 0) return STR(696);
   if (lvs[tier] === 1 && tier + 1 < lvs.length && lvs[tier + 1] > 0) return STR(697);
   /* 前 7 階任何一階離開滿級，終極進化就失去解鎖條件（sgEffectiveUlt 會自動失效）；
@@ -1647,7 +1649,7 @@ function skills2Downgrade(group, tier) {
   if (!G.player.skills2) G.player.skills2 = { levels: {} };
   if (!G.player.skills2.levels) G.player.skills2.levels = {};
   G.player.skills2.levels[group] = lvs;
-  sgAfterSkillChange();
+  sgAfterSkillChange(group);
   return null;
 }
 

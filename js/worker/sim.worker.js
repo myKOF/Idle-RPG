@@ -22,10 +22,10 @@ var _stringDataVersion = ((typeof self !== 'undefined' && self.location && /[?&]
 importScripts(
   '../util.js?v=20261023-str-fallback', '../strings_data.js?v=' + _stringDataVersion, '../strings.js?v=1.0.1', '../game-edition.js?v=1.0.0', '../data.js?v=20261127-combo-overflow-min-v1', '../runeword_data.js?v=20261106-ai-integration', '../gem_resonance_data.js?v=20261028-develop-merge-a8acfe', '../achievement_data.js?v=20261103-equipment-rarity-v3', '../relic_data.js?v=20261114-oni-relic-sync-v1', '../relic.js?v=20261112-chest-v1', '../chest_data.js?v=20261112-sync-chest-v3', '../chest.js?v=20261127-forge-chest-badge-v1', '../status.js?v=20261028-develop-merge-a8acfe', '../formula.js?v=20261127-combo-overflow-min-v1', '../battle-terrain.js?v=20261030-unlock-god-zone-merge', '../battlefield.js?v=20261120-integrated-v1', '../stats.js?v=20261109-mystery-merchant',
   '../item.js?v=20261126-reroll-min-cost-v1', '../gem_resonance.js?v=20261126-unlock-tip-format-v1','../runeword.js?v=20261109-relics',
-  '../skills.js?v=20261120-integrated-v1', '../skills2.js?v=20261126-knife-retarget-v1', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
-  '../save-schema.js?v=20261126-task-tower-boss-v1', '../player.js?v=20261118-demo-edition', '../system-unlocks.js?v=20261127-world-map-first-clear-v1', '../special_rules.js?v=20261030-unlock-progress',
+  '../skills.js?v=20261127-skill-zero-level-v1', '../skills2.js?v=20261127-skill-zero-level-v1', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
+  '../save-schema.js?v=20261127-skill-zero-level-v1', '../player.js?v=20261127-skill-zero-level-v1', '../system-unlocks.js?v=20261127-world-map-first-clear-v1', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261119-develop-merge-1', '../elite.js?v=20261120-integrated-v1', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261127-tower-player-spawn-v1',
-  '../factory.js?v=20261126-reroll-min-cost-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261119-develop-merge-1',
+  '../factory.js?v=20261126-reroll-min-cost-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261127-skill-zero-level-v1',
   '../tasks.js?v=20261127-task-equip-slots-v1', '../achievements.js?v=20261120-integrated-v1'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
@@ -1553,7 +1553,7 @@ var COMMAND_IMPL = {
     var lvs = (typeof skills2Levels === 'function') ? skills2Levels(a.group) : (G.player.skills2 && G.player.skills2.levels && G.player.skills2.levels[a.group]);
     if (!lvs) return true;
     lvs = skills2StoredLevels(a.group);
-    var minLv = (tier === 0 ? 1 : 0);
+    var minLv = 0;
     var removedPoints = lvs[tier] - minLv;
     for (var refundTier = tier + 1; refundTier < lvs.length; refundTier++) removedPoints += lvs[refundTier];
     var refundUlt = sgUltPickOf(G.player.skills2 && G.player.skills2.ult, a.group);
@@ -1569,7 +1569,7 @@ var COMMAND_IMPL = {
        即使此階已在保底，也要清除舊重置留下的超神資料。 */
     if (G.player.skills2.ult) delete G.player.skills2.ult[a.group];
     /* 超神進化異動連帶開關【修羅亂舞】，需同步屬性及面板。 */
-    if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange();
+    if (typeof sgAfterSkillChange === 'function') sgAfterSkillChange(a.group);
     else { UI.dirty.skills = true; UI.dirty.header = true; }
     return true;
   },

@@ -9272,12 +9272,12 @@ function sgbTierRowHTML(gid, i, lvs, skillsSnapshot, gold, pendingAttrs, hasUltP
     } else if (atCap) {
       h += STR(778);
     }
-    // 第 1 階預設開啟（恆為至少 Lv.1），所以降到 1 為止
-    var canDowngrade = (i === 0) ? (lv > 1) : (lv > 0);
+    // 所有階段均可退回未學習的零級。
+    var canDowngrade = lv > 0;
     if (canDowngrade) {
       h += '<button class="btn sgb-btn-quiet" data-skill2-downgrade="' + gid + ':' + i + '" data-tip="' + STR(2140) + '"' + pendingAttrs + '>' + STR(165) + '</button>';
     }
-    // 已在第 1 階保底時，仍可重置以清除舊存檔殘留的超神投資。
+    // 即使普通階已歸零，仍可重置以清除殘留的超神投資。
     if (canDowngrade || (i === 0 && hasUltPick)) {
       h += '<button class="btn sgb-btn-quiet sgb-btn-danger" data-skill2-delete="' + gid + ':' + i + '" data-tip="' + STR(2141) + '"' + pendingAttrs + '>' + STR(781) + '</button>';
     }
@@ -9377,7 +9377,7 @@ function sgbDetailHTML(gid, skillsSnapshot, headerSnapshot) {
   var equipBtn;
   if (inLoadout) {
     equipBtn = '<button class="btn sgb-btn-quiet" data-skill-unequip="' + ref + '"' + equipPendingAttrs + '>' + STR(74) + '</button>';
-  } else if (t.total > 0) {
+  } else if (lvs[0] > 0) {
     equipBtn = '<button class="btn sgb-btn-primary" data-skill-equip="' + ref + '"' + equipPendingAttrs +
       (isPassiveGroup ? ' data-tip="' + STR(803) + '">' + STR(804) : STR(805)) + '</button>';
   } else {
