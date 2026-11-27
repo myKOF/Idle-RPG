@@ -1112,8 +1112,7 @@ function installStorageGuards() {
       'IC_manual_' + (tag ? tag + '_' : '') + saveStamp(Date.now()) + '.json');
   }
 
-  /* 一般手動存檔：未連接資料夾時仍要落地（舊路徑是寫進瀏覽器存檔記錄）。
-     一鍵分解前的保護存檔走的就是這條，不能因為沒接資料夾就靜靜消失。 */
+  /* 一般手動存檔：未連接資料夾時仍要落地（舊路徑是寫進瀏覽器存檔記錄）。 */
   self.manualSave = function (label) {
     if (offlineProgressPending()) return null;
     var meta = buildManualMeta(label);
@@ -1329,8 +1328,7 @@ var COMMAND_IMPL = {
     return res;
   },
 
-  /* 一鍵分解。整段邏輯原本寫在 ui.js:2119 salvageAllUnlocked，含分解前自動存檔。
-     分解前存檔是刻意的保護，搬過來時必須保留。 */
+  /* 一鍵分解前保存完整快照，覆寫既有自動存檔；系統保護不建立手動另存記錄。 */
   'item.salvageBulk': function (a) {
     var maxRarity = a.maxRarity, maxLevel = a.maxLevel, maxAncient = a.maxAncient;
     var hasRarityLimit = typeof maxRarity === 'number' && !isNaN(maxRarity) && maxRarity >= 0;
@@ -1347,7 +1345,7 @@ var COMMAND_IMPL = {
     });
 
     if (targets.length) {
-      var rec = manualSave('before_bulk_salvage'); // 已被 installStorageGuards 導向 persist
+      var rec = requestPersist(PERSIST_KINDS.AUTO);
       if (rec) flog(STR(2013, rec.fname), 'info');
     }
     targets.forEach(function (it) {

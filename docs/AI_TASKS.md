@@ -17984,3 +17984,14 @@ Worker 存活且頁面正常完成載入。
 - 驗證／界限：npm.cmd run build774檔通過，Git差異檢查及自我Review通過。唯讀檢查共通規範／Workflow／Codex、技能快照／HTML／三選一與tooltip事件／刷新、既有技能／資源／捲動／模態回歸、正式瀏覽器驗證與清理工具；無新增顯示字串、美術或素材庫變更，不需String／VFX或素材庫Commit。未跑全庫、完整遊戲長時掛機或實體裝置，已完成本次提示生命週期修復，無未完成實作。
 - 共用檔保護：與同副本DESKTOP-STARTUP任務共用index／LV／AI_TASKS，分別為ui與start-menu不同script標籤、文件頭尾不同段落，無語意相依；以HEAD／本案／其他修改做三方合併試跑並核對完整工作檔，只暫存本案區段。其他Task／CSV／data及開始選單來源／測試／工具不納本次提交、不還原。
 - 交接：Commit為本段所在「[Codex] fix: 保留終極進化技能的懸停提示」，實際SHA見Git log／交付；可供合併，未合併／推送develop或main。下一步使用者整合至實際啟動分支後重新載入遊戲驗收。
+
+## SALVAGE-AUTOSAVE-20261127 — 分解前自動存檔不再誤用手動另存
+
+- Owner：Codex；Done，單人處理。使用者回報未手動存檔卻大量出現IC_manual_before_bulk_salvage檔案，要求系統自動保存歸自動存檔。已定位一鍵分解誤呼叫manualSave；刷新／關閉原走自動存檔。前置：既有auto_current與桌面同檔覆寫流程，fetch後逐檔預檢無外部來源。
+- 允許：js/worker/sim.worker.js、js/storage.js過期註解、js/bridge.js與index.html必要快取、tests/bulk-salvage-autosave.test.cjs／salvage-rarity-threshold.test.cjs、LV_upgrade_system.md與本段。改走既有AUTO，仍在分解前序列化權威G；保留手動操作與舊檔相容。不改存檔格式／協議、配置表、戰鬥／分解獎勵、素材、其他聊天修改，不合併推送。
+- 驗收：分解前完整裝備快照、auto_current與固定自動檔名、多次分解不增手動檔、無目標不存檔、決定論測試不自動寫入、真正手動另存保持；既有落地／桌面／刷新／分解與快取回歸、Build及自我Review後Commit。舊保護檔不自動搬移或刪除；同副本配置表與data修改保留。後續交使用者整合重載驗收。
+- 完成／修改8檔：Worker分解前使用requestPersist(AUTO)、Worker／Storage過期註解、Bridge與首頁快取、bulk-salvage-autosave新增四項回歸、salvage-rarity-threshold測試環境補setTimeout／clearTimeout、LV及本段。沒有新增玩家字串、素材或存檔欄位，不需String或素材庫Commit。
+- 測試指令：`node --test tests/bulk-salvage-autosave.test.cjs tests/desktop-saves.test.cjs tests/game-menu-save.test.cjs tests/save-drain-refresh.test.cjs tests/manual-save-filename.test.cjs tests/save-folder-timestamps.test.cjs tests/save-compression.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`，57/57；`node --test tests/bulk-salvage-autosave.test.cjs tests/salvage-rarity-threshold.test.cjs`，8/8（四項重複，共61項獨立案例）。`npm.cmd run build`775檔通過；最終Git差異檢查通過。
+- 回歸證據：只在記憶體以git show HEAD的Worker替換，新四項全部如預期失敗（manual種類、決定論自動落地、兩平台各12筆手動記錄）；舊分解四項在修改前也因fixture缺timer而失敗。補齊fixture後四項原有品質／等級／太古／鎖定斷言全過，沒有放寬規則。新測試完整載入正式Worker與模擬依賴，存檔前含待拆裝備／原材料且savedAt扣補進度欠帳，落地失敗回退時間；兩平台串真正Storage寫入器，桌面只用一個自動檔名，真正主動另存仍獨立。既有桌面回歸另驗原子寫檔／bak／開機讀回。
+- 唯讀檢查：AI_RULES／AGENTS／Workflow／prompts/codex、save.js／protocol.js／ui.js存檔與分解入口、electron/save-files.cjs、既有桌面／選單／刷新／檔名／時間戳／壓縮／分解／Worker及快取回歸、build工具。自我Review完成：快照在修改背包／材料前產生，沿用既有AUTO排程與覆寫，未改分解篩選／獎勵或舊檔掃描。未啟動遊戲或碰使用者存檔，未跑全庫／實體裝置；kill-test-browsers確認無測試瀏覽器，無桌面擷取或新增暫存產物。
+- 交接／風險：遊戲ai/codex的本段所在「[Codex] fix: 將分解前備份歸入自動存檔」提交，SHA見Git log／交付，可供合併；未合併或推送develop／main。沒有本案未完成實作。自動存檔會按原本週期持續覆寫，分解前快照不再是永久歷史副本；既有IC_manual_before_bulk_salvage仍保持可讀、不自動刪除。同副本既有NPC／Task／掉落CSV、Task.xlsx及data未暫存或還原；下一步使用者整合至實際啟動工作區並重載／重啟遊戲驗收。

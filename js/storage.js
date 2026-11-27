@@ -162,8 +162,7 @@ var SaveStorage = (function () {
   /* 一般手動存檔：與舊路徑的 manualSave 同語意——先寫瀏覽器存檔記錄，
      寫不進去（配額不足）且已連接資料夾時才落地資料夾。
 
-     這條路徑不能要求資料夾：一鍵分解前的保護存檔走的就是它，
-     多數玩家沒有連接資料夾，若在此失敗，那份保護存檔就等於不存在。 */
+     未連接資料夾的玩家仍可主動另存到瀏覽器存檔記錄。 */
   function writeManual(json, meta, done) {
     // 桌面版：手動存檔直接寫成存檔檔（瀏覽器存檔記錄不會被 Steam Cloud 同步）
     if (isDesktopFolder(_saveDir)) { writeManualFolder(json, meta, done); return; }
