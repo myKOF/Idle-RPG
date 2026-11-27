@@ -18089,3 +18089,9 @@ Worker 存活且頁面正常完成載入。
 - 同副本保護：COMBO任務已獨立提交8d7ff04e，本案不同index／Worker快取行與文件首尾，base0bcdbc87／本案／COMBO四個共享檔逐一git merge-file -p退出0且輸出等於完整工作檔，無語意相依；Bridge版本待COMBO提交完成後才更新。只提交本案9檔。
 - 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、player的已讀初始值、save／save-schema存讀、Worker的header投影／既有已讀命令、uiTick／戰鬥標頭、combat真正通關與髒標記、ui-world-map及任務導航、既有地圖／協議／快取測試、主題CSS與建置／瀏覽器工具。無本案未完成實作；未跑全庫、完整遊戲長時掛機或實體裝置。
 - 交接：Commit為本段所在`[Codex] feat: 荒漠首通後閃爍提示世界地圖入口`，SHA見Git log／交付，可供使用者審閱合併；未合併／推送develop或main。下一步整合至實際啟動工作區後重載驗收；已讀與其他提示同樣於既有自動／手動存檔落地。
+
+## WORLD-MAP-HINT-TEXT-20261127 — 黃色提示時改黑字
+
+- Owner：Codex；Done，使用者追加要求世界地圖黃色閃爍時改黑字。前置：7f0bd5b3與既有提示機制，逐檔衝突預檢無外部來源。允許css/world-map.css、index對應CSS快取、LV與本段；不改提示判定／存檔／其他聊天或素材。驗收正式主題CSS下普通／hover／focus與減少動態黑字且無陰影，提示解除恢復原樣；Git差異、自我Review與Commit後交使用者整合重載。
+
+- 完成4檔：提示樣式加color:#000及text-shadow:none的!important、CSS快取、LV與本段。launchHeadless隔離靜音瀏覽器載入正式五份主題CSS與正式祖先結構，computedStyle確認普通／強制hover／focus-visible為rgb(0,0,0)、文字陰影none，減少動態黑字保持且animation:none；finally關閉瀏覽器，無桌面擷取／暫存產物。未修改但檢查既有提示JS與主題覆寫。低影響CSS修正未另跑全庫／Build，Git差異檢查及自我Review通過，無未完成／素材庫變更；Commit為本段所在[Codex] fix: 世界地圖黃色提示使用黑色文字，SHA見交付，可供合併，未合併推送，下一步整合重載。寶石合成任務持續進行。
