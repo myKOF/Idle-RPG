@@ -17934,3 +17934,14 @@ Worker 存活且頁面正常完成載入。
 - 清理限制：本輪tmp/boss9-final-variants-20261127的13個表格／渲染／稽核暫存及素材包qa下4個早期idle-check診斷檔，在兩個明列絕對根目錄內逐項核對普通檔／非連結後，非遞迴刪除命令仍被自動核准審查以政策限制拒絕，整段未執行，未重試或換工具。17檔原位保留，不納Git；四個舊診斷不納必要素材manifest，日後focused輸出寫專案tmp。正式完整首幀／實戰／表格QA保留；前兩輪已拒絕刪除的舊tmp未動，不以ignore隱藏素材庫untracked。
 - 唯讀未改：共通規範／Workflow／Codex、舊核准death／game原檔與製作包、Hero3D／battle-renderer／塔戰ACT／公式／存檔／協議／技能／String／VFX、Excel更新器／CSV及config_tables、頭像UI與CSS。自我Review完成，角色／動作／表格接入無未完成項，可供合併；只驗本機Chrome，未驗其他瀏覽器或實體裝置，第一次模型載入仍為既有非同步方式。換機編修素材須同步LFS；下一步由使用者合併後重載遊戲，未合併／推送develop／main。雙庫SHA於後續交接補入。
 - 雙倉庫交接：素材庫先提交e5f03ff5e46759d02b0914ad269dcfd9a69f053c，共52檔；49份manifest的46個Git blob SHA與3個LFS原檔oid／size逐項通過，提交後git lfs fsck --objects HEAD成功。素材庫僅剩4個前述拒刪診斷untracked，無其他待提交修改。遊戲ai/codex提交為本段所在「[Codex] feat: 接入BOSS9三套正式外觀並同步使用者表單」，26檔含使用者兩個掉落表來源／衍生與data對應值，實際SHA見交付／Git log；沒有遺漏已授權的表單，也沒有另改其數值。
+
+## TOWER-PLAYER-SPAWN-20261127 — 玩家出生點對齊法陣左側紅圈
+
+- Owner：Codex；Done，單人處理。使用者指定封魔塔BOSS戰的玩家出生點移到截圖紅圈，即法陣左側外緣附近。前置：目前塔戰已有固定法陣幾何與權威玩家座標，工作區乾淨，fetch後逐檔衝突預檢無外部來源。
+- 允許：js/tower.js、tests/tower-battlefield.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js必要快取、LV_upgrade_system.md及本段。僅固定玩家起點為法陣中心左方基準畫寬37.5%（300世界單位），保留BOSS原起點與登場／原生追擊。禁止改配置表、傷害／射程／移速、存檔／協議、美術與其他任務，不合併推送。
+- 驗收：各種速度／射程及三塔樓層的玩家起點一致、法陣不偏移、BOSS原起點保持；真正start／tick的登場與接近／射程／場界、顯示沿用權威座標、Worker與主線快取同步、相關回歸及Build／自我Review後Commit。後續交使用者審閱合併及重載驗收。
+
+- 完成：7檔修改，包含tower玩家出生點、battlefield回歸、index／bridge／Worker快取及LV／本段。原中央交手測試預期已被使用者新出生點取代，改守固定左側起點；仍完整驗證原速、射程內出手、登場不偷跑、原BOSS起點及法陣不漂移。顯示層towerFieldView直接採權威playerPos、enterArena採權威arena，無第二套顯示座標；玩家鏡頭仍依既有規則跟隨。
+- 測試指令：`node --test tests/tower-battlefield.test.cjs tests/tower-opening-approach.test.cjs tests/tower-arena-bounds.test.cjs tests/tower-auto-advance.test.cjs tests/tower-auto-result.test.cjs tests/tower-scene-intro.test.cjs tests/tower-action-motion.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`，49/49通過；涵蓋全部150層固定出生與登場／原速追擊、不同速度射程體型、場界、連挑／自動推進、Worker協議及快取。`npm.cmd run build`774檔通過；最終Git差異檢查通過。初輪1項舊中央交手斷言因需求改變失敗，已改成固定起點並保留原本的相遇與追擊檢查，最終全組通過。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、battlefield幾何及場界、battle-renderer權威座標／鏡頭投影／進場、battle-arena法陣尺寸、既有塔開場／動作／自動流程／Worker及快取回歸、build工具。自我Review完成，無程式未完成項；未啟動完整遊戲作目視驗收或跑全庫，紅圈以法陣相對位置對齊，仍建議重載後實際查看。沒有美術／VFX／顯示文字或素材庫修改，不需素材庫Commit；沒有建立瀏覽器或擷取工作階段，kill-test-browsers確認無測試瀏覽器。
+- 交接：遊戲Commit為本段所在「[Codex] fix: 將封魔塔玩家出生點移至法陣左側」，實際SHA見Git log／交付。可供審閱合併，未合併或推送develop／main；下一步由使用者整合至實際啟動分支後重新載入遊戲，確認法陣左側出生位置。

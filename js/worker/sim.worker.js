@@ -24,7 +24,7 @@ importScripts(
   '../item.js?v=20261126-reroll-min-cost-v1', '../gem_resonance.js?v=20261126-unlock-tip-format-v1','../runeword.js?v=20261109-relics',
   '../skills.js?v=20261120-integrated-v1', '../skills2.js?v=20261126-knife-retarget-v1', '../elite_data.js?v=20261028-develop-merge-a8acfe', '../talents.js?v=20261106-t4-talents',
   '../save-schema.js?v=20261126-task-tower-boss-v1', '../player.js?v=20261118-demo-edition', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
-  '../combat.js?v=20261119-develop-merge-1', '../elite.js?v=20261120-integrated-v1', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261120-integrated-v1',
+  '../combat.js?v=20261119-develop-merge-1', '../elite.js?v=20261120-integrated-v1', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261127-tower-player-spawn-v1',
   '../factory.js?v=20261126-reroll-min-cost-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261119-develop-merge-1',
   '../tasks.js?v=20261126-task-chest-upgrade-v1', '../achievements.js?v=20261120-integrated-v1'
 );

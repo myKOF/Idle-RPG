@@ -23,9 +23,10 @@ var TOWER = {
 var TOWER_AUTO_DELAY = 1.0;   // 連續挑戰場與場之間的間隔（秒）
 var TOWER_AUTO_RESULT_DELAY = 3.0; // 連續挑戰結果畫面停留秒數
 var TOWER_AUTO_MAX = 999;     // 連續挑戰次數上限
-/* 原接戰站位用來錨定法陣中心；雙方出生點另依追擊與停步距離對齊中央接戰。
+/* 原接戰站位用來錨定法陣中心；玩家起點固定在法陣左側，首領沿用追擊與停步距離計算起點。
    未載入戰場幾何的環境仍以此作為相對我方的生成距離。 */
 var TOWER_BOSS_SPAWN_DIST = 260;
+var TOWER_PLAYER_SPAWN_LEFT_RATIO = 0.375;
 /* 野外 ⇄ 魔王戰的轉場（js/battle-renderer.js 的黑圈收合：收 1.0 秒、全黑 0.35 秒、展開 1.05 秒）。
    模擬是即時的，畫面黑掉的那段戰鬥若照跑，60 秒限時會被吃掉、開場也看不到——
    所以塔戰開場先有一段「登場」：計時與雙方行動不走，黑圈展開完才互相靠近並開打。
@@ -134,7 +135,7 @@ function startTowerFight(floor) {
 
 /* ---- 戰場站位 ----
    塔戰與野外共用同一個戰場座標系（js/battlefield.js）：我方就是 BF_PLAYER 本人，
-   以野外當下位置錨定法陣，黑幕換場時再將雙方放到中央接戰所需的起點，不歸零世界座標。
+   以野外當下位置錨定法陣，黑幕換場時將玩家放到法陣左側起點，不歸零世界座標。
    野外在塔戰期間凍結，結束時整批清怪重來（finishTowerFight）。
    TOWER.playerPos 與 FIELD.playerPos 同一個參照，面板序列化時自然帶到最新值。
    沒載入 battlefield.js 的環境（部分單元測試）維持舊的無座標行為：
@@ -147,10 +148,10 @@ function placeTowerCombatants(boss) {
   if (boss) boss.pos = { x: home.x + TOWER_BOSS_SPAWN_DIST, y: home.y };
   if (boss && typeof bfTowerArenaGeometry === 'function') {
     TOWER.arena = bfTowerArenaGeometry((home.x + boss.pos.x) / 2, (home.y + boss.pos.y) / 2);
-    /* 相隔一個基準畫寬，BOSS 仍從玩家畫面右側之外跑入。
+    /* 沿用原先以基準畫寬反推的首領起點，不因玩家新起點改動首領位置。
        雙方先按原速互相接近；遠程首領停步後，由玩家補至普攻距離。
        首次出手前必須先進入攻擊射程（eliteTickOne），不再以遠處施法的冷卻補償出生位置。
-       反推首領起點，使首次近身時的雙方中點落在中央附近，整組站位再共同向右平移。 */
+       玩家起點獨立錨定法陣左側，不再隨雙方移速／射程改變。 */
     var gap = TOWER.arena.viewWidth;
     var playerSpeed = bfPlayerSpeed() * bfPlayerSpeedFactor(TOWER.player);
     var bossSpeed = bfEnemyRunSpeed(boss) * bfEnemySpeedFactor(boss);
@@ -158,7 +159,7 @@ function placeTowerCombatants(boss) {
     var approach = Math.max(0, gap - Math.max(contact, bfStopDistance(boss)));
     var bossTravel = approach * bossSpeed / (playerSpeed + bossSpeed);
     boss.pos.x = TOWER.arena.cx + contact / 2 + bossTravel + bfMeterPx(5);
-    home.x = boss.pos.x - gap;
+    home.x = TOWER.arena.cx - TOWER.arena.viewWidth * TOWER_PLAYER_SPAWN_LEFT_RATIO;
     // 挑戰首領從遠端直接追向玩家，不受野外索敵視野限制而停住／遊走。
     boss._alerted = true;
   }
