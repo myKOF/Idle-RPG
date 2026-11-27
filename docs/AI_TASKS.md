@@ -1,3 +1,16 @@
+## DESKTOP-STARTUP-20261127 — 長時間掛機後刷新與開始選單卡頓
+
+- Owner：Codex；Done（已確認的背景等待問題），單人處理。使用者回報約12小時掛機後刷新卡1～2分鐘，補充可能是開始選單的繼續遊戲按鈕遲遲不能使用。先分開量測讀檔、背景準備、Worker與場景首畫，不能把session至boot的區間直接當成載入時間（含玩家停留選單）。
+- 前置：現有桌面／存檔／選單流程；已讀共通規範、Workflow、Codex與任務紀錄、fetch並逐檔預檢無外部來源。同副本既有NPC／Task／掉落表及data修改保留，不納入本案。
+- 允許：js/start-menu.js、必要的js/start-menu-background.js／storage.js、index.html快取、對應開始選單／背景／存檔回歸、tools/desktop/verify-startup.cjs、LV_upgrade_system.md與本段；若修改Worker共載檔再補必要Worker快取。禁止修改來源表、玩法／獎勵、存檔格式與協議、素材及其他任務，不合併推送。
+- 驗收：以隔離profile及只讀複製的真實掛機快照測試Electron冷啟動／刷新／繼續；人工延遲選單圖片確認按鈕不被無限等待，保留來源確認及新遊戲防護、不跳過讀檔或少算收益；相關回歸、Build、Git差異及自我Review後Commit。後續交使用者整合、重開桌面版驗收；未完成12小時實時重跑不得宣稱已完整重現。
+- 原因／完成：原prepare在讀檔成功後，仍無期限等待四張裝飾圖decode的Promise.all；已改成最多等一秒，讀檔未完成時不啟動倒數。背景正常完成取消timer，逾時與晚完成共用一次揭幕守門，避免進入遊戲後又重開選單／重啟音樂或收掉遊戲Loading。修改start-menu、首頁快取、專項回歸、Electron驗證工具、LV與本段共6檔；不動背景美術、存檔／離線結算、Worker或來源表。
+- 實機：verify-startup.cjs使用全新隔離profile，只讀複製玩家09:22的112級掛機快照，抑制原生視窗顯示且全靜音；先正常開選單，再刷新並讓四張裝飾圖的decode永久pending。修改前8秒等待逾時，Loading仍在、Worker未啟動、四圖pending；修改後正常選單2.772秒、四圖仍pending的選單3.082秒可操作，按繼續2.689秒進入完整遊戲首畫，Worker errors與頁面errors皆0。這是可控重現的阻塞路徑，不代表已證明玩家原本1～2分鐘的唯一原因。新工具先前缺Page.enable的首輪未成功注入，修正注入後才取得有效前後結果，沒有以無注入輪次宣稱修復。
+- 測試：node --test執行start-menu、start-menu-background、game-menu-save、save-origin-isolation、save-schema與vfx-editor-cache-versions，共53項51過2既有失敗；以git show HEAD的start-menu／index只在記憶體替換，save-origin-isolation同樣11過2失敗（舊fixture缺document.getElementById），未改其產品或斷言。新增兩項守背景無回覆／晚完成及讀檔不能被逾時跳過，12項選單測試全過。npm.cmd run build通過774檔；verify-startup另以node --check驗語法。
+- 唯讀檢查：規範／Workflow／Codex、main／bridge／storage／save／schema／origin／play-log、Electron外殼／protocol／背景活動／存檔適配、選單背景／遊戲首畫、renderer／Hero3D與模擬引擎、09:07／09:22／09:36掛機快照與遊玩記錄。原生引擎載入三份快照boot約4～14ms、JSON約22～65KB，沒有證據支持存檔膨脹或逐小時重播是這次主因。素材庫無修改，不需素材庫Commit。
+- 自我Review：只限制非必要背景等待，不繞過讀檔、來源／較新存檔攔截；保存正常背景完成、失敗、resume與新遊戲流程。未做12小時真實等待／多機測試，無法排除其他慢讀檔或資源瓶頸；本輪程式／回歸工作無剩餘項，可供審閱合併，未合併／推送。測試Electron與profile皆清理，無螢幕擷取，kill-test-browsers無殘留。遊戲Commit為本段所在「[Codex] fix: 避免開始選單被背景圖片載入卡住」，SHA見交付；下一步重新載入新版桌面版後驗收，若長掛後仍慢再依實際停留階段量測。
+- 共用檔保護：同副本另一項ULT-TOOLTIP任務修改index的ui.js快取與LV／任務檔尾端，本案只動start-menu快取與文件前段；沒有共用狀態或語意相依。提交前以HEAD拆出雙方差異，三方試跑並逐位元核對工作檔，只暫存本案hunk。其他表格／data／ui／技能提示回歸保持原位，不順帶提交。主要相關五份回歸再次40/40通過（另13項來源測試的2個既有fixture失敗照實保留）。
+
 ## SYNC-ALL-AI-20261127 — 整合六行開箱獎勵並恢復同步
 
 - Owner：Codex，整合。使用者輸入 `1`；將 develop `2f7d5e37` 與 Codex `5b49a5bd3b11afd0f072879150eebfef01becd55` 整合，保留六行獎勵、每50ms揭示一件及相關文件／測試。合併無內容衝突，新增本紀錄前的合併樹與來源樹完全一致。Claude、Antigravity、本地與遠端可同步任務來源均已核對在來源歷史內；三個固定工作區將循正常 BAT 推送及回同步，實際結果見本次報告。

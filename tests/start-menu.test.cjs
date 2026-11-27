@@ -10,7 +10,7 @@ const flush = () => new Promise(setImmediate);
 
 function setup({ save = null, info = {}, records = [], files = [], background, deferBoot = false, host, introPlayback } = {}) {
   const nodes = new Map();
-  const launches = [];
+  const launches = [], timers = [];
   const audio = [];
   let confirm, finishBoot;
   let nextSave = save;
@@ -26,6 +26,8 @@ function setup({ save = null, info = {}, records = [], files = [], background, d
     return nodes.get(id);
   }
   const ctx = {
+    setTimeout(fn, ms) { const timer = { fn, ms, cancelled: false }; timers.push(timer); return timer; },
+    clearTimeout(timer) { timer.cancelled = true; },
     document: { getElementById: node },
     IntroPlayer: { play: introPlayback },
     INTRO_REPLAY_TIMELINE: introPlayback && { video: 'opening_animation/shots-01-05-replay.mp4' },
@@ -73,11 +75,12 @@ function setup({ save = null, info = {}, records = [], files = [], background, d
     finishBoot,
     click: name => node('start-menu-' + name).click(),
     confirm: () => confirm(),
-    updateAuto(snapshot) { nextSave = snapshot; }
+    updateAuto(snapshot) { nextSave = snapshot; },
+    timers
   };
 }
 
-test('新玩家從 Loading 進入選單，等待存檔檢查及背景就緒', async () => {
+test('新玩家先完成存檔檢查，背景在等待上限內就緒則正常揭幕', async () => {
   let finishBackground;
   const background = new Promise(resolve => { finishBackground = resolve; });
   const e = setup({ background, deferBoot: true });
@@ -91,6 +94,7 @@ test('新玩家從 Loading 進入選單，等待存檔檢查及背景就緒', as
   assert.deepEqual(e.launches, []);
   finishBackground(true);
   await flush();
+  assert.equal(e.timers[0].cancelled, true);
   assert.equal(e.state.introStarted, undefined);
   assert.equal(e.state.loadingHidden, true);
   assert.equal(e.node('start-menu').style.display, 'flex');
@@ -108,6 +112,44 @@ test('新玩家從 Loading 進入選單，等待存檔檢查及背景就緒', as
   assert.deepEqual(e.launches, [{ snapshot: null, runId: 3 }]);
   assert.equal(e.menu.isActive(), false);
   assert.deepEqual(e.audio, ['preload', true, false]);
+});
+
+test('背景解碼無回覆時，一秒後可繼續遊戲，較晚就緒不會重開選單', async () => {
+  let finishBackground;
+  const background = new Promise(resolve => { finishBackground = resolve; });
+  const save = { runId: 3 };
+  const e = setup({ save, background });
+  await flush();
+  assert.equal(e.state.loadingHidden, false);
+  assert.deepEqual(e.launches, []);
+  assert.equal(e.timers[0].ms, 1000);
+  e.timers[0].fn();
+  assert.equal(e.state.loadingHidden, true);
+  assert.equal(e.node('start-menu').style.display, 'flex');
+  assert.equal(e.state.focus, 'start-menu-continue');
+  assert.deepEqual(e.launches, [], '背景逾時只放行選單，不啟動模擬或存檔');
+  e.click('continue');
+  assert.equal(e.state.gated, save);
+  assert.equal(e.launches.length, 1);
+  assert.equal(e.menu.isActive(), false);
+  finishBackground(true);
+  await flush();
+  assert.equal(e.node('start-menu').style.display, 'none');
+  assert.equal(e.launches.length, 1);
+  assert.deepEqual(e.audio, ['preload', true, false]);
+});
+
+test('背景等待上限不會跳過尚未完成的讀檔檢查', async () => {
+  const e = setup({ save: { runId: 3 }, background: new Promise(() => {}), deferBoot: true });
+  await flush();
+  assert.equal(e.timers.length, 0, '讀檔完成前不開始背景揭幕倒數');
+  assert.equal(e.state.loadingHidden, false);
+  assert.equal(e.node('start-menu').style.display, 'none');
+  assert.deepEqual(e.launches, []);
+  e.finishBoot();
+  e.timers[0].fn();
+  assert.equal(e.state.loadingHidden, true);
+  assert.equal(e.state.focus, 'start-menu-continue');
 });
 
 test('確認新遊戲後播放正式成片，結束或略過才建立一局', () => {

@@ -3,6 +3,8 @@ if (typeof STR !== 'function') { var STR = function (id) { return '[#' + id + ']
 
 /* 載入開始選單時只讀存檔。玩家選好本局後，才交給 Worker 遷移、結算與寫入。 */
 var StartMenu = (function () {
+  // Decorative decoding must not hold usable saves behind Loading indefinitely.
+  var BACKGROUND_WAIT_MS = 1000;
   var active = true, ready = false, busy = false, modes = false;
   var startGame, bootSave = null, bootInfo = {}, folderAuto = null;
   var returnFocus = null, folderCheck = 0, backdrop = null;
@@ -197,14 +199,21 @@ var StartMenu = (function () {
       bootInfo = info;
       folderAuto = info.folderAuto;
       if (info.resume && begin(save, SaveStorage.maxRunId())) return;
+      var revealed = false, backgroundTimer = null;
       function reveal() {
+        if (revealed) return;
+        revealed = true;
+        if (backgroundTimer !== null) clearTimeout(backgroundTimer);
         ready = true;
         if (deterministic && begin(null, 1)) return;
         show();
         if (typeof UISound !== 'undefined') UISound.setStartScreenActive(true);
         hideLoadingScreen();
       }
-      if (backdropReady) backdropReady.then(reveal);
+      if (backdropReady) {
+        backgroundTimer = setTimeout(reveal, BACKGROUND_WAIT_MS);
+        backdropReady.then(reveal);
+      }
       else reveal();
     }
     if (deterministic) prepare(null, {});
