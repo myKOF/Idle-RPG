@@ -124,10 +124,10 @@ test('預留完整獎勵格版面時不消耗揭示時間，開箱後啟動且�
   assert.equal(h.timers.size, 0);
   ctrl.start();
   assert.deepEqual(visible(grid), [0]);
-  h.advance(50);
+  h.advance(25);
   ctrl.start();
   assert.deepEqual(visible(grid), [0, 1]);
-  h.advance(50);
+  h.advance(25);
   assert.deepEqual(visible(grid), [0, 1, 2]);
   ctrl.disconnect();
   ctrl.start();
@@ -136,8 +136,9 @@ test('預留完整獎勵格版面時不消耗揭示時間，開箱後啟動且�
 
 test('搖晃結束1500ms先出光效，1650ms才出獎勵與確認，Esc及點擊不可提早跳過', async () => {
   const h = harness(), c = h.c;
-  c.chestShowResult(result(c));
+  c.chestShowResult(result(c, 80));
   const el = h.current();
+  el.nodes.viewport.clientHeight = 336; h.columns(10);
   assert.equal(el.confirm.hidden, true);
   assert.deepEqual(visible(el.nodes.grid), []);
   assert.equal(el.panel.inert, true);
@@ -167,12 +168,12 @@ test('搖晃結束1500ms先出光效，1650ms才出獎勵與確認，Esc及點�
   assert.equal(el.panel.inert, false);
   assert.equal(el.panel.getAttribute('aria-hidden'), 'false');
   assert.deepEqual(visible(el.nodes.grid), [0]);
-  h.advance(49); assert.deepEqual(visible(el.nodes.grid), [0]);
+  h.advance(24); assert.deepEqual(visible(el.nodes.grid), [0]);
   h.advance(1); assert.deepEqual(visible(el.nodes.grid), [0, 1]);
-  h.advance(400); assert.deepEqual(visible(el.nodes.grid), Array.from({ length: 10 }, (_, i) => i));
-  h.advance(50); assert.equal(visible(el.nodes.grid).length, 11);
-  h.advance(499); assert.equal(visible(el.nodes.grid).length, 20);
-  h.advance(1); assert.equal(visible(el.nodes.grid).length, 21);
+  h.advance(200); assert.deepEqual(visible(el.nodes.grid), Array.from({ length: 10 }, (_, i) => i));
+  h.advance(25); assert.equal(visible(el.nodes.grid).length, 11);
+  h.advance(749); assert.equal(visible(el.nodes.grid).length, 40);
+  h.advance(1); assert.equal(visible(el.nodes.grid).length, 41);
 });
 
 test('虛擬格捲動或縮放不會提前顯示尚未揭示的物品，離屏物品仍依全域次序揭示', () => {
@@ -181,7 +182,7 @@ test('虛擬格捲動或縮放不會提前顯示尚未揭示的物品，離屏�
   assert.ok(grid.children.length <= 40);
   viewport.scrollTop = 5600; viewport.emit('scroll');
   assert.deepEqual(visible(grid), []);
-  h.advance(500); assert.deepEqual(visible(grid), []);
+  h.advance(250); assert.deepEqual(visible(grid), []);
   h.columns(5); assert.deepEqual(visible(grid), []);
   viewport.scrollTop = 0; viewport.emit('scroll');
   assert.deepEqual(visible(grid), Array.from({ length: 11 }, (_, i) => i));
@@ -293,7 +294,7 @@ test('五種品質依配置選擇色系與箱圖，空獎勵仍有確認，所�
     assert.equal(h.timers.size, 0);
     h.current().confirm.emit('click');
   }
-  c.chestShowResult(result(c, 2)); await h.flush(); h.advance(1700);
+  c.chestShowResult(result(c, 2)); await h.flush(); h.advance(1675);
   assert.deepEqual(visible(h.current().nodes.grid), [0, 1]);
   assert.equal(h.timers.size, 0);
 });

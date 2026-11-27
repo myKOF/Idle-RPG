@@ -17964,6 +17964,15 @@ Worker 存活且頁面正常完成載入。
 - 素材庫僅V5 README及manifest改版，將播放規格改引用遊戲系統文件；145個Git index實際blob SHA全數核對後，先提交`6e2cfb3a8233d7404d7c08d3e71752e9d2927c4a`，無像素／模型／圖集變更。GIF是本輪實際遊戲擷取，五品質720×480／325幀／19.5秒／約4.84MB，逐幀解碼、時長及1500ms閉蓋有光目視通過；成品及QA JSON在本聊天chest-timing-v6/chest-faster-open-v6.gif，原始擷取在獨立tmp/chest-timing-v6。已核對絕對路徑／非連結後嘗試清理此輪自身暫存，自動核准審查以政策限制拒絕刪除，未重試並保留；上輪被拒的工作區外目錄未動。瀏覽器／伺服器已關閉，孤兒檢查無殘留。
 - 唯讀未改：規範／Workflow／Codex、來源製作與匯出工具、所有箱圖／Blender／manifest、chest結算／資料／Worker／Bridge／存檔／String、headless工具；其他聊天配置與formula／data變更不暫存。自我Review完成，三項要求與GIF無未完成項；未驗其他瀏覽器／實體裝置長時間播放。遊戲Commit為本段所在`[Codex] fix: 加倍開箱搖晃並提前品質光效`，實際SHA見交付，可供合併，未合併或推送develop／main；下一步重新載入遊戲驗收新版節奏。
 
+## CHEST-REVEAL40-20261127 — 每秒四十件開箱物品
+
+- Owner：Codex；Done，單人處理。使用者要求物品出現速度改為每秒40個，即每25ms一格；六行、捲動、原開蓋／光效／確認時序保持。允許ui-chest、開箱回歸、index對應快取、CHEST_SYSTEM／LV／VFX及本段7檔；禁止修改其他聊天角標、玩法／表格／存檔／Worker／協議／素材，不合併推送。
+- 前置：fetch及逐檔預檢無外部來源，同副本FORGE-CHEST-BADGE修改index熔爐角標、AI_TASKS開頭與chest／ui／style；本項只改ui-chest快取、本文既有寶箱段前插入紀錄，數量dirty header與揭示速度無語意相依。三方merge-file乾跑驗收後分段修改／暫存；驗收24／25ms與999／1000ms揭示邊界、虛擬格／中止、實際DOM速率與相關回歸／Build。無新必要素材。
+- 完成／修改7檔：js/ui-chest.js只將CHEST_REVEAL_STEP_MS從50改25；tests/chest-opening.test.cjs改驗24／25ms、999ms共40件與1000ms第41件，將案例資料及虛擬視口擴至可驗41格，保留捲動／縮放／關閉清理。index只升ui-chest快取reveal40-v1；CHEST_SYSTEM、LV寶箱段、VFX揭示登記與本段同步。六行CSS、箱蓋／光效／結算皆未改。
+- 驗證：`node --test tests/chest-opening.test.cjs tests/chest.test.cjs tests/vfx-preset-usage.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/string-table.test.cjs`最終79/79通過；`npm.cmd run build`776檔與Git差異檢查通過。早輪遇到其他聊天新增STR2583／2584與編輯器字串版號尚在更新的中間狀態，未修改對方檔案，待其更新後原五檔回歸全數重跑通過。未跑全庫。
+- UI實測限制：正式新局與獨立正式CSS／DOM頁兩次隔離Edge皆未回應Runtime.evaluate，沒有宣稱瀏覽器驗證通過。依各自精確PID／命令列確認後只結束本項Node，交headless看門狗與孤兒清理器關閉關聯瀏覽器；伺服器隨進程結束釋放。上輪六行實測保留，本輪25ms速率與中止以正式原函式的控時回歸驗收。未另試其他瀏覽器／真機。
+- 協作／交付：index、LV、AI_TASKS以HEAD加本項修改重建暫存，逐檔三方試合乾淨且結果等於含雙方內容的完整工作檔；保留角標／String／UI／Bridge／Worker／style在工作區，不順帶暫存或覆蓋。素材庫無本項變更，不建空提交；唯讀檢查規範／Workflow、chest揭示／六行CSS與前輪驗證、對方chest的header dirty及首頁／任務差異、headless工具，未改表格／獎勵／存檔／素材。自我Review完成，程式與文件無未完成項，UI實測限制如上，可供合併。Commit為本段所在`[Codex] feat: 開箱物品揭示改為每秒四十件`，SHA見交付，未合併或推送；下一步重載遊戲驗收速度。
+
 ## CHEST-REWARDS6-20261127 — 六行獎勵與每秒二十件
 
 - Owner：Codex；Done，單人處理。使用者指定開箱物品最多同時顯示六行、揭示改為每秒20個；沿用滿版置中、原格位與順序、超量捲動、開蓋後才揭示及立即確認關閉。
