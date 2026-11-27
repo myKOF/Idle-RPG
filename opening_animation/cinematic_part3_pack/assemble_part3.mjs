@@ -69,12 +69,12 @@ function main() {
 
   // 時間軸（全長 34.000s / 1020 幀 @ 30fps）：
   // v0 (Clip 09): 8.500s（0.5s 白金柔光淡入，銜接 Part 2 結尾金光）
-  // v1 (Clip 10): 8.500s（於 8.000s 處 0.500s 跨溶解 -> 累計 16.500s）
+  // v1 (Clip 10): clip_10_shot4b.mp4 為 20s 延長版（0–10.167s 為 Clip 09，10.167s 起為單膝半跪蓄力），故自 10.200s 裁取 8.500s（於 8.000s 處 0.500s 跨溶解 -> 累計 16.500s）
   // v2 (Clip 11): 8.500s（於 16.000s 處 0.500s 跨溶解 -> 累計 24.500s）
   // v3 (Clip 12): 10.000s（於 24.000s 處 0.500s 跨溶解 -> 累計 34.000s，最後 3.0s 淡出至全黑）
   const filterComplex = [
     `[0:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.500,setpts=PTS-STARTPTS,fade=t=in:st=0:d=0.5:color=white,settb=1/30[v0]`,
-    `[1:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.500,setpts=PTS-STARTPTS,settb=1/30[v1]`,
+    `[1:v]${normFilter},trim=start=10.200:duration=8.500,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=2,trim=duration=8.500,setpts=PTS-STARTPTS,settb=1/30[v1]`,
     `[2:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.500,setpts=PTS-STARTPTS,settb=1/30[v2]`,
     `[3:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=10.000,setpts=PTS-STARTPTS,settb=1/30[v3]`,
     `[v0][v1]xfade=transition=fade:duration=0.500:offset=8.000,fps=30,settb=1/30[v01]`,

@@ -1,5 +1,13 @@
 # PATCH.md
 
+## 序章第三部終章（Shot 04 + Shot 05）電影級剪接成片完成（Antigravity 2026-11-27）
+
+- **完成第三部終章 34.0 秒電影級剪接成片（[`opening_animation/cinematic_part3_pack/output_part3_cinematic.mp4`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/cinematic_part3_pack/output_part3_cinematic.mp4)）**：
+  - 納入最終批次 4 支輸入影片（`clip_09_shot4a.mp4`、`clip_10_shot4b.mp4`、`clip_11_shot4c.mp4`、`clip_12_shot5.mp4`）。
+  - 修正 [`assemble_part3.mjs`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/cinematic_part3_pack/assemble_part3.mjs)：偵測 `clip_10_shot4b.mp4` 為 20 秒延長版（`0–10.167s` 重複 Clip 09、`10.167s` 起為單膝半跪蓄力），改由 `start=10.200s` 精準裁取 8.500s，避免右手特寫重複並消除任何切換殘影。
+  - 輸出成片精準為 **1920×1080、30 fps、34.000 秒（1020 幀）**，開頭 0.5s 白金柔光淡入、全段 0.5s 平滑跨溶解（`8.0s` / `16.0s` / `24.0s`）、尾段 3.0s（`31.0s–34.0s`）畫面與雙音軌（`shots-01-05-replay-sfx.mp3` + `desert-ascendant.mp3`）同步淡黑淡出，已逐秒檢視驗收。
+
+
 ## 序章第三部終章（Shot 04 + Shot 05）電影級復刻分鏡手冊與參考圖包（Antigravity 2026-11-26）
 
 - **新增 [`opening_animation/CINEMATIC_PART3_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_PART3_STORYBOARD.md) 與 `opening_animation/cinematic_part3_pack/`**：
