@@ -630,7 +630,7 @@
 627,戰鬥,提示｜ui.js:4399 renderZoneBar,,切換至神界,,,,,,,,,,,
 628,戰鬥,提示｜ui.js:4400 renderZoneBar,,切換為太古戰場、混沌界、永恒神殿地圖,,,,,,,,,,,
 629,戰鬥,文字｜ui.js:4485 refreshStageDisplay,"{0}=代入參數：zoneIconHtml(stg.zone || 'desert',znd)；{1}=代入參數：displayStage（關卡）",{0} 第 {1} 關,,,,,,,,,,,
-630,戰鬥,文字｜ui.js:4486 refreshStageDisplay,{0}=代入參數：stg.best,最高{0}關,,,,,,,,,,,
+630,戰鬥,文字｜ui.js:4486 refreshStageDisplay,{0}=目前場景最高到達關卡；{1}=目前場景最高關卡數,最高{0}/{1}關,,,,,,,,,,,
 631,戰鬥,文字｜ui.js:4500 refreshCombatPauseButton,,▶ 繼續,,,,,,,,,,,
 632,戰鬥,文字/界面文字｜ui.js:4500 refreshCombatPauseButton、index.html:680、index.html:712,,⏸ 暫停,,,,,,,,,,,
 633,戰鬥,提示｜ui.js:4501 refreshCombatPauseButton、index.html:680、index.html:712,,戰鬥控制,,,,,,,,,,,

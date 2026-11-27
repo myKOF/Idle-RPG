@@ -18161,3 +18161,16 @@ Worker 存活且頁面正常完成載入。
 - Build／交接：`npm.cmd run build`776檔全數通過，臨時兩份TAP日誌按確切路徑刪除，最終Git差異／自我Review通過。Commit為本段所在`[Codex] test: 修正面板投影與升級回饋的三項舊測試`，SHA見Git log／交付，可供審閱合併；未合併／推送develop或main。無已知本案風險或未完成項；下一步由使用者整合本測試提交，不需為本案重新載入遊戲。
 
 - 同副本保護：收尾另一聊天新增MERCHANT-SOLD-OPAQUE任務與CSS／首頁／LV，與本案僅共用任務文件首尾不同段落、無產品語意相依。提交檢查發現其開頭紀錄一度隨整檔暫存；立即以原父提交與本案尾段重建索引並修正尚未推送的本案提交，工作檔完整保留對方內容。git merge-file三方試合退出0且輸出等於完整工作檔；本案只含測試與自己的任務尾段，其他未提交內容不暫存或還原。
+
+## STAGE-BEST-TOTAL-20261127 — 最高關卡顯示目前場景上限
+
+- Owner：Codex；Done，單人處理。使用者要求戰鬥列「最高X關」改為「最高XX/YY關」，YY為目前場景上限。前置：header.stage.best與共載zoneMaxStage權威配置，工作區乾淨、fetch後逐檔預檢無外部來源。
+- 允許：js/ui.js、String630原生Excel編修／CSV／strings_data、index必要快取及移除stage-best舊靜態初始文字、tools/vfx/editor/index.html共用字串快取、tests/stage-jump-ui.test.cjs、LV與本段；禁止改最高進度／通關／切關／解鎖／配置／存檔／Worker協議或素材，不合併推送。
+- 驗收：各場景分母動態取zoneMaxStage、XX維持最高到達值而非目前關卡、換圖／退關／長按預覽正確、配置上限更動即同步；String全表只改630繁中與參數說明、原生Excel重開及前後格式／目視比較，相關關卡／地圖／字串／快取回歸、Build與自我Review後Commit，交使用者整合重載。
+
+- 完成／修改9檔：ui.js新增zoneMaxStage(stg.zone)顯示參數、String.xlsx／CSV／strings_data更新630與必要參數說明、index移除579舊靜態文字並更新UI／String快取、VFX編輯器共用字串快取、stage-jump-ui回歸、LV與本段。正式格式最高{0}/{1}關，原最高進度與直達最高操作保持。
+- Excel：取得獨占後以tools/excel-update-sheets.ps1原生更新2格，兩輪正常重開、所有值一致、繪圖0個保留。逐格只差D633參數說明與E633繁中（String630），其餘2569列與styles.xml位元內容完全保持；以artifact-tool唯讀匯入渲染前後A632:G634目視，未匯出覆蓋來源。String單表匯出2569×16，apply_strings同步2568條／2aafbc80、build_string_csv --check寫死0，主頁及編輯器快取一致。
+- 測試：`node --test --test-reporter=tap tests/stage-jump-ui.test.cjs tests/world-map-ui.test.cjs tests/world-map.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/ui-worker-panels.test.cjs`56/56；新增真正refreshStageDisplay執行涵蓋所有10張地圖、退關仍保留best、長按與指定預覽不改best、修改Icefield上限150→175後即顯示新分母且不寫入header。初輪新fixture的$id被util正式函式覆蓋，補document.getElementById後通過。另同檔2項過期斷言（滑鼠按住→正式文案左鍵按住、舊定位字串已重構為函式參數）以HEAD基準只讀替換重跑，兩項同樣失敗；更新文案期待、把定位靜態斷言改成真正positionSkTooltip左／右／底部翻上方座標驗證，保留全部長按行為斷言，不改產品提示或定位。
+- Build／目視：npm.cmd run build777檔通過，Git差異檢查及自我Review通過。launchHeadless隔離profile靜音，正式全主題CSS／UI函式與原關卡導覽HTML，實測100/100、3/150及600/600，截圖確認最高3/150關可讀，頁面例外0；finally關閉瀏覽器，kill-test-browsers無殘留。未載入使用者存檔或建立桌面擷取，未跑全庫／完整遊戲長時或實體裝置；沒有本案未完成／已知新增風險。
+- 唯讀未改：共通規範／Workflow／Codex、ZONES／zoneMaxStage與關卡上限來源、原stage.best／最高到達規則、UI快照／切關／長按／提示定位、既有地圖／字串／快取／面板與Excel更新／匯出工具、headless及Build。無美術／戰場Preset或素材庫修改，不需素材庫Commit。新暫存目錄內來源備份／JSON／PNG／日誌／腳本與依賴junction按確切路徑清理；其他聊天被拒清理的舊暫存目錄未動。
+- 交接：Commit為本段所在`[Codex] feat: 關卡列顯示最高進度與場景上限`，SHA見Git log／交付，可供審閱合併，未合併／推送develop或main。下一步整合至啟動工作區後重載；VFX編輯器仍開著時先備份／另存未存內容再重載共用字串，不自動刷新或儲存舊頁覆蓋。

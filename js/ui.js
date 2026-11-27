@@ -4525,7 +4525,7 @@ function refreshStageDisplay(stageOverride) {
       ? UI.stageHold.targetStage
       : (_stagePendingStage !== null ? _stagePendingStage : stg.current));
   setHtmlIfChanged(label, STR(629, zoneIconHtml(stg.zone || 'desert', znd), displayStage));
-  setTextIfChanged(best, STR(630, stg.best));
+  setTextIfChanged(best, STR(630, stg.best, zoneMaxStage(stg.zone)));
   if (!isUiCommandPending(nodePendingKey('stage-auto'))) refreshStageAutoButton(stg.autoAdvance);
 }
 
