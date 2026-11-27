@@ -28,14 +28,14 @@ test('三個指定任務與獎勵參數符合使用者確認內容', () => {
     return [t.order,t.type,t.param,t.count,t.rewardType,t.rewardParam || '',t.rewardQty];
   });
   assert.deepEqual(data, [
-    [5,'skillTier','knife',2,'scrap','',250],
+    [5,'skillTier','knife',2,'scrap','',500],
     [13,'skillTier','knife',3,'gold','',250000],
     [31,'skillUlt','knife:petalStorm',1,'merchantInvitation','',5]
   ]);
   assert.equal(c.TASKS.length, 48);
 });
 
-test('普通進階必須實際學會指定階，無須裝配；實際發250碎片及250000金幣，領取不重複', () => {
+test('普通進階必須實際學會指定階，無須裝配；實際發500碎片及250000金幣，領取不重複', () => {
   const {e,c,p} = setup();
   p.loadout = [];
   const first = select(c, 5), scrap = p.scrap;
@@ -47,9 +47,9 @@ test('普通進階必須實際學會指定階，無須裝配；實際發250碎�
   assert.equal(c.skills2Learn('knife',1), null);
   assert.equal(c.taskQuickView().ready, true);
   assert.equal(e.cmd('task.claim').result.claimed, 5);
-  assert.equal(p.scrap, scrap + 250);
+  assert.equal(p.scrap, scrap + 500);
   assert.ok(e.cmd('task.claim').result.err, '下一項裝配任務尚未完成');
-  assert.equal(p.scrap, scrap + 250);
+  assert.equal(p.scrap, scrap + 500);
 
   const second = select(c, 13);
   assert.equal(c.taskProgressFor(second), 2);

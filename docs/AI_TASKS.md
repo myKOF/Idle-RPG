@@ -1,3 +1,18 @@
+## TASK-TABLE-TEST-AUDIT-20261127 — 更新任務表回歸並唯讀核對說明
+
+- Owner：Codex；Done，單人處理。使用者授權更新前輪4項失敗測試、驗證後Commit，並唯讀盤點Task任務／獎勵說明與實際條件／發放差異，不改其表。
+- 前置：既有taskClaim／塔戰／導航與來源讀取工具；fetch後目標逐檔衝突預檢無外部來源，ai/codex原有Task.xlsx／CSV／data及其他CSV未提交修改保持。允許tests/task-tower.test.cjs、tests/task-chest-relic.test.cjs、tests/task-evolution.test.cjs與本段；禁止修改／套用／提交來源表及衍生data、產品玩法／存檔／協議／快取、素材與其他工作，不合併推送。
+- 方案與驗收：以towerFloor的目標層數選任務，索引從該定義推算，明確驗目前首層順序21／2件與二十層35／1件；開10箱順序24、遺物順序41。保留真正勝利／失敗／防重領／存讀／導航鎖定與歷史遷移檢查。同輪確認第5項目前500碎片，更新兩處仍預期250的飛刀測試。唯讀比對Excel／CSV／TASKS全部48項及執行器、實際獎勵抽驗，列出不符但不修表；相關回歸／Build／Git差異與原表SHA核對、自我Review後Commit，後續由使用者審閱測試及盤點清單。
+
+- 完成／修改4檔：task-tower／task-chest-relic／task-evolution三支回歸及本段。首層領2件逐件驗1級／史詩／1太古且部位不同，依任務實際索引驗面板／保存；二十層、失敗／逃跑／逾時、鎖定導航與歷史遷移保留。第5項改驗500碎片而非250，未調整產品執行器或任何表。
+- 驗證：`node --test tests/task-system.test.cjs tests/task-tower.test.cjs tests/task-chest-upgrade.test.cjs tests/task-evolution.test.cjs tests/task-chest-relic.test.cjs tests/task-skills.test.cjs tests/gm-task.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs tests/save-schema.test.cjs tests/quest-guide-input.test.cjs`，82/82；`npm.cmd run build`775檔通過。初次更新四項後65/67，另兩項是目前第5項改500碎片與舊測試250不符，已同步測試後全過。
+- 唯讀稽核：既有readXlsxRows／csvParse／Task.extract比對全部48項Excel／CSV／runtime逐欄一致；各項在隔離模擬狀態呼叫真正taskGrantReward，檢查資源差額、裝備品質／等級／太古數與寶石數量，並人工核對所有目標類型與名稱／備註。第16項另以當前175關發獎，仍為1級2件。沒有啟動使用者存檔或寫入來源，未建立報表工作簿或另存Excel，無外部素材。
+- 列出不修（以下全為Task順序，Excel列號＝順序+1）：第16項獎勵顯示3件、實發2件，備註稱依當前關卡、參數卻固定1級；第32項顯示5000碎片、實發1000；第47項顯示5太古、實發4太古；第45／46項顯示創世，但品質索引8現在是神鑄神話（創世為7）。第33／35／36／38項獎勵稱傳奇，實際品質名稱為傳說；第37／39項任務與備註稱傳奇，實際要求傳說(含)以上及指定150／200級。第23／27／29項備註仍稱獨特(含)以上，實際門檻是史詩(含)以上，第27／29並要求50級。第6項任務名要求設為自動分解，實際只點擊精良標籤就達成，取消也算；這與其備註一致，屬任務名語意差異而非未接線。
+- 風險／界限：僅修測試，不修上述說明／設定差異；沒有本案未完成內容。測試針對目前尚未提交的Task版本，後續整合必須配合這版來源及衍生資料；本提交不把原有使用者表格混入。未跑全庫或實機瀏覽器，不改玩法，因此不需LV／String／快取版本；來源Excel沒有修改，不涉及Excel重開驗收。
+- 原檔保護：Task.xlsx SHA256 a0371a084b1626d2315c0560db2d41242d81bacea4253391967667f2f8c9c7ed；Task.csv fdff85690272ff4aaf5b78b57e256dfe337dcfaebfb78096cd799d4011e1f599；data.js f2ebcdaeae32cdb63264ab19dd5f4f76869cee156441cd1ce93e4774e64c3932，前後保持。另兩份NPC／Zone_Stage_Drops CSV雜湊亦保持，無stage／還原。自我Review確認只更新來源已變動的期待與對應定位，原功能斷言保留，Git差異檢查通過。
+- 唯讀未改：共通規範／Workflow／Codex、Task來源／CSV／data／RARITIES／String名稱、tasks與item實際進度／發獎／太古／等級、Worker熔爐setQuality與協議、其他任務／技能／存檔／導引／快取回歸及build工具。kill-test-browsers確認無測試瀏覽器，沒有桌面擷取或新增暫存，素材庫無變更／不需Commit。
+- 交付：ai/codex本段所在「[Codex] test: 依目前Task表更新任務回歸並記錄說明差異」提交，SHA見Git log／回報；可供審閱合併，需搭配目前Task資料。未合併或推送develop／main；下一步由使用者決定盤點項目中的說明或數值應採哪一方，本案不代改。
+
 ## TASK-EQUIP-SLOTS-20261127 — 任務裝備獎勵同批部位不重複
 
 - Owner：Codex；Done，單人處理。使用者要求任意N件裝備獎勵的部位不同，例如5件100級史詩裝備須為5個不同部位。前置：既有taskGrantReward與makeEquipment的slot選項可用，fetch後逐檔衝突預檢無外部來源。
