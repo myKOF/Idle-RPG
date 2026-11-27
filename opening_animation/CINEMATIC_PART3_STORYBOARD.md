@@ -46,66 +46,72 @@ STRICT ANATOMY LOCK: Strictly ONE armored right hand with exactly FIVE fingers p
 
 ---
 
-## Clip 10｜第四鏡之二：單膝半跪蓄力（`00:08.0 – 00:16.0`）
+## Clip 10｜第四鏡之二：單膝半跪蓄力（`00:08.0 – 00:16.0`）`[v2 修正版：鎖死方向與單劍]`
 
 - **參考圖 1（原片構圖基準）**：`orig_10_82s50.png`（`opening_animation/cinematic_part3_pack/refs/orig_10_82s50.png`）
 - **參考圖 2（電影風格基準）**：`ref_kneel.png`（`opening_animation/cinematic_part3_pack/refs/ref_kneel.png`）
-- **目標運鏡**：中景側面構圖，大天使長單膝跪於荒漠黃沙中、右手撐地、左手按住破損胸甲、兜帽下臉孔隱於暗影，長劍橫臥右前景沙面。強風吹得破爛白披風向左獵獵翻飛，微光粒子緩緩升起，鏡頭以緩慢史詩弧線微繞並見角色蓄力微抬肩膀準備起身。
+- **修正重點**：**全程嚴格鎖死角色朝向（面朝右）與固定側面機位**，禁止身體突然轉向或鏡頭繞背翻轉；僅做極緩慢的直線微推；畫面中只允許右前景沙面有一把長劍（禁止背景冒出第二把巨劍）。
 
 | 參考圖 1：原片構圖基準 (`orig_10_82s50.png`) | 參考圖 2：電影風格基準 (`ref_kneel.png`) |
 |---|---|
 | ![Clip 10 原片構圖基準](./cinematic_part3_pack/refs/orig_10_82s50.png) | ![Clip 10 電影風格基準](./cinematic_part3_pack/refs/ref_kneel.png) |
 
-### 給 Gemini 的生成指令（Clip 10 — 請直接依此段 Prompt 生成）
+### 給 Gemini 的生成指令（Clip 10 v2 — 請直接依此段 Prompt 生成）
 ```text
 Create an ultra-realistic AAA dark fantasy 3D CGI cinematic 16:9 video in a single continuous unbroken medium shot (no scene cuts, no text, no subtitles, no black letterbox bars). Use orig_10_82s50.png (first image) as the exact kneeling composition and pose, and transform it completely into the photorealistic 3D CGI film quality, cracked ivory-silver metallic armor, billowing tattered cloth, and twilight desert lighting of ref_kneel.png (second reference image).
 
-STRICT ANATOMY LOCK: Strictly TWO arms and TWO legs with natural human proportions (no extra limbs, no morphing armor).
+STRICT CAMERA & ORIENTATION LOCK: Keep the exact same side-profile camera angle and body orientation facing right throughout the entire clip. DO NOT turn, flip, or rotate the character's torso or facing direction at any point, and DO NOT orbit the camera around the character. Only a very slow, gentle straight push-in is allowed.
+STRICT ANATOMY & PROP LOCK: Strictly TWO arms and TWO legs with natural human proportions (no extra limbs). Strictly ONE ornate longsword lying on the sand in the lower-right foreground (NO second sword in the background).
 
-[0-4s] Dramatic medium shot of the hooded archangel kneeling on one knee in the windswept desert sand: right armored hand pressed firmly into the sand beside the fallen ornate longsword on the right, left armored hand clutching the cracked chestplate, face hidden in pitch-black shadow inside the tattered ivory hood. Fierce desert wind whips the torn ivory cloak and waist cloth rapidly to the left as glowing golden-white dust motes drift upward.
-[4-8s] Gathering final resolve, the archangel shifts weight firmly onto the front knee and right gauntlet, shoulders slowly rising slightly in preparation to stand up as windblown sand sweeps across the dunes and the camera executes a slow, heroic subtle arc push-in.
+[0-4s] Steady medium side-profile shot of the hooded archangel kneeling on one knee facing right in the windswept desert sand: right armored hand pressed firmly into the sand beside the single fallen longsword on the lower right, left armored hand resting on the cracked chestplate, face hidden in pitch-black shadow inside the tattered ivory hood. Fierce desert wind whips the torn ivory cloak and waist cloth continuously to the left as subtle golden-white dust motes drift upward.
+[4-8s] Maintaining the exact same facing direction and kneeling silhouette without turning, the archangel takes a deep resolute breath, shoulders rising slightly and right armored fingers tightening into the sand as windblown sand sweeps across the dunes and the camera performs a very slow, steady straight push-in.
 ```
 
 ---
 
-## Clip 11｜第四鏡之三：站起握劍、砂落劍刃與白光升騰（`00:16.0 – 00:24.0`）
+## Clip 11｜第四鏡之三：站起握劍、砂落劍刃與白光升騰（`00:16.0 – 00:24.0`）`[v2 修正版：1秒落砂收淨＋禁止多手]`
 
 - **參考圖 1（原片構圖基準）**：`orig_11_88s50.png`（`opening_animation/cinematic_part3_pack/refs/orig_11_88s50.png`）
 - **參考圖 2（電影風格基準）**：`ref_rise_sword.png`（`opening_animation/cinematic_part3_pack/refs/ref_rise_sword.png`）
-- **目標運鏡**：英雄四分之三側面全身構圖，大天使長穩健站立、右手緊握長劍斜指右下，黃沙自劍刃流瀉而下，破爛白披風在狂風中劇烈飛舞，純白與淡金光粒如星塵般環繞全身加速升騰，鏡頭緩慢橫移微仰拍彰顯不屈氣勢。
+- **修正重點**：
+  1. **自然落砂（僅前 1 秒）**：一開場（0.0s）劍刃上已殘留剛從沙地拔起時流下一半的黃沙，並在 **1 秒內全部滑落乾淨**，1.2s 之後劍刃保持潔淨，絕不憑空持續冒沙。
+  2. **徹底根治胸前多手**：取消環繞運鏡改為固定四分之三側面微推，並嚴格鎖定「總共只有兩條手臂：右手持劍、左手自然垂於左側身旁，**胸甲上絕不能出現任何手掌**」。
 
 | 參考圖 1：原片構圖基準 (`orig_11_88s50.png`) | 參考圖 2：電影風格基準 (`ref_rise_sword.png`) |
 |---|---|
 | ![Clip 11 原片構圖基準](./cinematic_part3_pack/refs/orig_11_88s50.png) | ![Clip 11 電影風格基準](./cinematic_part3_pack/refs/ref_rise_sword.png) |
 
-### 給 Gemini 的生成指令（Clip 11 — 請直接依此段 Prompt 生成）
+### 給 Gemini 的生成指令（Clip 11 v2 — 請直接依此段 Prompt 生成）
 ```text
-Create an ultra-realistic AAA dark fantasy 3D CGI cinematic 16:9 video in a single continuous unbroken heroic shot (no scene cuts, no text, no subtitles, no black letterbox bars). Use orig_11_88s50.png (first image) as the exact standing combat stance and framing, and transform it completely into the photorealistic 3D CGI film quality, weathered silver-and-gold armor reflections, windblown sand, and epic sunset lighting of ref_rise_sword.png (second reference image).
+Create an ultra-realistic AAA dark fantasy 3D CGI cinematic 16:9 video in a single continuous unbroken heroic shot (no scene cuts, no text, no subtitles, no black letterbox bars). Use orig_11_88s50.png (first image) as the exact standing combat stance and framing, and transform it completely into the photorealistic 3D CGI film quality, weathered silver-and-gold armor reflections, windblown desert atmosphere, and epic sunset lighting of ref_rise_sword.png (second reference image).
 
-STRICT ANATOMY LOCK: Strictly TWO arms and TWO legs, holding ONE ornate longsword in the right hand.
+STRICT ANATOMY & CAMERA LOCK: Strictly TWO arms total and TWO legs total. The right arm extends downward gripping ONE ornate longsword; the left arm hangs naturally down at the left side away from the torso—the chestplate is completely bare and unobstructed with NO hand touching the chest and NO extra hand or third arm anywhere. Keep a steady, locked three-quarter side camera angle with only a slow straight push-in (DO NOT orbit or spin the camera around the character).
 
-[0-4s] Heroic three-quarter profile shot of the hooded archangel standing firmly in a powerful ready stance across windswept desert dunes, weathered silver-and-ivory gothic plate armor gleaming faintly, face hidden in shadow inside the torn ivory hood. Fine desert sand cascades smoothly off the steel blade of the longsword gripped tightly in the right hand as fierce wind from right to left sends the tattered ivory cloak billowing dramatically behind.
-[4-8s] Luminous pure-white and pale-gold light particles intensify and swirl rapidly upward around the archangel's body and sword blade as a soft divine aura begins to awaken across the armor. The camera performs a slow, dramatic low-angle sweeping glide to heighten the heroic resolve against the stormy purple-and-amber sky.
+[0-1.2s] Opening immediately in motion right after lifting the sword from the desert floor: the final remaining half-stream of loose sand already clinging to the steel blade quickly slides off and finishes falling within the first 1 second. By 1.2 seconds, the sword blade is completely clean and dry, and NO more sand ever falls or spawns from the sword for the rest of the video.
+[1.2-8s] The hooded archangel stands firmly in the heroic three-quarter profile stance with the clean steel longsword gripped tightly in the right hand as fierce desert wind whips the tattered ivory cloak dramatically to the left. Luminous pure-white and pale-gold light particles gradually awaken and swirl upward around the archangel's armor and blade as the camera holds the steady side angle with a slow, heroic push-in against the stormy purple-and-amber sky.
 ```
 
 ---
 
-## Clip 12｜第五鏡終章：荒漠孤身迎戰古石拱門與聖劍白光（`00:24.0 – 00:34.0`）
+## Clip 12｜第五鏡終章：荒漠孤身迎戰古石拱門與聖劍白光（`00:24.0 – 00:34.0`）`[v2 修正版：平滑漸進充能]`
 
 - **參考圖 1（原片構圖基準）**：`orig_12_105s00.png`（`opening_animation/cinematic_part3_pack/refs/orig_12_105s00.png`）
 - **參考圖 2（電影風格基準）**：`ref_finale_arch.png`（`opening_animation/cinematic_part3_pack/refs/ref_finale_arch.png`）
-- **核心卡點**：史詩背影大遠景，孤身大天使長迎著狂沙大步走向遠方殘破的巨型哥德式古石拱門——拱門內外湧現大量地面魔軍剪影、空中盤旋著無數拍翼惡魔；**`0–3s` 穩步前行 → `3–10s` 右手長劍從劍柄、護手到整片劍身迸發耀眼純白星芒與緩慢旋轉的放射聖光**，鏡頭緩慢推進並微微環繞，締造全片最高潮終幕！
+- **修正重點**：解決原先 28s→29s 白光突然閃切跳變的問題——強制要求長劍從 `2.5s` 起由劍柄護手**如液態星光般連續、逐幀平滑流淌蔓延至劍尖（2.5s–6.5s）**，到 `6.5s–10s` 穩定綻放純白聖光與旋轉星芒，全程絕無任何瞬間跳切或亮度斷層。
 
 | 參考圖 1：原片構圖基準 (`orig_12_105s00.png`) | 參考圖 2：電影風格基準 (`ref_finale_arch.png`) |
 |---|---|
 | ![Clip 12 原片構圖基準](./cinematic_part3_pack/refs/orig_12_105s00.png) | ![Clip 12 電影風格基準](./cinematic_part3_pack/refs/ref_finale_arch.png) |
 
-### 給 Gemini 的生成指令（Clip 12 — 請直接依此段 Prompt 生成）
+### 給 Gemini 的生成指令（Clip 12 v2 — 請直接依此段 Prompt 生成）
 ```text
-Create an ultra-realistic AAA dark fantasy 3D CGI cinematic 16:9 video in a single continuous unbroken epic finale shot (no scene cuts, no text, no subtitles, no black letterbox bars). Use orig_12_105s00.png (first image) as the exact back-view composition facing the giant ruined stone archway, and transform it completely into the photorealistic 3D CGI film quality, dramatic golden volumetric god-rays, swirling desert wind, and epic dark fantasy atmosphere of ref_finale_arch.png (second reference image).
+Create an ultra-realistic AAA dark fantasy 3D CGI cinematic 16:9 video in a single continuous unbroken epic finale shot (no scene cuts, no sudden lighting jumps, no text, no subtitles, no black letterbox bars). Use orig_12_105s00.png (first image) as the exact back-view composition facing the giant ruined stone archway, and transform it completely into the photorealistic 3D CGI film quality, dramatic golden volumetric god-rays, swirling desert wind, and epic dark fantasy atmosphere of ref_finale_arch.png (second reference image).
 
-[0-3s] Epic back-view shot of the lone hooded archangel in battle-worn ivory-silver and gold-filigree gothic plate armor striding steadily forward across the windswept desert toward a colossal, ancient ruined gothic stone archway glowing against a blazing golden-amber stormy sky. The tattered ivory cloak whips fiercely to the left in the desert gale as dozens of dark horned ground demons march out from beneath the ruined archway and swarms of winged flying demons flap and circle ominously across the bright sky above.
-[3-10s] Brilliant, dazzling pure-white holy starlight ignites at the sword hilt and surges down the entire length of the longsword blade in the archangel's right hand, radiating crisp white light rays and a luminous glowing halo that shimmers intensely against the blowing desert sand. The camera slowly pushes forward and gently orbits behind the lone hero walking unwaveringly toward the demon horde beneath the towering archway. Epic AAA cinematic finale lighting.
+STRICT CONTINUITY LOCK: All lighting and sword-glow transitions MUST be completely smooth, gradual, and continuous frame-by-frame—strictly NO sudden flash-cut, NO abrupt pop-in of full blade glow, and NO visual discontinuity.
+
+[0-2.5s] Epic back-view shot of the lone hooded archangel in battle-worn ivory-silver and gold-filigree gothic plate armor striding steadily forward across the windswept desert toward a colossal, ancient ruined gothic stone archway glowing against a blazing golden-amber stormy sky. The steel longsword in the right hand is completely unlit at first. The tattered ivory cloak whips fiercely to the left in the desert gale as dozens of dark horned ground demons march out from beneath the ruined archway and swarms of winged flying demons flap and circle across the sky above.
+[2.5-6.5s] Starting smoothly at 2.5 seconds, a soft pure-white holy glow gently ignites at the sword hilt and crossguard, then flows gradually and continuously down the length of the steel blade toward the tip over four full seconds, steadily increasing in radiance without any sudden jump or flash-cut.
+[6.5-10s] Now seamlessly and completely illuminated, the entire longsword radiates a steady, dazzling pure-white starlight aura with delicate luminous light rays and drifting white sparks against the blowing desert sand as the camera continues pushing forward steadily behind the lone hero walking unwaveringly toward the demon horde beneath the towering archway. Epic AAA cinematic finale lighting.
 ```
 
 ---
