@@ -125,75 +125,44 @@
   },
   "rules": [
     {
-      "id": "survival-gate",
-      "everySec": 15,
-      "cmd": "stage.setAutoAdvance",
-      "stageGate": {
-        "stage": "view.stage",
-        "equippedRarities": "panels.inv.equipmentRarities",
-        "dropRates": "panels.battle.dropRates",
-        "dropRates_依據": "當前這一關掉得出哪些品質，由遊戲的 fieldDropRatesFor 回答。品質門檻達不成時放行，避免站在原地等一個掉不出來的品質（詳細事故說明見 policy.extreme.roi.json 的同名欄位與 policy_interpreter.js 的註解）",
-        "argKey": "on",
-        "checkpoints": [
-          {
-            "maxStage": 20,
-            "minRarity": 2,
-            "coverage": 0.85,
-            "park": [
-              11,
-              15
-            ],
-            "依據": "指南1＋安全關卡1. 前20關在11~15關刷到全身稀有"
-          },
-          {
-            "maxStage": 40,
-            "minRarity": 3,
-            "coverage": 0.85,
-            "park": [
-              21,
-              25
-            ],
-            "依據": "指南2＋安全關卡2. 過20關菁英後在21~25關刷到全身獨特"
-          },
-          {
-            "maxStage": 50,
-            "minRarity": 4,
-            "coverage": 0.3,
-            "park": [
-              41,
-              45
-            ],
-            "依據": "指南4＋安全關卡3. 過40關菁英後在41~45關刷到一部份史詩"
-          },
-          {
-            "maxStage": 59,
-            "minRarity": 4,
-            "coverage": 0.85,
-            "park": [
-              51,
-              59
-            ],
-            "依據": "指南5＋安全關卡4. 過50關BOSS後在51~59關刷到全身史詩"
-          },
-          {
-            "minRarity": 0,
-            "coverage": 0,
-            "依據": "指南只涵蓋前期，之後交回各強度自己的推關策略"
-          }
-        ],
-        "retreatCmd": "stage.go",
+      "id": "stage-seek",
+      "everySec": 10,
+      "cmd": "stage.go",
+      "stageSeek": {
+        "zones": "panels.gearTier",
+        "deaths": "panels.battle.lootStats.sources.field.deaths",
         "requireTargets": [
           "dpsAlive"
         ],
-        "targetRetreat": {
-          "step": 5,
-          "everySec": 60,
-          "minStage": 1,
-          "說明": "只有 dpsAlive 一個目標：持續 0 傷害就每 60 秒退 5 關。產出閘門（killRate 等）在有離線時段的策略仍然關閉，見 docs/SIM_HARNESS.md"
-        },
-        "requireTargets_依據": "打不動（命中全為 0 傷害）時退關。這不是產出閘門——離線誘因那一課說的是「門檻太高會把角色綁在淺關」，而 0 傷害的關卡本來就一隻也殺不死"
+        "killRateTarget": "killRate",
+        "upEverySec": 120,
+        "stableSec": 120,
+        "downEverySec": 120,
+        "calmSec": 60,
+        "comfort": [
+          {
+            "killRateMult": 3,
+            "calmSec": 120,
+            "step": 10
+          },
+          {
+            "killRateMult": 2,
+            "calmSec": 300,
+            "step": 5
+          }
+        ],
+        "autoAdvanceCmd": "stage.setAutoAdvance",
+        "kickAfterSec": 300,
+        "minStage": 1,
+        "參數_依據": "初版數字（使用者的手法沒有給數字）：穩定持續 2 分鐘才 +1、不穩每 2 分鐘 −1、死後 1 分鐘回去；很輕鬆（殺敵速率超過門檻 3 倍且 2 分鐘沒死）一次 +10、2 倍且 5 分鐘沒死 +5，對應真人記錄裡 ±1 為主、很輕鬆時 +5／+8／+13"
       },
-      "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）"
+      "if": [
+        [
+          "ctx.farmZone",
+          "falsy"
+        ]
+      ],
+      "why": "推關手法改成使用者的：手動 stage.go ±1 找「剛好打得動的最高關」，自動推進平常關著、固定在那一關，變強了再 +1，死了或打不動就 −1（來源：docs/REAL_PLAY_REFERENCE_2026-11-27.md）。取代原本的 survival-gate（品質覆蓋率門檻、park 區間、farmPark 刷／推交替、殺敵速率不足每 5 分鐘退 5 關）。穩不穩看的仍是原本宣告的目標（dpsAlive）加上死亡"
     },
     {
       "id": "farm-zone-return",
@@ -3161,7 +3130,15 @@
     "說明": "離開第 1 套時暫停針對使用中裝備的規則；強化另一套的那一輪只放行 investAllow 列的規則（強化），其餘（換裝、洗煉、寶石、符文）仍暫停",
     "investAllow": [
       "upgrade-by-rarity-cap"
-    ]
+    ],
+    "gate": {
+      "minZoneIndex": 3,
+      "stuckBossMin": 30,
+      "towerStallMin": 60,
+      "zones": "panels.gearTier",
+      "說明": "三套裝備推遲到用得到才開：目前場景是第 4 張地圖（索引 3）之後，而且某個 BOSS 已經卡了很久（野外 BOSS 卡關 30 分鐘，或封魔塔最高層 60 分鐘沒進步）；兩個條件成立過一次就鎖定開啟",
+      "依據": "使用者 2026-11-27：真人 30 小時遊玩只用第 1 套；模擬卻讓角色大半時間穿著由「第 1 套不要的」湊出的第 3 套，比第 1 套弱。門檻 30／60 分鐘是初版數字，使用者只說「卡了很久」"
+    }
   },
   "panelParams": {
     "battle": {

@@ -219,105 +219,47 @@
   },
   "rules": [
     {
-      "id": "survival-gate",
-      "everySec": 15,
-      "cmd": "stage.setAutoAdvance",
-      "stageGate": {
-        "stage": "view.stage",
-        "equippedRarities": "panels.inv.equipmentRarities",
-        "dropRates": "panels.battle.dropRates",
-        "dropRates_依據": "當前這一關掉得出哪些品質，由遊戲的 fieldDropRatesFor 回答（掉落路徑用的是同一支）。品質門檻達不成時就放行——關卡改造把掉落權威從『怪物等級』換成『地圖＋關卡』之後，荒漠 1~50 關的獨特與史詩掉落率都是 0，而閘門要求 21~40 關 85% 獨特、41~50 關 30% 史詩，兩道都是數學上打不開的門。實測 20 小時 × 5 個 seed 全部退回 34 關，10,185 件掉落裡史詩 0 件，五個 seed 的最高關卡一模一樣是 50。門檻本身不改成今天的 CSV 數字：那張表還在調，抄進來就是再犯一次同樣的錯",
-        "argKey": "on",
-        "checkpoints": [
-          {
-            "maxStage": 20,
-            "minRarity": 2,
-            "coverage": 0.85,
-            "park": [
-              11,
-              15
-            ],
-            "依據": "指南1＋安全關卡1. 前20關在11~15關刷到全身稀有"
-          },
-          {
-            "maxStage": 40,
-            "minRarity": 3,
-            "coverage": 0.85,
-            "park": [
-              21,
-              25
-            ],
-            "依據": "指南2＋安全關卡2. 過20關菁英後在21~25關刷到全身獨特"
-          },
-          {
-            "maxStage": 50,
-            "minRarity": 4,
-            "coverage": 0.3,
-            "park": [
-              41,
-              45
-            ],
-            "依據": "指南4＋安全關卡3. 過40關菁英後在41~45關刷到一部份史詩"
-          },
-          {
-            "maxStage": 59,
-            "minRarity": 4,
-            "coverage": 0.85,
-            "park": [
-              51,
-              59
-            ],
-            "依據": "指南5＋安全關卡4. 過50關BOSS後在51~59關刷到全身史詩"
-          },
-          {
-            "minRarity": 0,
-            "coverage": 0,
-            "依據": "指南只涵蓋前期，之後交回各強度自己的推關策略"
-          }
-        ],
-        "retreatCmd": "stage.go",
+      "id": "stage-seek",
+      "everySec": 10,
+      "cmd": "stage.go",
+      "stageSeek": {
+        "zones": "panels.gearTier",
+        "deaths": "panels.battle.lootStats.sources.field.deaths",
         "requireTargets": [
           "killRate",
           "fieldTrend",
           "fieldCap",
           "dpsAlive"
         ],
-        "targetRetreat": {
-          "step": 5,
-          "everySec": 300,
-          "minStage": 1,
-          "說明": "產出不足就每 300 秒往回退 5 關。everySec 必須 >= killRate 的 windowSec（tests/policy-keys.test.cjs 有哨兵）",
-          "releaseAtFloor": [
-            "fieldTrend",
-            "fieldCap"
-          ],
-          "releaseAtFloor_依據": "退到地板（minStage）、冷卻也過了，場上負載仍然超標，就證明退關修不好它——這兩個目標在這張圖內不再擋推關，換圖重新量。冰原的小怪每波 1~9 隻、平均約 5.5 隻且不分關卡（ZONE_ENCOUNTER.Icefield.mobCount 只有一列），而遊戲只有死亡會清場：退關讓怪變弱但不會變少。實測 24h × 5 seed 有 3 個被鎖在冰原第 1 關 10~14 小時（每分鐘仍殺 19~78 隻，killRate 達標），等級凍結在 114~146。killRate 不在清單裡：在地板都殺不動是真的太弱，照舊待著刷"
-        },
-        "zone": "panels.battle.stage.zone",
-        "zone_依據": "releaseAtFloor 的放行以地圖為單位：出怪密度是地圖的屬性，換圖就作廢重新量",
-        "requireTargets_依據": "極限玩家 dailyActiveHours=24 全程在線，沒有離線收益可領，所以「待在刷得動的關卡」直接決定產出。實測 4 個 seed：中位等級 201→412、擊殺 30K→138K、死亡 73→23",
-        "tierPush": {
-          "source": "panels.eval.tier",
-          "minBreakpointGain": 2,
-          "依據": "掉落裝備等級由 equipmentTierLevel 分段（EQUIP_TIER_SIZE=50）：關卡 1~49 掉裝等 1、50~99 掉裝等 50。park [41,45] 是一個每一件掉落都是裝等 1 的區間，而裝等 1 的詞條只剩 base（實測 12.0 對 335.4）。身上裝等追平當前分段之後就不該再留在原地——這一段能掉的都掉過了。跨過斷點的增幅低於 minBreakpointGain 倍時不觸發，避免在沒有斷點可跨的區間亂衝",
-          "advanceRequiresTargets": [
-            "deathRate",
-            "killRate"
-          ],
-          "advanceRequiresTargets_依據": "加上 killRate。原本只看 deathRate——但實測的失敗模式是**打不完**而不是打不過：關卡 150 的怪物血量 14,268,860、防禦 454,009，角色物攻 33,797，一隻要打 9.5 分鐘。角色完全不死，deathRate 因此一路達標，tierPush 就繼續放行往更深處推。「我沒死」不能當成「我推得動」的代理指標，那正是敗因側寫要分開 DPS_TIMEOUT 與 EHP_TOO_LOW 的理由"
-        },
-        "farmPark": {
-          "source": "panels.eval.tier",
-          "farmSec": 1800,
-          "pushSec": 600,
-          "依據": "掛機關卡要挑「會掉下一級裝備、而且最容易快速殺敵」的那一關，也就是掉落區間的底部——真人的 101 / 151 / 201。關卡改造之後野外掉落改成依地圖／關卡區間查表（rollFieldDrops → fieldDropRatesFor → ZONE_STAGE_DROP_TABLE），區間之內完全相同：荒漠 100~149 每一關都是 R3 10% / R4 1.5%、裝等都是 100。而怪物強度在區間內是連續指數成長——用遊戲的 monsterStatsFor 量，100→149 血量 ×25.79、經驗 ×21.25、金幣 ×2.73。⚠️ 曾據此推論「時薪差 20 倍」，**實測不成立**：24 小時 × 5 seed 的後 12 小時，對照組 925 隻/時、待在底部 1,042 隻/時，只差 13%。瓶頸是每隻怪固定的 RESPAWN_DELAY 0.8 ＋ FIELD_ENEMY_DEATH_CLEAR_DELAY 2.1 ＝ 2.9 秒（1,241 隻/時的硬上限），不是打死一隻要多久——對照組在關卡 189 就吃掉上限的 75%。底部真正買到的是「同樣的掉落數、少很多的死亡」，代價是每隻怪 21 倍的經驗",
-          "階梯_依據": "evaluator 的 farmFloorStage / nextFarmStage 把整張圖切成一串掛機點（荒漠 1→21→40→50→100→150→200，冰原 1→50→200→250→300）。正確的走法是逐格搬家，不是在格子裡一路走到打不動——舊行為讓角色停在它能存活的最深處，那正是同一格裡時薪最低的一關",
-          "階段輪流_依據": "刷（farmSec 退到底部、關掉自動推關）與推（pushSec 先跳回 best 再一路推）兩個階段輪流，兩邊都只看計時器。第一版寫成條件式（目標達標才准往上搬）實測大幅退步：24 小時 × 5 seed 全部卡在關卡 64，等級中位 335 → 87、最高關卡 198 → 64。因為 best 只能靠走出來，而往前走時殺敵速度必然會掉，一掉就被拉回底部，一趟 50 關的走法永遠走不完",
-          "比例_依據": "1800 / 600 ＝ 刷 75%、推 25%。使用者的權重是材料與裝備掉落數高於等級，等級只在前者都不缺時才衝。best 是單向棘輪，推進期拿到的每一關都是永久的，刷的時候掉回底部不會損失進度"
-        }
+        "killRateTarget": "killRate",
+        "upEverySec": 120,
+        "stableSec": 120,
+        "downEverySec": 120,
+        "calmSec": 60,
+        "comfort": [
+          {
+            "killRateMult": 3,
+            "calmSec": 120,
+            "step": 10
+          },
+          {
+            "killRateMult": 2,
+            "calmSec": 300,
+            "step": 5
+          }
+        ],
+        "autoAdvanceCmd": "stage.setAutoAdvance",
+        "kickAfterSec": 300,
+        "minStage": 1,
+        "參數_依據": "初版數字（使用者的手法沒有給數字）：穩定持續 2 分鐘才 +1、不穩每 2 分鐘 −1、死後 1 分鐘回去；很輕鬆（殺敵速率超過門檻 3 倍且 2 分鐘沒死）一次 +10、2 倍且 5 分鐘沒死 +5，對應真人記錄裡 ±1 為主、很輕鬆時 +5／+8／+13"
       },
-      "why": "依 player_strategy.md「前期優先生存任務指南」控制自動推關：裝備品質覆蓋率沒到門檻就關掉自動推關、留在原地掛機把裝備換上來。指南的核心是不要讓關卡跑在裝備前面——推太深只會一直死，死了就掉不到裝備，掉不到裝備就更推不動。先前是無條件每 15 秒送一次「開啟自動推關」，正是指南要防的那件事。覆蓋率只算身上真的有裝備的部位（空部位面板值為 -1，雙手武器會讓 weapon2 永遠空著，算進分母的話門檻永遠到不了、閘門永久關閉）",
-      "tierPush_退關地板": "退關的地板同時被拉到當前裝等分段的底（見 policy_interpreter.js 的 tierFloor）。跌破分段邊界一定更差，而這個地板是靜態的分段邊界、不是「記下來的已知安全關卡」，所以不會造成死鎖"
+      "if": [
+        [
+          "ctx.farmZone",
+          "falsy"
+        ]
+      ],
+      "why": "推關手法改成使用者的：手動 stage.go ±1 找「剛好打得動的最高關」，自動推進平常關著、固定在那一關，變強了再 +1，死了或打不動就 −1（來源：docs/REAL_PLAY_REFERENCE_2026-11-27.md）。取代原本的 survival-gate（品質覆蓋率門檻、park 區間、farmPark 刷／推交替、殺敵速率不足每 5 分鐘退 5 關）。穩不穩看的仍是原本宣告的目標（killRate、fieldTrend、fieldCap、dpsAlive）加上死亡"
     },
     {
       "id": "equip-set-switch",
@@ -3793,7 +3735,15 @@
     "說明": "離開第 1 套時暫停針對使用中裝備的規則；強化另一套的那一輪只放行 investAllow 列的規則（強化），其餘（換裝、洗煉、寶石、符文）仍暫停",
     "investAllow": [
       "upgrade-by-rarity-cap"
-    ]
+    ],
+    "gate": {
+      "minZoneIndex": 3,
+      "stuckBossMin": 30,
+      "towerStallMin": 60,
+      "zones": "panels.gearTier",
+      "說明": "三套裝備推遲到用得到才開：目前場景是第 4 張地圖（索引 3）之後，而且某個 BOSS 已經卡了很久（野外 BOSS 卡關 30 分鐘，或封魔塔最高層 60 分鐘沒進步）；兩個條件成立過一次就鎖定開啟",
+      "依據": "使用者 2026-11-27：真人 30 小時遊玩只用第 1 套；模擬卻讓角色大半時間穿著由「第 1 套不要的」湊出的第 3 套，比第 1 套弱。門檻 30／60 分鐘是初版數字，使用者只說「卡了很久」"
+    }
   },
   "survivalStall": {
     "counter": "panels.battle.lootStats.sources.field.deaths",

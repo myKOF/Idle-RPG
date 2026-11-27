@@ -736,9 +736,8 @@ function updateGearContext(state, policy, memo) {
   }
   var tp = cfg.tower ? peekPath(state, cfg.tower.plan || 'panels.towerFarm') : null;
   if (tp && Array.isArray(tp.itemTier) && filled >= minFilled && minRar >= needRar && now >= tg.pauseUntil) {
-    /* 「能掉出下一階」要有實際的機率：第 6~10 層的傳說只有 10%，連刷幾十場才會出一件；
-       minRate（每場 %，預設 25）把它排除，選到第 11 層（50%）。 */
-    var minRate = (typeof cfg.tower.minRate === 'number') ? cfg.tower.minRate : 25;
+    /* 「能掉出下一階」要有實際的機率：minRate（每場 %，預設 10）以下的不算（掉落表由企劃調整，數字不寫死）。 */
+    var minRate = (typeof cfg.tower.minRate === 'number') ? cfg.tower.minRate : 10;
     for (var f = 1; f <= tp.highest; f++) {
       var fr = tp.rates[f - 1] || [];
       if (tp.itemTier[f - 1] >= minLv && (Number(fr[minRar + 1]) || 0) >= minRate) { c.towerFarmFloor = f; break; }
@@ -748,6 +747,37 @@ function updateGearContext(state, policy, memo) {
   var hitT = cfg.tower && cfg.tower.hitTarget;
   var hd = hitT && c.deficit ? c.deficit[hitT] : null;
   c.towerHitOk = !hd || hd.unknown || !!hd.met;
+}
+
+/* ============ 三套裝備的啟用閘門（使用者 2026-11-27）============
+
+   真人 30 小時遊玩只用第 1 套，模擬卻讓角色大半時間穿著第 3 套（只吃第 1 套不要的裝備，比第 1 套弱）。
+   所以第 2、3 套推遲到「用得到」的時候才開：
+     ① 目前場景是第 minZoneIndex+1 張之後（預設從第 4 張地圖起）
+     ② 而且某個 BOSS 已經卡了很久（野外 BOSS 卡關 stuckBossMin 分鐘，或封魔塔最高層 towerStallMin 分鐘沒進步）
+   兩個條件都成立過一次就**鎖定開啟**（建套與強化第 2、3 套已經花了資源，之後不再關回去）。
+   沒開之前：不建第 2、3 套、不依遭遇切換、若人還在別套就切回第 1 套。
+   設定在 policy.equipSets.gate；沒有 gate 的策略不受影響（ctx.setsEnabled 恆為 true）。 */
+function updateSetsGate(state, policy, memo) {
+  var c = state.ctx || (state.ctx = {});
+  var gate = policy.equipSets && policy.equipSets.gate;
+  if (!gate) { c.setsEnabled = true; return; }
+  var g = memo.setGate || (memo.setGate = { open: false, towerHigh: -1, towerSince: 0 });
+  var now = Number(state.gameTimeSec) || 0;
+  var hi = Number(peekPath(state, gate.towerHighest || 'panels.tower.tower.highest')) || 0;
+  if (hi > g.towerHigh) { g.towerHigh = hi; g.towerSince = now; }
+  if (!g.open) {
+    var gt = peekPath(state, gate.zones || 'panels.gearTier');
+    var zi = -1;
+    if (gt && Array.isArray(gt.zones)) for (var i = 0; i < gt.zones.length; i++) if (gt.zones[i].key === gt.zone) zi = gt.zones[i].index;
+    var stuckBoss = Number(c.stuckBossMin) || 0;
+    var towerStall = Math.max(0, (now - g.towerSince) / 60);
+    if (zi >= (Number(gate.minZoneIndex) || 0)
+        && (stuckBoss >= (Number(gate.stuckBossMin) || 0) || towerStall >= (Number(gate.towerStallMin) || 1e9))) {
+      g.open = true;
+    }
+  }
+  c.setsEnabled = g.open;
 }
 
 function updateContext(state, policy, memo) {
@@ -1805,6 +1835,7 @@ function equipSetRank(b) {
    那是文件的優先序（先把第 1 套做好，第 2、3 套才有餘力），也避免同一輪兩條規則
    對同一件裝備各送一次、後一條被遊戲回「找不到物品」。不為第 2、3 套另外強化。 */
 function planEquipSetBuild(state, cfg, ruleId) {
+  if (state.ctx && state.ctx.setsEnabled === false) return [];          // 閘門沒開：不建第 2、3 套（updateSetsGate）
   var out = [];
   var P = pathVal(state, cfg.panel || 'panels.equipSets');
   if (!P || !P.sets) return out;
@@ -1898,6 +1929,8 @@ function planEquipSetSwitch(state, cfg, ruleId, memo, policy) {
      所以第 2 套必須在**進塔之前**穿好；進了塔就只能維持現狀，送了也只會被拒。 */
   var tower = !!pathVal(state, cfg.towerActive || 'panels.tower.tower.active');
   if (tower) { SW.pending = null; ctx.investing = false; return []; }
+  /* 閘門沒開：只做一件事——人還在第 2、3 套就切回第 1 套，其餘（遭遇切換、強化第 2、3 套）一律不做。 */
+  if (ctx.setsEnabled === false) { SW.pending = null; ctx.investing = false; return P.active !== home ? switchTo(home) : []; }
 
   /* ① 遭遇 */
   var enc = cfg.encounter || {};
@@ -1989,6 +2022,7 @@ function decide(state, policy, memo) {
   updateContext(state, policy, memo);
   updateStageMax(state);
   updateGearContext(state, policy, memo);
+  updateSetsGate(state, policy, memo);
   updateSkillContext(state, policy, memo);
   updateSetContext(state, policy, memo);
   var out = [];
@@ -3220,6 +3254,108 @@ function decide(state, policy, memo) {
         if (!state.ctx) state.ctx = {};
         state.ctx.pushing = !!gArgs[gCfg.argKey || 'on'];
         out.push({ name: r.cmd, args: gArgs, ruleId: r.id });
+      }
+    } else if (r.stageSeek) {
+      /* ============ 推關手法：找「剛好打得動的最高關」，手動 ±1，固定在那裡 ============
+
+         來源：真人 30 小時遊玩記錄（docs/REAL_PLAY_REFERENCE_2026-11-27.md）。使用者不靠自動推進一路衝，而是
+         手動 stage.go ±1（148 次裡 139 次是 ±1）找到「打得動、不會死」的最高關，把自動推進關掉固定在那一關，
+         變強了再 +1（很輕鬆時一次 +5、+8、+13），死了或打不動就 −1，並用 goMax 回到剛才的位置。
+
+         取代先前的 stageGate（品質覆蓋率門檻、park 區間、farmPark 的刷／推交替、殺敵速率不足每 5 分鐘退 5 關……）：
+         那一整套是模擬器自己長出來的啟發式，真人完全沒有這樣玩。
+
+         狀態：S＝目前認定的「穩定關」（memo.sk.S）。
+           死亡    遊戲自己會退關（約 10 關）。這裡把 S 設成「死掉前那一關 − 1」，calmSec 之後回去。
+           不穩    requireTargets 有未達標的（殺敵速率、場上數量趨勢、面板 DPS……）→ S 往下 1，每 downEverySec 一次。
+           穩定    沒死、目標全達標、沒在卡關重試等待，持續 stableSec → S 往上，每 upEverySec 一次；
+                   很輕鬆（殺敵速率遠超門檻、很久沒死）時一次跳 5～10 關。
+         自動推進：平常關著。只有「站在最前線（目前＝最高關）、穩定、而且最高關很久沒進步」才開一下——
+         遊戲只在整波清完才解鎖下一關，BOSS／菁英關可能需要自動推進踢一腳。 */
+      var skCfg = r.stageSeek;
+      var skZ = pathVal(state, skCfg.zones || 'panels.gearTier');
+      var skNow = Number(state.gameTimeSec) || 0;
+      if (skZ && Array.isArray(skZ.zones)) {
+        var skCur = null;
+        for (var skzi = 0; skzi < skZ.zones.length; skzi++) if (skZ.zones[skzi].key === skZ.zone) skCur = skZ.zones[skzi];
+        if (skCur) {
+          var sk = memo.sk || (memo.sk = { zone: null, S: skCur.current, lastUp: -1e9, lastDown: -1e9, lastDeathAt: -1e9, deaths: null, lastCur: skCur.current,
+            stableSince: skNow, lastBest: skCur.best, lastBestAt: skNow, onAuto: null });
+          if (sk.zone !== skCur.key) {                       // 換圖：從這張圖目前的關卡重新找
+            sk.zone = skCur.key; sk.S = skCur.current; sk.stableSince = skNow; sk.lastBest = skCur.best; sk.lastBestAt = skNow; sk.lastCur = skCur.current;
+          }
+          if (skCur.best > sk.lastBest) { sk.lastBest = skCur.best; sk.lastBestAt = skNow; }
+          var skMin = Math.max(1, Number(skCfg.minStage) || 1);
+          var skTop = Math.min(skCur.best, skCur.maxStage);
+
+          /* 死亡：計數器增加。S 設成死掉前那一關 −1（lastCur 是上一次取樣的關卡，遊戲退關之前的值）。 */
+          var skDeaths = Number(peekPath(state, skCfg.deaths || 'panels.battle.lootStats.sources.field.deaths')) || 0;
+          if (sk.deaths !== null && skDeaths > sk.deaths) {
+            sk.lastDeathAt = skNow;
+            sk.S = Math.max(skMin, Math.min(sk.S, sk.lastCur) - 1);
+            sk.stableSince = skNow;
+          }
+          sk.deaths = skDeaths;
+          sk.lastCur = skCur.current;
+
+          /* 穩不穩：宣告的目標全部達標（未知＝資料不足，視為還不能判斷，不當作不穩）。 */
+          var skBlocked = false, skKill = null;
+          var skReq = skCfg.requireTargets || [];
+          for (var skri = 0; skri < skReq.length; skri++) {
+            var skd = state.ctx && state.ctx.deficit && state.ctx.deficit[skReq[skri]];
+            if (!skd || skd.unknown) continue;
+            if (!skd.met) skBlocked = true;
+          }
+          var skKd = state.ctx && state.ctx.deficit && state.ctx.deficit[skCfg.killRateTarget || 'killRate'];
+          if (skKd && !skKd.unknown && skKd.target > 0) skKill = skKd.value / skKd.target;
+          var skCalmSec = (typeof skCfg.calmSec === 'number') ? skCfg.calmSec : 60;
+          var skCalm = (skNow - sk.lastDeathAt) >= skCalmSec;
+          var skWait = !!(state.ctx && state.ctx.retryWaiting);
+
+          if (skBlocked) {
+            sk.stableSince = skNow;
+            if (skNow - sk.lastDown >= ((typeof skCfg.downEverySec === 'number') ? skCfg.downEverySec : 120)) {
+              sk.S = Math.max(skMin, Math.min(sk.S, skCur.current) - 1);
+              sk.lastDown = skNow;
+            }
+          } else if (skCalm && !skWait) {
+            var skStableSec = (typeof skCfg.stableSec === 'number') ? skCfg.stableSec : 120;
+            if (skNow - sk.stableSince >= skStableSec
+                && skNow - sk.lastUp >= ((typeof skCfg.upEverySec === 'number') ? skCfg.upEverySec : 120)
+                && skCur.current >= sk.S - 0 && sk.S < skTop) {
+              var skStep = 1, skTiers = skCfg.comfort || [];
+              var calmFor = skNow - sk.lastDeathAt;
+              for (var skti = 0; skti < skTiers.length; skti++) {
+                var skT = skTiers[skti];
+                var okKill = (skKill === null) ? true : (skKill >= skT.killRateMult);
+                if (okKill && calmFor >= skT.calmSec && skT.step > skStep) skStep = skT.step;
+              }
+              sk.S = Math.min(skTop, sk.S + skStep);
+              sk.lastUp = skNow; sk.stableSince = skNow;
+            }
+          } else {
+            sk.stableSince = skNow;
+          }
+          sk.S = Math.max(skMin, Math.min(sk.S, skCur.maxStage));
+
+          /* 走到 S：只在「穩得住」時往上走；往下退是免費而且該立刻做。 */
+          var skDelta = sk.S - skCur.current;
+          if (skDelta < 0 || (skDelta > 0 && skCalm && !skBlocked)) {
+            if (skDelta !== 0) out.push({ name: r.cmd, args: { delta: skDelta }, ruleId: r.id });
+          }
+
+          /* 自動推進：只有站在最前線、穩定、而且最高關很久沒進步才開（踢一腳）。 */
+          if (skCfg.autoAdvanceCmd) {
+            var skKick = (typeof skCfg.kickAfterSec === 'number') ? skCfg.kickAfterSec : 300;
+            var wantAuto = !!(skCur.current >= skCur.best && skCur.best < skCur.maxStage && !skBlocked && skCalm && !skWait && (skNow - sk.lastBestAt) >= skKick);
+            if (sk.onAuto !== wantAuto) {
+              out.push({ name: skCfg.autoAdvanceCmd, args: { on: wantAuto }, ruleId: r.id });
+              sk.onAuto = wantAuto;
+            }
+          }
+          if (!state.ctx) state.ctx = {};
+          state.ctx.seekStage = sk.S;
+        }
       }
     } else if (r.talentFocus) {
       /* 威能：依清單順序，專注把「第一個還能升的」升滿，再換下一個（player_strategy.md：
