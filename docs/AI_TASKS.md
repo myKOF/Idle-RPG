@@ -1,3 +1,17 @@
+## TASK-EQUIP-SLOTS-20261127 — 任務裝備獎勵同批部位不重複
+
+- Owner：Codex；Done，單人處理。使用者要求任意N件裝備獎勵的部位不同，例如5件100級史詩裝備須為5個不同部位。前置：既有taskGrantReward與makeEquipment的slot選項可用，fetch後逐檔衝突預檢無外部來源。
+- 允許：js/tasks.js、tests/task-system.test.cjs、index.html／js/bridge.js／js/worker/sim.worker.js必要快取、LV_upgrade_system.md與本段。禁止修改來源表／data、裝備公式、掉落／熔爐、存檔／協議、素材與其他聊天修改，不合併推送。
+- 方案：每次發獎以ITEM_TYPES的11種實際部位不放回抽樣，武器／戒指各算一類，不把雙欄當不同部位。超過11件時每輪用完才補池，保留全數獎勵；各次任務重新抽樣。保持品質／等級／太古條數、直接入包及領取防重規則。
+- 驗收：5件史詩100級全不同、11種類覆蓋、超額循環不漏發、零／單件與跨次重置、實際taskClaim與防重、關卡等級／太古相容、共享常數不變、相關回歸／Build及自我Review後Commit。保留同副本Task表／data及終極提示修改，首頁只動bridge快取，文件在本段分段提交。後續交使用者審閱合併與重載驗收。
+
+- 完成：修改7檔：tasks發獎5行、task-system三項回歸、index／bridge／sim.worker快取、LV及本段。從ITEM_TYPES複製池再抽取，不改共享常數；僅任務裝備受影響，無顯示字串或素材變更，素材庫不需Commit。當前來源裝備獎勵最多2件，本測試另以指定5件與超過11件驗證通用行為。
+- 測試指令：`node --test tests/task-system.test.cjs tests/task-tower.test.cjs tests/task-chest-upgrade.test.cjs tests/task-evolution.test.cjs tests/task-chest-relic.test.cjs tests/task-skills.test.cjs tests/gm-task.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`，67項63通過／4既有失敗；修改前同組64項60通過／相同4項失敗。task-chest-relic的史詩任務預期順序22但現表23；task-tower仍預期首層任務在順序20且1件，現表21且2件，連帶勝利領取與導航兩項固定索引fixture失敗。未改來源表或放寬舊斷言，本次新增三項全部通過。
+- 新回歸驗證5件100級史詩／2太古、實際claim／重領拒絕／dirty旗標、固定整數抽樣上下界、0／1／5／11／25件、多輪及跨次重置、零等級沿用關卡175→150級、太古省略與指定0、ITEM_TYPES不變。初次測試將所有浮點亂數固定0使既有詞條抽樣無法產滿詞條，已改為只固定整數抽樣，保留正常詞條產出，產品詞條公式未動。
+- `npm.cmd run build`774檔通過，Git差異檢查與自我Review通過；`node tools/kill-test-browsers.cjs`確認無測試用無畫面瀏覽器。本次未建立瀏覽器或桌面擷取，未實機遊玩或跑全庫；本項沒有未完成實作，已知限制為11種部位用完才可重新抽樣，以及上述既有表格fixture失敗。
+- 唯讀未改：AI_RULES／AGENTS／Workflow／prompts/codex、item的makeEquipment／太古／詞條、data的ITEM_TYPES與TASKS、util亂數、Task.csv與其他任務／Worker回歸、player／save／protocol與build工具。其他聊天的開始選單及終極技能提示已獨立提交，index分別為start-menu／ui與本項bridge不同列，文件不同段，本項提交不含其增量；原有Task.xlsx／CSV／data與其他CSV保持未提交。
+- 交付：遊戲ai/codex的本段所在「[Codex] fix: 避免任務裝備獎勵部位重複」提交，SHA見Git log／交付。可供使用者審閱合併，未合併或推送develop／main；下一步整合到啟動工作區並重新載入／重啟遊戲。
+
 ## DESKTOP-STARTUP-20261127 — 長時間掛機後刷新與開始選單卡頓
 
 - Owner：Codex；Done（已確認的背景等待問題），單人處理。使用者回報約12小時掛機後刷新卡1～2分鐘，補充可能是開始選單的繼續遊戲按鈕遲遲不能使用。先分開量測讀檔、背景準備、Worker與場景首畫，不能把session至boot的區間直接當成載入時間（含玩家停留選單）。

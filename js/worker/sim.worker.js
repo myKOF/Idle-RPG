@@ -26,7 +26,7 @@ importScripts(
   '../save-schema.js?v=20261126-task-tower-boss-v1', '../player.js?v=20261118-demo-edition', '../system-unlocks.js?v=20261103-unlock-hints', '../special_rules.js?v=20261030-unlock-progress',
   '../combat.js?v=20261119-develop-merge-1', '../elite.js?v=20261120-integrated-v1', '../elite_boss.js?v=20261110-boss-indomitable-ground-v1', '../elite_boss_recipes.js?v=20261023-str-battle', '../legendary.js?v=20261106-ai-integration', '../tower.js?v=20261127-tower-player-spawn-v1',
   '../factory.js?v=20261126-reroll-min-cost-v1', '../newforge.js?v=20261105-forge-offline2', '../forge.js?v=20261109-relics', '../save.js?v=20261119-develop-merge-1',
-  '../tasks.js?v=20261126-task-chest-upgrade-v1', '../achievements.js?v=20261120-integrated-v1'
+  '../tasks.js?v=20261127-task-equip-slots-v1', '../achievements.js?v=20261120-integrated-v1'
 );
 /* GM 指令執行層。面板留在主執行緒（js/gm.js），執行層必須在狀態所在的這一側。
    它自己會擋非本機 hostname；Worker 的 location 是本檔的 URL，判定結果與主執行緒一致。 */
