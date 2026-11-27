@@ -2308,3 +2308,16 @@ upgradeSuccessBase：+5 以內必成，之後每級 −6 點，下限 30%
 `merchantPlan`（商人開著與否、券數、每件實際售價與可否購買）。
 
 **未涵蓋**：寶箱升級（花金幣）、商店刷新與商店升級、神祕商人的裝備貨架、遺物取得——文檔沒有寫規則，登記在 `scripts/sim/command_coverage.json`。
+
+## player_strategy.md §9 場景推進與刷裝的模擬器對應（2026-11-27）
+
+| 策略 | 實作 |
+|---|---|
+| §9-1／4 退回刷裝 | `policy.gearFarm` 每個決策點由 `updateGearContext` 算出 `ctx.farmZone`／`farmZoneAway`／`farmZoneNeedMax`；規則 `farm-zone-return`（`stage.switchZone`）、`farm-zone-goto-max`（`stage.goMax`，沿用卡關重試閘門）。通關換圖規則 `switch-zone-when-cleared` 在刷裝期間讓位（`ctx.farmZone` 為假才跑） |
+| §9-2 刷滿標準 | 全身 ≥ `minFilled` 件、最低裝等 ≥ 已通關場景最高關卡的掉落裝等、最低品質 ≥ 史詩；太古每件 ≥ 1 條，補不齊時達標後最多再等 `ancientWaitMin`（60 分鐘） |
+| §9-3 菁英關 | 不另開規則：§1.1 的保留清單本來就含對菁英傷害（`affixVsEnemy`）與菁英傷害抗性（防具清單） |
+| §9-5 封魔塔刷裝 | `ctx.towerFarmFloor`（已通關樓層中，掉落裝等 ≥ 身上最低裝等、下一階品質機率 ≥ `minRate` 的最低一層）驅動 `tower-farm`（`tower.start`）、`tower-farm-hold`（關自動推進）、`tower-push-resume`；`tower-auto` 在刷裝時讓位。命中率沿用 `hit` 目標（`ctx.towerHitOk`）。打不贏的煞車：連續失敗 `maxFails` 次暫停 `pauseMin` 分鐘，再失敗加倍（上限 8 倍），贏一場歸零 |
+
+**harness 專用面板**：`gearTier`（每張地圖的最高關卡／當前關卡掉落裝等、是否通關）、`towerFarm`（各樓層掉落裝等與各品質掉落機率）。分段規則由遊戲的 `equipmentTierLevel`、`towerRewardFor`、`BOSS_DROP_TABLE` 回答。
+
+**初版數字（文檔沒給）**：`stallMin`＝30 分鐘（最高關卡紀錄多久沒進步算推不動）、`ancientWaitMin`＝60 分鐘、`minRate`＝25%、`maxFails`＝3、`pauseMin`＝60。

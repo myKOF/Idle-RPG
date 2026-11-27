@@ -627,6 +627,129 @@ function updateStageMax(state) {
   state.ctx.stageMax = mx;
 }
 
+/* ============ 場景推進與刷裝（player_strategy.md §9）============
+
+   野外掉落裝等是分段的（equipmentTierLevel）：關卡 1~49 掉 1 級、50~99 掉 50 級、100~149 掉 100 級……
+   而每張地圖的關卡各自從 1 重數，所以「冰原第 70 關」掉 50 級裝，比「荒漠第 100 關」的 100 級裝還弱。
+   這支函式每個決策點算出幾個情境旗標，規則（stage.switchZone／stage.goMax／tower.start）只看旗標：
+
+     ctx.farmZone        正在「退回已通關場景刷裝」時＝該場景鍵，否則 false
+     ctx.farmZoneAway    要刷的場景不是目前這張（要切過去）
+     ctx.farmZoneNeedMax 已在那張場景，但還沒回到最高關卡（要 stage.goMax）
+     ctx.gearReady／gearMinLevel／gearMinRarity／gearAncientFull   身上裝備的刷裝進度
+     ctx.towerFarmFloor  封魔塔「停在這一層連續刷」的樓層（掉落裝等不低於身上最低裝等、下一階品質機率夠高的最低樓層），沒有則 false
+     ctx.towerHitOk      命中率目標達標（沒宣告命中率目標視為達標）
+
+   分段門檻、關卡掉落裝等、樓層掉落裝等與稀有度上限全部由遊戲函式算好放在 panels.gearTier／panels.towerFarm
+   （evaluator.js），這裡只做比較。狀態（卡了多久、是否正在刷裝）放在 memo.gf。 */
+function updateGearContext(state, policy, memo) {
+  var cfg = policy.gearFarm;
+  if (!cfg) return;
+  var c = state.ctx || (state.ctx = {});
+  var now = Number(state.gameTimeSec) || 0;
+  var gf = memo.gf || (memo.gf = { active: false, zone: null, readySince: null, best: {} });
+
+  /* ---- 身上裝備 ---- */
+  var eq = peekPath(state, cfg.equipment || 'panels.inv.equipment') || {};
+  var filled = 0, minLv = Infinity, minRar = Infinity, ancientAll = true;
+  var perItem = (typeof cfg.ancientPerItem === 'number') ? cfg.ancientPerItem : 1;
+  for (var k in eq) {
+    var it = eq[k];
+    if (!it || !it.id) continue;
+    filled++;
+    minLv = Math.min(minLv, Number(it.level) || 0);
+    minRar = Math.min(minRar, Number(it.rarity) || 0);
+    var anc = 0;
+    for (var ai = 0; it.affixes && ai < it.affixes.length; ai++) if (it.affixes[ai] && it.affixes[ai].ancient) anc++;
+    if (anc < perItem) ancientAll = false;
+  }
+  if (!filled) { minLv = 0; minRar = 0; ancientAll = false; }
+  var minFilled = (typeof cfg.minFilled === 'number') ? cfg.minFilled : 10;
+  var needRar = (typeof cfg.minRarity === 'number') ? cfg.minRarity : 4;
+  c.gearMinLevel = minLv;
+  c.gearMinRarity = minRar;
+  c.gearAncientFull = ancientAll;
+
+  /* ---- 場景 ---- */
+  c.farmZone = false; c.farmZoneAway = false; c.farmZoneNeedMax = false; c.gearReady = false;
+  var gt = peekPath(state, cfg.zones || 'panels.gearTier');
+  if (gt && Array.isArray(gt.zones)) {
+    var cur = null, fz = null;
+    for (var zi = 0; zi < gt.zones.length; zi++) {
+      var z = gt.zones[zi];
+      if (z.key === gt.zone) cur = z;
+      if (z.cleared && (!fz || z.tierAtMax > fz.tierAtMax || (z.tierAtMax === fz.tierAtMax && z.index > fz.index))) fz = z;
+    }
+    /* 每張地圖「最高關卡紀錄」進步的時間：用來判斷推不動。 */
+    for (var zj = 0; zj < gt.zones.length; zj++) {
+      var zz = gt.zones[zj], rec = gf.best[zz.key];
+      if (!rec || zz.best > rec.best) gf.best[zz.key] = { best: zz.best, at: now };
+    }
+    if (fz) {
+      var tStar = fz.tierAtMax;
+      var ready = filled >= minFilled && minLv >= tStar && minRar >= needRar;
+      c.gearReady = ready;
+      if (ready) { if (gf.readySince === null) gf.readySince = now; } else gf.readySince = null;
+      var waitSec = ((typeof cfg.ancientWaitMin === 'number') ? cfg.ancientWaitMin : 60) * 60;
+      var done = ready && (ancientAll || (now - gf.readySince) >= waitSec);
+
+      if (gf.active && done) {
+        gf.active = false; gf.zone = null;
+        /* 刷完回去推：卡住計時重算，不然剛出發又被判定「推不動」。 */
+        for (var kk in gf.best) gf.best[kk].at = now;
+      }
+      if (!gf.active && cur && !cur.cleared && !ready && cur.tierAtBest < tStar) {
+        var stallSec = ((typeof cfg.stallMin === 'number') ? cfg.stallMin : 30) * 60;
+        var r0 = gf.best[cur.key];
+        if (r0 && (now - r0.at) >= stallSec) { gf.active = true; gf.zone = fz.key; }
+      }
+      if (gf.active) {
+        c.farmZone = gf.zone;
+        c.farmZoneAway = !!(cur && cur.key !== gf.zone);
+        var tz = null;
+        for (var zk = 0; zk < gt.zones.length; zk++) if (gt.zones[zk].key === gf.zone) tz = gt.zones[zk];
+        c.farmZoneNeedMax = !!(cur && cur.key === gf.zone && tz && cur.current < tz.maxStage);
+      }
+    } else { gf.active = false; gf.zone = null; gf.readySince = null; }
+  }
+
+  /* ---- 封魔塔：停在能掉出「下一階、且不低於身上裝等」的最低樓層連續刷 ---- */
+  c.towerFarmFloor = false;
+  /* 打不贏就不要一直送：連續失敗 maxFails 次就暫停刷裝 pauseMin 分鐘，再失敗就加倍（上限 8 倍），贏一場就歸零。
+     沒有這道煞車，打不贏的樓層會每 2~3 分鐘送一次挑戰費、浪費野外刷裝的時間（實測 3 小時 23 次只贏 2 場）。
+     勝負用遊戲的塔戰統計：kills＝擊敗 BOSS（贏）、deaths＝失敗；只算「上一次取樣時正在刷裝」之後新增的場次。 */
+  var tCfg = cfg.tower || null;
+  var tg = gf.tower || (gf.tower = { kills: null, deaths: null, fails: 0, pauseUntil: 0, backoff: 1, farming: false });
+  var ts = tCfg ? peekPath(state, tCfg.stats || 'panels.battle.lootStats.sources.tower') : null;
+  if (ts) {
+    var tk = Number(ts.kills) || 0, td = Number(ts.deaths) || 0;
+    if (tg.kills !== null && tg.farming) {
+      if (tk > tg.kills) { tg.fails = 0; tg.backoff = 1; }
+      else if (td > tg.deaths) tg.fails += (td - tg.deaths);
+      var maxFails = (tCfg && typeof tCfg.maxFails === 'number') ? tCfg.maxFails : 3;
+      if (tg.fails >= maxFails) {
+        tg.pauseUntil = now + ((tCfg && typeof tCfg.pauseMin === 'number') ? tCfg.pauseMin : 60) * 60 * tg.backoff;
+        tg.backoff = Math.min(8, tg.backoff * 2); tg.fails = 0;
+      }
+    }
+    tg.kills = tk; tg.deaths = td;
+  }
+  var tp = cfg.tower ? peekPath(state, cfg.tower.plan || 'panels.towerFarm') : null;
+  if (tp && Array.isArray(tp.itemTier) && filled >= minFilled && minRar >= needRar && now >= tg.pauseUntil) {
+    /* 「能掉出下一階」要有實際的機率：第 6~10 層的傳說只有 10%，連刷幾十場才會出一件；
+       minRate（每場 %，預設 25）把它排除，選到第 11 層（50%）。 */
+    var minRate = (typeof cfg.tower.minRate === 'number') ? cfg.tower.minRate : 25;
+    for (var f = 1; f <= tp.highest; f++) {
+      var fr = tp.rates[f - 1] || [];
+      if (tp.itemTier[f - 1] >= minLv && (Number(fr[minRar + 1]) || 0) >= minRate) { c.towerFarmFloor = f; break; }
+    }
+  }
+  tg.farming = !!c.towerFarmFloor;
+  var hitT = cfg.tower && cfg.tower.hitTarget;
+  var hd = hitT && c.deficit ? c.deficit[hitT] : null;
+  c.towerHitOk = !hd || hd.unknown || !!hd.met;
+}
+
 function updateContext(state, policy, memo) {
   /* 速率型目標的取樣。放在最前面而且與 track 無關：決策點本身也是一個觀測時刻，
      而沒宣告 track 的策略一樣可以宣告速率目標。 */
@@ -1781,8 +1904,12 @@ function planEquipSetSwitch(state, cfg, ruleId, memo, policy) {
   var target = home;
   /* 這一輪就要進塔（塔的啟動規則到期且條件成立）：先換成塔用的那套，
      同一輪裡這條規則排在啟動規則前面，所以換好之後才開塔。 */
-  var tsr = cfg.towerStartRule;
-  if (tsr && enc.tower !== undefined && towerStartDue(state, policy, memo, tsr)) target = enc.tower;
+  var tsr = cfg.towerStartRule, tsrDue = false;
+  if (tsr && enc.tower !== undefined) {
+    var tsrList = Array.isArray(tsr) ? tsr : [tsr];
+    for (var tsi = 0; tsi < tsrList.length && !tsrDue; tsi++) tsrDue = towerStartDue(state, policy, memo, tsrList[tsi]);
+  }
+  if (tsrDue) target = enc.tower;
   else if (ctx.mode === 'boss' && enc.boss !== undefined) target = enc.boss;
   else if (ctx.mode === 'elite' && enc.elite !== undefined) target = enc.elite;
   if (target !== home && !ready(target)) target = home;     // 沒建好的套穿上去等於裸裝上場
@@ -1861,6 +1988,7 @@ function decideLazy(state, policy, memo, lazy) {
 function decide(state, policy, memo) {
   updateContext(state, policy, memo);
   updateStageMax(state);
+  updateGearContext(state, policy, memo);
   updateSkillContext(state, policy, memo);
   updateSetContext(state, policy, memo);
   var out = [];
