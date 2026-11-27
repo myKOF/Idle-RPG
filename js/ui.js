@@ -1400,6 +1400,7 @@ function bindWorkerUiState() {
       delete UI_WORKER_STATE.panelQueued[msg.name];
       requestPanelData(msg.name, true, queuedParams);
     }
+    if (msg.name === 'header') updateForgeChestBadge(msg.data && msg.data.player);
     if (msg.name === 'talents') updateTalentTabVisibility();
     if (msg.name === 'inv' && UI.pendingItemTooltip) {
       var pendingTooltip = UI.pendingItemTooltip;
@@ -2880,6 +2881,18 @@ function refreshSettingsPanel() {
       renderSaveList();
       refreshSaveFolderFilesV2();
     }
+}
+
+/* 各品質未開寶箱持有總數；只讀常駐header快照，離開熔爐頁仍可更新。 */
+function updateForgeChestBadge(player) {
+  var badge = $id('forge-chest-badge');
+  if (!badge) return;
+  var store = (player && player.chests) || {};
+  var total = 0;
+  CHESTS.forEach(function (def) { total += chestEntry(def, store[def.id]).n; });
+  setTextIfChanged(badge, total >= 1000 ? STR(2583) : String(total));
+  setAttrIfChanged(badge, 'aria-label', STR(2584, fmtFull(total)));
+  badge.hidden = total === 0;
 }
 
 /* ---- 熔爐改版公告：頁籤閃爍＋一次性彈窗（合併版遷移，migrateSave 設旗標） ---- */

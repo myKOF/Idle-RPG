@@ -1,3 +1,18 @@
+## FORGE-CHEST-BADGE-20261127 — 熔爐圖示顯示未開啟寶箱總數
+
+- Owner：Codex；Done，單人處理。使用者要求熔爐icon右上角顯示未開寶箱總數、文字清楚、1000個起顯示999+。前置：header已投影player.chests，chestEntry與CHESTS為數量權威，開箱已dirty header；工作區乾淨，fetch逐檔預檢無外部來源，String獨占可用。
+- 允許：index角標與CSS／UI／寶箱必要快取、ui角標及header回覆掛點、chest取得箱數變更時通知header、style角標、String.xlsx原生API及CSV／strings_data與編輯器共用快取、新forge-chest-badge回歸、Bridge／Worker快取、LV與本段。禁止改寶箱經驗／獎勵／機率／上限／開箱方式、存檔／協議、其他配置／玩法／素材或其他工作，不合併推送。
+- 方案：加總CHESTS各種由chestEntry正規化的持有n，不計經驗或歷史已開數；0隱藏，1～999完整數字，>=1000走String2583「999+」，String2584提供讀屏完整未開數量。header面板抵達即更新，不持續訂閱大型熔爐佇列；拆解經驗實際令持有箱數改變才dirty header，純經驗不增加header刷新。深紅實底、粗白字與淺邊，位於nav-tab-icon右上，點擊仍由原熔爐按鈕承接。
+- 驗收：五種／多種總數、0／1／999／1000／上限、舊檔／非法／未知ID、存讀純讀、真正拆解累積／開箱扣減與header通知、不在熔爐頁仍更新；原生Excel重開與全格比較、相關回歸／快取／Build、正式CSS隔離瀏覽器小圖示／999+完整顯示及清理，自我Review後Commit，後續使用者整合重載。
+
+- 完成／修改13檔：index角標／快取、style角標、ui加總與header回覆掛點、chest只在持有箱數增加時dirty header、Bridge／sim.worker快取、String.xlsx／CSV／strings_data及編輯器共用快取、新forge-chest-badge回歸、LV及本段。0隱藏、1～999數字、1000起999+，可及說明提供完整總數；取得、開箱、初次載入及非熔爐頁均沿權威header更新，不新增面板常駐訂閱或修改寶箱玩法。
+- 測試指令：`node --test tests/forge-chest-badge.test.cjs tests/chest.test.cjs tests/chest-opening.test.cjs tests/header-resources.test.cjs tests/worker-protocol.test.cjs tests/vfx-editor-cache-versions.test.cjs`55/55；新增非熔爐頁真正bindWorkerUiState／PANEL回覆回歸後，`node --test tests/forge-chest-badge.test.cjs tests/ui-worker-panels.test.cjs tests/string-table.test.cjs tests/xlsx-string-escapes.test.cjs`28/28。五品質加總、0／1／999／1000／各箱上限、異常與舊資料／未知ID、只讀快照、實際拆解換箱及開箱扣減／header通知、純經驗與滿箱不增header刷新皆通過。`apply_strings.cjs --check`、`build_string_csv.cjs --check`與`git diff --check`通過；`npm.cmd run build`777檔通過。
+- Excel：原生Excel updater寫入9格並正常重開兩輪逐格驗證；既有2567列與原本備份完全相同，只追加2583／2584兩列，其餘語言空白不填。styles.xml位元組一致，drawing清單不變；技能唯讀匯入並渲染前後指定區域目視，未以預覽器覆寫來源。String產出2568條／2955ee18，主頁與編輯器快取相同。
+- 畫面：launchHeadless隔離profile／靜音／看門狗、正式全部19支CSS及原nav／圖片／String／chest純讀函式，1400與700px視窗驗0／1／999／1000／12，數字完整在導覽列內、白字／不透明深紅底、hidden不佔位；999+截圖直接內嵌目視清楚，角標處真實滑鼠點擊由熔爐按鈕承接、頁面例外0。第一輪隔離頁缺畫布尺寸，補齊正式CSS變數後通過；finally關閉瀏覽器與伺服器，kill-test-browsers確認無殘留。
+- 清理限制：自動核准審查以政策限制拒絕刪除本輪`tmp/forge-chest-badge-20261127`（含來源備份／更新JSON／唯讀預覽／驗證腳本／依賴junction），未重試或換工具；目錄保留且不提交。上輪被拒清理的merchant暫存未動。
+- 唯讀未改：規範／Workflow／Codex、Chest來源表／chest_data、header投影與協議／存檔／取得與結算呼叫點、相關既有回歸／headless／build及配置工具；無新增素材。其他聊天CHEST-REVEAL40的ui-chest、chest-opening、CHEST_SYSTEM／VFX及index對應快取／LV既有開箱段／AI_TASKS末段不納入本提交；分段暫存保留。無未完成實作／已知新增風險，未測全庫／完整遊戲長時／其他瀏覽器與裝置。
+- 交付：FORGE-CHEST-BADGE-20261127，ai/codex本段所在「[Codex] feat: 在熔爐圖示顯示未開寶箱數量」提交，SHA見Git log與回報。可審閱合併；未合併或推送develop／main。下一步整合後重載遊戲驗收。
+
 ## MERCHANT-SOLD-OPAQUE-20261127 — 已購買商品改不透明灰色停用卡
 
 - Owner：Codex；Done，單人處理。使用者要求神祕商店商品買後不要半透明，改置灰不可用且不透後方木盤。前置：既有sold狀態／已購買文字／購買按鈕移除可用，工作區乾淨，fetch後逐檔衝突預檢無外部來源。

@@ -2,7 +2,7 @@
 /* 自動產生，請勿手改。來源：config/Excel/String.xlsx（Excel 是唯一來源）。
    重新產生：node tools/string-table/apply_strings.cjs（套用參數.bat 會自動執行）。
    每列＝[繁體中文, 簡體中文, 英文]；後面的空欄已省略。讀取請用 js/strings.js 的 STR()。 */
-var STRING_DATA_VERSION = '34f2c1e6';
+var STRING_DATA_VERSION = '2955ee18';
 var STRING_DATA = {
   "1": ["冰霜"],
   "2": ["毒霧"],
@@ -2569,5 +2569,7 @@ var STRING_DATA = {
   "2579": ["副手{0}"],
   "2580": ["{0}開放"],
   "2581": ["當前擁有邀請券數量：{0}"],
-  "2582": ["全部合成至最高"]
+  "2582": ["全部合成至最高"],
+  "2583": ["999+"],
+  "2584": ["未開啟寶箱：{0} 個"]
 };

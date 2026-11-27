@@ -159,16 +159,19 @@ function chestGainSalvageXp(rarity, count) {
   if (!(count > 0)) return;
   var mult = typeof relicChestSpeedMult === 'function' ? relicChestSpeedMult() : 1;
   mult *= demoMult(DEMO_CHEST_FORGE_XP_MULT);   // demo 版鍛造經驗倍率（js/data.js）
-  var changed = false;
+  var changed = false, countChanged = false;
   for (var i = 0; i < CHESTS.length; i++) {
     var def = CHESTS[i], st = chestState(def.id), row = chestLevelDef(def, st.lv);
     var gain = row ? (Number(row.xp[rarity]) || 0) * count * mult : 0;
     if (!(gain > 0)) continue;
     if (!st.on) { st.on = true; chestLog(STR(2490, def.name), 'good'); }
+    var previousCount = st.n;
     chestAddXp(def, st, gain);
+    if (st.n !== previousCount) countChanged = true;
     changed = true;
   }
   if (changed && typeof UI !== 'undefined' && UI.dirty) UI.dirty.newforge = true;
+  if (countChanged && typeof UI !== 'undefined' && UI.dirty) UI.dirty.header = true;
 }
 /* 離線結算用：記下各寶箱數量，結束時換算成「離線期間累積了幾個」。 */
 function chestCountsSnapshot() {
