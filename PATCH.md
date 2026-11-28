@@ -1,5 +1,22 @@
 # PATCH.md
 
+## 序章第三部終章分鏡 Prompt v2 修正（Clip 10/11/12 視覺瑕疵根治）（Antigravity 2026-11-27）
+
+- **更新 [`opening_animation/CINEMATIC_PART3_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_PART3_STORYBOARD.md)（Clip 10、Clip 11、Clip 12 升級為 v2 修正版）**：
+  - **Clip 10（約 10s 處）**：新增嚴格機位與朝向鎖定（`STRICT CAMERA & ORIENTATION LOCK`），禁止身體突然轉向復原或環繞翻轉，並鎖定僅右前景單把長劍。
+  - **Clip 11（約 16s & 18s 處）**：修正為一開場即處於剛拔劍殘沙流下一半的狀態且 **1 秒內落盡收淨**、不再憑空冒沙；取消環繞運鏡並嚴格鎖定「總共兩臂、左手自然垂於左側、胸甲完全無手」以根治胸前多長手掌問題。
+  - **Clip 12（約 28s→29s 處）**：強制要求長劍自 `2.5s–6.5s` 由劍柄護手向劍尖平滑連續漸進充能，消除原先白光特效突然跳切斷層。
+- **強化 [`assemble_part3.mjs`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/cinematic_part3_pack/assemble_part3.mjs)**：新增 `ffprobe` 自動長度偵測，相容 10s 獨立重製版與 20s 延長版 `clip_10_shot4b.mp4`。
+
+
+## 序章第三部終章（Shot 04 + Shot 05）電影級剪接成片完成（Antigravity 2026-11-27）
+
+- **完成第三部終章 34.0 秒電影級剪接成片（[`opening_animation/cinematic_part3_pack/output_part3_cinematic.mp4`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/cinematic_part3_pack/output_part3_cinematic.mp4)）**：
+  - 納入最終批次 4 支輸入影片（`clip_09_shot4a.mp4`、`clip_10_shot4b.mp4`、`clip_11_shot4c.mp4`、`clip_12_shot5.mp4`）。
+  - 修正 [`assemble_part3.mjs`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/cinematic_part3_pack/assemble_part3.mjs)：偵測 `clip_10_shot4b.mp4` 為 20 秒延長版（`0–10.167s` 重複 Clip 09、`10.167s` 起為單膝半跪蓄力），改由 `start=10.200s` 精準裁取 8.500s，避免右手特寫重複並消除任何切換殘影。
+  - 輸出成片精準為 **1920×1080、30 fps、34.000 秒（1020 幀）**，開頭 0.5s 白金柔光淡入、全段 0.5s 平滑跨溶解（`8.0s` / `16.0s` / `24.0s`）、尾段 3.0s（`31.0s–34.0s`）畫面與雙音軌（`shots-01-05-replay-sfx.mp3` + `desert-ascendant.mp3`）同步淡黑淡出，已逐秒檢視驗收。
+
+
 ## 序章第三部終章（Shot 04 + Shot 05）電影級復刻分鏡手冊與參考圖包（Antigravity 2026-11-26）
 
 - **新增 [`opening_animation/CINEMATIC_PART3_STORYBOARD.md`](file:///d:/MyGame/Idle-RPG/antigravity/opening_animation/CINEMATIC_PART3_STORYBOARD.md) 與 `opening_animation/cinematic_part3_pack/`**：

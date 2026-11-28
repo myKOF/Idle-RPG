@@ -60,12 +60,35 @@ function checkPrerequisites() {
   }
 }
 
+function probeDuration(filePath) {
+  const probe = spawnSync(
+    'ffprobe',
+    ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', filePath],
+    { encoding: 'utf8' }
+  );
+  if (!probe.error && probe.status === 0) {
+    const val = parseFloat(probe.stdout.trim());
+    if (Number.isFinite(val)) return val;
+  }
+  return null;
+}
+
 function main() {
   checkPrerequisites();
 
   const inputs = REQUIRED_CLIPS.map((name) => path.join(CLIPS_DIR, name));
   const normFilter =
     'scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,fps=30,format=yuv420p,setsar=1';
+
+  // 若 clip_10_shot4b.mp4 為 >15s 的延長版（前 10.17s 重複 Clip 09），自動從 10.200s 裁切；否則為獨立單段自 0s 起播
+  const clip10Dur = probeDuration(inputs[1]);
+  const clip10Trim =
+    clip10Dur !== null && clip10Dur > 15
+      ? `trim=start=10.200:duration=8.500,setpts=PTS-STARTPTS,`
+      : '';
+  if (clip10Trim) {
+    console.log(`[資訊] 偵測到 clip_10_shot4b.mp4 長度為 ${clip10Dur.toFixed(2)}s（延長版），自動自 10.200s 裁切單膝半跪段。`);
+  }
 
   // 時間軸（全長 34.000s / 1020 幀 @ 30fps）：
   // v0 (Clip 09): 8.500s（0.5s 白金柔光淡入，銜接 Part 2 結尾金光）
@@ -74,7 +97,7 @@ function main() {
   // v3 (Clip 12): 10.000s（於 24.000s 處 0.500s 跨溶解 -> 累計 34.000s，最後 3.0s 淡出至全黑）
   const filterComplex = [
     `[0:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.500,setpts=PTS-STARTPTS,fade=t=in:st=0:d=0.5:color=white,settb=1/30[v0]`,
-    `[1:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.500,setpts=PTS-STARTPTS,settb=1/30[v1]`,
+    `[1:v]${normFilter},${clip10Trim}tpad=stop_mode=clone:stop_duration=2,trim=duration=8.500,setpts=PTS-STARTPTS,settb=1/30[v1]`,
     `[2:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=8.500,setpts=PTS-STARTPTS,settb=1/30[v2]`,
     `[3:v]${normFilter},tpad=stop_mode=clone:stop_duration=2,trim=duration=10.000,setpts=PTS-STARTPTS,settb=1/30[v3]`,
     `[v0][v1]xfade=transition=fade:duration=0.500:offset=8.000,fps=30,settb=1/30[v01]`,
