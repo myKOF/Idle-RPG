@@ -2320,4 +2320,13 @@ upgradeSuccessBase：+5 以內必成，之後每級 −6 點，下限 30%
 
 **harness 專用面板**：`gearTier`（每張地圖的最高關卡／當前關卡掉落裝等、是否通關）、`towerFarm`（各樓層掉落裝等與各品質掉落機率）。分段規則由遊戲的 `equipmentTierLevel`、`towerRewardFor`、`BOSS_DROP_TABLE` 回答。
 
-**初版數字（文檔沒給）**：`stallMin`＝30 分鐘（最高關卡紀錄多久沒進步算推不動）、`ancientWaitMin`＝60 分鐘、`minRate`＝25%、`maxFails`＝3、`pauseMin`＝60。
+**初版數字（文檔沒給）**：`stallMin`＝30 分鐘（最高關卡紀錄多久沒進步算推不動）、`ancientWaitMin`＝60 分鐘、`minRate`＝10%、`maxFails`＝3、`pauseMin`＝60。
+
+## 推關手法與三套裝備閘門（2026-11-27，使用者指示）
+
+| 策略 | 實作 |
+|---|---|
+| §10 推關手法 | 規則 `stage-seek`（`stageSeek`）取代各策略原本的 `survival-gate`（`stageGate`）。狀態 `memo.sk.S`（穩定關）；死亡看 `panels.battle.lootStats.sources.field.deaths` 計數器；穩不穩看 `requireTargets`（沿用各策略原本宣告的目標）；很輕鬆的判準用 `killRate` 目標的值／門檻。`stageGate` 的程式碼還在（有測試），只是策略不再用 |
+| §7.2 三套裝備閘門 | `policy.equipSets.gate` ＋ `updateSetsGate` 算出 `ctx.setsEnabled`（鎖定開啟）；`planEquipSetBuild`／`planEquipSetSwitch` 沒開時不建、不切 |
+
+**初版數字**：`upEverySec`／`stableSec`／`downEverySec`＝120 秒、`calmSec`＝60 秒、輕鬆階梯（3 倍門檻＋120 秒沒死 → +10、2 倍＋300 秒 → +5）、`kickAfterSec`＝300 秒；閘門 `minZoneIndex`＝3、`stuckBossMin`＝30、`towerStallMin`＝60。

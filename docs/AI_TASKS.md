@@ -18211,3 +18211,10 @@ Worker 存活且頁面正常完成載入。
 - 唯讀未改：共通規範／Workflow／Codex、Skills2與game_parameters等來源／數值、角色初始與save-schema格式5、Worker協議／指令轉送、普通階解鎖與點數費用／GM規則、原生engine與Excel／字串／Build／headless工具。無素材庫修改或素材庫Commit。自我Review確認所有入口共用判定、主執行緒／Worker快取與提示一致；本案實作無未完成，未跑全庫／實體裝置，上述既有回歸保持。
 - 交接：本段所在`[Codex] feat: 終極進化改為普通七階學習即可解鎖`提交（SHA見交付），可審閱合併，未合併／推送develop或main。整合後重載遊戲即可依新條件生效，不另重置技能；若VFX編輯器仍開著，先備份／另存未存內容再重載共用字串，不自動刷新或儲存舊頁覆蓋。
 - 清理例外：自動核准審查以blocked by policy拒絕刪除本輪`tmp/ult-learned-20261127`（來源備份／JSON／預覽PNG／驗證腳本／TAP與Build日誌／依賴junction），已停止清理、保留不提交，未重試或改用其他工具；前輪被拒的暫存路徑未修改或刪除。最終Git差異／暫存檔名核對通過，只提交本案20檔。
+## SYNC-ALL-AI-20261128 — 整合 Claude 真人推關策略並同步所有 AI
+
+- Owner：Codex，整合；使用者輸入 `1`。初始 develop／Codex／Antigravity 為 `baa4e8cb`，先正常 fast-forward 至遠端 develop `8021de5777439e4656d65a7d83984bc4a0740a76`，保留 `3e87d6bc` 的任務引導調整；再合併 Claude `0be8b6107c046b53b6236b25cc07c8adeb437cae` 的兩筆提交（含 `fc4ab7ae` 真人遊玩基準）。內容為 stage-seek 手動推退關、延後三套裝備啟用、策略與文件／回歸，無文字衝突。新增本段前的合併樹與三方試跑樹 `2952408be5eee16e675b022c3d454bd64895a1c2` 一致，完整保留雙方成果。
+- 驗證：23份 sim／policy-keys 測試345項，342通過；任務／導引／Worker／快取／熔爐角標6份測試45項，44通過。合計390項、386通過、4項失敗；新的推關與裝備閘門回歸及各策略0.5小時煙霧測試通過。`npm.cmd run build` 781檔通過，Task生成器乾跑0語意差異、字串生成檔與CSV檢查通過（2568條、c0900690），Git差異檢查通過。字串工具首次誤用 tools 根目錄而未找到，確認其位於 tools/string-table 後執行正式 --check 通過；沒有修改來源表或生成檔。
+- 四項失敗皆在未修改的 Claude 來源分支獨立重現：sim-evaluator 裝等／品質增幅假設（3.45／2.50）、sim-farm-park 掉落樓層預期20而實際11、sim-luck-target 要求無幸運目標但策略仍有、task-chest-upgrade 固定預期存檔版本4但既有 skillZeroLevelV1 已升至5。未修改玩法／表格或降低測試斷言；保留來源既有問題。驗證記錄在 `logs/merge-20261128/`（sim-tests.tap、integration-tests.tap、source-sim-baseline.tap、source-task-baseline.tap、build.log）。本輪未跑全庫、未重新實機驗收畫面或長時間模擬。
+- 檢查但未改：共通規範／Workflow／Codex、各工作區與來源提交、同步工具、Task／資料／存檔、素材庫。僅追加本段整合紀錄，無新增玩法／素材；整合提交即本段所在 `[Codex] merge: 整合Claude真人推關策略並同步所有AI`。將使用正常 BAT（-NoAutoResolve）完成素材庫、所有可同步 AI 來源核對、develop推送與三個固定工作區回同步；最終結果／SHA見本次同步報告及交付。
+- 明確隔離保持：`codex/background-catchup`（`08013b4db0e3f03f336810a128cd801547f89f6d`）、`codex/boss8-animation-preview`（`86326b984b40c086844b28608de739bea9d01db6`）。不發布 main。剩餘上述四項既有測試問題供後續依來源規格確認，本輪合併可繼續，來源內容無遺漏。

@@ -187,7 +187,9 @@ test('技能面板與遊戲一致：解鎖判斷、費用、第 1 階開放等�
     assert.equal(t0.unlockLv, c.SKILLS2[gid].tiers[0].unlock.lv);
     if (g.castable) continue;
     const reply = c.skills2Learn(gid, 0);
-    if (t0.unlocked) assert.equal(reply, null, gid + ' 面板說可學，遊戲卻回：' + reply);
+    /* 學習還要 1 點技能點（面板的 points 另外給）：點數用完時遊戲回「技能點不足」是對的，不是面板錯。 */
+    if (t0.unlocked && P.points.available >= 1) assert.equal(reply, null, gid + ' 面板說可學，遊戲卻回：' + reply);
+    else if (t0.unlocked) assert.ok(/技能點/.test(String(reply)), gid + ' 沒有技能點時遊戲該回技能點不足：' + reply);
     else assert.ok(/需達到/.test(String(reply)), gid + ' 面板說未開放，遊戲回：' + reply);
     if (reply === null) c.skills2Downgrade(gid, 0);            // 還原，避免影響後面的群組
   }
@@ -874,7 +876,7 @@ const TF = (highest) => {
   const tier = [], rates = [];
   for (let f = 1; f <= highest + 1; f++) {
     tier.push(f < 10 ? 1 : f < 20 ? 50 : f < 30 ? 100 : 150);
-    rates.push(f < 6 ? [0, 0, 100, 50, 10, 0] : f < 11 ? [0, 0, 100, 100, 20, 10] : [0, 0, 0, 100, 100, 50]);   // 對照遊戲的 BOSS_DROP_TABLE：第 6~10 層傳說 10%、第 11 層起 50%
+    rates.push(f < 11 ? [0, 0, 100, 100, 20, 0] : [0, 0, 0, 100, 100, 10]);   // 合成資料：傳說（R5）第 11 層起才有 10%
   }
   return { highest, itemTier: tier, rates };
 };
@@ -917,7 +919,8 @@ test('場景與塔面板與遊戲一致：分段裝等、是否通關、樓層�
   vm.runInContext('G.tower.highest = 25', c);
   const T = e.panel('towerFarm');
   assert.equal(T.itemTier[19], 100, '第 20 層掉 100 級裝'); assert.equal(T.itemTier[18], 50, '第 19 層掉 50 級裝');
-  assert.ok(T.rates[10][5] >= 50 && T.rates[9][5] <= 10, '第 6~10 層傳說只有 10%，第 11 層起 50%');
+  /* 機率表會被企劃調整，不釘死數字：面板的每層機率要等於遊戲 dropRatesFor 的結果。 */
+  for (const f of [1, 6, 11, 20, 26]) assert.deepEqual(JSON.parse(JSON.stringify(T.rates[f - 1])), JSON.parse(JSON.stringify(vm.runInContext('dropRatesFor(BOSS_DROP_TABLE, ' + f + ')', c))), '第 ' + f + ' 層');
 });
 
 test('封魔塔刷裝煞車：連續失敗 3 次就暫停 60 分鐘，再失敗加倍，贏一場歸零', () => {

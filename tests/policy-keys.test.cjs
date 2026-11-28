@@ -430,15 +430,15 @@ test('視窗最低點目標（windowMin）的 path 與 per 在遊戲的 view 裡
   }
 });
 
-test('每份策略的 survival-gate 都要求 dpsAlive（持續 0 傷害就退關）', () => {
+test('每份策略的推關規則（stage-seek）都要求 dpsAlive（持續 0 傷害就往下退）', () => {
   /* 少了它，命中全被防禦壓到 0 的那一關會一直待下去——以前是 harness 不變量把整場模擬中止，
-     現在不變量只記錄，退關完全靠這個目標。 */
+     現在不變量只記錄，往下退完全靠這個目標。 */
   for (const f of POLICY_FILES) {
     const p = loadPolicy(f);
-    const rule = p.rules.find((r) => r.id === 'survival-gate');
-    assert.ok(rule && rule.stageGate, `${f} 沒有 survival-gate`);
-    assert.ok((rule.stageGate.requireTargets || []).indexOf('dpsAlive') >= 0, `${f} 的 survival-gate 沒有要求 dpsAlive`);
-    assert.ok(rule.stageGate.targetRetreat, `${f} 的 survival-gate 沒有 targetRetreat——dpsAlive 不達標時不會退關`);
+    const rule = p.rules.find((r) => r.id === 'stage-seek');
+    assert.ok(rule && rule.stageSeek, `${f} 沒有 stage-seek`);
+    assert.ok((rule.stageSeek.requireTargets || []).indexOf('dpsAlive') >= 0, `${f} 的 stage-seek 沒有要求 dpsAlive`);
+    assert.ok(rule.stageSeek.autoAdvanceCmd, `${f} 的 stage-seek 沒有 autoAdvanceCmd——自動推進不會被管理`);
   }
 });
 
